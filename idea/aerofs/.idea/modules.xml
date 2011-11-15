@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.daemon/aerofs.daemon.iml" filepath="$PROJECT_DIR$/../../java/aerofs.daemon/aerofs.daemon.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../cpp/aerofs.dtls/aerofs.dtls.iml" filepath="$PROJECT_DIR$/../../cpp/aerofs.dtls/aerofs.dtls.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.gui/aerofs.gui.iml" filepath="$PROJECT_DIR$/../../java/aerofs.gui/aerofs.gui.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.lib_obfus/aerofs.lib_obfus.iml" filepath="$PROJECT_DIR$/../../java/aerofs.lib_obfus/aerofs.lib_obfus.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.libs3/aerofs.libs3.iml" filepath="$PROJECT_DIR$/../../java/aerofs.libs3/aerofs.libs3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.s3/aerofs.s3.iml" filepath="$PROJECT_DIR$/../../java/aerofs.s3/aerofs.s3.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../cpp/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../cpp/libjingle.binding/libjingle.binding.iml" />
+    </modules>
+  </component>
+</project>
+

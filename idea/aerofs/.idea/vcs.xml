@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../cpp/aerofs.dtls" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../cpp/libjingle.binding" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../java/aerofs.daemon" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../java/aerofs.gui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../java/aerofs.lib_obfus" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../java/aerofs.libs3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../java/aerofs.s3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../../java/aerofs.spsv" vcs="Git" />
+  </component>
+</project>
+

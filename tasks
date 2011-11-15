@@ -1,0 +1,192 @@
+#!/bin/bash
+
+NUM_BASE_ARGS=1
+NUM_TAG_COMMAND_ARGS=2
+E_BADARGS=1
+E_BADTAGARGS=2
+BASEDIR=`pwd`
+
+if [ $# -lt $NUM_BASE_ARGS ]
+then
+    echo "usage: `basename $0` [help|init|master|pullall|pushall|ppa|tag|untag]"
+    exit $E_BADARGS
+fi
+
+# TODO: verify that the script is in the same directory from which it is being run
+# i.e. don't run as ../../tasks
+
+# build-path prefixes
+R="."
+B="build"
+J="java"
+C="cpp"
+
+ROOT_PROJECT_LIST="$R/aerofs.approot"
+BUILD_PROJECT_LIST="$B/aerofs.build.osx"
+JAVA_PROJECT_LIST="$J/aerofs.daemon $J/aerofs.gui $J/aerofs.lib $J/aerofs.spsv $J/aerofs.s3 $J/aerofs.libs3 $J/aerofs.openfire"
+CPP_PROJECT_LIST="$C/libjingle $C/aerofs.dtls $C/libjingle.binding $C/aerofs.shellext "
+
+PROJECT_LIST="$ROOT_PROJECT_LIST $BUILD_PROJECT_LIST $JAVA_PROJECT_LIST $CPP_PROJECT_LIST"
+
+master() {
+    echo "================================================================================"
+    echo "master:."
+    git checkout master 
+    for AD in $PROJECT_LIST
+    do
+        echo "--------------------------------------------------------------------------------"
+        echo "master:$AD"
+        cd $AD
+        git checkout master
+        cd $BASEDIR
+    done
+}
+
+pullall() {
+    echo "================================================================================"
+    echo "pull:."
+    git pull
+    for AD in $PROJECT_LIST
+    do
+        echo "--------------------------------------------------------------------------------"
+        echo "pull:$AD"
+        cd $AD
+        git pull
+        cd $BASEDIR
+    done
+    echo "----------------------------------------------------------------------------------"
+    echo "ant gen_java_proto"
+    ant gen_java_proto
+}
+
+pushall() {
+    echo "================================================================================"
+    echo "push:."
+    git push
+    for AD in $PROJECT_LIST
+    do
+        echo "--------------------------------------------------------------------------------"
+        echo "push:$AD"
+        cd $AD
+        git push 
+        cd $BASEDIR
+    done
+}
+
+init() {
+    echo "submodule init"
+    git submodule init
+    echo "submodule update"
+    git submodule update
+    master
+    pullall
+}
+
+tag() {
+    TAG_NAME=$1 # $1 is the first argument passed to this function
+
+    echo "ENSURE THAT YOUR WORKING BRANCHES ARE PUSHED TO THE REMOTE"
+    echo
+    echo "================================================================================"
+
+    # tag all the subprojects with the tag id
+    for AD in $PROJECT_LIST
+    do
+        echo "--------------------------------------------------------------------------------"
+        echo "tag:$AD w/ $TAG_NAME"
+        cd $AD
+        git tag -a -m "$TAG_NAME" $TAG_NAME
+        git push --tags
+        echo "--------------------------------------------------------------------------------"
+        cd $BASEDIR
+    done
+
+    # we should be here, but just to make sure
+    cd $BASEDIR
+
+    # tag the top-level project and push
+    echo "tag aerofs"
+    git add $PROJECT_LIST
+    git commit -m "update to $TAG_NAME"
+    git push
+    git tag -a -m "$TAG_NAME" $TAG_NAME
+    git push --tags
+
+    echo "================================================================================"
+}
+
+untag() {
+    TAG_NAME=$1 # $1 is the first argument passed to this function
+
+    echo "================================================================================"
+
+    # untag all the subprojects with the tag id
+    for AD in $PROJECT_LIST
+    do
+        echo "--------------------------------------------------------------------------------"
+        echo "untag:$AD w/ $TAG_NAME"
+        cd $AD
+        git tag -d $TAG_NAME
+        git push origin :refs/tags/$TAG_NAME
+        echo "--------------------------------------------------------------------------------"
+        cd $BASEDIR
+    done
+
+    # we should be here, but just to make sure
+    cd $BASEDIR
+
+    # untag the top-level project and push
+    # NOTE: although I untag, I won't delete the remote commit
+    # (because I don't want to rewrite history)
+    echo "untag aerofs"
+    git add $PROJECT_LIST
+    git commit -m "update to $TAG_NAME"
+    git tag -d $TAG_NAME
+    git push origin :refs/tags/$TAG_NAME
+
+    echo "================================================================================"
+}
+
+# keep this below function definitions so that bash can find and execute the commands
+
+COMMAND=$1
+
+case "$COMMAND" in
+    "init" )
+        init
+        ;;
+    "pullall" )
+        pullall
+        ;;
+    "master" )
+        master 
+        ;;
+    "pushall" )
+        pushall
+        ;;
+    "ppa" )
+        pullall
+        pushall
+        ;;
+    "tag" | "untag" )
+        # it's simpler to put the argument checks here (can't see $@, $# etc. inside a function)
+        if [ $# -ne $NUM_TAG_COMMAND_ARGS ]
+        then
+            echo "usage: `basename $0` $1 [tag name]"
+            exit $E_BADTAGARGS
+        fi
+
+        # runs either tag or untag function with the tag name
+        $1 $2
+        ;;
+    "help" | "--h" )
+        echo "init:     | $0 init             | a meta task that does 'git submodule init/update', master, and pullall"
+        echo "master:   | $0 master           | checkout master branch for all sub-projects"
+        echo "pullall:  | $0 pullall          | pull all local tracking branches"
+        echo "pushall:  | $0 pushall          | push all local tracking branches"
+        echo "ppa:      | $0 ppa              | pull all + push all"
+        echo "tag:      | $0 tag [tag_name]   | tag all subprojects and the aerofs project with [tag_name] and push tags and aerofs update-commit to origin/master"
+        echo "untag:    | $0 untag [tag_name] | untag [tag_name] from all subprojects and the aerofs project and remove from origin/master"
+        echo "help:     | $0 help             | print this help message"
+        ;;
+esac

@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# usage: run <rtroot> <app> [args]
+
+if [ x`uname -s | grep -i 'cygwin'` != x ]; then
+    S=';'
+else
+    S=':'
+fi
+
+# derive PPWD
+PPWD=`dirname $0`
+
+# convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
+PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+
+DAEMONROOT=$PPWD/../java/aerofs.daemon
+GUIROOT=$PPWD/../java/aerofs.gui
+LIBROOT=$PPWD/../java/aerofs.lib
+DTLSROOT=$PPWD/../cpp/aerofs.dtls
+LIBJINGLEBINDINGROOT=$PPWD/../cpp/libjingle.binding
+LIBS3ROOT=$PPWD/../aerofs.libs3
+S3ROOT=$PPWD/../aerofs.s3
+
+OS=`"$PPWD"/os`
+
+if [ $OS == osx ]; then
+    VMARGS=-XstartOnFirstThread
+elif [ x`echo $OS | grep linux` != x ]; then
+    export LD_LIBRARY_PATH=$PPWD:$LD_LIBRARY_PATH
+fi
+
+CP="$DAEMONROOT"/bin$CP$S"$GUIROOT"/bin$S"$LIBROOT"/bin$S"$DTLSROOT"/bin$S"$LIBJINGLEBINDINGROOT"/bin$S"$LIBS3ROOT"/bin$S"$S3ROOT"/bin
+for i in "$LIBROOT"/lib/*.jar "$LIBS3ROOT"/lib/*.jar "$GUIROOT"/lib/*.jar "$GUIROOT"/os/$OS/lib/*.jar; do
+    CP="$CP"$S"$i"
+done
+
+VMARGS_DBG="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005" 
+VMARGS_PROD="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError" 
+#VMARGS="$VMARGS -agentlib:hprof=cpu=samples,depth=16" 
+#VMARGS="$VMARGS -agentlib:hprof=heap=sites,depth=16" 
+java $VMARGS_PROD -ea -cp "$CP" com.aerofs.Main "$@" 
+

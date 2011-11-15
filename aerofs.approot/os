@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# echo the canonical os name
+
+if [ `uname -s` == Darwin ]; then
+    echo osx
+elif [ `uname -s` == Linux ]; then
+    if [ `uname -m` == x86_64 ]; then
+        echo linux64
+    else
+        echo linux32
+    fi
+else
+    echo win
+fi

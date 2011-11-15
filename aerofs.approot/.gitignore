@@ -1,0 +1,12 @@
+AeroFSsetup
+cacert.pem
+firstRun
+*.dylib
+*.jnilib
+*.so
+*.dll
+osxtools
+updater.sh
+icons
+lib
+user*

@@ -1,0 +1,17 @@
+# base directories
+dir.java              = ${basedir}/java
+dir.cpp               = ${basedir}/cpp
+
+# project directories
+dir.aerofs.gui        = ${dir.java}/aerofs.gui
+dir.aerofs.daemon     = ${dir.java}/aerofs.daemon
+dir.aerofs.lib        = ${dir.java}/aerofs.lib
+dir.aerofs.dtls       = ${dir.cpp}/aerofs.dtls
+dir.libjingle.binding = ${dir.cpp}/libjingle.binding
+dir.libjingle         = ${dir.cpp}/libjingle
+
+# mode
+build.mode            = PROD
+
+# programs
+prog.hammer           = hammer.sh

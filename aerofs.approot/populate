@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# usage: $0 <labeling>
+
+if [ x"$1" == x ]; then
+    LABELING=aerofs
+else
+    LABELING="$1"
+fi
+
+PPWD=`dirname $0`
+
+# convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
+PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+
+DAEMONROOT=$PPWD/../java/aerofs.daemon
+GUIROOT=$PPWD/../java/aerofs.gui
+OS=`"$PPWD"/os`
+
+cp -R "$DAEMONROOT"/os/$OS/* .
+cp -R "$GUIROOT"/icons .
+cp -R "$GUIROOT"/os/$OS/* .
+
+cp -R "$GUIROOT"/labeling/$LABELING/icons .
+cp -R "$GUIROOT"/labeling/$LABELING/os/$OS/* .
+
+if [ $LABELING == "comcast" ]; then
+    CACERT=cacert-comcast.pem
+else
+    CACERT=cacert-staging.pem
+fi
+
+cp "$DAEMONROOT"/"$CACERT" cacert.pem
+
+# create the labeling file
+case $LABELING in
+    "aerofs" )
+        CLASS=AA
+        ;;
+    "comcast" )
+        CLASS=CC
+        ;;
+    * )
+        echo $LABELING labeling is not supported yet
+        exit 1
+        ;;
+esac
+
+echo $CLASS > l
