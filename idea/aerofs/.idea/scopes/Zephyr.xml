@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Zephyr" pattern="[aerofs.daemon]:com.aerofs.daemon.transport.xmpp.zephyr..*" />
+</component>
