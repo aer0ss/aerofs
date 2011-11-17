@@ -17,6 +17,9 @@ DAEMONROOT=$PPWD/../java/aerofs.daemon
 GUIROOT=$PPWD/../java/aerofs.gui
 OS=`"$PPWD"/os`
 
+# Remove Growl.framework otherwise cp -R will fail overwriting it because it contains symlinks
+rm -rf Growl.framework
+
 cp -R "$DAEMONROOT"/os/$OS/* .
 cp -R "$GUIROOT"/icons .
 cp -R "$GUIROOT"/os/$OS/* .
