@@ -1,0 +1,3 @@
+[submodule "cpp/libjingle"]
+	path = cpp/libjingle
+	url = ssh://z.arrowfs.org/repos/libjingle
