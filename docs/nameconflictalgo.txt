@@ -17,9 +17,18 @@
 // Note that if n(o_a) != n(o_t) entering this subroutine,
 // the file name for n(o_a) will be discarded, and n(o_t) adopted.
 mergeObjects(o_a, o_t)
+
+    // Record the alias locally in the m table first
+    // so that if (o_t, v(o_t), n(o_t)) must be requested,
+    // a merge isn't handled in the hdObjectReceiveMsg method
+    write o_a -> o_t in m table;
+
+    if o_t not found in m table:
+        request (o_t, v(o_t), n(o_t)) from sender;
+
     vl(o_t) = vl(o_t) U vl(o_a);
     vkml(o_t) = (vkml(o_a) U vkml(o_t)) - vl(o_t)
-    mark o_a -> o_t;
+    replace o_a with o_t in all other tables;
     vl(o_a) = nil;
     vkml(o_a) = nil;
 
@@ -64,19 +73,10 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
 hdAliasMsg(o_a, o_t, vr(o_a), sender)
 
     lookup o_t in m table
-    if found o_t non-aliasing:
-        // Nothing special required here
-    elif found o_t -> o_e: 
-        // TODO should we attempt a download on o_t?
-        // or will anti-entropy take care of that?
-
+    if found o_t -> o_e: 
         // If the target has already been aliased,
         // our new target of interest is its target
         o_t = o_e; 
-    else: // o_t not found:
-        request (o_t, v(o_t), n(o_t)) from sender;
-
-    // At this point o_t represents some non-aliasing object
 
     lookup o_a in m table
     if found o_a non-alasing:
@@ -94,16 +94,15 @@ hdAliasMsg(o_a, o_t, vr(o_a), sender)
             // merge the version vectors of the two
             // (previously) targets
             mergeObjects(o_e, o_t);
-            // TODO at this point vl(o_e) = nil, 
-            // will anti-entropy download a new KML?
+            // Note at this point vl(o_e) = nil, 
+            // but this is fine, when o_e -> o_t is received,
+            // version will be updated.
     
-            // TODO need to do something with o_a -> o_t
-            // want o_a -> o_t
-            // what to do with vl(o_a)? set to nil? keep? 
-            // merge previous vl(o_a) with incoming vr(o_a)?
+            write o_a -> o_t in all tables;
+            // and keep vl(o_a) to be merged with vr below
  
     else // o_a not found 
-        record o_a -> o_t
+        write o_a -> o_t in m table; // vl(o_a) = nil implicitly
 
     // Merge local alias version with received remote;
     // if the alias previously had no version, treat as empty set.
