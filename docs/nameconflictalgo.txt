@@ -67,6 +67,9 @@ hdAliasMsg(o_a, o_t, vr(o_a), sender)
     if found o_t non-aliasing:
         // Nothing special required here
     elif found o_t -> o_e: 
+        // TODO should we attempt a download on o_t?
+        // or will anti-entropy take care of that?
+
         // If the target has already been aliased,
         // our new target of interest is its target
         o_t = o_e; 
@@ -80,20 +83,26 @@ hdAliasMsg(o_a, o_t, vr(o_a), sender)
         // i.e., we already had an object, (o_a, n(o_a), vl(o_a))
         mergeObjects(o_a, o_t);
 
-    elif found o_a -> o_e AND o_e != o_t:
-        // this is a new alias
-        // need to merge o_e and o_t
-        if (o_t != winner(o_e, o_t));
-            swap(o_t, o_e);
-
-        // Now that we know the winner and loser,
-        // merge the version vectors of the two
-        // (previously) targets
-        mergeObjects(o_e, o_t);
-        // TODO at this point vl(o_e) = nil, 
-        // will anti-entropy download a new KML?
+    elif found o_a -> o_e:
+        if o_e != o_t:
+            // this is a new alias
+            // need to merge o_e and o_t
+            if (o_t != winner(o_e, o_t));
+                swap(o_t, o_e);
+    
+            // Now that we know the winner and loser,
+            // merge the version vectors of the two
+            // (previously) targets
+            mergeObjects(o_e, o_t);
+            // TODO at this point vl(o_e) = nil, 
+            // will anti-entropy download a new KML?
+    
+            // TODO need to do something with o_a -> o_t
+            // want o_a -> o_t
+            // what to do with vl(o_a)? set to nil? keep? 
+            // merge previous vl(o_a) with incoming vr(o_a)?
  
-    else // o_a not found or o_a -> o_t found
+    else // o_a not found 
         record o_a -> o_t
 
     // Merge local alias version with received remote;
