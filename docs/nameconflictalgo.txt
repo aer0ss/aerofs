@@ -13,7 +13,9 @@
 //=============================================================================
 
 
-// Helper method used by both message handlers
+// Helper method used by both message handlers.
+// Note that if n(o_a) != n(o_t) entering this subroutine,
+// the file name for n(o_a) will be discarded, and n(o_t) adopted.
 mergeObjects(o_a, o_t)
     vl(o_t) = vl(o_t) U vl(o_a);
     vkml(o_t) = (vkml(o_a) U vkml(o_t)) - vl(o_t)
@@ -38,16 +40,19 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
         // are sent via o_t later, when the sender knows
         // o -> o_t
     else: // o is not found on this device
-        create a table entry for o; // implicitly vl(o) = vr(o);
+        create a table entry for o; // i.e., set vl(o) = vr(o);
 
-        // Determine if some other OID shares the same name
+        // Determine whether some other OID shares the same name
         o_nr = lookup nr(o) in some name->oid table
         if some o_nr is found:  // note: o_nr != o
             // There exists some object o_nr with name conflict
             if (o_nr != winner(o, o_nr):
                 swap(o, o_nr);
             mergeObjects(o, o_nr);
-            vl(o) = new_version; // implicit anti-entropy
+            // Other peers must learn that o is now aliased,
+            // so create a new version for o, forcing an
+            // implicit anti-entropy on object o.
+            vl(o) = new_version; 
         else:
             // No problem, unique oid for unique name
             // Do something normal
@@ -55,7 +60,7 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
 
 
 // Method to handle the second type of message, 
-// an alias message 
+// an alias message: o_a -> o_t 
 hdAliasMsg(o_a, o_t, vr(o_a), sender)
 
     lookup o_t in m table
@@ -78,14 +83,16 @@ hdAliasMsg(o_a, o_t, vr(o_a), sender)
     elif found o_a -> o_e AND o_e != o_t:
         // this is a new alias
         // need to merge o_e and o_t
-        o_tnew = winner(o_e, o_t);
-        if (o_t != o_tnew):
+        if (o_t != winner(o_e, o_t));
             swap(o_t, o_e);
 
         // Now that we know the winner and loser,
         // merge the version vectors of the two
         // (previously) targets
         mergeObjects(o_e, o_t);
+        // TODO at this point vl(o_e) = nil, 
+        // will anti-entropy download a new KML?
+ 
     else // o_a not found or o_a -> o_t found
         record o_a -> o_t
 
@@ -93,4 +100,6 @@ hdAliasMsg(o_a, o_t, vr(o_a), sender)
     // if the alias previously had no version, treat as empty set.
     // Following this is an implicit anti-entropy push of the version
     vl(o_a) = vl(o_a) U vr(o_a); 
+    // note that if vl(o_a) was nil prior to this statement, the
+    // version of o_a is not different between the remote and local peer
 
