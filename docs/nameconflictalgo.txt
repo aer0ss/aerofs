@@ -72,26 +72,20 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
 // an alias message: o_a -> o_t 
 hdAliasMsg(o_a, o_t, vr(o_a), sender)
 
-    lookup o_a in m table;
     lookup o_t in m table;
-
     if found o_t -> o_e in m table:
         // If the target has already been aliased,
         // our new target of interest is its target
         o_t = o_e; 
     elif o_t not found in m table:
-        if o_a found non-aliasing in m table: 
-            // Rename the alias filename so that a merge isn't
-            // handled in the hdObjectReceiveMsg method
-            n(o_a) = some unique temp filename;
+        // Implicit call to hdObjectReceiveMsg:
         request (o_t, v(o_t), n(o_t)) from sender; 
-            // implicit call to hdObjectReceiveMsg
 
     //---------
     // At this point 
     // - o_t represents some non-aliasing object
-    // - o_a has been lookedup in the m table
     //---------
+    lookup o_a in m table;
     if found o_a non-alasing: 
         // i.e., we already had an object, (o_a, n(o_a), vl(o_a))
         mergeObjects(o_a, o_t);
