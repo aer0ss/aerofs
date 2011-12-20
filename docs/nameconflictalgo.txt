@@ -73,13 +73,17 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
 hdAliasMsg(o_a, o_t, vr(o_a), sender)
 
     lookup o_t in m table;
+    if o_t not found in m table:
+        // Implicit call to hdObjectReceiveMsg:
+        request (o_t, v(o_t), n(o_t)) from sender; 
+        // Need to lookup o_t's state again, 
+        // as the download changed its state
+        lookup o_t in m table;
+
     if found o_t -> o_e in m table:
         // If the target has already been aliased,
         // our new target of interest is its target
         o_t = o_e; 
-    elif o_t not found in m table:
-        // Implicit call to hdObjectReceiveMsg:
-        request (o_t, v(o_t), n(o_t)) from sender; 
 
     //---------
     // At this point 
