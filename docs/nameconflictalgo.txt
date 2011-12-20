@@ -27,8 +27,10 @@ mergeObjects(o_a, o_t)
     vkml(o_a) = nil;
 
     // Must update any existing aliases.
+    // TODO this *might* be handled by "replace o_a w o_t in tables"
     for each o in {o | o -> o_a is in the m table}:
-        write o -> o_a in m table;
+        write o -> o_t in m table;
+        // TODO should we create new versions here?
 
 
 // Method to handle the first type of message, 
@@ -73,13 +75,12 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
 hdAliasMsg(o_a, o_t, vr(o_a), sender)
 
     lookup o_t in m table;
-    if o_t not found in m table:
+    if o_t not found in m table: // not alias nor non-alias
         // Implicit call to hdObjectReceiveMsg:
         request (o_t, v(o_t), n(o_t)) from sender; 
         // Need to lookup o_t's state again, 
         // as the download changed its state
         lookup o_t in m table;
-
     if found o_t -> o_e in m table:
         // If the target has already been aliased,
         // our new target of interest is its target
