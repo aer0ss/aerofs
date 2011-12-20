@@ -1,4 +1,4 @@
-//=============================================================================
+//============================================================================
 // Pseudo-code algorithm for resolving name-merge conflicts
 // Author: Mark Jeffrey
 // Created  Dec 16, 2011
@@ -6,12 +6,12 @@
 // Two types of remote messages are handled:
 //  1) (o, v(o), n(o), ...) an object, its version, its name, and other meta
 //  2) (o_a, o_t, v(o_a)) an alias message stating that o_a aliases to o_t
-// Noteworth definitions:
+// Noteworthy definitions:
 //  vr(o) = version of object o, received remotely
 //  vl(o) = version of object o, lookedup locally
 //  nr(o) = name of object o, received remotely
 //  nl(o) = name of object o, lookedup locally
-//=============================================================================
+//============================================================================
 
 
 // Helper method used by both message handlers.
@@ -25,6 +25,10 @@ mergeObjects(o_a, o_t)
         // and deal with duplicate o_t's
     vl(o_a) = nil;
     vkml(o_a) = nil;
+
+    // Must update any existing aliases.
+    for each o in {o | o -> o_a is in the m table}:
+        write o -> o_a in m table;
 
 
 // Method to handle the first type of message, 
@@ -57,6 +61,7 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
             // so create a new version for o, forcing an
             // implicit anti-entropy on object o.
             vl(o) = new_version; 
+
         else:
             // No problem, unique oid for unique name
             // Do something normal
@@ -67,29 +72,30 @@ hdObjectReceiveMsg(o, vr(o), nr(o))
 // an alias message: o_a -> o_t 
 hdAliasMsg(o_a, o_t, vr(o_a), sender)
 
-    lookup o_t in m table
-    if found o_t -> o_e: 
+    lookup o_a in m table;
+    lookup o_t in m table;
+
+    if found o_t -> o_e in m table:
         // If the target has already been aliased,
         // our new target of interest is its target
         o_t = o_e; 
-    elif o_t not found:
-        // Rename the alias filename so that a merge isn't
-        // handled in the hdObjectReceiveMsg method
-        n(o_a) = some unique temp filename;
-
+    elif o_t not found in m table:
+        if o_a found non-aliasing in m table: 
+            // Rename the alias filename so that a merge isn't
+            // handled in the hdObjectReceiveMsg method
+            n(o_a) = some unique temp filename;
         request (o_t, v(o_t), n(o_t)) from sender; 
             // implicit call to hdObjectReceiveMsg
 
     //---------
-    // At this point o_t represents some non-aliasing object
+    // At this point 
+    // - o_t represents some non-aliasing object
+    // - o_a has been lookedup in the m table
     //---------
-
-    lookup o_a in m table
-    if found o_a non-alasing:
+    if found o_a non-alasing: 
         // i.e., we already had an object, (o_a, n(o_a), vl(o_a))
         mergeObjects(o_a, o_t);
-
-    elif found o_a -> o_e:
+    elif found o_a -> o_e: // any o_e
         if o_e != o_t:
             // this is a new alias
             // need to merge o_e and o_t
@@ -107,8 +113,9 @@ hdAliasMsg(o_a, o_t, vr(o_a), sender)
             // Don't need to replace o_a with o_t in tables
             // because o_a was replaced with o_e, 
             // and o_e was replaced with o_t, above.
-            write o_a -> o_t in m table;
-            // keep vl(o_a) to be merged with vr below
+            // Additionally, o_a -> o_t was already written
+            // TODO Ensure that vl(o_a) is kept/left alone
+            // to be merged with vr below
  
     else // o_a not found 
         create o_a entry in m table; // vl(o_a) = nil implicitly
