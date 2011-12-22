@@ -1,0 +1,131 @@
+//============================================================================
+// Pseudo-code algorithm for resolving name-merge conflicts
+// Author: Mark Jeffrey
+// Created  Dec 16, 2011
+// Modified Dec 19, 2011
+// Two types of remote messages are handled:
+//  1) (o, v(o), n(o), ...) an object, its version, its name, and other meta
+//  2) (o_a, o_t, v(o_a)) an alias message stating that o_a aliases to o_t
+// Noteworthy definitions:
+//  vr(o) = version of object o, received remotely
+//  vl(o) = version of object o, lookedup locally
+//  nr(o) = name of object o, received remotely
+//  nl(o) = name of object o, lookedup locally
+//============================================================================
+
+
+// Helper method used by both message handlers.
+// Note that if n(o_a) != n(o_t) entering this subroutine,
+// the file name for n(o_a) will be discarded, and n(o_t) adopted.
+mergeObjects(o_a, o_t)
+    vl(o_t) = vl(o_t) U vl(o_a);
+    vkml(o_t) = (vkml(o_a) U vkml(o_t)) - vl(o_t)
+    write o_a -> o_t in m table;
+    replace o_a with o_t in all other tables;
+        // and deal with duplicate o_t's
+    vl(o_a) = nil;
+    vkml(o_a) = nil;
+
+    // Must update any existing aliases.
+    // TODO this *might* be handled by "replace o_a w o_t in tables"
+    for each o in {o | o -> o_a is in the m table}:
+        write o -> o_t in m table;
+        // TODO should we create new versions here?
+
+
+// Method to handle the first type of message, 
+// an object, its version, and name
+hdObjectReceiveMsg(o, vr(o), nr(o))
+    lookup o in m table
+    if found o non-aliasing
+        if nl(o) != nr(o):
+            // Deal with different name, same oid
+        elif vl(o) != vr(o):
+            // Deal with different versions, same n,oid
+
+    elif found o -> o_t:  // any o_t
+        // No action required, because anti-entropy will 
+        // ensure that the remote updates on o
+        // are sent via o_t later, when the sender knows
+        // o -> o_t
+    else: // o is not found on this device
+        create a table entry for o;
+        vl(o) = vr(o);
+
+        // Determine whether some other OID shares the same name
+        o_nr = lookup nr(o) in some name->oid table
+        if some o_nr is found:  // note: o_nr != o
+            // There exists some object o_nr with name conflict
+            if (o_nr != winner(o, o_nr):
+                swap(o, o_nr);
+            mergeObjects(o, o_nr);
+            // Other peers must learn that o is now aliased,
+            // so create a new version for o, forcing an
+            // implicit anti-entropy on object o.
+            vl(o) = new_version; 
+
+        else:
+            // No problem, unique oid for unique name
+            // Do something normal
+        
+
+
+// Method to handle the second type of message, 
+// an alias message: o_a -> o_t 
+hdAliasMsg(o_a, o_t, vr(o_a), sender)
+
+    lookup o_t in m table;
+    if o_t not found in m table: // not alias nor non-alias
+        // Implicit call to hdObjectReceiveMsg:
+        request (o_t, v(o_t), n(o_t)) from sender; 
+        // Need to lookup o_t's state again, 
+        // as the download changed its state
+        lookup o_t in m table;
+    if found o_t -> o_e in m table:
+        // If the target has already been aliased,
+        // our new target of interest is its target
+        o_t = o_e; 
+
+    //---------
+    // At this point 
+    // - o_t represents some non-aliasing object
+    //---------
+    lookup o_a in m table;
+    if found o_a non-alasing: 
+        // i.e., we already had an object, (o_a, n(o_a), vl(o_a))
+        mergeObjects(o_a, o_t);
+    elif found o_a -> o_e: // any o_e
+        if o_e != o_t:
+            // this is a new alias
+            // need to merge o_e and o_t
+            if (o_t != winner(o_e, o_t));
+                swap(o_t, o_e);
+    
+            // Now that we know the winner and loser,
+            // merge the version vectors of the two
+            // (previously) targets
+            mergeObjects(o_e, o_t);
+            // Note at this point vl(o_e) = nil, 
+            // but this is fine, when o_e -> o_t is received,
+            // version will be updated.
+    
+            // Don't need to replace o_a with o_t in tables
+            // because o_a was replaced with o_e, 
+            // and o_e was replaced with o_t, above.
+            // Additionally, o_a -> o_t was already written
+            // TODO Ensure that vl(o_a) is kept/left alone
+            // to be merged with vr below
+ 
+    else // o_a not found 
+        create o_a entry in m table; // vl(o_a) = nil implicitly
+        write o_a -> o_t in m table; 
+        
+
+    // Merge local alias version with received remote;
+    // if the alias previously had no version, treat as empty set.
+    // Following this is an implicit anti-entropy push of the version
+    vl(o_a) = vl(o_a) U vr(o_a); 
+    // note that if vl(o_a) was nil prior to this statement, the
+    // version of o_a is not different between the remote and local peer
+
+
