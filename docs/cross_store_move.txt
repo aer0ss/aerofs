@@ -1,0 +1,15 @@
+when creating meta for file o in store s:
+----
+
+if (o.origin is not set || origin store doesn't exist || o.oid is offline in the origin store) {
+	create o in s;
+	return
+}
+
+copy all branches and their associated versions, including KML, from the origin store to s
+
+move o in the origin to trash, without incrementing the version
+
+set knowledge of s to the minimum of both origin and s
+
+download meta of o in the origin as soon as possible, using downloadAsync
