@@ -2,7 +2,7 @@
 
 # usage: run <rtroot> <app> [args]
 
-if [ x`uname -s | grep -i 'cygwin'` != x ]; then
+if [ x`uname -s | grep -i 'cygwin\|mingw'` != x ]; then
     S=';'
 else
     S=':'
