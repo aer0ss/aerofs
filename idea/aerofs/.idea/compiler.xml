@@ -1,13 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="CompilerAPISettings">
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-Xmaxerrs 10000" />
+    <option name="MAXIMUM_HEAP_SIZE" value="512" />
+  </component>
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdSetRole.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdGetRole.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/TCP.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Unicast.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdDelUser.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdAddUser.java" />
       <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/linker_old" includeSubdirectories="true" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Stores.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/HostnameMonitor.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/HdTransportReconfigRemoteDevice.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Multicast.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/ARP.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/StartPulse.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/EOTpSubsequentPulse.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/EOTpStartPulse.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/IPulseEvent.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/admin/HdTransportFloodQuery.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/admin/HdTransportPing.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/admin/HdTransportFlood.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/test/com/aerofs/daemon/core/migration/TestImmigrantCreator.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/test/com/aerofs/daemon/core/migration/TestEmigrantCreator.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/test/com/aerofs/daemon/core/migration/TestEmigrantDetector.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/test/com/aerofs/daemon/core/TestStoreDeleter.java" />
     </excludeFromCompile>
     <resourceExtensions />
     <wildcardResourcePatterns>
@@ -23,6 +45,10 @@
       <entry name="?*.ftl" />
     </wildcardResourcePatterns>
     <annotationProcessing enabled="false" useClasspath="true" />
+  </component>
+  <component name="EclipseCompilerSettings">
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-proceedOnError" />
+    <option name="MAXIMUM_HEAP_SIZE" value="512" />
   </component>
 </project>
 

@@ -3,6 +3,14 @@
   <component name="CppTools.Loader" reportImplicitCastToBool="false" reportNameReferencedOnce="false" warnedAboutFileOutOfSourceRoot="true" version="3" currentProject="$PROJECT_DIR$/../../java/aerofs.daemon/Makefile" compilerSelect="AUTO" />
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
+    <list size="2">
+      <item index="0" class="java.lang.String" itemvalue="org.mockito.Captor" />
+      <item index="1" class="java.lang.String" itemvalue="org.mockito.Mock" />
+    </list>
+  </component>
+  <component name="ExportToHTMLSettings">
+    <option name="OPEN_IN_BROWSER" value="true" />
+    <option name="OUTPUT_DIRECTORY" value="/tmp" />
   </component>
   <component name="IdProvider" IDEtalkID="1B91C0D653B1E361A6A983CCE79E7BFC" />
   <component name="JavadocGenerationManager">
