@@ -1,5 +1,5 @@
 <component name="CopyrightManager">
-  <settings default="AeroFS">
+  <settings default="">
     <module2copyright>
       <element module="All" copyright="AeroFS" />
     </module2copyright>
