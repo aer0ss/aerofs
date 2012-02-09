@@ -1,3 +1,0 @@
-<component name="DependencyValidationManager">
-  <scope name="TCPMT" pattern="[aerofs.daemon]:com.aerofs.daemon.transport.tcpmt..*||[aerofs.lib]:com.aerofs.proto.*||[aerofs.lib]:com.aerofs.proto..*||[aerofs.lib]:com.aerofs.lib.os..*" />
-</component>
