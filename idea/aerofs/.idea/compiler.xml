@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <option name="DEFAULT_COMPILER" value="Javac" />
+    <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdSetRole.java" />
       <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/linker" includeSubdirectories="true" />
