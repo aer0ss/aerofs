@@ -97,9 +97,6 @@
           <option name="THROWS_KEYWORD_WRAP" value="1" />
           <option name="WRAP_COMMENTS" value="true" />
           <option name="PARENT_SETTINGS_INSTALLED" value="true" />
-          <indentOptions>
-            <option name="CONTINUATION_INDENT_SIZE" value="4" />
-          </indentOptions>
         </codeStyleSettings>
         <codeStyleSettings language="JavaScript">
           <option name="METHOD_BRACE_STYLE" value="2" />
