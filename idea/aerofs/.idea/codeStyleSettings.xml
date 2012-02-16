@@ -19,6 +19,7 @@
         <option name="LINE_SEPARATOR" value="&#10;" />
         <option name="FIELD_NAME_PREFIX" value="_" />
         <option name="STATIC_FIELD_NAME_PREFIX" value="s_" />
+        <option name="INSERT_INNER_CLASS_IMPORTS" value="true" />
         <option name="STATIC_FIELDS_ORDER_WEIGHT" value="3" />
         <option name="FIELDS_ORDER_WEIGHT" value="4" />
         <option name="CONSTRUCTORS_ORDER_WEIGHT" value="5" />
