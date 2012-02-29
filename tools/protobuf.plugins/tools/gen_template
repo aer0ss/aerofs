@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# This script converts *.tpl files into char arrays that can be used in C++
+# We use 'xxd' to create the array, and 'sed' to add a null terminator and remove the length variable
+
+if [ $# -ne 1 ] ; then
+  echo "Usage: $0 input_file.tpl"
+  exit 1
+fi
+
+echo "Generating $(basename $1).h"
+
+# We have to be in the file directory, otherwise xxd will append the path to the variable name
+cd $(dirname $1)
+
+xxd -i "$(basename $1)" | sed s/}\;/,0x00}\;/ | sed s/^unsigned\ int.\*\$//> "$(basename $1).h"

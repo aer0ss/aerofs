@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PLUGINS_PATH="$PWD/../../bin"
+OUT_DIR="$PWD/out"
+PB_INCLUDE_PATH="$PWD/../../proto"
+
+mkdir -p "$OUT_DIR"
+protoc -I="$PB_INCLUDE_PATH/" --objc_out "$OUT_DIR" "$PB_INCLUDE_PATH/rpc_service.proto" \
+&& protoc --plugin="$PLUGINS_PATH/protoc-gen-rpc-objc" -I="$PB_INCLUDE_PATH/" -I=.. --objc_out "$OUT_DIR" --rpc-objc_out "$OUT_DIR" ../address_book.proto \
+&& xcodebuild \
+&& ./build/Release/test_rpc_objc
+

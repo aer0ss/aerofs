@@ -1,0 +1,4 @@
+message Payload {
+    required int32 type = 1;
+    required bytes payload_data = 10;
+}

@@ -1,0 +1,21 @@
+option java_outer_classname = "AB";
+
+import "rpc_service.proto";
+
+service AddressBookService {
+    rpc AddPerson(AddPersonCall) returns(AddPersonReply);
+}
+
+message AddPersonCall {
+    required Person person = 1;
+    required string some_value = 2;
+}
+
+message AddPersonReply {
+    optional int32 id = 2;
+}
+
+message Person {
+    required string name = 1;
+    optional string email = 2;
+}
