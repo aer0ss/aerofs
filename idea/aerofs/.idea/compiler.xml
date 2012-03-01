@@ -4,6 +4,8 @@
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdSetRole.java" />
+      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/linker" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/linker" includeSubdirectories="true" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdGetRole.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdDelUser.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.gui/src/com/aerofs/shell/CmdAddUser.java" />
