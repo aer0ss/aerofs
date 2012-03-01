@@ -35,7 +35,7 @@ public class TestAddressBook
 			.setSomeValue("hello")
 			.build();
 
-		RpcService.Payload payload = RpcService.Payload.newBuilder()
+		com.aerofs.proto.RpcService.Payload payload = com.aerofs.proto.RpcService.Payload.newBuilder()
 			.setType(AB.AddressBookServiceReactor.ServiceRpcTypes.ADD_PERSON.ordinal())
 			.setPayloadData(call.toByteString())
 			.build();

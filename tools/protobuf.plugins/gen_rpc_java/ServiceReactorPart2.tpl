@@ -9,7 +9,7 @@
       @Override
       public void onSuccess($BaseMessageClass$ r)
       {
-        RpcService.Payload p = RpcService.Payload.newBuilder()
+        com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.newBuilder()
           .setType(type.ordinal())
           .setPayloadData(r.toByteString())
           .build();

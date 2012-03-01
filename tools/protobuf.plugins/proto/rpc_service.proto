@@ -1,3 +1,6 @@
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
 message Payload {
     required int32 type = 1;
     required bytes payload_data = 10;

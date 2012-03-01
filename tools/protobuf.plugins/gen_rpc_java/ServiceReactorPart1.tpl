@@ -15,7 +15,7 @@ public static class $ServiceName$Reactor
   {
     com.google.common.util.concurrent.ListenableFuture<? extends $BaseMessageClass$> reply;
 
-    RpcService.Payload p = RpcService.Payload.parseFrom(data);
+    com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.parseFrom(data);
 
     ServiceRpcTypes t;
     try {
