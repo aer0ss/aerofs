@@ -223,5 +223,5 @@ string getTypeName(const FieldDescriptor* field)
 */
 string methodEnumName(const MethodDescriptor* method)
 {
-    return "k" + UnderscoresToCapitalizedCamelCase(method->input_type()->name());
+    return "k" + UnderscoresToCapitalizedCamelCase(method->name());
 }

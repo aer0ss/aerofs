@@ -1,3 +1,4 @@
+
 public static class $ServiceName$Reactor
 {
   $ServiceClassName$ _service;
@@ -11,18 +12,20 @@ public static class $ServiceName$Reactor
     _service = service;
   }
 
-  public com.google.common.util.concurrent.ListenableFuture<byte[]> react(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException
+  public com.google.common.util.concurrent.ListenableFuture<byte[]> react(byte[] data)
   {
     com.google.common.util.concurrent.ListenableFuture<? extends $BaseMessageClass$> reply;
 
-    com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.parseFrom(data);
-
-    ServiceRpcTypes t;
+    int callType = ServiceRpcTypes.__ERROR__.ordinal();
     try {
-        t = ServiceRpcTypes.values()[p.getType()];
-    } catch (ArrayIndexOutOfBoundsException ex) {
-        throw new com.google.protobuf.InvalidProtocolBufferException("Unknown message type: " + p.getType() + ". Wrong protocol version.");
-    }
+      com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.parseFrom(data);
+      callType = p.getType();
 
-    final ServiceRpcTypes type = t;
-    switch (type) {
+      ServiceRpcTypes t;
+      try {
+        t = ServiceRpcTypes.values()[callType];
+      } catch (ArrayIndexOutOfBoundsException ex) {
+        throw new com.google.protobuf.InvalidProtocolBufferException("Unknown message type: " + callType + ". Wrong protocol version.");
+      }
+
+      switch (t) {

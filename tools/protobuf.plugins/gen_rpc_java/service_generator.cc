@@ -14,21 +14,36 @@ using namespace google::protobuf::compiler::java;
 string methodSignature(const Descriptor* message);
 void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* printer);
 string CamelCaseToCapitalizedUnderscores(const string& input);
+string methodEnumName(const MethodDescriptor* method);
 
 /**
   Generate the public Service interface
 */
 void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Printer* printer)
 {
-    printer->Print(
+    if (service->method_count() == 0) {
+        GOOGLE_LOG(FATAL) << "Error: Service " << service->name() << " has no methods. (file: " << service->file()->name() << ")";
+    }
+    if (service->method(0)->name() != "__error__") {
+        GOOGLE_LOG(FATAL) << "Error: The first method in Service " << service->name() << " must be named '__error__'. (file: " << service->file()->name() << ")";
+    }
+
+    map<string, string> v1;
+    v1["ServiceName"] = service->name();
+    printer->Print(v1,
                 "\n"
                 "public interface $ServiceName$\n"
-                "{\n",
-                "ServiceName", service->name());
+                "{\n");
 
     printer->Indent();
 
-    for (int i = 0; i < service->method_count(); i++) {
+    // Generate the encodeError method
+    map<string, string> v2;
+    v2["reply"] = ClassName(service->method(0)->output_type());
+    printer->Print(v2, "$reply$ encodeError(Throwable error);\n");
+
+    // Generate the other methods
+    for (int i = 1; i < service->method_count(); i++) {
         const MethodDescriptor* method = service->method(i);
 
         map<string, string> vars;
@@ -36,7 +51,7 @@ void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Pri
         vars["signature"] = methodSignature(method->input_type());
         vars["reply"] = ClassName(method->output_type());
 
-        printer->Print(vars, "public com.google.common.util.concurrent.ListenableFuture<$reply$> $methodName$($signature$);\n");
+        printer->Print(vars, "public com.google.common.util.concurrent.ListenableFuture<$reply$> $methodName$($signature$) throws Exception;\n");
     }
 
     printer->Outdent();
@@ -54,7 +69,7 @@ void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Pri
         if (i > 0) {
             enumRpcTypes << ",\n    ";
         }
-        enumRpcTypes << CamelCaseToCapitalizedUnderscores(service->method(i)->name());
+        enumRpcTypes << methodEnumName(service->method(i));
     }
 
     map<string, string> vars;
@@ -72,12 +87,15 @@ void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Pri
     printer->Indent();
     printer->Indent();
     printer->Indent();
+    printer->Indent();
 
     // Output the body of the switch statement
-    for (int i = 0; i < service->method_count(); i++) {
+    // Start at 1 because the first method is the __error__ method
+    for (int i = 1; i < service->method_count(); i++) {
         generateReactorSwitchCase(service->method(i), printer);
     }
 
+    printer->Outdent();
     printer->Outdent();
     printer->Outdent();
     printer->Outdent();
@@ -85,6 +103,59 @@ void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Pri
     // Output the second half of the ServiceReactor
     #include "ServiceReactorPart2.tpl.h"
     printer->Print(vars, (char*) ServiceReactorPart2_tpl);
+}
+
+void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printer* printer)
+{
+    map<string, string> vars;
+    vars["ServiceName"] = service->name();
+    vars["ServiceClassName"] = ClassName(service);
+    vars["ErrorReplyClass"] = ClassName(service->method(0)->output_type());
+    vars["MessageType"] = (service->file()->options().optimize_for() == FileOptions::LITE_RUNTIME)
+            ? "com.google.protobuf.MessageLite"
+            : "com.google.protobuf.Message";
+
+    #include "ServiceStub.tpl.h"
+    printer->Print(vars, (char*) ServiceStub_tpl);
+
+    printer->Indent();
+
+    // Start at 1 because the first method is the __error__ method
+    for (int i = 1; i < service->method_count(); i++) {
+
+        const MethodDescriptor* method = service->method(i);
+        map<string, string> subvars;
+        subvars["methodName"] = UnderscoresToCamelCase(method);
+        subvars["signature"] = methodSignature(method->input_type());
+        subvars["CallClass"] = ClassName(method->input_type());
+        subvars["ReplyClass"] = ClassName(method->output_type());
+        subvars["RPC_TYPE"] = methodEnumName(method);
+
+        subvars.insert(vars.begin(), vars.end());
+
+        printer->Print(subvars,
+                       "\n"
+                       "public com.google.common.util.concurrent.ListenableFuture<$ReplyClass$> $methodName$($signature$)\n"
+                       "{\n"
+                       "  $CallClass$ call = $CallClass$.newBuilder()\n");
+
+       for (int j = 0; j < method->input_type()->field_count(); j++) {
+           const FieldDescriptor* field = method->input_type()->field(j);
+           printer->Print(
+                       "    .set$Field$($var$)\n",
+                       "Field", UnderscoresToCapitalizedCamelCase(field),
+                       "var", UnderscoresToCamelCase(field));
+       }
+
+       printer->Print(subvars,
+                       "    .build();\n"
+                       "  return sendQuery($ServiceClassName$Reactor.ServiceRpcTypes.$RPC_TYPE$, call.toByteString(), $ReplyClass$.newBuilder());\n"
+                      "}\n"
+                       );
+    }
+
+    printer->Outdent();
+    printer->Print("}\n");
 }
 
 /**
@@ -153,7 +224,7 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
     }
 
     map<string, string> vars;
-    vars["LABEL_NAME"] = CamelCaseToCapitalizedUnderscores(method->name());
+    vars["LABEL_NAME"] = methodEnumName(method);
     vars["CallClassName"] = ClassName(method->input_type());
     vars["methodName"] = UnderscoresToCamelCase(method);
     vars["methodParams"] = methodParams.str();
@@ -166,8 +237,7 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
     }
     printer->Print(vars,
                    "  reply = _service.$methodName$($methodParams$);\n"
-                   "  break;\n"
-                   );
+                   "  break;\n");
 }
 
 /**
@@ -188,4 +258,9 @@ string CamelCaseToCapitalizedUnderscores(const string& input)
         }
     }
     return result;
+}
+
+string methodEnumName(const MethodDescriptor* method)
+{
+    return CamelCaseToCapitalizedUnderscores(method->name());
 }

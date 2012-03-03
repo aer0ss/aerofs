@@ -12,6 +12,7 @@ HEADERS += \
 
 TEMPLATES += \
     ServiceReactorPart1.tpl \
-    ServiceReactorPart2.tpl
+    ServiceReactorPart2.tpl \
+    ServiceStub.tpl
 
 OTHER_FILES += $$TEMPLATES

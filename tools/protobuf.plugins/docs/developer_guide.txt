@@ -2,8 +2,6 @@
 RPC Plugins for Protobuf
 ========================
 
-This folder contains the RPC code generator plugins for Protobuf.
-
 Introduction to Protobuf plugins
 --------------------------------
 

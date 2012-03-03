@@ -20,6 +20,8 @@ bool GenRpcObjc::Generate(const FileDescriptor* file, const std::string& /*param
 {
     string basename = compiler::objectivec::FilePath(file);
 
+    GOOGLE_LOG(FATAL) << "GENERATE ERROR HANDLING CODE";
+
     // Generate header.
     {
         internal::scoped_ptr<io::ZeroCopyOutputStream> output(output_directory->OpenForInsert(basename + ".pb.h", "global_scope"));

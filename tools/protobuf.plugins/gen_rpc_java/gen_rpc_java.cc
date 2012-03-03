@@ -40,6 +40,7 @@ bool GenRpcJava::Generate(const FileDescriptor* file, const std::string& /*param
     for (int i = 0; i < file->service_count(); i++) {
         ServiceGenerator::generateService(file->service(i), &printer);
         ServiceGenerator::generateReactor(file->service(i), &printer);
+        ServiceGenerator::generateStub(file->service(i), &printer);
     }
 
     return true;

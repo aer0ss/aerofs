@@ -1,8 +1,11 @@
 option java_outer_classname = "AB";
 
 service AddressBookService {
+    rpc __error__(VoidCall) returns(ErrorReply);
     rpc AddPerson(AddPersonCall) returns(AddPersonReply);
 }
+
+message VoidCall {}
 
 message AddPersonCall {
     required Person person = 1;
@@ -11,6 +14,10 @@ message AddPersonCall {
 
 message AddPersonReply {
     optional int32 id = 2;
+}
+
+message ErrorReply {
+    required string errorMessage = 1;
 }
 
 message Person {

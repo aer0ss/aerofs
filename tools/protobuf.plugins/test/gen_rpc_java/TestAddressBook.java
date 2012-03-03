@@ -2,61 +2,104 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.common.util.concurrent.SettableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class TestAddressBook
 {
-	final AB.AddressBookService service = new AddressBookServiceImpl();
-	final AB.AddressBookServiceReactor reactor = new AB.AddressBookServiceReactor(service);
+    static class Client implements AB.AddressBookServiceStub.AddressBookServiceStubCallbacks
+    {
+        Server server;
 
-	class AddressBookServiceImpl implements AB.AddressBookService
-	{
-		public ListenableFuture<AB.AddPersonReply> addPerson(AB.Person person, String someValue)
-		{
-			SettableFuture<AB.AddPersonReply> future = SettableFuture.create();
+        public Client(Server s)
+        {
+            server = s;
+        }
 
-			// TODO: Assert something about the person passed as param
-			AB.AddPersonReply reply = AB.AddPersonReply.newBuilder().setId(1234).build();
-			future.set(reply);
+        @Override
+        public ListenableFuture<byte[]> doRPC(byte[] data)
+        {
+            return server.processRequest(data);
+        }
 
-			return future;
-		}
-	}
+        @Override
+        public Throwable decodeError(AB.ErrorReply error)
+        {
+            return new IllegalArgumentException(error.getErrorMessage());
+        }
 
-	public static void main(String[] args) throws InvalidProtocolBufferException
-	{
-		TestAddressBook test = new TestAddressBook();
+    }
 
-		// Create a RPC call to add a new person. This would normally be done on the client side
-		AB.AddPersonCall call = AB.AddPersonCall.newBuilder()
-			.setPerson(AB.Person.newBuilder()
-					.setName("Joe Foo")
-					.setEmail("joe@foo.com")
-					.build())
-			.setSomeValue("hello")
-			.build();
+    static class Server implements AB.AddressBookService
+    {
+        AB.AddressBookServiceReactor reactor;
 
-		com.aerofs.proto.RpcService.Payload payload = com.aerofs.proto.RpcService.Payload.newBuilder()
-			.setType(AB.AddressBookServiceReactor.ServiceRpcTypes.ADD_PERSON.ordinal())
-			.setPayloadData(call.toByteString())
-			.build();
+        public Server()
+        {
+            reactor = new AB.AddressBookServiceReactor(this);
+        }
 
-		test.onReceived(payload.toByteArray());
+        @Override
+        public AB.ErrorReply encodeError(Throwable error)
+        {
+            return AB.ErrorReply.newBuilder().setErrorMessage(error.getMessage()).build();
+        }
 
-	}
+        @Override
+        public ListenableFuture<AB.AddPersonReply> addPerson(AB.Person person, String someValue)
+        {
+            SettableFuture<AB.AddPersonReply> future = SettableFuture.create();
 
-	private void onReceived(byte[] data) throws InvalidProtocolBufferException
-	{
-		// Now, on the server side, we just received this byte array from the client.
-		// React and send back the reply to the client 
-		ListenableFuture<byte[]> future = reactor.react(data);
-		future.addListener(new Runnable() {
-	            @Override
-	            public void run()
-	            {
-					//... send the byte array to the client
-				}
-			},
-			MoreExecutors.sameThreadExecutor()
-		);
-	}
+            // Fail if person name is empty
+            if (person.getName().length() == 0) {
+                // Normaly we would have used future.setException() here,
+                // but for the purpose of testing we also want to make sure we catch thrown exceptions
+                throw new IllegalArgumentException("can't add a person with an empty name");
+            }
+
+            AB.AddPersonReply reply = AB.AddPersonReply.newBuilder().setId(1234).build();
+            future.set(reply);
+
+            return future;
+        }
+
+        private ListenableFuture<byte[]> processRequest(byte[] data)
+        {
+            // we just received this byte array from the client.
+            // React and send back the reply to the client
+            return reactor.react(data);
+        }
+    }
+
+    public static void main(String[] args) throws Exception
+    {
+        Server server = new Server();
+        Client client = new Client(server);
+        AB.AddressBookServiceStub stub = new AB.AddressBookServiceStub(client);
+
+        // Test 1: add a person
+        AB.Person person = AB.Person.newBuilder()
+                    .setName("Joe Foo")
+                    .setEmail("joe@foo.com")
+                    .build();
+
+        stub.addPerson(person, "hello").get();
+
+        // Test 2. Invalid request
+        try {
+            // Try adding an empty person
+            stub.addPerson(AB.Person.newBuilder().setName("").build(), "").get();
+
+            // we should not get to this point
+            throw new RuntimeException("test failed - an expected error wasn't reported.");
+
+        } catch (ExecutionException e) {
+            String expected = "java.lang.IllegalArgumentException: can't add a person with an empty name";
+            if (e.getMessage().equals(expected)) {
+                System.out.println("Expected error: " + e.getMessage());
+            } else {
+                System.out.println("Unexpected error. Was expecting: \"" + expected + "\"");
+                throw e;
+            }
+        }
+    }
 }
