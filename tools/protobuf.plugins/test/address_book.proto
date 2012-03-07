@@ -1,7 +1,5 @@
 option java_outer_classname = "AB";
 
-import "rpc_service.proto";
-
 service AddressBookService {
     rpc AddPerson(AddPersonCall) returns(AddPersonReply);
 }
