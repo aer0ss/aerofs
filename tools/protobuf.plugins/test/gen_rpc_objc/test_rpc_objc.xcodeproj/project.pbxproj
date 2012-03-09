@@ -103,6 +103,9 @@
 /* Begin PBXProject section */
 		168900C814F85E12003CE54E /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0430;
+			};
 			buildConfigurationList = 168900CB14F85E12003CE54E /* Build configuration list for PBXProject "test_rpc_objc" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;

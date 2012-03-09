@@ -19,13 +19,22 @@ string methodEnumName(const MethodDescriptor* method);
 
 void ServiceGenerator::generateStubHeader(const ServiceDescriptor* service, io::Printer* printer)
 {
+    if (service->method_count() == 0) {
+        GOOGLE_LOG(FATAL) << "Error: Service " << service->name() << " has no methods. (file: " << service->file()->name() << ")";
+    }
+    if (service->method(0)->name() != "__error__") {
+        GOOGLE_LOG(FATAL) << "Error: The first method in Service " << service->name() << " must be named '__error__'. (file: " << service->file()->name() << ")";
+    }
+
     map<string, string> vars;
     vars["ServiceStubName"] = ClassName(service) + "Stub";
+    vars["ErrorClass"] = ClassName(service->method(0)->output_type());
 
     #include "ServiceStubHeader.tpl.h"
     printer->Print(vars, (char*) ServiceStubHeader_tpl);
 
-    for (int i = 0; i < service->method_count(); i++) {
+    // Start at 1 because the first method is the __error__ method
+    for (int i = 1; i < service->method_count(); i++) {
         const MethodDescriptor* method = service->method(i);
 
         map<string, string> vars;
@@ -33,7 +42,7 @@ void ServiceGenerator::generateStubHeader(const ServiceDescriptor* service, io::
         vars["signature"] = methodSignature(method->input_type());
 
         printer->Print(vars,
-                       "- (void) $methodName$$signature$andPerform:(SEL)selector withObject:(id)object;\n");
+                       "- (void) $methodName$$signature$;\n");
     }
 
     printer->Print("@end");
@@ -60,8 +69,22 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
     printer->Indent();
     printer->Indent();
 
-    // Output the body of the switch statement
-    for (int i = 0; i < service->method_count(); i++) {
+    // Output the switch case to deal with errors
+    {
+        map<string, string> vars;
+        vars["LabelName"] = methodEnumName(service->method(0));
+        vars["ReplyClassName"] = ClassName(service->method(0)->output_type());
+
+        printer->Print(vars,
+                       "case $LabelName$: {\n"
+                       "  $ReplyClassName$* reply = [$ReplyClassName$ parseFromData: [payload payloadData]];\n"
+                       "  [invocation setArgument:&reply atIndex:[signature numberOfArguments] - 1];\n"
+                       "  break;\n"
+                       "}\n");
+    }
+
+    // Output the other switch cases
+    for (int i = 1; i < service->method_count(); i++) {
         generateStubSwitchCase(service->method(i), printer);
     }
 
@@ -72,7 +95,7 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
     printer->Print(vars, (char*) ServiceStubImplPart2_tpl);
 
     // Output the method stubs
-    for (int i = 0; i < service->method_count(); i++) {
+    for (int i = 1; i < service->method_count(); i++) {
         generateMethodStub(service->method(i), printer);
     }
 
@@ -129,7 +152,7 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer)
 
     printer->Print(vars,
                    "\n"
-                   "- (void) $methodName$$signature$andPerform:(SEL)selector withObject:(id)object\n"
+                   "- (void)$methodName$$signature$\n"
                    "{\n"
                    "  $CallType$_Builder* call = [$CallType$ builder];\n"
                    "$callSetters$"
@@ -150,8 +173,7 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer)
   @endcode
 
   it returns:
-    @codeline ":(Person*)person withAnotherField:(int32_t)anotherField "
-    (note the space at the end of the signature)
+    @codeline ":(Person*)person withAnotherField:(int32_t)anotherField andPerform:(SEL)selector withObject:(id)object"
 */
 string methodSignature(const Descriptor* message)
 {
@@ -175,6 +197,10 @@ string methodSignature(const Descriptor* message)
                   << "(" << getTypeName(field) << ")"
                   << UnderscoresToCamelCase(field) << " ";
     }
+
+    const char* a = (message->field_count() > 0) ? "a" : "A";
+    signature << a << "ndPerform:(SEL)selector withObject:(id)object";
+
     return signature.str();
 }
 

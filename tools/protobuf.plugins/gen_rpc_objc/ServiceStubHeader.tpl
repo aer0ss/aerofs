@@ -1,6 +1,7 @@
 @protocol ServiceStubDelegate
 
-- (void) sendBytes:(NSData*)bytes withSelector:(SEL)selector andObject:(id)object;
+- (void)sendBytes:(NSData*)bytes withSelector:(SEL)selector andObject:(id)object;
+- (NSError*)decodeError:($ErrorClass$*)error;
 
 @end
 
@@ -9,5 +10,5 @@
   id delegate;
 }
 
-- (id) initWithDelegate:(id)theDelegate;
-- (void) onReplyReceived:(NSData*)reply withSelector:(SEL)selector andObject:(id)object;
+- (id)initWithDelegate:(id)theDelegate;
+- (void)onReplyReceived:(NSData*)reply withSelector:(SEL)selector andObject:(id)object;

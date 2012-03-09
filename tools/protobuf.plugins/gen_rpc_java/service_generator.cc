@@ -230,14 +230,15 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
     vars["methodParams"] = methodParams.str();
 
     printer->Print(vars,
-                   "case $LABEL_NAME$:\n");
+                   "case $LABEL_NAME$: {\n");
     if (method->input_type()->field_count() > 0) {
         printer->Print(vars,
                    "  $CallClassName$ call = $CallClassName$.parseFrom(p.getPayloadData());\n");
     }
     printer->Print(vars,
                    "  reply = _service.$methodName$($methodParams$);\n"
-                   "  break;\n");
+                   "  break;\n"
+                   "}\n");
 }
 
 /**

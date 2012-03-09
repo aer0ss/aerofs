@@ -1,48 +1,108 @@
-#import <Foundation/Foundation.h>
 #import "out/Address_book.pb.h"
+#import "out/Rpc_service.pb.h"
 
-@interface TestClass : NSObject<ServiceStubDelegate> {
-    AddressBookServiceStub* service;
-    BOOL success;
-}
+#define ADD_PERSON_TYPE 1
 
--(void) startTest;
--(void) onReplyReceived:(int)id;
--(BOOL) successful;
+////////////////
+// Server
+////////////////
+@interface Server : NSObject
+
+- (NSData*) processRpc:(NSData*)data;
+
 @end
 
-@implementation TestClass
+@implementation Server
 
-- (id)init
+- (NSData*) processRpc:(NSData*)data
+{
+    Payload* payload = [Payload parseFromData:data];
+    NSAssert([payload type] == ADD_PERSON_TYPE, @"Server: client payload has the wrong type");
+    AddPersonCall* call = [AddPersonCall parseFromData:[payload payloadData]];
+
+    Payload* payloadReply;
+    if ([[[call person] name] length] > 1) {
+        AddPersonReply* reply = [[[AddPersonReply builder] setId:1234] build];
+        payloadReply = [[[[Payload builder] setType: ADD_PERSON_TYPE] setPayloadData:[reply data]] build];
+    } else {
+        // Tried to add an empty person, fail
+        ErrorReply* reply = [[[ErrorReply builder] setErrorMessage:@"Cannot add an empty person"] build];
+        payloadReply = [[[[Payload builder] setType:0] setPayloadData:[reply data]] build];
+    }
+
+    return [payloadReply data];
+}
+
+@end
+
+////////////////
+// Client
+////////////////
+
+@interface Client : NSObject<ServiceStubDelegate> {
+    Server* server;
+    AddressBookServiceStub* stub;
+    BOOL lastTestFinished;
+}
+@property (readonly) BOOL lastTestFinished;
+
+- (id)initWithServer:(Server*)s;
+- (void)sendBytes:(NSData*)bytes withSelector:(SEL)selector andObject:(id)object;
+- (NSError*)decodeError:(ErrorReply*) error;
+
+/// testing methods
+- (void)shouldAddAPerson;
+- (void)shouldFailEmptyPerson;
+
+@end
+
+@implementation Client
+@synthesize lastTestFinished;
+
+- (id)initWithServer:(Server*)s
 {
     self = [super init];
-    if (self) {
-        service = [[AddressBookServiceStub alloc] initWithDelegate:self];
-    }
+    server = s;
+    stub = [[AddressBookServiceStub alloc] initWithDelegate:self];
+    lastTestFinished = NO;
     return self;
 }
 
--(void) startTest
-{
-    success = NO;
-    Person* person = [[[[Person builder] setName:@"Joe Foo"] setEmail:@"joe@foo.com"] build];
-    [service addPerson: person withSomeValue:@"test" andPerform:@selector(onReplyReceived:) withObject:self];
-}
-
--(void) onReplyReceived:(int)id
-{
-    NSAssert(id == 1234, @"Didn't receive the expected id after calling addPerson");
-    success = YES;
-}
-
-// TODO: make property
--(BOOL) successful { return success; }
-
 -(void)sendBytes:(NSData*)bytes withSelector:(SEL)selector andObject:(id)object
 {
-    AddPersonReply* reply = [[[AddPersonReply builder] setId:1234] build];
-    Payload* payload = [[[[Payload builder] setType:0] setPayloadData:[reply data]] build];
-    [service onReplyReceived:[payload data] withSelector:selector andObject:object];
+    NSData* data = [server processRpc:bytes];
+    [stub onReplyReceived:data withSelector:selector andObject:object];
+}
+
+- (NSError*)decodeError:(ErrorReply*)error
+{
+    //[error errorMessage]
+    NSError* nserror = [NSError errorWithDomain:@"localNak" code:0 userInfo:nil];
+    return nserror;
+}
+
+- (void)shouldAddAPerson
+{
+    Person* person = [[[[Person builder] setName:@"Joe Foo"] setEmail:@"joe@foo.com"] build];
+    [stub addPerson: person withSomeValue:@"some value" andPerform:@selector(onPersonAdded:error:) withObject:self];
+}
+
+-(void)onPersonAdded:(int)personId error:(NSError*)error
+{
+    NSAssert(error == nil, @"adding a person returned an error");
+    NSAssert(personId == 1234, @"Didn't receive the expected id after calling addPerson");
+}
+
+- (void)shouldFailEmptyPerson
+{
+    Person* person = [[[Person builder] setName:@""] build];
+    [stub addPerson: person withSomeValue:@"" andPerform:@selector(onEmptyPersonAdded:error:) withObject:self];
+}
+
+- (void)onEmptyPersonAdded:(int)personId error:(NSError*)error
+{
+    NSAssert(error != nil, @"Adding an empty person did NOT fail");
+    lastTestFinished = YES;
 }
 
 @end
@@ -50,20 +110,23 @@
 int main (int argc, const char * argv[])
 {
     NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-        
+
     // Start the test
-    TestClass* test = [[TestClass alloc] init];
-    [test startTest];
+    Server* server = [[Server alloc] init];
+    Client* client = [[Client alloc] initWithServer: server];
+
+    [client shouldAddAPerson];
+    [client shouldFailEmptyPerson];
 
     // Enter the run loop, and give it 2 seconds to get the reply
-    NSRunLoop *runLoop = [NSRunLoop currentRunLoop];    
-    
+    NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+
     [runLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:2]];
-        
+
     [pool release];
-    
-    if (test.successful == YES) {
-        NSLog(@"Test successful");    
+
+    if (client.lastTestFinished == YES) {
+        NSLog(@"Test successful");
         return 0;
     } else {
         NSLog(@"Test failed");

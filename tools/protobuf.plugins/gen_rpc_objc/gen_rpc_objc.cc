@@ -20,8 +20,6 @@ bool GenRpcObjc::Generate(const FileDescriptor* file, const std::string& /*param
 {
     string basename = compiler::objectivec::FilePath(file);
 
-    GOOGLE_LOG(FATAL) << "GENERATE ERROR HANDLING CODE";
-
     // Generate header.
     {
         internal::scoped_ptr<io::ZeroCopyOutputStream> output(output_directory->OpenForInsert(basename + ".pb.h", "global_scope"));
@@ -30,6 +28,13 @@ bool GenRpcObjc::Generate(const FileDescriptor* file, const std::string& /*param
         for (int i = 0; i < file->service_count(); i++) {
             ServiceGenerator::generateStubHeader(file->service(i), &printer);
         }
+    }
+
+    // Add #import "Rpc_service.pb.h" if needed
+    if (file->service_count() > 0) {
+        internal::scoped_ptr<io::ZeroCopyOutputStream> output(output_directory->OpenForInsert(basename + ".pb.m", "imports"));
+        io::Printer printer(output.get(), '$');
+        printer.Print("#import \"Rpc_service.pb.h\"\n");
     }
 
     // Generate cc file.
