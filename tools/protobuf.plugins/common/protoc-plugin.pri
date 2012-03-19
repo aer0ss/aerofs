@@ -7,7 +7,7 @@ DESTDIR = $$ROOT_PATH/bin   # Put the compiled executable in the bin folder
 
 INCLUDEPATH += \
     $$ROOT_PATH \
-    $$ROOT_PATH/3rdparty
+    $$ROOT_PATH/3rd_party
 
 LIBS += -lprotobuf -lprotoc
 

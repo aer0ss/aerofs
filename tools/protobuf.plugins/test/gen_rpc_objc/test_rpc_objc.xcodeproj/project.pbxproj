@@ -188,8 +188,8 @@
 				GCC_INCREASE_PRECOMPILED_HEADER_SHARING = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = prefix.pch;
-				HEADER_SEARCH_PATHS = "protobuf-objc";
-				LIBRARY_SEARCH_PATHS = "protobuf-objc/Debug";
+				HEADER_SEARCH_PATHS = "../../../../java/3rd_party/protobuf-objc";
+				LIBRARY_SEARCH_PATHS = "../../../../java/3rd_party/protobuf-objc/Debug";
 				OTHER_LDFLAGS = "-lProtocolBuffers";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -201,8 +201,8 @@
 				GCC_INCREASE_PRECOMPILED_HEADER_SHARING = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = prefix.pch;
-				HEADER_SEARCH_PATHS = "protobuf-objc";
-				LIBRARY_SEARCH_PATHS = "protobuf-objc/Release";
+				HEADER_SEARCH_PATHS = "../../../../java/3rd_party/protobuf-objc";
+				LIBRARY_SEARCH_PATHS = "../../../../java/3rd_party/protobuf-objc/Release";
 				OTHER_LDFLAGS = "-lProtocolBuffers";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

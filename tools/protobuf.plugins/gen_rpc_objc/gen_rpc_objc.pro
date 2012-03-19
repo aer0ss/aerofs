@@ -3,8 +3,8 @@ include( ../common/protoc-plugin.pri )
 TARGET = protoc-gen-rpc-objc
 
 SOURCES += \
-    ../3rdparty/google/protobuf/compiler/objc/objc_helpers.cc \   # FIXME: These come from protobuf-objc
-    ../3rdparty/google/protobuf/objectivec-descriptor.pb.cc \     # We should probably add it as a dependendency
+    ../3rd_party/google/protobuf/compiler/objc/objc_helpers.cc \   # FIXME: These come from protobuf-objc
+    ../3rd_party/google/protobuf/objectivec-descriptor.pb.cc \     # We should probably add it as a dependendency
     gen_rpc_objc.cc \
     service_generator.cc
 
