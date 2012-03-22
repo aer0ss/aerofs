@@ -9,4 +9,5 @@ TEMPLATE = subdirs
 CONFIG += ordered
 SUBDIRS = \
     gen_rpc_java \
-    gen_rpc_objc
+    gen_rpc_objc \
+    gen_rpc_python

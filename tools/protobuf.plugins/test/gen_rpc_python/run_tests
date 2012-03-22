@@ -1,0 +1,15 @@
+#!/bin/bash
+
+PROTOC=protoc
+PLUGINS_PATH="$PWD/../../bin"
+OUT_DIR="$PWD/out"
+PB_INCLUDE_PATH="$PWD/../../proto"
+
+##
+# Setup test
+##
+mkdir -p "$OUT_DIR"
+
+$PROTOC -I="$PB_INCLUDE_PATH/" --python_out "$OUT_DIR" "$PB_INCLUDE_PATH/rpc_service.proto" && \
+$PROTOC --plugin="$PLUGINS_PATH/protoc-gen-rpc-python" -I="$PB_INCLUDE_PATH/" -I=.. --python_out "$OUT_DIR" --rpc-python_out "$OUT_DIR" ../address_book.proto && \
+python tests.py
