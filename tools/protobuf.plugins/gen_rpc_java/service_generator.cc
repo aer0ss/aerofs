@@ -7,6 +7,8 @@
 #include <google/protobuf/io/printer.h>
 #include <google/protobuf/compiler/java/java_helpers.h>
 
+#include "common/common.h"
+
 using namespace google::protobuf;
 using namespace google::protobuf::compiler::java;
 
@@ -239,26 +241,6 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
                    "  reply = _service.$methodName$($methodParams$);\n"
                    "  break;\n"
                    "}\n");
-}
-
-/**
-  Helper function to convert a camelCasedName to CAPITALIZED_UNDERSCORE_NAME
-*/
-string CamelCaseToCapitalizedUnderscores(const string& input)
-{
-    std::string result;
-    for (unsigned int i = 0; i < input.size(); i++) {
-        if ('a' <= input[i] && input[i] <= 'z') {
-            result += input[i] + ('A' - 'a');
-            // Insert an underscore iff this character is lowercase and next character is uppercase
-            if (i < input.size() - 1 && 'A' <= input[i + 1] && input[i + 1] <= 'Z') {
-                result += '_';
-            }
-        } else {
-            result += input[i];
-        }
-    }
-    return result;
 }
 
 string methodEnumName(const MethodDescriptor* method)

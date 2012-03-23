@@ -7,6 +7,7 @@
 #include <google/protobuf/stubs/strutil.h>
 
 #include "util.h"
+#include "common/common.h"
 
 using namespace google::protobuf;
 
@@ -15,6 +16,7 @@ using namespace google::protobuf;
 void assertRequiredField(const FieldDescriptor *field);
 void generateMethodStub(const MethodDescriptor* service, io::Printer* printer, char* methodTemplate);
 string generateMethodCallEnums(const ServiceDescriptor* service);
+string methodNameToPythonEnum(const MethodDescriptor* name);
 string pythonScopedMessageName(const FileDescriptor* thisFile, const Descriptor* message);
 string requiredMessageFieldsToParameterList(const Descriptor* message);
 string requiredMessageFieldAssignmentToString(const Descriptor* message);
@@ -34,7 +36,7 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
     map<string, string> vars;
 
     // Populate map with error method information
-    vars["ErrorMethodEnum"] = service->method(0)->name();
+    vars["ErrorMethodEnum"] = methodNameToPythonEnum(service->method(0));
     vars["ErrorMethodOutputMessageType"] = pythonScopedMessageName(service->file(), service->method(0)->output_type());
 
     // Populate map with enums for method calls
@@ -68,7 +70,7 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
   Generates a python enum representing method calls, which isn't really an enum
   but looks like this:
 
-  DoMethod1, DoMethod2, DoMethod3 = range(3)
+  DO_METHOD_1, DO_METHOD_2, DO_METHOD_3 = range(3)
   */
 string generateMethodCallEnums(const ServiceDescriptor* service)
 {
@@ -78,10 +80,24 @@ string generateMethodCallEnums(const ServiceDescriptor* service)
         if (i > 0) {
             methodEnums << ", ";
         }
-        methodEnums << service->method(i)->name();
+        methodEnums << methodNameToPythonEnum(service->method(i));
     }
     methodEnums << " = range(" << service->method_count() << ")";
     return methodEnums.str();
+}
+
+/**
+  Converts a camel case string like:
+
+    helloWorldFromCamel
+
+  to a Python enum, adhereing to convention:
+
+    _HELLO_WORLD_FROM_CAMEL_
+  */
+string methodNameToPythonEnum(const MethodDescriptor* method)
+{
+    return "_" + CamelCaseToCapitalizedUnderscores(method->name()) + "_";
 }
 
 /**
@@ -103,7 +119,7 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer, ch
     methodDefinitionVars["MethodName"] = method->name();
     methodDefinitionVars["MethodArgs"] = requiredMessageFieldsToParameterList(method->input_type());
     methodDefinitionVars["InputMessageType"] = pythonScopedMessageName(method->service()->file(), method->input_type());
-    methodDefinitionVars["MethodCallEnum"] = method->name();
+    methodDefinitionVars["MethodCallEnum"] = methodNameToPythonEnum(method);
     methodDefinitionVars["OutputMessageType"] = pythonScopedMessageName(method->service()->file(), method->output_type());
     methodDefinitionVars["MessageFieldAssignment"] = requiredMessageFieldAssignmentToString(method->input_type());
 
@@ -180,16 +196,17 @@ string requiredMessageFieldAssignmentToString(const Descriptor *message)
 {
     stringstream assignment;
 
+    // Insert a newline so that the code insertion happens on a non-indented
+    // new line. That way all the assignment statements generated below
+    // will be treated the same, i.e require indentation
+    assignment << "\n";
+
     // For all fields, ensure they are required and create assignment code
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
         assertRequiredField(field);
 
-        if (i > 0) {
-            assignment << INDENT << INDENT;
-        }
-
-        assignment << "m." << field->name();
+        assignment << INDENT << INDENT << "m." << field->name();
 
         if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
             // The field is another message, so we need to do CopyFrom()
