@@ -1,3 +1,3 @@
-[submodule "cpp/libjingle"]
-	path = cpp/libjingle
+[submodule "java/libjingle"]
+	path = java/libjingle
 	url = ssh://g.arrowfs.org:29418/libjingle
