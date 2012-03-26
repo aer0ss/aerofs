@@ -1,0 +1,81 @@
+#!/bin/bash
+#This scripts generate the 32 or 64 deb installation packages
+if [ $# -ne 3 ]
+then
+    echo usage '$0 [path to aerofs.release] [output file] [prod|staging]'
+    exit
+fi
+
+aerofsPath=$1
+output=$2
+build=$3
+
+package='aerofs-installer'
+version=0.1.0
+echo "aerofs-installer version = $version"
+section='utility'
+priority='optional'
+
+#sharutils is used by uudecode
+depends='openjdk-6-jre(>= 6b18-1.8.2-4ubuntu1~8.04.1), sharutils'
+maintainer='AeroFS Team <support@aerofs.com>'
+descrip='AeroFS: File syncing without servers.'
+
+#clean up from past install
+rm -rf /tmp/aerofs.deb.tmp
+tmpdir=/tmp/aerofs.deb.tmp
+mkdir $tmpdir 
+cd $tmpdir
+
+########
+# under $tmpdir from now ons
+
+hicolor=debian/usr/share/icons/hicolor
+debian=debian/DEBIAN
+mkdir -p $debian
+
+#Make deb building directories.
+
+#used for linked aerofs executables
+mkdir -p debian/usr/local/bin/
+
+#used for menu items in GNOME
+mkdir -p debian/usr/share/applications
+mkdir -p $hicolor/16x16/apps 
+mkdir -p $hicolor/32x32/apps
+mkdir -p $hicolor/64x64/apps
+
+cp $aerofsPath/aerofs.linux.inst/aerofs debian/usr/local/bin/aerofs
+cp $aerofsPath/aerofs.linux/aerofs.desktop debian/usr/share/applications
+cp $aerofsPath/aerofs/icons/logo16.png $hicolor/16x16/apps/aerofs.png
+cp $aerofsPath/aerofs/icons/logo32.png $hicolor/32x32/apps/aerofs.png
+cp $aerofsPath/aerofs/icons/logo64.png $hicolor/64x64/apps/aerofs.png
+ 
+# Generate control file
+echo Package: $package >> $debian/control
+echo Version: $version >> $debian/control
+echo Section: $section >> $debian/control
+echo Priority: $priority >> $debian/control
+echo Architecture: all >> $debian/control
+echo Depends: $depends >> $debian/control
+echo Maintainer: $maintainer >> $debian/control
+echo Description: $descrip >> $debian/control
+echo Installed-Size: `du -sk | awk '{print $1}'` >> $debian/control
+
+# Generate postinst and preinst 
+echo "#!/bin/bash" >> $debian/preinst
+echo "rm -rf /usr/local/bin/aerofs-sh /usr/local/bin/aerofs-cli /usr/local/bin/aerofs-gui /usr/local/bin/aerofs" >> $debian/preinst
+chmod a+x $debian/preinst 
+
+echo "#!/bin/bash" >> $debian/postinst
+echo "ln -sf /usr/local/bin/aerofs /usr/local/bin/aerofs-sh" >> $debian/postinst
+echo "ln -sf /usr/local/bin/aerofs /usr/local/bin/aerofs-cli" >> $debian/postinst
+echo "ln -sf /usr/local/bin/aerofs /usr/local/bin/aerofs-gui" >> $debian/postinst
+echo "chmod a+x /usr/local/bin/aerofs" >> $debian/postinst
+chmod a+x $debian/postinst
+
+#Generate .deb file
+find ./debian -type d | xargs chmod 755
+#fakeroot allows us to build the deb file with root attributes for chown/chmod
+fakeroot dpkg-deb --build debian
+mv debian.deb $output

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ x"$1" == x ]; then
+    echo "usage: $0 <VER>"
+    exit 1
+fi
+
+`dirname $0`/retrace $1 -s3

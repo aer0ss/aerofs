@@ -1,0 +1,189 @@
+#!/bin/bash
+
+if [ x"$1" == x ]; then
+    echo usage '$0 <staging|prod> [labeling]'
+    exit
+fi
+
+cd ../aerofs.daemon/tools
+./build $1
+cd - > /dev/null
+
+if [ x"$2" == x ]; then
+    LABELING=aerofs
+else
+    LABELING="$2"
+fi
+
+if [ "$1" == "prod" ]; then
+	PROD=1
+else
+	PROD=0
+fi
+
+# echo -----------------
+DROP_TO=$PWD/../../aerofs.release
+AEROFS_DIR=$DROP_TO/aerofs
+AEROFS_WIN_DIR=$DROP_TO/aerofs.win
+AEROFS_OSX_DIR=$DROP_TO/aerofs.osx
+AEROFS_INST_DIR=$DROP_TO/aerofs.linux.inst
+
+AEROFS_LIBS3_DIR=$PWD/../aerofs.libs3
+APPROOT=$PWD/../../approot
+
+###################################
+# copy libs
+cp lib/*.jar $AEROFS_DIR/lib
+
+###################################
+# copy icons
+mkdir $AEROFS_DIR/icons
+cp icons/* $AEROFS_DIR/icons
+
+###################################
+# copy platform-dependent files
+for i in os/*; do cp -R $i/ $AEROFS_DIR.`basename $i`; done
+
+###################################
+# copy labeling icons
+cp labeling/$LABELING/icons/* $AEROFS_DIR/icons
+
+###################################
+# copy platform-dependent labeling files
+for i in labeling/$LABELING/os/*; do cp -R $i/ $AEROFS_DIR.`basename $i`; done
+
+PPWD=$PWD
+cd $AEROFS_DIR
+
+###################################
+#echo generate manifest
+
+echo "Main-Class: com.aerofs.Main" > m.tmp
+echo "Class-Path: " >> m.tmp
+
+for i in lib/*.jar; do
+    echo " $i " >> m.tmp
+done
+
+#echo N.B. platform-dependent jars must have identical names
+for i in `ls $AEROFS_WIN_DIR/lib/`; do
+    echo " lib/$i " >> m.tmp
+done
+
+# mac-specific jars
+echo " lib/growlbindings-1.3.1.jar " >> m.tmp
+
+for i in `ls $AEROFS_LIBS3_DIR/lib/`; do
+    echo " lib/$i " >> m.tmp
+done
+
+###################################
+#echo copy class files
+mkdir -p bin/com
+cp -Rf $APPROOT/bin/com/* bin/com
+
+# remove unnecessary class files (bin/com/aerofs/downloader will be moved away later)
+if [ $PROD == 1 ]; then
+    rm -rf bin/com/aerofs/testing
+    rm -rf bin/com/aerofs/sak
+fi
+
+# labeling
+if [ $LABELING != aerofs ]; then
+    rm -rf bin/com/aerofs/l/AA.class
+fi
+if [ $LABELING != comcast ]; then
+    rm -rf bin/com/aerofs/l/CC.class
+fi
+
+###################################
+#echo generate aerofs-installer
+rm -rf $AEROFS_INST_DIR
+mkdir -p $AEROFS_INST_DIR
+cp -R $PPWD/os/linux.inst/* $AEROFS_INST_DIR
+
+if [ $PROD == 1 ]; then
+    sed -i '' -e 's=STAGING==' $AEROFS_INST_DIR/aerofs
+else
+    sed -i '' -e 's=STAGING=staging/=' $AEROFS_INST_DIR/aerofs
+fi
+
+DLR_TMP=/tmp/aerofs-dlr
+AEROFS_DLR_PKG=com/aerofs/downloader
+rm -rf $DLR_TMP
+mkdir -p $DLR_TMP/$AEROFS_DLR_PKG
+mv bin/$AEROFS_DLR_PKG/* $DLR_TMP/$AEROFS_DLR_PKG
+cp $PPWD/os/linux32/lib/swt-*.jar $DLR_TMP/s32.jar
+cp $PPWD/os/linux64/lib/swt-*.jar $DLR_TMP/s64.jar
+tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
+
+###################################
+echo creating jars
+jar cfm aerofs-s3.unobf.jar m.tmp -C bin com
+
+rm -rf bin/com/aerofs/s3 bin/com/aerofs/lib/aws bin/com/aerofs/daemon/core/physical/s3
+jar cfm aerofs.unobf.jar m.tmp -C bin com
+
+# echo remove unnecessary files
+rm -rf bin m.tmp
+
+###################################
+
+PG_AEROFS_DIR=`echo $AEROFS_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+PG_DROP_TO=`echo $DROP_TO | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+PG_PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+
+if [ $PROD == 1 ]; then
+    echo obfuscating jar
+    cd $PPWD/util/proguard
+
+    if [ `uname -s` == Darwin ]; then
+        PRO_FILE=aerofs.pro.osx
+    else
+        PRO_FILE=aerofs.pro
+    fi
+
+    ./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs.unobf.jar -outjars $PG_AEROFS_DIR/aerofs.jar \
+    -printmapping $PG_DROP_TO/aerofs.map \
+    -dontwarn 'com.aerofs.testing.**' \
+    -dontwarn 'com.aerofs.sak.**' \
+    -dontwarn 'com.aerofs.daemon.core.physical.s3.**' \
+    -dontnote 'com.aerofs.s3.**' \
+    -dontnote 'com.aerofs.l.*' \
+    @$PG_PPWD/util/proguard/$PRO_FILE
+
+    # put aerofs-s3.jar outside of $PG_AEROFS_DIR so it won't be packaged with other files
+    ./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs-s3.unobf.jar -outjars $PG_AEROFS_DIR/../aerofs-s3.jar \
+    -printmapping $PG_DROP_TO/aerofs-s3.map \
+    -dontwarn 'com.aerofs.testing.**' \
+    -dontwarn 'com.aerofs.sak.**' \
+    -dontnote 'com.aerofs.l.*' \
+    @$PG_PPWD/util/proguard/$PRO_FILE
+
+else
+    cp $PG_AEROFS_DIR/aerofs.unobf.jar $PG_AEROFS_DIR/aerofs.jar
+    rm -rf $PG_AEROFS_DIR/aerofs.unobf.jar
+    cp $PG_AEROFS_DIR/aerofs-s3.unobf.jar $PG_AEROFS_DIR/../aerofs-s3.jar
+    rm -rf $PG_AEROFS_DIR/aerofs-s3.unobf.jar
+fi
+
+rm -rf $PG_AEROFS_DIR/aerofs.unobf.jar
+rm -rf $PG_AEROFS_DIR/aerofs-s3.unobf.jar
+
+###################################
+# echo write checksums
+
+CHKSUM_LIST="\
+    aerofs.jar:$AEROFS_DIR/aerofs.jar \
+    aerofsd.dll:$AEROFS_WIN_DIR/aerofsd.dll \
+    aerofsj.dll:$AEROFS_WIN_DIR/aerofsj.dll \
+    libaerofsd.dylib:$AEROFS_OSX_DIR/libaerofsd.dylib \
+    libaerofsj.dylib:$AEROFS_OSX_DIR/libaerofsj.dylib \
+"
+
+for i in $CHKSUM_LIST; do
+    FILE_PATH=`echo $i | sed -e 's/.*://'`
+    FILE_NAME=`echo $i | sed -e 's/:.*//'`
+    CHKSUM=`shasum -a 256 $FILE_PATH | sed -e 's/ .*//'`
+    echo "$FILE_NAME=$CHKSUM" >> $AEROFS_DIR/aerofs.ver
+done
