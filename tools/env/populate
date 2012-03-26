@@ -1,18 +1,32 @@
 #!/bin/bash
 
+# This script creates the approot directory and populates it
+# with the files needed for a staging AeroFS
+
 PPWD=`dirname $0`
 
-# convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
-PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-
-DAEMONROOT=$PPWD/../java/aerofs.daemon
-GUIROOT=$PPWD/../java/aerofs.gui
 OS=`"$PPWD"/os`
+ASIS=$PPWD/../../as-is
+APPROOT=$PPWD/../../approot
+LAUNCHER=$PPWD/../../java/launcher
 
-# Remove Growl.framework otherwise cp -R will fail overwriting it because it contains symlinks
-rm -rf Growl.framework
+# Copy files to approot
+mkdir -p "$APPROOT"
+rm -rf "$APPROOT"/Growl.framework    # Symlinks prevent cp from overwriting the files
+cp -R "$ASIS"/common/* "$APPROOT"/
+cp -R "$ASIS"/$OS/* "$APPROOT"/
 
-cp -R "$DAEMONROOT"/os/$OS/* .
-cp -R "$GUIROOT"/icons .
-cp -R "$GUIROOT"/os/$OS/* .
+# TODO (GS): Re-enable when we switch to the launcher
+#cp "$LAUNCHER"/bin/$OS/* "$APPROOT"/
+
+# Set-up a staging environment
+touch "$APPROOT"/staging
+echo "EA100.0" > "$APPROOT"/aerofs.ver
+rm "$APPROOT"/cacert-prod.pem
+mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
+
+# Add the run script.
+# TODO (GS): Remove when we switch to the launcher
+cp "$PPWD/run" "$APPROOT"/
+cp "$PPWD/os" "$APPROOT"/
 

@@ -32,3 +32,4 @@ fi
 
 source "${BASE}/git-alias-setup.sh"
 source "${BASE}/git-hook-setup.sh"
+source "${BASE}/populate"
