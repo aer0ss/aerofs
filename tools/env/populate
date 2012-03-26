@@ -1,0 +1,18 @@
+#!/bin/bash
+
+PPWD=`dirname $0`
+
+# convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
+PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+
+DAEMONROOT=$PPWD/../java/aerofs.daemon
+GUIROOT=$PPWD/../java/aerofs.gui
+OS=`"$PPWD"/os`
+
+# Remove Growl.framework otherwise cp -R will fail overwriting it because it contains symlinks
+rm -rf Growl.framework
+
+cp -R "$DAEMONROOT"/os/$OS/* .
+cp -R "$GUIROOT"/icons .
+cp -R "$GUIROOT"/os/$OS/* .
+

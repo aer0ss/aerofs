@@ -1,0 +1,12 @@
+GUIUtil.shortenText() is copied from SWT Win32 Extension library (http://sourceforge.net/projects/feeling/)
+
+third-party code includes:
+
+Baes64
+JsonFormat
+Growl (License: BSD - http://code.google.com/p/growl/)
+
+dirent.h - Windows port
+  Location: launcher/liblauncher/dirent_win.h
+  Author:   Toni Ronkko (http://www.softagalleria.net/dirent.php)
+  License:  MIT License
