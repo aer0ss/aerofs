@@ -14,8 +14,6 @@ PPWD=`dirname $0`
 # convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
 PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
-GUIROOT=$PPWD/../java/aerofs.gui
-LIBROOT=$PPWD/../java/aerofs.lib
 LIBS3ROOT=$PPWD/../aerofs.libs3
 
 OS=`"$PPWD"/os`
@@ -27,7 +25,7 @@ elif [ x`echo $OS | grep linux` != x ]; then
 fi
 
 CP="$PPWD"/bin
-for i in "$LIBROOT"/lib/*.jar "$LIBS3ROOT"/lib/*.jar "$GUIROOT"/lib/*.jar "$GUIROOT"/os/$OS/lib/*.jar; do
+for i in "$PPWD"/lib/*.jar "$LIBS3ROOT"/lib/*.jar; do
     CP="$CP"$S"$i"
 done
 
@@ -36,4 +34,3 @@ VMARGS_PROD="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryE
 #VMARGS="$VMARGS -agentlib:hprof=cpu=samples,depth=16"
 #VMARGS="$VMARGS -agentlib:hprof=heap=sites,depth=16"
 java $VMARGS_PROD -ea -cp "$CP" com.aerofs.Main "$@"
-
