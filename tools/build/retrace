@@ -1,0 +1,27 @@
+#!/bin/sh
+
+VER=$1
+
+if [ x"$VER" == x ]; then
+    echo "usage: $0 <VER>"
+    exit 1
+fi
+
+function abspath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+BASE=`dirname $0`
+BASE=`abspath "$BASE"`
+
+# $2 is used by retrace-s3
+FILE=aerofs-$VER-prod$2.map
+LOCAL_FILE="$BASE/$FILE"
+
+if [ ! -f "$LOCAL_FILE" ]; then
+    echo "retrieving map file..."
+    kscp release@www.aerofs.com:~/"$FILE" "$LOCAL_FILE"
+fi
+
+cd "$BASE"/util/proguard
+bin/retrace.sh "$LOCAL_FILE"

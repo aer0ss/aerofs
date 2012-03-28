@@ -1,0 +1,23 @@
+#!/bin/sh
+
+if [ x$1 == xprod ]; then
+    TYPE=prod
+    echo
+    echo "!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "!!! BANG PRODUCTION !!!"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!"
+    echo
+else
+    TYPE=staging
+fi
+
+./build $TYPE
+./deploy $TYPE
+if [ $? != 0 ]; then
+    exit $?
+fi
+
+sleep 10
+cd ../../build/aerofs.build.osx/
+./build $TYPE
+./deploy $TYPE

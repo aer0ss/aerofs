@@ -1,0 +1,217 @@
+#!/bin/sh
+
+# usage $0 [staging|prod]
+# exit non-zero if deployment failed
+
+DEPLOY_SP_DAEMON=1
+
+SVR_PORT=22
+SVR_LOGIN=release@www.aerofs.com
+
+SP_SVR_PORT=22
+SP_SVR_LOGIN=aerofs@x1.aerofs.com
+
+if [ x"$1" == x ]; then
+  echo usage '$0 [staging|prod]'
+  exit
+fi
+
+if [ $1 == prod ]; then
+  PROD=1
+else
+  PROD=0
+fi
+
+BUILDTYPE=$1
+PPWD=$PWD
+
+cd ../../aerofs.release
+
+VER=`head -1 aerofs/aerofs.ver`
+
+NAME=aerofs-$VER-$1     # e.g. aerofs-EA8.1-staging
+ZIP=$NAME.zip           # e.g. aerofs-EA8.1-staging.zip
+
+echo making $ZIP
+rm -rf $ZIP
+zip -9rqy $ZIP aerofs-s3.jar aerofs aerofs.osx aerofs.win \
+aerofs.linux32 aerofs.linux64 aerofs.linux aerofs.linux.inst
+
+echo uploading $ZIP and map files
+kscp -P $SVR_PORT $ZIP $SVR_LOGIN:~/$ZIP
+if [ $PROD == 1 ]; then
+    kscp -P $SVR_PORT aerofs.map $SVR_LOGIN:~/aerofs-$VER-$1.map
+    kscp -P $SVR_PORT aerofs-s3.map $SVR_LOGIN:~/aerofs-$VER-$1-s3.map
+fi
+
+echo deploying on the server
+ROOT=/home/release
+
+DEFLATED=aerofs.release/$1
+
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "cd ~; \
+    rm -rf $DEFLATED; \
+    mkdir -p $DEFLATED; \
+    cd $DEFLATED; \
+    unzip -qo ~/$ZIP; \
+    "
+if [ $PROD == 1 ]; then 
+  DOWNLOADS=/data/prod-downloads
+else 
+  DOWNLOADS=/data/staging-downloads
+fi
+###################
+echo deploying Linux installer .deb
+
+kscp -P $SVR_PORT $PPWD/build_deb $SVR_LOGIN:/tmp/
+
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "cd ~; \
+    chmod a+x /tmp/build_deb; \
+    /tmp/build_deb ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb $BUILDTYPE; \
+"
+
+###################
+echo deploying Linux installer .tgz
+
+LINUX_TMP=/tmp/aerofs.tmp
+LINUX_INST_TGZ=aerofs-installer.tgz
+
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "cd ~; \
+    rm -rf $LINUX_TMP; \
+    mkdir -p $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs.linux.inst/* $LINUX_TMP/aerofs; \
+    cd $LINUX_TMP; \
+    tar zcf $LINUX_INST_TGZ aerofs; \
+    cp $LINUX_INST_TGZ $DOWNLOADS; \
+    cd ~; \
+"
+
+###################
+echo deploying Linux 32bit .tgz
+
+LINUX32_TGZ=aerofs-x86.tgz
+LINUX32_VER_TGZ=aerofs-$VER-x86.tgz
+
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "cd ~; \
+    rm -rf $LINUX_TMP; \
+    mkdir -p $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs/* $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs.linux/* $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs.linux32/* $LINUX_TMP/aerofs; \
+    cd $LINUX_TMP; \
+    tar zcf $LINUX32_VER_TGZ aerofs; \
+    cp $LINUX32_VER_TGZ $DOWNLOADS; \
+    rm -f $DOWNLOADS/$LINUX32_TGZ; \
+    mv $LINUX32_VER_TGZ $DOWNLOADS/$LINUX32_TGZ; \
+    cp $DOWNLOADS/$LINUX32_TGZ $DOWNLOADS/aerofs-$VER-x86.tar.gz; \
+    cd ~; \
+"
+
+###################
+echo deploying Linux 64bit .tgz
+
+LINUX64_TGZ=aerofs-x86_64.tgz
+LINUX64_VER_TGZ=aerofs-$VER-x86_64.tgz
+
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "cd ~; \
+    rm -rf $LINUX_TMP; \
+    mkdir -p $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs/* $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs.linux/* $LINUX_TMP/aerofs; \
+    cp -rf $DEFLATED/aerofs.linux64/* $LINUX_TMP/aerofs; \
+    cd $LINUX_TMP; \
+    tar zcf $LINUX64_VER_TGZ aerofs; \
+    cp $LINUX64_VER_TGZ $DOWNLOADS; \
+    rm -f $DOWNLOADS/$LINUX64_TGZ; \
+    mv $LINUX64_VER_TGZ $DOWNLOADS/$LINUX64_TGZ; \
+    cp $DOWNLOADS/$LINUX64_TGZ $DOWNLOADS/aerofs-$VER-x86_64.tar.gz; \
+    cd ~; \
+"
+
+###################
+echo deploying Windows package
+
+PACKAGER=$ROOT/aerofs.nsis/packager
+
+#echo at \~/$ZIP, $PACKAGER/aerofs, $DOWNLOADS/AeroFSInstall-$VER-$1.exe, and $DOWNLOADS/AeroFSInstall.exe
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "rm -rf $PACKAGER/aerofs*; \
+    cd $PACKAGER; \
+    unzip -qo ~/$ZIP; \
+	cp -r $PACKAGER/aerofs.win/* $PACKAGER/aerofs; \
+    chmod -R a+rx $PACKAGER/aerofs*; \
+    /usr/local/nsis/nsis-2.46/bin/makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_TEMP_NAME=AeroFSInstall-$VER \
+        $PACKAGER/setup.nsi; \
+    chmod a+r $DOWNLOADS/AeroFSInstall-$VER.exe; \
+    rm -rf $DOWNLOADS/AeroFSInstall.exe; \
+    cp $DOWNLOADS/AeroFSInstall-$VER.exe $DOWNLOADS/AeroFSInstall.exe; \
+    chmod a+r $DOWNLOADS/AeroFSInstall.exe; \
+    "
+
+###################
+echo creating Windows patches
+PATCHER=$ROOT/aerofs.nsis/patcher
+
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $1; \
+    rm $DOWNLOADS/patch-*; \
+    mv $PATCHER/patch-* $DOWNLOADS; \
+    chmod a+r $DOWNLOADS/patch-*; \
+    "
+	
+if [ $DEPLOY_SP_DAEMON == 1 ]; then
+    ###################
+    echo deploying and restarting sp daemon
+
+    TMP_AEROFS_S3_JAR=/tmp/tmp.jar
+
+    kscp -P $SP_SVR_PORT aerofs-s3.jar $SP_SVR_LOGIN:$TMP_AEROFS_S3_JAR
+
+    if [ $PROD == 1 ]; then
+        URL=https://www.aerofs.com/downloads/aerofs-x86_64.tgz
+    else
+        URL=https://www.aerofs.com/staging/downloads/aerofs-x86_64.tgz
+    fi
+
+    kssh -p $SP_SVR_PORT $SP_SVR_LOGIN \
+        "rm -rf tmp;
+        mkdir tmp;
+        cd tmp;
+        wget --no-check-certificate --no-cache -q $URL;
+        tar zxf *.tgz;
+        cp -rf aerofs/* /data/aerofs/$1;
+        mv $TMP_AEROFS_S3_JAR /data/aerofs/$1/aerofs.jar;
+        # grep -v aerofs.jar /data/aerofs/$1/aerofs.ver > /tmp/aerofs.ver.tmp;
+        # mv /tmp/aerofs.ver.tmp /data/aerofs/$1/aerofs.ver;
+        echo EA1000.1 > /data/aerofs/$1/aerofs.ver;
+        ps -ef | grep user.$1 | grep -v grep; \
+        # the operator should kill cli and daemon manually
+        # kill -9 \`ps -ef | grep user.$1\ cli | grep -v grep | awk '{print \$2}'\`; \
+        # kill -9 \`ps -ef | grep user.$1\ daemon | grep -v grep | awk '{print \$2}'\`; \
+        kill -9 \`ps -ef | grep user.$1\ s3uploader | grep -v grep | awk '{print \$2}'\`; \
+        kill -9 \`ps -ef | grep user.$1\ s3cache | grep -v grep | awk '{print \$2}'\`; \
+        "
+
+    echo '[ ACTION REQUIRED ]'
+    echo '>>> please log on to x1, kill cli and daemon process, restart them, and  make sure all FOUR daemon processes are running. press Enter to continue.'
+    read
+fi
+
+###################
+echo updating current.ver 
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "rm $DOWNLOADS/current.ver; \
+    echo Version=$VER > $DOWNLOADS/current.ver; \
+    chmod a+r $DOWNLOADS/current.ver; \
+    echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
+    "
+echo '+-------------------------------------------+'
+echo '| Remember to deploy MacOS, as well as SPSV |'
+echo '+-------------------------------------------+'
+
+exit 0
