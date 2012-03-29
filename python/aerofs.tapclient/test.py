@@ -1,27 +1,19 @@
 import uuid
+import time
+import sys
 
 from tap import transport
 
 if __name__ == '__main__':
-	service = transport.connect(('localhost', 3001), 'zephyr')
+	didB = "18d601269b8e4f26baaf9443b72eeddc".decode("hex")
+	sid = uuid.uuid5(uuid.NAMESPACE_DNS, "g.arrowfs.org")
 
-	did = uuid.uuid4()
-	sid = uuid.uuid4()
-	
-	stream = service.beginStream(did, sid)
-	stream.send('Hello? Is there anybody in there?')
-	stream.end()
+	peerA = transport.connect(('localhost', int(3001)), 'zephyr')
+	peerB = transport.connect(('localhost', int(3002)), 'zephyr')
 
-	stream = service.beginStream(did, sid)
-	stream.send('Just nod if you can hear me')
-	stream.abort(transport.PBAbortStream.OUT_OF_ORDER)
+	peerA.updateLocalStoreInterest([sid], [])
+	peerB.updateLocalStoreInterest([sid], [])
 
-	service.sendPacket(1, sid, 'Is there anyone home?')
+	peerA.sendPacket(didB, sid, 'Is there anyone home?')
 
-	try:
-		service.awaitEvent()
-	except Exception as e:
-		print e
-
-
-
+	print peerB.awaitEvent()

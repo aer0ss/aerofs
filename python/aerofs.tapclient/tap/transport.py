@@ -30,14 +30,17 @@ class Transport(object):
     
     def __init__(self, rpcService):
         self._service = rpcService
+        self._nextOutgoingId = 1
 
     def beginStream(self, did, sid, highPrio=False):
         '''
         Begins a new outgoing stream given a DID and SID and returns an OutgoingStream object. Use
         that object to make stream related calls
         '''
-        stream = OutgoingStream(self._service, did, sid, False, highPrio)
-        self._service.begin(stream._streamId, did.bytes, sid.bytes, False, highPrio)
+
+        self._service.begin(self._nextOutgoingId, did.bytes, sid.bytes, False, highPrio)
+        stream = OutgoingStream(self._service, self._nextOutgoingId, did, sid, False, highPrio)
+        self._nextOutgoingId += 1
         return stream
 
     def sendPacket(self, id, sid, payload, highPrio=False):
@@ -118,11 +121,6 @@ class OutgoingStream(_Stream):
     '''
     Represents a writable, ordered and reliable stream to another peer
     '''
-    _nextId = 1
-
-    def __init__(self, service, did, sid, client, highPrio):
-        _Stream.__init__(self, service, OutgoingStream._nextId, did, sid, client, highPrio)
-        OutgoingStream._nextId += 1
 
     def send(self, bytes):
         '''
