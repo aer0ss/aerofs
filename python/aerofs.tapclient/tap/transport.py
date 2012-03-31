@@ -1,12 +1,29 @@
 import connection
 import tap_pb2
+import uuid
 
-from transport_pb2 import PBAbortStream
+from transport_pb2 import PBStream
+from tap_pb2 import TransportEvent
 
+# Maps string names to enums used to designate which transport
+# to use TAP with
 _TRANSPORT_NAME_TO_TYPE = {
     'zephyr': tap_pb2.StartTransportCall.ZEPHYR,
     'jingle': tap_pb2.StartTransportCall.JINGLE,
     'tcpmt': tap_pb2.StartTransportCall.TCPMT
+}
+
+# Converts an event to an IncomingStream object
+def _eventToIncomingStream(service, event):
+    return IncomingStream(service, event.stream_id, \
+            uuid.UUID(bytes=event.did), \
+            uuid.UUID(bytes=event.sid), \
+            event.client, event.high_priority)
+
+# Maps event types to functions that construct and return
+# a more pythony representation of the event type
+_EVENT_TRANSFORM_MAP = {
+    TransportEvent.INCOMING_STREAM_BEGUN: _eventToIncomingStream
 }
 
 def connect(rpc_host, transport):
@@ -43,7 +60,7 @@ class Transport(object):
         self._nextOutgoingId += 1
         return stream
 
-    def sendPacket(self, id, sid, payload, highPrio=False):
+    def sendDatagram(self, id, sid, payload, highPrio=False):
         '''
         Sends a Unicast or Maxcast packet, depending if 'id' is a DID
         or a Maxcast ID. 'payload' is an array of bytes
@@ -51,11 +68,11 @@ class Transport(object):
         try:
             # Try getting the bytes of this id. If this succeeds, looks like it's a DID,
             # so send the data as a Unicast packet
-            self._service.sendUnicastPacket(id.bytes, sid.bytes, payload, False, highPrio)
+            self._service.sendUnicastDatagram(id.bytes, sid.bytes, payload, False, highPrio)
         except AttributeError:
             # The id.bytes attribute doesn't exist, so try using id as an int for
             # sending a Maxcast packet
-            self._service.sendMaxcastPacket(id, sid.bytes, payload, highPrio)
+            self._service.sendMaxcastDatagram(id, sid.bytes, payload, highPrio)
 
     def updateLocalStoreInterest(self, stores_added, stores_removed):
         '''
@@ -87,13 +104,45 @@ class Transport(object):
         '''
         self._service.startPulse(did.bytes, highPrio)
 
-    def awaitEvent(self):
+    def awaitRawEvent(self, type=None):
         '''
         Blocks until the Transport layer fires a TransportEvent, and returns
-        that event
+        that event. If type is set to a TransportEvent type, then an event
+        of that type will be returned. If a list of types is given, then
+        any event matching one of those types will be returned
         '''
-        return self._service.awaitTransportEvent()
+        while True:
+            event = self._service.awaitTransportEvent()
 
+            if not type:
+                # Don't filter the event type, just return the first event
+                return event
+            else:
+                try:
+                    # The type may be a list of types, so check if the event
+                    # matches one
+                    for t in type:
+                        if event.type == t:
+                            return event
+                except TypeError:
+                    # The type is a single type, check if it matches the event
+                    if event.type == type:
+                        return event
+
+    def awaitEvent(self, type=None):
+        '''
+        Same as awaitRawEvent, but converts the event received into a python
+        object that is easier to work with.
+        For example, an event of type INCOMING_STREAM_BEGUN will be converted
+        into an IncomingStream object on which you can call receive()
+        '''
+        event = self.awaitRawEvent(type)
+        try:
+            transformFunc = _EVENT_TRANSFORM_MAP[event.type]
+            return transformFunc(self._service, event)
+        except KeyError:
+            # If no transform function exists, return the raw event
+            return event
 
 # Immutable base class that stores all information related to streams
 # Subclasses will only be able to perform actions and not modify data
@@ -136,25 +185,23 @@ class OutgoingStream(_Stream):
 
     def abort(self, reason):
         '''
-        Aborts the stream with the given PBAbortStream.Reason 'reason'
+        Aborts the stream with the given PBStream.InvalidationReason 'reason'
         '''
-        pbReason = PBAbortStream()
-        pbReason.reason = reason
-        self._service.abortOutgoing(self._streamId, self.did.bytes, pbReason)
+        self._service.abortOutgoing(self._streamId, self.did.bytes, reason)
 
 # Immutable class representing an incoming stream
 class IncomingStream(_Stream):
     '''
     Represents a readable, ordered and reliable stream to another peer
     '''
-    
+
     def receive(self):
         '''
         Blocks until there is data to be read from the stream and
         returns it as a list of tuples, each tuple representing a chunk
         of data in the form (sequence_number, wire_length, data)
         '''
-        reply = self._service.receive()
+        reply = self._service.receive(self._streamId, self.did.bytes)
         return [(chunk.seq_num, chunk.wire_length, chunk.payload) for chunk in reply.chunks]
 
     def end(self):
@@ -165,8 +212,6 @@ class IncomingStream(_Stream):
 
     def abort(self, reason):
         '''
-        Aborts the stream with the given PBAbortStream.Reason 'reason'
+        Aborts the stream with the given PBStream.InvalidationReason 'reason'
         '''
-        pbReason = PBAbortStream()
-        pbReason.reason = reason
-        self._service.abortIncoming(self._streamId, self.did.bytes, pbReason)
+        self._service.abortIncoming(self._streamId, self.did.bytes, reason)
