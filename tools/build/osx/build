@@ -1,0 +1,60 @@
+#!/bin/sh
+
+# usage $0 [staging|prod]
+
+SVR_PORT=22
+SVR_LOGIN=release@www.aerofs.com
+
+if [ x"$1" == x ]; then
+    echo usage '$0 [staging|prod]'
+    exit
+fi
+
+cd ../aerofs.build.osx
+rm -rf current.ver
+
+ROOT=$1
+if [ "$ROOT" == "prod" ]
+then
+wget --no-check-certificate --no-cache https://www.aerofs.com/downloads/current.ver
+elif [ "$ROOT" == "staging" ]
+then
+wget --no-check-certificate --no-cache https://www.aerofs.com/staging/downloads/current.ver
+fi
+
+VER=`cat current.ver | sed -e 's/.*=//'`
+
+NAME=aerofs-$VER-$1
+ZIP=$NAME.zip
+
+echo getting $ZIP
+rm -rf $ZIP
+rm -rf aerofs-* aerofs.win* aerofs.osx aerofs.linux* aerofs.map
+cp ../../aerofs.release/$ZIP .
+echo unzipping $ZIP
+unzip -q $ZIP 
+
+echo mounting dmg
+rm -rf AeroFSInstall-*.dmg
+cp AeroFSInstall.dmg AeroFSInstall-temp.dmg
+hdiutil mount AeroFSInstall-temp.dmg 
+
+echo getting clean version of aerofs.app into Release/aerofs.app
+rm -rf Release
+mkdir Release
+cp -R aerofs.app Release/AeroFS.app
+
+echo copying aerofs and aerofs.osx into Release/aerofs.app/Contents/Resources/Java
+cp -R aerofs/* Release/AeroFS.app/Contents/Resources/Java
+cp -R aerofs.osx/* Release/AeroFS.app/Contents/Resources/Java
+rm -rf aerofs-* aerofs aerofs.osx aerofs.win* aerofs.linux* aerofs.map
+
+echo removing old data from /Volumes/AeroFS Install
+rm -rf /Volumes/AeroFS\ Installer/AeroFS.app 
+echo copying Release/AeroFS.app into /Volumes/AeroFS Install
+
+cp -R Release/AeroFS.app /Volumes/AeroFS\ Installer
+
+echo unmounting dmg
+hdiutil eject /Volumes/AeroFS\ Installer/
+hdiutil convert -format UDBZ -o AeroFSInstall-$VER.dmg AeroFSInstall-temp.dmg 
