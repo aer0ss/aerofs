@@ -1,0 +1,1 @@
+This folder contains scripts that are used for ant build only. Users should not invoke these scripts directly from shell.
