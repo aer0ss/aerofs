@@ -3,21 +3,26 @@
 # This script creates the approot directory and populates it
 # with the files needed for a staging AeroFS
 
-PPWD=`dirname $0`
+# usage: $0 <approot> <as-is>
+#   where <approot> is the approot folder path which doesn't need to pre-exist,
+#   and <as-is> is the as-is folder path which must exist.
 
+
+if [ x"$1" == x ]; then
+    echo "usage: $0 <approot> <as-is>"
+    exit 1
+fi
+APPROOT="$1"
+ASIS="$2"
+
+PPWD=`dirname $0`
 OS=`"$PPWD"/os`
-ASIS=$PPWD/../../as-is
-APPROOT=$PPWD/../../approot
-LAUNCHER=$PPWD/../../java/launcher
 
 # Copy files to approot
 mkdir -p "$APPROOT"
 rm -rf "$APPROOT"/Growl.framework    # Symlinks prevent cp from overwriting the files
 cp -R "$ASIS"/common/* "$APPROOT"/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
-
-# TODO (GS): Re-enable when we switch to the launcher
-#cp "$LAUNCHER"/bin/$OS/* "$APPROOT"/
 
 # Set-up a staging environment
 touch "$APPROOT"/staging
@@ -26,7 +31,5 @@ rm "$APPROOT"/cacert-prod.pem
 mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
 
 # Add the run script.
-# TODO (GS): Remove when we switch to the launcher
-cp "$PPWD/run" "$APPROOT"/
-cp "$PPWD/os" "$APPROOT"/
+cp "$PPWD/os" "$PPWD/run" "$APPROOT"/
 

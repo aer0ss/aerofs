@@ -1,0 +1,1 @@
+This folder contains scripts that populate the approot folder for staging clients. Users should not invoke these scripts directly but use "ant populate" from the root of the AeroFS project.
