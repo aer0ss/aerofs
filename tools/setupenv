@@ -30,6 +30,5 @@ fi
 
 # All setup happens below
 
-source "${BASE}/git-alias-setup.sh"
-source "${BASE}/git-hook-setup.sh"
-source "${BASE}/populate"
+source "${BASE}/git-alias-setup"
+source "${BASE}/git-hook-setup"
