@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="guice-aerofs">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../as-is/common/lib/guice-aerofs.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="http://google-guice.googlecode.com/git/javadoc/" />
+    </JAVADOC>
+    <SOURCES />
+  </library>
+</component>
