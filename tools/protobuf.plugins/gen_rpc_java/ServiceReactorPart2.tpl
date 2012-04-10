@@ -1,10 +1,14 @@
         default:
           throw new com.google.protobuf.InvalidProtocolBufferException("Invalid RPC call: " + t);
       }
+      if (reply == null) {
+        throw new NullPointerException("$ServiceName$: implementation returned a null pointer for call " + t);
+      }
     } catch (Exception e) {
       com.google.common.util.concurrent.SettableFuture<$BaseMessageClass$> r = com.google.common.util.concurrent.SettableFuture.create();
       r.setException(e);
       reply = r;
+      callType = ServiceRpcTypes.__ERROR__.ordinal();
     }
     final com.google.common.util.concurrent.SettableFuture<byte[]> future = com.google.common.util.concurrent.SettableFuture.create();
 

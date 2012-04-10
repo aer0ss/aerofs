@@ -16,7 +16,7 @@ public static class $ServiceName$Reactor
   {
     com.google.common.util.concurrent.ListenableFuture<? extends $BaseMessageClass$> reply;
 
-    int callType = ServiceRpcTypes.__ERROR__.ordinal();
+    int callType;
     try {
       com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.parseFrom(data);
       callType = p.getType();
