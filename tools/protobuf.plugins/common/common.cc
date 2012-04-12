@@ -1,4 +1,5 @@
 #include "common.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -20,4 +21,11 @@ string CamelCaseToCapitalizedUnderscores(const string& input)
         }
     }
     return result;
+}
+
+string CamelCaseToLowerCaseUnderscores(const string& input)
+{
+    string output = CamelCaseToCapitalizedUnderscores(input);
+    std::transform(output.begin(), output.end(), output.begin(), ::tolower);
+    return output;
 }

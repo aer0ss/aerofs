@@ -104,7 +104,7 @@ string methodNameToPythonEnum(const MethodDescriptor* method)
   Based on a given template, generates a python method. The generated method looks something
   like the following:
 
-    def methodName(self, required_param_1, required_param_2):
+    def method_name(self, required_param_1, required_param_2):
         m = InputMessage()
         m.required_param_1 = required_param_1
         m.required_param_2 = required_param_2
@@ -116,7 +116,7 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer, ch
     map<string, string> methodDefinitionVars;
 
     methodDefinitionVars["ServiceName"] = method->service()->name();
-    methodDefinitionVars["MethodName"] = method->name();
+    methodDefinitionVars["MethodName"] = CamelCaseToLowerCaseUnderscores(method->name());
     methodDefinitionVars["MethodArgs"] = requiredMessageFieldsToParameterList(method->input_type());
     methodDefinitionVars["InputMessageType"] = pythonScopedMessageName(method->service()->file(), method->input_type());
     methodDefinitionVars["MethodCallEnum"] = methodNameToPythonEnum(method);
@@ -196,25 +196,20 @@ string requiredMessageFieldAssignmentToString(const Descriptor *message)
 {
     stringstream assignment;
 
-    // Insert a newline so that the code insertion happens on a non-indented
-    // new line. That way all the assignment statements generated below
-    // will be treated the same, i.e require indentation
-    assignment << "\n";
-
     // For all fields, ensure they are required and create assignment code
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
         assertRequiredField(field);
 
-        assignment << INDENT << INDENT << "m." << field->name();
+        assignment << endl << INDENT << INDENT << "m." << field->name();
 
         if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
             // The field is another message, so we need to do CopyFrom()
             // instead of assignment
-            assignment << ".CopyFrom(" << field->name() << ")" << endl;
+            assignment << ".CopyFrom(" << field->name() << ")";
         } else {
             // Regular assignment, because this isn't a composite type
-            assignment << " = " << field->name() << endl;
+            assignment << " = " << field->name();
         }
     }
     return assignment.str();
