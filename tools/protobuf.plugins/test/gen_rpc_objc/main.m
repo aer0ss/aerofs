@@ -87,10 +87,10 @@
     [stub addPerson: person withSomeValue:@"some value" andPerform:@selector(onPersonAdded:error:) withObject:self];
 }
 
--(void)onPersonAdded:(int)personId error:(NSError*)error
+-(void)onPersonAdded:(AddPersonReply*)reply error:(NSError*)error
 {
     NSAssert(error == nil, @"adding a person returned an error");
-    NSAssert(personId == 1234, @"Didn't receive the expected id after calling addPerson");
+    NSAssert(reply.id == 1234, @"Didn't receive the expected id after calling addPerson");
 }
 
 - (void)shouldFailEmptyPerson
@@ -99,7 +99,7 @@
     [stub addPerson: person withSomeValue:@"" andPerform:@selector(onEmptyPersonAdded:error:) withObject:self];
 }
 
-- (void)onEmptyPersonAdded:(int)personId error:(NSError*)error
+- (void)onEmptyPersonAdded:(AddPersonReply*)reply error:(NSError*)error
 {
     NSAssert(error != nil, @"Adding an empty person did NOT fail");
     lastTestFinished = YES;
