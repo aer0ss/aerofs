@@ -4,7 +4,6 @@
     <option name="PER_PROJECT_SETTINGS">
       <value>
         <option name="USE_SAME_INDENTS" value="true" />
-        <option name="IGNORE_SAME_INDENTS_FOR_LANGUAGES" value="true" />
         <option name="LINE_SEPARATOR" value="&#10;" />
         <option name="STATIC_FIELDS_ORDER_WEIGHT" value="5" />
         <option name="FIELDS_ORDER_WEIGHT" value="7" />
