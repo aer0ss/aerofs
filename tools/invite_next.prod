@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ $# != 1 ]; then
+    echo usage: "$0 <number of invites>"
+    exit 1
+fi
+
+echo "Password for aerofs_spsv@mysql: \c"
+stty -echo
+read PASSWD
+stty echo
+echo ""
+
+kssh weihanw@sp.aerofs.com "echo select s_email from sp_signup where s_email not in \(select u_id from sp_user union select i_id from sp_invited_user\) order by s_idx limit $1 | mysql -u aerofs_spsv -p\"$PASSWD\" --skip-column-names aerofs_sp" > /tmp/aerofs_batch_invite
+
+for i in `cat /tmp/aerofs_batch_invite`; do
+    ./invite.prod $i
+    sleep 1
+done
