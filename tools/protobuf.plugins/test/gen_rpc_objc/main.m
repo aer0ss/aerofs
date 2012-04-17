@@ -47,7 +47,7 @@
 @property (readonly) BOOL lastTestFinished;
 
 - (id)initWithServer:(Server*)s;
-- (void)sendBytes:(NSData*)bytes withSelector:(SEL)selector andObject:(id)object;
+- (void)sendBytes:(NSData*)bytes param1:(id)param1 param2:(id)param2;
 - (NSError*)decodeError:(ErrorReply*) error;
 
 /// testing methods
@@ -68,10 +68,10 @@
     return self;
 }
 
--(void)sendBytes:(NSData*)bytes withSelector:(SEL)selector andObject:(id)object
+-(void)sendBytes:(NSData*)bytes param1:(id)param1 param2:(id)param2
 {
     NSData* data = [server processRpc:bytes];
-    [stub onReplyReceived:data withSelector:selector andObject:object];
+    [stub onReplyReceived:data param1:param1 param2:param2];
 }
 
 - (NSError*)decodeError:(ErrorReply*)error
@@ -105,6 +105,15 @@
     lastTestFinished = YES;
 }
 
+- (void)shouldAddAPersonUsingBlocks
+{
+    Person* person = [[[[Person builder] setName:@"Joe Foo"] setEmail:@"joe@foo.com"] build];
+    [stub addPerson:person withSomeValue:@"some value" usingBlock:^(AddPersonReply* reply, NSError* error) {
+        NSAssert(error == nil, @"adding a person returned an error");
+        NSAssert(reply.id == 1234, @"Didn't receive the expected id after calling addPerson");
+    }];
+}
+
 @end
 
 int main (int argc, const char * argv[])
@@ -117,6 +126,7 @@ int main (int argc, const char * argv[])
 
     [client shouldAddAPerson];
     [client shouldFailEmptyPerson];
+    [client shouldAddAPersonUsingBlocks];
 
     // Enter the run loop, and give it 2 seconds to get the reply
     NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
