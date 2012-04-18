@@ -1,5 +1,5 @@
 approot
-aerofs.release
+*.out
 reports
 workspace.xml
 .metadata

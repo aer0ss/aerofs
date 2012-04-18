@@ -114,20 +114,9 @@ void generateStubSwitchCase(const MethodDescriptor* method, io::Printer* printer
 
     printer->Print(vars,
                    "case $LabelName$: {\n"
-                   "  $ReplyClassName$* reply = [$ReplyClassName$ parseFromData: [payload payloadData]];\n");
-
-    for (int i = 0; i < method->output_type()->field_count(); i++) {
-        map<string, string> subvars;
-        subvars["argName"] = UnderscoresToCamelCase(method->output_type()->field(i));
-        subvars["type"] = getTypeName(method->output_type()->field(i));
-        subvars["index"] = SimpleItoa(i + 2);
-
-        printer->Print(subvars,
-                       "  $type$ $argName$ = [reply $argName$];\n"
-                       "  [invocation setArgument:&$argName$ atIndex:$index$];\n");
-    }
-
-    printer->Print("  break;\n"
+                   "  $ReplyClassName$* reply = [$ReplyClassName$ parseFromData: [payload payloadData]];\n"
+                   "  [invocation setArgument:&reply atIndex:2];\n"
+                   "  break;\n"
                    "}\n");
 }
 

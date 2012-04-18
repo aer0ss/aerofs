@@ -7,6 +7,7 @@
 #   where <approot> is the approot folder path which doesn't need to pre-exist,
 #   and <as-is> is the as-is folder path which must exist.
 
+set -e
 
 if [ x"$1" == x ]; then
     echo "usage: $0 <approot> <as-is>"

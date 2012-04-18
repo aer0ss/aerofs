@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ x"$1" == x ]; then
+    echo usage: '$0 invite_count'
+    exit
+fi
+
+ARG="--no-check-certificate"
+
+wget -q $ARG -O- "https://sp.aerofs.com/staging/sp?aerofs=lotsoflove&inviteCount=$1"

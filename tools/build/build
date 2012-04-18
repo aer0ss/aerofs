@@ -2,7 +2,7 @@
 
 # TODO (GS) Remove labelling - also remove references to "com.aerofs.l."
 
-VERSION=EA31
+VERSION=EA32
 
 if [ x"$1" == x ]; then
     echo usage '$0 <staging|prod> [labeling]'
@@ -33,7 +33,7 @@ AEROFS_LIBS3_DIR=$AEROFS_ROOT/java/aerofs.libs3
 PROGUARD_HOME=$AEROFS_ROOT/java/aerofs.gui/util/proguard
 
 # dest dirs
-DROP_TO=$AEROFS_ROOT/aerofs.release
+DROP_TO=$AEROFS_ROOT/release.out
 AEROFS_DIR=$DROP_TO/aerofs
 AEROFS_WIN_DIR=$DROP_TO/aerofs.win
 AEROFS_OSX_DIR=$DROP_TO/aerofs.osx
@@ -144,7 +144,12 @@ done
 mkdir -p bin/com
 cp -Rf $APPROOT/bin/com/* bin/com
 
-# remove unnecessary class files (bin/com/aerofs/downloader will be moved away later)
+###################################
+# remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
+
+rm -rf bin/com/aerofs/sp
+find bin/com/aerofs -name .DS_Store | xargs rm -f
+
 if [ $PROD == 1 ]; then
     rm -rf bin/com/aerofs/testing
     rm -rf bin/com/aerofs/sak
@@ -155,7 +160,7 @@ fi
 #    rm -rf bin/com/aerofs/l/AA.class
 #fi
 #if [ $LABELING != comcast ]; then
-#    rm -rf bin/com/aerofs/l/CC.class
+    rm -rf bin/com/aerofs/l/CC.class
 #fi
 
 ###################################

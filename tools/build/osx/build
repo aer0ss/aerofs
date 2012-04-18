@@ -10,16 +10,15 @@ if [ x"$1" == x ]; then
     exit
 fi
 
-cd ../aerofs.build.osx
 rm -rf current.ver
 
 ROOT=$1
 if [ "$ROOT" == "prod" ]
 then
-wget --no-check-certificate --no-cache https://www.aerofs.com/downloads/current.ver
+wget --no-check-certificate --no-cache -q https://www.aerofs.com/downloads/current.ver
 elif [ "$ROOT" == "staging" ]
 then
-wget --no-check-certificate --no-cache https://www.aerofs.com/staging/downloads/current.ver
+wget --no-check-certificate --no-cache -q https://www.aerofs.com/staging/downloads/current.ver
 fi
 
 VER=`cat current.ver | sed -e 's/.*=//'`
@@ -30,7 +29,7 @@ ZIP=$NAME.zip
 echo getting $ZIP
 rm -rf $ZIP
 rm -rf aerofs-* aerofs.win* aerofs.osx aerofs.linux* aerofs.map
-cp ../../aerofs.release/$ZIP .
+cp ../../../release.out/$ZIP .
 echo unzipping $ZIP
 unzip -q $ZIP 
 
