@@ -2,7 +2,7 @@
 
 # TODO (GS) Remove labelling - also remove references to "com.aerofs.l."
 
-VERSION=EA32
+VERSION=EA33
 
 if [ x"$1" == x ]; then
     echo usage '$0 <staging|prod> [labeling]'
