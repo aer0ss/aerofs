@@ -12,8 +12,9 @@ using namespace google::protobuf::compiler::objectivec;
 
 // Private helper functions:
 void generateMethodStub(const MethodDescriptor* method, io::Printer* printer);
-void generateStubSwitchCase(const MethodDescriptor* method, io::Printer* printer);
-string methodSignature(const Descriptor* message);
+string methodSignature(const Descriptor* input_type);
+string methodSignatureUsingBlocks(const Descriptor* input_type, const Descriptor* output_type);
+void methodSignatureHelper(stringstream& signature, const Descriptor* input_type);
 string getTypeName(const FieldDescriptor* field);
 string methodEnumName(const MethodDescriptor* method);
 
@@ -39,10 +40,13 @@ void ServiceGenerator::generateStubHeader(const ServiceDescriptor* service, io::
 
         map<string, string> vars;
         vars["methodName"] = UnderscoresToCamelCase(method);
-        vars["signature"] = methodSignature(method->input_type());
+        vars["signature1"] = methodSignature(method->input_type());
+        vars["signature2"] = methodSignatureUsingBlocks(method->input_type(), method->output_type());
 
         printer->Print(vars,
-                       "- (void) $methodName$$signature$;\n");
+                       "- (void) $methodName$$signature1$;\n"
+                       "- (void) $methodName$$signature2$;\n"
+                       );
     }
 
     printer->Print("@end");
@@ -69,23 +73,26 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
     printer->Indent();
     printer->Indent();
 
-    // Output the switch case to deal with errors
-    {
-        map<string, string> vars;
-        vars["LabelName"] = methodEnumName(service->method(0));
-        vars["ReplyClassName"] = ClassName(service->method(0)->output_type());
-
-        printer->Print(vars,
-                       "case $LabelName$: {\n"
-                       "  $ReplyClassName$* reply = [$ReplyClassName$ parseFromData: [payload payloadData]];\n"
-                       "  [invocation setArgument:&reply atIndex:[signature numberOfArguments] - 1];\n"
-                       "  break;\n"
-                       "}\n");
-    }
-
     // Output the other switch cases
-    for (int i = 1; i < service->method_count(); i++) {
-        generateStubSwitchCase(service->method(i), printer);
+    for (int i = 0; i < service->method_count(); i++) {
+        map<string, string> vars;
+        vars["LabelName"] = methodEnumName(service->method(i));
+        vars["ReplyClassName"] = ClassName(service->method(i)->output_type());
+
+        if (i == 0) {
+            // Output the switch case to deal with errors
+            printer->Print(vars,
+                           "case $LabelName$: {\n"
+                           "  error = [delegate decodeError:[$ReplyClassName$ parseFromData:[payload payloadData]]];\n"
+                           "  break;\n"
+                           "}\n");
+        } else {
+            printer->Print(vars,
+                           "case $LabelName$: {\n"
+                           "  reply = [$ReplyClassName$ parseFromData: [payload payloadData]];\n"
+                           "  break;\n"
+                           "}\n");
+        }
     }
 
     printer->Outdent();
@@ -106,20 +113,6 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
 // Helper functions
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void generateStubSwitchCase(const MethodDescriptor* method, io::Printer* printer)
-{
-    map<string, string> vars;
-    vars["LabelName"] = methodEnumName(method);
-    vars["ReplyClassName"] = ClassName(method->output_type());
-
-    printer->Print(vars,
-                   "case $LabelName$: {\n"
-                   "  $ReplyClassName$* reply = [$ReplyClassName$ parseFromData: [payload payloadData]];\n"
-                   "  [invocation setArgument:&reply atIndex:2];\n"
-                   "  break;\n"
-                   "}\n");
-}
-
 /**
   Generates the actual method stub that gets called by the client
 */
@@ -134,25 +127,40 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer)
 
     map<string, string> vars;
     vars["methodName"] = UnderscoresToCamelCase(method);
-    vars["signature"] = methodSignature(method->input_type());
+    vars["signature1"] = methodSignature(method->input_type());
+    vars["signature2"] = methodSignatureUsingBlocks(method->input_type(), method->output_type());
     vars["CallType"] = ClassName(method->input_type());
     vars["CallEnumConstant"] = methodEnumName(method);
     vars["callSetters"] = setters.str();
 
     printer->Print(vars,
+                   // selector / object callback
                    "\n"
-                   "- (void)$methodName$$signature$\n"
+                   "- (void)$methodName$$signature1$\n"
                    "{\n"
                    "  $CallType$_Builder* call = [$CallType$ builder];\n"
                    "$callSetters$"
                    "\n"
                    "  Payload* payload = [[[[Payload builder] setType:$CallEnumConstant$] setPayloadData:[[call build] data]] build];\n"
-                   "  [delegate sendBytes: [payload data]withSelector:selector andObject:object];\n"
-                   "}\n");
+                   "  [delegate sendBytes: [payload data]param1:(id)selector param2:object];\n"
+                   "}\n"
+
+                   // block callback
+                   "\n"
+                   "- (void)$methodName$$signature2$\n"
+                   "{\n"
+                   "  $CallType$_Builder* call = [$CallType$ builder];\n"
+                   "$callSetters$"
+                   "\n"
+                   "  Payload* payload = [[[[Payload builder] setType:$CallEnumConstant$] setPayloadData:[[call build] data]] build];\n"
+                   "  [delegate sendBytes: [payload data]param1:[block copy] param2:nil];\n"
+                   "}\n"
+                   );
 }
 
 /**
-  Helper method to get a signature string.
+  Helper method to get the signature string using the selector / object callback mechanism.
+
   For example, given the following protobuf message:
   @code
     message AddPersonCall {
@@ -164,9 +172,41 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer)
   it returns:
     @codeline ":(Person*)person withAnotherField:(int32_t)anotherField andPerform:(SEL)selector withObject:(id)object"
 */
-string methodSignature(const Descriptor* message)
+string methodSignature(const Descriptor* input_type)
 {
     stringstream signature;
+    methodSignatureHelper(signature, input_type);
+    const char* a = (input_type->field_count() > 0) ? "a" : "A";
+    signature << a << "ndPerform:(SEL)selector withObject:(id)object";
+    return signature.str();
+}
+
+/**
+  Helper method to get the signature string taking a block to perform the callback.
+
+  For example, given the following protobuf message:
+  @code
+    message AddPersonCall {
+        required Person person = 1;
+        optional int32 another_field = 2;
+    }
+  @endcode
+
+  it returns:
+    @codeline ":(Person*)person withAnotherField:(int32_t)anotherField usingBlock:(void(^)(ReplyClass* reply, NSError* error))block"
+*/
+string methodSignatureUsingBlocks(const Descriptor* input_type, const Descriptor* output_type)
+{
+    stringstream signature;
+    methodSignatureHelper(signature, input_type);
+    string argName = (input_type->field_count() > 0) ? "usingBlock" : "";
+    signature << argName << ":(void(^)(" << ClassName(output_type) << "* reply, NSError* error))block";
+    return signature.str();
+}
+
+void methodSignatureHelper(stringstream& signature, const Descriptor* message)
+{
+    // Add all call fields to the signature
 
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
@@ -186,11 +226,6 @@ string methodSignature(const Descriptor* message)
                   << "(" << getTypeName(field) << ")"
                   << UnderscoresToCamelCase(field) << " ";
     }
-
-    const char* a = (message->field_count() > 0) ? "a" : "A";
-    signature << a << "ndPerform:(SEL)selector withObject:(id)object";
-
-    return signature.str();
 }
 
 // Stolen from objc_primitive_field.cc
