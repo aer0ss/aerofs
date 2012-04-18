@@ -23,5 +23,5 @@ if [ ! -f "$LOCAL_FILE" ]; then
     kscp release@www.aerofs.com:~/"$FILE" "$LOCAL_FILE"
 fi
 
-cd "$BASE"/util/proguard
+cd "$BASE"/proguard
 bin/retrace.sh "$LOCAL_FILE"
