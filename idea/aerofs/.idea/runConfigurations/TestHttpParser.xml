@@ -1,16 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TestTwoZephyrUnicastConnections" type="JUnit" factoryName="JUnit">
-    <extension name="coverage" enabled="false" merge="false" runner="idea">
-      <pattern>
-        <option name="PATTERN" value="com.aerofs.daemon.transport.xmpp.zephyr.*" />
-        <option name="ENABLED" value="true" />
-      </pattern>
-    </extension>
+  <configuration default="false" name="TestHttpParser" type="JUnit" factoryName="JUnit">
     <module name="aerofs.daemon" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
-    <option name="PACKAGE_NAME" value="com.aerofs.daemon.transport.xmpp.zephyr" />
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.daemon.transport.xmpp.zephyr.TestTwoZephyrUnicastConnections" />
+    <option name="PACKAGE_NAME" value="com.aerofs.daemon.transport.base.http" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.daemon.transport.base.http.TestHttpParser" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea" />
@@ -23,7 +17,13 @@
     </option>
     <envs />
     <patterns />
+    <RunnerSettings RunnerId="Debug">
+      <option name="DEBUG_PORT" value="" />
+      <option name="TRANSPORT" value="0" />
+      <option name="LOCAL" value="true" />
+    </RunnerSettings>
     <RunnerSettings RunnerId="Run" />
+    <ConfigurationWrapper RunnerId="Debug" />
     <ConfigurationWrapper RunnerId="Run" />
     <method />
   </configuration>
