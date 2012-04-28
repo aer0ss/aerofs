@@ -9,7 +9,7 @@ message VoidCall {}
 
 message AddPersonCall {
     required Person person = 1;
-    required string some_value = 2;
+    optional string some_value = 2;
 }
 
 message AddPersonReply {

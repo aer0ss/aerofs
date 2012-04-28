@@ -84,7 +84,7 @@
 - (void)shouldAddAPerson
 {
     Person* person = [[[[Person builder] setName:@"Joe Foo"] setEmail:@"joe@foo.com"] build];
-    [stub addPerson: person withSomeValue:@"some value" andPerform:@selector(onPersonAdded:error:) withObject:self];
+    [stub addPerson: person withSomeValue:nil andPerform:@selector(onPersonAdded:error:) withObject:self];
 }
 
 -(void)onPersonAdded:(AddPersonReply*)reply error:(NSError*)error
