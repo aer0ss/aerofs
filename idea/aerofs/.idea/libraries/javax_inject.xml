@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="aerofsjn">
+  <library name="javax.inject">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../as-is/common/lib/aerofsjn.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../approot/lib/javax.inject.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
