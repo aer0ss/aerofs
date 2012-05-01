@@ -5,3 +5,4 @@ workspace.xml
 .metadata
 .DS_Store
 build.properties
+aerofs.release

@@ -139,19 +139,26 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
                        "\n"
                        "public com.google.common.util.concurrent.ListenableFuture<$ReplyClass$> $methodName$($signature$)\n"
                        "{\n"
-                       "  $CallClass$ call = $CallClass$.newBuilder()\n");
+                       "  $CallClass$.Builder builder = $CallClass$.newBuilder();\n");
 
        for (int j = 0; j < method->input_type()->field_count(); j++) {
            const FieldDescriptor* field = method->input_type()->field(j);
-           printer->Print(
-                       "    .set$Field$($var$)\n",
-                       "Field", UnderscoresToCapitalizedCamelCase(field),
-                       "var", UnderscoresToCamelCase(field));
+           if (field->is_optional()) {
+               printer->Print(
+                           "  if ($var$ != null) { builder.set$Field$($var$); }\n",
+                           "Field", UnderscoresToCapitalizedCamelCase(field),
+                           "var", UnderscoresToCamelCase(field));
+           } else {
+               printer->Print(
+                           "  builder.set$Field$($var$);\n",
+                           "Field", UnderscoresToCapitalizedCamelCase(field),
+                           "var", UnderscoresToCamelCase(field));
+           }
        }
 
        printer->Print(subvars,
-                       "    .build();\n"
-                       "  return sendQuery($ServiceClassName$Reactor.ServiceRpcTypes.$RPC_TYPE$, call.toByteString(), $ReplyClass$.newBuilder());\n"
+                       "\n"
+                       "  return sendQuery($ServiceClassName$Reactor.ServiceRpcTypes.$RPC_TYPE$, builder.build().toByteString(), $ReplyClass$.newBuilder());\n"
                       "}\n"
                        );
     }
@@ -181,14 +188,6 @@ string methodSignature(const Descriptor* message)
 
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
-
-        if (!field->is_required()) {
-            GOOGLE_LOG(FATAL) << "\n"
-                              << "All RPC input message fields must be required.\n"
-                              << "  field: " << field->name() << "\n"
-                              << "  in message: " << message->name() << "\n"
-                              << "  in file: " << message->file()->name() << "\n";
-        }
 
         string javaType;
         JavaType type = GetJavaType(field);

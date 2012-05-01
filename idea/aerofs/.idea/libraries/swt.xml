@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="swt">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../as-is/osx/lib/swt-3.7.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../approot/lib/swt-3.7.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

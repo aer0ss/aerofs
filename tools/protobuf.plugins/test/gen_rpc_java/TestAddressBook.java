@@ -87,7 +87,7 @@ public class TestAddressBook
         // Test 2. Invalid request
         try {
             // Try adding an empty person
-            stub.addPerson(AB.Person.newBuilder().setName("").build(), "").get();
+            stub.addPerson(AB.Person.newBuilder().setName("").build(), null).get();
 
             // we should not get to this point
             throw new RuntimeException("test failed - an expected error wasn't reported.");

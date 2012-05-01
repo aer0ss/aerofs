@@ -1,8 +1,8 @@
 <component name="libraryTable">
   <library name="smack">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../as-is/common/lib/smack.jar!/" />
-      <root url="jar://$PROJECT_DIR$/../../as-is/common/lib/smackx.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../approot/lib/smack.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../approot/lib/smackx.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

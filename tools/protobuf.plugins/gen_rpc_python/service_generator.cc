@@ -13,7 +13,6 @@ using namespace google::protobuf;
 
 #define INDENT "  "
 
-void assertRequiredField(const FieldDescriptor *field);
 void generateMethodStub(const MethodDescriptor* service, io::Printer* printer, char* methodTemplate);
 string generateMethodCallEnums(const ServiceDescriptor* service);
 string methodNameToPythonEnum(const MethodDescriptor* name);
@@ -169,7 +168,6 @@ string requiredMessageFieldsToParameterList(const Descriptor* message)
     // For all fields, ensure they are required and create a parameter list
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
-        assertRequiredField(field);
 
         args << ", " << field->name();
     }
@@ -199,7 +197,6 @@ string requiredMessageFieldAssignmentToString(const Descriptor *message)
     // For all fields, ensure they are required and create assignment code
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
-        assertRequiredField(field);
 
         assignment << endl << INDENT << INDENT << "m." << field->name();
 
@@ -213,14 +210,4 @@ string requiredMessageFieldAssignmentToString(const Descriptor *message)
         }
     }
     return assignment.str();
-}
-
-void assertRequiredField(const FieldDescriptor* field)
-{
-    if (!field->is_required()) {
-        GOOGLE_LOG(FATAL) << "\n"
-                          << "All RPC input message fields must be required.\n"
-                          << "  field: " << field->name() << "\n"
-                          << "  in message: " << field->containing_type()->name() << "\n";
-    }
 }

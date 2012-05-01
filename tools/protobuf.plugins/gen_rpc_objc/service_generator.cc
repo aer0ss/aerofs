@@ -211,14 +211,6 @@ void methodSignatureHelper(stringstream& signature, const Descriptor* message)
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
 
-        if (!field->is_required()) {
-            GOOGLE_LOG(FATAL) << "\n"
-                              << "All RPC input message fields must be required.\n"
-                              << "  field: " << field->name() << "\n"
-                              << "  in message: " << message->name() << "\n"
-                              << "  in file: " << message->file()->name() << "\n";
-        }
-
         if (i > 0) {
             signature << "with" << UnderscoresToCapitalizedCamelCase(field);
         }

@@ -76,7 +76,9 @@ As of this writing, this plugin does not create the insertion points that we nee
 
 https://github.com/booyah/protobuf-objc/pull/23
 
-So if you're cloning the protobuf-objc plugin, make sure this pull request is fully merged (or pull it manually into your clone).
+So if you're cloning the protobuf-objc plugin, fetch is from our repository on github:
+
+https://github.com/aerofs/protobuf-objc
 
 We are also using 2 headers and 2 .cc files from them:
 
