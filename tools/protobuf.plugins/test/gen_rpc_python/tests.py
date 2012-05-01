@@ -13,17 +13,28 @@ class TestAddPersonConnection(object):
         self._id = 1
 
     def do_rpc(self, bytes):
+        ADD_PERSON_CALL = 1
+        ADD_PEOPLE_CALL = 2
+
         payload = Payload.FromString(bytes)
-        call = AddPersonCall.FromString(payload.payload_data)
         t = payload.type
-        if call.person.name == "":
-            reply = ErrorReply()
-            reply.errorMessage = "Can't add a person with no name"
-            t = 0
-        else:
-            reply = AddPersonReply()
-            reply.id = self._id
-            self._id += 1
+
+        if t == ADD_PERSON_CALL:
+            call = AddPersonCall.FromString(payload.payload_data)
+            if call.person.name == "":
+                reply = ErrorReply()
+                reply.errorMessage = "Can't add a person with no name"
+                t = 0
+            else:
+                reply = AddPersonReply()
+                reply.id = self._id
+                self._id += 1
+
+        elif t == ADD_PEOPLE_CALL:
+            call = AddPeopleCall.FromString(payload.payload_data)
+            reply = AddPeopleReply();
+            reply.length_name.extend([len(person.name) for person in call.people])
+
         replyPayload = Payload()
         replyPayload.type = t
         replyPayload.payload_data = reply.SerializeToString()
@@ -51,6 +62,16 @@ class TestProtobufRpcPlugin(unittest.TestCase):
             self.assertTrue(False)
         except Exception as e:
             self.assertTrue(True)
+
+    def test_add_people_call(self):
+        p1 = Person()
+        p2 = Person()
+        p1.name = 'John'
+        p2.name = 'Antonio'
+        response = self.service.add_people([p1, p2], [])
+        self.assertEqual(2, len(response.length_name))
+        self.assertEqual(len(p1.name), response.length_name[0])
+        self.assertEqual(len(p2.name), response.length_name[1])
 
 if __name__ == '__main__':
     unittest.main()

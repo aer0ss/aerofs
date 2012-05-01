@@ -17,8 +17,8 @@ void generateMethodStub(const MethodDescriptor* service, io::Printer* printer, c
 string generateMethodCallEnums(const ServiceDescriptor* service);
 string methodNameToPythonEnum(const MethodDescriptor* name);
 string pythonScopedMessageName(const FileDescriptor* thisFile, const Descriptor* message);
-string requiredMessageFieldsToParameterList(const Descriptor* message);
-string requiredMessageFieldAssignmentToString(const Descriptor* message);
+string messageFieldsToParameterList(const Descriptor* message);
+string messageFieldAssignmentToString(const Descriptor* message);
 
 void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Printer* printer)
 {
@@ -103,10 +103,10 @@ string methodNameToPythonEnum(const MethodDescriptor* method)
   Based on a given template, generates a python method. The generated method looks something
   like the following:
 
-    def method_name(self, required_param_1, required_param_2):
+    def method_name(self, param_1, param_2):
         m = InputMessage()
-        m.required_param_1 = required_param_1
-        m.required_param_2 = required_param_2
+        m.param_1 = param_1
+        m.param_2 = param_2
         d = self._sendData(INTEGER_REPRESENTING_THIS_METHOD, m.SerializeToString())
         return OutputMessage.FromString(d)
   */
@@ -116,11 +116,11 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer, ch
 
     methodDefinitionVars["ServiceName"] = method->service()->name();
     methodDefinitionVars["MethodName"] = CamelCaseToLowerCaseUnderscores(method->name());
-    methodDefinitionVars["MethodArgs"] = requiredMessageFieldsToParameterList(method->input_type());
+    methodDefinitionVars["MethodArgs"] = messageFieldsToParameterList(method->input_type());
     methodDefinitionVars["InputMessageType"] = pythonScopedMessageName(method->service()->file(), method->input_type());
     methodDefinitionVars["MethodCallEnum"] = methodNameToPythonEnum(method);
     methodDefinitionVars["OutputMessageType"] = pythonScopedMessageName(method->service()->file(), method->output_type());
-    methodDefinitionVars["MessageFieldAssignment"] = requiredMessageFieldAssignmentToString(method->input_type());
+    methodDefinitionVars["MessageFieldAssignment"] = messageFieldAssignmentToString(method->input_type());
 
     printer->Print(methodDefinitionVars, methodTemplate);
 }
@@ -154,21 +154,20 @@ string pythonScopedMessageName(const FileDescriptor* thisFile, const Descriptor*
 }
 
 /**
-  Compiles all required message fields of a protobuf message into
+  Compiles all message fields of a protobuf message into
   a python parameter list. Since python is dynamically typed, no
   types are required
   */
-string requiredMessageFieldsToParameterList(const Descriptor* message)
+string messageFieldsToParameterList(const Descriptor* message)
 {
     stringstream args;
 
     // Add the 'self' parameter
     args << "self";
 
-    // For all fields, ensure they are required and create a parameter list
+    // For all fields, create a parameter list
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
-
         args << ", " << field->name();
     }
     return args.str();
@@ -177,30 +176,32 @@ string requiredMessageFieldsToParameterList(const Descriptor* message)
 /**
   Creates a string of the form,
 
-    m.required_param_1 = required_param_1
-    m.required_param_2 = required_param_2
+    m.param_1 = param_1
+    m.param_2 = param_2
     ...
 
-  for all required fields of the given protobuf message type.
+  for all fields of the given protobuf message type.
 
   The Protobuf Python API does not allow assignment of composite
-  message fields, aka, if required_param_1 is itself a message,
-  you can't assign it directly to m.required_param_1. Instead, we
-  must do,
+  message fields, aka, if param_1 is itself a message,
+  you can't assign it directly to m.param_1. Instead, we must do,
 
-    m.required_param_1.CopyFrom(required_param_1)
+    m.param_1.CopyFrom(param_1)
   */
-string requiredMessageFieldAssignmentToString(const Descriptor *message)
+string messageFieldAssignmentToString(const Descriptor *message)
 {
     stringstream assignment;
 
-    // For all fields, ensure they are required and create assignment code
+    // For all fields, create assignment code
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
 
         assignment << endl << INDENT << INDENT << "m." << field->name();
 
-        if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
+        if (field->is_repeated()) {
+            // The field is repeated, so we need to use extend()
+            assignment << ".extend(" << field->name() << ")";
+        } else if (field->type() == FieldDescriptor::TYPE_MESSAGE) {
             // The field is another message, so we need to do CopyFrom()
             // instead of assignment
             assignment << ".CopyFrom(" << field->name() << ")";

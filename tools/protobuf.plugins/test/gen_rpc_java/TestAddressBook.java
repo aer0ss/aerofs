@@ -3,6 +3,8 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.common.util.concurrent.SettableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.List;
+import java.util.ArrayList;
 
 public class TestAddressBook
 {
@@ -62,6 +64,22 @@ public class TestAddressBook
             return future;
         }
 
+        @Override
+        public ListenableFuture<AB.AddPeopleReply> addPeople(List<AB.Person> people, List<String> testValues) throws Exception
+        {
+            AB.AddPeopleReply.Builder reply = AB.AddPeopleReply.newBuilder();
+
+            if (people != null) {
+                for (AB.Person person : people) {
+                    reply.addLengthName(person.getName().length());
+                }
+            }
+
+            SettableFuture<AB.AddPeopleReply> future = SettableFuture.create();
+            future.set(reply.build());
+            return future;
+        }
+
         private ListenableFuture<byte[]> processRequest(byte[] data)
         {
             // we just received this byte array from the client.
@@ -101,5 +119,17 @@ public class TestAddressBook
                 throw e;
             }
         }
+
+        // Test 3: repeated parameters
+        ArrayList<AB.Person> people = new ArrayList<AB.Person>();
+        people.add(AB.Person.newBuilder().setName("John").build());
+        people.add(AB.Person.newBuilder().setName("Antonio").build());
+
+        AB.AddPeopleReply reply = stub.addPeople(people, null).get();
+        List<Integer> l = reply.getLengthNameList();
+        assert l.size() == 2;
+        assert l.get(0).intValue() == people.get(0).getName().length();
+        assert l.get(1).intValue() == people.get(1).getName().length();
+
     }
 }

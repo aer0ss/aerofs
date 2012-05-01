@@ -143,16 +143,19 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
 
        for (int j = 0; j < method->input_type()->field_count(); j++) {
            const FieldDescriptor* field = method->input_type()->field(j);
+           map<string, string> vars;
+           vars["Field"] = UnderscoresToCapitalizedCamelCase(field);
+           vars["varName"] = UnderscoresToCamelCase(field);
+
            if (field->is_optional()) {
-               printer->Print(
-                           "  if ($var$ != null) { builder.set$Field$($var$); }\n",
-                           "Field", UnderscoresToCapitalizedCamelCase(field),
-                           "var", UnderscoresToCamelCase(field));
+               printer->Print(vars,
+                           "  if ($varName$ != null) { builder.set$Field$($varName$); }\n");
+           } else if (field->is_repeated()) {
+               printer->Print(vars,
+                           "  if ($varName$ != null) { builder.addAll$Field$($varName$); }\n");
            } else {
-               printer->Print(
-                           "  builder.set$Field$($var$);\n",
-                           "Field", UnderscoresToCapitalizedCamelCase(field),
-                           "var", UnderscoresToCamelCase(field));
+               printer->Print(vars,
+                           "  builder.set$Field$($varName$);\n");
            }
        }
 
@@ -204,6 +207,10 @@ string methodSignature(const Descriptor* message)
 
         GOOGLE_CHECK(!javaType.empty());
 
+        if (field->is_repeated()) {
+            javaType = "java.util.List<" + javaType + ">";
+        }
+
         if (i > 0) {
             signature << ", ";
         }
@@ -221,7 +228,8 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
             methodParams << ", ";
         }
         const FieldDescriptor* field = method->input_type()->field(i);
-        methodParams << "call.get" << UnderscoresToCapitalizedCamelCase(field) << "()";
+        const string list = field->is_repeated() ? "List" : "";
+        methodParams << "call.get" << UnderscoresToCapitalizedCamelCase(field) << list << "()";
     }
 
     map<string, string> vars;

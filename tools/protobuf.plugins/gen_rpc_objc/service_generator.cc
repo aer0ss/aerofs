@@ -121,7 +121,8 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer)
     stringstream setters;
     for (int j = 0; j < method->input_type()->field_count(); j++) {
         const FieldDescriptor* field = method->input_type()->field(j);
-        setters << "  [call set" << UnderscoresToCapitalizedCamelCase(field)
+        string asArray = field->is_repeated() ? "Array" : "";
+        setters << "  [call set" << UnderscoresToCapitalizedCamelCase(field) << asArray
                 << ":" << UnderscoresToCamelCase(field) << "];\n";
     }
 
@@ -249,6 +250,10 @@ const char* PrimitiveTypeName(const FieldDescriptor* field)
 */
 string getTypeName(const FieldDescriptor* field)
 {
+    if (field->is_repeated()) {
+        return "NSArray*";
+    }
+
     ObjectiveCType type = GetObjectiveCType(field);
     switch (type) {
     case OBJECTIVECTYPE_MESSAGE:
