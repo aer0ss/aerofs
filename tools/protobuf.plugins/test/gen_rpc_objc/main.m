@@ -131,6 +131,12 @@
     }];
 }
 
+- (void)shouldWorkWithNilBlock
+{
+    Person* person = [[[[Person builder] setName:@"Joe Foo"] setEmail:@"joe@foo.com"] build];
+    [stub addPerson:person withSomeValue:@"some value" usingBlock:nil];
+}
+
 - (void)shouldWorkWithRepeatedFields
 {
     Person* p1 = [[[Person builder] setName:@"John"] build];
@@ -157,6 +163,7 @@ int main (int argc, const char * argv[])
     [client shouldAddAPerson];
     [client shouldFailEmptyPerson];
     [client shouldAddAPersonUsingBlocks];
+    [client shouldWorkWithNilBlock];
     [client shouldWorkWithRepeatedFields];
 
     // Enter the run loop, and give it 2 seconds to get the reply

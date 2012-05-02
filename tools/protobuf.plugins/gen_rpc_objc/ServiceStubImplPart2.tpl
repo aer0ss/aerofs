@@ -27,8 +27,10 @@
 
     // block callback
 
-    void(^block)(id reply, NSError* error) = param1;
-    block(reply, error);
-    [block release];
+    if (param1) {
+      void(^block)(id reply, NSError* error) = param1;
+      block(reply, error);
+      [block release];
+    }
   }
 }
