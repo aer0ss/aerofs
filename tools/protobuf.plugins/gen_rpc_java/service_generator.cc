@@ -170,6 +170,50 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
     printer->Print("}\n");
 }
 
+void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io::Printer* printer)
+{
+    map<string, string> vars;
+    vars["ServiceName"] = service->name();
+
+    #include "BlockingStub.tpl.h"
+    printer->Print(vars, (char*) BlockingStub_tpl);
+
+    printer->Indent();
+
+    // Start at 1 because the first method is the __error__ method
+    for (int i = 1; i < service->method_count(); i++) {
+
+        const MethodDescriptor* method = service->method(i);
+
+        // generate a string with all the arguments separated by comma
+        stringstream args;
+        for (int i = 0; i < method->input_type()->field_count(); i++) {
+            if (i > 0) {
+                args << ", ";
+            }
+            args << method->input_type()->field(i)->camelcase_name();
+        }
+
+        map<string, string> vars;
+        vars["ServiceName"] = service->name();
+        vars["methodName"] = UnderscoresToCamelCase(method);
+        vars["signature"] = methodSignature(method->input_type());
+        vars["ReplyClass"] = ClassName(method->output_type());
+        vars["args"] = args.str();
+
+        printer->Print(vars,
+                       "\n"
+                       "public $ReplyClass$ $methodName$($signature$) throws Exception\n"
+                       "{\n"
+                       "  return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), Exception.class);\n"
+                       "}\n"
+                       );
+    }
+
+    printer->Outdent();
+    printer->Print("}\n");
+}
+
 /**
   Helper method to get a signature string
 

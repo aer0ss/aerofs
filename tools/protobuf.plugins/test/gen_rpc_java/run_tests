@@ -8,6 +8,6 @@ JARS=protobuf-java-2.4.1.jar:guava-11.0.1.jar
 mkdir -p "$OUT_DIR"
 protoc -I="$PB_INCLUDE_PATH/" --java_out "$OUT_DIR" "$PB_INCLUDE_PATH/rpc_service.proto" \
 && protoc --plugin="$PLUGINS_PATH/protoc-gen-rpc-java" -I="$PB_INCLUDE_PATH/" -I=.. --java_out "$OUT_DIR" --rpc-java_out "$OUT_DIR" ../address_book.proto \
-&& javac -cp $JARS "$OUT_DIR/AB.java" "$OUT_DIR/com/aerofs/proto/RpcService.java" -d out TestAddressBook.java \
+&& javac -cp $JARS "$OUT_DIR/com/aerofs/proto/AB.java" "$OUT_DIR/com/aerofs/proto/RpcService.java" -d out TestAddressBook.java \
 && java -ea -cp "out:$JARS" TestAddressBook \
 && echo "Test successful"

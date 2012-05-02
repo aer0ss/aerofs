@@ -16,6 +16,7 @@ public:
     static void generateService(const google::protobuf::ServiceDescriptor* service, google::protobuf::io::Printer* printer);
     static void generateReactor(const google::protobuf::ServiceDescriptor* service, google::protobuf::io::Printer* printer);
     static void generateStub(const google::protobuf::ServiceDescriptor* service, google::protobuf::io::Printer* printer);
+    static void generateBlockingStub(const google::protobuf::ServiceDescriptor* service, google::protobuf::io::Printer* printer);
 };
 
 #endif // SERVICE_GENERATOR_H

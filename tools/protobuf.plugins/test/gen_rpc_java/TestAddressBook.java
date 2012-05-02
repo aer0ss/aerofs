@@ -2,13 +2,15 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.common.util.concurrent.SettableFuture;
+import com.aerofs.proto.*;
+import com.aerofs.proto.AB.*;
 import java.util.concurrent.ExecutionException;
 import java.util.List;
 import java.util.ArrayList;
 
 public class TestAddressBook
 {
-    static class Client implements AB.AddressBookServiceStub.AddressBookServiceStubCallbacks
+    static class Client implements AddressBookServiceStub.AddressBookServiceStubCallbacks
     {
         Server server;
 
@@ -24,32 +26,32 @@ public class TestAddressBook
         }
 
         @Override
-        public Throwable decodeError(AB.ErrorReply error)
+        public Throwable decodeError(ErrorReply error)
         {
             return new IllegalArgumentException(error.getErrorMessage());
         }
 
     }
 
-    static class Server implements AB.AddressBookService
+    static class Server implements AddressBookService
     {
-        AB.AddressBookServiceReactor reactor;
+        AddressBookServiceReactor reactor;
 
         public Server()
         {
-            reactor = new AB.AddressBookServiceReactor(this);
+            reactor = new AddressBookServiceReactor(this);
         }
 
         @Override
-        public AB.ErrorReply encodeError(Throwable error)
+        public ErrorReply encodeError(Throwable error)
         {
-            return AB.ErrorReply.newBuilder().setErrorMessage(error.getMessage()).build();
+            return ErrorReply.newBuilder().setErrorMessage(error.getMessage()).build();
         }
 
         @Override
-        public ListenableFuture<AB.AddPersonReply> addPerson(AB.Person person, String someValue)
+        public ListenableFuture<AddPersonReply> addPerson(Person person, String someValue)
         {
-            SettableFuture<AB.AddPersonReply> future = SettableFuture.create();
+            SettableFuture<AddPersonReply> future = SettableFuture.create();
 
             // Fail if person name is empty
             if (person.getName().length() == 0) {
@@ -58,24 +60,24 @@ public class TestAddressBook
                 throw new IllegalArgumentException("can't add a person with an empty name");
             }
 
-            AB.AddPersonReply reply = AB.AddPersonReply.newBuilder().setId(1234).build();
+            AddPersonReply reply = AddPersonReply.newBuilder().setId(1234).build();
             future.set(reply);
 
             return future;
         }
 
         @Override
-        public ListenableFuture<AB.AddPeopleReply> addPeople(List<AB.Person> people, List<String> testValues) throws Exception
+        public ListenableFuture<AddPeopleReply> addPeople(List<Person> people, List<String> testValues) throws Exception
         {
-            AB.AddPeopleReply.Builder reply = AB.AddPeopleReply.newBuilder();
+            AddPeopleReply.Builder reply = AddPeopleReply.newBuilder();
 
             if (people != null) {
-                for (AB.Person person : people) {
+                for (Person person : people) {
                     reply.addLengthName(person.getName().length());
                 }
             }
 
-            SettableFuture<AB.AddPeopleReply> future = SettableFuture.create();
+            SettableFuture<AddPeopleReply> future = SettableFuture.create();
             future.set(reply.build());
             return future;
         }
@@ -92,20 +94,31 @@ public class TestAddressBook
     {
         Server server = new Server();
         Client client = new Client(server);
-        AB.AddressBookServiceStub stub = new AB.AddressBookServiceStub(client);
 
-        // Test 1: add a person
-        AB.Person person = AB.Person.newBuilder()
+        testAddingAPerson(client);
+        testInvalidRequest(client);
+        testRepeatedParams(client);
+        testBlockingStub(client);
+    }
+
+    private static void testAddingAPerson(Client client) throws Exception
+    {
+        AddressBookServiceStub stub = new AddressBookServiceStub(client);
+
+        Person person = Person.newBuilder()
                     .setName("Joe Foo")
                     .setEmail("joe@foo.com")
                     .build();
 
         stub.addPerson(person, "hello").get();
+    }
 
-        // Test 2. Invalid request
+    private static void testInvalidRequest(Client client) throws Exception
+    {
+        AddressBookServiceStub stub = new AddressBookServiceStub(client);
         try {
             // Try adding an empty person
-            stub.addPerson(AB.Person.newBuilder().setName("").build(), null).get();
+            stub.addPerson(Person.newBuilder().setName("").build(), null).get();
 
             // we should not get to this point
             throw new RuntimeException("test failed - an expected error wasn't reported.");
@@ -119,17 +132,27 @@ public class TestAddressBook
                 throw e;
             }
         }
+    }
 
-        // Test 3: repeated parameters
-        ArrayList<AB.Person> people = new ArrayList<AB.Person>();
-        people.add(AB.Person.newBuilder().setName("John").build());
-        people.add(AB.Person.newBuilder().setName("Antonio").build());
+    private static void testRepeatedParams(Client client) throws Exception
+    {
+        ArrayList<Person> people = new ArrayList<Person>();
+        people.add(Person.newBuilder().setName("John").build());
+        people.add(Person.newBuilder().setName("Antonio").build());
 
-        AB.AddPeopleReply reply = stub.addPeople(people, null).get();
+        AddressBookServiceStub stub = new AddressBookServiceStub(client);
+        AddPeopleReply reply = stub.addPeople(people, null).get();
         List<Integer> l = reply.getLengthNameList();
         assert l.size() == 2;
         assert l.get(0).intValue() == people.get(0).getName().length();
         assert l.get(1).intValue() == people.get(1).getName().length();
+    }
 
+    private static void testBlockingStub(Client client) throws Exception
+    {
+        AddressBookServiceBlockingStub stub = new AddressBookServiceBlockingStub(client);
+        Person john = Person.newBuilder().setName("John").build();
+        AddPersonReply reply = stub.addPerson(john, "test");
+        assert reply.getId() == 1234;
     }
 }

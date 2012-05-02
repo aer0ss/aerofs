@@ -1,3 +1,4 @@
+option java_package = "com.aerofs.proto";
 option java_outer_classname = "AB";
 
 service AddressBookService {
