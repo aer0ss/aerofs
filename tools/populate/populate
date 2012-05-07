@@ -32,5 +32,5 @@ rm "$APPROOT"/cacert-prod.pem
 mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
 
 # Add the run script.
-cp "$PPWD/os" "$PPWD/run" "$APPROOT"/
+ln -sf "$PPWD/os" "$PPWD/run" "$APPROOT"/
 
