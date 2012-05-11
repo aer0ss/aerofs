@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="servlet-2.5">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../java/aerofs.spsv/lib/servlet-api.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../java/aerofs.spsv/lib/servlet-api-2.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
