@@ -33,7 +33,7 @@ public class TestAddressBook
 
     }
 
-    static class Server implements AddressBookService
+    static class Server implements IAddressBookService
     {
         AddressBookServiceReactor reactor;
 

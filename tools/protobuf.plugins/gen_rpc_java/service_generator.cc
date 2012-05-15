@@ -17,6 +17,7 @@ string methodSignature(const Descriptor* message);
 void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* printer);
 string CamelCaseToCapitalizedUnderscores(const string& input);
 string methodEnumName(const MethodDescriptor* method);
+string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualified);
 
 /**
   Generate the public Service interface
@@ -31,7 +32,7 @@ void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Pri
     }
 
     map<string, string> v1;
-    v1["ServiceName"] = service->name();
+    v1["ServiceName"] = serviceInterfaceName(service, false);
     printer->Print(v1,
                 "\n"
                 "public interface $ServiceName$\n"
@@ -76,6 +77,7 @@ void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Pri
 
     map<string, string> vars;
     vars["ServiceName"] = service->name();
+    vars["ServiceInterface"] = serviceInterfaceName(service, true);
     vars["ServiceClassName"] = ClassName(service);
     vars["EnumRpcTypes"] = enumRpcTypes.str();
     vars["BaseMessageClass"] = (service->file()->options().optimize_for() == FileOptions::LITE_RUNTIME)
@@ -297,4 +299,15 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
 string methodEnumName(const MethodDescriptor* method)
 {
     return CamelCaseToCapitalizedUnderscores(method->name());
+}
+
+/**
+  Return the interface name for the service
+  @param fullyQualified: whether we should return the full Java name or just the interface name
+ */
+string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualified)
+{
+    string name = "I" + service->full_name();
+    return (fullyQualified) ? ToJavaName(name, service->file())
+                            : name;
 }

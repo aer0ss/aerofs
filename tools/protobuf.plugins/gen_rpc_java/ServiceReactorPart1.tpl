@@ -1,13 +1,13 @@
 
 public static class $ServiceName$Reactor
 {
-  $ServiceClassName$ _service;
+  $ServiceInterface$ _service;
 
   public enum ServiceRpcTypes {
     $EnumRpcTypes$
   }
 
-  public $ServiceName$Reactor($ServiceClassName$ service)
+  public $ServiceName$Reactor($ServiceInterface$ service)
   {
     _service = service;
   }
