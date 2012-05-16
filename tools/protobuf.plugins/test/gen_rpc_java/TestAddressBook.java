@@ -60,6 +60,11 @@ public class TestAddressBook
                 throw new IllegalArgumentException("can't add a person with an empty name");
             }
 
+            // testCanSetOptionalFieldToNull
+            if (person.getName().equals("TestNullValue")) {
+                assert someValue == null;
+            }
+
             AddPersonReply reply = AddPersonReply.newBuilder().setId(1234).build();
             future.set(reply);
 
@@ -99,6 +104,7 @@ public class TestAddressBook
         testInvalidRequest(client);
         testRepeatedParams(client);
         testBlockingStub(client);
+        testCanSetOptionalFieldToNull(client);
     }
 
     private static void testAddingAPerson(Client client) throws Exception
@@ -154,5 +160,12 @@ public class TestAddressBook
         Person john = Person.newBuilder().setName("John").build();
         AddPersonReply reply = stub.addPerson(john, "test");
         assert reply.getId() == 1234;
+    }
+
+    private static void testCanSetOptionalFieldToNull(Client client) throws Exception
+    {
+        AddressBookServiceBlockingStub stub = new AddressBookServiceBlockingStub(client);
+        Person john = Person.newBuilder().setName("TestNullValue").build();
+        stub.addPerson(john, null);
     }
 }

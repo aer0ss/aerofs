@@ -271,11 +271,17 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
     stringstream methodParams;
     for (int i = 0; i < method->input_type()->field_count(); i++) {
         if (i > 0) {
-            methodParams << ", ";
+            methodParams << ",\n                               ";
         }
         const FieldDescriptor* field = method->input_type()->field(i);
         const string list = field->is_repeated() ? "List" : "";
-        methodParams << "call.get" << UnderscoresToCapitalizedCamelCase(field) << list << "()";
+        string getter = "call.get" + UnderscoresToCapitalizedCamelCase(field) + list + "()";
+
+        // Pass null if an optional field is not set
+        if (field->is_optional()) {
+            getter = "call.has" + UnderscoresToCapitalizedCamelCase(field) + "() ? " + getter + " : null";
+        }
+        methodParams << getter;
     }
 
     map<string, string> vars;
