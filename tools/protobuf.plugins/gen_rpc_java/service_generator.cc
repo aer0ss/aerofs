@@ -13,7 +13,7 @@ using namespace google::protobuf;
 using namespace google::protobuf::compiler::java;
 
 // Private helper methods
-string methodSignature(const Descriptor* message);
+string methodSignature(const Descriptor* message, bool signatureForStub);
 void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* printer);
 string CamelCaseToCapitalizedUnderscores(const string& input);
 string methodEnumName(const MethodDescriptor* method);
@@ -51,7 +51,7 @@ void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Pri
 
         map<string, string> vars;
         vars["methodName"] = UnderscoresToCamelCase(method);
-        vars["signature"] = methodSignature(method->input_type());
+        vars["signature"] = methodSignature(method->input_type(), false);
         vars["reply"] = ClassName(method->output_type());
 
         printer->Print(vars, "public com.google.common.util.concurrent.ListenableFuture<$reply$> $methodName$($signature$) throws Exception;\n");
@@ -130,7 +130,7 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
         const MethodDescriptor* method = service->method(i);
         map<string, string> subvars;
         subvars["methodName"] = UnderscoresToCamelCase(method);
-        subvars["signature"] = methodSignature(method->input_type());
+        subvars["signature"] = methodSignature(method->input_type(), true);
         subvars["CallClass"] = ClassName(method->input_type());
         subvars["ReplyClass"] = ClassName(method->output_type());
         subvars["RPC_TYPE"] = methodEnumName(method);
@@ -199,7 +199,7 @@ void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io
         map<string, string> vars;
         vars["ServiceName"] = service->name();
         vars["methodName"] = UnderscoresToCamelCase(method);
-        vars["signature"] = methodSignature(method->input_type());
+        vars["signature"] = methodSignature(method->input_type(), true);
         vars["ReplyClass"] = ClassName(method->output_type());
         vars["args"] = args.str();
 
@@ -231,7 +231,7 @@ void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io
 
   it returns: @codeline "AB.Person person, java.lang.Integer anotherField"
 */
-string methodSignature(const Descriptor* message)
+string methodSignature(const Descriptor* message, bool signatureForStub)
 {
     stringstream signature;
 
@@ -254,7 +254,11 @@ string methodSignature(const Descriptor* message)
         GOOGLE_CHECK(!javaType.empty());
 
         if (field->is_repeated()) {
-            javaType = "java.util.List<" + javaType + ">";
+            if (signatureForStub) {
+                javaType = "java.lang.Iterable<" + javaType + ">";
+            } else {
+                javaType = "java.util.List<" + javaType + ">";
+            }
         }
 
         if (i > 0) {
