@@ -5,6 +5,7 @@
 if [ x`uname -s | grep -i 'cygwin\|mingw'` != x ]; then
     S=';'
 else
+    EXEC=exec
     S=':'
 fi
 
@@ -36,4 +37,4 @@ VMARGS_PROD="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryE
 #VMARGS="$VMARGS -agentlib:hprof=heap=sites,depth=16"
 
 # set DEBUG to "gdb --args" to run in debugger
-$DEBUG java $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" com.aerofs.Main "$@"
+$EXEC $DEBUG java $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" com.aerofs.Main "$@"
