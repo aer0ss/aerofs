@@ -7,9 +7,9 @@
       </pattern>
     </extension>
     <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrPublisherTestClient" />
-    <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="localhost 9090 verkehr.jks" />
-    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../java/verkehr" />
+    <option name="VM_PARAMETERS" value="-ea" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 9090 cacert.pem" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../java/verkehr/resources/staging_tls" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
     <option name="ENABLE_SWING_INSPECTOR" value="false" />
