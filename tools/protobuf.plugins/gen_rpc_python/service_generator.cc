@@ -20,7 +20,94 @@ string pythonScopedMessageName(const FileDescriptor* thisFile, const Descriptor*
 string messageFieldsToParameterList(const Descriptor* message);
 string messageFieldAssignmentToString(const Descriptor* message);
 
-void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Printer* printer)
+/**
+  Generates the Service abstract class
+*/
+void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Printer* printer)
+{
+    map<string, string> vars;
+    vars["ServiceName"] = service->name();
+
+    printer->Print(vars, "import abc\n");
+    printer->Print(vars, "from rpc_service_pb2 import Payload\n");
+    printer->Print(vars, "class $ServiceName$(object):\n  __metaclass__ = abc.ABCMeta\n\n");
+
+    printer->Indent();
+
+    // Generate abstract methods (skip the error method).
+    for (int i = 1; i < service->method_count(); i++) {
+        vars["MethodName"] = CamelCaseToLowerCaseUnderscores(service->method(i)->name());
+
+        printer->Print(vars, "@abc.abstractmethod\n");
+        printer->Print(vars, "def $MethodName$(self, call):\n  raise Exception()\n\n");
+    }
+
+    printer->Outdent();
+}
+
+/**
+  Generates the ServiceReactor class
+*/
+void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Printer* printer)
+{
+    if (service->method_count() == 0) {
+        GOOGLE_LOG(FATAL)
+            << "Error: Service " << service->name()
+            << " has no methods. (file: "
+            << service->file()->name() << ")";
+    }
+
+    if (service->method(0)->name() != "__error__") {
+        GOOGLE_LOG(FATAL)
+            << "Error: The first method in Service "
+            << service->name() << " must be named '__error__'. (file: "
+            << service->file()->name() << ")";
+    }
+
+    map<string, string> vars;
+
+    vars["ErrorMethodEnum"] = methodNameToPythonEnum(service->method(0));
+    vars["MethodEnums"] = generateMethodCallEnums(service);
+    vars["ServiceName"] = service->name();
+
+    // Output the first part of the generated data to file
+    #include "ServiceReactorPart1.tpl.h"
+    printer->Print(vars, (char*) ServiceReactorPart1_tpl);
+
+    // Generate if-elif statements for each method callback.
+    printer->Indent();
+    printer->Indent();
+    printer->Indent();
+
+    // The first one is "if" and all subsequent statements are "elif".
+    vars["IfStatement"] = "if";
+    vars["ErrorMethodName"] = methodNameToPythonEnum(service->method(0));
+
+    for (int i = 1; i < service->method_count(); i++) {
+
+        vars["LabelName"] = methodNameToPythonEnum(service->method(i));
+        vars["MethodName"] = CamelCaseToLowerCaseUnderscores(service->method(i)->name());
+        vars["InputName"] = service->method(i)->input_type()->name();
+
+        printer->Print(vars, "$IfStatement$ t == $ServiceName$Reactor._METHOD_ENUMS_.$LabelName$:\n");
+        if (service->method(i)->input_type()->field_count() > 0) {
+            printer->Print(vars, "  call = $InputName$.FromString(payload.payload_data)\n");
+        }
+
+        vars["IfStatement"] = "elif";
+        printer->Print(vars, "  reply = self._service.$MethodName$(call)\n\n");
+    }
+
+    printer->Outdent();
+    printer->Outdent();
+    printer->Outdent();
+
+    #include "ServiceReactorPart2.tpl.h"
+    printer->Print(vars, (char*) ServiceReactorPart2_tpl);
+    printer->Print("\n");
+}
+
+void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printer* printer)
 {
     // Ensure there are methods defined in the service
     if (service->method_count() == 0) {
@@ -62,6 +149,8 @@ void ServiceGenerator::generateStubImpl(const ServiceDescriptor* service, io::Pr
             generateMethodStub(service->method(i), printer, (char*) RpcMethodStub_tpl);
             printer->Print("\n");
         }
+
+        printer->Outdent();
     }
 }
 
