@@ -3,11 +3,11 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.daemon/aerofs.daemon.iml" filepath="$PROJECT_DIR$/../../java/aerofs.daemon/aerofs.daemon.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.dtls/aerofs.dtls.iml" filepath="$PROJECT_DIR$/../../java/aerofs.dtls/aerofs.dtls.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.gui/aerofs.gui.iml" filepath="$PROJECT_DIR$/../../java/aerofs.gui/aerofs.gui.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.lib/aerofs.lib.iml" filepath="$PROJECT_DIR$/../../java/aerofs.lib/aerofs.lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.spsv/aerofs.spsv.iml" filepath="$PROJECT_DIR$/../../java/aerofs.spsv/aerofs.spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../java/libjingle.binding/libjingle.binding.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../java/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../java/swiglibs/swiglibs.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/verkehr/verkehr.iml" filepath="$PROJECT_DIR$/../../java/verkehr/verkehr.iml" />
     </modules>
   </component>

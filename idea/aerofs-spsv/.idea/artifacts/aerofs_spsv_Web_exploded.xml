@@ -7,7 +7,7 @@
         <element id="directory" name="classes">
           <element id="module-output" name="aerofs.spsv" />
           <element id="module-output" name="aerofs.lib_obfus" />
-          <element id="module-output" name="aerofs.dtls" />
+          <element id="module-output" name="swiglibs" />
         </element>
         <element id="directory" name="lib">
           <element id="file-copy" path="$PROJECT_DIR$/../../java/aerofs.spsv/war/WEB-INF/lib/org.restlet.jar" />
