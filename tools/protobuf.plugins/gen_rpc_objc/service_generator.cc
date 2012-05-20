@@ -20,6 +20,7 @@ string methodEnumName(const MethodDescriptor* method);
 
 void ServiceGenerator::generateStubHeader(const ServiceDescriptor* service, io::Printer* printer)
 {
+    // TODO Pretty dirty that this is in all three service_generator.cc files... might want to refactor to clean this up later.
     if (service->method_count() == 0) {
         GOOGLE_LOG(FATAL) << "Error: Service " << service->name() << " has no methods. (file: " << service->file()->name() << ")";
     }

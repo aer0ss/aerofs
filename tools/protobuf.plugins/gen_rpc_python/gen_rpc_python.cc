@@ -38,7 +38,9 @@ bool GenRpcPython::Generate(const FileDescriptor* file, const std::string& /*par
         io::Printer printer(output.get(), '$');
 
         for (int i = 0; i < file->service_count(); i++) {
-            ServiceGenerator::generateStubImpl(file->service(i), &printer);
+            ServiceGenerator::generateService(file->service(i), &printer);
+            ServiceGenerator::generateReactor(file->service(i), &printer);
+            ServiceGenerator::generateStub(file->service(i), &printer);
         }
     }
     return true;
