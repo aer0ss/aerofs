@@ -78,11 +78,14 @@ void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Pri
 
         printer->Print(vars, "$IfStatement$ t == $ServiceName$Reactor._METHOD_ENUMS_.$LabelName$:\n");
         if (service->method(i)->input_type()->field_count() > 0) {
-            printer->Print(vars, "  call = $InputName$.FromString(payload.payload_data)\n");
+            printer->Print(vars, "  call = $InputName$.FromString(payload.payload_data)\n"
+                                 "  reply = self._service.$MethodName$(call)\n\n");
+        }
+        else {
+            printer->Print(vars, "  reply = self._service.$MethodName$()\n\n");
         }
 
         vars["IfStatement"] = "elif";
-        printer->Print(vars, "  reply = self._service.$MethodName$(call)\n\n");
     }
 
     printer->Outdent();
