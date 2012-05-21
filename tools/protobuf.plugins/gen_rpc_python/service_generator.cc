@@ -28,18 +28,17 @@ void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Pri
     map<string, string> vars;
     vars["ServiceName"] = service->name();
 
-    printer->Print(vars, "import abc\n");
-    printer->Print(vars, "from rpc_service_pb2 import Payload\n");
-    printer->Print(vars, "class $ServiceName$(object):\n  __metaclass__ = abc.ABCMeta\n\n");
-
+    printer->Print(vars, "import abc\n"
+                          "from rpc_service_pb2 import Payload\n"
+                          "class $ServiceName$(object):\n  __metaclass__ = abc.ABCMeta\n\n");
     printer->Indent();
 
     // Generate abstract methods (skip the error method).
     for (int i = 1; i < service->method_count(); i++) {
         vars["MethodName"] = CamelCaseToLowerCaseUnderscores(service->method(i)->name());
 
-        printer->Print(vars, "@abc.abstractmethod\n");
-        printer->Print(vars, "def $MethodName$(self, call):\n  raise Exception()\n\n");
+        printer->Print(vars, "@abc.abstractmethod\n"
+                             "def $MethodName$(self, call):\n  raise Exception()\n\n");
     }
 
     printer->Outdent();
@@ -50,19 +49,7 @@ void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Pri
 */
 void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Printer* printer)
 {
-    if (service->method_count() == 0) {
-        GOOGLE_LOG(FATAL)
-            << "Error: Service " << service->name()
-            << " has no methods. (file: "
-            << service->file()->name() << ")";
-    }
-
-    if (service->method(0)->name() != "__error__") {
-        GOOGLE_LOG(FATAL)
-            << "Error: The first method in Service "
-            << service->name() << " must be named '__error__'. (file: "
-            << service->file()->name() << ")";
-    }
+    checkThatRpcErrorIsDefined(service);
 
     map<string, string> vars;
 

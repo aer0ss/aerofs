@@ -24,12 +24,7 @@ string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualifie
 */
 void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Printer* printer)
 {
-    if (service->method_count() == 0) {
-        GOOGLE_LOG(FATAL) << "Error: Service " << service->name() << " has no methods. (file: " << service->file()->name() << ")";
-    }
-    if (service->method(0)->name() != "__error__") {
-        GOOGLE_LOG(FATAL) << "Error: The first method in Service " << service->name() << " must be named '__error__'. (file: " << service->file()->name() << ")";
-    }
+    checkThatRpcErrorIsDefined(service);
 
     map<string, string> v1;
     v1["ServiceName"] = serviceInterfaceName(service, false);

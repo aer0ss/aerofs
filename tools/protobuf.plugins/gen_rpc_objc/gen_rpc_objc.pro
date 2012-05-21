@@ -6,7 +6,8 @@ SOURCES += \
     ../3rd_party/google/protobuf/compiler/objc/objc_helpers.cc \   # FIXME: These come from protobuf-objc
     ../3rd_party/google/protobuf/objectivec-descriptor.pb.cc \     # We should probably add it as a dependendency
     gen_rpc_objc.cc \
-    service_generator.cc
+    service_generator.cc \
+    ../common/common.cc
 
 HEADERS += \
     gen_rpc_objc.h \
