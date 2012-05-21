@@ -202,7 +202,12 @@ void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io
                        "\n"
                        "public $ReplyClass$ $methodName$($signature$) throws Exception\n"
                        "{\n"
-                       "  return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), Exception.class);\n"
+                       "  try {\n"
+                       "    return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), Exception.class);\n"
+                       "  } catch (Exception e) {\n"
+                       "    if (e.getCause() instanceof Exception) {throw (Exception)e.getCause();}\n"
+                       "    else {throw e;}\n"
+                       "  }\n"
                        "}\n"
                        );
     }

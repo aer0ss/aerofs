@@ -105,6 +105,7 @@ public class TestAddressBook
         testRepeatedParams(client);
         testBlockingStub(client);
         testCanSetOptionalFieldToNull(client);
+        testCorrectExceptionOnBlockingClient(client);
     }
 
     private static void testAddingAPerson(Client client) throws Exception
@@ -167,5 +168,23 @@ public class TestAddressBook
         AddressBookServiceBlockingStub stub = new AddressBookServiceBlockingStub(client);
         Person john = Person.newBuilder().setName("TestNullValue").build();
         stub.addPerson(john, null);
+    }
+
+    private static void testCorrectExceptionOnBlockingClient(Client client) throws Exception
+    {
+        AddressBookServiceBlockingStub stub = new AddressBookServiceBlockingStub(client);
+
+        try {
+            // Try adding an empty person
+            stub.addPerson(Person.newBuilder().setName("").build(), null);
+
+            // we should not get to this point
+            throw new RuntimeException("test failed - an expected error wasn't reported.");
+        } catch (IllegalArgumentException e1) {
+            // expected error, test successful
+        } catch (Exception e2) {
+            System.out.println("Unexpected error.");
+            throw e2;
+        }
     }
 }
