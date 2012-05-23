@@ -71,15 +71,16 @@ else
 fi
 
 VERSION=$VER_MAJOR_MINOR.$BUILD
+VERSION_FILE=version
 
 echo '+--------------'
 echo '|' $VERSION $1
 echo '+--------------'
 
 ##################################
-# make aerofs.ver and staging
+# make ver and staging
 
-echo $VERSION > $AEROFS_DIR/aerofs.ver
+echo $VERSION > $AEROFS_DIR/$VERSION_FILE
 
 if [ $PROD == 0 ]; then
   touch $AEROFS_DIR/staging
@@ -248,5 +249,5 @@ for i in $CHKSUM_LIST; do
     FILE_PATH=`echo $i | sed -e 's/.*://'`
     FILE_NAME=`echo $i | sed -e 's/:.*//'`
     CHKSUM=`shasum -a 256 $FILE_PATH | sed -e 's/ .*//'`
-    echo "$FILE_NAME=$CHKSUM" >> $AEROFS_DIR/aerofs.ver
+    echo "$FILE_NAME=$CHKSUM" >> $AEROFS_DIR/$VERSION_FILE
 done

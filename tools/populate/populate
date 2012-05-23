@@ -15,6 +15,7 @@ if [ x"$1" == x ]; then
 fi
 APPROOT="$1"
 ASIS="$2"
+VERSION_FILE=version
 
 PPWD=`dirname $0`
 OS=`"$PPWD"/os`
@@ -27,7 +28,7 @@ cp -R "$ASIS"/$OS/* "$APPROOT"/
 
 # Set-up a staging environment
 touch "$APPROOT"/staging
-echo "100.0.0" > "$APPROOT"/aerofs.ver
+echo "100.0.0" > "$APPROOT"/$VERSION_FILE
 rm "$APPROOT"/cacert-prod.pem
 mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
 

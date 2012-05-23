@@ -24,10 +24,11 @@ fi
 
 BUILDTYPE=$1
 PPWD=$PWD
+VERSION_FILE=version
 
 cd ../../release.out
 
-VER=`head -1 aerofs/aerofs.ver`
+VER=`head -1 aerofs/$VERSION_FILE`
 
 NAME=aerofs-$VER-$1     # e.g. aerofs-EA8.1-staging
 ZIP=$NAME.zip           # e.g. aerofs-EA8.1-staging.zip
@@ -186,9 +187,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
         tar zxf *.tgz;
         cp -rf aerofs/* /data/aerofs/$1;
         mv $TMP_AEROFS_S3_JAR /data/aerofs/$1/aerofs.jar;
-        # grep -v aerofs.jar /data/aerofs/$1/aerofs.ver > /tmp/aerofs.ver.tmp;
-        # mv /tmp/aerofs.ver.tmp /data/aerofs/$1/aerofs.ver;
-        echo EA1000.1 > /data/aerofs/$1/aerofs.ver;
+        echo EA1000.1 > /data/aerofs/$1/$VERSION_FILE;
         ps -ef | grep user.$1 | grep -v grep; \
         # the operator should kill cli and daemon manually
         # kill -9 \`ps -ef | grep user.$1\ cli | grep -v grep | awk '{print \$2}'\`; \
