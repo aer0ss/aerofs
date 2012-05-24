@@ -17,10 +17,10 @@ rm -rf current.ver
 ROOT=$1
 if [ "$ROOT" == "prod" ]
 then
-wget --no-check-certificate --no-cache -q https://www.aerofs.com/downloads/current.ver
+wget --no-check-certificate --no-cache -q https://nocache.client.aerofs.com/current.ver
 elif [ "$ROOT" == "staging" ]
 then
-wget --no-check-certificate --no-cache -q https://www.aerofs.com/staging/downloads/current.ver
+wget --no-check-certificate --no-cache -q https://nocache.client.staging.aerofs.com/current.ver
 fi
 
 VER=`cat current.ver | sed -e 's/.*=//'`

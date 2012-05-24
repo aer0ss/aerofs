@@ -59,9 +59,11 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     cd $DEFLATED; \
     unzip -qo ~/$ZIP; \
     "
-if [ $PROD == 1 ]; then 
+if [ $PROD == 1 ]; then
+  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com 
   DOWNLOADS=/data/prod-downloads
-else 
+else
+  DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
   DOWNLOADS=/data/staging-downloads
 fi
 ###################
@@ -166,6 +168,12 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     mv $PATCHER/patch-* $DOWNLOADS; \
     chmod a+r $DOWNLOADS/patch-*; \
     "
+
+###################
+echo upload to S3/CloudFront
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET; \
+    "
 	
 if [ $DEPLOY_SP_DAEMON == 1 ]; then
     ###################
@@ -176,9 +184,9 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
     kscp -P $SP_SVR_PORT aerofs-s3.jar $SP_SVR_LOGIN:$TMP_AEROFS_S3_JAR
 
     if [ $PROD == 1 ]; then
-        URL=https://www.aerofs.com/downloads/aerofs-x86_64.tgz
+        URL=https://nocache.client.aerofs.com/aerofs-x86_64.tgz
     else
-        URL=https://www.aerofs.com/staging/downloads/aerofs-x86_64.tgz
+        URL=https://nocache.client.staging.aerofs.com/aerofs-x86_64.tgz
     fi
 
     kssh -p $SP_SVR_PORT $SP_SVR_LOGIN \
@@ -209,6 +217,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
     chmod a+r $DOWNLOADS/current.ver; \
+    s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET; \
     echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
     "
 echo '+-------------------------------------------+'
