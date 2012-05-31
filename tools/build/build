@@ -187,7 +187,7 @@ tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
 echo creating jars
 jar cfm aerofs-s3.unobf.jar m.tmp -C bin com
 
-rm -rf bin/com/aerofs/s3 bin/com/aerofs/daemon/core/phy/s3 bin/com/aerofs/lib/aws bin/com/aerofs/verkehr/example bin/com/aerofs/verkehr/server
+rm -rf bin/com/aerofs/s3 bin/com/aerofs/program/s3setup bin/com/aerofs/daemon/core/phy/s3 bin/com/aerofs/lib/aws bin/com/aerofs/verkehr/example bin/com/aerofs/verkehr/server
 jar cfm aerofs.unobf.jar m.tmp -C bin com
 
 # echo remove unnecessary files
