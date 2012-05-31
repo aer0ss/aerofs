@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="exploded-war" build-on-make="true" name="aerofs.spsv:Web exploded">
-    <output-path>$PROJECT_DIR$/../../java/aerofs.spsv/out.artifacts/aerofs_spsv_Web_exploded</output-path>
+    <output-path>$PROJECT_DIR$/../../war.out/out.artifacts/aerofs_spsv_Web_exploded</output-path>
     <root id="root">
       <element id="javaee-facet-resources" facet="aerofs.spsv/web/spsv servlet" />
       <element id="directory" name="WEB-INF">
