@@ -2,15 +2,15 @@
   <configuration default="false" name="TestUnicastConnectionSink" type="JUnit" factoryName="JUnit">
     <extension name="coverage" enabled="false" merge="false" runner="idea">
       <pattern>
-        <option name="PATTERN" value="com.aerofs.daemon.transport.base.*" />
+        <option name="PATTERN" value="com.aerofs.daemon.tng.base.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
     <module name="aerofs.daemon" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
-    <option name="PACKAGE_NAME" value="com.aerofs.daemon.transport.base" />
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.daemon.transport.base.TestUnicastConnectionSink" />
+    <option name="PACKAGE_NAME" value="com.aerofs.daemon.tng.base" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.daemon.tng.base.TestUnicastConnectionSink" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea" />

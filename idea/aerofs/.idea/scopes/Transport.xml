@@ -1,3 +1,3 @@
 <component name="DependencyValidationManager">
-  <scope name="Transport" pattern="[aerofs.daemon]:com.aerofs.daemon.transport..*&amp;&amp;![aerofs.daemon]:com.aerofs.daemon.transport.old..*" />
+  <scope name="Transport" pattern="[aerofs.daemon]:com.aerofs.daemon.tng..*&amp;&amp;![aerofs.daemon]:com.aerofs.daemon.tng.old..*" />
 </component>

@@ -8,14 +8,14 @@
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/linker_old" includeSubdirectories="true" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/TCP.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Unicast.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Stores.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/HostnameMonitor.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/HdTransportReconfigRemoteDevice.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Multicast.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/ARP.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/StartPulse.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/TCP.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/Unicast.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/Stores.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/HostnameMonitor.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/HdTransportReconfigRemoteDevice.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/Multicast.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/ARP.java" />
+      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/StartPulse.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/EOTpSubsequentPulse.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/EOTpStartPulse.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/IPulseEvent.java" />
