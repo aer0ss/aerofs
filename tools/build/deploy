@@ -172,7 +172,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
 ###################
 echo upload to S3/CloudFront
 kssh -p $SVR_PORT $SVR_LOGIN \
-    "s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET; \
+    "s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
     "
 
 if [ $DEPLOY_SP_DAEMON == 1 ]; then
@@ -217,7 +217,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
     chmod a+r $DOWNLOADS/current.ver; \
-    s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET; \
+    s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
     echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
     "
 echo '+-------------------------------------------+'

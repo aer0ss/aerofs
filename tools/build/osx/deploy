@@ -40,6 +40,6 @@ kssh -p $SVR_PORT $SVR_LOGIN \
      "cd /data/$ROOT-downloads/; \
      cp AeroFSInstall-$VER.dmg AeroFSInstall.dmg; \
      mv aerofs-osx-temp.zip aerofs-osx-$VER.zip; \
-     s3cmd -P --cf-invalidate sync /data/$ROOT-downloads/* $DOWNLOAD_BUCKET"
+     s3cmd -P --cf-invalidate sync /data/$ROOT-downloads/* $DOWNLOAD_BUCKET > /dev/null"
 
 rm -rf Release
