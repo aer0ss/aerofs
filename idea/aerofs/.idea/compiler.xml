@@ -7,9 +7,9 @@
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
+      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/linker_old" includeSubdirectories="true" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/TCP.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Unicast.java" />
-      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/linker_old" includeSubdirectories="true" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/Stores.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/HostnameMonitor.java" />
       <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt/HdTransportReconfigRemoteDevice.java" />
