@@ -1,5 +1,7 @@
 #!/bin/bash
 #This scripts generate the 32 or 64 deb installation packages
+
+set -e
 if [ $# -ne 3 ]
 then
     echo usage '$0 [path to aerofs.release] [output file] [prod|staging]'
@@ -21,9 +23,10 @@ depends='openjdk-6-jre(>= 6b18-1.8.2-4ubuntu1~8.04.1), sharutils'
 maintainer='AeroFS Team <support@aerofs.com>'
 descrip='AeroFS: File syncing without servers.'
 
+TEMP_DIR=/tmp/release-$build
 #clean up from past install
-rm -rf /tmp/aerofs.deb.tmp
-tmpdir=/tmp/aerofs.deb.tmp
+rm -rf $TEMP_DIR/aerofs.deb.tmp
+tmpdir=$TEMP_DIR/aerofs.deb.tmp
 mkdir $tmpdir 
 cd $tmpdir
 

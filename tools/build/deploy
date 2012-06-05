@@ -7,9 +7,6 @@ set -e
 
 DEPLOY_SP_DAEMON=0
 
-SVR_PORT=22
-SVR_LOGIN=release@www.aerofs.com
-
 SP_SVR_PORT=22
 SP_SVR_LOGIN=aerofs@x1.aerofs.com
 
@@ -23,6 +20,26 @@ if [ $1 == prod ]; then
 else
   PROD=0
 fi
+
+if [ $PROD == 1 ]; then
+  SVR_PORT=22
+  SVR_LOGIN=release-prod@b.arrowfs.org
+  SVR_ROOT=/home/release-prod
+  SVR_TEMP=/tmp/release-prod
+else
+  SVR_PORT=22
+  SVR_LOGIN=release-staging@b.arrowfs.org
+  SVR_ROOT=/home/release-staging
+  SVR_TEMP=/tmp/release-staging
+fi
+
+if [ $PROD == 1 ]; then
+   echo "Please enter the passphrase for code signing:"
+   read -s PASSPHRASE
+else
+  PASSPHRASE="temp123"
+fi
+
 
 BUILDTYPE=$1
 PPWD=$PWD
@@ -47,7 +64,6 @@ if [ $PROD == 1 ]; then
 fi
 
 echo deploying on the server
-ROOT=/home/release
 
 DEFLATED=aerofs.release/$1
 
@@ -56,7 +72,9 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     rm -rf $DEFLATED; \
     mkdir -p $DEFLATED; \
     cd $DEFLATED; \
-    unzip -qo ~/$ZIP; \
+    unzip -qo ~/$ZIP;
+    rm -rf $SVR_TEMP;
+    mkdir $SVR_TEMP; \
     "
 if [ $PROD == 1 ]; then
   DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com 
@@ -68,18 +86,18 @@ fi
 ###################
 echo deploying Linux installer .deb
 
-kscp -P $SVR_PORT $PPWD/build_deb $SVR_LOGIN:/tmp/
+kscp -P $SVR_PORT $PPWD/build_deb $SVR_LOGIN:$SVR_TEMP/
 
 kssh -p $SVR_PORT $SVR_LOGIN \
     "cd ~; \
-    chmod a+x /tmp/build_deb; \
-    /tmp/build_deb ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb $BUILDTYPE; \
+    chmod a+x /$SVR_TEMP/build_deb; \
+    /$SVR_TEMP/build_deb ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb $BUILDTYPE; \
 "
 
 ###################
 echo deploying Linux installer .tgz
 
-LINUX_TMP=/tmp/aerofs.tmp
+LINUX_TMP=$SVR_TEMP/aerofs.tmp
 LINUX_INST_TGZ=aerofs-installer.tgz
 
 kssh -p $SVR_PORT $SVR_LOGIN \
@@ -140,29 +158,31 @@ kssh -p $SVR_PORT $SVR_LOGIN \
 ###################
 echo deploying Windows package
 
-PACKAGER=$ROOT/aerofs.nsis/packager
+PACKAGER=$SVR_ROOT/aerofs.nsis/packager
 
 #echo at \~/$ZIP, $PACKAGER/aerofs, $DOWNLOADS/AeroFSInstall-$VER-$1.exe, and $DOWNLOADS/AeroFSInstall.exe
-kssh -p $SVR_PORT $SVR_LOGIN \
-    "rm -rf $PACKAGER/aerofs*; \
+    DATA="rm -rf $PACKAGER/aerofs*; \
     cd $PACKAGER; \
     unzip -qo ~/$ZIP; \
 	cp -r $PACKAGER/aerofs.win/* $PACKAGER/aerofs; \
     chmod -R a+rx $PACKAGER/aerofs*; \
-    /usr/local/nsis/nsis-2.46/bin/makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_TEMP_NAME=AeroFSInstall-$VER \
-        $PACKAGER/setup.nsi; \
+    makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_TEMP_NAME=AeroFSInstall-$VER $PACKAGER/setup.nsi; \
+    export PASSPHRASE=\"$PASSPHRASE\"; \
+    printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll -tr 10 -n \"AeroFS\" -i \"http://www.aerofs.com\" $DOWNLOADS/AeroFSInstall-$VER.exe; \
     chmod a+r $DOWNLOADS/AeroFSInstall-$VER.exe; \
-    rm -rf $DOWNLOADS/AeroFSInstall.exe; \
+    rm -f $DOWNLOADS/AeroFSInstall.exe; \
     cp $DOWNLOADS/AeroFSInstall-$VER.exe $DOWNLOADS/AeroFSInstall.exe; \
     chmod a+r $DOWNLOADS/AeroFSInstall.exe; \
     "
 
+kssh -p $SVR_PORT $SVR_LOGIN $DATA;
 ###################
 echo creating Windows patches
-PATCHER=$ROOT/aerofs.nsis/patcher
+PATCHER=$SVR_ROOT/aerofs.nsis/patcher
 
 kssh -p $SVR_PORT $SVR_LOGIN \
-    "bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $1; \
+    " export PASSPHRASE=\"$PASSPHRASE\"; \
+    bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $1; \
     rm $DOWNLOADS/patch-*; \
     mv $PATCHER/patch-* $DOWNLOADS; \
     chmod a+r $DOWNLOADS/patch-*; \
