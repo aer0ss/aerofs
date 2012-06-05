@@ -101,11 +101,12 @@ cp -R "$ASIS"/linux64/* "$AEROFS_LINUX64_DIR"/
 cp -R "$ASIS"/linux.inst/* "$AEROFS_INST_DIR"/
 #cp "$LAUNCHER"/bin/$OS/* "$APPROOT"/
 
+rm -rf "$AEROFS_DIR"/lib.test
+
 # Adjust files for prod or staging
 if [ $PROD == 1 ]; then
     rm "$AEROFS_DIR"/cacert-staging.pem
     mv "$AEROFS_DIR"/cacert-prod.pem "$AEROFS_DIR"/cacert.pem
-    rm -rf "$AEROFS_DIR"/lib.test
 else
     rm "$AEROFS_DIR"/cacert-prod.pem
     mv "$AEROFS_DIR"/cacert-staging.pem "$AEROFS_DIR"/cacert.pem
