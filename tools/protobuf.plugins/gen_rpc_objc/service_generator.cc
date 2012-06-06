@@ -1,4 +1,5 @@
 #include "service_generator.h"
+#include "common/common.h"
 
 #include <sstream>
 
@@ -20,12 +21,7 @@ string methodEnumName(const MethodDescriptor* method);
 
 void ServiceGenerator::generateStubHeader(const ServiceDescriptor* service, io::Printer* printer)
 {
-    if (service->method_count() == 0) {
-        GOOGLE_LOG(FATAL) << "Error: Service " << service->name() << " has no methods. (file: " << service->file()->name() << ")";
-    }
-    if (service->method(0)->name() != "__error__") {
-        GOOGLE_LOG(FATAL) << "Error: The first method in Service " << service->name() << " must be named '__error__'. (file: " << service->file()->name() << ")";
-    }
+    checkThatRpcErrorIsDefined(service);
 
     map<string, string> vars;
     vars["ServiceStubName"] = ClassName(service) + "Stub";
@@ -121,7 +117,8 @@ void generateMethodStub(const MethodDescriptor* method, io::Printer* printer)
     stringstream setters;
     for (int j = 0; j < method->input_type()->field_count(); j++) {
         const FieldDescriptor* field = method->input_type()->field(j);
-        setters << "  [call set" << UnderscoresToCapitalizedCamelCase(field)
+        string asArray = field->is_repeated() ? "Array" : "";
+        setters << "  [call set" << UnderscoresToCapitalizedCamelCase(field) << asArray
                 << ":" << UnderscoresToCamelCase(field) << "];\n";
     }
 
@@ -249,6 +246,10 @@ const char* PrimitiveTypeName(const FieldDescriptor* field)
 */
 string getTypeName(const FieldDescriptor* field)
 {
+    if (field->is_repeated()) {
+        return "NSArray*";
+    }
+
     ObjectiveCType type = GetObjectiveCType(field);
     switch (type) {
     case OBJECTIVECTYPE_MESSAGE:

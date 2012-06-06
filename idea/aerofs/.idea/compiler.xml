@@ -7,61 +7,7 @@
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
-      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/net/tng" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/tcpmt" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/xmpp" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/zephyr" includeSubdirectories="true" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/ITransport.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/AddressUtils.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/TPUtil.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/TransportDiagnosisState.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/CRCByteArrayInputStream.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/CRCByteArrayOutputStream.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdBeginStream.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdChunk.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdLinkStateChanged.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdMaxcastMessage.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdPulse.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdRxEndStream.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdStartPulse.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdTransportFlood.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdTransportFloodQuery.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdTransportPing.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdTxAbortStream.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdTxEndStream.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdUnicastMessage.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/HdUpdateStores.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IDebug.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IIdentifier.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IMaxcast.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/INetworkStats.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IPipeController.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IPipeDebug.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IPulseHandlerImpl.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/ITransportImpl.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/IUnicast.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/MaxcastFilterReceiver.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/MaxcastFilterSender.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/PulseHandlerUtil.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/PulseManager.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/StartPulseBase.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/StreamManager.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/transport/lib/SubsequentPulse.java" />
       <directory url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/linker_old" includeSubdirectories="true" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/TCP.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/Unicast.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/Stores.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/HostnameMonitor.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/HdTransportReconfigRemoteDevice.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/Multicast.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/ARP.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/tng/tcpmt/StartPulse.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/EOTpSubsequentPulse.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/EOTpStartPulse.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/event/net/IPulseEvent.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/admin/HdTransportFloodQuery.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/admin/HdTransportPing.java" />
-      <file url="file://$PROJECT_DIR$/../../java/aerofs.daemon/src/com/aerofs/daemon/core/admin/HdTransportFlood.java" />
     </excludeFromCompile>
     <resourceExtensions />
     <wildcardResourcePatterns>

@@ -6,3 +6,4 @@ workspace.xml
 .DS_Store
 build.properties
 aerofs.release
+out.artifacts

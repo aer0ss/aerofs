@@ -1,3 +1,7 @@
+#!/bin/sh
+
+set -e
+
 if [ x"$1" == x ]; then
     echo usage '$0 [staging|prod]'
     exit
@@ -11,10 +15,12 @@ rm -rf current.ver
 ROOT=$1
 if [ "$ROOT" == "prod" ]
 then
-wget --no-check-certificate --no-cache -q https://www.aerofs.com/downloads/current.ver
+DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
+wget --no-check-certificate --no-cache -q https://nocache.client.aerofs.com/current.ver
 elif [ "$ROOT" == "staging" ]
 then
-wget --no-check-certificate --no-cache -q https://www.aerofs.com/staging/downloads/current.ver
+DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
+wget --no-check-certificate --no-cache -q https://nocache.client.staging.aerofs.com/current.ver
 fi
 
 VER=`cat current.ver | sed -e 's/.*=//'`
@@ -33,6 +39,7 @@ kscp -P $SVR_PORT aerofs-osx-$VER.zip $SVR_LOGIN:/data/$ROOT-downloads/aerofs-os
 kssh -p $SVR_PORT $SVR_LOGIN \
      "cd /data/$ROOT-downloads/; \
      cp AeroFSInstall-$VER.dmg AeroFSInstall.dmg; \
-     mv aerofs-osx-temp.zip aerofs-osx-$VER.zip;"
+     mv aerofs-osx-temp.zip aerofs-osx-$VER.zip; \
+     s3cmd -P --cf-invalidate sync /data/$ROOT-downloads/* $DOWNLOAD_BUCKET > /dev/null"
 
 rm -rf Release

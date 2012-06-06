@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 # usage $0 [staging|prod]
 # exit non-zero if deployment failed
 
@@ -24,10 +26,11 @@ fi
 
 BUILDTYPE=$1
 PPWD=$PWD
+VERSION_FILE=version
 
 cd ../../release.out
 
-VER=`head -1 aerofs/aerofs.ver`
+VER=`head -1 aerofs/$VERSION_FILE`
 
 NAME=aerofs-$VER-$1     # e.g. aerofs-EA8.1-staging
 ZIP=$NAME.zip           # e.g. aerofs-EA8.1-staging.zip
@@ -56,9 +59,11 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     cd $DEFLATED; \
     unzip -qo ~/$ZIP; \
     "
-if [ $PROD == 1 ]; then 
+if [ $PROD == 1 ]; then
+  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com 
   DOWNLOADS=/data/prod-downloads
-else 
+else
+  DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
   DOWNLOADS=/data/staging-downloads
 fi
 ###################
@@ -162,8 +167,14 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     rm $DOWNLOADS/patch-*; \
     mv $PATCHER/patch-* $DOWNLOADS; \
     chmod a+r $DOWNLOADS/patch-*; \
+    " || true
+
+###################
+echo upload to S3/CloudFront
+kssh -p $SVR_PORT $SVR_LOGIN \
+    "s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
     "
-	
+
 if [ $DEPLOY_SP_DAEMON == 1 ]; then
     ###################
     echo deploying and restarting sp daemon
@@ -173,9 +184,9 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
     kscp -P $SP_SVR_PORT aerofs-s3.jar $SP_SVR_LOGIN:$TMP_AEROFS_S3_JAR
 
     if [ $PROD == 1 ]; then
-        URL=https://www.aerofs.com/downloads/aerofs-x86_64.tgz
+        URL=https://nocache.client.aerofs.com/aerofs-x86_64.tgz
     else
-        URL=https://www.aerofs.com/staging/downloads/aerofs-x86_64.tgz
+        URL=https://nocache.client.staging.aerofs.com/aerofs-x86_64.tgz
     fi
 
     kssh -p $SP_SVR_PORT $SP_SVR_LOGIN \
@@ -186,9 +197,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
         tar zxf *.tgz;
         cp -rf aerofs/* /data/aerofs/$1;
         mv $TMP_AEROFS_S3_JAR /data/aerofs/$1/aerofs.jar;
-        # grep -v aerofs.jar /data/aerofs/$1/aerofs.ver > /tmp/aerofs.ver.tmp;
-        # mv /tmp/aerofs.ver.tmp /data/aerofs/$1/aerofs.ver;
-        echo EA1000.1 > /data/aerofs/$1/aerofs.ver;
+        echo EA1000.1 > /data/aerofs/$1/$VERSION_FILE;
         ps -ef | grep user.$1 | grep -v grep; \
         # the operator should kill cli and daemon manually
         # kill -9 \`ps -ef | grep user.$1\ cli | grep -v grep | awk '{print \$2}'\`; \
@@ -208,6 +217,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
     chmod a+r $DOWNLOADS/current.ver; \
+    s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
     echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
     "
 echo '+-------------------------------------------+'

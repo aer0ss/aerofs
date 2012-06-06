@@ -13,25 +13,21 @@ using namespace google::protobuf;
 using namespace google::protobuf::compiler::java;
 
 // Private helper methods
-string methodSignature(const Descriptor* message);
+string methodSignature(const Descriptor* message, bool signatureForStub);
 void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* printer);
 string CamelCaseToCapitalizedUnderscores(const string& input);
 string methodEnumName(const MethodDescriptor* method);
+string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualified);
 
 /**
   Generate the public Service interface
 */
 void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Printer* printer)
 {
-    if (service->method_count() == 0) {
-        GOOGLE_LOG(FATAL) << "Error: Service " << service->name() << " has no methods. (file: " << service->file()->name() << ")";
-    }
-    if (service->method(0)->name() != "__error__") {
-        GOOGLE_LOG(FATAL) << "Error: The first method in Service " << service->name() << " must be named '__error__'. (file: " << service->file()->name() << ")";
-    }
+    checkThatRpcErrorIsDefined(service);
 
     map<string, string> v1;
-    v1["ServiceName"] = service->name();
+    v1["ServiceName"] = serviceInterfaceName(service, false);
     printer->Print(v1,
                 "\n"
                 "public interface $ServiceName$\n"
@@ -50,7 +46,7 @@ void ServiceGenerator::generateService(const ServiceDescriptor* service, io::Pri
 
         map<string, string> vars;
         vars["methodName"] = UnderscoresToCamelCase(method);
-        vars["signature"] = methodSignature(method->input_type());
+        vars["signature"] = methodSignature(method->input_type(), false);
         vars["reply"] = ClassName(method->output_type());
 
         printer->Print(vars, "public com.google.common.util.concurrent.ListenableFuture<$reply$> $methodName$($signature$) throws Exception;\n");
@@ -76,6 +72,7 @@ void ServiceGenerator::generateReactor(const ServiceDescriptor* service, io::Pri
 
     map<string, string> vars;
     vars["ServiceName"] = service->name();
+    vars["ServiceInterface"] = serviceInterfaceName(service, true);
     vars["ServiceClassName"] = ClassName(service);
     vars["EnumRpcTypes"] = enumRpcTypes.str();
     vars["BaseMessageClass"] = (service->file()->options().optimize_for() == FileOptions::LITE_RUNTIME)
@@ -128,7 +125,7 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
         const MethodDescriptor* method = service->method(i);
         map<string, string> subvars;
         subvars["methodName"] = UnderscoresToCamelCase(method);
-        subvars["signature"] = methodSignature(method->input_type());
+        subvars["signature"] = methodSignature(method->input_type(), true);
         subvars["CallClass"] = ClassName(method->input_type());
         subvars["ReplyClass"] = ClassName(method->output_type());
         subvars["RPC_TYPE"] = methodEnumName(method);
@@ -143,16 +140,19 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
 
        for (int j = 0; j < method->input_type()->field_count(); j++) {
            const FieldDescriptor* field = method->input_type()->field(j);
+           map<string, string> vars;
+           vars["Field"] = UnderscoresToCapitalizedCamelCase(field);
+           vars["varName"] = UnderscoresToCamelCase(field);
+
            if (field->is_optional()) {
-               printer->Print(
-                           "  if ($var$ != null) { builder.set$Field$($var$); }\n",
-                           "Field", UnderscoresToCapitalizedCamelCase(field),
-                           "var", UnderscoresToCamelCase(field));
+               printer->Print(vars,
+                           "  if ($varName$ != null) { builder.set$Field$($varName$); }\n");
+           } else if (field->is_repeated()) {
+               printer->Print(vars,
+                           "  if ($varName$ != null) { builder.addAll$Field$($varName$); }\n");
            } else {
-               printer->Print(
-                           "  builder.set$Field$($var$);\n",
-                           "Field", UnderscoresToCapitalizedCamelCase(field),
-                           "var", UnderscoresToCamelCase(field));
+               printer->Print(vars,
+                           "  builder.set$Field$($varName$);\n");
            }
        }
 
@@ -160,6 +160,55 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
                        "\n"
                        "  return sendQuery($ServiceClassName$Reactor.ServiceRpcTypes.$RPC_TYPE$, builder.build().toByteString(), $ReplyClass$.newBuilder());\n"
                       "}\n"
+                       );
+    }
+
+    printer->Outdent();
+    printer->Print("}\n");
+}
+
+void ServiceGenerator::generateBlockingStub(const ServiceDescriptor* service, io::Printer* printer)
+{
+    map<string, string> vars;
+    vars["ServiceName"] = service->name();
+
+    #include "BlockingStub.tpl.h"
+    printer->Print(vars, (char*) BlockingStub_tpl);
+
+    printer->Indent();
+
+    // Start at 1 because the first method is the __error__ method
+    for (int i = 1; i < service->method_count(); i++) {
+
+        const MethodDescriptor* method = service->method(i);
+
+        // generate a string with all the arguments separated by comma
+        stringstream args;
+        for (int i = 0; i < method->input_type()->field_count(); i++) {
+            if (i > 0) {
+                args << ", ";
+            }
+            args << method->input_type()->field(i)->camelcase_name();
+        }
+
+        map<string, string> vars;
+        vars["ServiceName"] = service->name();
+        vars["methodName"] = UnderscoresToCamelCase(method);
+        vars["signature"] = methodSignature(method->input_type(), true);
+        vars["ReplyClass"] = ClassName(method->output_type());
+        vars["args"] = args.str();
+
+        printer->Print(vars,
+                       "\n"
+                       "public $ReplyClass$ $methodName$($signature$) throws Exception\n"
+                       "{\n"
+                       "  try {\n"
+                       "    return com.google.common.util.concurrent.Futures.get(_stub.$methodName$($args$), Exception.class);\n"
+                       "  } catch (Exception e) {\n"
+                       "    if (e.getCause() instanceof Exception) {throw (Exception)e.getCause();}\n"
+                       "    else {throw e;}\n"
+                       "  }\n"
+                       "}\n"
                        );
     }
 
@@ -182,7 +231,7 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
 
   it returns: @codeline "AB.Person person, java.lang.Integer anotherField"
 */
-string methodSignature(const Descriptor* message)
+string methodSignature(const Descriptor* message, bool signatureForStub)
 {
     stringstream signature;
 
@@ -204,6 +253,14 @@ string methodSignature(const Descriptor* message)
 
         GOOGLE_CHECK(!javaType.empty());
 
+        if (field->is_repeated()) {
+            if (signatureForStub) {
+                javaType = "java.lang.Iterable<" + javaType + ">";
+            } else {
+                javaType = "java.util.List<" + javaType + ">";
+            }
+        }
+
         if (i > 0) {
             signature << ", ";
         }
@@ -218,10 +275,17 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
     stringstream methodParams;
     for (int i = 0; i < method->input_type()->field_count(); i++) {
         if (i > 0) {
-            methodParams << ", ";
+            methodParams << ",\n                               ";
         }
         const FieldDescriptor* field = method->input_type()->field(i);
-        methodParams << "call.get" << UnderscoresToCapitalizedCamelCase(field) << "()";
+        const string list = field->is_repeated() ? "List" : "";
+        string getter = "call.get" + UnderscoresToCapitalizedCamelCase(field) + list + "()";
+
+        // Pass null if an optional field is not set
+        if (field->is_optional()) {
+            getter = "call.has" + UnderscoresToCapitalizedCamelCase(field) + "() ? " + getter + " : null";
+        }
+        methodParams << getter;
     }
 
     map<string, string> vars;
@@ -245,4 +309,15 @@ void generateReactorSwitchCase(const MethodDescriptor* method, io::Printer* prin
 string methodEnumName(const MethodDescriptor* method)
 {
     return CamelCaseToCapitalizedUnderscores(method->name());
+}
+
+/**
+  Return the interface name for the service
+  @param fullyQualified: whether we should return the full Java name or just the interface name
+ */
+string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualified)
+{
+    string name = "I" + service->full_name();
+    return (fullyQualified) ? ToJavaName(name, service->file())
+                            : name;
 }

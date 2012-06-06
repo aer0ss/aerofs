@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Core Unit Tests" type="JUnit" factoryName="JUnit">
+  <configuration default="false" name="core Tests" type="JUnit" factoryName="JUnit">
     <extension name="coverage" enabled="false" merge="false" runner="idea">
       <pattern>
         <option name="PATTERN" value="com.aerofs.daemon.core.*" />

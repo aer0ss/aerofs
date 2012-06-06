@@ -5,6 +5,7 @@
 if [ x`uname -s | grep -i 'cygwin\|mingw'` != x ]; then
     S=';'
 else
+    EXEC=exec
     S=':'
 fi
 
@@ -14,7 +15,7 @@ PPWD=`dirname $0`
 # convert '/cygdrive/X/' to 'X:/'. otherwise JVM wouldn't recognize the path
 PPWD=`echo $PPWD | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
-LIBS3ROOT=$PPWD/../java/aerofs.libs3
+S3ROOT="$PPWD/../java/aerofs.s3"
 
 OS=`"$PPWD"/os`
 
@@ -26,7 +27,7 @@ elif [ x`echo $OS | grep linux` != x ]; then
 fi
 
 CP="$PPWD/bin"
-for i in "$PPWD"/lib/*.jar "$LIBS3ROOT"/lib/*.jar; do
+for i in "$PPWD"/lib/*.jar "$S3ROOT"/lib/*.jar; do
     CP="$CP$S$i"
 done
 
@@ -34,4 +35,6 @@ VMARGS_DBG="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryEr
 VMARGS_PROD="$VMARGS -Xmx64m -XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError"
 #VMARGS="$VMARGS -agentlib:hprof=cpu=samples,depth=16"
 #VMARGS="$VMARGS -agentlib:hprof=heap=sites,depth=16"
-java $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" com.aerofs.Main "$@"
+
+# set DEBUG to "gdb --args" to run in debugger
+$EXEC $DEBUG java $VMARGS_PROD -Djava.library.path="$PPWD" -ea -cp "$CP" com.aerofs.Main "$@"

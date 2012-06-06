@@ -1,8 +1,10 @@
 #!/bin/bash
 
+set -e
+
 # TODO (GS) Remove labelling - also remove references to "com.aerofs.l."
 
-VERSION=EA33
+VER_MAJOR_MINOR=0.2
 
 if [ x"$1" == x ]; then
     echo usage '$0 <staging|prod> [labeling]'
@@ -29,8 +31,7 @@ AEROFS_ROOT=$PWD/../..
 ASIS=$AEROFS_ROOT/as-is
 APPROOT=$AEROFS_ROOT/approot
 #LAUNCHER=$AEROFS_ROOT/java/launcher
-AEROFS_LIBS3_DIR=$AEROFS_ROOT/java/aerofs.libs3
-PROGUARD_HOME=$AEROFS_ROOT/java/aerofs.gui/util/proguard
+PROGUARD_HOME=$AEROFS_ROOT/tools/proguard
 
 # dest dirs
 DROP_TO=$AEROFS_ROOT/release.out
@@ -57,28 +58,31 @@ mkdir -p "$AEROFS_INST_DIR"/
 # find build number
 
 if [ $PROD == 1 ]; then
-  LAST_VER=`wget --no-check-certificate --no-cache -q -O- https://www.aerofs.com/downloads/current.ver`
+  SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.aerofs.com/current.ver`
 else
-  LAST_VER=`wget --no-check-certificate --no-cache -q -O- https://www.aerofs.com/staging/downloads/current.ver`
+  SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.staging.aerofs.com/current.ver`
 fi
 
-LAST_MAJOR=`echo $LAST_VER | sed -e 's/\..*//' | sed -e 's/.*=//'`
-LAST_MINOR=`echo $LAST_VER | sed -e 's/.*\.//'`
+SERVER_VER_MAJOR_MINOR=`echo $SERVER_VER | sed -e 's/.*=//' | sed -e 's/\.[0-9]*$//'`
+SERVER_VER_BUILD=`echo $SERVER_VER | sed -e 's/.*\.//'`
 
-if [ $LAST_MAJOR == $VERSION ]; then
-    BUILD=`expr $LAST_MINOR \+ 1`
+if [ $SERVER_VER_MAJOR_MINOR == $VER_MAJOR_MINOR ]; then
+    BUILD=`expr $SERVER_VER_BUILD \+ 1`
 else
     BUILD=1
 fi
 
+VERSION=$VER_MAJOR_MINOR.$BUILD
+VERSION_FILE=version
+
 echo '+--------------'
-echo '|' $VERSION.$BUILD $1
+echo '|' $VERSION $1
 echo '+--------------'
 
 ##################################
-# make aerofs.ver and staging
+# make ver and staging
 
-echo $VERSION.$BUILD > $AEROFS_DIR/aerofs.ver
+echo $VERSION > $AEROFS_DIR/$VERSION_FILE
 
 if [ $PROD == 0 ]; then
   touch $AEROFS_DIR/staging
@@ -134,10 +138,6 @@ done
 # mac-specific jars
 echo " lib/growlbindings-1.3.1.jar " >> m.tmp
 
-for i in `ls $AEROFS_LIBS3_DIR/lib/`; do
-    echo " lib/$i " >> m.tmp
-done
-
 ###################################
 #echo copy class files
 
@@ -187,7 +187,7 @@ tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
 echo creating jars
 jar cfm aerofs-s3.unobf.jar m.tmp -C bin com
 
-rm -rf bin/com/aerofs/s3 bin/com/aerofs/lib/aws bin/com/aerofs/daemon/core/physical/s3
+rm -rf bin/com/aerofs/s3 bin/com/aerofs/program/s3setup bin/com/aerofs/daemon/core/phy/s3 bin/com/aerofs/lib/aws bin/com/aerofs/verkehr/example bin/com/aerofs/verkehr/server
 jar cfm aerofs.unobf.jar m.tmp -C bin com
 
 # echo remove unnecessary files
@@ -251,5 +251,5 @@ for i in $CHKSUM_LIST; do
     FILE_PATH=`echo $i | sed -e 's/.*://'`
     FILE_NAME=`echo $i | sed -e 's/:.*//'`
     CHKSUM=`shasum -a 256 $FILE_PATH | sed -e 's/ .*//'`
-    echo "$FILE_NAME=$CHKSUM" >> $AEROFS_DIR/aerofs.ver
+    echo "$FILE_NAME=$CHKSUM" >> $AEROFS_DIR/$VERSION_FILE
 done

@@ -1,8 +1,10 @@
+option java_package = "com.aerofs.proto";
 option java_outer_classname = "AB";
 
 service AddressBookService {
     rpc __error__(VoidCall) returns(ErrorReply);
     rpc AddPerson(AddPersonCall) returns(AddPersonReply);
+    rpc AddPeople(AddPeopleCall) returns(AddPeopleReply);
 }
 
 message VoidCall {}
@@ -23,4 +25,13 @@ message ErrorReply {
 message Person {
     required string name = 1;
     optional string email = 2;
+}
+
+message AddPeopleCall {
+	repeated Person people = 1;
+	repeated string test_values = 2;
+}
+
+message AddPeopleReply {
+	repeated int32 length_name = 1;
 }

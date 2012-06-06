@@ -16,6 +16,8 @@ HEADERS += \
 
 TEMPLATES += \
     ServiceStubHeader.tpl \
-    RpcMethodStub.tpl
+    RpcMethodStub.tpl \
+    ServiceReactorPart1.tpl \
+    ServiceReactorPart2.tpl
 
 OTHER_FILES += $$TEMPLATES
