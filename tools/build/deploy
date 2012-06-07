@@ -37,14 +37,13 @@ ZIP=$NAME.zip           # e.g. aerofs-EA8.1-staging.zip
 
 echo making $ZIP
 rm -rf $ZIP
-zip -9rqy $ZIP aerofs-s3.jar aerofs aerofs.osx aerofs.win \
+zip -9rqy $ZIP aerofs aerofs.osx aerofs.win \
 aerofs.linux32 aerofs.linux64 aerofs.linux aerofs.linux.inst
 
 echo uploading $ZIP and map files
 kscp -P $SVR_PORT $ZIP $SVR_LOGIN:~/$ZIP
 if [ $PROD == 1 ]; then
     kscp -P $SVR_PORT aerofs.map $SVR_LOGIN:~/aerofs-$VER-$1.map
-    kscp -P $SVR_PORT aerofs-s3.map $SVR_LOGIN:~/aerofs-$VER-$1-s3.map
 fi
 
 echo deploying on the server
@@ -179,10 +178,6 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
     ###################
     echo deploying and restarting sp daemon
 
-    TMP_AEROFS_S3_JAR=/tmp/tmp.jar
-
-    kscp -P $SP_SVR_PORT aerofs-s3.jar $SP_SVR_LOGIN:$TMP_AEROFS_S3_JAR
-
     if [ $PROD == 1 ]; then
         URL=https://nocache.client.aerofs.com/aerofs-x86_64.tgz
     else
@@ -196,8 +191,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
         wget --no-check-certificate --no-cache -q $URL;
         tar zxf *.tgz;
         cp -rf aerofs/* /data/aerofs/$1;
-        mv $TMP_AEROFS_S3_JAR /data/aerofs/$1/aerofs.jar;
-        echo EA1000.1 > /data/aerofs/$1/$VERSION_FILE;
+        echo 1000.0.0 > /data/aerofs/$1/$VERSION_FILE;
         ps -ef | grep user.$1 | grep -v grep; \
         # the operator should kill cli and daemon manually
         # kill -9 \`ps -ef | grep user.$1\ cli | grep -v grep | awk '{print \$2}'\`; \
