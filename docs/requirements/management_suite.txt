@@ -1,0 +1,57 @@
+Management Suite Requirements
+================================================
+
+This doc summarizes our initial draft of the requirements for an AeroFS
+Management Suite. The intended users of this app are IT Admins.
+
+3 main components (which are elaborated below)
+---------------------------------------------------
+1) User management (e.g. add/rm)
+2) Settings configuration (e.g. S3, enable global sharing)
+3) "Home Page": some summary of analytics (for later)
+
+1) User management
+- three user authorization levels:
+  i)   User (cannot add or remove Users)
+  ii)  Admin (adds or removes Users)
+  iii) Super-Admin (adds or removes Admins)
+  iv)  ?? (keep this list flexible)
+- tasks
+  o add/remove users
+  o convert users into admins (otherwise who has the rights to add users)
+  o reset passwords (non-trivial but very important)
+  o ban devices (not for first revision)
+
+2) Settings configuration
+These settings are initialized at installation time, but could change
+later, so a panel must be available in the Mgt Suite.
+- company-wide cloud backup
+  i)   enable
+  ii)  disable
+  iii) opt-in: disable by default, users can individually opt-in
+- specify backup provider (S3 for now, but permit others later?)
+- specify S3 credentials
+- specify own S3 bucket
+- globally enable/disable sharing outside the company domain
+- centralized configuration of services provided by deployment VMs
+
+3) "Home Page" (all optional right now)
+- view of backup space currently used (globally or per user)
+- view network traffic?
+
+
+Miscellaneous
+---------------------------------------------------
+Licensing:
+- restrict number of users
+- enforce payment
+- if periodic payment ends, do something inconvenient (stopping sync is hard)
+- this could be done later if Management Suite is offered for free at first
+
+Installation: collaborate with Matt
+
+Updating:
+- should be easy to update Mgt Suite: e.g. apt-get update hook
+- must be able to update KVMs for security patches etc.
+  o diff?
+  o re-install?
