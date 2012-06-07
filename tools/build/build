@@ -101,11 +101,12 @@ cp -R "$ASIS"/linux64/* "$AEROFS_LINUX64_DIR"/
 cp -R "$ASIS"/linux.inst/* "$AEROFS_INST_DIR"/
 #cp "$LAUNCHER"/bin/$OS/* "$APPROOT"/
 
+rm -rf "$AEROFS_DIR"/lib.test
+
 # Adjust files for prod or staging
 if [ $PROD == 1 ]; then
     rm "$AEROFS_DIR"/cacert-staging.pem
     mv "$AEROFS_DIR"/cacert-prod.pem "$AEROFS_DIR"/cacert.pem
-    rm -rf "$AEROFS_DIR"/lib.test
 else
     rm "$AEROFS_DIR"/cacert-prod.pem
     mv "$AEROFS_DIR"/cacert-staging.pem "$AEROFS_DIR"/cacert.pem
@@ -185,9 +186,7 @@ tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
 
 ###################################
 echo creating jars
-jar cfm aerofs-s3.unobf.jar m.tmp -C bin com
-
-rm -rf bin/com/aerofs/s3 bin/com/aerofs/program/s3setup bin/com/aerofs/daemon/core/phy/s3 bin/com/aerofs/lib/aws bin/com/aerofs/verkehr/example bin/com/aerofs/verkehr/server
+rm -rf bin/com/aerofs/verkehr/example bin/com/aerofs/verkehr/server
 jar cfm aerofs.unobf.jar m.tmp -C bin com
 
 # echo remove unnecessary files
@@ -203,38 +202,19 @@ if [ $PROD == 1 ]; then
     echo obfuscating jar
     cd $PROGUARD_HOME
 
-    if [ `uname -s` == Darwin ]; then
-        PRO_FILE=aerofs.pro.osx
-    else
-        PRO_FILE=aerofs.pro
-    fi
-
     ./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs.unobf.jar -outjars $PG_AEROFS_DIR/aerofs.jar \
     -printmapping $PG_DROP_TO/aerofs.map \
     -dontwarn 'com.aerofs.testing.**' \
     -dontwarn 'com.aerofs.sak.**' \
-    -dontwarn 'com.aerofs.daemon.core.physical.s3.**' \
-    -dontnote 'com.aerofs.s3.**' \
     -dontnote 'com.aerofs.l.*' \
-    @$PG_HOME/$PRO_FILE
-
-    # put aerofs-s3.jar outside of $PG_AEROFS_DIR so it won't be packaged with other files
-    ./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs-s3.unobf.jar -outjars $PG_AEROFS_DIR/../aerofs-s3.jar \
-    -printmapping $PG_DROP_TO/aerofs-s3.map \
-    -dontwarn 'com.aerofs.testing.**' \
-    -dontwarn 'com.aerofs.sak.**' \
-    -dontnote 'com.aerofs.l.*' \
-    @$PG_HOME/$PRO_FILE
+    @$PG_HOME/aerofs.pro
 
 else
     cp $PG_AEROFS_DIR/aerofs.unobf.jar $PG_AEROFS_DIR/aerofs.jar
     rm -rf $PG_AEROFS_DIR/aerofs.unobf.jar
-    cp $PG_AEROFS_DIR/aerofs-s3.unobf.jar $PG_AEROFS_DIR/../aerofs-s3.jar
-    rm -rf $PG_AEROFS_DIR/aerofs-s3.unobf.jar
 fi
 
 rm -rf $PG_AEROFS_DIR/aerofs.unobf.jar
-rm -rf $PG_AEROFS_DIR/aerofs-s3.unobf.jar
 
 ###################################
 # echo write checksums

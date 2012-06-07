@@ -1,4 +1,10 @@
 #!/bin/sh
+#
+# Usage:
+#        $ ./retrace <version> <<end
+#        (paste obfuscated stack trace here as "heredoc")
+#        end
+#
 
 VER=$1
 
