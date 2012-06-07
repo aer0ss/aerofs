@@ -2,7 +2,7 @@
   <copyright>
     <option name="notice" value="Copyright (c) Air Computing Inc., &amp;#36;today.year." />
     <option name="keyword" value="Copyright" />
-    <option name="allowReplaceKeyword" value="Created by" />
+    <option name="allowReplaceKeyword" value="Copyright" />
     <option name="myName" value="AeroFS" />
     <option name="myLocal" value="true" />
   </copyright>
