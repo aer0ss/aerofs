@@ -7,20 +7,27 @@ if [ x"$1" == x ]; then
     exit
 fi
 
-SVR_PORT=22
-SVR_LOGIN=release@www.aerofs.com
+
 
 rm -rf current.ver
 
 ROOT=$1
 if [ "$ROOT" == "prod" ]
 then
-DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
-wget --no-check-certificate --no-cache -q https://nocache.client.aerofs.com/current.ver
+  SVR_PORT=22
+  SVR_LOGIN=release-prod@b.arrowfs.org
+  SVR_TEMP=/tmp/release-prod
+
+  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
+  wget --no-check-certificate --no-cache -q https://nocache.client.aerofs.com/current.ver
 elif [ "$ROOT" == "staging" ]
 then
-DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
-wget --no-check-certificate --no-cache -q https://nocache.client.staging.aerofs.com/current.ver
+  SVR_PORT=22
+  SVR_LOGIN=release-staging@b.arrowfs.org
+  SVR_TEMP=/tmp/release-staging
+
+  DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
+  wget --no-check-certificate --no-cache -q https://nocache.client.staging.aerofs.com/current.ver
 fi
 
 VER=`cat current.ver | sed -e 's/.*=//'`

@@ -1,0 +1,46 @@
+Adding support for Organizations in SP
+======================================
+
+Existing requirements
+=====================
+
+(in the default organization)
+
+1. Users should be able to invite other users to use AeroFS
+	Needed by:
+		-> the heart menu
+		-> if sharing with someone who isn't a user yet
+		-> admins (curently through the invite script, later through the admin panel)
+
+2. Users should be able to share folders with other users. If the user doesn't exist yet, he should be invited to sign up for AeroFS (default).
+
+3. A shared folder should always be explicitly accepted.
+
+4. Users should be able to sign-up without a sign-up code IF we allow that (currently we don't, later we will)
+
+5. Users should always be able to sign-up if they have a sign-up code (batch or targeted). Thoses codes are issued by us, and may be subject to a quota restrictions.
+
+Needed requirements
+===================
+
+1. We must support the concept of organizations. Organizations are units that manage themselves. There will be a default organization managed by us.
+
+2. Organizations have admins that manage them. When we say "an organization should be able to", we mean: "the admins of that organization should be able to"
+
+3. An organization should be able to specify what email domain users are allowed to sign-up with, if they don't have a sign-up code. A wildcard domain "*" can be specified (everybody). An empty domain  prevents anyone from signing-up without being explicitly invited.
+
+4a. Sharing within an organization should always be allowed. The "allowed email domain" is used to determine who is considered inside an organization. Admins bypass the check. (ie: they can invite someone even if his email address is not in the allowed domain)
+
+4b. Sharing outside an organization can be allowed or disabled. If it's enabled and the user doesn't exist, he gets invited to the default organization, NOT the inviter's organization.
+
+5. Email addresses should be verified. We don't want to prevent the user from signing-up, but he should not be able to share or accept shared folder until he verifies his email address. Sync betweeen devices should still work. Accepting a folder with a code received by email should work and mark the user as verified.
+
+6. Administrators: Right now, users and admin. Users can access AeroFS, admins can access the control panel, add delete users and admins. Admins can change user roles. _Later_, full blown ACLs for that.
+
+Summary: key changes to present
+===============================
+
+- Use email address domains to allow joining an organization. Remove open/close concept. This implies email verification.
+- Drop the concept of folder-based invites. Invitation codes are for signing-up only. Which folders to join is in the ACLs. Implies adding the concept of "accepted" in the ACL.
+- Drop the super admin concept. Easy to add it afterwards.
+

@@ -4,9 +4,6 @@ set -e
 
 # usage $0 [staging|prod]
 
-SVR_PORT=22
-SVR_LOGIN=release@www.aerofs.com
-
 if [ x"$1" == x ]; then
     echo usage '$0 [staging|prod]'
     exit
