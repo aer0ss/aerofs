@@ -186,7 +186,6 @@ tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
 
 ###################################
 echo creating jars
-rm -rf bin/com/aerofs/verkehr/example bin/com/aerofs/verkehr/server bin/com/aerofs/zephyr/server
 jar cfm aerofs.unobf.jar m.tmp -C bin com
 
 # echo remove unnecessary files
