@@ -26,7 +26,8 @@ LOCAL_FILE="$BASE/$FILE"
 
 if [ ! -f "$LOCAL_FILE" ]; then
     echo "retrieving map file..."
-    kscp release@www.aerofs.com:~/"$FILE" "$LOCAL_FILE"
+    #kscp release@www.aerofs.com:~/"$FILE" "$LOCAL_FILE"
+    kscp release-staging@b.arrowfs.org:/home/release-prod/"$FILE" "$LOCAL_FILE"
 fi
 
 cd "$BASE"/proguard
