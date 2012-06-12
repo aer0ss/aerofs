@@ -5,5 +5,4 @@ workspace.xml
 .metadata
 .DS_Store
 build.properties
-aerofs.release
-out.artifacts
+artifacts.out
