@@ -75,7 +75,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
     mkdir $SVR_TEMP; \
     "
 if [ $PROD == 1 ]; then
-  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com 
+  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
   DOWNLOADS=/data/prod-downloads
 else
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
@@ -164,7 +164,7 @@ PACKAGER=$SVR_ROOT/aerofs.nsis/packager
     unzip -qo ~/$ZIP; \
 	cp -r $PACKAGER/aerofs.win/* $PACKAGER/aerofs; \
     chmod -R a+rx $PACKAGER/aerofs*; \
-    makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_TEMP_NAME=AeroFSInstall-$VER $PACKAGER/setup.nsi; \
+    makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_VERSION=$VER $PACKAGER/setup.nsi; \
     export PASSPHRASE=\"$PASSPHRASE\"; \
     printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll -tr 10 -n \"AeroFS\" -i \"http://www.aerofs.com\" $DOWNLOADS/AeroFSInstall-$VER.exe; \
     chmod a+r $DOWNLOADS/AeroFSInstall-$VER.exe; \
@@ -224,7 +224,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
 fi
 
 ###################
-echo updating current.ver 
+echo updating current.ver
 kssh -p $SVR_PORT $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
