@@ -2,7 +2,7 @@
 
 set -e
 
-if [ x$1 == xprod ]; then
+if [ x"$1" == xprod ]; then
     TYPE=prod
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
@@ -13,8 +13,14 @@ else
     TYPE=staging
 fi
 
+if [ x"$2" == x ]; then
+    PASSPHRASE=temp123
+else
+    PASSPHRASE="$2"
+fi
+
 ./build $TYPE
-./deploy $TYPE
+./deploy $TYPE "$PASSPHRASE"
 if [ $? != 0 ]; then
     exit $?
 fi
