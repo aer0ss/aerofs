@@ -17,7 +17,6 @@ then
   SVR_TEMP=/tmp/release-prod
 
   DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
-  wget --no-check-certificate --no-cache -q https://nocache.client.aerofs.com/current.ver
 elif [ "$ROOT" == "staging" ]
 then
   SVR_PORT=22
@@ -25,9 +24,9 @@ then
   SVR_TEMP=/tmp/release-staging
 
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
-  wget --no-check-certificate --no-cache -q https://nocache.client.staging.aerofs.com/current.ver
 fi
 
+kscp $SVR_LOGIN:/data/$ROOT-downloads/current.ver . 
 VER=`cat current.ver | sed -e 's/.*=//'`
 
 NAME=aerofs-$VER-$1
@@ -45,6 +44,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
      "cd /data/$ROOT-downloads/; \
      cp AeroFSInstall-$VER.dmg AeroFSInstall.dmg; \
      mv aerofs-osx-temp.zip aerofs-osx-$VER.zip; \
+     echo Deploying to S3/CloudFront; \
      s3cmd -P --cf-invalidate sync /data/$ROOT-downloads/* $DOWNLOAD_BUCKET > /dev/null"
 
 rm -rf Release

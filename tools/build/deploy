@@ -186,26 +186,16 @@ kssh $SVR_LOGIN \
     " || true
 
 ###################
-echo upload to S3/CloudFront
-kssh $SVR_LOGIN \
-    "s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
-    "
-
 if [ $DEPLOY_SP_DAEMON == 1 ]; then
     ###################
     echo deploying and restarting sp daemon
 
-    if [ $PROD == 1 ]; then
-        URL=https://nocache.client.aerofs.com/aerofs-x86_64.tgz
-    else
-        URL=https://nocache.client.staging.aerofs.com/aerofs-x86_64.tgz
-    fi
-
+    kscp $SVR_LOGIN:$DOWNLOADS/aerofs-x86_64.tgz $SP_SVR_LOGIN:~/ 
     kssh $SP_SVR_LOGIN \
         "rm -rf tmp;
         mkdir tmp;
         cd tmp;
-        wget --no-check-certificate --no-cache -q $URL;
+        mv ~/aerofs-x86_64.tgz .;
         tar zxf *.tgz;
         cp -rf aerofs/* /data/aerofs/$1;
         echo 1000.0.0 > /data/aerofs/$1/$VERSION_FILE;
@@ -228,7 +218,6 @@ kssh $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
     chmod a+r $DOWNLOADS/current.ver; \
-    s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
     echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
     "
 echo '+-------------------------------------------+'
