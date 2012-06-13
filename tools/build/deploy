@@ -7,16 +7,10 @@ set -e
 
 DEPLOY_SP_DAEMON=0
 
-SP_SVR_PORT=22
 SP_SVR_LOGIN=aerofs@x1.aerofs.com
 
-if [ x"$1" == x ]; then
-  echo usage '$0 [staging|prod] [deployment password]'
-  exit 2
-fi
-
 if [ x"$2" == x ]; then
-  echo usage '$0 [staging|prod] [deployment password]'
+  echo usage '$0 [staging|prod] [deployment passphrase]'
   exit 2
 fi
 
@@ -27,12 +21,10 @@ else
 fi
 
 if [ $PROD == 1 ]; then
-  SVR_PORT=22
   SVR_LOGIN=release-prod@b.arrowfs.org
   SVR_ROOT=/home/release-prod
   SVR_TEMP=/tmp/release-prod
 else
-  SVR_PORT=22
   SVR_LOGIN=release-staging@b.arrowfs.org
   SVR_ROOT=/home/release-staging
   SVR_TEMP=/tmp/release-staging
@@ -47,8 +39,8 @@ cd ../../release.out
 
 VER=`head -1 aerofs/$VERSION_FILE`
 
-NAME=aerofs-$VER-$1     # e.g. aerofs-EA8.1-staging
-ZIP=$NAME.zip           # e.g. aerofs-EA8.1-staging.zip
+NAME=aerofs-$VER-$1     # e.g. aerofs-1.2.3-staging
+ZIP=$NAME.zip           # e.g. aerofs-1.2.3-staging.zip
 
 echo making $ZIP
 rm -rf $ZIP
@@ -56,16 +48,16 @@ zip -9rqy $ZIP aerofs aerofs.osx aerofs.win \
 aerofs.linux32 aerofs.linux64 aerofs.linux aerofs.linux.inst
 
 echo uploading $ZIP and map files
-kscp -P $SVR_PORT $ZIP $SVR_LOGIN:~/$ZIP
+kscp $ZIP $SVR_LOGIN:~/$ZIP
 if [ $PROD == 1 ]; then
-    kscp -P $SVR_PORT aerofs.map $SVR_LOGIN:~/aerofs-$VER-$1.map
+    kscp aerofs.map $SVR_LOGIN:~/aerofs-$VER-$1.map
 fi
 
 echo deploying on the server
 
 DEFLATED=aerofs.release/$1
 
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "cd ~; \
     rm -rf $DEFLATED; \
     mkdir -p $DEFLATED; \
@@ -84,9 +76,9 @@ fi
 ###################
 echo deploying Linux installer .deb
 
-kscp -P $SVR_PORT $PPWD/build_deb $SVR_LOGIN:$SVR_TEMP/
+kscp $PPWD/build_deb $SVR_LOGIN:$SVR_TEMP/
 
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "cd ~; \
     chmod a+x /$SVR_TEMP/build_deb; \
     /$SVR_TEMP/build_deb ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb $BUILDTYPE; \
@@ -98,7 +90,7 @@ echo deploying Linux installer .tgz
 LINUX_TMP=$SVR_TEMP/aerofs.tmp
 LINUX_INST_TGZ=aerofs-installer.tgz
 
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "cd ~; \
     rm -rf $LINUX_TMP; \
     mkdir -p $LINUX_TMP/aerofs; \
@@ -115,7 +107,7 @@ echo deploying Linux 32bit .tgz
 LINUX32_TGZ=aerofs-x86.tgz
 LINUX32_VER_TGZ=aerofs-$VER-x86.tgz
 
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "cd ~; \
     rm -rf $LINUX_TMP; \
     mkdir -p $LINUX_TMP/aerofs; \
@@ -137,7 +129,7 @@ echo deploying Linux 64bit .tgz
 LINUX64_TGZ=aerofs-x86_64.tgz
 LINUX64_VER_TGZ=aerofs-$VER-x86_64.tgz
 
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "cd ~; \
     rm -rf $LINUX_TMP; \
     mkdir -p $LINUX_TMP/aerofs; \
@@ -156,29 +148,36 @@ kssh -p $SVR_PORT $SVR_LOGIN \
 ###################
 echo deploying Windows package
 
-PACKAGER=$SVR_ROOT/aerofs.nsis/packager
+NSIS_DIR=win_installer
+PACKAGER=$SVR_ROOT/$NSIS_DIR/packager
+PATCHER=$SVR_ROOT/$NSIS_DIR/patcher
 
-#echo at \~/$ZIP, $PACKAGER/aerofs, $DOWNLOADS/AeroFSInstall-$VER-$1.exe, and $DOWNLOADS/AeroFSInstall.exe
-    DATA="rm -rf $PACKAGER/aerofs*; \
+# deploy NSIS scripts. knock ports first to allow rsync to go through
+kssh $SVR_LOGIN 'echo > /dev/null'
+rsync --archive --compress --relative --rsh ssh ../tools/./$NSIS_DIR $SVR_LOGIN:$SVR_ROOT
+
+DATA="rm -rf $PACKAGER/aerofs*; \
     cd $PACKAGER; \
     unzip -qo ~/$ZIP; \
 	cp -r $PACKAGER/aerofs.win/* $PACKAGER/aerofs; \
     chmod -R a+rx $PACKAGER/aerofs*; \
     makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_VERSION=$VER $PACKAGER/setup.nsi; \
     export PASSPHRASE=\"$PASSPHRASE\"; \
-    printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll -tr 10 -n \"AeroFS\" -i \"http://www.aerofs.com\" $DOWNLOADS/AeroFSInstall-$VER.exe; \
+    printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \
+        -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll \
+        -tr 10 -n \"AeroFS\" -i \"http://www.aerofs.com\" $DOWNLOADS/AeroFSInstall-$VER.exe > /dev/null; \
     chmod a+r $DOWNLOADS/AeroFSInstall-$VER.exe; \
     rm -f $DOWNLOADS/AeroFSInstall.exe; \
     cp $DOWNLOADS/AeroFSInstall-$VER.exe $DOWNLOADS/AeroFSInstall.exe; \
     chmod a+r $DOWNLOADS/AeroFSInstall.exe; \
     "
 
-kssh -p $SVR_PORT $SVR_LOGIN $DATA;
+kssh $SVR_LOGIN $DATA;
+
 ###################
 echo creating Windows patches
-PATCHER=$SVR_ROOT/aerofs.nsis/patcher
 
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     " export PASSPHRASE=\"$PASSPHRASE\"; \
     bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $1; \
     rm $DOWNLOADS/patch-*; \
@@ -188,7 +187,7 @@ kssh -p $SVR_PORT $SVR_LOGIN \
 
 ###################
 echo upload to S3/CloudFront
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "s3cmd -P --cf-invalidate sync $DOWNLOADS/* $DOWNLOAD_BUCKET > /dev/null; \
     "
 
@@ -202,7 +201,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
         URL=https://nocache.client.staging.aerofs.com/aerofs-x86_64.tgz
     fi
 
-    kssh -p $SP_SVR_PORT $SP_SVR_LOGIN \
+    kssh $SP_SVR_LOGIN \
         "rm -rf tmp;
         mkdir tmp;
         cd tmp;
@@ -225,7 +224,7 @@ fi
 
 ###################
 echo updating current.ver
-kssh -p $SVR_PORT $SVR_LOGIN \
+kssh $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
     chmod a+r $DOWNLOADS/current.ver; \
