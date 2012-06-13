@@ -14,7 +14,7 @@ rm -rf current.ver
 ROOT=$1
 if [ "$ROOT" == "prod" ]
 then
-kscp release-prod@b.arrowfs.org:/data/prod-downloads/current.ver .  
+kscp release-prod@b.arrowfs.org:/data/prod-downloads/current.ver .
 elif [ "$ROOT" == "staging" ]
 then
 kscp release-staging@b.arrowfs.org:/data/staging-downloads/current.ver .

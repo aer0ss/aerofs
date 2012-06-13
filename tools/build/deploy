@@ -190,7 +190,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
     ###################
     echo deploying and restarting sp daemon
 
-    kscp $SVR_LOGIN:$DOWNLOADS/aerofs-x86_64.tgz $SP_SVR_LOGIN:~/ 
+    kscp $SVR_LOGIN:$DOWNLOADS/aerofs-x86_64.tgz $SP_SVR_LOGIN:~/
     kssh $SP_SVR_LOGIN \
         "rm -rf tmp;
         mkdir tmp;

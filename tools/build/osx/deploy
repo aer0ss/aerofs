@@ -26,7 +26,7 @@ then
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
 fi
 
-kscp $SVR_LOGIN:/data/$ROOT-downloads/current.ver . 
+kscp $SVR_LOGIN:/data/$ROOT-downloads/current.ver .
 VER=`cat current.ver | sed -e 's/.*=//'`
 
 NAME=aerofs-$VER-$1
