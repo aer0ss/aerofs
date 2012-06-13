@@ -11,8 +11,13 @@ SP_SVR_PORT=22
 SP_SVR_LOGIN=aerofs@x1.aerofs.com
 
 if [ x"$1" == x ]; then
-  echo usage '$0 [staging|prod]'
-  exit
+  echo usage '$0 [staging|prod] [deployment password]'
+  exit 2
+fi
+
+if [ x"$2" == x ]; then
+  echo usage '$0 [staging|prod] [deployment password]'
+  exit 2
 fi
 
 if [ $1 == prod ]; then
@@ -33,15 +38,8 @@ else
   SVR_TEMP=/tmp/release-staging
 fi
 
-if [ $PROD == 1 ]; then
-   echo "Please enter the passphrase for code signing:"
-   read -s PASSPHRASE
-else
-  PASSPHRASE="temp123"
-fi
-
-
 BUILDTYPE=$1
+PASSPHRASE=$2
 PPWD=$PWD
 VERSION_FILE=version
 
@@ -222,7 +220,7 @@ if [ $DEPLOY_SP_DAEMON == 1 ]; then
 
     echo '[ ACTION REQUIRED ]'
     echo '>>> please log on to x1, kill cli and daemon process, restart them, and  make sure all FOUR daemon processes are running. press Enter to continue.'
-    read
+    read # Will not work when run through ant, but I'll worry about this later
 fi
 
 ###################

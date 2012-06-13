@@ -7,8 +7,6 @@ if [ x"$1" == x ]; then
     exit
 fi
 
-
-
 rm -rf current.ver
 
 ROOT=$1
