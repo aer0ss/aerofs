@@ -1,0 +1,16 @@
+#!/bin/bash
+
+PROBE=`readlink -f "$0"`
+PROBE=`dirname "$PROBE"`/probe
+
+$PROBE tomcat.aerofs.com url http://www.aerofs.com
+$PROBE tomcat.aerofs.com url https://www.aerofs.com/sp
+$PROBE verkehr port reloadedsp.aerofs.com 80
+$PROBE x.aerofs.com-openfire port x.aerofs.com 443
+$PROBE x.aerofs.com-relay port x.aerofs.com 80
+$PROBE x.aerofs.com-zephyr port x.aerofs.com 8888 # FIXME: change to 80 once an IP exists
+$PROBE mysql.aerofs.com port mysql.aerofs.com 22
+$PROBE ca.aerofs.com port joan.aerofs.com 22
+$PROBE x1.aerofs.com-daemon.services procs pagerduty@x1.aerofs.com 22 user.prod 4
+$PROBE g.arrowfs.org url https://g.arrowfs.org 8443
+$PROBE g.arrowfs.org port g.arrowfs.org 44353

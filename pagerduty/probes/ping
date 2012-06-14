@@ -1,0 +1,13 @@
+# test if ping succeeds
+#
+# usage: $0 <hostname>
+#
+# exit 1 if bad arguments
+# exit the exit code of 'ping -c <hostname>'
+
+if [ x"$1" == x ]; then
+    echo bad arguments
+    exit 1
+fi
+
+ping -c 1 $1 > /dev/null

@@ -1,0 +1,19 @@
+See https://z.arrowfs.org/wiki/ops/Ops_On-call for user manual and on-call guide lines.
+
+How to deploy
+====
+
+On the monitor server
+----
+
+$ cd /opt
+$ git clone <repos_url>/aerofs.pagerduty
+$ sudo ln -s /opt/aerofs.pagerduty/cron.daily /etc/cron.daily/pagerduty
+$ sudo ln -s /opt/aerofs.pagerduty/cron.hourly /etc/cron.hourly/pagerduty
+
+Finally, change the cron.daily job's time from 0600 to 1400 in /etc/crontab so people are less likely to be waken up at 6AM.
+
+On the meta-monitor server
+----
+
+Same as above but instead link meta.cron.hourly to the cron tab

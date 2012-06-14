@@ -1,0 +1,9 @@
+#!/bin/bash
+
+PROBE=`readlink -f "$0"`
+PROBE=`dirname "$PROBE"`/probe
+
+$PROBE sp.aerofs.com df90 pagerduty@sp.aerofs.com 22 /dev/xvda1
+$PROBE x1.aerofs.com df90 pagerduty@x1.aerofs.com 22 /dev/sda1
+$PROBE x1.aerofs.com df90 pagerduty@x1.aerofs.com 22 /dev/sdf1
+$PROBE x.aerofs.com df90 pagerduty@x.aerofs.com 22 /dev/xvda
