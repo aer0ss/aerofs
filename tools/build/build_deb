@@ -13,7 +13,7 @@ output=$2
 build=$3
 
 package='aerofs-installer'
-version=0.1.0
+version=0.2.0
 echo "aerofs-installer version = $version"
 section='utility'
 priority='optional'

@@ -168,11 +168,9 @@ fi
 #echo generate aerofs-installer
 
 if [ $PROD == 1 ]; then
-    sed -i '' -e 's=DOT_STAGING__TO_BE_REPLACED_BY_SED==' \
-        -e 's=STAGING_SLASH__TO_BE_REPLACED_BY_SED==' $AEROFS_INST_DIR/aerofs
+    sed -i '' -e 's=DOT_STAGING__TO_BE_REPLACED_BY_SED==' $AEROFS_INST_DIR/aerofs
 else
-    sed -i '' -e 's=DOT_STAGING__TO_BE_REPLACED_BY_SED=.staging=' \
-        -e 's=STAGING_SLASH__TO_BE_REPLACED_BY_SED=staging/=' $AEROFS_INST_DIR/aerofs
+    sed -i '' -e 's=DOT_STAGING__TO_BE_REPLACED_BY_SED=.staging=' $AEROFS_INST_DIR/aerofs
 fi
 
 DLR_TMP=/tmp/aerofs-dlr
