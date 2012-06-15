@@ -5,4 +5,4 @@ workspace.xml
 .metadata
 .DS_Store
 build.properties
-artifacts.out
+out*
