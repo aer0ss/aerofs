@@ -5,10 +5,6 @@ set -e
 # usage $0 [staging|prod]
 # exit non-zero if deployment failed
 
-DEPLOY_SP_DAEMON=0
-
-SP_SVR_LOGIN=aerofs@x1.aerofs.com
-
 if [ x"$2" == x ]; then
   echo usage '$0 [staging|prod] [deployment passphrase]'
   exit 2
@@ -186,33 +182,6 @@ kssh $SVR_LOGIN \
     " || true
 
 ###################
-if [ $DEPLOY_SP_DAEMON == 1 ]; then
-    ###################
-    echo deploying and restarting sp daemon
-
-    kscp $SVR_LOGIN:$DOWNLOADS/aerofs-x86_64.tgz $SP_SVR_LOGIN:~/
-    kssh $SP_SVR_LOGIN \
-        "rm -rf tmp;
-        mkdir tmp;
-        cd tmp;
-        mv ~/aerofs-x86_64.tgz .;
-        tar zxf *.tgz;
-        cp -rf aerofs/* /data/aerofs/$1;
-        echo 1000.0.0 > /data/aerofs/$1/$VERSION_FILE;
-        ps -ef | grep user.$1 | grep -v grep; \
-        # the operator should kill cli and daemon manually
-        # kill -9 \`ps -ef | grep user.$1\ cli | grep -v grep | awk '{print \$2}'\`; \
-        # kill -9 \`ps -ef | grep user.$1\ daemon | grep -v grep | awk '{print \$2}'\`; \
-        kill -9 \`ps -ef | grep user.$1\ s3uploader | grep -v grep | awk '{print \$2}'\`; \
-        kill -9 \`ps -ef | grep user.$1\ s3cache | grep -v grep | awk '{print \$2}'\`; \
-        "
-
-    echo '[ ACTION REQUIRED ]'
-    echo '>>> please log on to x1, kill cli and daemon process, restart them, and  make sure all FOUR daemon processes are running. press Enter to continue.'
-    read # Will not work when run through ant, but I'll worry about this later
-fi
-
-###################
 echo updating current.ver
 kssh $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \
@@ -220,8 +189,8 @@ kssh $SVR_LOGIN \
     chmod a+r $DOWNLOADS/current.ver; \
     echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
     "
-echo '+-------------------------------------------+'
-echo '| Remember to deploy MacOS, as well as SPSV |'
-echo '+-------------------------------------------+'
+echo '+--------------------------+'
+echo '| Remember to deploy MacOS |'
+echo '+--------------------------+'
 
 exit 0
