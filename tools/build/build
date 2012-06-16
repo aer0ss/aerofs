@@ -201,7 +201,7 @@ if [ $PROD == 1 ]; then
 
     ./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs.unobf.jar -outjars $PG_AEROFS_DIR/aerofs.jar \
     -printmapping $PG_DROP_TO/aerofs.map \
-    -dontwarn 'com.aerofs.testing.**' \
+    -repackageclasses "com.aerofs" \
     -dontwarn 'com.aerofs.sak.**' \
     -dontnote 'com.aerofs.l.*' \
     @$PG_HOME/aerofs.pro
