@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.daemon/aerofs.daemon.iml" filepath="$PROJECT_DIR$/../../java/aerofs.daemon/aerofs.daemon.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.gui/aerofs.gui.iml" filepath="$PROJECT_DIR$/../../java/aerofs.gui/aerofs.gui.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.lib/aerofs.lib.iml" filepath="$PROJECT_DIR$/../../java/aerofs.lib/aerofs.lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.s3/aerofs.s3.iml" filepath="$PROJECT_DIR$/../../java/aerofs.s3/aerofs.s3.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/aerofs.spsv/aerofs.spsv.iml" filepath="$PROJECT_DIR$/../../java/aerofs.spsv/aerofs.spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../java/libjingle.binding/libjingle.binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../java/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../java/swiglibs/swiglibs.iml" />

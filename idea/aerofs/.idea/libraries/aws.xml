@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="aws">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../java/aerofs.s3/lib/aws-java-sdk-1.1.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
