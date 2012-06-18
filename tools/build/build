@@ -148,7 +148,6 @@ cp -Rf $APPROOT/bin/com/* bin/com
 ###################################
 # remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
 
-rm -rf bin/com/aerofs/sp
 find bin/com/aerofs -name .DS_Store | xargs rm -f
 
 if [ $PROD == 1 ]; then
