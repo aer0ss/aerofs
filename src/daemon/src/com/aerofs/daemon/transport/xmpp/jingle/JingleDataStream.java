@@ -1,9 +1,13 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.daemon.transport.xmpp.jingle;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExNoResource;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.xmpp.XUtil;
@@ -14,41 +18,41 @@ import com.aerofs.j.StreamResult;
 import com.aerofs.j.StreamState;
 import com.aerofs.j.j;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.base.ex.ExNoResource;
-import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 
-// A Channel object represents a bidirectional jingle stream
+import static com.aerofs.daemon.lib.DaemonParam.Jingle.QUEUE_LENGTH;
+
+// A JingleDataStream object represents a bidirectional jingle stream
 //
 // N.B. all the methods of this class must be called within the signal thread.
 //
-public class Channel implements IProxyObjectContainer
+public class JingleDataStream implements IProxyObjectContainer
 {
-    private static final Logger l = Loggers.getLogger(Channel.class);
+    private static final Logger l = Loggers.getLogger(JingleDataStream.class);
 
     static interface IClosureListener
     {
-        void closed_(Channel self);
+        void closed_(JingleDataStream self);
     }
 
     static interface IConnectionListener
     {
-        void connected_(Channel self);
+        void connected_(JingleDataStream self);
     }
 
     private final IJingle ij;
     private final DID did;
-    private final StreamInterface _s;
+    private final StreamInterface _streamInterface;
     private boolean _writable;
     private boolean _firstwrite = false;
     private long _bytesIn;
 
-    private final PrioQueue<SendData> _q = new PrioQueue<SendData>(
-            DaemonParam.Jingle.QUEUE_LENGTH);
+    private final PrioQueue<SendData> _q = new PrioQueue<SendData>(QUEUE_LENGTH);
 
     // each SendData is an atomic chunk of data and can't be preempted by other
     // data even if they are at higher priorities. therefore we have to remember
@@ -62,38 +66,37 @@ public class Channel implements IProxyObjectContainer
     private byte[] _inPayload;
     private int _inPayloadOff;
 
-    private final IClosureListener _closl;
-    private final IConnectionListener _connl;
+    private final IClosureListener _closureListener;
+    private final IConnectionListener _connectionListener;
     private final boolean _incoming;
 
-    // keep a reference to prevent the slot being GC'ed (as there's no Java
-    // reference to this object otherwise)
-    //
-    private final StreamInterface_EventSlot _slotEvent =
-        new StreamInterface_EventSlot() {
-            @Override
-            public void onEvent(StreamInterface s, int event, int error)
-            {
-                try {
-                    onStreamEvent_(s, event, error);
-                } catch (Exception e) {
-                    close_(e);
-                    _closl.closed_(Channel.this);
-                }
+    // keep a reference to prevent the slot being GC'ed (as there's no Java reference to this object otherwise)
+    private final StreamInterface_EventSlot _slotEvent = new StreamInterface_EventSlot()
+    {
+        @Override
+        public void onEvent(StreamInterface s, int event, int error)
+        {
+            try {
+                l.info("stream e:" + event);
+                onStreamEvent_(s, event, error);
+            } catch (Exception e) {
+                close_(e);
+                _closureListener.closed_(JingleDataStream.this);
             }
-        };
+        }
+    };
 
-    Channel(IJingle ij, StreamInterface s, DID did, boolean incoming, IClosureListener closl, IConnectionListener connl)
+    JingleDataStream(IJingle ij, StreamInterface streamInterface, DID did, boolean incoming, IClosureListener closureListener, IConnectionListener connectionListener)
     {
         this.ij = ij;
         this.did = did;
-        _s = s;
-        _closl = closl;
-        _connl = connl;
-        _incoming = incoming;
+        this._streamInterface = streamInterface;
+        this._closureListener = closureListener;
+        this._connectionListener = connectionListener;
+        this._incoming = incoming;
 
-        _slotEvent.connect(_s);
-        _writable = _s.GetState() == StreamState.SS_OPEN;
+        _slotEvent.connect(_streamInterface);
+        _writable = _streamInterface.GetState() == StreamState.SS_OPEN;
     }
 
     boolean isIncoming()
@@ -106,13 +109,13 @@ public class Channel implements IProxyObjectContainer
         return did;
     }
 
-    private void onStreamEvent_(StreamInterface s, int event, int error)
+    private void onStreamEvent_(StreamInterface streamInterface, int event, int error)
         throws Exception
     {
         if ((event & StreamEvent.SE_WRITE.swigValue()) != 0) {
             if (!_firstwrite) {
                 _firstwrite = true;
-                _connl.connected_(Channel.this);
+                _connectionListener.connected_(JingleDataStream.this);
             }
 
             _writable = true;
@@ -132,9 +135,9 @@ public class Channel implements IProxyObjectContainer
     // calling this method will not trigger IClosureListener
     void close_(Exception e)
     {
-        l.debug("close channel " + this + ": " + Util.e(e, ExJingle.class));
+        l.debug("close jds " + this + ": " + Util.e(e, ExJingle.class));
 
-        _s.Close();
+        _streamInterface.Close();
 
         // notify the core that the current outgoing packet failed to be sent
         if (_outCur != null && _outCur.waiter() != null) {
@@ -187,7 +190,7 @@ public class Channel implements IProxyObjectContainer
 
                 StreamResult res;
 
-                res = j.WriteAll(_s, cur, _outOff,
+                res = j.WriteAll(_streamInterface, cur, _outOff,
                         cur.length - _outOff, written, error);
 
                 _outOff += written[0];
@@ -231,7 +234,7 @@ public class Channel implements IProxyObjectContainer
             if (_inHeaderOff != _inHeader.length) {
                 assert _inHeaderOff < _inHeader.length;
                 // read the header
-                res = j.ReadAll(_s, _inHeader, _inHeaderOff,
+                res = j.ReadAll(_streamInterface, _inHeader, _inHeaderOff,
                         _inHeader.length - _inHeaderOff, read, error);
                 _inHeaderOff += read[0];
                 logio(read[0], _inHeaderOff, _inHeader.length, res, false);
@@ -263,7 +266,7 @@ public class Channel implements IProxyObjectContainer
 
             assert _inPayloadOff < _inPayload.length;
 
-            res = j.ReadAll(_s, _inPayload, _inPayloadOff,
+            res = j.ReadAll(_streamInterface, _inPayload, _inPayloadOff,
                     _inPayload.length - _inPayloadOff, read, error);
             _inPayloadOff += read[0];
             logio(read[0], _inPayloadOff, _inPayload.length, res, false);
@@ -326,7 +329,7 @@ public class Channel implements IProxyObjectContainer
         String opdir = (iswrite ? " -> " : " <- ");
 
         if (l.isDebugEnabled()) {
-            l.debug("jch: " + optyp + " b:" + inthiscall + " [" + sofar + "/" + expected + "]" + opdir + did + " ret:" + ioretval);
+            l.debug("jds: " + optyp + " b:" + inthiscall + " [" + sofar + "/" + expected + "]" + opdir + did + " ret:" + ioretval);
         }
     }
 
@@ -334,7 +337,7 @@ public class Channel implements IProxyObjectContainer
     public void finalize()
     {
         // delete_() must have been called
-        assert StreamInterface.getCPtr(_s) == 0;
+        assert StreamInterface.getCPtr(_streamInterface) == 0;
     }
 
     @Override
@@ -346,7 +349,7 @@ public class Channel implements IProxyObjectContainer
     @Override
     public void delete_()
     {
-        _s.delete();
+        _streamInterface.delete();
         _slotEvent.delete();
     }
 
@@ -357,6 +360,7 @@ public class Channel implements IProxyObjectContainer
 
     String diagnose_()
     {
-        return _s.diagnose();
+        //return _s.diagnose(); // FIXME (AG): need to add a diagnose method!
+        return "";
     }
 }

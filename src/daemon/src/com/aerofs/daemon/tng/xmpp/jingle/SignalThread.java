@@ -8,22 +8,18 @@ import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.DaemonParam.Jingle;
-import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.daemon.tng.xmpp.ID;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;
 import com.aerofs.j.MessageHandlerBase;
-import com.aerofs.j.Status;
 import com.aerofs.j.XmppClient_StateChangeSlot;
 import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
-import com.aerofs.j.XmppSocket_CloseEventSlot;
-import com.aerofs.j.XmppSocket_ErrorSlot;
-import com.aerofs.lib.SystemUtil.ExitCode;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -133,7 +129,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         // post the handler if it's not been scheduled
         if (_postRunners.size() == 1) {
-            _main.getSignalThread().Post(_postHandler);
+            _main.signal_thread().Post(_postHandler);
         }
     }
 
@@ -167,7 +163,6 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
             while (!_linkUp) { ThreadUtil.waitUninterruptable(_cvLinkState); }
         }
 
-
         l.info("create_ xmppmain");
 
         // The xmpp server address is an unresolved hostname.
@@ -177,24 +172,23 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         // TODO (WW) XmppMain() should use int rathe than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
-        _main = new XmppMain(address.getHostName(), address.getPort(), true, _jidSelf,
-                ID.getShaedXMPP(), Jingle.RELAY_HOST, (short) Jingle.RELAY_PORT,
+        _main = new XmppMain(
+                address.getHostName(), address.getPort(),
+                true,
+                _jidSelf,
+                ID.getShaedXMPP(),
                 ljlogpathutf8);
 
         l.info("connect slots");
 
-        _slotStateChange.connect(_main.getXmppClient());
-
-        _slotSocketCloseEvent.connect(_main.getSocket());
-
-        _slotSocketError.connect(_main.getSocket());
+        _slotStateChange.connect(_main.xmpp_client());
 
         // >>>> WHEE...RUNNING >>>>
 
         l.info("before run");
 
         boolean lolon = Cfg.lotsOfLog(Cfg.absRTRoot());
-        _main.run(lolon, lolon);
+        _main.Run(lolon);
 
         l.info("after run");
 
@@ -225,7 +219,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         if (_eng != null) _eng.close_(e);
 
-        _main.quit();
+        _main.Stop();
     }
 
     void close_(DID did, Exception e)
@@ -292,7 +286,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 return;
             }
 
-            main.getSignalThread().Post(this);
+            main.signal_thread().Post(this);
 
             _wake = false;
 
@@ -338,14 +332,13 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
             l.info("engine state: " + state);
 
             if (state == XmppEngine.State.STATE_OPEN) {
-                _main.sendPresence(true, Status.Show.SHOW_ONLINE);
-                _main.initSessionManagerTask();
+                _main.StartHandlingSessions();
                 l.info("create_ engine");
                 _eng = new Engine(ij, _main, SignalThread.this);
 
             } else if (state == XmppEngine.State.STATE_CLOSED) {
                 int[] subcode = {0};
-                XmppEngine.Error error = _main.getXmppClient().engine().GetError(subcode);
+                XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
                 close_(new ExJingle("engine state changed to closed." +
                         " error " + error + " subcode " + subcode[0]));
                 // Previously we had code that tried to create_ a new account
@@ -359,24 +352,6 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 // some point at time the Multicast thread will succeed, at
                 // which time we will be able to log in here as well.
             }
-        }
-    };
-
-    private final XmppSocket_CloseEventSlot _slotSocketCloseEvent = new XmppSocket_CloseEventSlot()
-    {
-        @Override
-        public void onCloseEvent(int error)
-        {
-            close_(new ExJingle("socket closed. error " + error));
-        }
-    };
-
-    private final XmppSocket_ErrorSlot _slotSocketError = new XmppSocket_ErrorSlot()
-    {
-        @Override
-        public void onError()
-        {
-            close_(new ExJingle("socket error"));
         }
     };
 

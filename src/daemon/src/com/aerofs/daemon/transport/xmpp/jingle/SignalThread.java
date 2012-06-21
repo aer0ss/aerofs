@@ -10,16 +10,14 @@ import com.aerofs.daemon.transport.xmpp.XMPPServerConnection;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;
 import com.aerofs.j.MessageHandlerBase;
-import com.aerofs.j.Status;
 import com.aerofs.j.XmppClient_StateChangeSlot;
 import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
-import com.aerofs.j.XmppSocket_CloseEventSlot;
-import com.aerofs.j.XmppSocket_ErrorSlot;
-import com.aerofs.lib.SystemUtil.ExitCode;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -62,14 +60,14 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
      * by the signal thread. 2) accessing the engine's methods out of the signal
      * thread is not safe.
      */
-    Engine getEngine_()
+    JingleTunnelClient getEngine_()
     {
-        return _engineReference.get_();
+        return _jingleTunnelClientReference.get_();
     }
 
     boolean ready()
     {
-        return _engineReference.get_() != null;
+        return _jingleTunnelClientReference.get_() != null;
     }
 
     void linkStateChanged(boolean up)
@@ -129,7 +127,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         // post the handler if it's not been scheduled
         if (_postRunners.size() == 1) {
-            _main.getSignalThread().Post(_postHandler);
+            _main.signal_thread().Post(_postHandler);
         }
     }
 
@@ -176,34 +174,27 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         InetSocketAddress address = Xmpp.xmppAddress();
         // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
-        _main = new XmppMain(address.getHostName(), address.getPort(),
-                true, _jidSelf, XMPPServerConnection.shaedXMPP(),
-                DaemonParam.Jingle.RELAY_HOST, (short) DaemonParam.Jingle.RELAY_PORT,
+        _main = new XmppMain(
+                address.getHostName(), address.getPort(),
+                true,
+                _jidSelf,
+                XMPPServerConnection.shaedXMPP(),
                 ljlogpathutf8);
 
         l.debug("st: created xmppmain");
 
-        _slotStateChange.connect(_main.getXmppClient());
-
-        _slotSocketCloseEvent.connect(_main.getSocket());
-
-        _slotSocketError.connect(_main.getSocket());
+        _slotStateChange.connect(_main.xmpp_client());
 
         l.debug("st: connected slots - starting main");
 
         // >>>> WHEE...RUNNING >>>>
 
         boolean lolon = Cfg.lotsOfLog(Cfg.absRTRoot());
-        _main.run(lolon, lolon);
+        _main.Run(lolon);
 
         l.debug("st: main completed");
 
         // >>>> WHEE...OHHHH....DONE :( >>>>
-
-        if (_engineReference.get_() != null) {
-            _engineReference.get_().delete_();
-            _engineReference.set_(null);
-        }
 
         synchronized (_mxMain) {
             _main.delete();
@@ -220,15 +211,26 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
     {
         assertThread();
 
+        l.warn("st: trigger jingle close err:{}", e);
+
+        _main.Stop();
+    }
+
+    void closeImpl_(Exception e)
+    {
+        assertThread();
+
         l.debug("st: close: cause: " + e);
 
-        if (_engineReference.get_() != null) {
-            _engineReference.get_().close_(e);
+        if (_jingleTunnelClientReference.get_() != null) {
+            _jingleTunnelClientReference.get_().close_(e);
+            _jingleTunnelClientReference.get_().delete_();
+            _jingleTunnelClientReference.set_(null);
         } else {
             l.warn("st: null engine");
         }
 
-        _main.quit();
+        _main.ShutdownSignalThread();
     }
 
     void close_(DID did, Exception e)
@@ -237,8 +239,8 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         l.debug("st: close: cause: " + e + " d:" + did);
 
-        if (_engineReference.get_() != null) {
-            _engineReference.get_().close_(did, e);
+        if (_jingleTunnelClientReference.get_() != null) {
+            _jingleTunnelClientReference.get_().close_(did, e);
         }
     }
 
@@ -247,8 +249,8 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         assertThread();
 
         InOutArg<Collection<DID>> res = new InOutArg<Collection<DID>>(new ArrayList<DID>());
-        if (_engineReference.get_() != null) {
-            res.set(_engineReference.get_().getConnections_());
+        if (_jingleTunnelClientReference.get_() != null) {
+            res.set(_jingleTunnelClientReference.get_().getConnections_());
         }
         return res.get();
     }
@@ -259,10 +261,10 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         final InOutArg<String> res = new InOutArg<String>("call not executed");
 
-        if (_engineReference.get_() == null) {
+        if (_jingleTunnelClientReference.get_() == null) {
             res.set("engine closed");
         } else {
-            res.set(_engineReference.get_().diagnose_());
+            res.set(_jingleTunnelClientReference.get_().diagnose_());
         }
 
         return res.get();
@@ -271,7 +273,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
     @Override
     public void dumpStatMisc(final String indent, final String indentUnit, final PrintStream ps)
     {
-        ps.println(indent + "engine " + (_engineReference.get_() == null ? "closed" : "open"));
+        ps.println(indent + "engine " + (_jingleTunnelClientReference.get_() == null ? "closed" : "open"));
     }
 
     /**
@@ -319,7 +321,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 }
 
                 long postMessageId = _messageId++;
-                main.getSignalThread().Post(this, postMessageId);
+                main.signal_thread().Post(this, postMessageId);
                 l.debug("st: post to jingle m_id:" + postMessageId + " t:" + task);
 
                 _wake = false;
@@ -412,7 +414,8 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         private boolean _wake; // protected by _mxMain
     }
 
-    MessageHandlerBase _postHandler = new MessageHandlerBase() {
+    MessageHandlerBase _postHandler = new MessageHandlerBase()
+    {
         @Override
         public void OnMessage(Message msg)
         {
@@ -421,78 +424,59 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         }
     };
 
-    private final XmppClient_StateChangeSlot _slotStateChange =
-        new XmppClient_StateChangeSlot() {
-            @Override
-            public void onStateChange(XmppEngine.State state)
-            {
-                l.debug("st: engine state:" + state);
+    private final XmppClient_StateChangeSlot _slotStateChange = new XmppClient_StateChangeSlot()
+    {
+        @Override
+        public void onStateChange(XmppEngine.State state)
+        {
+            l.debug("st: engine state:" + state);
 
-                if (state == XmppEngine.State.STATE_OPEN) {
-                    _main.sendPresence(true, Status.Show.SHOW_ONLINE);
-                    _main.initSessionManagerTask();
-                    l.debug("st: create engine");
-                    _engineReference.set_(new Engine(ij, _main, SignalThread.this));
-                } else if (state == XmppEngine.State.STATE_CLOSED) {
-                    int[] subcode = { 0 };
-                    XmppEngine.Error error = _main.getXmppClient().engine()
-                        .GetError(subcode);
-                    close_(new ExJingle("engine state changed to closed." +
-                                " error " + error + " subcode " + subcode[0]));
-                    // Previously we had code that tried to create a new account
-                    // if login failed because of a "not authorized" message. This
-                    // call would race against the Multicast thread to create an
-                    // account on the XMPP server. The winner would succeed, but
-                    // the loser would get a conflict(409). This led to a lot of
-                    // thrashing. The better solution is to simply bail out here,
-                    // and let the Multicast thread alone attempt to create the
-                    // account. This thread will simply reattempt to log in. At
-                    // some point at time the Multicast thread will succeed, at
-                    // which time we will be able to log in here as well.
-                }
+            if (state == XmppEngine.State.STATE_OPEN) {
+                l.debug("st: create engine");
+                _main.StartHandlingSessions();
+                _jingleTunnelClientReference.set_(new JingleTunnelClient(ij, _main, SignalThread.this));
+            } else if (state == XmppEngine.State.STATE_CLOSED) {
+                int[] subcode = { 0 };
+                XmppEngine.Error error = _main.xmpp_client().engine().GetError(subcode);
+                l.warn("engine state changed to closed. err:{} subcode:{}", error, subcode[0]);
+                closeImpl_(new ExJingle("engine state changed to closed." + " error " + error + " subcode " + subcode[0]));
+                // Previously we had code that tried to create a new account
+                // if login failed because of a "not authorized" message. This
+                // call would race against the Multicast thread to create an
+                // account on the XMPP server. The winner would succeed, but
+                // the loser would get a conflict(409). This led to a lot of
+                // thrashing. The better solution is to simply bail out here,
+                // and let the Multicast thread alone attempt to create the
+                // account. This thread will simply reattempt to log in. At
+                // some point at time the Multicast thread will succeed, at
+                // which time we will be able to log in here as well.
             }
-        };
+        }
+    };
 
-    private final XmppSocket_CloseEventSlot _slotSocketCloseEvent =
-        new XmppSocket_CloseEventSlot() {
-            @Override
-            public void onCloseEvent(int error)
-            {
-                close_(new ExJingle("socket closed. error " + error));
-            }
-        };
-
-    private final XmppSocket_ErrorSlot _slotSocketError =
-        new XmppSocket_ErrorSlot() {
-            @Override
-            public void onError()
-            {
-                close_(new ExJingle("socket error"));
-            }
-        };
-
-    private final class EngineReference
+    private final class JingleTunnelClientReference
     {
         /**
-         * @return the current value of the {@link Engine} reference (may be null)
+         * @return the current value of the {@link JingleTunnelClient} reference (may be null)
          * <br/>
          * NOTE: if this returns a non-null value, then _main <i>must</i> be valid (the reverse is
          * not the case)
          */
-        public @Nullable Engine get_()
+        public @Nullable
+        JingleTunnelClient get_()
         {
-            return _engine;
+            return _jingleTunnelClient;
         }
 
-        public void set_(@Nullable Engine engine)
+        public void set_(@Nullable JingleTunnelClient jingleTunnelClient)
         {
             assertThread();
 
-            l.debug("st: set eng old:" + _engine + " new:" + engine);
-            _engine = engine;
+            l.debug("st: set eng old:" + _jingleTunnelClient + " new:" + jingleTunnelClient);
+            _jingleTunnelClient = jingleTunnelClient;
         }
 
-        private Engine _engine;
+        private JingleTunnelClient _jingleTunnelClient;
     }
 
     private boolean _linkUp;    // protected by _cvLinkState
@@ -500,7 +484,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
     private volatile XmppMain _main;
 
     private final IJingle ij;
-    private final EngineReference _engineReference = new EngineReference();
+    private final JingleTunnelClientReference _jingleTunnelClientReference = new JingleTunnelClientReference();
     private final ArrayList<Runnable> _postRunners =  new ArrayList<Runnable>(); // st thread only
     private final CallHandler _callHandler = new CallHandler();
     private final Object _mxMain = new Object(); // lock object

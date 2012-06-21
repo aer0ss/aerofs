@@ -5,13 +5,11 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExJingle;
 import org.slf4j.Logger;
 
-// see Engine.java for documentation
-
 class Tandem
 {
     private static final Logger l = Loggers.getLogger(Tandem.class);
 
-    private final Channel[] _cs = new Channel[2];
+    private final JingleDataStream[] _jingleDataStreams = new JingleDataStream[2];
     private boolean _notified = false;
     private final IJingle ij;
 
@@ -20,43 +18,43 @@ class Tandem
         this.ij = ij;
     }
 
-    Channel get_()
+    JingleDataStream get_()
     {
-        return _cs[0];
+        return _jingleDataStreams[0];
     }
 
     boolean isEmpty_()
     {
-        if (_cs[0] == null) assert _cs[1] == null;
+        if (_jingleDataStreams[0] == null) assert _jingleDataStreams[1] == null;
         return get_() == null;
     }
 
     void unpack_()
     {
-        if (_cs[0] != null) {
-            assert _cs[1] == null;
-            _cs[1] = _cs[0];
-            _cs[0] = null;
+        if (_jingleDataStreams[0] != null) {
+            assert _jingleDataStreams[1] == null;
+            _jingleDataStreams[1] = _jingleDataStreams[0];
+            _jingleDataStreams[0] = null;
         }
     }
 
     void pack_()
     {
-        if (_cs[1] != null) {
-            assert _cs[0] == null;
-            _cs[0] = _cs[1];
-            _cs[1] = null;
+        if (_jingleDataStreams[1] != null) {
+            assert _jingleDataStreams[0] == null;
+            _jingleDataStreams[0] = _jingleDataStreams[1];
+            _jingleDataStreams[1] = null;
         }
     }
 
     /**
      * remove, but not close nor delete, the specified channel
      */
-    void remove_(Channel c)
+    void remove_(JingleDataStream jingleDataStream)
     {
         for (int i = 0; i < 2; i++) {
-            if (_cs[i] == c) {
-                _cs[i] = null;
+            if (_jingleDataStreams[i] == jingleDataStream) {
+                _jingleDataStreams[i] = null;
                 pack_();
                 return;
             }
@@ -64,35 +62,35 @@ class Tandem
         assert false;
     }
 
-    void add_(Channel c)
+    void add_(JingleDataStream jingleDataStream)
     {
-        if (c.isIncoming()) {
+        if (jingleDataStream.isIncoming()) {
             // close the existing incoming stream if any
             for (int i = 0; i < 2; i++) {
-                if (_cs[i] != null && _cs[i].isIncoming()) {
-                    l.debug("t:" + this + " discard old incoming tunnel c:" + _cs[i]);
+                if (_jingleDataStreams[i] != null && _jingleDataStreams[i].isIncoming()) {
+                    l.debug("t:" + this + " discard old incoming stream jds:" + _jingleDataStreams[i]);
 
-                    _cs[i].close_(new ExJingle("stream overwritten"));
-                    _cs[i].delete_();
-                    _cs[i] = null;
+                    _jingleDataStreams[i].close_(new ExJingle("stream overwritten"));
+                    _jingleDataStreams[i].delete_();
+                    _jingleDataStreams[i] = null;
                 }
             }
 
         } else {
             // cannot add outgoing streams for more than once
-            for (Channel p2 : _cs) assert p2 == null || p2.isIncoming();
+            for (JingleDataStream p2 : _jingleDataStreams) assert p2 == null || p2.isIncoming();
         }
 
         unpack_();
-        _cs[0] = c;
+        _jingleDataStreams[0] = jingleDataStream;
 
         l.debug("t:" + this + " after add");
     }
 
     void connected_()
     {
-        assert _cs[0] != null;
-        DID did = _cs[0].did();
+        assert _jingleDataStreams[0] != null;
+        DID did = _jingleDataStreams[0].did();
 
         if (!_notified) ij.peerConnected(did);
         _notified = true;
@@ -111,10 +109,10 @@ class Tandem
         l.warn("t:" + this + " close: cause: " + e);
 
         for (int i = 0; i < 2; i++) {
-            if (_cs[i] != null) {
-                _cs[i].close_(e);
-                _cs[i].delete_();
-                _cs[i] = null;
+            if (_jingleDataStreams[i] != null) {
+                _jingleDataStreams[i].close_(e);
+                _jingleDataStreams[i].delete_();
+                _jingleDataStreams[i] = null;
             }
         }
     }
@@ -122,14 +120,14 @@ class Tandem
     @Override
     public String toString()
     {
-        return "[" + _cs[0] + ", " + _cs[1] + "]";
+        return "[" + _jingleDataStreams[0] + ", " + _jingleDataStreams[1] + "]";
     }
 
     long getBytesIn_()
     {
         long ret = 0;
-        for (Channel c : _cs) {
-            if (c != null) ret += c.getBytesIn_();
+        for (JingleDataStream jingleDataStream : _jingleDataStreams) {
+            if (jingleDataStream != null) ret += jingleDataStream.getBytesIn_();
         }
         return ret;
     }
@@ -138,9 +136,9 @@ class Tandem
     {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 2; i++) {
-            if (_cs[i] != null) {
-                sb.append(_cs[i] + "\n-----------\n");
-                sb.append(_cs[i].diagnose_());
+            if (_jingleDataStreams[i] != null) {
+                sb.append(_jingleDataStreams[i]).append("\n-----------\n");
+                sb.append(_jingleDataStreams[i].diagnose_());
             }
         }
 

@@ -130,7 +130,7 @@ final class Engine implements IProxyObjectContainer
     Engine(IJingle ij, XmppMain main, SignalThread st)
     {
         this.ij = ij;
-        _tsc = new TunnelSessionClient(main.getXmppClient().jid(), main.getSessionManager());
+        _tsc = new TunnelSessionClient(main.xmpp_client().jid(), main.session_manager());
         _slotIncomingTunnel.connect(_tsc);
 
         _st = st;
@@ -149,8 +149,7 @@ final class Engine implements IProxyObjectContainer
         t.add_(p);
     }
 
-    private void onIncomingTunnel_(final TunnelSessionClient client, Jid jid,
-            final SWIGTYPE_p_cricket__Session sess)
+    private void onIncomingTunnel_(final TunnelSessionClient client, Jid jid, final SWIGTYPE_p_cricket__Session sess)
     {
         _st.assertThread();
         assert !_closed;

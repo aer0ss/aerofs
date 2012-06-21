@@ -118,7 +118,7 @@ public class Jingle implements ISignalledPipe, IJingle
             @Override
             public void run()
             {
-                Engine eng = _st.getEngine_();
+                JingleTunnelClient eng = _st.getEngine_();
                 if (eng != null && !eng.isClosed_()) {
                     eng.connect_(did);
                 } else {
@@ -244,7 +244,7 @@ public class Jingle implements ISignalledPipe, IJingle
             @Override
             public void run()
             {
-                Engine eng = _st.getEngine_();
+                JingleTunnelClient eng = _st.getEngine_();
                 if (eng != null && !eng.isClosed_()) {
                     eng.send_(did, bss, pri, wtr);
                 } else {
@@ -352,7 +352,7 @@ public class Jingle implements ISignalledPipe, IJingle
             @Override
             public void run()
             {
-                Engine eng = _st.getEngine_();
+                JingleTunnelClient eng = _st.getEngine_();
                 if (eng != null) {
                     ret.set(eng.getBytesIn_(did));
                 } else {

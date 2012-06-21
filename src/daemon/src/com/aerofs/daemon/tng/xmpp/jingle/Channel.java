@@ -360,7 +360,8 @@ final class Channel implements IProxyObjectContainer
 
     String diagnose_()
     {
-        return _s.diagnose();
+        // return _s.diagnose(); // FIXME (AG): add a diagnose method
+        return "";
     }
 
     /**

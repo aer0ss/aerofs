@@ -12,3 +12,5 @@ dump.rdb
 env
 *.pyc
 resource/dropwizard
+aerofsj-build*
+converter-build*

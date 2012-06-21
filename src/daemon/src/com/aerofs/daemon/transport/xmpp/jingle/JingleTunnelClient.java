@@ -1,14 +1,19 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
 import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.LRUCache;
-import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.LRUCache.IEvictionListener;
-import com.aerofs.j.*;
-import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.j.Jid;
+import com.aerofs.j.SWIGTYPE_p_cricket__Session;
+import com.aerofs.j.StreamInterface;
+import com.aerofs.j.TunnelSessionClient;
+import com.aerofs.j.TunnelSessionClient_IncomingTunnelSlot;
+import com.aerofs.j.XmppMain;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExJingle;
 import org.slf4j.Logger;
 
@@ -16,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map.Entry;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Design rationales:
@@ -50,106 +57,106 @@ import java.util.Map.Entry;
 // N.B. all the methods of this class must be called within the signal thread
 // including dumpStat()
 //
-public class Engine implements IProxyObjectContainer {
-    private static final Logger l = Loggers.getLogger(Engine.class);
+public class JingleTunnelClient implements IProxyObjectContainer
+{
+    private static final Logger l = Loggers.getLogger(JingleTunnelClient.class);
 
-    private final TunnelSessionClient_IncomingTunnelSlot _slotIncomingTunnel =
-        new TunnelSessionClient_IncomingTunnelSlot()
-        {
-            @Override
-            public void onIncomingTunnel(TunnelSessionClient client, Jid jid,
-                    String desc, SWIGTYPE_p_cricket__Session sess)
-            {
-                onIncomingTunnel_(client, jid, sess);
-            }
-        };
-
-    private final Channel.IClosureListener _cclosl = new Channel.IClosureListener() {
-            @Override
-            public void closed_(Channel c)
-            {
-                l.debug("eng: ccl triggered close c:" + c + " d:" + c.did());
-
-                _st.delayedDelete_(c);
-
-                DID did = c.did();
-                Tandem t = _cache.get_(did);
-                t.remove_(c);
-                if (t.isEmpty_()) {
-                    l.debug("eng: remove tandem d:" + did);
-
-                    _cache.invalidate_(did);
-
-                    // since the tandem itself is empty we signal that both incoming and
-                    // outgoing streams are closed
-                    // also, see comments at top of Engine.java
-                    ij.closePeerStreams(did, true, true);
-
-                    // A. case where channel is shut down because of an error
-                    // have to signal here, because we don't know when eviction runs
-                    ij.peerDisconnected(did);
-
-                    l.debug("eng: make ccl peer disconnected callback d:" + did);
-                }
-            }
-        };
-
-    private final Channel.IConnectionListener _cconl = new Channel.IConnectionListener() {
+    private final TunnelSessionClient_IncomingTunnelSlot _slotIncomingTunnel = new TunnelSessionClient_IncomingTunnelSlot()
+    {
         @Override
-        public void connected_(Channel c)
+        public void onIncomingTunnel(TunnelSessionClient client, Jid jid, String desc, SWIGTYPE_p_cricket__Session sess)
         {
-            l.debug("eng: connected c:" + c + " d:" + c.did());
+            onIncomingTunnel_(client, jid, sess);
+        }
+    };
 
-            DID did = c.did();
+    private final JingleDataStream.IClosureListener _cclosl = new JingleDataStream.IClosureListener()
+    {
+        @Override
+        public void closed_(JingleDataStream jds)
+        {
+            l.debug("eng: ccl triggered close jds:" + jds + " d:" + jds.did());
+
+            _st.delayedDelete_(jds);
+
+            DID did = jds.did();
+
             Tandem t = _cache.get_(did);
-            assert t != null : ("null tandem for " + c);
+            checkNotNull(t);
+            t.remove_(jds);
+
+            if (t.isEmpty_()) {
+                l.debug("eng: remove tandem d:" + did);
+
+                _cache.invalidate_(did);
+
+                // since the tandem itself is empty we signal that both incoming and
+                // outgoing streams are closed
+                // also, see comments at top of Engine.java
+                _ij.closePeerStreams(did, true, true);
+
+                // A. case where channel is shut down because of an error
+                // have to signal here, because we don't know when eviction runs
+                _ij.peerDisconnected(did);
+
+                l.debug("eng: make ccl peer disconnected callback d:" + did);
+            }
+        }
+    };
+
+    private final JingleDataStream.IConnectionListener _cconl = new JingleDataStream.IConnectionListener()
+    {
+        @Override
+        public void connected_(JingleDataStream jingleDataStream)
+        {
+            l.debug("eng: connected jds:" + jingleDataStream + " d:" + jingleDataStream.did());
+
+            DID did = jingleDataStream.did();
+            Tandem t = _cache.get_(did);
+            assert t != null : ("null tandem for " + jingleDataStream);
             t.connected_();
         }
     };
 
     // TODO: This should be consolidated with the device LRU in the core
-    private final LRUCache<DID, Tandem> _cache =
-        new LRUCache<DID, Tandem>(DaemonParam.deviceLRUSize(),
-                new IEvictionListener<DID, Tandem>() {
-            @Override
-            public void evicted_(DID did, Tandem t)
-            {
-                l.debug("eng: t:" + t + " d:" + did + " evicted");
-                close_(did, t, new ExJingle("evicted"));
-            }
-        });
+    private final LRUCache<DID, Tandem> _cache = new LRUCache<DID, Tandem>(DaemonParam.deviceLRUSize(), new IEvictionListener<DID, Tandem>()
+    {
+        @Override
+        public void evicted_(DID did, Tandem t)
+        {
+            l.debug("eng: t:" + t + " d:" + did + " evicted");
+            close_(did, t, new ExJingle("evicted"));
+        }
+    });
 
-    private final IJingle ij;
+    private final IJingle _ij;
     private final SignalThread _st;
     private final TunnelSessionClient _tsc;
 
     private boolean _closed;
 
-    Engine(IJingle ij, XmppMain main, SignalThread st)
+    JingleTunnelClient(IJingle ij, XmppMain main, SignalThread st)
     {
-        this.ij = ij;
-        _tsc = new TunnelSessionClient(main.getXmppClient().jid(),
-                main.getSessionManager());
-        _slotIncomingTunnel.connect(_tsc);
-
-        _st = st;
+        this._ij = ij;
+        this._tsc = new TunnelSessionClient(main.xmpp_client().jid(), main.session_manager());
+        this._slotIncomingTunnel.connect(_tsc);
+        this._st = st;
     }
 
-    private void add_(DID did, Channel p)
+    private void add_(DID did, JingleDataStream p)
     {
         _st.assertThread();
         assert !_closed;
 
         Tandem t = _cache.get_(did);
         if (t == null) {
-            t = new Tandem(ij);
+            t = new Tandem(_ij);
             _cache.put_(did, t);
         }
         t.add_(p);
     }
 
-    private void onIncomingTunnel_(TunnelSessionClient client, Jid jid,
-                                   SWIGTYPE_p_cricket__Session sess)
+    private void onIncomingTunnel_(TunnelSessionClient client, Jid jid, SWIGTYPE_p_cricket__Session sess)
     {
         _st.assertThread();
         assert !_closed;
@@ -165,11 +172,11 @@ public class Engine implements IProxyObjectContainer {
 
         StreamInterface s = client.AcceptTunnel(sess);
         l.debug("eng: new channel d:" + did);
-        Channel c = new Channel(ij, s, did, true, _cclosl, _cconl);
-        add_(did, c);
+        JingleDataStream jingleDataStream = new JingleDataStream(_ij, s, did, true, _cclosl, _cconl);
+        add_(did, jingleDataStream);
 
         // see the comments on top
-        ij.closePeerStreams(did, true, true);
+        _ij.closePeerStreams(did, true, true);
     }
 
     boolean isClosed_()
@@ -183,14 +190,14 @@ public class Engine implements IProxyObjectContainer {
         assert !_closed;
 
         Tandem t = _cache.get_(did);
-        Channel c = t != null ? t.get_() : null;
+        JingleDataStream jingleDataStream = t != null ? t.get_() : null;
 
-        if (c == null) {
+        if (jingleDataStream == null) {
             Jid jid = Jingle.did2jid(did);
             StreamInterface s = _tsc.CreateTunnel(jid, "a");
             l.debug("eng: create channel to d:" + did);
-            c = new Channel(ij, s, did, false, _cclosl, _cconl);
-            add_(did, c);
+            jingleDataStream = new JingleDataStream(_ij, s, did, false, _cclosl, _cconl);
+            add_(did, jingleDataStream);
         }
 
         l.info("eng: connect initiated to d:" + did);
@@ -202,7 +209,7 @@ public class Engine implements IProxyObjectContainer {
         assert !_closed;
 
         Tandem t = _cache.get_(did);
-        Channel c = t != null ? t.get_() : null;
+        JingleDataStream jingleDataStream = t != null ? t.get_() : null;
 
         //
         // IMPORTANT: it is possible to end up with a null channel because of a change in
@@ -220,16 +227,16 @@ public class Engine implements IProxyObjectContainer {
         // filled with outgoing packets). Because send events are still in the xmpp event
         // queue and are being serviced, they _will_ make it. Instead of asserting, we should simply
         // log it, notify waiters, and the upper layer will find out about the disconnection in
-        // time (presumably they were notified via ij.peerDisconnected(did))
+        // time (presumably they were notified via _ij.peerDisconnected(did))
         //
 
-        if (c == null) {
+        if (jingleDataStream == null) {
             l.warn("eng: null chan d:" + did);
             if (waiter != null) waiter.error(new Exception("null chan")); // explicitly handle err
             return;
         }
 
-        c.send_(bss, prio, waiter);
+        jingleDataStream.send_(bss, prio, waiter);
     }
 
     void close_(Exception e)
@@ -260,7 +267,7 @@ public class Engine implements IProxyObjectContainer {
     {
         _st.assertThread();
 
-        if (t.isConnected_()) ij.closePeerStreams(did, true, true);
+        if (t.isConnected_()) _ij.closePeerStreams(did, true, true);
         t.close_(e);
 
         //
@@ -279,7 +286,7 @@ public class Engine implements IProxyObjectContainer {
         //
 
         l.debug("eng: make peer disconnected callback d:" + did);
-        ij.peerDisconnected(did); // B. signal for aerofs-initiated shutdowns
+        _ij.peerDisconnected(did); // B. signal for aerofs-initiated shutdowns
     }
 
     /**
@@ -299,7 +306,7 @@ public class Engine implements IProxyObjectContainer {
         if (t == null) return;
 
         //
-        // IMPORTANT: DO NOT CALL ij.peerDisconnected(did) HERE!!
+        // IMPORTANT: DO NOT CALL _ij.peerDisconnected(did) HERE!!
         // it will be called by close(did, t, e) above!
         //
 
