@@ -4,7 +4,7 @@
 set -e
 if [ $# -ne 3 ]
 then
-    echo usage '$0 [path to aerofs.release] [output file] [prod|staging]'
+    echo usage "$0 [path to release.out] [output file] [prod|staging]"
     exit
 fi
 
@@ -27,7 +27,7 @@ TEMP_DIR=/tmp/release-$build
 #clean up from past install
 rm -rf $TEMP_DIR/aerofs.deb.tmp
 tmpdir=$TEMP_DIR/aerofs.deb.tmp
-mkdir $tmpdir 
+mkdir -p $tmpdir
 cd $tmpdir
 
 ########
@@ -40,7 +40,18 @@ mkdir -p $debian
 #Make deb building directories.
 
 #used for linked aerofs executables
-mkdir -p debian/usr/local/bin/
+mkdir -p debian/usr/bin/
+
+# Bump max inotify watches to something absurdly huge.
+mkdir -p debian/etc/sysctl.d/
+cat << EOF >> debian/etc/sysctl.d/30-aerofs-increase-inotify-limit.conf
+# Increase the maximum number of inotify watches allowed per user from the
+# default value of 8192.
+# AeroFS needs to create a watch for every folder under your AeroFS folder.
+# For some users, this can be a bunch of folders.  We picked a big number that
+# will hopefully be more than sufficient for virtually all users.
+fs.inotify.max_user_watches = 131072
+EOF
 
 #used for menu items in GNOME
 mkdir -p debian/usr/share/applications
@@ -48,34 +59,54 @@ mkdir -p $hicolor/16x16/apps
 mkdir -p $hicolor/32x32/apps
 mkdir -p $hicolor/64x64/apps
 
-cp $aerofsPath/aerofs.linux.inst/aerofs debian/usr/local/bin/aerofs
+cp $aerofsPath/aerofs.linux.inst/aerofs debian/usr/bin/aerofs
 cp $aerofsPath/aerofs.linux/aerofs.desktop debian/usr/share/applications
 cp $aerofsPath/aerofs/icons/logo16.png $hicolor/16x16/apps/aerofs.png
 cp $aerofsPath/aerofs/icons/logo32.png $hicolor/32x32/apps/aerofs.png
 cp $aerofsPath/aerofs/icons/logo64.png $hicolor/64x64/apps/aerofs.png
  
 # Generate control file
-echo Package: $package >> $debian/control
-echo Version: $version >> $debian/control
-echo Section: $section >> $debian/control
-echo Priority: $priority >> $debian/control
-echo Architecture: all >> $debian/control
-echo Depends: $depends >> $debian/control
-echo Maintainer: $maintainer >> $debian/control
-echo Description: $descrip >> $debian/control
-echo Installed-Size: `du -sk | awk '{print $1}'` >> $debian/control
+cat << EOF >> $debian/control
+Package: $package
+Version: $version
+Section: $section
+Priority: $priority
+Architecture: all
+Depends: $depends
+Maintainer: $maintainer
+Description: $descrip
+Installed-Size: $(du -sk | awk '{print $1}')
+EOF
 
-# Generate postinst and preinst 
-echo "#!/bin/bash" >> $debian/preinst
-echo "rm -rf /usr/local/bin/aerofs-sh /usr/local/bin/aerofs-cli /usr/local/bin/aerofs-gui /usr/local/bin/aerofs" >> $debian/preinst
-chmod a+x $debian/preinst 
+# Generate postinst and preinst
+# We used to install to /usr/local/bin ; it's more correct for packages
+# installed via the package manager to go in /usr/bin/.
+# We pre-remove the files and links from both locations.
+cat << EOF >> $debian/preinst
+#!/bin/bash
+rm -rf /usr{,/local}/bin/aerofs{,-sh,-cli,-gui}
+EOF
+chmod a+x $debian/preinst
 
-echo "#!/bin/bash" >> $debian/postinst
-echo "ln -sf /usr/local/bin/aerofs /usr/local/bin/aerofs-sh" >> $debian/postinst
-echo "ln -sf /usr/local/bin/aerofs /usr/local/bin/aerofs-cli" >> $debian/postinst
-echo "ln -sf /usr/local/bin/aerofs /usr/local/bin/aerofs-gui" >> $debian/postinst
-echo "chmod a+x /usr/local/bin/aerofs" >> $debian/postinst
+cat << EOF >> $debian/postinst
+#!/bin/bash
+ln -sf /usr/bin/aerofs /usr/bin/aerofs-sh
+ln -sf /usr/bin/aerofs /usr/bin/aerofs-cli
+ln -sf /usr/bin/aerofs /usr/bin/aerofs-gui
+chmod a+x /usr/bin/aerofs
+invoke-rc.d procps start
+EOF
 chmod a+x $debian/postinst
+
+# Remove symlinks on uninstallation.
+cat << EOF >> $debian/postrm
+#!/bin/bash
+unlink -f /usr/bin/aerofs-sh
+unlink -f /usr/bin/aerofs-cli
+unlink -f /usr/bin/aerofs-gui
+invoke-rc.d procps start
+EOF
+chmod a+x $debian/postrm
 
 #Generate .deb file
 find ./debian -type d | xargs chmod 755
