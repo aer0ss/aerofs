@@ -3,8 +3,8 @@
 PROBE=`readlink -f "$0"`
 PROBE=`dirname "$PROBE"`/probe
 
-$PROBE tomcat.aerofs.com url http://www.aerofs.com
-$PROBE tomcat.aerofs.com url https://www.aerofs.com/sp
+$PROBE www.aerofs.com url http://www.aerofs.com
+$PROBE sp.aerofs.com url https://sp.aerofs.com/sp
 $PROBE verkehr port reloadedsp.aerofs.com 80
 $PROBE x.aerofs.com-openfire port x.aerofs.com 443
 $PROBE x.aerofs.com-relay port x.aerofs.com 80
