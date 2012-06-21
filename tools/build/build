@@ -100,6 +100,8 @@ cp -R "$ASIS"/linux32/* "$AEROFS_LINUX32_DIR"/
 cp -R "$ASIS"/linux64/* "$AEROFS_LINUX64_DIR"/
 cp -R "$ASIS"/linux.inst/* "$AEROFS_INST_DIR"/
 #cp "$LAUNCHER"/bin/$OS/* "$APPROOT"/
+mkdir -p "$AEROFS_LINUX_DIR"/lib/
+cp "$ASIS"/s3/lib/* "$AEROFS_LINUX_DIR"/lib/
 
 rm -rf "$AEROFS_DIR"/lib.test
 
@@ -139,6 +141,11 @@ done
 # mac-specific jars
 echo " lib/growlbindings-1.3.1.jar " >> m.tmp
 
+# s3 jars
+for i in "$ASIS/s3/lib"/*.jar; do
+    echo " lib/$(basename "$i") " >> m.tmp
+done
+
 ###################################
 #echo copy class files
 
@@ -167,10 +174,11 @@ fi
 #echo generate aerofs-installer
 
 if [ $PROD == 1 ]; then
-    sed -i '' -e 's=DOT_STAGING__TO_BE_REPLACED_BY_SED==' $AEROFS_INST_DIR/aerofs
+    DOT_STAGING=''
 else
-    sed -i '' -e 's=DOT_STAGING__TO_BE_REPLACED_BY_SED=.staging=' $AEROFS_INST_DIR/aerofs
+    DOT_STAGING='.staging'
 fi
+sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$ASIS"/linux.inst/aerofs > "$AEROFS_INST_DIR"/aerofs
 
 DLR_TMP=/tmp/aerofs-dlr
 AEROFS_DLR_PKG=com/aerofs/downloader

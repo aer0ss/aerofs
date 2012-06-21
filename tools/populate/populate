@@ -24,6 +24,7 @@ OS=`"$PPWD"/os`
 mkdir -p "$APPROOT"
 rm -rf "$APPROOT"/Growl.framework    # Symlinks prevent cp from overwriting the files
 cp -R "$ASIS"/common/* "$APPROOT"/
+cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
 
 # Set-up a staging environment
