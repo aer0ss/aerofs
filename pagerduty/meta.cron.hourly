@@ -1,6 +1,0 @@
-#!/bin/bash
-
-PROBE=`readlink -f "$0"`
-PROBE=`dirname "$PROBE"`/probe
-
-$PROBE z.arrowfs.org ping z.arrowfs.org
