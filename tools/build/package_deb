@@ -1,0 +1,155 @@
+#!/bin/bash
+
+set -e
+
+#################################
+# arguments
+
+if [[ x"$1" == x || x"$2" == x || x"$3" == x ]]; then
+    echo usage "$0 [build mode] [remote release dir] [output deb filename]"
+    echo "[build mode]: staging, prod"
+    echo "[remote release dir]: directory in which the release files are on the build server"
+    echo "[output deb filename]: name of the deb file this script creates"
+    echo
+    echo "IMPORTANT: this script is meant to be run on a remote server!!!!"
+    echo
+    echo "example: $0 staging ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
+    exit
+fi
+
+#################################
+# build mode
+
+MODE=""
+if [ "$1" == "prod" ]; then
+    MODE="prod"
+else
+    MODE="staging"
+fi
+
+#################################
+# set parameters
+
+SERVER_RELEASE_DIR=$2
+OUTPUT_DEB_NAME=$3
+
+# debian control-file parameters
+PACKAGE_NAME='aerofs-installer'
+VERSION=0.2.0
+echo "aerofs-installer version = $VERSION"
+SECTION='utility'
+PRIORITY='optional'
+
+#sharutils is used by uudecode
+DEPENDS='openjdk-6-jre(>= 6b18-1.8.2-4ubuntu1~8.04.1), sharutils'
+MAINTAINER='AeroFS Team <support@aerofs.com>'
+DESCRIPTION='AeroFS: File syncing without servers.'
+
+#################################
+# create a working directory for package building
+
+TEMP_DIR=/tmp/release-$MODE
+#clean up from past install
+rm -rf $TEMP_DIR/aerofs.deb.tmp
+DEB_BUILD_DIR=$TEMP_DIR/aerofs.deb.tmp
+mkdir -p $DEB_BUILD_DIR
+cd $DEB_BUILD_DIR
+
+#################################
+# all work done in $DEB_BUILD_DIR from now
+
+HICOLOR_DIR=debian/usr/share/icons/hicolor
+DEBIAN_CONTROL_DIR=debian/DEBIAN
+mkdir -p $DEBIAN_CONTROL_DIR
+
+#################################
+# copy the files we need on the client system into the correct spots in the debian package
+
+#used for linked aerofs executables
+mkdir -p debian/usr/bin/
+
+# Bump max inotify watches to something absurdly huge.
+mkdir -p debian/etc/sysctl.d/
+cat << EOF >> debian/etc/sysctl.d/30-aerofs-increase-inotify-limit.conf
+# Increase the maximum number of inotify watches allowed per user from the
+# default value of 8192.
+# AeroFS needs to create a watch for every folder under your AeroFS folder.
+# For some users, this can be a bunch of folders.  We picked a big number that
+# will hopefully be more than sufficient for virtually all users.
+fs.inotify.max_user_watches = 131072
+EOF
+
+#used for menu items in GNOME
+mkdir -p debian/usr/share/applications
+
+#################################
+# generate the .deb file
+
+mkdir -p $HICOLOR_DIR/16x16/apps
+mkdir -p $HICOLOR_DIR/32x32/apps
+mkdir -p $HICOLOR_DIR/64x64/apps
+
+cp $SERVER_RELEASE_DIR/aerofs.linux.inst/aerofs debian/usr/bin/aerofs
+cp $SERVER_RELEASE_DIR/aerofs.linux/aerofs.desktop debian/usr/share/applications
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/aerofs.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/aerofs.png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/aerofs.png
+
+#################################
+# generate the control file
+
+cat << EOF >> $DEBIAN_CONTROL_DIR/control
+Package: $PACKAGE_NAME
+Version: $VERSION
+Section: $SECTION
+Priority: $PRIORITY
+Architecture: all
+Depends: $DEPENDS
+Maintainer: $MAINTAINER
+Description: $DESCRIPTION
+Installed-Size: $(du -sk | awk '{print $1}')
+EOF
+
+#################################
+# generate preinst, postinst and postrm
+
+# We used to install to /usr/local/bin ; it's more correct for packages
+# installed via the package manager to go in /usr/bin/.
+
+# NOTE: we call procps start so that the sysctl values that
+# were modified are loaded
+
+# We pre-remove the files and links from both locations.
+cat << EOF >> $DEBIAN_CONTROL_DIR/preinst
+#!/bin/bash
+rm -rf /usr{,/local}/bin/aerofs{,-sh,-cli,-gui}
+EOF
+chmod a+x $DEBIAN_CONTROL_DIR/preinst
+
+cat << EOF >> $DEBIAN_CONTROL_DIR/postinst
+#!/bin/bash
+ln -sf /usr/bin/aerofs /usr/bin/aerofs-sh
+ln -sf /usr/bin/aerofs /usr/bin/aerofs-cli
+ln -sf /usr/bin/aerofs /usr/bin/aerofs-gui
+chmod a+x /usr/bin/aerofs
+invoke-rc.d procps start
+EOF
+chmod a+x $DEBIAN_CONTROL_DIR/postinst
+
+# Remove symlinks on uninstallation.
+cat << EOF >> $DEBIAN_CONTROL_DIR/postrm
+#!/bin/bash
+unlink /usr/bin/aerofs-sh
+unlink /usr/bin/aerofs-cli
+unlink /usr/bin/aerofs-gui
+invoke-rc.d procps start
+EOF
+chmod a+x $DEBIAN_CONTROL_DIR/postrm
+
+#################################
+# finally build the .deb
+
+find ./debian -type d | xargs chmod 755
+fakeroot dpkg-deb --build debian #fakeroot allows deb to be built with root attributes for chown/chmod
+mv debian.deb $OUTPUT_DEB_NAME
+echo "successfully packaged $DEB_BUILD_DIR/$OUTPUT_DEB_NAME"

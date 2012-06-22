@@ -2,29 +2,59 @@
 
 set -e
 
-if [ x"$1" == xprod ]; then
-    TYPE=prod
+#################################
+# arguments
+
+if [[ $# -ne 0 && $# -ne 1 ]]; then
+    echo "usage: $0 [staging|prod]"
+    echo "[build mode]: staging, prod"
+    echo
+    echo "example: $0 staging"
+    exit 2
+fi
+
+#################################
+# build mode
+
+if [ "$1" == "prod" ]; then
+    MODE=prod
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo "!!! BANG PRODUCTION !!!"
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo
 else
-    TYPE=staging
+    MODE=staging
 fi
 
+#################################
+# set parameters
+
+STAGING_PASSPHRASE=temp123
+
+# passphrase
 if [ x"$2" == x ]; then
-    PASSPHRASE=temp123
+    PASSPHRASE="$STAGING_PASSPHRASE"
 else
     PASSPHRASE="$2"
 fi
 
-./build $TYPE
-./deploy $TYPE "$PASSPHRASE"
-if [ $? != 0 ]; then
-    exit $?
-fi
+# directories
+# see: http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
+AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )" # get the absolute path
+BUILD_DIR=$AEROFS_GIT_ROOT/out.ant
+RELEASE_DIR=$AEROFS_BUILD_DIR/release
+
+#################################
+# jar the aerofs code; create windows and linux installers and zip files
+
+./package $MODE "$AEROFS_GIT_ROOT" "$BUILD_DIR" "$RELEASE_DIR"
+./publish $MODE "$AEROFS_GIT_ROOT" "$RELEASE_DIR" "$PASSPHRASE"
+
+#################################
+# create mac installer and zipfile
 
 cd osx/
-./build $TYPE
-./deploy $TYPE
+./package $MODE "$AEROFS_GIT_ROOT" "$RELEASE_DIR"
+./publish $MODE

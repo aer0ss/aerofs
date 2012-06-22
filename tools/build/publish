@@ -2,56 +2,80 @@
 
 set -e
 
-# usage $0 [staging|prod]
-# exit non-zero if deployment failed
+#################################
+# arguments
 
-if [ x"$2" == x ]; then
-  echo usage '$0 [staging|prod] [deployment passphrase]'
+if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]] ; then
+  echo "usage: $0 [build mode] [aerofs git root] [aerofs build dir] [aerofs release dir]"
+  echo "[build mode]: staging, prod"
+  echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
+  echo "[aerofs build dir]: path into which all ant (or non-ide) build artifacts are placed (usually ~/repos/aerofs/out.ant)"
+  echo "[aerofs release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
+  echo
+  echo "example: $0 staging /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant /Users/aerofsbuild/repos/aerofs/out.ant/release"
   exit 2
 fi
 
+#################################
+# build mode
+
+MODE=""
 if [ $1 == prod ]; then
   PROD=1
+  MODE="prod"
 else
   PROD=0
+  MODE="staging"
 fi
 
-if [ $PROD == 1 ]; then
-  SVR_LOGIN=release-prod@b.arrowfs.org
-  SVR_ROOT=/home/release-prod
-  SVR_TEMP=/tmp/release-prod
-else
-  SVR_LOGIN=release-staging@b.arrowfs.org
-  SVR_ROOT=/home/release-staging
-  SVR_TEMP=/tmp/release-staging
-fi
+SVR_LOGIN="release-$MODE@b.arrowfs.org"
+SVR_ROOT="/home/release-$MODE"
+SVR_TEMP="/tmp/release-$MODE" # FIXME: (AG) replace with mktemp
 
-BUILDTYPE=$1
-PASSPHRASE=$2
-PPWD=$PWD
+#################################
+# set parameters
+
+AEROFS_GIT_ROOT=$2
+RELEASE_DIR=$3
+PASSPHRASE=$4
+PPWD="$( cd $PWD; pwd )"
+
+#################################
+# all local work happens in release directory from now on
+
+cd $RELEASE_DIR
+
+#################################
+# create a properly-versioned aerofs zipfile
+
 VERSION_FILE=version
+VER=$( head -1 aerofs/$VERSION_FILE )
 
-cd ../../release.out
-
-VER=`head -1 aerofs/$VERSION_FILE`
-
-NAME=aerofs-$VER-$1     # e.g. aerofs-1.2.3-staging
-ZIP=$NAME.zip           # e.g. aerofs-1.2.3-staging.zip
+NAME=aerofs-$VER-$MODE # e.g. aerofs-1.2.3-staging
+ZIP=$NAME.zip          # e.g. aerofs-1.2.3-staging.zip
 
 echo making $ZIP
-rm -rf $ZIP
+
+rm -rf "$ZIP"
 zip -9rqy $ZIP aerofs aerofs.osx aerofs.win \
 aerofs.linux32 aerofs.linux64 aerofs.linux aerofs.linux.inst
 
+#################################
+# upload the zipfile as well as the proguard map files
+
 echo uploading $ZIP and map files
+
 kscp $ZIP $SVR_LOGIN:~/$ZIP
 if [ $PROD == 1 ]; then
-    kscp aerofs.map $SVR_LOGIN:~/aerofs-$VER-$1.map
+    kscp aerofs.map $SVR_LOGIN:~/aerofs-$VER-$MODE.map
 fi
+
+#################################
+# upload the zipfile with the java classes as well as the proguard map files
 
 echo deploying on the server
 
-DEFLATED=aerofs.release/$1
+DEFLATED=aerofs.release/$MODE # directory on the server with the aerofs jars, libs, etc.
 
 kssh $SVR_LOGIN \
     "cd ~; \
@@ -62,25 +86,30 @@ kssh $SVR_LOGIN \
     rm -rf $SVR_TEMP;
     mkdir $SVR_TEMP; \
     "
+
+DOWNLOADS="/data/$MODE-downloads"
 if [ $PROD == 1 ]; then
   DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
-  DOWNLOADS=/data/prod-downloads
 else
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
-  DOWNLOADS=/data/staging-downloads
 fi
-###################
+
+#################################
+# build the debian package and publish it
+
 echo deploying Linux installer .deb
 
-kscp $PPWD/build_deb $SVR_LOGIN:$SVR_TEMP/
+kscp $PPWD/package_deb $SVR_LOGIN:$SVR_TEMP/
 
 kssh $SVR_LOGIN \
     "cd ~; \
-    chmod a+x /$SVR_TEMP/build_deb; \
-    /$SVR_TEMP/build_deb ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb $BUILDTYPE; \
+    chmod a+x $SVR_TEMP/package_deb; \
+    $SVR_TEMP/package_deb $MODE ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb; \
 "
 
-###################
+#################################
+# build the linux tgz installer (arch-independent)
+
 echo deploying Linux installer .tgz
 
 LINUX_TMP=$SVR_TEMP/aerofs.tmp
@@ -97,7 +126,9 @@ kssh $SVR_LOGIN \
     cd ~; \
 "
 
-###################
+#################################
+# build the linux 32-bit tgz and publish it
+
 echo deploying Linux 32bit .tgz
 
 LINUX32_TGZ=aerofs-x86.tgz
@@ -119,7 +150,9 @@ kssh $SVR_LOGIN \
     cd ~; \
 "
 
-###################
+#################################
+# build the linux 64-bit tgz and publish it
+
 echo deploying Linux 64bit .tgz
 
 LINUX64_TGZ=aerofs-x86_64.tgz
@@ -141,7 +174,9 @@ kssh $SVR_LOGIN \
     cd ~; \
 "
 
-###################
+#################################
+# build the _full_ windows installer and publish it
+
 echo deploying Windows package
 
 NSIS_DIR=win_installer
@@ -150,7 +185,7 @@ PATCHER=$SVR_ROOT/$NSIS_DIR/patcher
 
 # deploy NSIS scripts. knock ports first to allow rsync to go through
 kssh $SVR_LOGIN 'echo > /dev/null'
-rsync --archive --compress --relative --rsh ssh ../tools/./$NSIS_DIR $SVR_LOGIN:$SVR_ROOT
+rsync --archive --compress --relative --rsh ssh $AEROFS_GIT_ROOT/tools/./$NSIS_DIR $SVR_LOGIN:$SVR_ROOT
 
 DATA="rm -rf $PACKAGER/aerofs*; \
     cd $PACKAGER; \
@@ -170,18 +205,22 @@ DATA="rm -rf $PACKAGER/aerofs*; \
 
 kssh $SVR_LOGIN $DATA;
 
-###################
+#################################
+# build windows patches and publish them
+
 echo creating Windows patches
 
 kssh $SVR_LOGIN \
     " export PASSPHRASE=\"$PASSPHRASE\"; \
-    bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $1; \
+    bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $MODE; \
     rm $DOWNLOADS/patch-*; \
     mv $PATCHER/patch-* $DOWNLOADS; \
     chmod a+r $DOWNLOADS/patch-*; \
     " || true
 
-###################
+#################################
+# update current.ver (this version is not 'published' to the public until mac osx dmg is built and published)
+
 echo updating current.ver
 kssh $SVR_LOGIN \
     "rm $DOWNLOADS/current.ver; \

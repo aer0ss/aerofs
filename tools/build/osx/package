@@ -1,0 +1,80 @@
+#!/bin/sh
+
+set -e
+
+#################################
+# arguments
+
+if [[ x"$1" == x || x"$2" == x || x"$3" == x ]]; then
+    echo usage "$0 [build mode] [aeros git root] [local release dir]"
+    echo "[build mode]: staging, prod"
+    echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
+    echo "[aerofs local release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
+    echo
+    echo "example: $0 staging /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant/release"
+
+    exit 2
+fi
+
+#################################
+# mode
+
+MODE=""
+if [ "$1" == "prod" ]; then
+    MODE="prod"
+else
+    MODE="staging"
+fi
+
+#################################
+# get the proper version based on which mode (prod/staging) we're in
+
+SERVER_CURRENT_VER='mktemp'
+kscp release-$MODE@b.arrowfs.org:/data/$MODE-downloads/current.ver $SERVER_CURRENT_VER
+VER=$( cat $SERVER_CURRENT_VER | sed -e 's/.*=//' )
+rm -f $SERVER_CURRENT_VER
+
+#################################
+# set parameters
+
+AEROFS_ROOT=$2
+RELEASE_DIR=$3
+NAME=aerofs-$VER-$MODE
+ZIP=$NAME.zip
+
+#################################
+# package
+
+# FIXME: (AG) we should do all this work in a temporary directory
+
+echo getting $ZIP
+rm -rf "$ZIP"
+rm -rf aerofs-* aerofs.win* aerofs.osx aerofs.linux* aerofs.map
+cp $RELEASE_DIR/$ZIP .
+echo unzipping $ZIP
+unzip -q $ZIP
+
+echo mounting dmg
+rm -rf AeroFSInstall-*.dmg
+cp AeroFSInstall.dmg AeroFSInstall-temp.dmg
+hdiutil mount AeroFSInstall-temp.dmg
+
+echo getting clean version of aerofs.app into Release/aerofs.app
+rm -rf Release
+mkdir Release
+cp -R aerofs.app Release/AeroFS.app
+
+echo copying aerofs and aerofs.osx into Release/aerofs.app/Contents/Resources/Java
+cp -R aerofs/* Release/AeroFS.app/Contents/Resources/Java
+cp -R aerofs.osx/* Release/AeroFS.app/Contents/Resources/Java
+rm -rf aerofs-* aerofs aerofs.osx aerofs.win* aerofs.linux* aerofs.map
+
+echo removing old data from /Volumes/AeroFS Install
+rm -rf /Volumes/AeroFS\ Installer/AeroFS.app
+echo copying Release/AeroFS.app into /Volumes/AeroFS Install
+
+cp -R Release/AeroFS.app /Volumes/AeroFS\ Installer
+
+echo unmounting dmg
+hdiutil eject /Volumes/AeroFS\ Installer/
+hdiutil convert -format UDBZ -o AeroFSInstall-$VER.dmg AeroFSInstall-temp.dmg
