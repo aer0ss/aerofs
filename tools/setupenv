@@ -28,7 +28,20 @@ if [ "$?" != "0" ]; then
     return 1
 fi
 
+# Verify usage
+if [ $# -ne 0 ] && [ $# -ne 1 ] || \
+   ( [ $# -eq 1 ] && [ "$1" != "--with-picture" ] )
+then
+    echo "usage: $0 [--with-picture]"
+    exit 1
+fi
+
 # All setup happens below
 
 source "${BASE}/git-alias-setup"
 source "${BASE}/git-hook-setup"
+
+if [ "$1" = "--with-picture" ]
+then
+    source "${BASE}/git-picture-setup"
+fi
