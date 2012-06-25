@@ -6,3 +6,9 @@
 
 git config alias.review '!sh tools/env/git-review'
 echo "Added git alias 'git review'"
+
+git config alias.picture '!sh tools/env/git-picture'
+echo "Added git alias 'git picture'"
+
+git config alias.review-picture '!sh tools/env/git-review-picture'
+echo "Added git alias 'git review-picture'"
