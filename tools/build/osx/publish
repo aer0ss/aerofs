@@ -1,0 +1,61 @@
+#!/bin/sh
+
+set -e
+
+#################################
+# arguments
+
+if [ $# -ne 1 ]; then
+    echo "usage: $0 [build mode]"
+    echo "[build mode]: staging, prod"
+    echo
+    echo "example $0 staging"
+    exit 2
+fi
+
+#################################
+# set parameters
+
+MODE=""
+if [ "$1" == "prod" ];then
+  MODE="prod"
+  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
+else
+  MODE="staging"
+  DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
+fi
+
+SVR_PORT=22
+SVR_LOGIN=release-$MODE@b.arrowfs.org
+SVR_TEMP=/tmp/release-$MODE #FIXME: use mktemp
+
+#################################
+# get the latest version we're supposed to be at
+# FIXME (AG): this is identical to code in osx/package and should be removed
+
+SERVER_CURRENT_VER='mktemp'
+kscp $SVR_LOGIN:/data/$MODE-downloads/current.ver $SERVER_CURRENT_VER
+VER=`cat $SERVER_CURRENT_VER | sed -e 's/.*=//'`
+rm -f $SERVER_CURRENT_VER || true
+
+NAME=aerofs-$VER-$1
+ZIP=$NAME.zip
+
+#################################
+# publish the dmg
+
+echo deploying aerofs-osx-$VER
+
+kscp -P $SVR_PORT AeroFSInstall-$VER.dmg $SVR_LOGIN:/data/$MODE-downloads/
+rm -rf aerofs-osx-*.zip
+zip -9rq aerofs-osx-$VER.zip Release/
+
+kscp -P $SVR_PORT aerofs-osx-$VER.zip $SVR_LOGIN:/data/$MODE-downloads/aerofs-osx-temp.zip
+kssh -p $SVR_PORT $SVR_LOGIN \
+     "cd /data/$MODE-downloads/; \
+     cp AeroFSInstall-$VER.dmg AeroFSInstall.dmg; \
+     mv aerofs-osx-temp.zip aerofs-osx-$VER.zip; \
+     echo Deploying to S3/CloudFront; \
+     s3cmd -P --cf-invalidate sync /data/$MODE-downloads/* $DOWNLOAD_BUCKET > /dev/null" # publishes _all_ platform installers to s3
+
+rm -rf Release
