@@ -5,7 +5,7 @@ set -e
 #################################
 # arguments
 
-if [ $# > 2 ]; then
+if [ $# -gt 2 ]; then
     echo "usage: $0 [staging|prod] [passphrase]"
     echo "[build mode]: staging, prod"
     echo "[passphrase]: passphrase for pushing"
