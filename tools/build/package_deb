@@ -76,7 +76,7 @@ cat << EOF >> debian/etc/sysctl.d/30-aerofs-increase-inotify-limit.conf
 # AeroFS needs to create a watch for every folder under your AeroFS folder.
 # For some users, this can be a bunch of folders.  We picked a big number that
 # will hopefully be more than sufficient for virtually all users.
-fs.inotify.max_user_watches = 131072
+fs.inotify.max_user_watches = 1048576
 EOF
 
 #used for menu items in GNOME
