@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -e -u
 
 # TODO (GS) Remove labelling - also remove references to "com.aerofs.l."
 

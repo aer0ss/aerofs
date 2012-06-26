@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -e -u
 
 #################################
 # arguments
@@ -19,7 +19,8 @@ fi
 #################################
 # build mode
 
-if [ "$1" == "prod" ]; then
+MODE=${1:-} # if $1 doesn't exist, then "" is substituted
+if [ "$MODE" == "prod" ]; then
     MODE=prod
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
@@ -36,15 +37,14 @@ fi
 STAGING_PASSPHRASE=temp123
 
 # passphrase
-if [ x"$2" == x ]; then
+PASSPHRASE=${2:-} # if $2 doesn't exist, then "" is substituted
+if [ x"$PASSPHRASE" == x ]; then
     if [ $MODE == "prod" ]; then
         echo "cannot use staging passphrase to push to prod"
         exit 3
     else
         PASSPHRASE="$STAGING_PASSPHRASE"
     fi
-else
-    PASSPHRASE="$2"
 fi
 
 # directories
