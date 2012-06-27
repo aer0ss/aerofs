@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="core" type="JUnit" factoryName="JUnit" singleton="true">
+  <configuration default="false" name="core" type="JUnit" factoryName="JUnit">
     <extension name="coverage" enabled="false" merge="false" runner="idea">
       <pattern>
         <option name="PATTERN" value="com.aerofs.daemon.core.*" />
@@ -49,7 +49,6 @@
     <ConfigurationWrapper RunnerId="Run" />
     <method>
       <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/../../build.xml" target="populate" />
-      <option name="Make" enabled="true" />
     </method>
   </configuration>
 </component>

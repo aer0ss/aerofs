@@ -1,15 +1,15 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="VerkehrSubscriberTestClient (tng)" type="Application" factoryName="Application">
+  <configuration default="false" name="VerkehrCommanderTestClient" type="Application" factoryName="Application">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
-        <option name="PATTERN" value="com.aerofs.verkehr.client.subscriber.*" />
+        <option name="PATTERN" value="com.aerofs.verkehr.client.commander.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrSubscriberTestClient" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrCommanderTestClient" />
     <option name="VM_PARAMETERS" value="-ea" />
-    <option name="PROGRAM_PARAMETERS" value="localhost 9091 tng cacert.pem" />
-    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../java/verkehr/resources/staging_tls" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 9089 cacert.pem" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../java/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
     <option name="ENABLE_SWING_INSPECTOR" value="false" />
