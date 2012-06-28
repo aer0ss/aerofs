@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+if [ x"$1" == x ]; then
+  echo usage '$0 <username>'
+  exit 2
+fi
+
+SP_SVR_PORT=22
+SP_SVR_LOGIN=reloadedsp.aerofs.com
+
+AR_USER="accountreset"
+AR_PASS="vsXFQ6DINrCN2kCi"
+
+kssh -p $SP_SVR_PORT $SP_SVR_LOGIN \
+    "mysql -h sp.mysql.aws.aerofs.com -u $AR_USER -p$AR_PASS aerofs_sp -e \"call accountreset('$1')\""
