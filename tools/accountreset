@@ -14,4 +14,4 @@ AR_USER="accountreset"
 AR_PASS="vsXFQ6DINrCN2kCi"
 
 kssh -p $SP_SVR_PORT $SP_SVR_LOGIN \
-    "mysql -h sp.mysql.aws.aerofs.com -u $AR_USER -p$AR_PASS aerofs_sp -e \"call accountreset('$1')\""
+    "mysql -v -h sp.mysql.aws.aerofs.com -u $AR_USER -p$AR_PASS aerofs_sp -e \"call accountreset('$1')\""
