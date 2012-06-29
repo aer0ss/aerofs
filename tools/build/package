@@ -136,43 +136,43 @@ fi
 
 cd $AEROFS_DIR
 
+TEMP_MANIFEST=m.tmp
 ###################################
 #echo generate manifest
 
-echo "Main-Class: com.aerofs.Main" > m.tmp
-echo "Class-Path: " >> m.tmp
+echo "Main-Class: com.aerofs.Main" > "$TEMP_MANIFEST"
+echo "Class-Path: " >> "$TEMP_MANIFEST"
 
 for i in lib/*.jar; do
-    echo " $i " >> m.tmp
+    echo " $i " >> "$TEMP_MANIFEST"
 done
 
 #echo N.B. platform-dependent jars must have identical names
 for i in `ls $AEROFS_WIN_DIR/lib/`; do
-    echo " lib/$i " >> m.tmp
+    echo " lib/$i " >> "$TEMP_MANIFEST"
 done
 
 # mac-specific jars
-echo " lib/growlbindings-1.3.1.jar " >> m.tmp
+echo " lib/growlbindings-1.3.1.jar " >> "$TEMP_MANIFEST"
 
 # s3 jars
 for i in "$ASIS_DIR/s3/lib"/*.jar; do
-    echo " lib/$(basename "$i") " >> m.tmp
+    echo " lib/$(basename "$i") " >> "$TEMP_MANIFEST"
 done
 
 ###################################
 #echo copy class files
 
-mkdir -p bin/com
-cp -Rf $BUILD_DIR/bin/com/* bin/com
+mkdir -p bin
+cp -Rf $BUILD_DIR/bin/* bin/
 
 ###################################
 # remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
 
-find bin/com/aerofs -name .DS_Store | xargs rm -f
+find bin/ -name .DS_Store | xargs rm -f
 
 if [ $PROD == 1 ]; then
     # TODO: (AG) move these as excludes into build.xml
-    rm -rf bin/com/aerofs/testing
     rm -rf bin/com/aerofs/sak
 fi
 
@@ -205,10 +205,10 @@ tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
 
 ###################################
 echo creating jars
-jar cfm aerofs.unobf.jar m.tmp -C bin com
+jar cfm aerofs.unobf.jar "$TEMP_MANIFEST" -C bin com -C bin org
 
 # echo remove unnecessary files
-rm -rf bin m.tmp
+rm -rf bin "$TEMP_MANIFEST"
 
 ###################################
 
