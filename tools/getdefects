@@ -1,0 +1,34 @@
+#!/bin/bash -e
+
+if [ $# -lt 2 ]; then
+    echo "usage: $0 [prod version] [defect # (multiple, space separated)]"
+    echo
+    echo "example: $0 0.2.37 6308 6310 6317"
+    exit 1
+fi
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+VERSION="$1"
+shift # remove the first argument
+DEFECTS="$@"
+
+MAP_FILE=aerofs-$VERSION-prod.map
+kscp release-staging@b.arrowfs.org:/home/release-prod/"$MAP_FILE" "$MAP_FILE"
+
+SED_SCRIPT_1='s/^	/	at /g'
+SED_SCRIPT_2='s/at at/at/g'
+
+for DEFECT in $DEFECTS; do
+    TARGET_FOLDER="defect-$DEFECT"
+    if [[ -e $TARGET_FOLDER ]]; then
+        echo "$TARGET_FOLDER already exists"
+        continue
+    fi
+    kscp sp.aerofs.com:/var/svlogs_prod/defect/log.defect-$DEFECT.zip .
+    mkdir $TARGET_FOLDER
+    unzip -o log.defect-$DEFECT.zip -d $TARGET_FOLDER
+    sed -i "" "$SED_SCRIPT_1" $TARGET_FOLDER/daemon.log
+    sed -i "" "$SED_SCRIPT_2" $TARGET_FOLDER/daemon.log
+    ${SCRIPT_DIR}/proguard/bin/retrace.sh $MAP_FILE $TARGET_FOLDER/daemon.log > $TARGET_FOLDER/retrace.log
+done
