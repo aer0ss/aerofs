@@ -13,20 +13,16 @@ if [ x"$VER" == x ]; then
     exit 1
 fi
 
+# the following block is idential to the block in the 'getdefects' script
 function abspath() {
     [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
-
 BASE=`dirname $0`
-BASE=`abspath "$BASE"`
-
-# $2 is used by retrace-s3
-FILE=aerofs-$VER-prod$2.map
+BASE=`abspath "$BASE"` # needed by proguard's retrace.sh
+FILE=aerofs-$VER-prod.map
 LOCAL_FILE="$BASE/$FILE"
-
 if [ ! -f "$LOCAL_FILE" ]; then
     echo "retrieving map file..."
-    #kscp release@www.aerofs.com:~/"$FILE" "$LOCAL_FILE"
     kscp release-staging@b.arrowfs.org:/home/release-prod/"$FILE" "$LOCAL_FILE"
 fi
 

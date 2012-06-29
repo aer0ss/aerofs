@@ -1,4 +1,5 @@
 #!/bin/bash -e
+# This script retrives defect log files and retrace them
 
 if [ $# -lt 2 ]; then
     echo "usage: $0 [prod version] [defect # (multiple, space separated)]"
@@ -9,26 +10,39 @@ fi
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-VERSION="$1"
+VER="$1"
 shift # remove the first argument
 DEFECTS="$@"
 
-MAP_FILE=aerofs-$VERSION-prod.map
-kscp release-staging@b.arrowfs.org:/home/release-prod/"$MAP_FILE" "$MAP_FILE"
+# the following block is identical to the block in the 'retrace' script
+function abspath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+BASE=`dirname $0`
+BASE=`abspath "$BASE"` # needed by proguard's retrace.sh
+FILE=aerofs-$VER-prod.map
+LOCAL_FILE="$BASE/$FILE"
+if [ ! -f "$LOCAL_FILE" ]; then
+    echo "retrieving map file..."
+    kscp release-staging@b.arrowfs.org:/home/release-prod/"$FILE" "$LOCAL_FILE"
+fi
 
 SED_SCRIPT_1='s/^	/	at /g'
 SED_SCRIPT_2='s/at at/at/g'
 
 for DEFECT in $DEFECTS; do
-    TARGET_FOLDER="defect-$DEFECT"
-    if [[ -e $TARGET_FOLDER ]]; then
+    TARGET_FOLDER="$BASE/defect-$DEFECT"
+    if [[ -e "$TARGET_FOLDER" ]]; then
         echo "$TARGET_FOLDER already exists"
         continue
     fi
-    kscp sp.aerofs.com:/var/svlogs_prod/defect/log.defect-$DEFECT.zip .
-    mkdir $TARGET_FOLDER
-    unzip -o log.defect-$DEFECT.zip -d $TARGET_FOLDER
-    sed -i "" "$SED_SCRIPT_1" $TARGET_FOLDER/daemon.log
-    sed -i "" "$SED_SCRIPT_2" $TARGET_FOLDER/daemon.log
-    ${SCRIPT_DIR}/proguard/bin/retrace.sh $MAP_FILE $TARGET_FOLDER/daemon.log > $TARGET_FOLDER/retrace.log
+    LOCAL_ZIP_FILE="$BASE/log.defect-$DEFECT.zip"
+    kscp sp.aerofs.com:/var/svlogs_prod/defect/log.defect-$DEFECT.zip "$LOCAL_ZIP_FILE"
+    mkdir "$TARGET_FOLDER"
+    unzip -o "$LOCAL_ZIP_FILE" -d "$TARGET_FOLDER"
+    rm "$LOCAL_ZIP_FILE"
+    echo "$TARGET_FOLDER/retrace.log"
+    sed -i "" "$SED_SCRIPT_1" "$TARGET_FOLDER/daemon.log"
+    sed -i "" "$SED_SCRIPT_2" "$TARGET_FOLDER/daemon.log"
+    ${SCRIPT_DIR}/proguard/bin/retrace.sh "$LOCAL_FILE" "$TARGET_FOLDER/daemon.log" > "$TARGET_FOLDER/retrace.log"
 done
