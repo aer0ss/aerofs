@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="apache-codec">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../approot/lib/commons-codec-1.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
