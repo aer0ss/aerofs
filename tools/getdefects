@@ -35,8 +35,19 @@ for DEFECT in $DEFECTS; do
     mkdir "$TARGET_FOLDER"
     unzip -o "$ZIP_FILE" -d "$TARGET_FOLDER"
     rm "$ZIP_FILE"
-    echo "$TARGET_FOLDER/retrace.log"
+
+    echo "Unobfuscating logs for $DEFECT"
+
     sed -i "" "$SED_SCRIPT_1" "$TARGET_FOLDER/daemon.log"
     sed -i "" "$SED_SCRIPT_2" "$TARGET_FOLDER/daemon.log"
-    ${SCRIPT_DIR}/proguard/bin/retrace.sh "$LOCAL_FILE" "$TARGET_FOLDER/daemon.log" > "$TARGET_FOLDER/retrace.log"
+    sed -i "" "$SED_SCRIPT_1" "$TARGET_FOLDER/gui.log"
+    sed -i "" "$SED_SCRIPT_2" "$TARGET_FOLDER/gui.log"
+
+    mv "$TARGET_FOLDER/daemon.log" "$TARGET_FOLDER/obfuscated.daemon.log"
+    mv "$TARGET_FOLDER/gui.log" "$TARGET_FOLDER/obfuscated.gui.log"
+
+    ${SCRIPT_DIR}/proguard/bin/retrace.sh "$LOCAL_FILE" "$TARGET_FOLDER/obfuscated.daemon.log" > "$TARGET_FOLDER/daemon.log"
+    ${SCRIPT_DIR}/proguard/bin/retrace.sh "$LOCAL_FILE" "$TARGET_FOLDER/obfuscated.gui.log" > "$TARGET_FOLDER/gui.log"
 done
+
+echo "Done"
