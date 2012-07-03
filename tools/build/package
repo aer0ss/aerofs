@@ -4,7 +4,7 @@ set -e
 
 # TODO (GS) Remove labelling - also remove references to "com.aerofs.l."
 
-VER_MAJOR_MINOR=0.3
+VER_MAJOR_MINOR=0.4
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
     echo "usage: $0 [build mode] [aerofs git root] [aerofs build dir] [aerofs release dir]"
