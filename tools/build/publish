@@ -31,6 +31,8 @@ else
 fi
 
 SVR_LOGIN="release-$MODE@b.arrowfs.org"
+MAP_LOGIN="maps@sv.aerofs.com"
+MAP_ROOT="/maps"
 SVR_ROOT="/home/release-$MODE"
 SVR_TEMP="/tmp/release-$MODE" # FIXME: (AG) replace with mktemp
 
@@ -69,7 +71,7 @@ echo uploading $ZIP and map files
 
 kscp $ZIP $SVR_LOGIN:~/$ZIP
 if [ $PROD == 1 ]; then
-    kscp aerofs.map $SVR_LOGIN:~/aerofs-$VER-$MODE.map
+    kscp aerofs.map $MAP_LOGIN:$MAP_ROOT/aerofs-$VER-$MODE.map
 fi
 
 #################################

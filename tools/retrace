@@ -23,7 +23,7 @@ FILE=aerofs-$VER-prod.map
 LOCAL_FILE="$BASE/$FILE"
 if [ ! -f "$LOCAL_FILE" ]; then
     echo "retrieving map file..."
-    kscp release-staging@b.arrowfs.org:/home/release-prod/"$FILE" "$LOCAL_FILE"
+    kscp maps@sp.aerofs.com:/maps/"$FILE" "$LOCAL_FILE"
 fi
 
 cd "$BASE"/proguard
