@@ -59,3 +59,8 @@ kssh -p $SVR_PORT $SVR_LOGIN \
      s3cmd -P --cf-invalidate sync /data/$MODE-downloads/* $DOWNLOAD_BUCKET > /dev/null" # publishes _all_ platform installers to s3
 
 rm -rf Release
+
+if [ "$MODE" == "prod" ]; then
+    git tag -a "$VER" -m "$VER"
+    git push --tags
+fi
