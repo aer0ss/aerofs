@@ -6,6 +6,8 @@
 #        end
 #
 
+source common #for abspath()
+
 VER=$1
 
 if [ x"$VER" == x ]; then
@@ -13,18 +15,10 @@ if [ x"$VER" == x ]; then
     exit 1
 fi
 
-# the following block is idential to the block in the 'getdefects' script
-function abspath() {
-    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-}
 BASE=`dirname $0`
 BASE=`abspath "$BASE"` # needed by proguard's retrace.sh
-FILE=aerofs-$VER-prod.map
-LOCAL_FILE="$BASE/$FILE"
-if [ ! -f "$LOCAL_FILE" ]; then
-    echo "retrieving map file..."
-    kscp maps@sp.aerofs.com:/maps/"$FILE" "$LOCAL_FILE"
-fi
 
+MAP_FILE="$BASE/aerofs-$VER-prod.map"
+$BASE/getmap $VER $BASE
 cd "$BASE"/proguard
-bin/retrace.sh "$LOCAL_FILE"
+bin/retrace.sh "$MAP_FILE"

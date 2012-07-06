@@ -1,0 +1,17 @@
+#!/bin/sh
+
+VER="$1"
+DIR="$2"
+
+if [ ! "$#" -eq "2" ]; then
+  echo "usage: $0 [version] [path]"
+  exit 1
+fi
+
+FILE="aerofs-$VER-prod.map"
+MAP_FILE="$DIR"/"$FILE"
+
+if [ ! -f "$MAP_FILE" ]; then
+    echo "retrieving map file..."
+    kscp maps@sp.aerofs.com:/maps/"$FILE" "$MAP_FILE"
+fi

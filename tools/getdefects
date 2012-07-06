@@ -1,6 +1,8 @@
 #!/bin/bash -e
 # This script retrives defect log files and retrace them
 
+source common #for abspath()
+
 if [ $# -lt 2 ]; then
     echo "usage: $0 [prod version] [defect # (multiple, space separated)]"
     echo
@@ -8,18 +10,15 @@ if [ $# -lt 2 ]; then
     exit 1
 fi
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # NOTE: this is identical to $BASE in retrace.sh
-
 VER="$1"
 shift # remove the first argument
 DEFECTS="$@"
 
-FILE=aerofs-$VER-prod.map
-LOCAL_FILE="$FILE"
-if [ ! -f "$LOCAL_FILE" ]; then
-    echo "retrieving map file..."
-    kscp maps@sp.aerofs.com:/maps/"$FILE" "$LOCAL_FILE"
-fi
+BASE=`dirname $0`
+BASE=`abspath "$BASE"`
+MAP_FILE="$BASE"/"aerofs-$VER-prod.map"
+
+$BASE/getmap $VER $BASE
 
 SED_SCRIPT_1='s/^	/	at /g'
 SED_SCRIPT_2='s/at at/at/g'
@@ -46,8 +45,8 @@ for DEFECT in $DEFECTS; do
     mv "$TARGET_FOLDER/daemon.log" "$TARGET_FOLDER/obfuscated.daemon.log"
     mv "$TARGET_FOLDER/gui.log" "$TARGET_FOLDER/obfuscated.gui.log"
 
-    ${SCRIPT_DIR}/proguard/bin/retrace.sh "$LOCAL_FILE" "$TARGET_FOLDER/obfuscated.daemon.log" > "$TARGET_FOLDER/daemon.log"
-    ${SCRIPT_DIR}/proguard/bin/retrace.sh "$LOCAL_FILE" "$TARGET_FOLDER/obfuscated.gui.log" > "$TARGET_FOLDER/gui.log"
+    ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$TARGET_FOLDER/obfuscated.daemon.log" > "$TARGET_FOLDER/daemon.log"
+    ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$TARGET_FOLDER/obfuscated.gui.log" > "$TARGET_FOLDER/gui.log"
 done
 
 echo "Done"
