@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "Connecting to sp.aerofs.com..."
+fwknop -A tcp/22 -D "sp.aerofs.com" -s --get-key `dirname $0`/fwknop.key
+ssh -q -t sp.aerofs.com "cmd $@"
