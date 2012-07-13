@@ -112,6 +112,10 @@ cp -R "$ASIS_DIR"/common/* "$AEROFS_DIR"/
 cp -R "$ASIS_DIR"/osx/* "$AEROFS_OSX_DIR"/
 cp -R "$ASIS_DIR"/win/* "$AEROFS_WIN_DIR"/
 cp -R "$ASIS_DIR"/linux/* "$AEROFS_LINUX_DIR"/
+# N.B. We put the run scripts from the installer package in the actual aerofs
+# package so we can restart the Linux client automatically, even if aerofs-cli
+# (the launcher shell script) isn't on the user's PATH
+cp -R "$ASIS_DIR"/linux.inst/aerofs* "$AEROFS_LINUX_DIR"/
 cp -R "$ASIS_DIR"/s3/lib/* "$AEROFS_LINUX_DIR"/lib/
 cp -R "$ASIS_DIR"/linux32/* "$AEROFS_LINUX32_DIR"/
 cp -R "$ASIS_DIR"/linux64/* "$AEROFS_LINUX64_DIR"/
