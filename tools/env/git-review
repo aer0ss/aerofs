@@ -33,4 +33,21 @@ if [ "$?" != "0" ]; then
     exit 1
 fi
 
+# Check for common formatting issues. (Missing or extra spaces around keywords, etc...)
+
+KEYWORDS="(if|for|while|catch|finally|synchronized)"
+FORMATTING_ISSUES=$(git diff $REMOTE/$REMOTE_BRANCH HEAD | grep -E "^\+.*("\
+"($KEYWORDS\()"\
+"|($KEYWORDS \( )"\
+"|(\){)"\
+"|( \) {)"\
+"|(\".*[a-zA-Z]\.  [a-zA-Z].*\")"\
+")")
+
+if [ -n "$FORMATTING_ISSUES" ]; then
+    echo "Your commit contains formatting errors.\nPlease review and fix them:\n"
+    echo "$FORMATTING_ISSUES"
+    exit 1
+fi
+
 git push $REMOTE HEAD:refs/for/$REMOTE_BRANCH
