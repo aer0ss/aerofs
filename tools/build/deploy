@@ -24,7 +24,7 @@ if [ "$MODE" == "prod" ]; then
     MODE=prod
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "!!! BANG PRODUCTION !!!"
+    echo "!! DEPLOY PRODUCTION !!"
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo
 else
