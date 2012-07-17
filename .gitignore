@@ -1,9 +1,6 @@
 approot
-*.out
-reports
 workspace.xml
 .metadata
 .DS_Store
 build.properties
-out*
-/dist
+out.*
