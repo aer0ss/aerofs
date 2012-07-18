@@ -45,7 +45,8 @@ FORMATTING_ISSUES=$(git diff $REMOTE/$REMOTE_BRANCH HEAD | grep -E "^\+.*("\
 ")")
 
 if [ -n "$FORMATTING_ISSUES" ]; then
-    echo -e "Your commit contains formatting errors.\nPlease review and fix them:\n"
+    echo "Your commit contains formatting errors."
+    echo "Please search your commit diff for the following lines and fix them:"
     echo "$FORMATTING_ISSUES"
     exit 1
 fi
