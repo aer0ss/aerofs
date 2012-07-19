@@ -197,6 +197,7 @@ else
     DOT_STAGING='.staging'
 fi
 sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$ASIS_DIR"/linux.inst/aerofs > "$AEROFS_INST_DIR"/aerofs
+sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$ASIS_DIR"/linux.inst/aerofs > "$AEROFS_LINUX_DIR"/aerofs
 
 DLR_TMP=/tmp/aerofs-dlr
 AEROFS_DLR_PKG=com/aerofs/downloader
