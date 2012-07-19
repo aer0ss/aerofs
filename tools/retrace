@@ -6,7 +6,10 @@
 #        end
 #
 
-source common #for abspath()
+BASE=`dirname "$0"`
+source "$BASE"/common #for abspath()
+
+BASE=`abspath "$BASE"` # needed by proguard's retrace.sh
 
 VER=$1
 
@@ -15,10 +18,7 @@ if [ x"$VER" == x ]; then
     exit 1
 fi
 
-BASE=`dirname $0`
-BASE=`abspath "$BASE"` # needed by proguard's retrace.sh
-
 MAP_FILE="$BASE/aerofs-$VER-prod.map"
-$BASE/getmap $VER $BASE
+"$BASE"/getmap $VER $BASE
 cd "$BASE"/proguard
 bin/retrace.sh "$MAP_FILE"
