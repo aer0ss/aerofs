@@ -6,10 +6,10 @@
 #        end
 #
 
-BASE=`dirname "$0"`
+BASE=$(dirname "$0")
 source "$BASE"/common #for abspath()
 
-BASE=`abspath "$BASE"` # needed by proguard's retrace.sh
+BASE=$(abspath "$BASE") # needed by proguard's retrace.sh
 
 VER=$1
 
