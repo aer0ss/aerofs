@@ -12,8 +12,8 @@
 #
 # === Examples
 #
-#  class { pagerduty:
-#  }
+#  class { "pagerduty": }
+#  pagerduty::probe::base{"url http://www.aerofs.com":}
 #
 # === Authors
 #
@@ -24,23 +24,8 @@
 # Copyright 2012 Air Computing Inc, unless otherwise noted.
 #
 class pagerduty {
-
   package { "aerofs-pagerduty":
     ensure => latest,
     require => Apt::Source["aerofs"],
-  }
-
-  cron { "pagerduty cron.daily":
-    command => "/opt/aerofs.pagerduty/cron.daily",
-    require => Package["aerofs-pagerduty"],
-    hour => "14",
-    minute => "00"
-  }
-
-  cron { "pagerduty cron.hourly":
-    command => "/opt/aerofs.pagerduty/cron.hourly",
-    require => Package["aerofs-pagerduty"],
-    hour => "*",
-    minute => "00"
   }
 }

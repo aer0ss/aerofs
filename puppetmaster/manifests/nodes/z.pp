@@ -1,18 +1,53 @@
 node "z.arrowfs.org" inherits default {
 
+  # TODO: pagerduty ssh key
+
   $fwknop_hostnames = [
     "sp.aerofs.com",
     "x.aerofs.com",
     "x1.aerofs.com"
   ]
 
-  $fwknop_key = hiera("fwknop_pass")
+  class{"fwknop-client":
+    fwknop_hostnames => $fwknop_hostnames
+  }
 
-  file { "/opt/aerofs.pagerduty/fwknop.key":
-    ensure => present,
-    content => template("pagerduty/fwknop.key.erb"),
+  class{"pagerduty":
+    require => Class["fwknop-client"],
+  }
+
+  #daily
+  pagerduty::probe::base{[
+    "df90 pagerduty@sp.aerofs.com 22 /dev/xvda1",
+    "df90 pagerduty@x1.aerofs.com 22 /dev/sda1",
+    "df90 pagerduty@x1.aerofs.com 22 /dev/sdf1",
+    "df90 pagerduty@x.aerofs.com 22 /dev/xvda"
+  ]:
+    hour => "14",
+    minute => "0",
     require => Class["pagerduty"]
   }
 
-  class{"pagerduty":}
+  #hourly
+  pagerduty::probe::base{[
+    # Production
+    "url http://www.aerofs.com",
+    "url https://sv.aerofs.com/sv_beta/sv",
+    "port reloadedsp.aerofs.com 443",
+    "port verkehr.aerofs.com 443",
+    "port zephyr.aerofs.com 443",
+    "port x.aerofs.com 443",
+    # Staging
+    "port sp.aerofs.com 443",
+    "port sp.aerofs.com 80",
+    # Dev servers
+    "url https://g.arrowfs.org 8443",
+    "port g.arrowfs.org 44353",
+    # Meta (not used right now)
+    #"ping z.arrowfs.org"
+  ]:
+    hour => "*",
+    minute => "0",
+    require => Class["pagerduty"]
+  }
 }
