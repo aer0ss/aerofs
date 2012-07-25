@@ -87,17 +87,22 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
         return _str;
     }
 
-    public String toStringFormal()
+    public String toHex()
     {
         return Util.hexEncode(_bs);
     }
 
-    private static byte[] hexDecode(String str) throws ExFormatError
+    public String toStringFormal()
+    {
+        return toHex();
+    }
+
+    public static byte[] hexDecode(String str) throws ExFormatError
     {
         return hexDecode(str, 0, str.length());
     }
 
-    private static byte[] hexDecode(String str, int start, int end) throws ExFormatError
+    public static byte[] hexDecode(String str, int start, int end) throws ExFormatError
     {
         byte[] bs = Util.hexDecode(str, start, end);
         if (bs.length != LENGTH) throw new ExFormatError("wrong length");

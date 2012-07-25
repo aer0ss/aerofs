@@ -5,3 +5,4 @@ workspace.xml
 build.properties
 out.*
 *.log
+/classes

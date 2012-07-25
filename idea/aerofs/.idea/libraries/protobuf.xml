@@ -4,6 +4,8 @@
       <root url="jar://$PROJECT_DIR$/../../approot/lib/protobuf-java-2.4.1.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../../resource/src/protobuf-2.4.1/java/src/main/java" />
+    </SOURCES>
   </library>
 </component>

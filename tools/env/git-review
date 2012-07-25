@@ -1,11 +1,20 @@
+#!/bin/bash
 ##
 # git-review checks whitespace and pushes the current branch to Gerrit for review
 #
-# usage: git-review [remote branch]
+# usage: git-review [-n] [remote branch]
 ##
 
 # Currently only operates on a fixed remote
 REMOTE="origin"
+CHECK=1
+
+case x"$1" in
+    x-n)
+        CHECK=0
+        shift
+    ;;
+esac
 
 REMOTE_BRANCH="$1"
 if [ -z "$REMOTE_BRANCH" ]; then
@@ -26,17 +35,19 @@ if [ -z "$REMOTE_BRANCH" ]; then
     fi
 fi
 
-# Check for whitespace errors. Compare against upstream commit
-git diff $REMOTE/$REMOTE_BRANCH HEAD --check
-if [ "$?" != "0" ]; then
-    echo "Please fix whitespace errors before submitting patch set" 1>&2
-    exit 1
-fi
+if [ "$CHECK" -ne 0 ]; then
 
-# Check for common formatting issues. (Missing or extra spaces around keywords, etc...)
+    # Check for whitespace errors. Compare against upstream commit
+    git diff $REMOTE/$REMOTE_BRANCH HEAD --check
+    if [ "$?" != "0" ]; then
+        echo "Please fix whitespace errors before submitting patch set" 1>&2
+        exit 1
+    fi
 
-KEYWORDS="(if|for|while|catch|finally|synchronized)"
-FORMATTING_ISSUES=$(git diff $REMOTE/$REMOTE_BRANCH HEAD | grep -E "^\+.*("\
+    # Check for common formatting issues. (Missing or extra spaces around keywords, etc...)
+
+    KEYWORDS="(if|for|while|catch|finally|synchronized)"
+    FORMATTING_ISSUES=$(git diff $REMOTE/$REMOTE_BRANCH HEAD | grep -E "^\+.*("\
 "($KEYWORDS\()"\
 "|($KEYWORDS \( )"\
 "|(\){)"\
@@ -44,11 +55,12 @@ FORMATTING_ISSUES=$(git diff $REMOTE/$REMOTE_BRANCH HEAD | grep -E "^\+.*("\
 "|(\".*[a-zA-Z]\.  [a-zA-Z].*\")"\
 ")")
 
-if [ -n "$FORMATTING_ISSUES" ]; then
-    echo "Your commit contains formatting errors."
-    echo "Please search your commit diff for the following lines and fix them:"
-    echo "$FORMATTING_ISSUES"
-    exit 1
+    if [ -n "$FORMATTING_ISSUES" ]; then
+        echo "Your commit contains formatting errors."
+        echo "Please search your commit diff for the following lines and fix them:"
+        echo "$FORMATTING_ISSUES"
+        exit 1
+    fi
 fi
 
 git push $REMOTE HEAD:refs/for/$REMOTE_BRANCH

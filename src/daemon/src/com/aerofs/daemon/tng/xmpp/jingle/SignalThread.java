@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -165,7 +166,8 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         l.info("create_ xmppmain");
 
-        _main = new XmppMain(L.get().xmppServerAddr(), L.get().xmppServerPort(), true, _jidSelf,
+        InetSocketAddress address = Param.xmppAddress();
+        _main = new XmppMain(address.getHostName(), address.getPort(), true, _jidSelf,
                 ID.getShaedXMPP(), L.get().jingleRelayHost(), L.get().jingleRelayPort(),
                 ljlogpathutf8);
 

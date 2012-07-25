@@ -14,6 +14,7 @@ import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.lib.IDumpStat;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
@@ -67,7 +68,8 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     private final LinkStateService _lss;
 
     @Inject
-    public Transports(CoreQueue q, TC tc, LinkStateService lss)
+    public Transports(CoreQueue q, TC tc, LinkStateService lss,
+            MobileService.Factory mobileServiceFactory)
     {
         _q = q;
         _tc = tc;
@@ -85,7 +87,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
         count = 0;
 
         if (Cfg.useTCP()) add_(new TCP(_q, mcfr), count++);
-        if (Cfg.useXMPP()) add_(new XMPP(_q, mcfr), count++);
+        if (Cfg.useXMPP()) add_(new XMPP(_q, mcfr, mobileServiceFactory), count++);
     }
 
     public ITransport[] getAll_()

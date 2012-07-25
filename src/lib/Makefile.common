@@ -24,8 +24,7 @@ ${GEN_ROOT}:
 %.gen_proto: ${GEN_ROOT}
 	${PROTOC} --plugin=${RPC_PLUGIN} ${PROTO_INCLUDES} --java_out=${GEN_ROOT} \
 		--rpc-java_out=${GEN_ROOT} ${SRC_ROOT}/proto/$*.proto
-	for gen_file in `find ${GEN_ROOT} -name \*.java`; \
-		do echo post-processing $$gen_file; \
+	@for gen_file in `find ${GEN_ROOT} -name \*.java`; do \
 		sed -i ${SEDFLAGS} \
 			-e 's,^public final class ,@SuppressWarnings(\"all\") &,' \
 			$$gen_file; \

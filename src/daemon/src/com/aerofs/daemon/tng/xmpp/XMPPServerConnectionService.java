@@ -34,6 +34,7 @@ import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Proxy;
 import java.util.HashSet;
@@ -241,8 +242,9 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
      */
     private XMPPConnection createNewConnection()
     {
-        ConnectionConfiguration cc = new ConnectionConfiguration(L.get().xmppServerAddr(),
-                L.get().xmppServerPort());
+        InetSocketAddress address = Param.xmppAddress();
+        ConnectionConfiguration cc = new ConnectionConfiguration(
+                address.getHostName(), address.getPort());
         cc.setServiceName(DaemonParam.XMPP.SERVER_DOMAIN);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);

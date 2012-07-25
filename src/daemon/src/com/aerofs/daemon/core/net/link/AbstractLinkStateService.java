@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 
 import org.apache.log4j.Logger;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -82,7 +83,8 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         //
 
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
-        l.info("ls:ifs:");
+//        l.info("ls:ifs:");
+        StringBuilder sb = new StringBuilder();
 
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
                 e.hasMoreElements();) {
@@ -96,9 +98,20 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             boolean isLoopback = iface.isLoopback();
             boolean isVirtual = iface.isVirtual();
 
-            if (l.isInfoEnabled()) {
-                l.info(name + "(u:" + isUp + " l:" + isLoopback + " v:" + isVirtual + ")");
+//            if (l.isInfoEnabled()) {
+//                l.info(name + "(u:" + isUp + " l:" + isLoopback + " v:" + isVirtual + ")");
+//            }
+
+            sb.append(' ').append(iface.getName());
+            if (iface.getDisplayName() != null && !iface.getDisplayName().equals(iface.getName())) {
+                sb.append('[').append(iface.getDisplayName()).append(']');
             }
+            sb.append('(');
+            if (iface.isUp()) sb.append('u');
+            if (iface.isLoopback()) sb.append('l');
+            if (iface.isVirtual()) sb.append('v');
+            if (iface.supportsMulticast()) sb.append('m');
+            sb.append(')');
 
             // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
             // simply removes the interface's IPV4 address. This caused a situation where
@@ -108,14 +121,18 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             if (isUp && !isLoopback && !isVirtual) {
                 Enumeration<InetAddress> ias = iface.getInetAddresses();
                 while (ias.hasMoreElements()) {
-                    if (!ias.nextElement().getHostAddress().contains(":")) {
+                    InetAddress address = ias.nextElement();
+                    if (address instanceof Inet4Address) {
                         // it is an IPv4 address
                         ifaceBuilder.add(iface);
+                        sb.append(':').append(address.getHostAddress());
                         break;
                     }
                 }
             }
         }
+
+        l.info(sb);
 
         return ifaceBuilder.build();
     }

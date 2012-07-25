@@ -99,4 +99,6 @@ public class BufferPool
 
     /** default size for each bytebuffer */
     public static final int DEFAULT_BYTEBUFFER_SIZE = 4096;
+//    public static final int DEFAULT_BYTEBUFFER_SIZE = 16384;
+//    public static final int DEFAULT_BYTEBUFFER_SIZE = 1024;
 }

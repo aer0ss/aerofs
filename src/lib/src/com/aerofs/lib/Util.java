@@ -616,27 +616,13 @@ public abstract class Util
         }
     }
 
+
+
     public static String stackTrace2string(Throwable e)
     {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw, false);
-        e.printStackTrace(pw);
-
-        while (e.getCause() != null) e = e.getCause();
-        if (e instanceof AbstractExWirable) {
-            AbstractExWirable eWirable = (AbstractExWirable) e;
-            if (eWirable.hasRemoteStackTrace()) {
-                pw.print(REMOTE_STACKTRACE);
-                String trace = eWirable.getRemoteStackTrace();
-                if (trace.isEmpty()) {
-                    pw.println(" (n/a)");
-                } else {
-                    pw.println();
-                    pw.print(trace);
-                }
-            }
-        }
-
+        AbstractExWirable.printStackTrace(e, pw);
         return sw.toString();
     }
 

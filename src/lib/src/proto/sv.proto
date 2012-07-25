@@ -1,4 +1,5 @@
-package com.aerofs.proto;
+package sv;
+option java_package = "com.aerofs.proto";
 
 import "common.proto";
 

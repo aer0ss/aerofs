@@ -35,6 +35,8 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
+import com.aerofs.daemon.mobile.MobileService;
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
@@ -133,8 +135,10 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     /**
      * @param sink
      * @param mcfr
+     * @param mobileServiceFactory
      */
-    public XMPP(IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
+    public XMPP(IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr,
+            MobileService.Factory mobileServiceFactory)
     {
         // this is a workaround for NullPointerException during authentication
         // see http://www.igniterealtime.org/community/thread/35976
@@ -166,6 +170,11 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         }
 
         _spf = new SignalledPipeFanout(_sched, pipes);
+        if (mobileServiceFactory != null && MobileService.Factory.isEnabled()) {
+            _mobileConnector = new MobileServerZephyrConnector(mobileServiceFactory);
+        } else {
+            _mobileConnector = null;
+        }
     }
 
     @Override
@@ -626,7 +635,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     }
 
     @Override
-    public void xmppServerConnected(XMPPConnection conn) throws XMPPException
+    public void xmppServerConnected(final XMPPConnection conn) throws XMPPException
     {
         assertNonDispThread();
 
@@ -658,6 +667,8 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
 
                             Message m = (Message) packet;
                             Message.Type t = m.getType();
+
+                            if (m.getSubject() != null) return;
 
                             assert t != groupchat && t != headline && t != chat :
                                 ("pl: groupchat, headline and chat messages are not expected here");
@@ -696,6 +707,10 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             }
         }, fullfilter);
 
+        if (_mobileConnector != null) {
+            _mobileConnector.setConnection(conn);
+        }
+
         enqueueIntoXmpp(new AbstractEBSelfHandling()
         {
             @Override
@@ -703,7 +718,8 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             {
                 try {
                     _spf.xmppServerConnected_();
-                    _mc.xmppServerConnected(null); // FIXME: should not pass in null - change Multicast to use passed-in connection
+                    _mc.xmppServerConnected(
+                            null); // FIXME: should not pass in null - change Multicast to use passed-in connection
                 } catch (XMPPException e) {
                     l.warn("invalid XMPP message on XMPP connection");
                 } catch (ExNoResource e) { // FIXME: should I catch all exceptions? - no...let me approach this on a case-by-case basis for now
@@ -1207,7 +1223,9 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
 
     private final Map<PBTPHeader.Type, ISignallingClient> _processors = new HashMap<PBTPHeader.Type, ISignallingClient>();
 
-    private final Logger l = Util.l(XMPP.class);
+    private final MobileServerZephyrConnector _mobileConnector;
+
+    private static final Logger l = Util.l(XMPP.class);
 
     //
     // constants

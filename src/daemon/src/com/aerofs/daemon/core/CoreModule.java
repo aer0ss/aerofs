@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.core.syncstatus.SyncStatusConnection;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
+import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
 import com.aerofs.daemon.lib.db.AliasDatabase;
@@ -44,6 +45,7 @@ import com.aerofs.daemon.lib.db.ver.ImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
 
 public class CoreModule extends AbstractModule
@@ -77,5 +79,11 @@ public class CoreModule extends AbstractModule
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(ISyncStatusDatabase.class).to(SyncStatusDatabase.class);
         bind(SyncStatusConnection.ISignInHandler.class).to(SyncStatusSynchronizer.class);
+    }
+
+    @Provides
+    public CoreIMCExecutor provideCoreIMCExecutor(CoreQueue q)
+    {
+        return new CoreIMCExecutor(new QueueBasedIMCExecutor(q));
     }
 }

@@ -3,9 +3,20 @@ package com.aerofs.daemon.transport.xmpp.jingle;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection;
-import com.aerofs.j.*;
+import com.aerofs.j.Jid;
+import com.aerofs.j.Message;
+import com.aerofs.j.MessageHandlerBase;
+import com.aerofs.j.Status;
+import com.aerofs.j.XmppClient_StateChangeSlot;
+import com.aerofs.j.XmppEngine;
+import com.aerofs.j.XmppMain;
+import com.aerofs.j.XmppSocket_CloseEventSlot;
+import com.aerofs.j.XmppSocket_ErrorSlot;
 import com.aerofs.l.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.InOutArg;
+import com.aerofs.lib.Param;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.id.DID;
@@ -14,6 +25,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -153,7 +165,8 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         l.debug("st: links up");
 
-        _main = new XmppMain(L.get().xmppServerAddr(), L.get().xmppServerPort(),
+        InetSocketAddress address = Param.xmppAddress();
+        _main = new XmppMain(address.getHostName(), address.getPort(),
                 true, _jidSelf, XMPPServerConnection.shaedXMPP(),
                 L.get().jingleRelayHost(), L.get().jingleRelayPort(),
                 ljlogpathutf8);

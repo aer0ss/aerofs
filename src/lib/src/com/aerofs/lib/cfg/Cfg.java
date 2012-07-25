@@ -34,8 +34,11 @@ public class Cfg
         RITUAL_NOTIFICATION,
         UI,
         UI_SINGLETON,
-        RITUAL
+        RITUAL,
     };
+
+    private static final int NUM_RESERVED_PORTS =
+            Math.max(8, PortType.values().length);
 
     private static String _absRTRoot;
     private static DID _did;
@@ -260,11 +263,11 @@ public class Cfg
     }
 
     /**
-     * @return N + 1 where N is the maximum possible port number
+     * @return the next unreserved port for the given base
      */
-    public static int maxPort(int portbase)
+    public static int nextUnreservedPort(int portbase)
     {
-        return portbase + PortType.values().length;
+        return portbase + NUM_RESERVED_PORTS;
     }
 
     public static boolean lotsOfLog(String rtRoot)

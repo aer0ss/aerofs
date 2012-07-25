@@ -38,7 +38,6 @@ public class Core implements IModule
     private final LinkStateService _lss;
     private final Transports _tps;
     private final CoreScheduler _sched;
-    private final CoreQueue _q;
     private final TC _tc;
     private final VerkehrNotificationSubscriber _vksub;
     private final ACLNotificationSubscriber _aclsub;
@@ -51,7 +50,7 @@ public class Core implements IModule
     @Inject
     public Core(
             TC tc,
-            CoreQueue q,
+            CoreIMCExecutor imce,
             Stores ss,
             Transports tps,
             LinkStateService lss,
@@ -68,8 +67,8 @@ public class Core implements IModule
             ILinker linker,
             DaemonPostUpdateTasks dput)
     {
+        _imce2core = imce.imce();
         _tc = tc;
-        _q = q;
         _ss = ss;
         _lss = lss;
         _tps = tps;
@@ -104,7 +103,6 @@ public class Core implements IModule
         _aclsub.init_();
         _sssub.init_();
         _notifier.init_();
-        _imce2core = new QueueBasedIMCExecutor(_q);
 
         _sched.schedule(new AbstractEBSelfHandling()
         {

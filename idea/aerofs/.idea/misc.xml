@@ -54,8 +54,10 @@
     </option>
   </component>
   <component name="ProjectResources">
-    <default-html-doctype>$APPLICATION_HOME_DIR$/lib/idea.jar!/resources/html5-schema/html5.rnc</default-html-doctype>
+    <default-html-doctype>http://www.w3.org/1999/xhtml</default-html-doctype>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="1.6" project-jdk-type="JavaSDK" />
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" assert-keyword="true" jdk-15="true" project-jdk-name="1.6" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/../../classes" />
+  </component>
 </project>
 

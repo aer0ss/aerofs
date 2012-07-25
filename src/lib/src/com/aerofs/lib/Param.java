@@ -3,6 +3,7 @@ package com.aerofs.lib;
 import com.aerofs.l.L;
 import com.aerofs.lib.cfg.Cfg;
 
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -16,6 +17,29 @@ public class Param
     public static final long FREQUENT_DEFECT_SENDER_INTERVAL = 3 * C.HOUR;
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;
     public static final long EXP_RETRY_MAX_DEFFAULT          = 60 * C.SEC;
+
+    private static final String XMPP_SERVER_PROP = "aerofs.xmpp";
+    private static final String ZEPHYR_SERVER_PROP = "aerofs.zephyr";
+
+    private static InetSocketAddress parseAddress(String str)
+    {
+        if (str == null) return null;
+        int pos = str.lastIndexOf(':');
+        if (pos == -1) return null;
+        String host = str.substring(0, pos);
+        int port = Integer.parseInt(str.substring(pos + 1));
+        return InetSocketAddress.createUnresolved(host, port);
+    }
+
+    public static InetSocketAddress xmppAddress()
+    {
+        InetSocketAddress address = parseAddress(System.getProperty(XMPP_SERVER_PROP));
+        if (address == null) {
+            address = InetSocketAddress.createUnresolved(
+                    L.get().xmppServerAddr(), L.get().xmppServerPort());
+        }
+        return address;
+    }
 
     public static class PostUpdate
     {
@@ -40,18 +64,32 @@ public class Param
 
     public static class Zephyr
     {
+        public static InetSocketAddress zephyrAddress()
+        {
+            InetSocketAddress address = parseAddress(System.getProperty(ZEPHYR_SERVER_PROP));
+            if (address == null) {
+                String host;
+                int port;
+                if (Cfg.staging()) {
+                    host = "staging.aerofs.com";
+                    port = 8888;
+                } else {
+                    host = "zephyr.aerofs.com";
+                    port = 443;
+                }
+                address = InetSocketAddress.createUnresolved(host, port);
+            }
+            return address;
+        }
+
         public static String zephyrHost()
         {
-            return Cfg.staging() ?
-                    "staging.aerofs.com" :
-                    "zephyr.aerofs.com";
+            return zephyrAddress().getHostName();
         }
 
         public static short zephyrPort()
         {
-            return Cfg.staging() ?
-                (short) 8888 :
-                (short) 443;
+            return (short)zephyrAddress().getPort();
         }
     }
 

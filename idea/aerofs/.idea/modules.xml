@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../src/android/android.iml" filepath="$PROJECT_DIR$/../../src/android/android.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/daemon/daemon.iml" filepath="$PROJECT_DIR$/../../src/daemon/daemon.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/gui/gui.iml" filepath="$PROJECT_DIR$/../../src/gui/gui.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/lib/lib.iml" filepath="$PROJECT_DIR$/../../src/lib/lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/libmobile/libmobile.iml" filepath="$PROJECT_DIR$/../../src/libmobile/libmobile.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/servletlib/servletlib.iml" filepath="$PROJECT_DIR$/../../src/servletlib/servletlib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/spsv/spsv.iml" filepath="$PROJECT_DIR$/../../src/spsv/spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" />

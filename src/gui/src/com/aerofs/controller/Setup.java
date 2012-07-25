@@ -342,12 +342,12 @@ class Setup
 
         // try 100 times only
         for (int i = 0; i < 100; i++) {
-            for (int port = Cfg.minPort(base); port < Cfg.maxPort(base); port++) {
+            for (int port = Cfg.minPort(base); port < Cfg.nextUnreservedPort(base); port++) {
                 try {
                     ServerSocket ss = new ServerSocket(port, 0, C.LOCALHOST_ADDR);
                     ss.close();
                 } catch (BindException e) {
-                    base = Cfg.maxPort(base);
+                    base = Cfg.nextUnreservedPort(base);
                     error = true;
                     break;
                 }

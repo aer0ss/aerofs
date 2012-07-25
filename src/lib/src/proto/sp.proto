@@ -1,3 +1,4 @@
+package sp;
 option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
@@ -575,7 +576,7 @@ message PBACLNotification {
 // recently.
 message PBSyncStatNotification {
     required uint64 ss_epoch = 1;
-    optional GetSyncStatusReply.SyncStatus status = 2;
+    optional syncstat.GetSyncStatusReply.SyncStatus status = 2;
 }
 
 message VerifyEmailCall {

@@ -7,15 +7,20 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.l.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.Base64;
+import com.aerofs.lib.Param;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-
 import org.apache.log4j.Logger;
-import org.jivesoftware.smack.*;
+import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
+import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -31,7 +36,7 @@ public class XMPPServerConnection implements IDumpStatMisc
 
     static
     {
-        XMPPConnection.DEBUG_ENABLED = false;
+        //XMPPConnection.DEBUG_ENABLED = true;
     }
 
     XMPPServerConnection(String resource, IXMPPServerConnectionWatcher listener)
@@ -91,9 +96,9 @@ public class XMPPServerConnection implements IDumpStatMisc
 
     private XMPPConnection newConnection()
     {
+        InetSocketAddress address = Param.xmppAddress();
         ConnectionConfiguration cc = new ConnectionConfiguration(
-            L.get().xmppServerAddr(),
-            L.get().xmppServerPort());
+                address.getHostName(), address.getPort());
         cc.setServiceName(DaemonParam.XMPP.SERVER_DOMAIN);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
@@ -107,8 +112,9 @@ public class XMPPServerConnection implements IDumpStatMisc
         return new XMPPConnection(cc);
     }
 
-     private void startConnect(final boolean initialDelay)
+    private void startConnect(final boolean initialDelay)
     {
+        l.info("startConnect: delay=" + initialDelay);
         // TODO use scheduler instead of threads?
         Util.exponentialRetryNewThread("xsct", new Callable<Void>()
             {
@@ -119,6 +125,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                         l.info("reconnect in " + Param.EXP_RETRY_MIN_DEFAULT);
                         Util.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
                     }
+                    l.info("connecting");
 
                     try {
                         if (!_linkUp) {
@@ -127,6 +134,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                         }
                         synchronized (XMPPServerConnection.this) { connect_(); }
                     } catch (XMPPException e) {
+                        l.warn("error", e);
                         // 502: remote-server-error(502): java.net.ConnectException: Operation timed out
                         // 504: remote-server-error(504): connection refused
                         if (e.getXMPPError() != null) {
@@ -139,6 +147,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                         // all other cases should throw an exception with no message
                         throw new Exception(Util.e(e));
                     } catch (Exception e) {
+                        l.warn("error", e);
                         Util.printStack(e.toString());
                     }
 
@@ -164,12 +173,11 @@ public class XMPPServerConnection implements IDumpStatMisc
             l.warn("beginning process to replace old connection");
         }
 
-        l.info("connecting");
-
         XMPPConnection c = newConnection();
+        l.info("connecting to " + c.getHost() + ":" + c.getPort());
         c.connect();
 
-        l.info("connected. logging in");
+        l.info("logging in as " + _user + '@' + c.getServiceName() + '/' + _resource);
 
         c.login(_user, shaedXMPP(), _resource);
 

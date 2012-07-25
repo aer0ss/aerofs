@@ -87,6 +87,8 @@ import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
+import com.aerofs.daemon.mobile.EIDownloadPacket;
+import com.aerofs.daemon.mobile.HdDownloadPacket;
 
 public class CoreEventDispatcher extends EventDispatcher
 {
@@ -133,7 +135,8 @@ public class CoreEventDispatcher extends EventDispatcher
             HdGetSyncStatus hdGetSyncStatus,
             HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat,
-            HdGetActivities hdGetActivities)
+            HdGetActivities hdGetActivities,
+            HdDownloadPacket hdDownloadPacket)
     {
         this
             // fs events
@@ -189,6 +192,9 @@ public class CoreEventDispatcher extends EventDispatcher
             .setHandler_(EIStreamBegun.class, hdStreamBegun)
             .setHandler_(EIChunk.class, hdChunk)
             .setHandler_(EIStreamAborted.class, hdStreamAborted)
-            .setHandler_(EIPulseStopped.class, hdPulseStopped);
+            .setHandler_(EIPulseStopped.class, hdPulseStopped)
+
+            // mobile events
+            .setHandler_(EIDownloadPacket.class, hdDownloadPacket);
     }
 }

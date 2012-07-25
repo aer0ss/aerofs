@@ -4,7 +4,12 @@
       <root url="jar://$PROJECT_DIR$/../../approot/lib/smack.jar!/" />
       <root url="jar://$PROJECT_DIR$/../../approot/lib/smackx.jar!/" />
     </CLASSES>
-    <JAVADOC />
-    <SOURCES />
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/../../resource/src/smack_src_3_2_2.zip!/smack_src_3_2_2/javadoc" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../resource/src/smack_src_3_2_2.zip!/smack_src_3_2_2/source" />
+      <root url="jar://$PROJECT_DIR$/../../resource/src/smack_src_3_2_2.zip!/smack_src_3_2_2/jingle/extension/source" />
+    </SOURCES>
   </library>
 </component>

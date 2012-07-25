@@ -1,5 +1,8 @@
 package com.aerofs.lib.ex;
 
+import java.io.PrintStream;
+import java.io.PrintWriter;
+
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
@@ -57,6 +60,7 @@ import com.aerofs.proto.Common.PBException.Type;
 public abstract class AbstractExWirable extends Exception
 {
     private static final long serialVersionUID = 1L;
+    private static final String REMOTE_STACKTRACE = "Remote stacktrace:";
 
     private final PBException _pb;
 
@@ -140,5 +144,56 @@ public abstract class AbstractExWirable extends Exception
     {
         assert hasRemoteStackTrace();
         return _pb.getStackTrace();
+    }
+
+    @Override
+    public void printStackTrace(PrintWriter s)
+    {
+        super.printStackTrace(s);
+        printRemoteStackTrace(s);
+    }
+
+    @Override
+    public void printStackTrace(PrintStream s)
+    {
+        super.printStackTrace(s);
+        printRemoteStackTrace(s);
+    }
+
+    public void printRemoteStackTrace(PrintWriter s)
+    {
+        if (hasRemoteStackTrace()) {
+            s.print(REMOTE_STACKTRACE);
+            String trace = getRemoteStackTrace();
+            if (trace.isEmpty()) {
+                s.println(" (n/a)");
+            } else {
+                s.println();
+                s.print(trace);
+            }
+        }
+    }
+
+    public void printRemoteStackTrace(PrintStream s)
+    {
+        if (hasRemoteStackTrace()) {
+            s.print(REMOTE_STACKTRACE);
+            String trace = getRemoteStackTrace();
+            if (trace.isEmpty()) {
+                s.println(" (n/a)");
+            } else {
+                s.println();
+                s.print(trace);
+            }
+        }
+    }
+
+    public static void printStackTrace(Throwable t, PrintWriter s)
+    {
+        t.printStackTrace(s);
+        while (t.getCause() != null) t = t.getCause();
+        if (t instanceof AbstractExWirable) {
+            ((AbstractExWirable)t).printRemoteStackTrace(s);
+        }
     }
 }

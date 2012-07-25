@@ -14,6 +14,7 @@ import com.aerofs.lib.ex.ExNoResource;
 import org.apache.log4j.Logger;
 
 import java.io.*;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -67,7 +68,12 @@ public class TCPProactorMT
     {
         _name = name;
         _manager = manager;
-        _ss = new ServerSocket(port, DaemonParam.TCP.BACKLOG, addr);
+        try {
+            _ss = new ServerSocket(port, DaemonParam.TCP.BACKLOG, addr);
+        } catch (BindException e) {
+            l.warn("error binding to " +addr + ":" + port);
+            throw e;
+        }
         _magic = magic;
         _sendable = sendable;
         _maxRecvMsgSize = maxRecvMsgSize;
