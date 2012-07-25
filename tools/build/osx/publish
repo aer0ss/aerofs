@@ -52,7 +52,8 @@ zip -9rq aerofs-osx-$VER.zip Release/
 
 kscp -P $SVR_PORT aerofs-osx-$VER.zip $SVR_LOGIN:/data/$MODE-downloads/aerofs-osx-temp.zip
 kssh -p $SVR_PORT $SVR_LOGIN \
-     "cd /data/$MODE-downloads/; \
+     "set -e; \
+     cd /data/$MODE-downloads/; \
      cp AeroFSInstall-$VER.dmg AeroFSInstall.dmg; \
      mv aerofs-osx-temp.zip aerofs-osx-$VER.zip; \
      echo Deploying to S3/CloudFront; \

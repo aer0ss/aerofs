@@ -82,7 +82,8 @@ echo deploying on the server
 DEFLATED=aerofs.release/$MODE # directory on the server with the aerofs jars, libs, etc.
 
 kssh $SVR_LOGIN \
-    "cd ~; \
+    "set -e; \
+    cd ~; \
     rm -rf $DEFLATED; \
     mkdir -p $DEFLATED; \
     cd $DEFLATED; \
@@ -106,7 +107,8 @@ echo deploying Linux installer .deb
 kscp $PPWD/package_deb $SVR_LOGIN:$SVR_TEMP/
 
 kssh $SVR_LOGIN \
-    "cd ~; \
+    "set -e; \
+    cd ~; \
     chmod a+x $SVR_TEMP/package_deb; \
     $SVR_TEMP/package_deb $MODE ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb; \
 "
@@ -120,7 +122,8 @@ LINUX_TMP=$SVR_TEMP/aerofs.tmp
 LINUX_INST_TGZ=aerofs-installer.tgz
 
 kssh $SVR_LOGIN \
-    "cd ~; \
+    "set -e; \
+    cd ~; \
     rm -rf $LINUX_TMP; \
     mkdir -p $LINUX_TMP/aerofs; \
     cp -rf $DEFLATED/aerofs.linux.inst/* $LINUX_TMP/aerofs; \
@@ -139,7 +142,8 @@ LINUX32_TGZ=aerofs-x86.tgz
 LINUX32_VER_TGZ=aerofs-$VER-x86.tgz
 
 kssh $SVR_LOGIN \
-    "cd ~; \
+    "set -e; \
+    cd ~; \
     rm -rf $LINUX_TMP; \
     mkdir -p $LINUX_TMP/aerofs; \
     cp -rf $DEFLATED/aerofs/* $LINUX_TMP/aerofs; \
@@ -163,7 +167,8 @@ LINUX64_TGZ=aerofs-x86_64.tgz
 LINUX64_VER_TGZ=aerofs-$VER-x86_64.tgz
 
 kssh $SVR_LOGIN \
-    "cd ~; \
+    "set -e; \
+    cd ~; \
     rm -rf $LINUX_TMP; \
     mkdir -p $LINUX_TMP/aerofs; \
     cp -rf $DEFLATED/aerofs/* $LINUX_TMP/aerofs; \
@@ -191,10 +196,11 @@ PATCHER=$SVR_ROOT/$NSIS_DIR/patcher
 kssh $SVR_LOGIN 'echo > /dev/null'
 rsync --archive --compress --relative --rsh ssh $AEROFS_GIT_ROOT/tools/./$NSIS_DIR $SVR_LOGIN:$SVR_ROOT
 
-DATA="rm -rf $PACKAGER/aerofs*; \
+DATA="set -e; \
+    rm -rf $PACKAGER/aerofs*; \
     cd $PACKAGER; \
     unzip -qo ~/$ZIP; \
-	cp -r $PACKAGER/aerofs.win/* $PACKAGER/aerofs; \
+    cp -r $PACKAGER/aerofs.win/* $PACKAGER/aerofs; \
     chmod -R a+rx $PACKAGER/aerofs*; \
     makensis -V1 -DAEROFS_SETUP_FOLDER=$DOWNLOADS -DAEROFS_VERSION=$VER $PACKAGER/setup.nsi; \
     export PASSPHRASE=\"$PASSPHRASE\"; \
@@ -215,7 +221,7 @@ kssh $SVR_LOGIN $DATA;
 echo creating Windows patches
 
 kssh $SVR_LOGIN \
-    " export PASSPHRASE=\"$PASSPHRASE\"; \
+    "export PASSPHRASE=\"$PASSPHRASE\"; \
     bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $MODE; \
     rm $DOWNLOADS/patch-*; \
     mv $PATCHER/patch-* $DOWNLOADS; \
@@ -227,7 +233,8 @@ kssh $SVR_LOGIN \
 
 echo updating current.ver
 kssh $SVR_LOGIN \
-    "rm $DOWNLOADS/current.ver; \
+    "set -e; \
+    rm $DOWNLOADS/current.ver; \
     echo Version=$VER > $DOWNLOADS/current.ver; \
     chmod a+r $DOWNLOADS/current.ver; \
     echo ' ' | mail -s \"$NAME deployed by $USER\" team@aerofs.com \
