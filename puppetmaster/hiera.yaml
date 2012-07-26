@@ -5,8 +5,9 @@
     - console
 
 :hierarchy:
-        - %{hostname}
-        - users
-        - common
+    - %{hostname}
+    - users
+    - common
+
 :yaml:
     :datadir: '/etc/puppet/hieradata'

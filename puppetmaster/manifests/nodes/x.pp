@@ -1,3 +1,3 @@
-node x.aerofs.com inherits default {
+node /^x\.aerofs\.com$/ inherits default {
    class { "ejabberd": }
 } 

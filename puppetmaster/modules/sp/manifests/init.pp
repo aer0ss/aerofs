@@ -74,6 +74,7 @@ class sp {
             group   => "adm",
             mode    => "0750",
             require => [ File["/data/var/log"], User["tomcat6"] ],
+        }
 
         file { "/var/svlogs_prod":
             ensure => directory,
@@ -119,4 +120,5 @@ class sp {
         package { "proguard":
             ensure => installed,
         }
+    }
 }
