@@ -212,6 +212,9 @@ DATA="set -e; \
     cp $DOWNLOADS/AeroFSInstall-$VER.exe $DOWNLOADS/AeroFSInstall.exe; \
     chmod a+r $DOWNLOADS/AeroFSInstall.exe; \
     "
+if [ $PROD == 1 ]; then
+  DATA="$DATA lftp -e 'mirror -R $PACKAGER/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com;"
+fi
 
 kssh $SVR_LOGIN $DATA;
 
