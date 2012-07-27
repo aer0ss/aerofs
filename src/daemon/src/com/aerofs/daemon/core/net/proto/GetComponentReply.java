@@ -63,7 +63,7 @@ public class GetComponentReply
         return OA.Type.valueOf(type.ordinal());
     }
 
-    public static enum CIDType {
+    static enum CIDType {
         META,
         CONTENT,
         OTHER;
@@ -74,7 +74,7 @@ public class GetComponentReply
             else if (cid.equals(CID.CONTENT)) return CONTENT;
             else return OTHER;
         }
-    };
+    }
 
     void processReply_(SOCID socid, To src, DigestedMessage msg, Token tk)
             throws Exception
@@ -106,7 +106,7 @@ public class GetComponentReply
             throws Exception
     {
         PBGetComReply pbReply = msg.pb().getGetComReply();
-        CIDType type = CIDType.infer(socid.cid());
+        final CIDType type = CIDType.infer(socid.cid());
 
         /////////////////////////////////////////
         // determine meta diff, handle aliases, check permissions, etc
@@ -283,7 +283,7 @@ public class GetComponentReply
                 break;
             }
 
-            _ru.applyUpdateMetaAndContent_(targetBranch, vRemote, cr, type, t);
+            _ru.applyUpdateMetaAndContent_(targetBranch, vRemote, cr, t);
 
             t.commit_();
             l.warn(socid + " ok " + msg.ep());

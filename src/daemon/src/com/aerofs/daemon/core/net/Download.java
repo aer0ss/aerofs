@@ -5,10 +5,16 @@ import java.util.HashSet;
 import java.util.Set;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.net.dependence.DependencyEdge;
+import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph;
+import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.core.net.dependence.NameConflictDependencyEdge;
+import com.aerofs.daemon.core.net.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.core.net.proto.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.net.proto.GetComponentCall;
 import com.aerofs.daemon.core.store.IMapSIndex2Store;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.*;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -36,9 +42,8 @@ public class Download
 
     private final To _src;
     private final Listeners<IDownloadCompletionListener> _ls = Listeners.newListeners();
-    // A global directed graph representing dependencies from ongoing downloads. It is used to
-    // prevent dependency deadlocks, and avoid redownloading a completed dependency.
-    private final DownloadDependenciesGraph<SOCID> _dlOngoingDependencies;
+    // See Downloads.java: A global directed graph representing dependencies from ongoing downloads.
+    private final DownloadDependenciesGraph _dlOngoingDependencies;
     private final Token _tk;
     private final SOCID _socid;
     private Prio _prio;
@@ -54,12 +59,12 @@ public class Download
         private final GetComponentCall _pgcc;
         private final NativeVersionControl _nvc;
         private final To.Factory _factTo;
-        private final DownloadDependenciesGraph<SOCID> _dlOngoingDependencies;
+        private final DownloadDependenciesGraph _dlOngoingDependencies;
 
         @Inject
         public Factory(NativeVersionControl nvc, GetComponentCall pgcc, Downloads dls,
                 DirectoryService ds, DownloadState dlstate, TC tc,
-                To.Factory factTo, IMapSIndex2Store sidx2s, DownloadDependenciesGraph<SOCID> dldg)
+                To.Factory factTo, IMapSIndex2Store sidx2s, DownloadDependenciesGraph dldg)
         {
 
             _nvc = nvc;
@@ -79,11 +84,10 @@ public class Download
         }
     }
 
-    private Download(Factory f, SOCID socid, To src, @Nullable IDownloadCompletionListener l, Token tk,
-            DownloadDependenciesGraph<SOCID> dldg)
+    private Download(Factory f, SOCID socid, To src, @Nullable IDownloadCompletionListener l,
+            Token tk, DownloadDependenciesGraph dldg)
     {
         _f = f;
-
         _socid = socid;
         _tk = tk;
         _src = src;
@@ -161,6 +165,7 @@ public class Download
             _f._dlstate.ended_(_socid, false);
             return e;
         } finally {
+            // Clear all dependencies of this socid on others, since we're "done" with this socid
             _dlOngoingDependencies.removeOutwardEdges_(_socid);
             _f._tc.setPrio(prioOrg);
         }
@@ -177,12 +182,14 @@ public class Download
             DID replier = null;
             boolean started = false;
             try {
-                // Check for dependency and expulsion. Even though GetComReply will check again,
-                // we do it here to avoid useless round-trips with remote peers when possible.
+                // Check for dependency and expulsion. Even though GetComponentReply will check
+                // again, we do it here to avoid useless round-trips with remote peers when
+                // possible.
                 if (!_socid.cid().equals(CID.META)) {
                     OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
                     if (oa == null) {
-                        throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null, false);
+                        throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null,
+                                DependencyType.UNSPECIFIED, false);
                     } else if (oa.isExpelled()) {
                         throw new ExAborted(_socid + " is expelled");
                     }
@@ -214,26 +221,40 @@ public class Download
                 reenqueue(started);
                 l.warn("inc dl failed. full dl now.");
 
+            } catch (ExNameConflictDependsOn e) {
+                // N.B. this exception specializes ExDependsOn and thus must precede the
+                // catch for ExDependsOn
+                reenqueue(started);
+
+                SOCID dst = new SOCID(_socid.sidx(), e._ocid);
+                DependencyEdge dependency = new NameConflictDependencyEdge(_socid, dst, e._did,
+                        e._parent, e._vRemote, e._meta, e._soidMsg);
+                onDependency_(dependency, e);
+
             } catch (ExDependsOn e) {
                 reenqueue(started);
-                final SOCID dep = new SOCID(_socid.sidx(), e.ocid());
-                l.info(_socid + " depends on " + dep);
-                _dlOngoingDependencies.addEdge_(_socid, dep);
-                To to = e.did() == null ? _f._factTo.create_(_src) : _f._factTo.create_(e.did());
-                try {
-                    _f._dls.downloadSync_(dep, to, _tk, _socid);
-                } catch (Exception e2) {
-                    if (e.ignoreError()) l.info("dl dependency error, ignored: " + Util.e(e2));
-                    else throw e2;
+
+                SOCID dst = new SOCID(_socid.sidx(), e._ocid);
+                DependencyEdge dependency = null;
+                switch(e._type) {
+                case PARENT:
+                    dependency = new ParentDependencyEdge(_socid, dst);
+                    break;
+                // ExDependsOn should never be thrown with type NAME_CONFLICT, use
+                // ExNameConflictDependsOn instead (TODO (MJ) this should be enforced by types...)
+                case NAME_CONFLICT: assert false; break;
+                default:
+                    dependency = new DependencyEdge(_socid, dst);
+                    break;
                 }
-                l.info("dependency " + _socid + " -> " + dep + " solved");
+                onDependency_(dependency, e);
 
             } catch (ExStreamInvalid e) {
                 reenqueue(started);
                 if (e.getReason_() == InvalidationReason.UPDATE_IN_PROGRESS) {
                     onUpdateInProgress();
                 } else {
-                    onGeneralException(e, replier, false);
+                    onGeneralException(e, replier);
                 }
 
             } catch (ExNoResource e) {
@@ -268,7 +289,7 @@ public class Download
 
             } catch (Exception e) {
                 reenqueue(started);
-                onGeneralException(e, replier, true);
+                onGeneralException(e, replier);
             }
         }
     }
@@ -285,7 +306,7 @@ public class Download
         _tk.sleep_(3 * C.SEC, "retry dl (update in prog)");
     }
 
-    private void onGeneralException(Exception e, DID replier, boolean mayPrintStack)
+    private void onGeneralException(Exception e, DID replier)
     {
         if (e instanceof RuntimeException) Util.fatal(e);
 
@@ -294,6 +315,20 @@ public class Download
         // RTN: retry now
         l.warn(_socid + ": " + Util.e(e) + " " + replier + " RTN");
         if (replier != null) _src.avoid_(replier);
+    }
+
+    private void onDependency_(DependencyEdge dependency, ExDependsOn e)
+            throws Exception
+    {
+        To to = e._did == null ? _f._factTo.create_(_src) : _f._factTo.create_(e._did);
+        l.info("download dependency " + dependency);
+        try {
+            _f._dls.downloadSync_(dependency, to, _tk);
+        } catch (Exception e2) {
+            if (e._ignoreError) l.info("dl dependency error, ignored: " + Util.e(e2));
+            else throw e2;
+        }
+        l.info("dependency " + dependency + " solved");
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.Downloads;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.To.Factory;
+import com.aerofs.daemon.core.net.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.Util;
@@ -19,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
@@ -28,6 +30,10 @@ public class EmigrantDetector
     static final Logger l = Util.l(EmigrantDetector.class);
 
     private final DirectoryService _ds;
+    // This class uses the Downloads.downloadSync_ method to get dependent immigrant/emmigrant
+    // objects and ancestors. It uses these methods directly, instead of the ExDependsOn pattern
+    // to avoid the delay in reprocessing a ComponentReply, once the required object has been
+    // downloaded locally.
     private final Downloads _dls;
     private final To.Factory _factTo;
     private final IMapSID2SIndex _sid2sidx;
@@ -138,7 +144,8 @@ public class EmigrantDetector
      * @return the ancestor store being downloaded. null if the local and remote
      * peers don't share common ancestors
      */
-    private SIndex downloadEmigrantAncestorStores_(Queue<SID> sids, DID did, Token tk, SOID soid)
+    private @Nullable SIndex downloadEmigrantAncestorStores_(Queue<SID> sids, DID did, Token tk,
+            SOID soid)
             throws Exception
     {
         SID sid = sids.poll();
@@ -154,7 +161,8 @@ public class EmigrantDetector
 
         SOID soidAnchor = new SOID(sidxAnchor, SID.storeSID2anchorOID(sid));
         l.info("download ancestor anchor " + soidAnchor);
-        _dls.downloadSync_(new SOCID(soidAnchor, CID.META), _factTo.create_(did), tk, socid);
+        ParentDependencyEdge dependency = new ParentDependencyEdge(socid, new SOCID(soidAnchor, CID.META));
+        _dls.downloadSync_(dependency, _factTo.create_(did), tk);
 
         // may return null even after downloading of the anchor succeeds.
         // for example, the remote peer may delete the anchor after the meta

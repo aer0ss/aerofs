@@ -7,6 +7,10 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.net.dependence.DependencyEdge;
+import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph;
+import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
+import com.aerofs.daemon.core.net.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
@@ -29,27 +33,26 @@ import javax.annotation.Nullable;
 // priorities. the download thread being interrupted will throw ExAborted with
 // cause ExNoResource.
 
-public class Downloads {
+public class Downloads
+{
     private static final Logger l = Util.l(Downloads.class);
 
-    private class SyncDownloadImpl implements IDownloadCompletionListener {
-
+    private class SyncDownloadImpl implements IDownloadCompletionListener
+    {
         private TCB _tcb;
         private DID _from;
 
-        SyncDownloadImpl(SOCID socid, To to, Token tk, SOCID dependent)
+        SyncDownloadImpl(DependencyEdge dependency, To to, Token tk)
                 throws Exception
         {
             Token tkWait = _tc.acquireThrows_(Cat.UNLIMITED, "syncDL");
             try {
-                downloadAsyncThrows_(socid, to, this, tk);
-                _syncDownloadDeadlockDetector.addEdge_(dependent, socid);
+                downloadAsyncThrows_(dependency.dst, to, this, tk);
                 _tcb = TC.tcb();
-                tkWait.pause_("syncDL " + socid);
+                tkWait.pause_("syncDL " + dependency.dst);
             } catch (ExAborted e) {
                 throw (Exception) e.getCause();
             } finally {
-                _syncDownloadDeadlockDetector.removeEdge_(dependent, socid);
                 tkWait.reclaim_();
                 _tcb = null;
             }
@@ -79,14 +82,18 @@ public class Downloads {
     private To.Factory _factTo;
     private DirectoryService _ds;
 
+    // A global directed graph representing dependencies from ongoing downloads. It is used to
+    // detect dependency deadlocks, and avoid redownloading a completed dependency.
+    private DownloadDependenciesGraph _dlOngoingDependencies;
+    private DownloadDeadlockResolver _ddr;
+
     private final Map<SOCID, Download> _ongoing = Maps.newTreeMap();
-    private final DownloadDependenciesGraph<SOCID> _syncDownloadDeadlockDetector
-            = new DownloadDependenciesGraph<SOCID>();
 
     @Inject
     public void inject_(CoreQueue q, DownloadState dlstate, TC tc,
             CoreScheduler sched, Download.Factory factDownload,
-            To.Factory factTo, DirectoryService ds)
+            To.Factory factTo, DirectoryService ds, DownloadDependenciesGraph dldg,
+            DownloadDeadlockResolver ddr)
     {
         _q = q;
         _dlstate = dlstate;
@@ -95,6 +102,8 @@ public class Downloads {
         _factDownload = factDownload;
         _factTo = factTo;
         _ds = ds;
+        _dlOngoingDependencies = dldg;
+        _ddr = ddr;
     }
 
     public boolean isOngoing_(SOCID socid)
@@ -103,14 +112,31 @@ public class Downloads {
     }
 
     /**
-     * @param dependent the branch that depends on the downloading of k. this is
-     * to detect cyclic downloadSync calls (deadlocks). may be null
+     * @param dependent the object that depends on the downloading of socid. this is
+     * to detect cyclic downloadSync calls (deadlocks).
      */
-    public DID downloadSync_(SOCID socid, To to, @Nullable Token tk, SOCID dependent)
+    public @Nullable DID downloadSync_(SOCID socid, To to, @Nullable Token tk, SOCID dependent)
         throws Exception
     {
-        SyncDownloadImpl sdi = new SyncDownloadImpl(socid, to, tk, dependent);
-        return sdi._from;
+        DependencyEdge dependency = new DependencyEdge(dependent, socid);
+        return downloadSync_(dependency, to, tk);
+    }
+
+    public @Nullable DID downloadSync_(DependencyEdge dependency, To to, Token tk)
+            throws Exception
+    {
+        try {
+            // Edges are added to the dependency graph here instead of in Download.java because
+            // there are callers of downloadSync_, in addition to Download.java
+            // Edges are removed in Download.java after a download completes or aborts
+            _dlOngoingDependencies.addEdge_(dependency);
+            SyncDownloadImpl sdi = new SyncDownloadImpl(dependency, to, tk);
+            return sdi._from;
+        } catch (ExDownloadDeadlock edldl) {
+            // Try to resolve the deadlock, or else crash the app in this method
+            _ddr.resolveDeadlock_(edldl._cycle);
+            return null;
+        }
     }
 
     public Download downloadAsyncThrows_(SOCID socid, To to, IDownloadCompletionListener listener,
