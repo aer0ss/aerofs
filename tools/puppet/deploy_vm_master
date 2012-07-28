@@ -1,0 +1,42 @@
+#!/bin/bash
+
+set -e -u
+
+if [ $# -ne 1 ]; then
+    echo "usage: $0 puppetmaster"
+    echo "puppetmaster: the address of the puppetmaster server"
+    echo
+    echo "example: $0 192.168.1.83"
+    exit 2
+fi
+
+PUPPET_MASTER=${1:-}
+if [ x"$PUPPET_MASTER" == x ]; then
+    echo "puppetmaster server address is required"
+    exit 3
+fi
+
+USER=root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
+AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )" # get the absolute path
+PUPPET_ROOT=${AEROFS_GIT_ROOT}/puppetmaster/
+SSH_KEY=${SCRIPT_DIR}/id_rsa
+SSH_COMMAND="ssh -l ${USER} -i ${SSH_KEY}"
+
+echo "Configuring puppet master vm: ${PUPPET_MASTER}"
+echo "Installing puppet"
+$SSH_COMMAND ${PUPPET_MASTER} -C "apt-get install puppet puppetmaster rubygems"
+$SSH_COMMAND ${PUPPET_MASTER} -C "gem install hiera"
+echo "Copying over puppet files"
+# rsync - recursuve/follow symlinks - use ssh -
+rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
+rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT}/local/ ${PUPPET_MASTER}:/etc/puppet
+echo "configuring puppetmaster to autosign certs"
+$SSH_COMMAND ${PUPPET_MASTER} -C "echo '*' > /etc/puppet/autosign.conf"
+echo "restarting puppetmaster service"
+$SSH_COMMAND ${PUPPET_MASTER} -C "service puppetmaster restart"
+echo "populating plugins"
+$SSH_COMMAND ${PUPPET_MASTER} -C "puppet agent -t --pluginsync --server ubuntu --noop > /dev/null"
+
+
+echo "Done!"
