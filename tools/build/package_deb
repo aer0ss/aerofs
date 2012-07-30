@@ -92,6 +92,10 @@ mkdir -p $HICOLOR_DIR/32x32/apps
 mkdir -p $HICOLOR_DIR/64x64/apps
 
 cp $SERVER_RELEASE_DIR/aerofs.linux.inst/aerofs debian/usr/bin/aerofs
+chmod a+x debian/usr/bin/aerofs
+ln -s aerofs debian/usr/bin/aerofs-sh
+ln -s aerofs debian/usr/bin/aerofs-cli
+ln -s aerofs debian/usr/bin/aerofs-gui
 cp $SERVER_RELEASE_DIR/aerofs.linux/aerofs.desktop debian/usr/share/applications
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/aerofs.png
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/aerofs.png
@@ -119,7 +123,8 @@ EOF
 # installed via the package manager to go in /usr/bin/.
 
 # NOTE: we call procps start so that the sysctl values that
-# were modified are loaded
+# were modified are loaded.  However, on some systems (like OpenVZ containers)
+# certain sysctl variables cannot be set, so we ignore such failures.
 
 # We pre-remove the files and links from both locations.
 cat << EOF >> $DEBIAN_CONTROL_DIR/preinst
@@ -130,21 +135,14 @@ chmod a+x $DEBIAN_CONTROL_DIR/preinst
 
 cat << EOF >> $DEBIAN_CONTROL_DIR/postinst
 #!/bin/bash
-ln -sf /usr/bin/aerofs /usr/bin/aerofs-sh
-ln -sf /usr/bin/aerofs /usr/bin/aerofs-cli
-ln -sf /usr/bin/aerofs /usr/bin/aerofs-gui
-chmod a+x /usr/bin/aerofs
-invoke-rc.d procps start
+invoke-rc.d procps start || echo "Warning: couldn't set sysctl parameters; file changes may take some time to propagate"
 EOF
 chmod a+x $DEBIAN_CONTROL_DIR/postinst
 
 # Remove symlinks on uninstallation.
 cat << EOF >> $DEBIAN_CONTROL_DIR/postrm
 #!/bin/bash
-unlink /usr/bin/aerofs-sh
-unlink /usr/bin/aerofs-cli
-unlink /usr/bin/aerofs-gui
-invoke-rc.d procps start
+invoke-rc.d procps start || true
 EOF
 chmod a+x $DEBIAN_CONTROL_DIR/postrm
 
