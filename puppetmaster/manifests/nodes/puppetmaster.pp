@@ -5,9 +5,13 @@ node "puppetmaster" inherits default {
     include puppet::master::config
     include puppet::master
 
-    file{ "/etc/puppet" :
+    file{[
+        "/etc/puppet/manifests",
+        "/etc/puppet/modules"
+        ] :
         ensure => directory,
         recurse => true,
-        owner => "devops",
+        group => "admin",
+        mode => "664"
     }
 }

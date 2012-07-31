@@ -2,6 +2,11 @@ node /^syncstat\.aerofs\.com$/ inherits default {
 
     include syncstat
 
+    user{"tomcat6":
+        shell => "/bin/false",
+        home => "/usr/share/tomcat6",
+    }
+
     mkfs::create{ "ext4 /dev/xvdf":
         type      => "ext4",
         partition => "/dev/xvdf",

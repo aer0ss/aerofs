@@ -98,7 +98,7 @@ allow *
 path /run
 method save
 auth any
-allow <%= puppetmaster %>
+allow *
 
 # this one is not stricly necessary, but it has the merit
 # to show the default policy which is deny everything else
