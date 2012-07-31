@@ -2,6 +2,10 @@ node "z.arrowfs.org" inherits default {
 
   # TODO: pagerduty ssh key
 
+  users::add_user {
+    [ hiera('dev_users') ]:
+  }
+
   $fwknop_hostnames = [
     "sp.aerofs.com",
     "x.aerofs.com",
@@ -13,7 +17,10 @@ node "z.arrowfs.org" inherits default {
   }
 
   class{"pagerduty":
-    require => Class["fwknop-client"],
+    require => [
+        Class["fwknop-client"],
+        Exec["apt-get update"],
+    ]
   }
 
   #daily

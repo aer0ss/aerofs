@@ -10,3 +10,5 @@ templatedir=$confdir/templates
 listen=<%= listen %>
 report=true
 server=<%= puppetmaster %>
+# run once a day - we use kick if we need to update something
+runinterval=86400
