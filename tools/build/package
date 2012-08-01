@@ -222,21 +222,15 @@ PG_AEROFS_DIR=`echo $AEROFS_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 PG_RELEASE_DIR=`echo $RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 PG_HOME=`echo $PROGUARD_HOME | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
-if [ $MODE == "PROD" ]; then
-    echo obfuscating jar
-    cd $PROGUARD_HOME
+echo obfuscating jar
+cd $PROGUARD_HOME
 
-    ./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs.unobf.jar -outjars $PG_AEROFS_DIR/aerofs.jar \
-    -printmapping $PG_RELEASE_DIR/aerofs.map \
-    -repackageclasses "com.aerofs" \
-    -dontwarn 'com.aerofs.sak.**' \
-    -dontnote 'com.aerofs.l.*' \
-    @$PG_HOME/aerofs.pro
-
-else
-    cp $PG_AEROFS_DIR/aerofs.unobf.jar $PG_AEROFS_DIR/aerofs.jar
-    rm -rf "$PG_AEROFS_DIR/aerofs.unobf.jar"
-fi
+./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs.unobf.jar -outjars $PG_AEROFS_DIR/aerofs.jar \
+-printmapping $PG_RELEASE_DIR/aerofs.map \
+-repackageclasses "com.aerofs" \
+-dontwarn 'com.aerofs.sak.**' \
+-dontnote 'com.aerofs.l.*' \
+@$PG_HOME/aerofs.pro
 
 rm -rf "$PG_AEROFS_DIR/aerofs.unobf.jar"
 
