@@ -7,9 +7,9 @@ set -e -u
 
 if [ $# -ne 1 ]; then
     echo "usage: $0 [build mode]"
-    echo "[build mode]: staging, prod"
+    echo "[build mode]: STAGING or PROD"
     echo
-    echo "example $0 staging"
+    echo "example $0 STAGING"
     exit 2
 fi
 
@@ -17,24 +17,29 @@ fi
 # set parameters
 
 MODE=""
-if [ "$1" == "prod" ];then
-  MODE="prod"
+LOWERCASE_MODE=""
+if [ "$1" == "PROD" ];then
+  MODE="PROD"
+  LOWERCASE_MODE="prod"
   DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
-else
-  MODE="staging"
+elif [ "$1" == "STAGING"]; then
+  MODE="STAGING"
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
+else
+  echo "Invalid build mode $1.  Expected STAGING or PROD."
+  exit 2
 fi
 
 SVR_PORT=22
-SVR_LOGIN=release-$MODE@b.arrowfs.org
-SVR_TEMP=/tmp/release-$MODE #FIXME: use mktemp
+SVR_LOGIN=release-${LOWERCASE_MODE}@b.arrowfs.org
+SVR_TEMP=/tmp/release-${LOWERCASE_MODE} #FIXME: use mktemp
 
 #################################
 # get the latest version we're supposed to be at
 # FIXME (AG): this is identical to code in osx/package and should be removed
 
 SERVER_CURRENT_VER='mktemp'
-kscp $SVR_LOGIN:/data/$MODE-downloads/current.ver $SERVER_CURRENT_VER
+kscp $SVR_LOGIN:/data/${LOWERCASE_MODE}-downloads/current.ver $SERVER_CURRENT_VER
 VER=`cat $SERVER_CURRENT_VER | sed -e 's/.*=//'`
 rm -f $SERVER_CURRENT_VER || true
 
@@ -46,22 +51,22 @@ ZIP=$NAME.zip
 
 echo deploying aerofs-osx-$VER
 
-kscp -P $SVR_PORT AeroFSInstall-$VER.dmg $SVR_LOGIN:/data/$MODE-downloads/
+kscp -P $SVR_PORT AeroFSInstall-$VER.dmg $SVR_LOGIN:/data/${LOWERCASE_MODE}-downloads/
 rm -rf aerofs-osx-*.zip
 zip -9rq aerofs-osx-$VER.zip Release/
 
-kscp -P $SVR_PORT aerofs-osx-$VER.zip $SVR_LOGIN:/data/$MODE-downloads/aerofs-osx-temp.zip
+kscp -P $SVR_PORT aerofs-osx-$VER.zip $SVR_LOGIN:/data/${LOWERCASE_MODE}-downloads/aerofs-osx-temp.zip
 kssh -p $SVR_PORT $SVR_LOGIN \
      "set -e; \
-     cd /data/$MODE-downloads/; \
+     cd /data/${LOWERCASE_MODE}-downloads/; \
      cp AeroFSInstall-$VER.dmg AeroFSInstall.dmg; \
      mv aerofs-osx-temp.zip aerofs-osx-$VER.zip; \
      echo Deploying to S3/CloudFront; \
-     s3cmd -P --cf-invalidate sync /data/$MODE-downloads/* $DOWNLOAD_BUCKET > /dev/null" # publishes _all_ platform installers to s3
+     s3cmd -P --cf-invalidate sync /data/${LOWERCASE_MODE}-downloads/* $DOWNLOAD_BUCKET > /dev/null" # publishes _all_ platform installers to s3
 
 rm -rf Release
 
-if [ "$MODE" == "prod" ]; then
+if [ "$MODE" == "PROD" ]; then
     git tag -a "$VER" -m "$VER"
     git push --tags
 fi

@@ -7,12 +7,12 @@ set -e
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]] ; then
   echo "usage: $0 [build mode] [aerofs git root] [aerofs build dir] [aerofs release dir]"
-  echo "[build mode]: staging, prod"
+  echo "[build mode]: STAGING or PROD"
   echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
   echo "[aerofs build dir]: path into which all ant (or non-ide) build artifacts are placed (usually ~/repos/aerofs/out.ant)"
   echo "[aerofs release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
   echo
-  echo "example: $0 staging /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant /Users/aerofsbuild/repos/aerofs/out.ant/release"
+  echo "example: $0 STAGING /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant /Users/aerofsbuild/repos/aerofs/out.ant/release"
   exit 2
 fi
 
@@ -22,19 +22,23 @@ set -u
 # build mode
 
 MODE=""
-if [ $1 == prod ]; then
-  PROD=1
-  MODE="prod"
+LOWERCASE_MODE=""
+if [ "$1" == "PROD" ]; then
+  MODE="PROD"
+  LOWERCASE_MODE="prod"
+elif [ "$1" == "STAGING" ]; then
+  MODE="STAGING"
+  LOWERCASE_MODE="staging"
 else
-  PROD=0
-  MODE="staging"
+  echo "Invalid build mode $1.  Expected STAGING or PROD."
+  exit 2
 fi
 
-SVR_LOGIN="release-$MODE@b.arrowfs.org"
+SVR_LOGIN="release-${LOWERCASE_MODE}@b.arrowfs.org"
 MAP_LOGIN="maps@sv.aerofs.com"
 MAP_ROOT="/maps"
-SVR_ROOT="/home/release-$MODE"
-SVR_TEMP="/tmp/release-$MODE" # FIXME: (AG) replace with mktemp
+SVR_ROOT="/home/release-${LOWERCASE_MODE}"
+SVR_TEMP="/tmp/release-${LOWERCASE_MODE}" # FIXME: (AG) replace with mktemp
 
 #################################
 # set parameters
@@ -55,7 +59,7 @@ cd $RELEASE_DIR
 VERSION_FILE=version
 VER=$( head -1 aerofs/$VERSION_FILE )
 
-NAME=aerofs-$VER-$MODE # e.g. aerofs-1.2.3-staging
+NAME=aerofs-$VER-${LOWERCASE_MODE} # e.g. aerofs-1.2.3-staging
 ZIP=$NAME.zip          # e.g. aerofs-1.2.3-staging.zip
 
 echo making $ZIP
@@ -70,8 +74,8 @@ aerofs.linux32 aerofs.linux64 aerofs.linux aerofs.linux.inst
 echo uploading $ZIP and map files
 
 kscp $ZIP $SVR_LOGIN:~/$ZIP
-if [ $PROD == 1 ]; then
-    kscp aerofs.map $MAP_LOGIN:$MAP_ROOT/aerofs-$VER-$MODE.map
+if [ $MODE == "PROD" ]; then
+    kscp aerofs.map $MAP_LOGIN:$MAP_ROOT/aerofs-$VER-${LOWERCASE_MODE}.map
 fi
 
 #################################
@@ -79,7 +83,7 @@ fi
 
 echo deploying on the server
 
-DEFLATED=aerofs.release/$MODE # directory on the server with the aerofs jars, libs, etc.
+DEFLATED=aerofs.release/${LOWERCASE_MODE} # directory on the server with the aerofs jars, libs, etc.
 
 kssh $SVR_LOGIN \
     "set -e; \
@@ -92,8 +96,8 @@ kssh $SVR_LOGIN \
     mkdir $SVR_TEMP; \
     "
 
-DOWNLOADS="/data/$MODE-downloads"
-if [ $PROD == 1 ]; then
+DOWNLOADS="/data/${LOWERCASE_MODE}-downloads"
+if [ $MODE == "PROD" ]; then
   DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
 else
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
@@ -110,7 +114,7 @@ kssh $SVR_LOGIN \
     "set -e; \
     cd ~; \
     chmod a+x $SVR_TEMP/package_deb; \
-    $SVR_TEMP/package_deb $MODE ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb; \
+    $SVR_TEMP/package_deb ${LOWERCASE_MODE} ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb; \
 "
 
 #################################
@@ -212,7 +216,7 @@ DATA="set -e; \
     cp $DOWNLOADS/AeroFSInstall-$VER.exe $DOWNLOADS/AeroFSInstall.exe; \
     chmod a+r $DOWNLOADS/AeroFSInstall.exe; \
     "
-if [ $PROD == 1 ]; then
+if [ $MODE == "PROD" ]; then
   DATA="$DATA lftp -e 'mirror -R $PACKAGER/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com;"
 fi
 
@@ -225,7 +229,7 @@ echo creating Windows patches
 
 kssh $SVR_LOGIN \
     "export PASSPHRASE=\"$PASSPHRASE\"; \
-    bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER $MODE; \
+    bash $PATCHER/createPatches.sh \$HOME $PATCHER $VER ${LOWERCASE_MODE}; \
     rm $DOWNLOADS/patch-*; \
     mv $PATCHER/patch-* $DOWNLOADS; \
     chmod a+r $DOWNLOADS/patch-*; \

@@ -7,7 +7,7 @@ set -e -u
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x ]]; then
     echo usage "$0 [build mode] [aeros git root] [local release dir]"
-    echo "[build mode]: staging, prod"
+    echo "[build mode]: STAGING or PROD"
     echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
     echo "[aerofs local release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
     echo
@@ -20,17 +20,23 @@ fi
 # mode
 
 MODE=""
-if [ "$1" == "prod" ]; then
-    MODE="prod"
+LOWERCASE_MODE=""
+if [ "$1" == "PROD" ]; then
+    MODE="PROD"
+    LOWERCASE_MODE="prod"
+elif [ "$1" == "STAGING" ]; then
+    MODE="STAGING"
+    LOWERCASE_MODE="staging"
 else
-    MODE="staging"
+    echo "Invalid build mode: $1.  Expected STAGING or PROD."
+    exit 2
 fi
 
 #################################
 # get the proper version based on which mode (prod/staging) we're in
 
 SERVER_CURRENT_VER='mktemp'
-kscp release-$MODE@b.arrowfs.org:/data/$MODE-downloads/current.ver $SERVER_CURRENT_VER
+kscp release-${LOWERCASE_MODE}@b.arrowfs.org:/data/${LOWERCASE_MODE}-downloads/current.ver $SERVER_CURRENT_VER
 VER=$( cat $SERVER_CURRENT_VER | sed -e 's/.*=//' )
 rm -f $SERVER_CURRENT_VER
 
@@ -39,7 +45,7 @@ rm -f $SERVER_CURRENT_VER
 
 AEROFS_ROOT=$2
 RELEASE_DIR=$3
-NAME=aerofs-$VER-$MODE
+NAME=aerofs-$VER-${LOWERCASE_MODE}
 ZIP=$NAME.zip
 
 #################################
