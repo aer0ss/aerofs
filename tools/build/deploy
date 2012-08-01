@@ -5,30 +5,32 @@ set -e -u
 #################################
 # arguments
 
-if [ $# -gt 2 ]; then
-    echo "usage: $0 [staging|prod] [passphrase]"
-    echo "[build mode]: staging, prod"
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "usage: $0 [build_mode] [passphrase]"
+    echo "[build mode]: STAGING or PROD"
     echo "[passphrase]: passphrase for pushing"
     echo
-    echo "example: $0"
-    echo "example: $0 staging"
-    echo "example: $0 prod [passphrase]"
+    echo "example: $0 STAGING"
+    echo "example: $0 PROD [passphrase]"
     exit 2
 fi
 
 #################################
 # build mode
 
-MODE=${1:-} # if $1 doesn't exist, then "" is substituted
-if [ "$MODE" == "prod" ]; then
-    MODE=prod
+MODE=""
+if [ "$1" == "PROD" ]; then
+    MODE="PROD"
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo "!! DEPLOY PRODUCTION !!"
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo
+elif [ "$1" == "STAGING" ]; then
+    MODE="STAGING"
 else
-    MODE=staging
+    echo "Invalid build mode $1.  Expected STAGING or PROD."
+    exit 2
 fi
 
 #################################
@@ -39,7 +41,7 @@ STAGING_PASSPHRASE=temp123
 # passphrase
 PASSPHRASE=${2:-} # if $2 doesn't exist, then "" is substituted
 if [ x"$PASSPHRASE" == x ]; then
-    if [ $MODE == "prod" ]; then
+    if [ $MODE == "PROD" ]; then
         echo "cannot use staging passphrase to push to prod"
         exit 3
     else

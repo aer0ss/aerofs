@@ -7,13 +7,13 @@ set -e
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x ]]; then
     echo usage "$0 [build mode] [remote release dir] [output deb filename]"
-    echo "[build mode]: staging, prod"
+    echo "[build mode]: STAGING or PROD"
     echo "[remote release dir]: directory in which the release files are on the build server"
     echo "[output deb filename]: name of the deb file this script creates"
     echo
     echo "IMPORTANT: this script is meant to be run on a remote server!!!!"
     echo
-    echo "example: $0 staging ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
+    echo "example: $0 STAGING ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
     exit
 fi
 
@@ -23,10 +23,15 @@ set -u
 # build mode
 
 MODE=""
-if [ "$1" == "prod" ]; then
-    MODE="prod"
+LOWERCASE_MODE=""
+if [ "$1" == "PROD" ]; then
+    MODE="PROD"
+    LOWERCASE_MODE="prod"
+elif [ "$1" == "STAGING" ]; then
+    MODE="STAGING"
+    LOWERCASE_MODE="staging"
 else
-    MODE="staging"
+    echo "Invalid build mode $1.  Expected STAGING or PROD."
 fi
 
 #################################
@@ -50,7 +55,7 @@ DESCRIPTION='AeroFS: File syncing without servers.'
 #################################
 # create a working directory for package building
 
-TEMP_DIR=/tmp/release-$MODE
+TEMP_DIR=/tmp/release-${LOWERCASE_MODE}
 #clean up from past install
 rm -rf $TEMP_DIR/aerofs.deb.tmp
 DEB_BUILD_DIR=$TEMP_DIR/aerofs.deb.tmp

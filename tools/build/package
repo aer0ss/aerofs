@@ -8,12 +8,12 @@ VER_MAJOR_MINOR=0.4
 
 if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
     echo "usage: $0 [build mode] [aerofs git root] [aerofs build dir] [aerofs release dir]"
-    echo "[build mode]: staging, prod"
+    echo "[build mode]: STAGING or PROD"
     echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
     echo "[aerofs build dir]: path into which all ant (or non-ide) build artifacts are placed (usually ~/repos/aerofs/out.ant)"
     echo "[aerofs release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
     echo
-    echo "example: $0 staging /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant /Users/aerofsbuild/repos/aerofs/out.ant/release"
+    echo "example: $0 STAGING /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant /Users/aerofsbuild/repos/aerofs/out.ant/release"
     exit 2
 fi
 
@@ -23,12 +23,13 @@ set -u
 # build mode
 
 MODE=""
-if [ "$1" == "prod" ]; then
-    PROD=1
-    MODE="prod"
+if [ "$1" == "PROD" ]; then
+    MODE="PROD"
+elif [ "$1" == "STAGING" ]; then
+    MODE="STAGING"
 else
-    PROD=0
-    MODE="staging"
+    echo "Invalid build mode $1.  Expected STAGING or PROD."
+    exit 2
 fi
 
 #if [ x"$2" == x ]; then
@@ -74,7 +75,7 @@ mkdir -p "$AEROFS_INST_DIR"/
 #################################
 # find version number
 
-if [ $PROD == 1 ]; then
+if [ $MODE == "PROD" ]; then
   SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.aerofs.com/current.ver`
 else
   SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.staging.aerofs.com/current.ver`
@@ -101,7 +102,7 @@ echo '+--------------'
 
 echo $VERSION > $AEROFS_DIR/$VERSION_FILE
 
-if [ $PROD == 0 ]; then
+if [ $MODE == "STAGING" ]; then
   touch $AEROFS_DIR/staging
 fi
 
@@ -125,7 +126,7 @@ cp -R "$ASIS_DIR"/linux.inst/* "$AEROFS_INST_DIR"/
 rm -rf "$AEROFS_DIR"/lib.test
 
 # Adjust files for prod or staging
-if [ $PROD == 1 ]; then
+if [ $MODE == "PROD" ]; then
     rm "$AEROFS_DIR"/cacert-staging.pem
     mv "$AEROFS_DIR"/cacert-prod.pem "$AEROFS_DIR"/cacert.pem
 else
@@ -175,7 +176,7 @@ cp -Rf $BUILD_DIR/bin/* bin/
 
 find bin/ -name .DS_Store | xargs rm -f
 
-if [ $PROD == 1 ]; then
+if [ $MODE == "PROD" ]; then
     # TODO: (AG) move these as excludes into build.xml
     rm -rf bin/com/aerofs/sak
 fi
@@ -191,7 +192,7 @@ fi
 ###################################
 #echo generate aerofs-installer
 
-if [ $PROD == 1 ]; then
+if [ $MODE == "PROD" ]; then
     DOT_STAGING=''
 else
     DOT_STAGING='.staging'
@@ -221,7 +222,7 @@ PG_AEROFS_DIR=`echo $AEROFS_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 PG_RELEASE_DIR=`echo $RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 PG_HOME=`echo $PROGUARD_HOME | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
-if [ $PROD == 1 ]; then
+if [ $MODE == "PROD" ]; then
     echo obfuscating jar
     cd $PROGUARD_HOME
 
