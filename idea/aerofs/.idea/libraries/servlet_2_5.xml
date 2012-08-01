@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="servlet-2.5">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../as-is/common/servlet/servlet-api-2.5.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resources.servlet/servlet-api-2.5.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
