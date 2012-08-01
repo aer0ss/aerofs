@@ -48,7 +48,7 @@ SECTION='utility'
 PRIORITY='optional'
 
 #sharutils is used by uudecode
-DEPENDS='openjdk-6-jre(>= 6b18-1.8.2-4ubuntu1~8.04.1), sharutils'
+DEPENDS='openjdk-6-jre(>= 6b18-1.8.2-4ubuntu1~8.04.1), sharutils, procps'
 MAINTAINER='AeroFS Team <support@aerofs.com>'
 DESCRIPTION='AeroFS: File syncing without servers.'
 
