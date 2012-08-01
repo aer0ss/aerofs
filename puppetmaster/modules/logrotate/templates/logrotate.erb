@@ -4,5 +4,8 @@ compress
 
 <%= filename %> {
     rotate <%= quantity %>
+    # use copytruncate to rotate the log without making
+    # other applications reopen the file.
+    copytruncate
     <%= frequency %>
 }
