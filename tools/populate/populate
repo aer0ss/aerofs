@@ -28,7 +28,7 @@ cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
 
 # Set-up a staging environment
-touch "$APPROOT"/staging
+touch "$APPROOT"/stg
 echo "100.0.0" > "$APPROOT"/$VERSION_FILE
 rm "$APPROOT"/cacert-prod.pem
 mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
