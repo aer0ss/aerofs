@@ -11,7 +11,7 @@ if [[ x"$1" == x || x"$2" == x || x"$3" == x ]]; then
     echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
     echo "[aerofs local release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
     echo
-    echo "example: $0 staging /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant/release"
+    echo "example: $0 STAGING /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant/release"
 
     exit 2
 fi

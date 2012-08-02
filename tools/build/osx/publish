@@ -24,6 +24,7 @@ if [ "$1" == "PROD" ];then
   DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
 elif [ "$1" == "STAGING"]; then
   MODE="STAGING"
+  LOWERCASE_MODE="staging"
   DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
 else
   echo "Invalid build mode $1.  Expected STAGING or PROD."
