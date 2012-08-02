@@ -97,11 +97,6 @@ kssh $SVR_LOGIN \
     "
 
 DOWNLOADS="/data/${LOWERCASE_MODE}-downloads"
-if [ $MODE == "PROD" ]; then
-  DOWNLOAD_BUCKET=s3://nocache.client.aerofs.com
-else
-  DOWNLOAD_BUCKET=s3://nocache.client.staging.aerofs.com
-fi
 
 #################################
 # build the debian package and publish it

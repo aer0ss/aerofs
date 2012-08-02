@@ -78,7 +78,7 @@ mkdir -p "$AEROFS_INST_DIR"/
 if [ $MODE == "PROD" ]; then
   SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.aerofs.com/current.ver`
 else
-  SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.staging.aerofs.com/current.ver`
+  SERVER_VER=`wget --no-check-certificate --no-cache -q -O- https://nocache.client.stg.aerofs.com/current.ver`
 fi
 
 SERVER_VER_MAJOR_MINOR=`echo $SERVER_VER | sed -e 's/.*=//' | sed -e 's/\.[0-9]*$//'`
@@ -103,7 +103,7 @@ echo '+--------------'
 echo $VERSION > $AEROFS_DIR/$VERSION_FILE
 
 if [ $MODE == "STAGING" ]; then
-  touch $AEROFS_DIR/staging
+  touch $AEROFS_DIR/stg
 fi
 
 ##################################
@@ -195,7 +195,7 @@ fi
 if [ $MODE == "PROD" ]; then
     DOT_STAGING=''
 else
-    DOT_STAGING='.staging'
+    DOT_STAGING='.stg'
 fi
 sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$ASIS_DIR"/linux.inst/aerofs > "$AEROFS_INST_DIR"/aerofs
 sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$ASIS_DIR"/linux.inst/aerofs > "$AEROFS_LINUX_DIR"/aerofs
