@@ -2,7 +2,7 @@
 
 set -e -u
 
-if [ $# -gt 2 ]; then
+if [ $# -ne 1 ]; then
     echo "usage: $0 [puppetmaster] [puppet agent]"
     echo "[puppetmaster]: the address of the puppetmaster server"
     echo "[puppet agent]: the hostname of the puppet agent"
@@ -17,12 +17,6 @@ if [ x"$PUPPET_MASTER" == x ]; then
     exit 3
 fi
 
-PUPPET_AGENT=${2:-}
-if [ x"$PUPPET_AGENT" == x ]; then
-    echo "puppet agent hostname is required"
-    exit 3
-fi
-
-kssh ${PUPPET_MASTER} -C "puppet kick ${PUPPET_AGENT}"
+ssh ${PUPPET_MASTER} -C "kick"
 
 exit 0
