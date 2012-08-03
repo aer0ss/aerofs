@@ -39,11 +39,13 @@ class fwknop-client (
 
   file{"/usr/bin/kssh":
     ensure => present,
+    mode => 755,
     source => "puppet:///modules/fwknop-client/kssh"
   }
 
   file{"/usr/bin/kscp":
     ensure => present,
+    mode => 755,
     source => "puppet:///modules/fwknop-client/kscp"
   }
 

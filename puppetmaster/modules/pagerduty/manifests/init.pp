@@ -28,4 +28,7 @@ class pagerduty {
     ensure => latest,
     require => Apt::Source["aerofs"],
   }
+  package { "bsd-mailx":
+    ensure => present
+  }
 }
