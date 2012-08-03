@@ -29,8 +29,13 @@ include motd
 #        key => hiera("fwknop_pass"),
 #    }
 
+    $repo = hiera("environment","") ? {
+        "staging"   => "staging",
+        default     => "production"
+    }
+
     apt::source { "aerofs":
-        location    => "http://apt.aerofs.com/ubuntu/production",
+        location    => "http://apt.aerofs.com/ubuntu/${repo}",
         repos       => "main",
         include_src => false,
         key         => "64E72541",

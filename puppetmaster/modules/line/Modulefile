@@ -1,0 +1,11 @@
+name    'aerofs-line'
+version '0.0.1'
+source 'UNKNOWN'
+author 'Peter Hamilton <peter@aerofs.com>'
+license 'Apache License, Version 2.0'
+summary 'manage the presence of a line in a file'
+description 'ensure a line is present or absent in a file'
+project_page 'UNKNOWN'
+
+## Add dependencies, if any:
+# dependency 'username/name', '>= 1.2.0'
