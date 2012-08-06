@@ -57,15 +57,14 @@ message GetSyncStatusCall {
 
 message GetSyncStatusReply {
 
+    // Message that represents the sync status for a given device (which, when associated with
+    // an OID/SID pair, encapsulates the full state of the given object).
+    message DeviceSyncStatus {
+        required bytes did = 1;
+        required bool is_synced = 2;
+    }
+
     message OidSyncStatus {
-
-        // Message that represents the sync status for a given device (which, when associated with
-        // an OID, encapsulates the full state of the given object).
-        message DeviceSyncStatus {
-            required bytes did = 1;
-            required bool is_synced = 2;
-        }
-
         required bytes oid = 1;
         required bytes sid = 2;
         repeated DeviceSyncStatus devices = 3;

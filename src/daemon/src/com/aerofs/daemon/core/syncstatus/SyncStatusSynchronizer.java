@@ -44,7 +44,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.syncstat.SyncStatBlockingClient;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.OidSyncStatus;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply.OidSyncStatus.DeviceSyncStatus;
+import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 

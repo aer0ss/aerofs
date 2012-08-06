@@ -1,11 +1,11 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="TestSyncStatSetVersionHash" type="JUnit" factoryName="JUnit">
+  <configuration default="false" name="TestSyncStatService" type="JUnit" factoryName="JUnit">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-    <module name="aerofs.spsv" />
+    <module name="syncstat" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
-    <option name="PACKAGE_NAME" value="com.aerofs.sp.server.sp" />
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.syncstat.server.test.TestSyncStatSetVersionHash" />
+    <option name="PACKAGE_NAME" value="com.aerofs.syncstat.server.test" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.syncstat.server.test.TestSyncStatService" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea" />
