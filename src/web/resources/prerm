@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# first stop uwsgi if it is running
+/etc/init.d/uwsgi stop

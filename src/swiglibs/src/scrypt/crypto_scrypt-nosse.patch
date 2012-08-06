@@ -1,0 +1,8 @@
+234,235c234,235
+< crypto_scrypt(uint8_t * passwd, size_t passwdlen,
+<     uint8_t * salt, size_t saltlen, uint64_t N, uint32_t r, uint32_t p,
+---
+> crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
+>     const uint8_t * salt, size_t saltlen, uint64_t N, uint32_t r, uint32_t p,
+243a244
+> 	printf ("\nN: %d\t r: %d\t p: %d\t saltlen: %d\n\n",N,r,p,saltlen);

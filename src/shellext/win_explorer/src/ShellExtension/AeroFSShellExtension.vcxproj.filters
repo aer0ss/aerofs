@@ -1,0 +1,140 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{461b7934-1054-43cd-a50d-cb189a50f7a6}</UniqueIdentifier>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{0cda8b35-032d-4183-878e-d290d845d1b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AsyncSocket">
+      <UniqueIdentifier>{572a35fa-ce8c-4d0b-837b-66e6985e270d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AeroFSShellExtension.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OverlayIcons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AeroSocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AsyncSocket.cpp">
+      <Filter>AsyncSocket</Filter>
+    </ClCompile>
+    <ClCompile Include="SocketOperations.cpp">
+      <Filter>AsyncSocket</Filter>
+    </ClCompile>
+    <ClCompile Include="AeroNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ContextMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gen\common.pb.cc">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gen\shellext.pb.cc">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AeroFSShellExtension.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\3rdparty\include\rgs_helper.h">
+      <Filter>3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AeroSocket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AsyncSocket.h">
+      <Filter>AsyncSocket</Filter>
+    </ClInclude>
+    <ClInclude Include="ISocketDelegate.h">
+      <Filter>AsyncSocket</Filter>
+    </ClInclude>
+    <ClInclude Include="SocketOperations.h">
+      <Filter>AsyncSocket</Filter>
+    </ClInclude>
+    <ClInclude Include="AeroNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayIcons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\gen\common.pb.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\gen\shellext.pb.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="string_helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AeroFSShellExtension.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AeroFSShellExtension.def">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="AeroFS.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="OverlayIcons.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="UploadOverlay.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="DownloadOverlay.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ContextMenu.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="OverlayIconsAdmin.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ContextMenuAdmin.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

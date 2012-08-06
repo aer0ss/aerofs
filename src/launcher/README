@@ -1,0 +1,6 @@
+Building out-of-sourcedir on Linux
+----------------------------------
+mkdir ../launcher.linux.build
+cd ../launcher.linux.build
+qmake ../launcher/launcher.pro
+make

@@ -1,0 +1,251 @@
+package com.aerofs.proto;
+
+import "common.proto";
+
+//removed reflection -- unneeded
+//this makes obfuscation possible
+option optimize_for = LITE_RUNTIME;
+
+// all core messages are sent with delimiters
+
+// N.B. the entire PBCore message must fit in a single packet. split into
+// multiple messages if it can't. see PBGetVersReply.
+
+// TODO for maxcast messages, pass the destination store to core and filter out
+// non-member-store request in HdMesasge instead of individual msg handlers
+
+message PBCore {
+
+    enum Type {
+
+        // call/reply is for RPC, while request/response is for async,
+        // potentially multiple responses
+
+        REPLY = 0;
+
+        NEW_UPDATES = 1;        // followed by: repeated PBNewUpdate
+        GET_VERS_CALL = 2;
+        UPDATE_SENDER_FILTER = 3;
+        GET_COM_CALL = 4;
+        LIST_CHILDREN_CALL = 5;
+        GET_HASH_CALL = 6;
+        NOP = 7;
+        LIST_REV_CHILDREN_REQUEST = 16;
+        LIST_REV_CHILDREN_RESPONSE = 17;
+        LIST_REV_HISTORY_REQUEST = 18;
+        LIST_REV_HISTORY_RESPONSE = 19;
+        GET_REVISION_CALL = 20;
+
+        DIAGNOSIS = 100;
+    }
+
+    required Type type = 1;
+    optional int32 rpcid = 2 [default = 0];
+
+    // rpc calls
+    optional PBGetVersCall get_vers_call = 3;
+    optional PBGetComCall get_com_call = 4;
+    optional PBGetRevisionCall get_revision_call = 5;
+    optional PBGetHashCall get_hash_call = 6;
+
+    // rpc replies
+    optional PBGetVersReply get_vers_reply = 7;
+    optional PBGetComReply get_com_reply = 8;
+    optional PBGetRevisionReply get_revision_reply = 9;
+    optional PBGetHashReply get_hash_reply = 10;
+    optional PBException exception_reply = 11;
+
+    // non-rpc stuff
+    optional PBUpdateSenderFilter update_sender_filter = 12;
+    optional PBListRevChildrenRequest list_rev_children_request = 13;
+    optional PBListRevChildrenResponse list_rev_children_response = 14;
+    optional PBListRevHistoryRequest list_rev_history_request = 15;
+    optional PBListRevHistoryResponse list_rev_history_response = 16;
+
+    optional PBCoreDiagnosis diagnosis = 100;
+}
+
+message PBUpdateSenderFilter {
+    required uint64 sender_filter_index = 1;
+    required uint64 sender_filter_update_seq = 2;
+}
+
+message PBGetRevisionCall {
+    repeated string object_path_element = 1;
+    required bytes index = 2;
+}
+
+message PBGetRevisionReply {
+    required uint64 length = 1;
+
+    // followed by file content (we always use streams here)
+}
+
+message PBListRevChildrenRequest {
+    required int32 seq = 1;
+    repeated string object_path_element = 2;
+}
+
+message PBListRevChildrenResponse {
+    required int32 seq = 1;
+    repeated string name = 2;
+    repeated bool dir = 3 [packed=true];
+}
+
+message PBListRevHistoryRequest {
+    required int32 seq = 1;
+    repeated string object_path_element = 2;
+}
+
+message PBListRevHistoryResponse {
+    required int32 seq = 1;
+    repeated bytes index = 2;
+    repeated PBVer version = 3;
+    repeated uint64 mtime = 4 [packed=true];
+    repeated uint64 length = 5 [packed=true];
+}
+
+message PBCoreDiagnosis {
+
+    enum Type {
+        REQUEST_TRANSPORT_FLOOD = 0;
+    }
+
+    message PBRequestTransportFlood {
+        required uint64 duration = 1;
+        required uint32 seqStart = 2;
+        required uint32 seqEnd = 3;
+    }
+
+    required Type type = 1;
+
+    optional PBRequestTransportFlood request_transport_flood = 2;
+}
+
+message PBNewUpdate {
+    required bytes object_id = 1;
+    required int32 com_id = 2;
+    required uint64 tick = 3;
+}
+
+message PBGetVersCall {
+    repeated bytes device_id = 1;
+    repeated uint64 knowledge_tick = 2 [packed=true];
+    repeated uint64 immigrant_knowledge_tick = 3 [packed=true];
+    // the requester would like all filters from BASE
+    optional bool from_base = 4 [default = false];
+}
+
+message PBGetVersReply {
+    // absent if the filter is empty
+    optional bytes sender_filter = 1;
+    optional uint64 sender_filter_index = 2;
+    optional uint64 sender_filter_update_seq = 3;
+
+    // followed by zero or more PBGetVersReplyBlock's
+}
+
+message PBGetVersReplyBlock {
+
+    // a block without the device_id field set has the same device_id as
+    // the previous block. the first block must have the field set unless
+    // it has no fields set except is_last_block
+    optional bytes device_id = 1;
+
+    repeated bytes object_id = 2;
+    repeated int32 com_id = 3 [packed=true];
+    repeated uint64 tick = 4 [packed=true];
+    optional uint64 knowledge_tick = 5;
+
+    repeated bytes immigrant_object_id = 6;
+    repeated int32 immigrant_com_id = 7 [packed=true];
+    repeated uint64 immigrant_imm_tick = 8 [packed=true];
+    repeated bytes immigrant_device_id = 9;
+    repeated uint64 immigrant_tick = 10 [packed=true];
+    optional uint64 immigrant_knowledge_tick = 11;
+
+    // this field marks the last block
+    optional bool is_last_block = 12 [default = false];
+}
+
+message PBGetComCall {
+    required bytes object_id = 1;
+    required uint32 com_id = 2;
+    required PBVer kml_version = 3;
+    required PBVer local_version = 4;
+
+    // present only if the component is content
+    optional uint64 prefix_length = 5 [ default = 0 ];
+
+    // valid only if prefix_length > 0
+    optional PBVer prefix_version = 6;
+}
+
+message PBGetHashCall {
+    required bytes object_id = 1;
+    required PBVer remote_version = 2;
+}
+
+message PBGetHashReply {
+    required uint32 hash_length = 1;
+    // followed by: required bytes hash_content
+    // the hash bytes can grow arbitrarily large, and the receiving end expects the entire PBCore
+    // in a single datagram.
+}
+
+message PBGetComReply {
+    required PBVer version = 1;
+    repeated PBVer conflict_version = 2;
+
+    // present only for metadata
+    optional PBMeta meta = 3;
+
+    // present only in streams.  gives the total length of the file for which content will stream
+    optional uint64 file_total_length = 4;
+
+    // present only for contents. must be equal to the same field in PBGetComCall if not zero.
+    // It represents the length of the file prefix that we are skipping in our file_content
+    // That is, the file content length in this is file_total_length - prefix_length.
+    optional uint64 prefix_length = 5 [ default = 0 ];
+
+    // present only for contents.
+    optional uint64 mtime = 6;
+
+    // The length of the hash_content which follows this PBGetComReply, if it exists.
+    optional uint32 hash_length = 7;
+
+    // followed by: optional bytes hash_content
+    // followed by: optional bytes file_content
+}
+
+//////////////////////////////////////
+// non-message data types
+
+message PBMeta {
+
+    enum Type {
+        // the order must be the same as the order in OA.Type
+        FILE = 0;
+        DIR = 1;
+        ANCHOR = 2;
+    }
+
+    required bytes parent_object_id = 1;
+    required string name = 2;
+    required Type type = 3;
+    required int32 flags = 4;
+
+    // information about alias message.
+    optional bytes target_oid = 5;
+    optional PBVer target_version = 6;
+
+    // If the object has been emigrated as indicated by the object's parent and name field, this
+    // field records a chain of SIDs where the target object resides. The first SID refers to the
+    // parent of the target's residing store (whose own SID is encoded in the object's name).
+    // The last SID refers to the root store. When the target is in the root store, the list only
+    // contains the root SID.
+    //
+    // The list is empty if the store the target resides doesn't exist locally or the object is not
+    // emigrated.
+    repeated bytes emigrant_target_ancestor_sid = 7;
+}

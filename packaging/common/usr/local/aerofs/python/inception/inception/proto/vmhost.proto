@@ -1,0 +1,55 @@
+package aerofs.inception.vmhost;
+import "kvm.proto";
+
+service VmHostService {
+    rpc __error__(Void) returns(aerofs.inception.kvm.ErrorReply);
+
+    // Reboot the VM host system.
+    rpc DoReboot(Void) returns(aerofs.inception.kvm.ResultReply);
+
+    // Get the unique ID corresponding to this VM host.
+    rpc GetVmHostId(Void) returns(GetVmHostIdReply);
+
+    // Get a list of services running on this VM host system.
+    rpc GetServicesList(Void) returns(GetServicesListReply);
+
+    // Enable or disable a service on this VM host.
+    rpc EnableService(ServiceCall) returns(aerofs.inception.kvm.ResultReply);
+    rpc DisableService(ServiceCall) returns(aerofs.inception.kvm.ResultReply);
+
+    // Forward a protobuf request to a specific KVM.
+    rpc SendMsgToKvm(SendMsgToKvmCall) returns(SendMsgToKvmReply);
+}
+
+message Void {}
+
+message GetVmHostIdReply {
+    required string vmHostId = 1;
+}
+
+message GetServicesListReply {
+    enum ServiceStatus {
+        // The KVM is enabled and is connected.
+        CONNECTED = 0;
+        // The KVM is enabled but not connected.
+        DISCONNECTED = 1;
+        // The KVM is disabled and is therefore offline.
+        DISABLED = 2;
+    }
+
+    repeated string serviceNames = 1;
+    repeated ServiceStatus statuses = 2;
+}
+
+message ServiceCall {
+    required string serviceName = 1;
+}
+
+message SendMsgToKvmCall {
+    required string serviceName = 1;
+    required bytes data = 2;
+}
+
+message SendMsgToKvmReply {
+    required bytes data = 1;
+}

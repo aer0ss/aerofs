@@ -1,0 +1,19 @@
+HKCU
+{
+	NoRemove Software
+	{
+		NoRemove Classes
+		{
+			NoRemove CLSID
+			{
+				ForceRemove %CLSID% = s '%DESCRIPTION%'
+				{
+					InprocServer32 = s '%MODULE%'
+					{
+						val ThreadingModel = s 'Apartment'
+					}
+				}
+			}
+		}
+	}
+}

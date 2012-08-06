@@ -1,0 +1,23 @@
+//
+// Prefix header for all source files of the 'AeroFS' target in the 'AeroFS' project
+//
+
+#ifdef __OBJC__
+    #import <Cocoa/Cocoa.h>
+
+/**
+* Macro to mark a string as localizable.
+* All user-facing strings should be enclosed with this macro
+* This is a replacement for NSLocalizedString, which is way to verbose
+* @param key: (NSString*) English version of the string
+* @param comment: (NSString*) used to provide some context to the translator, or nil.
+*
+* See the doc for NSLocalizedString for more information
+*
+* To generate the translation file:
+* $ genstrings -s TR -a -o en.lproj *.{m,mm}
+*/
+    #define TR(key, comment) \
+	    [[NSBundle mainBundle] localizedStringForKey:(key) value:@"" table:nil]
+
+#endif

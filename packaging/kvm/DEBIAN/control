@@ -1,0 +1,7 @@
+Package: aerofs-kvm
+Section: admin
+Priority: required
+Depends: aerofs-common, autofs
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS KVM package.
+Architecture: all

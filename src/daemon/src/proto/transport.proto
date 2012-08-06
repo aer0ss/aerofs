@@ -1,0 +1,162 @@
+package com.aerofs.proto;
+
+//removed reflection -- unneeded
+//this makes obfuscation possible
+option optimize_for = LITE_RUNTIME;
+
+message PBTPHeader {
+
+    enum Type {
+        DATAGRAM = 0;
+
+        STREAM = 13;
+
+        DIAGNOSIS = 100;
+
+        // TCP control messages
+        TCP_PING = 1;
+        TCP_PONG = 2;
+        TCP_UNICAST_PREAMBLE = 3;
+        TCP_GO_OFFLINE = 4;
+        TCP_STORES = 9;
+        TCP_NOP = 10;
+
+        // XMPP relay information
+        ZEPHYR_CANDIDATE_INFO = 8;
+
+        // Messages to test liveness of the link
+        TRANSPORT_CHECK_PULSE_CALL = 11;
+        TRANSPORT_CHECK_PULSE_REPLY = 12;
+    }
+
+    required Type type = 1;
+
+    // only in unicast and maxcast payload
+    optional bytes sid = 2;
+
+    // only in maxcast payload
+    optional uint32 mcast_id = 3;
+
+    // only for stream messages
+    optional PBStream stream = 4;
+
+    optional PBTCPPong tcp_pong = 5;
+    optional PBTCPUnicastPreamble tcp_preamble = 6;
+
+    // only in IP multicast
+    optional bytes tcp_multicast_device_id  = 7;
+
+    // only in IP unicast
+    optional PBTCPStores tcp_stores = 8;
+
+    // only in XMPP relay information
+    optional PBZephyrCandidateInfo zephyr_info = 9;
+
+    // only in TRANSPORT_CHECK_PULSE_* messages
+    optional PBCheckPulse check_pulse = 10;
+
+    optional PBTransportDiagnosis diagnosis = 100;
+}
+
+message PBStream {
+    enum Type {
+        PAYLOAD = 0;
+        BEGIN_STREAM = 1;
+        TX_ABORT_STREAM = 2;
+        RX_ABORT_STREAM = 3;
+    }
+
+    enum InvalidationReason {
+        UPDATE_IN_PROGRESS = 0;
+        ENDED = 1;
+        STREAM_NOT_FOUND = 2;
+        INTERNAL_ERROR = 3;
+        DTLS_ERROR = 4;
+        CHOKE_ERROR = 5;
+        OUT_OF_ORDER = 6;       // a chunk is out of order
+        STORE_NOT_FOUND = 7;
+    }
+
+    required Type type = 1;
+    required uint32 stream_id = 2;
+    optional uint32 seq_num = 3;
+
+    optional InvalidationReason reason = 4;
+}
+
+message PBTransportDiagnosis {
+
+    enum Type {
+        // may be sent via unreliable channels
+        PING = 0;
+        PONG = 1;
+
+        // must be sent via reliable channels
+        FLOOD_DISCARD = 2;  // message followed by random bytes
+        FLOOD_STAT_CALL = 3;    // message followed by random bytes
+        FLOOD_STAT_REPLY = 4;
+    }
+
+    message PBPing {
+        required uint32 seq = 1;
+    }
+
+    message PBPong {
+        required uint32 seq = 1;
+    }
+
+    message PBFloodStatCall {
+        required uint32 seq = 1;
+    }
+
+    message PBFloodStatReply {
+        required uint32 seq = 1;
+        required uint64 time = 2;
+        required uint64 bytes = 3;
+    }
+
+    required Type type = 1;
+
+    optional PBPing ping = 2;
+    optional PBPong pong = 3;
+    optional PBFloodStatCall flood_stat_call = 4;
+    optional PBFloodStatReply flood_stat_reply = 5;
+    optional PBCheckPulse check_pulse = 6;
+}
+
+message PBZephyrCandidateInfo {
+    required int32 source_zephyr_id = 1;
+    optional int32 destination_zephyr_id = 2;
+}
+
+////////
+// TCP specific messages
+
+// the bloom filter containing all the stores of the sending device.
+// BFSID: bloom filter for store identifiers
+message PBTCPFilterAndSeq {
+    // the sequence is to reduce duplicate notifications in multicast
+    required uint32 sequence = 1;
+    required bytes filter = 2;
+}
+
+message PBTCPPong {
+    required uint32 unicast_listening_port = 1;
+    required PBTCPFilterAndSeq filter = 2;
+}
+
+message PBTCPUnicastPreamble {
+    required bytes device_id = 1;
+    required uint32 listening_port = 2;
+}
+
+message PBTCPStores {
+    // only in non-SP to non-SP communications
+    optional PBTCPFilterAndSeq filter = 1;
+    // only in SP to non-SP communications
+    repeated bytes prefix = 2;
+}
+
+message PBCheckPulse {
+    required int32 pulse_id = 1;
+}

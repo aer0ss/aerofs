@@ -1,0 +1,666 @@
+package com.aerofs.daemon.lib.db;
+
+import static com.aerofs.lib.db.CoreSchema.*;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import javax.annotation.Nullable;
+
+import com.aerofs.daemon.core.ds.CA;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.BitVector;
+import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.db.AbstractDBIterator;
+import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.id.FID;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.OID;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
+import com.google.inject.Inject;
+
+public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
+{
+    @Inject
+    public MetaDatabase(CoreDBCW dbcw)
+    {
+        super(dbcw.get());
+    }
+
+    PreparedStatement _psGetChild;
+    @Override
+    public OID getChild_(SIndex sidx, OID parent, String name)
+            throws SQLException
+    {
+        assert parent != null;
+        try {
+            if (_psGetChild == null) _psGetChild = c()
+                    .prepareStatement("select " + C_OA_OID + " from "
+                            + T_OA + " where " + C_OA_SIDX + "=? and "
+                            + C_OA_PARENT + "=? and " + C_OA_NAME + "=?");
+            _psGetChild.setInt(1, sidx.getInt());
+            _psGetChild.setBytes(2, parent.getBytes());
+            _psGetChild.setString(3, name);
+            ResultSet rs = _psGetChild.executeQuery();
+            try {
+                if (rs.next()) {
+                    OID oid = new OID(rs.getBytes(1));
+                    return oid;
+                } else {
+                    return null;
+                }
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGetChild);
+            _psGetChild = null;
+            throw e;
+        }
+    }
+
+    //private PreparedStatement and userpin to null for directories
+    private PreparedStatement _psInsOA;
+
+    @Override
+    public void createOA_(SIndex sidx, OID oid, OID oidParent, String name, OA.Type type, int flags,
+            Trans t)
+        throws SQLException, ExAlreadyExist
+    {
+        try {
+            if (_psInsOA == null) _psInsOA = c()
+                .prepareStatement("insert into " + T_OA + "("
+                    + C_OA_SIDX + ","
+                    + C_OA_PARENT + ","
+                    + C_OA_NAME + ","
+                    + C_OA_OID + ","
+                    + C_OA_TYPE + ","
+                    + C_OA_FLAGS + ")"
+                    + " values (?,?,?,?,?,?)");
+            _psInsOA.setInt(1, sidx.getInt());
+            _psInsOA.setBytes(2, oidParent.getBytes());
+            _psInsOA.setString(3, name);
+            _psInsOA.setBytes(4, oid.getBytes());
+            _psInsOA.setInt(5, type.ordinal());
+            _psInsOA.setInt(6, flags);
+            _psInsOA.executeUpdate();
+
+        } catch (SQLException e) {
+            DBUtil.close(_psInsOA);
+            _psInsOA = null;
+            // must be called *after* closing the statement
+            _dbcw.checkDuplicateKey(e);
+            _dbcw.checkDeadConnection(e);
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psInsCA;
+
+    @Override
+    public void createCA_(SOID soid, KIndex kidx, Trans t)
+            throws SQLException
+    {
+        try {
+            if (_psInsCA == null) _psInsCA = c().prepareStatement("insert into "
+                    + T_CA + "(" + C_CA_SIDX + "," + C_CA_OID + "," + C_CA_KIDX
+                    + "," + C_CA_LENGTH + ") " + "values (?,?,?,0)");
+            _psInsCA.setInt(1, soid.sidx().getInt());
+            _psInsCA.setBytes(2, soid.oid().getBytes());
+            _psInsCA.setInt(3, kidx.getInt());
+            _psInsCA.executeUpdate();
+
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psInsCA);
+            _psInsCA = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psDelCA;
+
+    @Override
+    public void deleteCA_(SOID soid, KIndex kidx, Trans t)
+            throws SQLException
+    {
+        try {
+            if (_psDelCA == null) _psDelCA = c().prepareStatement("delete from "
+                    + T_CA + " where " + C_CA_SIDX + "=? and " + C_CA_OID
+                    + "=? and " + C_CA_KIDX + "=?");
+            _psDelCA.setInt(1, soid.sidx().getInt());
+            _psDelCA.setBytes(2, soid.oid().getBytes());
+            _psDelCA.setInt(3, kidx.getInt());
+            Util.verify(_psDelCA.executeUpdate() == 1);
+
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psDelCA);
+            _psDelCA = null;
+            throw e;
+        }
+    }
+
+    // @param v may be null
+    private PreparedStatement setOABlob_(SOID soid, String column, byte[] v,
+            Trans t, PreparedStatement ps) throws SQLException
+    {
+        if (ps == null) ps = c().prepareStatement("update " + T_OA + " set "
+                + column + "=? where " + C_OA_SIDX + "=? and " + C_OA_OID
+                + "=?");
+        if (v == null) ps.setNull(1, Types.BLOB);
+        else ps.setBytes(1, v);
+        ps.setInt(2, soid.sidx().getInt());
+        ps.setBytes(3, soid.oid().getBytes());
+        Util.verify(ps.executeUpdate() == 1);
+        return ps;
+    }
+
+    private PreparedStatement setOAInt_(SOID soid, String column, int v,
+            Trans t, PreparedStatement ps) throws SQLException
+    {
+        if (ps == null) ps = c().prepareStatement("update " + T_OA + " set "
+                + column + "=? where " + C_OA_SIDX + "=? and " + C_OA_OID
+                + "=?");
+        ps.setInt(1, v);
+        ps.setInt(2, soid.sidx().getInt());
+        ps.setBytes(3, soid.oid().getBytes());
+        Util.verify(ps.executeUpdate() == 1);
+        return ps;
+    }
+
+    private PreparedStatement _psSOAPNC;
+
+    @Override
+    public void setOAParentAndName_(SIndex sidx, OID oid, OID parent,
+            String name, Trans t) throws SQLException, ExAlreadyExist
+    {
+        try {
+            if (_psSOAPNC == null) _psSOAPNC = c()
+                    .prepareStatement("update " + T_OA + " set "
+                            + C_OA_PARENT + "=?," + C_OA_NAME + "=?"
+                            + " where " + C_OA_SIDX + "=? and "
+                            + C_OA_OID + "=?");
+            _psSOAPNC.setBytes(1, parent.getBytes());
+            _psSOAPNC.setString(2, name);
+            _psSOAPNC.setInt(3, sidx.getInt());
+            _psSOAPNC.setBytes(4, oid.getBytes());
+            Util.verify(_psSOAPNC.executeUpdate() == 1);
+
+        } catch (SQLException e) {
+            DBUtil.close(_psSOAPNC);
+            _psSOAPNC = null;
+            // must be called *after* closing the statement
+            _dbcw.checkDuplicateKey(e);
+            _dbcw.checkDeadConnection(e);
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psSOAF;
+
+    @Override
+    public void setOAFlags_(SOID soid, int flags, Trans t)
+            throws SQLException
+    {
+        try {
+            _psSOAF = setOAInt_(soid, C_OA_FLAGS, flags, t,
+                    _psSOAF);
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psSOAF);
+            _psSOAF = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psSCALM;
+    @Override
+    public void setCA_(SOID soid, KIndex kidx, long len, long mtime, @Nullable ContentHash h,
+            Trans t) throws SQLException
+    {
+        try {
+            if (_psSCALM == null) _psSCALM = c().prepareStatement(
+                    "update " + T_CA + " set " + C_CA_LENGTH + "=?, " +
+                    C_CA_MTIME + "=?," + C_CA_HASH + "=? where " +
+                    C_CA_SIDX + "=? and " + C_CA_OID + "=? and " +
+                    C_CA_KIDX + "=?");
+            _psSCALM.setLong(1, len);
+            _psSCALM.setLong(2, mtime);
+            if (h == null) _psSCALM.setNull(3, Types.BLOB);
+            else _psSCALM.setBytes(3, h.getBytes());
+            _psSCALM.setInt(4, soid.sidx().getInt());
+            _psSCALM.setBytes(5, soid.oid().getBytes());
+            _psSCALM.setInt(6, kidx.getInt());
+            Util.verify(_psSCALM.executeUpdate() == 1);
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psSCALM);
+            _psSCALM = null;
+            throw e;
+        }
+    }
+
+   private PreparedStatement _psSCAH;
+    @Override
+    public void setCAHash_(SOID soid, KIndex kidx, ContentHash h, Trans t)
+        throws SQLException
+    {
+        try {
+            if (_psSCAH == null) _psSCAH = c().prepareStatement(
+                    "update " + T_CA + " set " +
+                    C_CA_HASH + "=? where " +
+                    C_CA_SIDX + "=? and " +
+                    C_CA_OID + "=? and " +
+                    C_CA_KIDX + "=?");
+
+            _psSCAH.setBytes(1, h.getBytes());
+
+            _psSCAH.setInt(2, soid.sidx().getInt());
+            _psSCAH.setBytes(3, soid.oid().getBytes());
+            _psSCAH.setInt(4, kidx.getInt());
+
+            Util.verify(_psSCAH.executeUpdate() == 1);
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psSCAH);
+            _psSCAH = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psSFID;
+
+    @Override
+    public void setFID_(SOID soid, @Nullable FID fid, Trans t) throws SQLException
+    {
+        try {
+            _psSFID = setOABlob_(soid, C_OA_FID, fid == null ? null : fid.getBytes(), t, _psSFID);
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psSFID);
+            _psSFID = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGetCA;
+    private SortedMap<KIndex, CA> getCAs_(SOID soid) throws SQLException
+    {
+        try {
+            if (_psGetCA == null) _psGetCA = c().prepareStatement("select "
+                    + C_CA_LENGTH + "," + C_CA_KIDX + "," + C_CA_MTIME
+                    + " from " + T_CA + " where " + C_CA_SIDX + "=? and "
+                    + C_CA_OID + "=?");
+            _psGetCA.setInt(1, soid.sidx().getInt());
+            _psGetCA.setBytes(2, soid.oid().getBytes());
+            ResultSet rs = _psGetCA.executeQuery();
+            try {
+                SortedMap<KIndex, CA> cas = new TreeMap<KIndex, CA>();
+                while (rs.next()) {
+                    long len = rs.getLong(1);
+                    KIndex kidx = new KIndex(rs.getInt(2));
+                    long mtime = rs.getLong(3);
+                    cas.put(kidx, new CA(len, mtime));
+                }
+                return cas;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGetCA);
+            _psGetCA = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGCAH;
+    @Override
+    public ContentHash getCAHash_(SOID soid, KIndex kidx)
+            throws SQLException
+    {
+        try {
+            if (_psGCAH == null) _psGCAH = c().prepareStatement(
+                "select " + C_CA_HASH + " from " + T_CA + " where " +
+                C_CA_SIDX + "=? and " +
+                C_CA_OID + "=? and " +
+                C_CA_KIDX + "=?");
+
+            _psGCAH.setInt(1, soid.sidx().getInt());
+            _psGCAH.setBytes(2, soid.oid().getBytes());
+            _psGCAH.setInt(3, kidx.getInt());
+
+            ResultSet rs = _psGCAH.executeQuery();
+            try {
+                byte[] hash;
+                if (rs.next() && (hash = rs.getBytes(1)) != null) {
+                    return new ContentHash(hash);
+                } else {
+                    return null;
+                }
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGCAH);
+            _psGCAH = null;
+            throw e;
+        }
+    }
+
+    private static Collection<SIndex> queryGetSIndexes_(PreparedStatement ps) throws SQLException
+    {
+        ResultSet rs = ps.executeQuery();
+        try {
+            ArrayList<SIndex> sidxs = new ArrayList<SIndex>(16);
+            while (rs.next()) sidxs.add(new SIndex(rs.getInt(1)));
+            return sidxs;
+        } finally {
+            rs.close();
+        }
+    }
+
+    private PreparedStatement _psGSIX;
+    @Override
+    public Collection<SIndex> getSIndexes_(OID oid, SIndex sidxExcluded) throws SQLException
+    {
+        try {
+            if (_psGSIX == null) _psGSIX = c().prepareStatement(
+                    "select " + C_OA_SIDX + " from " + T_OA +
+                    " where " + C_OA_SIDX + "!=? and " + C_OA_OID + "=?");
+
+            _psGSIX.setInt(1, sidxExcluded.getInt());
+            _psGSIX.setBytes(2, oid.getBytes());
+            return queryGetSIndexes_(_psGSIX);
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGSIX);
+            _psGSIX = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGetOA;
+    @Override
+    public OA getOA_(SOID soid) throws SQLException
+    {
+        try {
+            if (_psGetOA == null) _psGetOA = c().prepareStatement("select "
+                    + C_OA_PARENT + "," + C_OA_NAME + "," + C_OA_TYPE + ","
+                    + C_OA_FLAGS + "," + C_OA_FID + " from "
+                    + T_OA + " where " + C_OA_SIDX + "=? and " + C_OA_OID
+                    + "=?");
+
+            _psGetOA.setInt(1, soid.sidx().getInt());
+            _psGetOA.setBytes(2, soid.oid().getBytes());
+            ResultSet rs = _psGetOA.executeQuery();
+            try {
+                if (rs.next()) {
+                    OID parent = new OID(rs.getBytes(1));
+                    String name = rs.getString(2);
+                    OA.Type type = OA.Type.valueOf(rs.getInt(3));
+                    int flags = rs.getInt(4);
+                    byte[] bs = rs.getBytes(5);
+                    FID fid = bs == null ? null : new FID(bs);
+
+                    assert !rs.next();
+
+                    SortedMap<KIndex, CA> cas = type == OA.Type.FILE ? getCAs_(soid) : null;
+
+                    return new OA(soid, parent, name, type, cas, flags, fid);
+                } else {
+                    return null;
+                }
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGetOA);
+            _psGetOA = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psFID2SOID;
+
+    @Override
+    public SOID getSOID_(FID fid) throws SQLException
+    {
+        try {
+            if (_psFID2SOID == null) _psFID2SOID = c().prepareStatement(
+                    "select " + C_OA_SIDX + "," + C_OA_OID +
+                    " from " + T_OA +
+                    " where " + C_OA_FID + "=?");
+
+            _psFID2SOID.setBytes(1, fid.getBytes());
+            ResultSet rs = _psFID2SOID.executeQuery();
+            try {
+                if (rs.next()) {
+                    SIndex sidx = new SIndex(rs.getInt(1));
+                    OID oid = new OID(rs.getBytes(2));
+                    // There is a uniqueness constraint on FIDs.
+                    assert !rs.next();
+                    return new SOID(sidx, oid);
+                } else {
+                    return null;
+                }
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psFID2SOID);
+            _psFID2SOID = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGetUsedSp;
+    @Override
+    public long getUsedSpace_(SIndex sidx) throws SQLException
+    {
+        try {
+            if (_psGetUsedSp == null) _psGetUsedSp = c()
+                    .prepareStatement("select sum(" + C_CA_LENGTH + ") from "
+                            + T_CA + " where " + C_CA_SIDX + "=?");
+
+            _psGetUsedSp.setInt(1, sidx.getInt());
+
+            ResultSet rs = _psGetUsedSp.executeQuery();
+            try {
+                Util.verify(rs.next());
+                long ret = rs.getLong(1);
+                assert !rs.next();
+                return ret;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGetUsedSp);
+            _psGetUsedSp = null;
+            throw e;
+        }
+    }
+
+    private static class DBIterNonMasterBranches extends
+            AbstractDBIterator<SOKID>
+    {
+        DBIterNonMasterBranches(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        @Override
+        public SOKID get_() throws SQLException
+        {
+            SIndex sidx = new SIndex(_rs.getInt(1));
+            OID oid = new OID(_rs.getBytes(2));
+            KIndex kidx = new KIndex(_rs.getInt(3));
+            return new SOKID(sidx, oid, kidx);
+        }
+    }
+
+    @Override
+    public IDBIterator<SOKID> getNonMasterBranches_()
+        throws SQLException
+    {
+        Statement ps = null;
+        try {
+            // this method is not called requently so we don't prepare the stmt
+            ps = c().createStatement();
+            ResultSet rs = ps.executeQuery("select "
+                    + C_CA_SIDX + "," + C_CA_OID + "," + C_CA_KIDX +
+                    " from " + T_CA +
+                    " where " + C_CA_KIDX + "!=" + KIndex.MASTER);
+
+            return new DBIterNonMasterBranches(rs);
+
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(ps);
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGetChildren;
+    @Override
+    public Set<OID> getChildren_(SOID parent) throws SQLException
+    {
+        try {
+            if (_psGetChildren == null) _psGetChildren = c()
+                    .prepareStatement("select " + C_OA_OID + " from "
+                            + T_OA + " where " + C_OA_SIDX + "=? and "
+                            + C_OA_PARENT + "=?");
+            _psGetChildren.setInt(1, parent.sidx().getInt());
+            _psGetChildren.setBytes(2, parent.oid().getBytes());
+            ResultSet rs = _psGetChildren.executeQuery();
+            try {
+                boolean rootParent = parent.oid().equals(OID.ROOT);
+                // Most callers of this method simply iterate over the set, so if performance is
+                // an issue, consider using a LinkedHashSet
+                Set<OID> children = new HashSet<OID>();
+                while (rs.next()) {
+                    OID oid = new OID(rs.getBytes(1));
+                    if (rootParent && oid.equals(OID.ROOT)) continue;
+                    children.add(oid);
+                }
+                return children;
+            } finally {
+                rs.close();
+            }
+
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGetChildren);
+            _psGetChildren = null;
+            throw e;
+        }
+    }
+
+    PreparedStatement _psDeleteOA;
+    @Override
+    public void deleteOA_(SIndex sidx, OID alias, Trans t)
+            throws SQLException
+    {
+        try {
+            if (_psDeleteOA == null) _psDeleteOA =
+                    c().prepareStatement("delete from " + T_OA + " where " +
+                    C_OA_SIDX + "=? and " +
+                    C_OA_OID + "=?");
+            _psDeleteOA.setInt(1, sidx.getInt());
+            _psDeleteOA.setBytes(2, alias.getBytes());
+
+            _psDeleteOA.executeUpdate();
+
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psDeleteOA);
+            _psDeleteOA = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psGet;
+    @Override
+    public BitVector getSyncStatus_(SOID soid) throws SQLException
+    {
+        try {
+            if (_psGet == null) {
+                _psGet = c().prepareStatement(
+                        "select " + C_OA_SYNC + " from " + T_OA +
+                                " where " + C_OA_SIDX + "=? and " + C_OA_OID + "=?");
+            }
+            _psGet.setInt(1, soid.sidx().getInt());
+            _psGet.setBytes(2, soid.oid().getBytes());
+            ResultSet rs = _psGet.executeQuery();
+            BitVector bv = null;
+            try {
+                if (rs.next()) {
+                    byte[] d = rs.getBytes(1);
+                    bv = d != null ? new BitVector(8 * d.length, d) : new BitVector();
+                    Util.verify(!rs.next()); // and only one entry...
+                } else {
+                    bv = new BitVector();
+                }
+            } finally {
+                rs.close();
+            }
+            return bv;
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psGet);
+            _psGet = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psSet;
+    @Override
+    public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
+    {
+        try {
+            if (_psSet == null) {
+                _psSet = c().prepareStatement(
+                        "update " + T_OA + " set " + C_OA_SYNC + "=?" +
+                                " where " + C_OA_SIDX + "=? and " + C_OA_OID + "=?");
+            }
+            _psSet.setBytes(1, status.data());
+            _psSet.setInt(2, soid.sidx().getInt());
+            _psSet.setBytes(3, soid.oid().getBytes());
+
+            int affectedRows = _psSet.executeUpdate();
+            assert affectedRows == 1 : ("Duplicate SOID");
+        } catch (SQLException e) {
+            _dbcw.checkDeadConnection(e);
+            DBUtil.close(_psSet);
+            _psSet = null;
+            throw e;
+        }
+    }
+
+    @Override
+    public void clearSyncStatus_(SOID soid, Trans t) throws SQLException
+    {
+        setSyncStatus_(soid, new BitVector(), t);
+    }
+}

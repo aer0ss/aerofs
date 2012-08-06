@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# first stop zephyr if it is running
+service zephyr stop || true

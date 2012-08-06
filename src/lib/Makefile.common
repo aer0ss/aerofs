@@ -1,0 +1,37 @@
+GEN_ROOT=gen
+SRC_ROOT=src
+PROTOC=protoc
+TOOLS=../../tools
+RPC_PLUGIN=${TOOLS}/protobuf.plugins/bin/protoc-gen-rpc-java
+RPC_PROTO=${TOOLS}/protobuf.plugins/proto
+OS=${shell uname}
+PROTO_INCLUDES += -I=${SRC_ROOT}/proto
+PROTO_INCLUDES += -I=../lib/${SRC_ROOT}/proto
+
+# GNU sed does not require "" (empty extension) after -i
+ifeq (${OS},Darwin)
+	SEDFLAGS=""
+else
+	SEDFLAGS=
+endif
+
+${GEN_ROOT}:
+	mkdir -p ${GEN_ROOT}
+
+# The post-processing is needed because of protobuf bug 266
+# http://code.google.com/p/protobuf/issues/detail?id=266
+# TODO: remove when AeroFS has upgraded to the patch, or the bug is fixed
+%.gen_proto: ${GEN_ROOT}
+	${PROTOC} --plugin=${RPC_PLUGIN} ${PROTO_INCLUDES} --java_out=${GEN_ROOT} \
+		--rpc-java_out=${GEN_ROOT} ${SRC_ROOT}/proto/$*.proto
+	for gen_file in `find ${GEN_ROOT} -name \*.java`; \
+		do echo post-processing $$gen_file; \
+		sed -i ${SEDFLAGS} \
+			-e 's,^public final class ,@SuppressWarnings(\"all\") &,' \
+			$$gen_file; \
+	done
+
+clean: clean_gen
+
+clean_gen:
+	rm -rf ${GEN_ROOT}

@@ -1,0 +1,48 @@
+#!/bin/bash -u -e
+
+if [[ $# -ne 4 || "$1x" == "x" || "$2x" == "x" || "$3x" == "x"  || "$4x" == "x" ]]
+then
+    echo "usage: $0 [servlet_name] [base_dir] [proj_dir] [build_mode]"
+    echo
+    echo "example: $0 sv ~/repos/aerofs aerofs.spsv PROD"
+    exit 2
+fi
+
+SERVLET_NAME="$1"
+BASEDIR="$2"
+PROJDIR="$3"
+
+# check the mode this script was invoked in
+if [[ "$4" != "PROD" && "$4" != "STAGING" ]]
+then
+    echo "mode:$4 incorrect - must be PROD or STAGING"
+    exit 2
+fi
+
+# convert the mode to lowercase (because all mode-specific dirs use lowercase)
+MODE=$(echo "$4" | tr '[A-Z]' '[a-z]')
+
+PACKAGE_NAME="$SERVLET_NAME"
+BUILDROOT="$PACKAGE_NAME"
+
+RESOURCES="$BASEDIR"/src/"$PROJDIR"/resources/"$SERVLET_NAME"_"$MODE"
+INSTALL="$BUILDROOT"/usr/share/aerofs-"$PACKAGE_NAME"/"$SERVLET_NAME"
+CONTEXT="$BUILDROOT"/etc/tomcat6/Catalina/localhost
+DEBIAN="$BUILDROOT"/DEBIAN
+
+rm -rf "$BUILDROOT"
+
+mkdir -p "$BUILDROOT"
+mkdir -p "$INSTALL"
+mkdir -p "$CONTEXT"
+mkdir -p "$DEBIAN"
+
+# debian files
+for F in control
+do
+    cp -R "$RESOURCES"/$F "$DEBIAN"
+done
+
+# package-data files
+cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"_"$MODE"/exploded/* "$INSTALL"/
+cp -R "$RESOURCES"/context.xml "$CONTEXT"/"$MODE".xml

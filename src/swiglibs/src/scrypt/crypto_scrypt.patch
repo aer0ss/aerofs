@@ -1,0 +1,19 @@
+34,36d33
+< #ifdef __cplusplus
+< extern "C" {
+< #endif
+46,51c43
+<
+< //NOTE: yuri removed the const in front of the first and 3rd paramater because swig is stupid. see
+< //http://www.swig.org/Doc2.0/SWIGDocumentation.html#SWIGPlus_const and
+< //http://www.swig.org/Doc2.0/SWIGDocumentation.html#SWIG_nn13 for more info
+<
+< int crypto_scrypt(uint8_t *, size_t, uint8_t *, size_t, uint64_t,
+---
+> int crypto_scrypt(const uint8_t *, size_t, const uint8_t *, size_t, uint64_t,
+53,55c45
+< #ifdef __cplusplus
+< }
+< #endif
+---
+>

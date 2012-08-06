@@ -1,0 +1,204 @@
+option java_package = "com.aerofs.proto";
+option java_outer_classname = "ControllerProto";
+option optimize_for = LITE_RUNTIME;
+
+import "common.proto";
+
+service ControllerService {
+
+    // Sets the message type used in case of errors
+    rpc __error__(Void) returns(PBException);
+
+    ///////////////////////////////////////////////////
+    // Setup
+    ///////////////////////////////////////////////////
+
+    /**
+     * Returns whether setup/login is needed or not.
+     * Clients should always call this method at the very beginning of the program
+     */
+    rpc GetInitialStatus(Void) returns(GetInitialStatusReply);
+
+    /**
+     * Retrieves default values (default approot, default device name) for the setup dialog
+     */
+    rpc GetSetupSettings(Void) returns(GetSetupSettingsReply);
+
+    /**
+     * Resolves an invitation code
+     * Throws:
+     *  - NotFound if the invitation code was not found or is invalid
+     */
+    rpc ResolveSignUpCode(ResolveSignUpCodeCall) returns(ResolveSignUpCodeReply);
+
+    /**
+     * Sets up a new AeroFS user.
+     * See SetupNewUserCall for more information on the arguments
+     *
+     * TODO (GS) Document what exceptions this can throw
+     */
+    rpc SetupNewUser(SetupNewUserCall) returns(Void);
+
+    /**
+     * Sets up an existing (returning) AeroFS user
+     *
+     * TODO (GS) Document what exceptions this can throw
+     */
+    rpc SetupExistingUser(SetupExistingUserCall) returns(Void);
+
+    /**
+     * Resets the password of an AeroFS user
+     *
+     * Throws:
+     * - Exception  if something else fails (no expected exceptions)
+     */
+    rpc SendPasswordResetEmail(SendPasswordResetEmailCall) returns(Void);
+
+    /**
+     * Resets the password of an AeroFS user
+     *
+     * Throws:
+     * - ExNotFound if the provided token has no associated user account
+     *
+     */
+    rpc ResetPassword(ResetPasswordCall) returns(Void);
+
+    /**
+     * Change the password of an AeroFS user
+     *
+     * Throws:
+     * - ExBadCredential    if the user sign in failed.
+     * - ExNoPerm           if the old password is not correct
+     *
+     */
+    rpc ChangePassword(ChangePasswordCall) returns(Void);
+
+    /**
+     * Update the password that is stored locally.
+     *
+     * Throws:
+     * - ExBadCredential    if the user sign in failed.
+     *
+     */
+     rpc UpdateStoredPassword(UpdateStoredPasswordCall) returns(Void);
+
+    /**
+     * Initializes AeroFS
+     * This method should be called only if GetInitialStatus returns READY_TO_LAUNCH
+     * You don't need to call it after setup or login
+     */
+    rpc Launch(Void) returns(Void);
+
+    ///////////////////////////////////////////////////
+    // Config
+    ///////////////////////////////////////////////////
+
+    rpc GetConfig(Void) returns (GetConfigReply);
+    rpc UpdateConfig(UpdateConfigCall) returns (PBConfig);
+}
+
+message GetInitialStatusReply {
+    enum Status {
+        NOT_LAUNCHABLE = 1;
+        NEEDS_SETUP = 2;
+        NEEDS_LOGIN = 3;
+        READY_TO_LAUNCH = 4;
+    }
+    required Status status = 1;
+    optional string error_message = 2;
+}
+
+message GetSetupSettingsReply {
+    required string root_anchor = 1;
+    required string device_name = 2;
+}
+
+message GetConfigReply {
+    required PBConfig config = 1;
+}
+
+message SetupNewUserCall {
+    // Valid email address for the user
+    // Must be the same as the email address from the sign-up code, if any.
+    required string user_id = 1;
+
+    // Desired password. Must be at least Param.MIN_PASSWD_LENGTH long.
+    required string password = 2;
+
+    // Path to root anchor.
+    required string root_anchor = 3;
+
+    // Name for this device. Can be empty.
+    required string device_name = 4;
+
+    // Sign-up code for this user. Leave empty if not using a sign-up code.
+    required string sign_up_code = 6;
+
+    // First name of the user. Can't be empty.
+    required string first_name = 7;
+
+    // Last name. Can be empty.
+    required string last_name = 8;
+
+    // S3
+    optional PBS3Config s3_config = 9;
+}
+
+message SetupExistingUserCall {
+    required string user_id = 1;
+    required string password = 2;
+    required string root_anchor = 3;
+    required string device_name = 4;
+
+    // S3
+    optional PBS3Config s3_config = 5;
+}
+
+message SendPasswordResetEmailCall {
+    required string user_id = 1;
+}
+
+message ResetPasswordCall {
+    required string user_id = 1;
+    required string token = 2;
+    required string password = 3;
+}
+
+message ChangePasswordCall {
+    required string user_id = 1;
+    required string old_password = 2;
+    required string new_password = 3;
+}
+
+message UpdateStoredPasswordCall {
+    required string user_id = 1;
+    required string password = 2;
+}
+
+message ResolveSignUpCodeCall {
+    required string code = 1;
+}
+
+message ResolveSignUpCodeReply {
+    required string email = 1; // empty string if batch invite
+}
+
+message UpdateConfigCall {
+    required PBConfig config = 1;
+}
+
+message PBConfig {
+    optional string version = 1;
+    optional string user_name = 2;
+    optional string user_id = 3;
+    optional string device_id = 4;
+    optional string root_anchor = 5;
+}
+
+message PBS3Config {
+    required string bucket_id = 1;
+    required string access_key = 2;
+    required string secret_key = 3;
+    required string encryption_key = 4;
+    required string local_dir = 5;
+}

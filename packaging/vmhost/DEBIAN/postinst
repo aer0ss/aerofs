@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Make scripts executable.
+sudo chmod a+x /usr/local/aerofs/tools/*.sh
+
+# Special permissions for AeroFS console.
+sudo chown root:root /usr/local/aerofs/tools/aerofs-console.sh
+sudo chmod 755 /usr/local/aerofs/tools/aerofs-console.sh
+
+# Start/restart the bootstrap web application and the KVM's manager.
+sudo service aerofs-vmhost-bootstrap restart
+sudo service aerofs-kvms-manager restart
+
+# For the new /etc/network/interfaces
+echo "Note: a networking restart may be required."

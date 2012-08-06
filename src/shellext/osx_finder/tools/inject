@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# This script installs and injects the Finder extension into the Finder
+# tip: you can set this script as the run action in Xcode so that it is executed every time you press Command+R
+
+sudo rm -rf /Library/ScriptingAdditions/AeroFSFinderExtension.osax
+sudo cp -R ../build/Debug/AeroFSFinderExtension.osax /Library/ScriptingAdditions/AeroFSFinderExtension.osax
+killall Finder
+sleep 1
+/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/Resources/finder_inject

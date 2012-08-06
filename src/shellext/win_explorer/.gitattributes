@@ -1,0 +1,2 @@
+*.rc diff merge -crlf
+resource.h diff merge -crlf

@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Implementation-Vendor: AeroFS
+Main-Class: com.aerofs.zephyr.server.Zephyr

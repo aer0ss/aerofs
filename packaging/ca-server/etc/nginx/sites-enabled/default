@@ -1,0 +1,12 @@
+server {
+    listen 1029 default;
+    server_name ca;
+
+    location /staging {
+        proxy_pass http://localhost:9001;
+    }
+
+    location /prod {
+        proxy_pass http://localhost:9002;
+    }
+}

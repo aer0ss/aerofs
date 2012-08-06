@@ -1,0 +1,25 @@
+Building the SWIG libraries (a.k.a libaerofsd)
+
+# On Linux
+
+- Install qmake:
+  $ sudo apt-get install libqt4-dev
+
+- Install java jdk:
+  $ sudo apt-get install sun-java6-jdk
+
+- Set the JAVA_HOME environment variable:
+  $ JAVA_HOME=/usr/lib/jvm/java-6-sun
+  $ export JAVA_HOME
+
+- Build in a folder outside the source ("shadow building")
+  $ cd ~/repos/aerofs/java/
+  $ mkdir aerofsd-build
+  $ cd aerofsd-build
+  $ qmake ../swiglibs/aerofsd.pro
+  $ make
+
+- Put the binaries in the righ place: (TODO: automate this later)
+ $ cd ~/repos/aerofs/java/swiglibs/build/
+ $ mv libaerofsd.so.1.0.0 ../../../as-is/linux<32|64>/libaerofsd.so
+

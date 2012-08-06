@@ -1,0 +1,312 @@
+package com.aerofs.proto;
+
+import "common.proto";
+import "files.proto";
+
+// remove reflection
+option optimize_for = LITE_RUNTIME;
+
+// TODO don't use uint at all, as Java can't handle them. use int or sint instead
+
+/**
+ * The FSI RPC request message
+ */
+message PBFSICall {
+
+    enum Type {
+        /**
+         * List children's attributes for a given directory.
+         *
+         * Call field: yes
+         * Reply field: yes
+         */
+        LIST_CHILDREN = 6;
+
+        /**
+         * Create a directory
+         *
+         * Call field: yes
+         * Reply field: no
+         */
+        MKDIR = 8;
+
+        /**
+         * Move or rename an object to a different path of the same store
+         *
+         * Call field: yes
+         * Reply field: no
+         */
+        MOVE_OBJECT = 13;
+
+        /**
+         * Get an object's attributes
+         *
+         * Call field: yes
+         * Reply field: yes
+         */
+        GET_ATTR = 14;
+
+        /**
+         * Set an object's attributes
+         *
+         * Call field: yes
+         * Reply field: no
+         */
+        SET_ATTR = 15;
+
+        /**
+         * Get an object's extended attributes
+         *
+         * Call field: yes
+         * Reply field: yes
+         */
+        GET_ATTR_EX = 16;
+
+        /**
+         * Request the daemon to immediately shutdown
+         *
+         * Call field: no
+         * Reply field: no
+         */
+        SHUTDOWN = 18;
+
+        /**
+         * Set the user's private key
+         *
+         * Call field: yes
+         * Reply field: no
+         */
+        SET_PRIVATE_KEY = 19;
+
+        /**
+         * Delete an object
+         *
+         * Call field: yes
+         * Reply field: no
+         */
+        DELETE_OBJECT = 23;
+
+        /**
+         * Delete a non-master branch
+         *
+         * Call field: yes
+         * Reply field: no
+         */
+        DELETE_BRANCH = 24;
+
+        TRANSPORT_PING = 39;
+
+        TRANSPORT_FLOOD = 40;
+
+        TRANSPORT_FLOOD_QUERY = 41;
+
+        /**
+         * Call field: no
+         * Reply field: yes
+         */
+        LIST_CONFLICTS = 43;
+
+        /**
+         * Call field: yes
+         * Reply field: no
+         */
+        SAVE_REVISION = 44;
+    }
+
+    required Type type = 1;
+
+    // the id of the user who initiates the call. set to null to use the user
+    // defined in device.conf
+    optional string user = 2;
+
+    optional PBListChildrenAttrCall list_children_attr = 8;
+    optional PBGetAttrCall get_attr = 9;
+    optional PBMoveObjectCall move_object = 11;
+    optional PBMkdirCall mkdir = 13;
+    optional PBSetAttrCall set_attr = 16;
+    optional PBSetPrivateKeyCall set_private_key = 17;
+    optional PBDeleteObjectCall delete_object = 19;
+    optional PBDeleteBranchCall delete_branch = 20;
+    optional PBTransportPingCall transport_ping = 31;
+    optional PBTransportFloodCall transport_flood = 32;
+    optional PBTransportFloodQueryCall transport_flood_query = 33;
+    optional PBSaveRevisionCall save_revision = 34;
+}
+
+/**
+ * The FSI RPC reply message. If the RPC failed, the error_reply field will be set.
+ * In this case, the client must ignore all other fields even if they are
+ * present.
+ */
+message PBFSIReply {
+    optional PBException exception = 1;
+
+    optional PBListChildrenAttrReply list_children_attr = 5;
+    optional PBGetAttrReply get_attr = 8;
+    optional PBTransportPingReply transport_ping = 19;
+    optional PBTransportFloodQueryReply transport_flood_query = 20;
+    optional PBListConflictsReply list_conflicts = 22;
+}
+
+message PBListChildrenAttrCall {
+
+    // the path to the parent object
+    required PBPath path = 1;
+}
+
+message PBListChildrenAttrReply {
+
+    // children's attributes
+    repeated PBObjectAttr child_attr = 1;
+}
+
+message PBMkdirCall {
+
+    required PBPath path = 1;
+
+    required bool exclusive = 2;
+}
+
+message PBDeleteObjectCall {
+
+    required PBPath path = 1;
+}
+
+message PBDeleteBranchCall {
+
+    // the path to the object of which the branch is to be deleted
+    required PBPath path = 1;
+
+    // the KIndex of the branch to delete
+    required uint32 kidx = 2;
+}
+
+message PBMoveObjectCall {
+
+    // the original path to the object to be moved/renamed
+    required PBPath from = 1;
+
+    // the path to the new parent of the object
+    required PBPath toParent = 2;
+
+    // the new name of the object
+    required string toName = 3;
+}
+
+message PBGetAttrCall {
+
+    required PBPath path = 1;
+}
+
+message PBGetAttrReply {
+
+    required PBObjectAttr attr = 1;
+}
+
+message PBSetAttrCall {
+
+    required PBPath path = 1;
+
+    optional bool is_inheritable = 2;
+
+    optional string owner = 3;
+
+    optional int32 flags = 4;
+}
+
+message PBSetPrivateKeyCall {
+
+    required bytes key = 1;
+}
+
+message PBTransportPingCall {
+    // see IEOTransportPing for details
+    required bytes device_id = 1;
+    required uint32 seq_prev = 2;
+    required uint32 seq_next = 3;
+    required bool force_next = 4;
+    required bool ignore_offline = 5;
+}
+
+message PBTransportPingReply {
+    optional uint64 rtt = 1;
+}
+
+message PBTransportFloodCall {
+    required bytes device_id = 1;
+    required bool send = 2;
+    required uint32 seq_start = 3;
+    required uint32 seq_end = 4;
+    required uint64 duration = 5;
+    optional string sname = 6;      // required if !send
+}
+
+message PBTransportFloodQueryCall {
+    required bytes device_id = 1;
+    required uint32 seq = 2;
+}
+
+message PBTransportFloodQueryReply {
+    // time == TRANSPORT_DIAGNOSIS_STATE_PENDING if pending
+    required uint64 time = 1;
+    required uint64 bytes = 2;
+}
+
+////////
+// non-message data types
+
+message PBObjectAttr {
+
+    // the globally unique identifier of the object. It can be converted to a
+    // {@link com.aci.aerofs.lib.id.OID} object using
+    // <code>new OID(object_id)</code>
+    required bytes object_id = 1;
+
+    // the name of the object
+    required string name = 2;
+
+    required bool is_dir = 3;
+
+    required bool is_anchor = 4;
+
+    required int32 flags = 7;
+
+    repeated PBContentAttr content_attr = 8;
+};
+
+/**
+ * Each content attribute object describes a branch of a file. Files that
+ * haven't been downloaded has zero branches. Otherwise, they must have
+ * as least a master branch.
+ */
+message PBContentAttr {
+
+    // the KIndex of the branch this content attribute refers to. The KIndex of
+    // master branches is always KIndex.MASTER. The value of the field can be
+    // converted to a {@link com.aci.aerofs.lib.id.KIndex} object by using
+    // <code>new KIndex(kidx)</code>
+    required uint32 kidx = 1;
+
+    // content length. see ContentAttr.length() for details
+    required uint64 length = 2;
+}
+
+message PBListConflictsReply {
+
+    message PBConflictEditors {
+        repeated string editor = 1;
+    }
+
+    repeated PBPath path = 1;
+    repeated uint32 kidx = 2;
+    repeated string fs_path = 3;
+    repeated PBConflictEditors editors = 4;
+}
+
+message PBSaveRevisionCall {
+
+    required PBPath path = 1;
+    required bytes device_id = 2;
+    required bytes index = 3;
+    required string destination = 4;
+}

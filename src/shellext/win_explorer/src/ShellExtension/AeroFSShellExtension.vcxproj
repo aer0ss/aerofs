@@ -1,0 +1,304 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FF60BFE7-69F0-46E8-8155-8620DBB9103D}</ProjectGuid>
+    <Keyword>AtlProj</Keyword>
+    <ProjectName>AeroFSShellExt</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseOfAtl>Dynamic</UseOfAtl>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <UseOfAtl>Dynamic</UseOfAtl>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseOfAtl>Dynamic</UseOfAtl>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <UseOfAtl>Dynamic</UseOfAtl>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)$(PlatformArchitecture)d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)$(PlatformArchitecture)d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)$(PlatformArchitecture)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IgnoreImportLibrary>true</IgnoreImportLibrary>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)build\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)$(PlatformArchitecture)</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <HeaderFileName>AeroFSShellExtension_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>AeroFSShellExtension_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>AeroFSShellExtension_p.c</ProxyFileName>
+      <GenerateStublessProxies>true</GenerateStublessProxies>
+      <TypeLibraryName>$(IntDir)AeroFSShellExtension.tlb</TypeLibraryName>
+      <DllDataFileName>
+      </DllDataFileName>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <OutputDirectory>gen</OutputDirectory>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <ModuleDefinitionFile>.\AeroFSShellExtension.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RegisterOutput>true</RegisterOutput>
+      <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libprotobuf-lite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <HeaderFileName>AeroFSShellExtension_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>AeroFSShellExtension_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>AeroFSShellExtension_p.c</ProxyFileName>
+      <GenerateStublessProxies>true</GenerateStublessProxies>
+      <TypeLibraryName>$(IntDir)AeroFSShellExtension.tlb</TypeLibraryName>
+      <DllDataFileName>
+      </DllDataFileName>
+      <OutputDirectory>gen</OutputDirectory>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <ModuleDefinitionFile>.\AeroFSShellExtension.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RegisterOutput>true</RegisterOutput>
+      <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libprotobuf-lite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <HeaderFileName>AeroFSShellExtension_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>AeroFSShellExtension_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>AeroFSShellExtension_p.c</ProxyFileName>
+      <GenerateStublessProxies>true</GenerateStublessProxies>
+      <TypeLibraryName>$(IntDir)AeroFSShellExtension.tlb</TypeLibraryName>
+      <DllDataFileName>
+      </DllDataFileName>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <OutputDirectory>gen</OutputDirectory>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <ModuleDefinitionFile>.\AeroFSShellExtension.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RegisterOutput>true</RegisterOutput>
+      <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libprotobuf-lite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <HeaderFileName>AeroFSShellExtension_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>AeroFSShellExtension_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>AeroFSShellExtension_p.c</ProxyFileName>
+      <GenerateStublessProxies>true</GenerateStublessProxies>
+      <TypeLibraryName>$(IntDir)AeroFSShellExtension.tlb</TypeLibraryName>
+      <DllDataFileName>
+      </DllDataFileName>
+      <OutputDirectory>gen</OutputDirectory>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <ModuleDefinitionFile>.\AeroFSShellExtension.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RegisterOutput>true</RegisterOutput>
+      <AdditionalLibraryDirectories>$(SolutionDir)3rdparty\lib\$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libprotobuf-lite.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\gen\common.pb.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\gen\shellext.pb.cc">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="AeroFSShellExtension.cpp" />
+    <ClCompile Include="AeroNode.cpp" />
+    <ClCompile Include="AeroSocket.cpp" />
+    <ClCompile Include="OverlayIcons.cpp" />
+    <ClCompile Include="ContextMenu.cpp" />
+    <ClCompile Include="AsyncSocket.cpp" />
+    <ClCompile Include="SocketOperations.cpp">
+      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</PreprocessToFile>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\3rdparty\include\rgs_helper.h" />
+    <ClInclude Include="..\..\gen\common.pb.h" />
+    <ClInclude Include="..\..\gen\shellext.pb.h" />
+    <ClInclude Include="AeroFSShellExtension.h" />
+    <ClInclude Include="AeroNode.h" />
+    <ClInclude Include="AeroSocket.h" />
+    <ClInclude Include="ISocketDelegate.h" />
+    <ClInclude Include="logger.h" />
+    <ClInclude Include="OverlayIcons.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ContextMenu.h" />
+    <ClInclude Include="AsyncSocket.h" />
+    <ClInclude Include="SocketOperations.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="string_helpers.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="AeroFSShellExtension.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="AeroFS.ico" />
+    <None Include="AeroFSShellExtension.def" />
+    <None Include="ContextMenuAdmin.rgs" />
+    <None Include="DownloadOverlay.ico" />
+    <None Include="OverlayIcons.rgs" />
+    <None Include="ContextMenu.rgs" />
+    <None Include="OverlayIconsAdmin.rgs" />
+    <None Include="UploadOverlay.ico" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

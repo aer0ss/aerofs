@@ -1,0 +1,20 @@
+# test if the specified TCP port is open
+#
+# usage: $0 <host> <port>
+#
+# exit 1 if bad arguments
+# exit the exit code of 'nc -z <host> <port>'
+
+HOST=$1
+PORT=$2
+
+if [ x"$PORT" == x ]; then
+    echo bad arguments
+    exit 1
+fi
+
+if [ x"$PORT" == x"22" ]; then
+fwknop -A tcp/22 -D "$HOST" -s --get-key /usr/bin/fwknop.key > /dev/null
+fi
+
+nc -z $HOST $PORT

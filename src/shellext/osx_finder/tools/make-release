@@ -1,0 +1,12 @@
+#!/bin/sh
+
+rm -rf ../build/*
+xcodebuild -project ../FinderExtension.xcodeproj -target AeroFSFinderExtension -configuration Release clean install
+
+echo "Looking for absolute paths hardcoded in the executable..."
+strings ../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/MacOS/AeroFSFinderExtension | grep /Users
+strings ../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/Resources/finder_inject | grep /Users
+echo "Done"
+
+rm -rf ../../../../as-is/osx/AeroFSFinderExtension.osax
+mv ../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax ../../../../as-is/osx

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Install the certificate authority python module.
+cd /usr/local/aerofs/python/certauth
+sudo python setup.py install
+
+# Restart the nginx server.
+sudo service nginx restart

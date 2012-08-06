@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# usage: $0 <probe> <probe_specific_args>...
+
+SERVICE=servers
+PROBE=$1
+shift 1
+
+SCRIPT=`readlink -f "$0"`
+SCRIPT=`dirname "$SCRIPT"`/probes/$PROBE
+
+TRIES=3
+for i in `seq 1 $TRIES`; do
+    /bin/bash "$SCRIPT" $@
+    RET=$?
+    if [ $RET == 0 ]; then
+        exit 0
+    elif [ $i != $TRIES ]; then
+        sleep 2
+    else
+        ARGS="$@"
+        TITLE="$PROBE returned $RET: $ARGS"
+        echo sending alert \"$TITLE\"
+        echo " " | mail $SERVICE@aerofs.pagerduty.com -s "$TITLE"
+        exit 1
+    fi
+done

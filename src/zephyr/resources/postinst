@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ZEPHYR_PATH=/opt/zephyr
+
+# start zephyr
+service zephyr start

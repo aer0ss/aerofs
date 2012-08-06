@@ -1,0 +1,60 @@
+package com.aerofs.daemon.core.net.throttling;
+
+import com.aerofs.daemon.lib.Prio;
+import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.Util;
+import javax.annotation.Nonnull;
+
+public class PerDeviceLimiter extends AbstractLimiter
+{
+    @Nonnull
+    private ILimiter _nextLimiter;
+
+    @Nonnull
+    private final String _name;
+
+    public PerDeviceLimiter(Scheduler sched, ILimiter nextLevel, String name,
+            long minBucket, long bucket, long fillRate, int pendingSize)
+    {
+        super(sched, Util.l(PerDeviceLimiter.class),
+            minBucket, bucket, fillRate, pendingSize);
+
+        l = Util.l(PerDeviceLimiter.class);
+        _nextLimiter = nextLevel;
+        _name = name;
+
+        l.info("construct " + _name + ": " + this);
+    }
+
+    /**
+     * Tokens are only needed if per-device queues have items in them
+     */
+    @Override
+    protected void indicateTokensNeeded_(Outgoing o)
+    {
+        l.info(name() + ": nd tok");
+        o.setTokensNeeded();
+    }
+
+    //
+    // ILimiter
+    //
+
+    @Override
+    public void processConfirmedOutgoing_(Outgoing o, Prio p)
+        throws Exception
+    {
+        if (l.isInfoEnabled()) {
+            l.info(name() + ": o route lower:" + _nextLimiter.name());
+            l.info(printstat_());
+        }
+
+        _nextLimiter.processOutgoing_(o, p);
+    }
+
+    @Override
+    public String name()
+    {
+        return _name;
+    }
+}

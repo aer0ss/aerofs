@@ -1,0 +1,67 @@
+option java_package = "com.aerofs.proto";
+
+import "common.proto";
+option optimize_for = LITE_RUNTIME;
+
+/**
+ * This file defines communication between the shell extension and the GUI process.
+ * Note that all the path variables defined in this file should be absolute paths.
+ */
+
+/**
+ * Calls from the shell extension to the GUI. The GUI should not reply anything to those calls.
+ */
+message ShellextCall {
+
+    enum Type {
+        GREETING = 0;
+        SHARE_FOLDER = 1;
+    }
+    required Type type = 1;
+    optional GreetingCall greeting = 2;
+    optional ShareFolderCall share_folder = 3;
+}
+
+message GreetingCall {
+    required int32 protocol_version = 1;
+}
+
+message ShareFolderCall {
+    // absolute path to the folder
+    required string path = 1;
+}
+
+
+/**
+ * Notifications sent from the GUI to the shell extension
+ */
+message ShellextNotification {
+
+    enum Type {
+        // Sent upon connection and when the root anchor moves
+        ROOT_ANCHOR = 1;
+
+        // Sent when the status of a file changes, so that the
+        // extension can display the appropriate overlay icon.
+        FILE_STATUS = 2;
+
+        // Sent when the daemon is restarted, to clear all cached
+        // statuses.
+        CLEAR_STATUS_CACHE = 3;
+    }
+    required Type type = 1;
+    optional RootAnchorNotification root_anchor = 2;
+    optional FileStatusNotification file_status = 3;
+}
+
+message RootAnchorNotification {
+    // absolute path to the root anchor. Must NOT include a trailing separator
+    required string path = 1;
+}
+
+message FileStatusNotification {
+    // Absolute path of the file that changed
+    required string path = 1;
+    optional bool downloading = 2;
+    optional bool uploading = 3;
+}

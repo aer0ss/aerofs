@@ -1,0 +1,51 @@
+package com.aerofs.daemon.event.lib.imc;
+
+import com.aerofs.daemon.event.IEvent;
+import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
+import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExNoResource;
+
+public class QueueBasedIMCExecutor implements IIMCExecutor {
+    final IBlockingPrioritizedEventSink<IEvent> _q;
+
+    public QueueBasedIMCExecutor(IBlockingPrioritizedEventSink<IEvent> q)
+    {
+        _q = q;
+    }
+
+    @Override
+    public void done_(IEvent ev)
+    {
+        synchronized (ev) { ev.notify(); }
+    }
+
+    @Override
+    public boolean enqueue_(IEvent ev, Prio prio)
+    {
+        return _q.enqueue(ev, prio);
+    }
+
+    @Override
+    public void enqueueThrows_(IEvent ev, Prio prio) throws ExNoResource
+    {
+        _q.enqueueThrows(ev, prio);
+    }
+
+    @Override
+    public void enqueueBlocking_(IEvent ev, Prio prio)
+    {
+        _q.enqueueBlocking(ev, prio);
+    }
+
+    @Override
+    public void execute_(IEvent ev, Prio prio)
+    {
+        synchronized (ev) {
+            // enqueuing must be done while holding the lock  otherwise we might
+            // miss notify();
+            _q.enqueueBlocking(ev, prio);
+            Util.waitUninterruptable(ev);
+        }
+    }
+}

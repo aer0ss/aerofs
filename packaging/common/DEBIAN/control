@@ -1,0 +1,7 @@
+Package: aerofs-common
+Section: admin
+Priority: required
+Depends: vim, python-setuptools
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS common server infrastructure package.
+Architecture: all

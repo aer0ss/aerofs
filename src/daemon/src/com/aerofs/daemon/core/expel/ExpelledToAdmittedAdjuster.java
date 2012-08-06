@@ -1,0 +1,82 @@
+package com.aerofs.daemon.core.expel;
+
+import static com.aerofs.daemon.core.expel.Expulsion.effectivelyExpelled;
+
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
+import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.migration.ImmigrantDetector;
+import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.SOID;
+import com.google.inject.Inject;
+
+class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
+{
+    private final DirectoryService _ds;
+    private final ImmigrantDetector _imd;
+    private final Expulsion _expulsion;
+    private final StoreCreator _sc;
+
+    @Inject
+    public ExpelledToAdmittedAdjuster(StoreCreator sc, Expulsion expulsion, ImmigrantDetector imd,
+            DirectoryService ds)
+    {
+        _sc = sc;
+        _expulsion = expulsion;
+        _imd = imd;
+        _ds = ds;
+    }
+
+    @Override
+    public void adjust_(boolean emigrate, final PhysicalOp op, final SOID soidRoot, Path pOld,
+            final int flagsRoot, final Trans t)
+            throws Exception
+    {
+        assert !emigrate;
+
+        _ds.walk_(soidRoot, null, new ObjectWalkerAdapter<SOID>() {
+            @Override
+            public SOID prefixWalk_(SOID unused, OA oa) throws Exception
+            {
+                boolean isRoot = soidRoot.equals(oa.soid());
+
+                // set the flags _before_ physically creating folders, since physical file
+                // implementations may assume that the corresponding logical object has been
+                // admitted when creating the physical object.
+                // see also AdmittedToExpelledAdjuster
+                int flagsNew = isRoot ? flagsRoot : Util.unset(oa.flags(), OA.FLAG_EXPELLED_INH);
+                _ds.setOAFlags_(oa.soid(), flagsNew, t);
+
+                // skip the current node and its children if the effective state of the current
+                // object doesn't change
+                if (effectivelyExpelled(flagsNew)) return null;
+
+                switch (oa.type()) {
+                case FILE:
+                    _imd.detectAndPerformImmigration_(oa, op, t);
+                    _expulsion.fileAdmitted_(oa.soid(), t);
+                    return null;
+                case DIR:
+                    oa.physicalFolder().create_(op, t);
+                    return oa.soid();
+                case ANCHOR:
+                    boolean immigrated = _imd.detectAndPerformImmigration_(oa, op, t);
+                    if (!immigrated) {
+                        oa.physicalFolder().create_(op, t);
+                        SID sid = SID.anchorOID2storeSID(oa.soid().oid());
+                        _sc.createStore_(sid, oa.soid().sidx(), _ds.resolve_(oa), t);
+                    }
+                    return null;
+                default:
+                    assert false;
+                    return null;
+                }
+            }
+        });
+    }
+}

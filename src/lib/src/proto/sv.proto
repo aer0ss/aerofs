@@ -1,0 +1,103 @@
+package com.aerofs.proto;
+
+import "common.proto";
+
+// remove reflection
+option optimize_for = LITE_RUNTIME;
+
+message PBSVCall {
+
+    enum Type {
+        DEFECT = 0;
+        EVENT = 1;
+        GZIPPED_LOG = 4;
+        ANALYTICS = 5;
+    }
+
+    required Type type = 1;
+    optional PBSVHeader header = 2;    // may be absent only for BLACKHOLEs
+
+    optional PBSVDefect defect = 3;
+    optional PBSVGzippedLog gzipped_log = 5;
+    optional PBSVEvent event = 6;
+    optional PBSVAnalytics analytics = 7;
+}
+
+message PBSVReply {
+    optional PBException exception = 1;
+}
+
+message PBSVHeader {
+    required string user = 1;
+    required bytes device_id = 2;
+    required string version = 3;
+    required string app_root = 5;
+    required string rt_root = 6;
+    required uint64 time = 7;
+}
+
+message PBSVDefect {
+    required bool automatic = 1;
+    required string description = 3;
+    repeated string java_env_name = 6;
+    repeated string java_env_value = 7;
+    optional string cfg_db = 5;
+
+    optional string stacktrace = 8; //for backwards compatability as some old clients may still put stacktrace in description
+    // followed by zipped logs
+}
+
+message PBSVGzippedLog {
+    required string name = 1;
+
+    // followed by a gzipped log
+}
+
+message PBSVEvent {
+
+    //if adding a new event here, please remember to update the mysql aerofs_sv database
+    //with the new enums
+
+    enum Type {
+
+        CLICKED_TASKBAR = 100;
+        CLICKED_TASKBAR_OPEN_AEROFS = 101;
+        CLICKED_TASKBAR_SHARE_FOLDER = 102;
+        CLICKED_TASKBAR_ACCEPT_INVITE = 103;
+        CLICKED_TASKBAR_MANAGER_SHARED_FOLDER = 104;
+        CLICKED_TASKBAR_TRANSFERS = 105;
+        CLICKED_TASKBAR_PREFERENCES = 106;
+
+        CLICKED_TASKBAR_INVITE_FOLDERLESS = 107;
+
+        CLICKED_TASKBAR_EXIT = 108;
+        CLICKED_TASKBAR_DEFAULT_SELECTION = 109;
+        CLICKED_TASKBAR_APPLY_UPDATE = 110;
+        CLICKED_SHELLEXT = 200;
+        CLICKED_SHELLEXT_INVITE_FOLDER = 201;
+
+        INVITE_SENT = 300;
+        FOLDERLESS_INVITE_SENT = 301;
+
+        FILE_SAVED = 0;
+
+        SIGN_UP = 1000;
+        SIGN_RETURNING = 1001;
+        SIGN_IN = 1002;
+        EXIT = 1003;
+        CREATE_STORE = 1004;
+        JOIN_STORE = 1005;             // initial request to join
+        JOIN_STORE_OK = 1006;          // join successfully
+        UPDATE = 1007;                 // the program is updated
+
+    }
+
+    required Type type = 1;
+    optional string desc = 2;
+}
+
+message PBSVAnalytics {
+    required uint64 db_dump_len = 1;
+
+    // followed by a gzipped db dump
+}

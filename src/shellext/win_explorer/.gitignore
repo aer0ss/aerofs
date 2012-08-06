@@ -1,0 +1,11 @@
+# Visual Studio settings and IntelliSense
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.aps
+ipch
+
+# Build artifacts
+build
+gen

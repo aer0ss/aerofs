@@ -1,0 +1,15 @@
+set number
+set ic
+set hlsearch
+set ignorecase
+set showmode
+set incsearch
+set autoindent
+set hlsearch
+set ruler
+set number
+set ts=4
+set sw=4
+set expandtab
+syntax on
+filetype on

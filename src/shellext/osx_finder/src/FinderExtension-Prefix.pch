@@ -1,0 +1,13 @@
+//
+// Prefix header for all source files of the 'FinderExtension' target in the 'FinderExtension' project
+//
+
+#ifndef DEBUG
+    #ifndef NS_BLOCK_ASSERTIONS
+        #define NS_BLOCK_ASSERTIONS
+    #endif
+#endif
+
+#ifdef __OBJC__
+#import <Cocoa/Cocoa.h>
+#endif

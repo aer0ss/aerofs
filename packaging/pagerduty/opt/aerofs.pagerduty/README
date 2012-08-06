@@ -1,0 +1,11 @@
+See Google documents for PagerDuty user manual. The manual includes a more
+detailed description of how the probes work.
+
+How to deploy
+====
+
+This is deployed via puppet.  See puppet module pagerduty for more information
+about usage.
+
+Build a new debian aerofs-pagerduty debian package using the standard deployment
+scripts (see the README in the aerofs/deployment directory).

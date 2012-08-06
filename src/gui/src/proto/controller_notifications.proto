@@ -1,0 +1,19 @@
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME;
+
+enum Type {
+    UPDATE_NOTIFICATION = 1;
+    SHOW_LOGIN_NOTIFICATION = 2;
+}
+
+message UpdateNotification {
+    enum Status {
+        NONE    = 1;
+        ONGOING = 2;   // Update check and/or download in progress
+        LATEST  = 3;   // Check succeeded, we're on the latest version
+        APPLY   = 4;   // We've downloaded an update, it's ready to be applied
+        ERROR   = 5;
+    }
+    required Status status = 1;
+    optional int32 progress = 2;  // from 0 to 100
+}

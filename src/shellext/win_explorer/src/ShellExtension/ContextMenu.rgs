@@ -1,0 +1,76 @@
+HKCU
+{
+	NoRemove Software
+	{
+		NoRemove Classes
+		{
+			NoRemove CLSID
+			{
+				ForceRemove %CLSID% = s '%DESCRIPTION%'
+				{
+					InprocServer32 = s '%MODULE%'
+					{
+						val ThreadingModel = s 'Apartment'
+					}
+				}
+			}
+
+			NoRemove Directory
+			{
+				NoRemove ShellEx
+				{
+					NoRemove ContextMenuHandlers
+					{
+						ForceRemove %NAME% = s '%CLSID%'
+					}
+				}
+				NoRemove Background
+				{
+					NoRemove ShellEx
+					{
+						NoRemove ContextMenuHandlers
+						{
+							ForceRemove %NAME% = s '%CLSID%'
+						}
+					}
+				}
+			}
+
+			NoRemove Folder
+			{
+				NoRemove ShellEx
+				{
+					NoRemove ContextMenuHandlers
+					{
+						ForceRemove %NAME% = s '%CLSID%'
+					}
+				}
+			}
+
+			NoRemove LibraryFolder
+			{
+				NoRemove Background
+				{
+					NoRemove ShellEx
+					{
+						NoRemove ContextMenuHandlers
+						{
+							ForceRemove %NAME% = s '%CLSID%'
+						}
+					}
+				}
+			}
+
+			NoRemove LibraryLocation
+			{
+				NoRemove ShellEx
+				{
+					NoRemove ContextMenuHandlers
+					{
+						ForceRemove %NAME% = s '%CLSID%'
+					}
+				}
+			}
+		}
+	}
+}

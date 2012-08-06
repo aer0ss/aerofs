@@ -1,0 +1,101 @@
+@import "bootstrap/variables.less";
+
+@footerHeight: 8em;
+
+.navbar .nav > li > a {
+  font-size:120%;
+  font-weight:bold;
+}
+
+h3 {
+    font-weight:600;
+}
+
+// Form-related elements
+// ------------------
+
+span.required_field {
+    color: @red;
+}
+
+div.input_container {
+    margin-top: 10px;
+}
+
+div.input_container label input {
+    display: inline;
+}
+
+div.input_container.submit {
+    margin-top: 25px;
+}
+
+a.delete_permission {
+    color: @red;
+    text-decoration: none;
+    padding-left: 8px;
+}
+
+// Messages
+// ------------------
+
+#empty_message_bar {
+    position: fixed;
+    top: 0;
+    padding: 8px;
+    background-color: darken(@grayLighter, 10%);
+}
+
+#message_bar {
+    position: fixed;
+    top: 0;
+}
+
+div.message_container {
+    cursor: pointer;
+    display: none;
+    z-index: 99;
+}
+
+div.flash_message {
+    padding: 8px;
+}
+
+div.error_message {
+    background-color: @errorMessageColor;
+}
+
+div.success_message {
+    background-color: @successMessageColor;
+}
+
+div#not_authorized {
+    color: @red;
+    margin-bottom: 10px;
+}
+
+// Make the footer stick to the bottom
+// ------------------
+
+html, body {
+    height: 100%;
+}
+
+#wrapper {
+    min-height: 100%;
+    margin-bottom: -@footerHeight;
+}
+
+#footer-push {
+    height: @footerHeight;
+}
+
+footer {
+    height: @footerHeight;
+    background: @base02;
+    color: @base1;
+}
+
+.sidebar-nav {
+
+}

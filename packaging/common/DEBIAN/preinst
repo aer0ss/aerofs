@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Create the aerofs user.
+info=$(id aerofs 2>/dev/null)
+if [ "$info" = "" ]
+then
+    useradd -m -s /bin/bash aerofs
+fi

@@ -1,0 +1,14 @@
+# test if wget of the specified URL returns okay, i.e. HTTP 200.
+#
+# usage: $0 <url>
+#
+# exit 1 if bad arguments
+# exit the exit code of 'wget <url>'
+
+if [ x"$1" == x ]; then
+    echo bad arguments
+    exit 1
+fi
+
+# TODO (WW) restore the timeout to 1 sec once snorby is moved off z.arrowfs.org
+wget --timeout=4 --no-cache -q -O /dev/null "$1"

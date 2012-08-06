@@ -1,0 +1,103 @@
+/*
+ * Created by Allen A. George, Air Computing Inc.
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.daemon.transport.xmpp.routing;
+
+import com.aerofs.daemon.transport.xmpp.IPipe;
+import com.aerofs.lib.id.DID;
+
+import static com.aerofs.daemon.transport.xmpp.routing.ErrorPipe.ERROR_PIPE;
+
+/**
+ * A stream cookie that is always returned by <code>send_</code> calls to
+ * a {@link SignalledPipeFanout}. It remembers the connection-count number of the
+ * {@link com.aerofs.daemon.transport.xmpp.IPipe} used to send a packet to a peer. A difference between
+ * this stored connection count and one available in the system means that a
+ * reconnection occurred.
+ */
+class DIDPipeCookie
+{
+    /**
+     *
+     * @param did
+     */
+    DIDPipeCookie(DID did)
+    {
+        assert did != null : ("invalid args");
+
+        _did = did;
+        _p = ERROR_PIPE;
+    }
+
+    /**
+     *
+     * @param did
+     * @param p
+     * @param routeSeqNum
+     */
+    DIDPipeCookie(DID did, IPipe p, int routeSeqNum)
+    {
+        assert did != null && p != null : ("invalid args");
+
+        _did = did;
+        _p = p;
+        _connSeqNum = routeSeqNum;
+        _set = true;
+    }
+
+    /**
+     *
+     * @param p
+     * @param connSeqNum
+     */
+    void set_(IPipe p, int connSeqNum)
+    {
+        assert !_set : ("set_ already called");
+        assert p != null : ("invalid route");
+
+        _p = p;
+        _connSeqNum = connSeqNum;
+        _set = true;
+    }
+
+    /**
+     * @return
+     */
+    public DID did()
+    {
+        return _did;
+    }
+
+    /**
+     * @return
+     */
+    public IPipe p_()
+    {
+        return _p;
+    }
+
+    /**
+     * @return
+     */
+    public int connSeqNum_()
+    {
+        return _connSeqNum;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean set_()
+    {
+        return _set;
+    }
+
+    private final DID _did;
+
+    private IPipe _p;
+    private int _connSeqNum;
+    private boolean _set = false;
+}

@@ -1,0 +1,142 @@
+package com.aerofs.lib.notifier;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import com.aerofs.lib.Util;
+
+/**
+ * A utility class for listener registration and notification. Support copy-on-write on the
+ * listeners list. It iterates the listeners in the same order as the order in which listeners
+ * are added.
+ *
+ * TODO (WW) this class is duplicate with Notifier in functionality. Consider refactoring.
+ */
+public class Listeners<T>
+{
+    private LinkedHashSet<T> _ls = new LinkedHashSet<T>();
+    private int _iterators;
+    private boolean _copiedOnWrite;
+
+    /**
+     * @return a newly created Listeners object
+     */
+    public static <T> Listeners<T> newListeners()
+    {
+        return new Listeners<T>();
+    }
+
+    /**
+     * this doesn't affect any ongoing iteration over the listeners
+     */
+    public void addListener_(T l)
+    {
+        copyOnWrite(false);
+        if (_ls.isEmpty()) beforeAddFirstListener_();
+        Util.verify(_ls.add(l));
+    }
+
+    /**
+     * this doesn't affect any ongoing iteration over the listeners
+     */
+    public void removeListener_(T l)
+    {
+        copyOnWrite(false);
+        _ls.remove(l);
+        if (_ls.isEmpty()) afterRemoveLastListener_();
+    }
+
+    /**
+     * @return null if there's no listener
+     */
+    public T removeFirstListener_()
+    {
+        copyOnWrite(false);
+        Iterator<T> iter = _ls.iterator();
+        if (iter.hasNext()) {
+            T l = iter.next();
+            iter.remove();
+            if (_ls.isEmpty()) afterRemoveLastListener_();
+            return l;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * this doesn't affect any ongoing iteration over the listeners
+     */
+    public void removeAll_()
+    {
+        copyOnWrite(true);
+        _ls.clear();
+        afterRemoveLastListener_();
+    }
+
+    private void copyOnWrite(boolean removeAll)
+    {
+        if (_iterators != 0) {
+            _copiedOnWrite = true;
+            // iteration is going on. create a new copy of the set to avoid
+            // concurrent modification exception
+            assert _iterators > 0;
+            _ls = removeAll ? new LinkedHashSet<T>() : new LinkedHashSet<T>(_ls);
+        }
+    }
+
+    public boolean hasListeners_()
+    {
+        return !_ls.isEmpty();
+    }
+
+    /**
+     * Usage:
+     *
+     *      try {
+     *          for (T l : startIteratingListeners_()) {
+     *              ...
+     *          }
+     *      } finally {
+     *          endIterating_();
+     *      }
+     *
+     * The returned set iterates the elements in the insertion order. It's
+     * immutable during the iteration, even if the listeners list is updated
+     * during iteration (in which case endIterating_() returns true).
+     */
+    public Set<T> beginIterating_()
+    {
+        _iterators++;
+        return Collections.unmodifiableSet(_ls);
+    }
+
+    /**
+     * @return true if the listeners list has changed during the iteration
+     */
+    public boolean endIterating_()
+    {
+        assert _iterators > 0;
+        _iterators--;
+
+        boolean ret = _copiedOnWrite;
+        _copiedOnWrite = false;
+
+        return ret;
+    }
+
+    protected void beforeAddFirstListener_()
+    {
+    }
+
+    protected void afterRemoveLastListener_()
+    {
+    }
+
+    @Override
+    protected void finalize()
+    {
+        assert _iterators == 0;
+    }
+}

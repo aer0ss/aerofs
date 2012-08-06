@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+    "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+  <!-- config parameters -->
+
+  <context-param>
+    <param-name>labeling_class</param-name>
+    <param-value>com.aerofs.l.AA</param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_endpoint</param-name>
+    <param-value>localhost</param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_user</param-name>
+    <param-value>aerofs_spsv</param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_password</param-name>
+    <param-value>[MYSQL_PASSWORD]</param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_sv_schema</param-name>
+    <param-value>aerofs_sv_beta_staging</param-value>
+  </context-param>
+
+  <!-- servlets -->
+
+  <servlet>
+    <servlet-name>ServletSV</servlet-name>
+    <servlet-class>com.aerofs.sp.server.sv.SVServlet</servlet-class>
+  </servlet>
+
+  <!-- url mapping -->
+
+  <servlet-mapping>
+    <servlet-name>ServletSV</servlet-name>
+    <url-pattern>/sv</url-pattern>
+  </servlet-mapping>
+
+  <!-- Default page to serve -->
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+  </welcome-file-list>
+</web-app>

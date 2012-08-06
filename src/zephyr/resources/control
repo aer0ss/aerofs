@@ -1,0 +1,7 @@
+Package: aerofs-zephyr
+Section: java
+Priority: required
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS zephyr server package.
+Architecture: all
+Depends: default-jdk (>= 1.6)

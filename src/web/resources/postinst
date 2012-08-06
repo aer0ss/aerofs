@@ -1,0 +1,34 @@
+#!/bin/bash
+
+PYHOME=/opt/web/pythonenv
+PYTHON=$PYHOME/bin/python
+
+# Enter temp directory to build python packages
+TMPDIR=/tmp/aerofs_web_build
+mkdir $TMPDIR
+CURRENT=$PWD
+cd $TMPDIR
+
+mkdir -p $PYHOME
+
+# Install virtualenv package and install AeroFS web package in virtualenv
+pip install virtualenv
+virtualenv $PYHOME
+$PYHOME/bin/pip install protobuf
+cd /opt/web
+$PYTHON setup.py install
+
+# Install aerofs.python-lib
+# cd to directory first because setuptools can't find setup.py otherwise
+cd /opt/web/extra/aerofs.python-lib
+$PYTHON setup.py install
+cd $TMPDIR
+
+# restart uwsgi, disable default Nginx configuration, restart Nginx
+/etc/init.d/uwsgi restart
+rm -f /etc/nginx/sites-enabled/default
+service nginx restart
+
+# Back to original directory, clean up temp directory
+cd $CURRENT
+rm -r $TMPDIR

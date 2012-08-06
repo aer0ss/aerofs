@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Start/restart the services manager.
+sudo service aerofs-services-manager restart

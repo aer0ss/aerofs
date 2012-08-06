@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Permissions
+chown -R root:root /opt/aerofs.pagerduty
+chmod a+x /opt/aerofs.pagerduty/probes/*

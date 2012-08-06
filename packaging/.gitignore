@@ -1,0 +1,13 @@
+debs
+*.ver
+zephyr
+verkehr
+web
+sp
+sv
+syncstat
+
+# Python stuff:
+*.pyc
+*.egg-info
+gen

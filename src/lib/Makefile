@@ -1,0 +1,15 @@
+
+all: gen_rpc_service \
+	common.gen_proto \
+	files.gen_proto \
+	fsi.gen_proto \
+	ritual_notifications.gen_proto \
+	ritual.gen_proto \
+	sp.gen_proto \
+	sv.gen_proto \
+	syncstat.gen_proto \
+
+include ../lib/Makefile.common
+
+gen_rpc_service: ${GEN_ROOT}
+	${PROTOC} -I=${RPC_PROTO} --java_out=${GEN_ROOT} ${RPC_PROTO}/rpc_service.proto

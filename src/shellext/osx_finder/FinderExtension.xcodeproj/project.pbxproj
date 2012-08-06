@@ -1,0 +1,652 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1600FB3C147BEE6D001C0A40 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1600FB3B147BEE6D001C0A40 /* SenTestingKit.framework */; };
+		1600FB3D147BEE6D001C0A40 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B45E1455C4AD0049B1B6 /* Cocoa.framework */; };
+		1600FB47147BEE6D001C0A40 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1600FB45147BEE6D001C0A40 /* InfoPlist.strings */; };
+		1600FB4B147BEE6D001C0A40 /* FinderExtensionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1600FB4A147BEE6D001C0A40 /* FinderExtensionTests.m */; };
+		1600FB54147BF750001C0A40 /* AeroNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 1644252814648FE500DE4546 /* AeroNode.m */; };
+		16026EEF145849670078E542 /* AeroSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 16026EED145849670078E542 /* AeroSocket.m */; };
+		16088EE91451C42C00CDFCDC /* AeroUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16088EE51451C42C00CDFCDC /* AeroUtils.mm */; };
+		16088EEA1451C42C00CDFCDC /* AeroContextMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16088EE61451C42C00CDFCDC /* AeroContextMenu.mm */; };
+		163F2F0A1455E46B00762616 /* finder_inject in Resources */ = {isa = PBXBuildFile; fileRef = 1640B4531455C3A40049B1B6 /* finder_inject */; };
+		163F2F0D145600D600762616 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B45E1455C4AD0049B1B6 /* Cocoa.framework */; };
+		163F2F0F14560D4300762616 /* AeroFSFinderExtension.sdef in Resources */ = {isa = PBXBuildFile; fileRef = 163F2F0E14560D4300762616 /* AeroFSFinderExtension.sdef */; };
+		163F2F201457007B00762616 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 163F2F1F1457007B00762616 /* main.m */; };
+		1640B45F1455C4AD0049B1B6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B45E1455C4AD0049B1B6 /* Cocoa.framework */; };
+		1640B4611455C4C90049B1B6 /* ScriptingBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */; };
+		1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252714648FE500DE4546 /* FinderTypes.mm */; };
+		1644252B14648FE500DE4546 /* AeroNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 1644252814648FE500DE4546 /* AeroNode.m */; };
+		1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252C146AE85700DE4546 /* AeroIconPair.mm */; };
+		1658CC92145E9FD4005476FE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC91145E9FD3005476FE /* QuartzCore.framework */; };
+		1658CC97145F2D9C005476FE /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC96145F2D9C005476FE /* Quartz.framework */; };
+		16655B93153FA2620023DE48 /* AeroFSFinderExtension.osax in CopyFiles */ = {isa = PBXBuildFile; fileRef = 16978F82144E3B1B00F92021 /* AeroFSFinderExtension.osax */; };
+		16692664150AD6450072DA1E /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 16692663150AD6450072DA1E /* AsyncSocket.m */; };
+		1670114614840DEC0022673C /* DownloadBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114414840DEC0022673C /* DownloadBadge.icns */; };
+		1670114714840DEC0022673C /* UploadBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114514840DEC0022673C /* UploadBadge.icns */; };
+		16978FA1144E3C2D00F92021 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 16978F9D144E3C2D00F92021 /* InfoPlist.strings */; };
+		16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16A99D5F145B296600C3EA3D /* AeroOverlay.mm */; };
+		16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F60E9C153F6F2B00A25339 /* Shellext.pb.m */; };
+		16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */; };
+		16F8E758144EFF9400F78CD3 /* Common.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E754144EFF9400F78CD3 /* Common.pb.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		163F2F0B1455E4D900762616 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 16978F79144E3B1B00F92021 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1640B4521455C3A40049B1B6;
+			remoteInfo = finder_inject;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1640B4511455C3A40049B1B6 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		16655B91153FA2500023DE48 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = $SRCROOT/build/$CONFIGURATION;
+			dstSubfolderSpec = 0;
+			files = (
+				16655B93153FA2620023DE48 /* AeroFSFinderExtension.osax in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		1600FB3A147BEE6D001C0A40 /* FinderExtensionTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinderExtensionTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1600FB3B147BEE6D001C0A40 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
+		1600FB3F147BEE6D001C0A40 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		1600FB40147BEE6D001C0A40 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		1600FB41147BEE6D001C0A40 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		1600FB44147BEE6D001C0A40 /* FinderExtensionTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "FinderExtensionTests-Info.plist"; sourceTree = "<group>"; };
+		1600FB46147BEE6D001C0A40 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1600FB4A147BEE6D001C0A40 /* FinderExtensionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FinderExtensionTests.m; sourceTree = "<group>"; };
+		1600FB4C147BEE6D001C0A40 /* FinderExtensionTests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "FinderExtensionTests-Prefix.pch"; sourceTree = "<group>"; };
+		16026EED145849670078E542 /* AeroSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroSocket.m; path = src/AeroSocket.m; sourceTree = SOURCE_ROOT; };
+		16026EEE145849670078E542 /* AeroSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroSocket.h; path = src/AeroSocket.h; sourceTree = SOURCE_ROOT; };
+		16088EE51451C42C00CDFCDC /* AeroUtils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroUtils.mm; path = src/AeroUtils.mm; sourceTree = SOURCE_ROOT; };
+		16088EE61451C42C00CDFCDC /* AeroContextMenu.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroContextMenu.mm; path = src/AeroContextMenu.mm; sourceTree = SOURCE_ROOT; };
+		16088EE71451C42C00CDFCDC /* AeroContextMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroContextMenu.h; path = src/AeroContextMenu.h; sourceTree = SOURCE_ROOT; };
+		16088EE81451C42C00CDFCDC /* AeroUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroUtils.h; path = src/AeroUtils.h; sourceTree = SOURCE_ROOT; };
+		16088EEB1451DA8D00CDFCDC /* FinderTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FinderTypes.h; path = src/FinderTypes.h; sourceTree = SOURCE_ROOT; };
+		160E0C85147713D1008855E3 /* AppleEventConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppleEventConstants.h; path = src/AppleEventConstants.h; sourceTree = SOURCE_ROOT; };
+		163F2F0E14560D4300762616 /* AeroFSFinderExtension.sdef */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = AeroFSFinderExtension.sdef; path = src/AeroFSFinderExtension.sdef; sourceTree = SOURCE_ROOT; };
+		163F2F1F1457007B00762616 /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = src/finder_inject/main.m; sourceTree = SOURCE_ROOT; };
+		1640B4531455C3A40049B1B6 /* finder_inject */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = finder_inject; sourceTree = BUILT_PRODUCTS_DIR; };
+		1640B45E1455C4AD0049B1B6 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScriptingBridge.framework; path = System/Library/Frameworks/ScriptingBridge.framework; sourceTree = SDKROOT; };
+		1644252714648FE500DE4546 /* FinderTypes.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FinderTypes.mm; path = src/FinderTypes.mm; sourceTree = SOURCE_ROOT; };
+		1644252814648FE500DE4546 /* AeroNode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroNode.m; path = src/AeroNode.m; sourceTree = SOURCE_ROOT; };
+		1644252914648FE500DE4546 /* AeroNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroNode.h; path = src/AeroNode.h; sourceTree = SOURCE_ROOT; };
+		1644252C146AE85700DE4546 /* AeroIconPair.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroIconPair.mm; path = src/AeroIconPair.mm; sourceTree = SOURCE_ROOT; };
+		1644252D146AE85700DE4546 /* AeroIconPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroIconPair.h; path = src/AeroIconPair.h; sourceTree = SOURCE_ROOT; };
+		1658CC91145E9FD3005476FE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		1658CC96145F2D9C005476FE /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
+		16692661150AD6350072DA1E /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AsyncSocket.h; path = 3rd_party/cocoaasyncsocket/AsyncSocket.h; sourceTree = SOURCE_ROOT; };
+		16692663150AD6450072DA1E /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AsyncSocket.m; path = 3rd_party/cocoaasyncsocket/AsyncSocket.m; sourceTree = SOURCE_ROOT; };
+		1670114414840DEC0022673C /* DownloadBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = DownloadBadge.icns; path = images/DownloadBadge.icns; sourceTree = SOURCE_ROOT; };
+		1670114514840DEC0022673C /* UploadBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = UploadBadge.icns; path = images/UploadBadge.icns; sourceTree = SOURCE_ROOT; };
+		16978F82144E3B1B00F92021 /* AeroFSFinderExtension.osax */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AeroFSFinderExtension.osax; sourceTree = BUILT_PRODUCTS_DIR; };
+		16978F8A144E3B1B00F92021 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		16978F9B144E3C2D00F92021 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = src/Info.plist; sourceTree = SOURCE_ROOT; };
+		16978F9E144E3C2D00F92021 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = InfoPlist.strings; sourceTree = "<group>"; };
+		16978F9F144E3C2D00F92021 /* FinderExtension-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "FinderExtension-Prefix.pch"; path = "src/FinderExtension-Prefix.pch"; sourceTree = SOURCE_ROOT; };
+		16A99D5F145B296600C3EA3D /* AeroOverlay.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroOverlay.mm; path = src/AeroOverlay.mm; sourceTree = SOURCE_ROOT; };
+		16A99D60145B296600C3EA3D /* AeroOverlay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroOverlay.h; path = src/AeroOverlay.h; sourceTree = SOURCE_ROOT; };
+		16F60E9C153F6F2B00A25339 /* Shellext.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Shellext.pb.m; path = gen/Shellext.pb.m; sourceTree = "<group>"; };
+		16F60E9D153F6F2B00A25339 /* Shellext.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Shellext.pb.h; path = gen/Shellext.pb.h; sourceTree = "<group>"; };
+		16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroFinderExt.m; path = src/AeroFinderExt.m; sourceTree = SOURCE_ROOT; };
+		16F8E74A144E47BD00F78CD3 /* AeroFinderExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroFinderExt.h; path = src/AeroFinderExt.h; sourceTree = SOURCE_ROOT; };
+		16F8E754144EFF9400F78CD3 /* Common.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Common.pb.m; path = gen/Common.pb.m; sourceTree = "<group>"; };
+		16F8E756144EFF9400F78CD3 /* Common.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.pb.h; path = gen/Common.pb.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1600FB36147BEE6D001C0A40 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1600FB3C147BEE6D001C0A40 /* SenTestingKit.framework in Frameworks */,
+				1600FB3D147BEE6D001C0A40 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1640B4501455C3A40049B1B6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1640B4611455C4C90049B1B6 /* ScriptingBridge.framework in Frameworks */,
+				1640B45F1455C4AD0049B1B6 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		16978F7F144E3B1B00F92021 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1658CC97145F2D9C005476FE /* Quartz.framework in Frameworks */,
+				1658CC92145E9FD4005476FE /* QuartzCore.framework in Frameworks */,
+				163F2F0D145600D600762616 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1600FB3E147BEE6D001C0A40 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1600FB3F147BEE6D001C0A40 /* AppKit.framework */,
+				1600FB40147BEE6D001C0A40 /* CoreData.framework */,
+				1600FB41147BEE6D001C0A40 /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		1600FB42147BEE6D001C0A40 /* FinderExtensionTests */ = {
+			isa = PBXGroup;
+			children = (
+				1600FB4A147BEE6D001C0A40 /* FinderExtensionTests.m */,
+				1600FB43147BEE6D001C0A40 /* Supporting Files */,
+			);
+			path = FinderExtensionTests;
+			sourceTree = "<group>";
+		};
+		1600FB43147BEE6D001C0A40 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				1600FB44147BEE6D001C0A40 /* FinderExtensionTests-Info.plist */,
+				1600FB45147BEE6D001C0A40 /* InfoPlist.strings */,
+				1600FB4C147BEE6D001C0A40 /* FinderExtensionTests-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		1640B4551455C3A40049B1B6 /* finder_inject */ = {
+			isa = PBXGroup;
+			children = (
+				160E0C85147713D1008855E3 /* AppleEventConstants.h */,
+				163F2F1F1457007B00762616 /* main.m */,
+			);
+			name = finder_inject;
+			path = ../finder_inject;
+			sourceTree = "<group>";
+		};
+		16978F77144E3B1B00F92021 = {
+			isa = PBXGroup;
+			children = (
+				16F8E753144EF66B00F78CD3 /* gen */,
+				16978F8B144E3B1B00F92021 /* src */,
+				16978F8C144E3B1B00F92021 /* Supporting Files */,
+				1600FB42147BEE6D001C0A40 /* FinderExtensionTests */,
+				16978F84144E3B1B00F92021 /* Frameworks */,
+				16978F83144E3B1B00F92021 /* Products */,
+			);
+			sourceTree = "<group>";
+			wrapsLines = 0;
+		};
+		16978F83144E3B1B00F92021 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				16978F82144E3B1B00F92021 /* AeroFSFinderExtension.osax */,
+				1640B4531455C3A40049B1B6 /* finder_inject */,
+				1600FB3A147BEE6D001C0A40 /* FinderExtensionTests.octest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		16978F84144E3B1B00F92021 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1658CC96145F2D9C005476FE /* Quartz.framework */,
+				1658CC91145E9FD3005476FE /* QuartzCore.framework */,
+				16978F8A144E3B1B00F92021 /* Foundation.framework */,
+				1640B45E1455C4AD0049B1B6 /* Cocoa.framework */,
+				1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */,
+				1600FB3B147BEE6D001C0A40 /* SenTestingKit.framework */,
+				1600FB3E147BEE6D001C0A40 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		16978F8B144E3B1B00F92021 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				1640B4551455C3A40049B1B6 /* finder_inject */,
+				16088EEB1451DA8D00CDFCDC /* FinderTypes.h */,
+				1644252714648FE500DE4546 /* FinderTypes.mm */,
+				16F8E74A144E47BD00F78CD3 /* AeroFinderExt.h */,
+				16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */,
+				16088EE71451C42C00CDFCDC /* AeroContextMenu.h */,
+				16088EE61451C42C00CDFCDC /* AeroContextMenu.mm */,
+				16A99D60145B296600C3EA3D /* AeroOverlay.h */,
+				16A99D5F145B296600C3EA3D /* AeroOverlay.mm */,
+				1644252C146AE85700DE4546 /* AeroIconPair.mm */,
+				1644252D146AE85700DE4546 /* AeroIconPair.h */,
+				16088EE81451C42C00CDFCDC /* AeroUtils.h */,
+				16088EE51451C42C00CDFCDC /* AeroUtils.mm */,
+				1644252914648FE500DE4546 /* AeroNode.h */,
+				1644252814648FE500DE4546 /* AeroNode.m */,
+				16026EEE145849670078E542 /* AeroSocket.h */,
+				16026EED145849670078E542 /* AeroSocket.m */,
+				16692661150AD6350072DA1E /* AsyncSocket.h */,
+				16692663150AD6450072DA1E /* AsyncSocket.m */,
+			);
+			name = src;
+			path = FinderExtension;
+			sourceTree = "<group>";
+		};
+		16978F8C144E3B1B00F92021 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				1670114414840DEC0022673C /* DownloadBadge.icns */,
+				1670114514840DEC0022673C /* UploadBadge.icns */,
+				163F2F0E14560D4300762616 /* AeroFSFinderExtension.sdef */,
+				16978F9B144E3C2D00F92021 /* Info.plist */,
+				16978F9C144E3C2D00F92021 /* en.lproj */,
+				16978F9F144E3C2D00F92021 /* FinderExtension-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			path = FinderExtension;
+			sourceTree = "<group>";
+		};
+		16978F9C144E3C2D00F92021 /* en.lproj */ = {
+			isa = PBXGroup;
+			children = (
+				16978F9D144E3C2D00F92021 /* InfoPlist.strings */,
+			);
+			name = en.lproj;
+			path = src/en.lproj;
+			sourceTree = SOURCE_ROOT;
+		};
+		16F8E753144EF66B00F78CD3 /* gen */ = {
+			isa = PBXGroup;
+			children = (
+				16F60E9C153F6F2B00A25339 /* Shellext.pb.m */,
+				16F60E9D153F6F2B00A25339 /* Shellext.pb.h */,
+				16F8E754144EFF9400F78CD3 /* Common.pb.m */,
+				16F8E756144EFF9400F78CD3 /* Common.pb.h */,
+			);
+			name = gen;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1600FB39147BEE6D001C0A40 /* FinderExtensionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1600FB4F147BEE6D001C0A40 /* Build configuration list for PBXNativeTarget "FinderExtensionTests" */;
+			buildPhases = (
+				1600FB35147BEE6D001C0A40 /* Sources */,
+				1600FB36147BEE6D001C0A40 /* Frameworks */,
+				1600FB37147BEE6D001C0A40 /* Resources */,
+				1600FB38147BEE6D001C0A40 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FinderExtensionTests;
+			productName = FinderExtensionTests;
+			productReference = 1600FB3A147BEE6D001C0A40 /* FinderExtensionTests.octest */;
+			productType = "com.apple.product-type.bundle";
+		};
+		1640B4521455C3A40049B1B6 /* finder_inject */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1640B45C1455C3A40049B1B6 /* Build configuration list for PBXNativeTarget "finder_inject" */;
+			buildPhases = (
+				1640B44F1455C3A40049B1B6 /* Sources */,
+				1640B4501455C3A40049B1B6 /* Frameworks */,
+				1640B4511455C3A40049B1B6 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = finder_inject;
+			productName = finder_inject;
+			productReference = 1640B4531455C3A40049B1B6 /* finder_inject */;
+			productType = "com.apple.product-type.tool";
+		};
+		16978F81144E3B1B00F92021 /* AeroFSFinderExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 16978F94144E3B1B00F92021 /* Build configuration list for PBXNativeTarget "AeroFSFinderExtension" */;
+			buildPhases = (
+				16978F7E144E3B1B00F92021 /* Sources */,
+				16978F7F144E3B1B00F92021 /* Frameworks */,
+				16978F80144E3B1B00F92021 /* Resources */,
+				16655B91153FA2500023DE48 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				163F2F0C1455E4D900762616 /* PBXTargetDependency */,
+			);
+			name = AeroFSFinderExtension;
+			productName = FinderExtension;
+			productReference = 16978F82144E3B1B00F92021 /* AeroFSFinderExtension.osax */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		16978F79144E3B1B00F92021 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0410;
+			};
+			buildConfigurationList = 16978F7C144E3B1B00F92021 /* Build configuration list for PBXProject "FinderExtension" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 16978F77144E3B1B00F92021;
+			productRefGroup = 16978F83144E3B1B00F92021 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				16978F81144E3B1B00F92021 /* AeroFSFinderExtension */,
+				1640B4521455C3A40049B1B6 /* finder_inject */,
+				1600FB39147BEE6D001C0A40 /* FinderExtensionTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1600FB37147BEE6D001C0A40 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1600FB47147BEE6D001C0A40 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		16978F80144E3B1B00F92021 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				163F2F0A1455E46B00762616 /* finder_inject in Resources */,
+				16978FA1144E3C2D00F92021 /* InfoPlist.strings in Resources */,
+				163F2F0F14560D4300762616 /* AeroFSFinderExtension.sdef in Resources */,
+				1670114614840DEC0022673C /* DownloadBadge.icns in Resources */,
+				1670114714840DEC0022673C /* UploadBadge.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		1600FB38147BEE6D001C0A40 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1600FB35147BEE6D001C0A40 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1600FB4B147BEE6D001C0A40 /* FinderExtensionTests.m in Sources */,
+				1600FB54147BF750001C0A40 /* AeroNode.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1640B44F1455C3A40049B1B6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				163F2F201457007B00762616 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		16978F7E144E3B1B00F92021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */,
+				16F8E758144EFF9400F78CD3 /* Common.pb.m in Sources */,
+				16088EE91451C42C00CDFCDC /* AeroUtils.mm in Sources */,
+				16088EEA1451C42C00CDFCDC /* AeroContextMenu.mm in Sources */,
+				16026EEF145849670078E542 /* AeroSocket.m in Sources */,
+				16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */,
+				1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */,
+				1644252B14648FE500DE4546 /* AeroNode.m in Sources */,
+				1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */,
+				16692664150AD6450072DA1E /* AsyncSocket.m in Sources */,
+				16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		163F2F0C1455E4D900762616 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1640B4521455C3A40049B1B6 /* finder_inject */;
+			targetProxy = 163F2F0B1455E4D900762616 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		1600FB45147BEE6D001C0A40 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1600FB46147BEE6D001C0A40 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		16978F9D144E3C2D00F92021 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				16978F9E144E3C2D00F92021 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1600FB4D147BEE6D001C0A40 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_LIBRARY_DIR)/Frameworks";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "FinderExtensionTests/FinderExtensionTests-Prefix.pch";
+				INFOPLIST_FILE = "FinderExtensionTests/FinderExtensionTests-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Debug;
+		};
+		1600FB4E147BEE6D001C0A40 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_LIBRARY_DIR)/Frameworks";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "FinderExtensionTests/FinderExtensionTests-Prefix.pch";
+				INFOPLIST_FILE = "FinderExtensionTests/FinderExtensionTests-Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = octest;
+			};
+			name = Release;
+		};
+		1640B45A1455C3A40049B1B6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				DSTROOT = $SOURCE_ROOT/build/;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		1640B45B1455C3A40049B1B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				DSTROOT = $SOURCE_ROOT/build/;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		16978F92144E3B1B00F92021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COPY_PHASE_STRIP = NO;
+				DSTROOT = "";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		16978F93144E3B1B00F92021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DSTROOT = "";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		16978F95144E3B1B00F92021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				DSTROOT = $SOURCE_ROOT/build/;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "src/FinderExtension-Prefix.pch";
+				HEADER_SEARCH_PATHS = "../../3rd_party/protobuf-objc";
+				INFOPLIST_FILE = src/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/ScriptingAdditions/";
+				LIBRARY_SEARCH_PATHS = "../../3rd_party/protobuf-objc/Debug";
+				OTHER_LDFLAGS = "-lProtocolBuffers";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				WRAPPER_EXTENSION = osax;
+			};
+			name = Debug;
+		};
+		16978F96144E3B1B00F92021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				DSTROOT = $SOURCE_ROOT/build/;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "src/FinderExtension-Prefix.pch";
+				HEADER_SEARCH_PATHS = "../../3rd_party/protobuf-objc";
+				INFOPLIST_FILE = src/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/ScriptingAdditions/";
+				LIBRARY_SEARCH_PATHS = "../../3rd_party/protobuf-objc/Release/**";
+				OTHER_LDFLAGS = "-lProtocolBuffers";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				WRAPPER_EXTENSION = osax;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1600FB4F147BEE6D001C0A40 /* Build configuration list for PBXNativeTarget "FinderExtensionTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1600FB4D147BEE6D001C0A40 /* Debug */,
+				1600FB4E147BEE6D001C0A40 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1640B45C1455C3A40049B1B6 /* Build configuration list for PBXNativeTarget "finder_inject" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1640B45A1455C3A40049B1B6 /* Debug */,
+				1640B45B1455C3A40049B1B6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		16978F7C144E3B1B00F92021 /* Build configuration list for PBXProject "FinderExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				16978F92144E3B1B00F92021 /* Debug */,
+				16978F93144E3B1B00F92021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		16978F94144E3B1B00F92021 /* Build configuration list for PBXNativeTarget "AeroFSFinderExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				16978F95144E3B1B00F92021 /* Debug */,
+				16978F96144E3B1B00F92021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 16978F79144E3B1B00F92021 /* Project object */;
+}

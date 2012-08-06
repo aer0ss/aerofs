@@ -1,0 +1,110 @@
+======================================
+AeroFS Deployment Packages and Scripts
+======================================
+
+-----------------
+Accessing Servers
+-----------------
+
+All AeroFS servers are available over ssh, public key access only. Simply add
+your public key to aerofs-common/home/aerofs/.ssh/authorized_keys and roll a
+new aerofs-common package. Now you can access AeroFS servers via the aerofs user
+using your private key.
+
+The password of the AeroFS user is _aerofs!' when (use this if you require root
+access). If for some reason ssh access is broken, you can access the system via
+the AeroFS user console using the hidden AeroFS admin access command
+'inception'.
+
+Most of the time you will only be accessing the system via the admin panel or
+via the bootstrap web interface.
+
+-----------------
+Building Packages
+-----------------
+
+Build all packages (from parent directory):
+    ant debian
+
+Release packages that have been built to staging:
+    make upload
+
+Rebuild all packages and release to staging:
+    make clean all upload
+
+Rebuild a specific package and release to staging:
+    make clean <package> upload
+
+    where <package> does not include the aerofs prefix (examples include common,
+    ca-tools, etc.)
+
+To release debs to production, run in PROD mode:
+    make upload MODE=PROD
+
+etc...
+
+To be able to upload to the apt-repo you need to add your key to the apt server
+(apt.aerofs.com) in ~aerofs/.ssh/authorized_keys. In the future this will be
+managed by puppet.
+
+-------------------
+Directory Structure
+-------------------
+
+tools
+    Tools, utilities, etc., used for building packages and executing unit tests.
+
+aerofs-<package>
+    Debian style package directories. These directories hold static content and
+    dpkg related information for their corresponding package. Each folder has a
+    DEBIAN subdirectory, which contains standard scripts and control files used
+    by dpkg. Everything else under aerofs-<package> will be installed on the
+    target box at the root directory.
+
+    For example, if we had a file aerofs-ca-tools/usr/ca-tools and you installed
+    the aerofs-ca-tools package, a new file /usr/ca-tools would exist on the
+    system.
+
+debs
+    The output folder where the output debian packages are stored. Ignored by
+    git.
+
+python
+    Most python code is stored in aerofs-common/usr/local/aerofs/python; the
+    python directory is just a soft link to that location, for convenient
+    integration with build.xml.
+
+builders
+    In some cases we don't want to or can't keep all package related content in
+    the aerofs-<package> subdirectories (for example, we must dynamically create
+    jars and must copy them from some other location). In this case, the user
+    can create a "builder script" which "builds" the required aerofs-<package>
+    subdirectories, i.e. copies over all the required files.
+
+    The script must be named builder/aerofs-<package>.sh and will be executed
+    automatically by the make scripts.
+
+---------------------------------
+Command Line Manipulation of KVMs
+---------------------------------
+
+In the event that the admin panel is broken or not hooked up for whatever
+reason, you can manipulate the KVMs via the command line. From a root shell (see
+above 'Accessing Servers' for a description of how to do this) type 'virsh'
+(this is the virtual machine console). From here you can manipulate the KVMs.
+Some relevant commands:
+
+    list            list running KVMs.
+    list --all      list all KVMs regardless of state.
+    start <kvm>     start a KVM.
+    stop <kvm>      graceful shutdown of a KVM.
+    destroy <kvm>   dirty shutdown of a KVM.
+    undefine <kvm>  destroy and delete a KVM.
+    edit <kvm>      edit the configuration (memory, etc) of a KVM.
+
+To clone a KVM, from the root shell simply run a variant of the following
+command:
+
+    virt-clone --original <original> --name <new> --file ~root/images/<new>img
+
+That's all folks!

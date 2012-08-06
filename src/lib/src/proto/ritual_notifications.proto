@@ -1,0 +1,63 @@
+package com.aerofs.proto;
+
+import "common.proto";
+
+// remove reflection
+option optimize_for = LITE_RUNTIME;
+
+message PBNotification {
+
+    enum Type {
+        DOWNLOAD = 0;
+        UPLOAD = 1;
+        BAD_CREDENTIAL = 2;
+    }
+
+    required Type type = 1;
+
+    optional PBDownloadEvent download = 2;
+    optional PBUploadEvent upload = 3;
+}
+
+// TODO change to PBUpload/DownloadNotification?
+message PBUploadEvent {
+    required PBSOCKID k = 1;
+    optional PBPath path = 2;   // absent if unknown
+    required bytes device_id = 3;
+    required uint64 done = 4;   // done == total means completion,
+                                // either failure or success
+    required uint64 total = 5;
+}
+
+message PBDownloadEvent {
+
+    enum State {
+        ENQUEUED = 0;
+        STARTED = 1;
+        ONGOING = 2;
+        ENDED = 3;
+    }
+
+    required PBSOCKID k = 1;
+    optional PBPath path = 2;   // absent if unknown
+
+    required State state = 3;
+
+    // for ongoing state only
+    optional uint64 done = 4;
+    optional uint64 total = 5;
+    optional bytes device_id = 6;
+
+    // for ended state only
+    optional bool okay = 7;
+}
+
+////////
+// non-message data structures
+
+message PBSOCKID {
+    required int32 sidx = 1;
+    required bytes oid = 2;
+    required int32 cid = 3;
+    required int32 kidx = 4;
+}

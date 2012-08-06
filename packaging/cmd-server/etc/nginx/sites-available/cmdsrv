@@ -1,0 +1,10 @@
+# Request server (for developers only). Make sure this port is firewalled!
+server {
+    listen 80;
+    access_log off;
+    error_log /var/log/nginx/request.error.log;
+
+    location / {
+        proxy_pass http://localhost:9080;
+    }
+}

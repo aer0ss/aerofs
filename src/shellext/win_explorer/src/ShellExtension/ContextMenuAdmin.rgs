@@ -1,0 +1,22 @@
+HKLM
+{
+	NoRemove Software
+	{
+		NoRemove Microsoft
+		{
+			NoRemove Windows
+			{
+				NoRemove CurrentVersion
+				{
+					NoRemove 'Shell Extensions'
+					{
+						NoRemove Approved
+						{
+							val %CLSID% = s '%DESCRIPTION%'
+						}
+					}
+				}
+			}
+		}
+	}
+}

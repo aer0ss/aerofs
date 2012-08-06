@@ -1,0 +1,46 @@
+package com.aerofs.proto;
+
+//
+// Command Types
+//
+
+enum CommandType {
+    UPLOAD_DATABASE = 0;
+    CHECK_UPDATE = 1;
+}
+
+//
+// Redis and Client Side Messages
+//
+
+message Commands {
+    repeated Command commands = 1;
+}
+
+message Command {
+    required uint64 command_id = 1;
+    required CommandType type = 2;
+    required bytes payload = 3;
+}
+
+//
+// Command Payloads
+//
+
+message CommandUploadDatabase {
+    // Nothing.
+}
+
+message CommandCheckUpdate {
+    // Nothing.
+}
+
+//
+// Command Request
+//
+
+message CommandRequest {
+    required uint32 ttl_hours = 1;
+    required string user_email = 2;
+    required Command command = 3;
+}

@@ -1,0 +1,371 @@
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
+import "files.proto";
+import "common.proto";
+
+service RitualService {
+
+    // Sets the message type used in case of errors
+    rpc __error__(Void) returns(PBException);
+
+    // Dump daemon statistics (for internal use only)
+    rpc DumpStats(DumpStatsCall) returns(DumpStatsReply);
+
+    // Test if the daemon is responsive
+    rpc Heartbeat(Void) returns(Void);
+
+    // Return the attribute of a given file or folder.
+    // Throw NOT_FOUND if the object doesn't exist
+    rpc GetObjectAttributes(GetObjectAttributesCall) returns(GetObjectAttributesReply);
+
+    // Return the list of children names as long with their attributes for a given parent folder.
+    // Throw NOT_FOUND if the parent path doesn't exist
+    // Throw NOT_DIR if the parent path is not a folder
+    rpc GetChildrenAttributes(GetChildrenAttributesCall) returns(GetChildrenAttributesReply);
+
+    // Share a specified folder, and optionally specify the list of users and their roles to be
+    // added the the shared folder. The user that calls this method is always added as an owner of
+    // the shared folder. If the folder is already shared, the method only adds the users specified
+    // in the list. Roles of these users will be overwritten if they already exist.
+    //
+    rpc ShareFolder(ShareFolderCall) returns(ShareFolderReply);
+
+    // Unshare a shared folder and remove all the users from the folder. Nop if the folder is
+    // already unshared.
+    rpc UnshareFolder(UnshareFolderCall) returns(Void);
+
+    rpc ListSharedFolders(Void) returns(ListSharedFoldersReply);
+
+    // Join an existing remote shared folder from this device.
+    // Throw ALREADY_EXIST if the specified path already exists.
+    rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
+
+    // Excluding a folder deletes the folder and its content from the local system and stops
+    // receiving updates from other peers for this folder. Note that excluding a folder is a local
+    // operation and does not affect other peers. This method is a nop if the folder is already
+    // excluded.
+    rpc ExcludeFolder(ExcludeFolderCall) returns(Void);
+
+    // Undo folder exclusion. This method is a nop if the folder is already included.
+    rpc IncludeFolder(IncludeFolderCall) returns(Void);
+
+    // Return a list of excluded folders
+    rpc ListExcludedFolders(Void) returns(ListExcludedFoldersReply);
+
+    // Export a file to a local path
+    rpc ExportFile(ExportFileCall) returns(ExportFileReply);
+
+    // Shutdown the Daemon process. It is used by AeroFS GUI and CLI when quitting.
+    rpc Shutdown(Void) returns(Void);
+
+    // Set users and their roles for a shared folder.
+    // Throw NOT_SHARED if called on a unshared folder
+    rpc SetACL(SetACLCall) returns(Void);
+
+    // Delete users from a shared folder.
+    // Throw NOT_SHARED if called on a unshared folder
+    rpc DeleteACL(DeleteACLCall) returns(Void);
+
+    // Moves AeroFS folder to a new location
+    rpc Relocate(RelocateCall) returns(Void);
+
+    // Get the list of users and their roles for a shared folder. The local user is always included
+    // in the list.
+    rpc GetACL(GetACLCall) returns(GetACLReply);
+
+    rpc ReloadConfig(Void) returns(Void);
+
+    rpc PauseSyncing(Void) returns(Void);
+
+    rpc ResumeSyncing(Void) returns(Void);
+
+    // Get the list of recent activities. This method may block for an extended period of time when
+    // fetching information from remote servers.
+    rpc GetActivities(GetActivitiesCall) returns(GetActivitiesReply);
+
+    // Get per-file sync status
+    rpc GetSyncStatus(GetSyncStatusCall) returns(GetSyncStatusReply);
+
+    ////////
+    // Revision History
+
+    rpc ListRevChildren(ListRevChildrenCall) returns(ListRevChildrenReply);
+
+    rpc ListRevHistory(ListRevHistoryCall) returns(ListRevHistoryReply);
+
+    rpc ExportRevision(ExportRevisionCall) returns(ExportRevisionReply);
+
+    ////////
+    // Methods for testing purposes only. not available on production.
+
+    // Return SOID of the object. Throw NOT_FOUND if the object doesn't exists
+    rpc TestGetObjectIdentifier(TestGetObjectIdentifierCall) returns(TestGetObjectIdentifierReply);
+
+    // Stop the linker. No-op if the linker is paused.
+    rpc TestPauseLinker(Void) returns(Void);
+
+    // Start the linker. No-op if the linker is running.
+    rpc TestResumeLinker(Void) returns(Void);
+}
+
+message DumpStatsCall {
+    required PBDumpStat template = 1;
+}
+
+message DumpStatsReply {
+    required PBDumpStat stats = 1;
+}
+
+message GetExcludedFoldersCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message GetExcludedFoldersReply {
+    // name of excluded folders
+    repeated string name = 1;
+}
+
+message ShareFolderCall {
+    required string user = 1;
+    required PBPath path = 2;
+    repeated PBSubjectRolePair subject_role = 3;
+}
+
+message ShareFolderReply {
+    required bytes share_id = 1;
+}
+
+message UnshareFolderCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message JoinSharedFolderCall {
+    required string user = 1;
+    required bytes share_id = 2;
+    required PBPath path = 3;
+}
+
+message ListSharedFoldersReply {
+    repeated PBPath path = 1;
+}
+
+message GetObjectAttributesCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message GetObjectAttributesReply {
+    required PBObjectAttributes object_attributes = 1;
+}
+
+message GetChildrenAttributesCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message GetChildrenAttributesReply {
+    repeated string children_name = 1;
+    repeated PBObjectAttributes children_attributes = 2;
+}
+
+message ExcludeFolderCall {
+    required PBPath path = 1;
+}
+
+message IncludeFolderCall {
+    required PBPath path = 1;
+}
+
+message ListExcludedFoldersReply {
+    repeated PBPath path = 1;
+}
+
+message ExportFileCall {
+    required PBPath source = 1;
+}
+
+message ExportFileReply {
+    // The daemon exports the file to a temporary file on the local filesystem. This field
+    // specifies the path to the temporary file.
+    // This is necessary to avoid privilege escalation through the daemon.
+    required string dest = 1;
+}
+
+message GetACLCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message GetACLReply {
+    repeated PBSubjectRolePair subject_role = 1;
+}
+
+message SetACLCall {
+    required string user = 1;
+    required PBPath path = 2;
+    repeated PBSubjectRolePair subject_role = 3;
+}
+
+message DeleteACLCall {
+    required string user = 1;
+    required PBPath path = 2;
+    repeated string subject = 3;
+}
+
+message RelocateCall {
+    required string absolute_path = 1;
+}
+
+message GetActivitiesCall {
+    // Whether to return messages in brief
+    required bool brief = 1;
+
+    // maximum number of activities to be returned for one page. see page_token for detail.
+    required uint32 max_results = 2;
+
+    // assuming the client can't display all the activities in a single page, this field specifies
+    // which page to return. when absent, the first page will be returned.
+    optional uint64 page_token = 3;
+}
+
+message GetActivitiesReply {
+
+    enum ActivityType {
+        CREATION = 0x1;
+        MODIFICATION = 0x2;
+        MOVEMENT = 0x4;
+        DELETION = 0x8;
+    }
+
+    message PBActivity {
+        // one or more ActivityTypes combined with OR
+        required uint32 type = 1;
+
+        // the timestamp of the activity
+        required uint64 time = 2;
+
+        required string message = 3;
+
+        // the current path of the file being affected. absent if the activity is not file
+        // operations or the file has been deleted.
+        optional PBPath path = 4;
+    }
+
+    repeated PBActivity activity = 1;
+
+    // Whether some device detail can't be retrieved from the server due to Internet connectivity
+    // problems. Inaccurate information will be shown (e.g. "unknown devices") in the returned
+    // messages.
+    required bool has_unresolved_devices = 2;
+
+    // The page token used by GetActivitiesCall to retrieve the next result page. Absent if the
+    // current page is the last one.
+    optional uint64 page_token = 3;
+}
+
+message ListRevChildrenCall {
+    required PBPath path = 1;
+}
+
+message ListRevChildrenReply {
+    repeated PBRevChild child = 1;
+}
+
+message ListRevHistoryCall {
+    required PBPath path = 1;
+}
+
+message ListRevHistoryReply {
+    repeated PBRevision revision = 1;
+}
+
+message ExportRevisionCall {
+    required PBPath path = 1;
+    required bytes index = 2;
+}
+
+message ExportRevisionReply {
+    // The daemon exports the file to a temporary file on the local filesystem. This field
+    // specifies the path to the temporary file.
+    // This is necessary to avoid privilege escalation through the daemon.
+    required string dest = 1;
+}
+
+message GetSyncStatusCall {
+    required PBPath path = 1;
+}
+
+message GetSyncStatusReply {
+    repeated PBSyncStatus status_list = 1;
+}
+
+message PBObjectAttributes {
+    enum Type {
+        FILE = 0;
+        FOLDER = 1;
+        SHARED_FOLDER = 2;
+    }
+    required Type type = 1;
+
+    // An object has one or more branches iff it is a file and it has been downloaded locally.
+    repeated PBBranch branch = 2;
+
+    required bool excluded = 3;
+}
+
+/**
+ * Each Branch object describes the attributes of a branch of a file. Files that
+ * haven't been downloaded has zero branches. Otherwise, they must have
+ * as least a master branch.
+ */
+message PBBranch {
+
+    // the KIndex of the branch this content attribute refers to. The KIndex of
+    // master branches is always KIndex.MASTER. The value of the field can be
+    // converted to a {@link com.aci.aerofs.lib.id.KIndex} object by using
+    // <code>new KIndex(kidx)</code>
+    required uint32 kidx = 1;
+
+    // content length. see ContentAttr.length() for details
+    required uint64 length = 2;
+}
+
+// Describes one child of a folder in the history tree
+message PBRevChild {
+    required string name = 1;
+    required bool is_dir = 2;
+}
+
+// Describes one revision of a file
+message PBRevision {
+    required bytes index = 1;
+    required uint64 mtime = 2;
+    required uint64 length = 3;
+}
+
+message PBSyncStatus {
+    enum Status {
+        IN_SYNC = 0;            // same version
+        IN_PROGRESS = 2;        // different versions, syncing not started yet
+        OFFLINE = 3;            // different versions, remote device unreachable
+    }
+
+    required Status status = 1;
+    required string user_name = 2;
+    optional string device_name = 3;    // only present for devices of the current user
+}
+
+////////
+// Messages for testing purposes only
+
+message TestGetObjectIdentifierCall {
+    required PBPath path = 1;
+}
+
+message TestGetObjectIdentifierReply {
+    required int32 sidx = 1;
+    required bytes oid = 2;
+}

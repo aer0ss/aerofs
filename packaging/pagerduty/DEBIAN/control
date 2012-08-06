@@ -1,0 +1,7 @@
+Package: aerofs-pagerduty
+Section: admin
+Priority: required
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS pagerduty server package.
+Architecture: all
+Depends: fwknop-client, bsd-mailx

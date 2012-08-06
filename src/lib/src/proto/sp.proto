@@ -1,0 +1,667 @@
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
+import "common.proto";
+import "files.proto";
+
+/**
+ * NOTE: When modifying the service declaration below, if you are not appending your new RPC
+ * calls at the end of the declaration make sure to increment the SP_PROTOCOL_VERSION parameter
+ * in C.java and the sp.version parameter in development.ini and production.ini (in java/web/)
+ */
+
+service SPService {
+
+    // Sets the message type used in case of errors
+    rpc __error__(Void) returns(PBException);
+
+    /**
+     * Sign up a user without a signup code
+     * The user email address must match the allowed domain of the organization
+     * The user will be marked as unverified, and an email verification code will be sent.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExAlreadyExist if the email address is unavailable
+     *   ExNotFound if the provided organization ID is not found
+     *   ExNoPerm if the email address isn't allowed to sign up for this organization
+     */
+    rpc SignUp(SignUpCall) returns(Void);
+
+    /**
+     * Sign up a user using a batch signup code.
+     * The user will be marked as unverified, and an email verification code will be sent.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExAlreadyExist if the email address is unavailable
+     *   ExNotFound if the batch signup code wasn't found
+     */
+    rpc SignUpWithBatch(SignUpWithBatchCall) returns(Void);
+
+    /**
+     * Sign up a user using a targeted signup code.
+     * Since the invitation has been delivered by mail, the user will be marked as verified.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExAlreadyExist if the email address is unavailable
+     *   ExNotFound if the targeted signup code was not found
+     */
+    rpc SignUpWithTargeted(SignUpWithTargetedCall) returns(Void);
+
+    /**
+     * Sign into the SP server. Return the authorization level of the caller.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExBadCredential if username/password combination is incorrect
+     */
+    rpc SignIn(SignInCall) returns(SignInReply);
+
+    /**
+     * Finds the email address and the organization id associated with an
+     * signup code.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExNotFound if the signup code wasn't found
+     */
+    rpc ResolveTargetedSignUpCode(ResolveTargetedSignUpCodeCall)
+            returns (ResolveTargetedSignUpCodeReply);
+
+    /**
+     * Verifies that a batch signup code is valid
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     *   ExNotFound if the signup code wasn't found or if the quota is over
+     */
+     rpc VerifyBatchSignUpCode(VerifyBatchSignUpCodeCall) returns (Void);
+
+    /**
+     * Send a verification code to the user's email address. This function will be called
+     * automatically when a user signs-up, but we may need to call again if the user
+     * can't find the email (spam filter, etc...)
+     *
+     * TODO: Allow the user to update his email address while it's not verified, like dropbox
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExAlreadyExist if the user has already been verified
+     */
+     rpc SendEmailVerification(Void) returns(Void);
+
+    /**
+     * Checks an email verification code, and mark the email address as verified
+     *
+     * Required Auth Level: none (protected by the randomness of the verification code)
+     *
+     * Throws:
+     *   ExNotFound if the verification code wasn't found
+     *   ExAlreadyExist if the user has already been verified
+     */
+     rpc VerifyEmail(VerifyEmailCall) returns(Void);
+
+    /**
+     * Signs out of SP
+     *
+     * Required Auth Level: user
+     */
+    rpc SignOut(Void) returns (Void);
+
+    /**
+     * Creates a certificate for the specified device which is bound to the calling user. Creates
+     * an entry in the device table when this is a new device, i.e. when the recertify flag is set
+     * to false. When the recertify flag is set to true, a new device row will of course not be
+     * added. In either case, once the certificate is created on the CA side, we will create an
+     * entry in the certificate table.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNotFound  if you are trying to recertify a device that does not exist.
+     *   ExNoPerm    if you are trying to recertify a device that does not belong to you.
+     *   ExBadArgs   if the cname does not match the required format (hashed concatenation of user
+     *               email, did).
+     */
+    rpc CertifyDevice(CertifyDeviceCall) returns (CertifyDeviceReply);
+
+    /**
+     * Invite a person to become an AeroFS user of the same organization as the caller's,
+     * or the default organization (as specified by the boolean).
+     * The person will receive an email instructing her to download AeroFS. The email will
+     * also contain a sign-up code to be used in the SignUpWithTargeted call.
+     *
+     * TODO: this function currently accepts inviting several people at once to ease
+     *       transition. Make it single-person in the future.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExAlreadyExist if the email address is already an AeroFS user
+     *   ExNoPerm if the inviter is in the default org, has user level,
+     *            and he's out of heart invite quota
+     *   ExNoPerm if the inviter has user level and the invited email address is outside
+     *            the allowed domain.
+     */
+    rpc InviteUser(InviteUserCall) returns(Void);
+
+    /**
+     * Shares a folder with another user.
+     *
+     * If the user doesn't exist yet, this method will automatically call InviteUser
+     * If the invitee email address is outside the organization's allowed domain, he
+     * will be invited to the default organization.
+     *
+     * Note: this function doesn't change the ACLs. You must also call ShareFolder in
+     *       ritual.proto before calling this.
+     *
+     * TODO: this function currently accepts sharing with several people at once to ease
+     *       transition. Make it single-person in the future.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNoPerm if the sharee is (or would be created) in a different organization *and*
+     *            sharing outside the organization isn't allowed for either the sharer or sharee
+     *   TODO change the exception type below
+     *   ExNoPerm if the caller's email address needs to be verified first.
+     */
+    rpc ShareFolder(ShareFolderCall) returns(Void);
+
+    /**
+     * Retrieves the shareId and folderName associated with a shared folder code.
+     * Without this information, a client can't join a shared folder.
+     *
+     * Calling this function with a valid shared folder code will set the user's email address
+     * as verified.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNotFound if the shared folder code wasn't found
+     *   ExNoPerm if the user email address doesn't match the email address specified in the invitation
+     */
+    rpc ResolveSharedFolderCode(ResolveSharedFolderCodeCall) returns(ResolveSharedFolderCodeReply);
+
+    /**
+     * Returns a list of pending shared folder invitations for the user
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNoPerm if there is at least one pending invitaton and the user email address
+     *            isn't be verified.
+     */
+    rpc ListPendingFolderInvitations(Void) returns(ListPendingFolderInvitationsReply);
+
+    /**
+     * Sends an email to the user
+     *
+     * Required Auth Level: user
+     */
+    rpc EmailUser(EmailUserCall) returns (Void);
+
+    /**
+     * Return the quota of AeroFS "heart menu" invites
+     * This is a legacy of the old system and should disappear once we allow anyone to sign-up.
+     *
+     * Required Auth Level: user
+     */
+    rpc GetHeartInvitesQuota(Void) returns (GetHeartInvitesQuotaReply);
+
+    /**
+     * Get the user's preferences (name, device name, etc)
+     *
+     * Required Auth Level: user
+     */
+    rpc GetPreferences(GetPreferencesCall) returns (GetPreferencesReply);
+
+    /**
+     * Set the user's preferences (name, device name, etc)
+     * Optional fields that aren't present won't be changed
+     *
+     * Required Auth Level: user
+     */
+    rpc SetPreferences(SetPreferencesCall) returns (Void);
+
+    /**
+     * Get the list of users in the system
+     * Used by the admin panel
+     *
+     * Required Auth Level: admin
+     *
+     * Throws:
+     *   ExNoPerm if the user does not have admin privileges
+     */
+    rpc ListUsers(ListUsersCall) returns(ListUsersReply);
+
+    /**
+     * Sends an email to a user with instructions to reset his password. The user
+     * will be sent an email containing a link with a reset password token. The link
+     * will take the user to a form when they can set a new password.
+     * The reset_password token and the new password will be used in the ResetPassword
+     * call.
+     *
+     * Required Auth Level: none
+     *
+     * Throws:
+     * - Nothing... No feedback makes brute force attacks useless
+     *
+     */
+    rpc SendPasswordResetEmail(SendPasswordResetEmailCall) returns(Void);
+
+    /**
+     * Reset a user's password. The user will already have received a reset_password token
+     * via email.
+     *
+     * Required Auth Level: none
+     *
+     *
+     * Throws:
+     * - ExNotFound if the provided token has no associated user account
+     */
+    rpc ResetPassword(ResetPasswordCall) returns(Void);
+
+    /**
+     * Changes a users password.  The old password is replaced with the new password.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     * - ExNoPerm   if the authorization requirements are not met
+     *              if the old password is not correct
+     *
+     */
+    rpc ChangePassword(ChangePasswordCall) returns(Void);
+
+    /**
+     * Set the user's authorization level for SP services
+     *
+     * authlevel: higher than the level of the subject user
+     *            e.g. Admin to set level for User, Super-admin to set level for Admin or User.
+     *                 Admins cannot set level for Admins
+     * throws:
+     * - ExNotFound if the provided user email has no AeroFS account set up.
+     * - ExNoPerm   if the authorization requirements are not met,
+     *              if the new authorization level exceeds that of the caller,
+     *              if the caller does not belong to the same organization as the user email
+     */
+    rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
+
+    /**
+     * Create a new organization, move the authenticated user to it, and give the authenticated user
+     * authlevel ADMIN for the new organization.
+     *
+     * org_allowed_domain defaults to allow any domain, meaning that there is no required domain
+     * name for members of this organization.
+     *
+     * authlevel: USER
+     *
+     * throws:
+     * - ExAlreadyExist if an organization with the same id already exists
+     * - ExBadArg       if the organization id is not a valid domain name
+     *                  if the allowed domain of the organization is not a valid domain name
+     *                  if the user id of the caller does not match the allowed domain of the new
+     *                      organization
+     */
+    rpc AddOrganization(AddOrganizationCall) returns(Void);
+
+    /////////
+    // these are internal API calls only (meant to be called by the daemon only)
+    // Required Auth Level: user for all of them
+
+    rpc GetACL(GetACLCall) returns (GetACLReply);
+    rpc SetACL(SetACLCall) returns (Void);
+    rpc DeleteACL(DeleteACLCall) returns (Void);
+
+    /**
+     * Get the certificate revocations relevant to a specific user, based on the certificate
+     * revocation list epoch number.
+     *
+     * Required Auth Level: user
+     */
+    rpc GetUserCRL(GetUserCRLCall) returns(GetUserCRLReply);
+
+    /**
+     * Get global (full, non-user specific) certificate revocation list.
+     */
+    rpc GetCRL(Void) returns(GetCRLReply);
+
+    /**
+     * Revoke the certificate of a specific device. This will trigger a verkehr notification.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNoPerm       if the user does not own the certificate that they are trying to revoke.
+     *   ExNotFound     if the user is trying to delete a certificate that does not exist.
+     */
+    rpc RevokeDeviceCertificate(RevokeDeviceCertificateCall) returns(Void);
+
+    /**
+     * Revoke the certificates belonging to one user. This will trigger a verkehr notification.
+     *
+     * Required Auth Level: user
+     */
+    rpc RevokeUserCertificates(Void) returns(Void);
+
+    /**
+     * Get information about a device ID.
+     *
+     * Required Auth Level: user
+     */
+    rpc GetDeviceInfo(GetDeviceInfoCall) returns(GetDeviceInfoReply);
+
+    /**
+     * Get list of folders being shared by users in organization
+     *
+     * Throws:
+     *   ExNoPerm       if the user calling this does not have admin privileges
+     */
+    rpc ListSharedFolders(ListSharedFoldersCall) returns(ListSharedFoldersResponse);
+}
+
+message SignUpCall {
+    required string user_id = 1;
+    required bytes credentials = 2; // hashed credentials (some combo of password, etc.)
+    required string first_name = 3;
+    required string last_name = 4;
+    required string organization_id = 5;
+}
+
+message SignUpWithBatchCall {
+    required string batch_signup_code = 1;
+    required string user_id = 2;
+    required bytes credentials = 3; // hashed credentials (some combo of password, etc.)
+    required string first_name = 4;
+    required string last_name = 5;
+}
+
+message SignUpWithTargetedCall {
+    required string targeted_signup_code = 1;
+    required bytes credentials = 3; // hashed credentials (some combo of password, etc.)
+    required string first_name = 4;
+    required string last_name = 5;
+}
+
+message SignInCall {
+    required string user_id = 1;
+    optional bytes credentials = 2;
+}
+
+message SignInReply {
+    required PBAuthorizationLevel auth_level = 1;
+}
+
+message ResolveTargetedSignUpCodeCall {
+    required string tsc = 1;
+}
+
+message ResolveTargetedSignUpCodeReply {
+    required string email_address = 1;
+    required string organization_id = 2;
+}
+
+message VerifyBatchSignUpCodeCall {
+    required string bsc = 1;
+}
+
+message CertifyDeviceCall {
+    required bytes device_id = 1;
+    required bytes csr_bytes = 2;
+    required bool recertify = 3;
+}
+
+message CertifyDeviceReply {
+    required string cert = 1;
+}
+
+message InviteUserCall {
+
+    // email address of the person being invited
+    // TODO: repeated field now to ease transition. Switch to single email_address after
+    repeated string email_addresses = 1;
+
+    // if true, the person will be invited to the default organization rather than
+    // the inviter's organization.
+    required bool invite_to_default_org = 2;
+}
+
+message ShareFolderCall {
+
+    // name of the folder being shared
+    required string folder_name = 3;
+
+    required bytes share_id = 2;
+
+    // email address of the person with whom we want to share
+    // TODO: repeated field now to ease transition. Switch to single email_address after
+    repeated string email_address = 1;
+
+    // Message to the person
+    optional string note = 4;
+}
+
+message ResolveSharedFolderCodeCall {
+    required string shared_folder_code = 1;
+}
+
+message ResolveSharedFolderCodeReply {
+    required string folder_name = 2;
+    required bytes share_id = 1;
+}
+
+message ListPendingFolderInvitationsReply {
+
+    message PBFolderInvitation {
+        required string sharer = 1;       // email address of the sharer
+        required string folder_name = 2;
+        required bytes share_id = 3;
+    }
+
+    repeated PBFolderInvitation invitations = 1;
+}
+
+
+message EmailUserCall {
+    required string subject = 1;
+    required string body = 2;
+}
+
+message GetHeartInvitesQuotaReply {
+        required uint32 count = 1;
+}
+
+message GetPreferencesCall {
+    required bytes device_id = 1;
+}
+
+message GetPreferencesReply {
+    required string first_name = 1;
+    required string last_name = 2;
+    required string device_name = 3;
+}
+
+message SetPreferencesCall {
+    optional string first_name = 2;
+    optional string last_name = 4;
+
+    // if set, it doesn't change the device id, but it allows setting
+    // the device name (below)
+    optional bytes device_id = 1;
+
+    // valid iff device_id is present
+    optional string device_name = 3;
+}
+
+message GetACLCall {
+    required uint64 epoch = 1;
+}
+
+message GetACLReply {
+    message PBStoreACL {
+        required bytes store_id = 1;
+        repeated PBSubjectRolePair subject_role = 2;
+    }
+
+    repeated PBStoreACL store_acl = 1;
+    required uint64 epoch = 2;
+}
+
+message SetACLCall {
+    required bytes store_id = 1;
+    repeated PBSubjectRolePair subject_role = 2;
+}
+
+message DeleteACLCall {
+    required bytes store_id = 1;
+    repeated string subject_list = 2;
+}
+
+message PBACLNotification {
+    required uint64 acl_epoch = 1;
+}
+
+message PBSyncStatNotification {
+    required uint64 ss_epoch = 1;
+}
+
+message VerifyEmailCall {
+    required string verification_code = 1;
+}
+
+/////////////////
+
+message ListUsersCall {
+    // Return only users whose name match this string. Empty string matches all users.
+    optional string search = 1;
+
+    // Maximum number of users returned on one page.
+    // The SP server should enforce a reasonable upper bound for this parameter (like 1000)
+    optional int32 max_results = 2 [default = 100];
+
+    // Offset to start retrieving the results
+    optional int32 offset = 3;
+}
+
+message ListUsersReply {
+    // A subset of the users. There will be at most 'max_results' users
+    repeated PBUser users = 1;
+
+    // Total number of users in the database
+    required int32 total_count = 2;
+
+    // Total number of users in the database that match the 'search' parameter
+    required int32 filtered_count = 3;
+}
+
+message PBUser {
+    // N.B. the user_email is assumed to be the user's unique ID on the SP Database
+    required string user_email = 1;
+    required string first_name = 2;
+    required string last_name = 3;
+}
+
+message SetAuthorizationLevelCall {
+    required string user_email = 1;
+    required PBAuthorizationLevel auth_level = 2;
+}
+
+enum PBAuthorizationLevel {
+    USER       = 1;
+    ADMIN      = 2;
+    SUPERADMIN = 3;
+}
+
+message AddOrganizationCall {
+    required string org_id = 1;
+    required string org_name = 2;
+    required bool allow_open_sharing = 3;
+
+    optional string org_allowed_domain = 4;
+}
+
+message SendPasswordResetEmailCall {
+    required string user_email = 1;
+}
+
+message ResetPasswordCall {
+    // Token to be included in email
+    required string password_reset_token = 1;
+    required bytes new_credentials = 2;
+}
+
+message ChangePasswordCall {
+    required bytes old_credentials = 1;
+    required bytes new_credentials = 2;
+}
+
+message GetUserCRLCall {
+    required uint64 crl_epoch = 1;
+}
+
+message GetUserCRLReply {
+    required uint64 crl_epoch = 1;
+    repeated uint64 serial = 2;
+}
+
+message GetCRLReply {
+    repeated uint64 serial = 1;
+}
+
+message RevokeDeviceCertificateCall {
+    required bytes device_id = 1;
+}
+
+message GetDeviceInfoCall {
+    repeated bytes device_id = 1;
+}
+
+message GetDeviceInfoReply {
+
+    message PBDeviceInfo {
+        // These fields are absent if:
+        // 1) the device ID is not found, or
+        // 2) the caller is not sharing any folder with the device owner.
+        optional PBUser owner = 1;
+        optional string device_name = 2;
+    }
+
+    repeated PBDeviceInfo device_info = 1;
+}
+
+message ListSharedFoldersCall {
+    // Maximum number of folders returned.
+    optional int32 max_results = 1 [default = 100];
+
+    // Offset into results
+    optional int32 offset = 2;
+}
+
+message ListSharedFoldersResponse {
+    message PBSharedFolder {
+        required string store_id = 1;                   // store id (unique identifier)
+        repeated PBSubjectRolePair subject_role = 2;    // list of users
+
+        /**
+         * TODO: Find a way to return folder names that are up to date, and change store_id to type
+         *       bytes when we do so (currently string because we need a user-displayable version
+         *       of store_id in the admin panel)
+         * required string name = 3;
+         */
+    }
+
+    repeated PBSharedFolder shared_folders = 1;
+
+    // Total number of shared folders in the database for this organization
+    required int32 total_count = 2;
+}

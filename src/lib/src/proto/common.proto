@@ -1,0 +1,111 @@
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
+/**
+ * PBPath specifies an *absolute* path of a object under AeroFS root.
+ *
+ * {@link com.aci.aerofs.lib.fsi.FSIUtil} provides several helper functions to
+ * ease generation, access, and comparison of PBSOPath objects.
+ */
+message PBPath {
+    /**
+     * A list of object path elements. The 0th element refers to the object
+     * directly under the root of the store, the 1st element to the object under
+     * the 0th one, and so on. An empty list refers to the store's root.
+     */
+    repeated string elem = 1;
+}
+
+message PBVer {
+    repeated bytes device_id = 1;
+    repeated uint64 tick = 2 [packed=true];
+}
+
+/**
+ * Intended for rpc calls and replies that take no parameter
+ */
+message Void {}
+
+/**
+ * Protobuf representation of exceptions
+ */
+message PBException {
+
+
+    //
+    // All the following exception enum types map one-to-one to subclasses of AbstractExWirable
+    // eg. BAD_ARGS is represented in Java as ExBadArgs
+    //
+
+    enum Type {
+        INTERNAL_ERROR = 0;
+
+        // These type names strictly map to Java exception types. e.g. BAD_ARGS maps to ExBadArgs.
+        ABORTED = 2;
+        ALREADY_EXIST = 3;
+        BAD_ARGS = 4;
+        NO_PERM = 6;
+        NO_RESOURCE = 7;         // TODO (GS): Rename to something more meaningful (SYSTEM_BUSY?)
+        NOT_DIR = 8;
+        NOT_FILE = 9;
+        NOT_FOUND = 10;
+        OUT_OF_SPACE = 11;
+        PROTOCOL_ERROR = 12;
+        TIMEOUT = 13;
+        DEVICE_OFFLINE = 14;
+        NO_AVAIL_DEVICE = 15;
+        CHILD_ALREADY_SHARED = 16;
+        PARENT_ALREADY_SHARED = 17;
+
+        ////////////////////////////////////////////////////
+        // Core exception types
+        ////////////////////////////////////////////////////
+
+        UPDATE_IN_PROGRESS = 100;
+        NO_NEW_UPDATE = 101;
+
+        ////////////////////////////////////////////////////
+        // Ritual exception types
+        ////////////////////////////////////////////////////
+
+        NOT_SHARED = 200;
+        EXCLUDED = 201;
+
+        ////////////////////////////////////////////////////
+        // Controller exception types
+        ////////////////////////////////////////////////////
+
+        FOO_BAR_BAZ_QUX = 300;
+
+        ////////////////////////////////////////////////////
+        // SP exception types
+        ////////////////////////////////////////////////////
+
+        BAD_CREDENTIAL = 400;
+    }
+
+    required Type type = 1;
+
+    /**
+     * User-friendly error message, if available.
+     * This message *can* be displayed to the user, and should be localized if possible.
+     */
+    optional string localized_message = 2;
+
+    /**
+     * The call stack of the exception, if available. Note that stack trace should not be sent
+     * across machine boundaries for security concerns.
+     */
+    optional string stack_trace = 3;
+}
+
+enum PBRole {
+    VIEWER = 1;     // read
+    EDITOR = 2;     // read, write
+    OWNER  = 3;     // read, write, manage users
+}
+
+message PBSubjectRolePair {
+    required string subject = 1;
+    required PBRole role = 2;
+}
