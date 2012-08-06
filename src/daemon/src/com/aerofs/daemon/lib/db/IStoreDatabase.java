@@ -23,12 +23,14 @@ public interface IStoreDatabase
     void delete_(SIndex sidx, Trans t) throws SQLException;
 
     /**
-     * Do not use directly! See {@link Stores.getDeviceMapping_}
+     * Do not use directly!
+     * See {@link com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap#getDeviceMapping_}
      */
     byte[] getDeviceMapping_(SIndex sidx) throws SQLException;
 
     /**
-     * Do not use directly! See {@link Stores.addDevice_}
+     * Do not use directly!
+     * See {@link com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap#addDevice_}
      */
-    void setDeviceMapping_(SIndex sidx, byte mapping[]) throws SQLException;
+    void setDeviceMapping_(SIndex sidx, byte mapping[], Trans t) throws SQLException;
 }

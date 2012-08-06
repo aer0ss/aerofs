@@ -124,7 +124,11 @@ public class ShProgram implements IProgram, ICallback<ShProgram>
         _s.addCommand_(new CmdRevisions());
         _s.addCommand_(new CmdPassword());
         _s.addCommand_(new CmdActivities());
-        _s.addCommand_(new CmdSyncStatus());
+
+        // TODO(huguesb): remove conditional when sync stat is enabled in prod
+        if (Cfg.staging()) {
+            _s.addCommand_(new CmdSyncStatus());
+        }
 
         // restricted
         if (Cfg.staging() || Cfg.isSP()) {

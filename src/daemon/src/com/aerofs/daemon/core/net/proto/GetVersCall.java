@@ -12,6 +12,7 @@ import java.util.Set;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ex.ExAborted;
@@ -29,7 +30,6 @@ import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.net.OutgoingStreams;
 import com.aerofs.daemon.core.net.OutgoingStreams.OutgoingStream;
 import com.aerofs.daemon.core.net.RPC;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
@@ -70,7 +70,7 @@ public class GetVersCall
     private final GetVersReply _pgvr;
     private final Metrics _m;
     private final OutgoingStreams _oss;
-    private final IMapSIndex2Store _sidx2s;
+    private final MapSIndex2Store _sidx2s;
     private final IPulledDeviceDatabase _pulleddb;
     private final TokenManager _tokenManager;
     // The following dependency exists only to use and log OAs in
@@ -83,7 +83,7 @@ public class GetVersCall
 
     @Inject
     public GetVersCall(OutgoingStreams oss, Metrics m, GetVersReply pgvr, NSL nsl, RPC rpc,
-            NativeVersionControl nvc, ImmigrantVersionControl ivc, IMapSIndex2Store sidx2s,
+            NativeVersionControl nvc, ImmigrantVersionControl ivc, MapSIndex2Store sidx2s,
             IPulledDeviceDatabase pddb, TokenManager tokenManager, DirectoryService ds,
             TransManager tm)
     {

@@ -11,15 +11,12 @@ import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
@@ -27,22 +24,16 @@ import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.spsv.SPBlockingClient;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
-import com.aerofs.proto.Sp.GetDeviceInfoReply;
-import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.*;
 
 import java.io.File;
-import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,25 +53,20 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
     private final ActivityLog _al;
     private final DirectoryService _ds;
     private final DID2User _d2u;
-    private final IUserAndDeviceNameDatabase _udndb;
-    private final TransManager _tm;
+    private final UserAndDeviceNames _udinfo;
     private final CfgLocalUser _cfgLocalUser;
     private final CfgLocalDID _cfgLocalDID;
-    private final SPBlockingClient.Factory _factSP;
 
     @Inject
     public HdGetActivities(ActivityLog al, DirectoryService ds, DID2User d2u,
-            IUserAndDeviceNameDatabase udndb, TransManager tm, CfgLocalUser cfgLocalUser,
-            CfgLocalDID cfgLocalDID, SPBlockingClient.Factory factSP)
+            UserAndDeviceNames udinfo, CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID)
     {
         _al = al;
         _ds = ds;
         _d2u = d2u;
-        _udndb = udndb;
-        _tm = tm;
+        _udinfo = udinfo;
         _cfgLocalUser = cfgLocalUser;
         _cfgLocalDID = cfgLocalDID;
-        _factSP = factSP;
     }
 
     @Override
@@ -102,56 +88,14 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 
         // There are unresolved devices. Retrieve their information from SP and then compose the
         // activities again.
-
-        // convert the set of devices into an ordered list so we can correspond the list returned
-        // from SP with the supplied list.
-        ArrayList<DID> dids = Lists.newArrayList(res._unresolvedDIDs);
-
-        GetDeviceInfoReply reply;
-        try {
-            SPBlockingClient sp = _factSP.create_(SP.URL, _cfgLocalUser.get());
-            sp.signInRemote();
-            List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
-            for (DID did : dids) pb.add(did.toPB());
-            reply = sp.getDeviceInfo(pb);
-        } catch (Exception e) {
-            Util.l(this).warn("ignored: " + Util.e(e, IOException.class));
-            // Ignore and return with whatever we got from the previous call of getActivities_()..
-            return res;
+        if (_udinfo.updateLocalDeviceInfo(Lists.newArrayList(res._unresolvedDIDs))) {
+            // try again only if the call to SP succeeded
+            res = getActivitiesLocally_(brief, maxResults, pageToken);
+            // Even though we've successfully retrieved information from SP, some devices can still
+            // be left unresolved if SP didn't reveal their detail for privacy reasons. In this case
+            // we would ignore these devices by setting the unresolvedDIDs list to empty.
+            res._unresolvedDIDs = Collections.emptySet();
         }
-
-        if (reply.getDeviceInfoCount() != dids.size()) {
-            throw new ExProtocolError("server reply count mismatch (" +
-                    reply.getDeviceInfoCount() + " != " + res._unresolvedDIDs.size() + ")");
-        }
-
-        Trans t = _tm.begin_();
-        try {
-            for (int i = 0; i < dids.size(); i++) {
-                DID did = dids.get(i);
-                // guaranteed by the above code
-                assert i < reply.getDeviceInfoCount();
-                PBDeviceInfo di = reply.getDeviceInfo(i);
-
-                _udndb.setDeviceName_(did, di.hasDeviceName() ? di.getDeviceName() : null, t);
-                if (di.hasOwner()) {
-                    String user = di.getOwner().getUserEmail();
-                    if (_d2u.getFromLocalNullable_(did) == null) _d2u.addToLocal_(did, user, t);
-                    FullName fn = new FullName(di.getOwner().getFirstName(),
-                            di.getOwner().getLastName());
-                    _udndb.setUserName_(user, fn, t);
-                }
-            }
-            t.commit_();
-        } finally {
-            t.end_();
-        }
-
-        res = getActivitiesLocally_(brief, maxResults, pageToken);
-        // Even though we've successfully retrieved information from SP, some devices can still be
-        // left unresolved if SP didn't reveal their detail for privacy reasons. In this case, we
-        // would ignore these devices by setting the unresolvedDIDs list to empty.
-        res._unresolvedDIDs = Collections.emptySet();
         return res;
     }
 
@@ -268,7 +212,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
                         continue;
                     }
 
-                    String name = _udndb.getDeviceNameNullable_(did);
+                    String name = _udinfo.getDeviceNameNullable_(did);
                     if (name == null) {
                         unresolvedDIDs.add(did);
                         myUnknownDevices++;
@@ -301,7 +245,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
                 return sb;
             }
 
-            FullName fullName = _udndb.getUserNameNullable_(user);
+            FullName fullName = _udinfo.getUserNameNullable_(user);
             if (fullName == null) {
                 // use the user's email address if the user name is not found
                 sb.append(user);

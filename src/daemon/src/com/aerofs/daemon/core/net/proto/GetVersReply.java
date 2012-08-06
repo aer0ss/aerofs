@@ -10,7 +10,7 @@ import java.util.Queue;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -48,13 +48,13 @@ public class GetVersReply
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
     private final TransManager _tm;
-    private final IMapSIndex2Store _sidx2s;
+    private final MapSIndex2Store _sidx2s;
     private final IPulledDeviceDatabase _pulleddb;
 
     @Inject
     public GetVersReply(TransManager tm, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, UpdateSenderFilter pusf,
-            IncomingStreams iss, IMapSIndex2Store sidx2s,
+            IncomingStreams iss, MapSIndex2Store sidx2s,
             IPulledDeviceDatabase pddb)
     {
         _tm = tm;

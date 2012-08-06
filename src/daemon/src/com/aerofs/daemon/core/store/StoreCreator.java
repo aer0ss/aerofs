@@ -32,7 +32,7 @@ public class StoreCreator
     private IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public void inject_(CfgRootSID cfgRootSID, IMapSIndex2Store sidx2s, NativeVersionControl nvc,
+    public void inject_(CfgRootSID cfgRootSID, MapSIndex2Store sidx2s, NativeVersionControl nvc,
             ImmigrantVersionControl ivc, IMetaDatabase mdb, IMapSID2SIndex sid2sidx, IStores ss,
             IPhysicalStorage ps)
     {

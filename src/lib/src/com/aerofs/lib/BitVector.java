@@ -6,7 +6,8 @@ import java.util.Arrays;
  * A simple bitvector implementation that grows as needed
  *
  */
-public class BitVector {
+public class BitVector
+{
 
     private int _size;
     private byte[] _d;
@@ -16,7 +17,8 @@ public class BitVector {
      * @param size in bits
      * @return minimum number of bytes required to hold the given amount of bits
      */
-    private int byteCount(int size) {
+    private int byteCount(int size)
+    {
         final int BITS_PER_BYTE = 8;
         // add BITS_PER_BYTE-1 to the input for proper upwards rounding
         return (size + BITS_PER_BYTE - 1) / BITS_PER_BYTE;
@@ -25,7 +27,8 @@ public class BitVector {
     /**
      * grow the underlying byte array
      */
-    private void grow(int minSize) {
+    private void grow(int minSize)
+    {
         assert minSize > _size;
         _size = minSize;
         _d = Arrays.copyOf(_d, byteCount(minSize));
@@ -34,7 +37,8 @@ public class BitVector {
     /**
      * Create an empty bit vector
      */
-    public BitVector() {
+    public BitVector()
+    {
         _d = new byte[0];
     }
 
@@ -43,7 +47,8 @@ public class BitVector {
      * @param size size in bits of the vector to create
      * @param value default value for bits in the vector
      */
-    public BitVector(int size, boolean value) {
+    public BitVector(int size, boolean value)
+    {
         assert size >= 0;
         _size = size;
         _d = new byte[byteCount(size)];
@@ -64,7 +69,8 @@ public class BitVector {
      *
      * The byte->bit mapping in the input array is expected to be the same as what data() returns.
      */
-    public BitVector(int size, byte[] d) {
+    public BitVector(int size, byte[] d)
+    {
         assert size >= 0;
         _size = size;
         _d = Arrays.copyOf(d, byteCount(size));
@@ -76,10 +82,27 @@ public class BitVector {
     }
 
     /**
+     * Create a bit vector and populate it from a sequence of boolean values
+     * @param values
+     */
+    public BitVector(boolean... values)
+    {
+        _size = values.length;
+        _d = new byte[byteCount(_size)];
+        Arrays.fill(_d, (byte)0);
+        for (int i = 0; i < values.length; ++i) {
+            if (values[i]) {
+                set(i);
+            }
+        }
+    }
+
+    /**
      * Create a copy of a bit vector
      * @param bv bit vector to copy
      */
-    public BitVector(BitVector bv) {
+    public BitVector(BitVector bv)
+    {
         _size = bv._size;
         _d = Arrays.copyOf(bv._d, byteCount(_size));
     }
@@ -87,7 +110,8 @@ public class BitVector {
     /**
      * @return size in bits of the vector
      */
-    public int size() {
+    public int size()
+    {
         return _size;
     }
 
@@ -96,7 +120,8 @@ public class BitVector {
      *
      * vector(abcdefghijklmnop...) -> byte[] { hgfedcba, ponmlkji, ... }
      */
-    public byte[] data() {
+    public byte[] data()
+    {
         return _d;
     }
 
@@ -105,7 +130,8 @@ public class BitVector {
      * NB: vectors of different size can be equal if all the extra bits are reset.
      */
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
         if (!(o instanceof BitVector))
             return false;
         BitVector bv = (BitVector)o;
@@ -126,7 +152,8 @@ public class BitVector {
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         StringBuilder bd = new StringBuilder();
         bd.append("BitVector(");
         for (int i = 0; i < _size; ++i)
@@ -143,7 +170,8 @@ public class BitVector {
      * Negative index values will cause an assert failure (or {@link IndexOutOfBoundsException}
      * if assertions are disabled). Indices larger than the vector size will be evaluated as false.
      */
-    public boolean test(int idx) {
+    public boolean test(int idx)
+    {
         return test(idx, false);
     }
 
@@ -156,7 +184,8 @@ public class BitVector {
      * Negative index values will cause an assert failure (or {@link IndexOutOfBoundsException}
      * if assertions are disabled).
      */
-    public boolean test(int idx, boolean defaultValue) {
+    public boolean test(int idx, boolean defaultValue)
+    {
         assert idx >= 0;
         if (idx >= _size) return defaultValue;
         return (_d[idx / 8] & (1 << (idx % 8))) != 0;
@@ -167,7 +196,8 @@ public class BitVector {
      * @param idx Index of the bit to set
      * @param value new value of the bit
      */
-    public void set(int idx, boolean value) {
+    public void set(int idx, boolean value)
+    {
         if (value)
             set(idx);
         else
@@ -178,7 +208,8 @@ public class BitVector {
      * Set a bit of the vector
      * @param idx Index of the bit to set
      */
-    public void set(int idx) {
+    public void set(int idx)
+    {
         assert idx >= 0;
         if (idx >= _size) grow(idx + 1);
         _d[idx / 8] |= (1 << (idx % 8));
@@ -188,7 +219,8 @@ public class BitVector {
      * Invert a bit of the vector
      * @param idx Index of the bit to flip
      */
-    public void flip(int idx) {
+    public void flip(int idx)
+    {
         assert idx >= 0;
         if (idx >= _size) grow(idx + 1);
         _d[idx / 8] ^= (1 << (idx % 8));
@@ -198,7 +230,8 @@ public class BitVector {
      * Reset a bit of the vector
      * @param idx Index of the bit to reset
      */
-    public void reset(int idx) {
+    public void reset(int idx)
+    {
         assert idx >= 0;
         if (idx >= _size) return;
         _d[idx / 8] &= ~(1 << (idx % 8));

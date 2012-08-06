@@ -30,7 +30,6 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     private final Expulsion _expulsion;
     private final StoreDeleter _sd;
     private final IMapSID2SIndex _sid2sidx;
-    private final IMetaDatabase _mdb;
 
     @Inject
     public AdmittedToExpelledAdjuster(StoreDeleter sd, Expulsion expulsion,
@@ -42,7 +41,6 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
         _ps = ps;
         _nvc = nvc;
         _ds = ds;
-        _mdb = mdb;
         _sid2sidx = sid2sidx;
     }
 
@@ -84,7 +82,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
                     // expelled objects should be considered out-of-sync. This is especially important
                     // to make sure they are not mistakenly considered in sync when they are readmitted.
-                    _mdb.clearSyncStatus_(oa.soid(), t);
+                    _ds.clearSyncStatus_(oa.soid(), t);
 
                     _expulsion.fileExpelled_(oa.soid());
                     return null;
@@ -92,7 +90,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                 case DIR:
                     // expelled objects should be considered out-of-sync. This is especially important
                     // to make sure they are not mistakenly considered in sync when they are readmitted.
-                    _mdb.clearSyncStatus_(oa.soid(), t);
+                    _ds.clearSyncStatus_(oa.soid(), t);
 
                     // skip children if the expulsion state of the current object doesn't change
                     return oldExpelled ? null : pathOld;

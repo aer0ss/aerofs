@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.NSL;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
@@ -16,10 +16,10 @@ import com.google.inject.Inject;
 public class UpdateSenderFilter
 {
     private final NSL _nsl;
-    private final IMapSIndex2Store _sidx2s;
+    private final MapSIndex2Store _sidx2s;
 
     @Inject
-    public UpdateSenderFilter(NSL nsl, IMapSIndex2Store sidx2s)
+    public UpdateSenderFilter(NSL nsl, MapSIndex2Store sidx2s)
     {
         _nsl = nsl;
         _sidx2s = sidx2s;

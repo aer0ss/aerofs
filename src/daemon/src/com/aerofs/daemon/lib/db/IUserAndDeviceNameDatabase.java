@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 /**
- * When possible, use the UserAndDeviceInfo class which provides a high-level wrapper around this
+ * When possible, use the UserAndDeviceNames class which provides a high-level wrapper around this
  * low-level class.
  */
 public interface IUserAndDeviceNameDatabase

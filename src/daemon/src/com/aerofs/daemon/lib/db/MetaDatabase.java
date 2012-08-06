@@ -652,7 +652,8 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psSet.setBytes(3, soid.oid().getBytes());
 
             int affectedRows = _psSet.executeUpdate();
-            assert affectedRows == 1 : ("Duplicate SOID");
+            // NOTE: Silently ignore missing SOID (should we use a boolean return flag instead?)
+            assert affectedRows <= 1;
         } catch (SQLException e) {
             _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSet);

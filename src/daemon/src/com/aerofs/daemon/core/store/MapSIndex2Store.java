@@ -14,7 +14,7 @@ import com.google.common.collect.Maps;
  * This class maintains the mapping from SIndex to Store objects, which represent locally present
  * stores.
  */
-public class MapSIndex2Store implements IMapSIndex2Store
+public class MapSIndex2Store
 {
     private Store.Factory _factStore;
 
@@ -26,13 +26,17 @@ public class MapSIndex2Store implements IMapSIndex2Store
         _factStore = factStore;
     }
 
-    @Override
+    /**
+     * @return the store object corresponding to the sidx, null if not found
+     */
     public Store getNullable_(SIndex sidx)
     {
         return _sidx2s.get(sidx);
     }
 
-    @Override
+    /**
+     * @return the store object corresponding to the sidx. Assertion failure if not found.
+     */
     public Store get_(SIndex sidx)
     {
         Store s = getNullable_(sidx);
@@ -40,7 +44,10 @@ public class MapSIndex2Store implements IMapSIndex2Store
         return s;
     }
 
-    @Override
+    /**
+     * @return always a valid store object corresponding to the sidx
+     * @throws ExNotFound if there is no corresponding store
+     */
     public Store getThrows_(SIndex sidx) throws ExNotFound
     {
         Store s = getNullable_(sidx);

@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.io.IOException;
 
+import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
@@ -41,6 +42,7 @@ public class Core implements IModule
     private final CoreQueue _q;
     private final TC _tc;
     private final ACLNotificationSubscriber _aclsub;
+    private final SyncStatusNotificationSubscriber _sssub;
     private final UnicastInputOutputStack _stack;
     private final ILinker _linker;
     private final RitualNotificationServer _notifier;
@@ -59,6 +61,7 @@ public class Core implements IModule
             ImmigrantVersionControl ivc,
             CoreDBCW dbcw,
             ACLNotificationSubscriber aclsub,
+            SyncStatusNotificationSubscriber sssub,
             UnicastInputOutputStack stack,
             RitualNotificationServer notifier,
             ILinker linker,
@@ -75,6 +78,7 @@ public class Core implements IModule
         _ivc = ivc;
         _dbcw = dbcw;
         _aclsub = aclsub;
+        _sssub = sssub;
         _stack = stack;
         _linker = linker;
         _notifier = notifier;
@@ -132,6 +136,7 @@ public class Core implements IModule
         _tc.start_();
         _linker.start_();
         _aclsub.start_();
+        _sssub.start_();
         _notifier.start_();
     }
 

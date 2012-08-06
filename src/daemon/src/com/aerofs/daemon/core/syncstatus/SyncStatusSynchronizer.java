@@ -4,16 +4,37 @@ import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.concurrent.Callable;
 
 import com.aerofs.daemon.core.ActivityLog;
 import com.aerofs.daemon.core.ActivityLog.IActivityLogListener;
+import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.store.DeviceBitMap;
+import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.daemon.lib.ExponentialRetry;
+import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.BitVector;
+import com.aerofs.lib.cfg.CfgBuildType;
+import com.aerofs.lib.id.OID;
+import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.SIndex;
+import com.aerofs.proto.Sp.PBSyncStatNotification;
+import com.aerofs.proto.Syncstat.GetSyncStatusReply;
+import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
+import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -40,34 +61,68 @@ import com.google.protobuf.ByteString;
 /**
  * This class keeps local sync status information in sync with the central server.
  *
+ * There are three main aspects to the sync status synchronizer logic :
+ *
+ *  1) push: Whenever a new changes happen locally (catched by the ActivityLog) the synchronizer
+ *  will scan the activity log table for modified SOIDs, compute their new version hash and send it
+ *  to the server (which should result in a new epoch being received from verkher soon after). After
+ *  successful push of a version hash, the local push epoch is updated. This epoch is basically the
+ *  index of the last row of the activity log table successfully pushed.
+ *
+ *  2) pull : Whenever a new pull epoch is received through {@link SyncStatusNotificationSubscriber}
+ *  the synchronizer compares it to the last known pull epoch and initiates pull from the server if
+ *  needed. The pull epoch is assigned by the syncstatus server at device granularity and increases
+ *  with every change made that could result in an out-of-sync state between two devices.
+ *  For performance reasons, the notification allows a "fast-forward" : the last updated sync status
+ *  can be included in the notification, allowing the client to update its DB without an extra round
+ *  trip if the epoch difference is exactly one.
+ *
+ *  3) startup : The startup phase is responsible for flushing any local information not yet
+ *  transmitted to the sync status server and pulling the server for new information (to account
+ *  for dropped verkher notifications).
  */
 public class SyncStatusSynchronizer
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
     private final TC _tc;
+    private final CoreQueue _q;
     private final TransManager _tm;
     private final LocalSyncStatus _lsync;
     private final SyncStatBlockingClient.Factory _ssf;
     private final IActivityLogDatabase _aldb;
     private final NativeVersionControl _nvc;
-    // TODO (MJ) rename to whichever interface you actually need
-    private final SIDMap _sidmap;
+    private final IMapSIndex2SID _sidx2sid;
+    private final IMapSID2SIndex _sid2sidx;
+    private final MapSIndex2DeviceBitMap _sidx2dbm;
+    private final DirectoryService _ds;
+    private final ExponentialRetry _er;
+
+    private final CfgBuildType _bt;
 
     private SyncStatBlockingClient _c;
 
     @Inject
-    public SyncStatusSynchronizer(TC tc, TransManager tm,
-            LocalSyncStatus lsync, SyncStatBlockingClient.Factory ssf,
-            ActivityLog al, IActivityLogDatabase aldb, NativeVersionControl nvc, SIDMap sidmap) {
+    public SyncStatusSynchronizer(CoreQueue q, CoreScheduler sched, TC tc, TransManager tm,
+            LocalSyncStatus lsync, DirectoryService ds, SyncStatBlockingClient.Factory ssf,
+            IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, MapSIndex2DeviceBitMap sidx2dbm,
+            ActivityLog al, IActivityLogDatabase aldb, NativeVersionControl nvc,
+            CfgBuildType buildType)
+    {
         _c = null;
+        _q = q;
         _tc = tc;
         _tm = tm;
+        _ds = ds;
         _ssf = ssf;
         _lsync = lsync;
         _aldb = aldb;
         _nvc = nvc;
-        _sidmap = sidmap;
+        _sidx2sid = sidx2sid;
+        _sid2sidx = sid2sidx;
+        _sidx2dbm = sidx2dbm;
+        _er = new ExponentialRetry(sched);
+        _bt = buildType;
 
         al.addListener_(new IActivityLogListener()
         {
@@ -81,18 +136,16 @@ public class SyncStatusSynchronizer
         // 1) process items in the bootstrap table, if any
         // 2) process items in the activity log left by a previous run
         // 3) make a first pull
-        // TODO(huguesb): uncomment after proper testing
-        //scheduleStartup();
+        scheduleStartup();
     }
 
     /**
      * Wrapper to access sync status client
-     * @throws Exception
      */
-    private SyncStatBlockingClient c() throws Exception {
+    private SyncStatBlockingClient c() throws Exception
+    {
         if (_c == null) {
             try {
-                // TODO: check connection/disconnection/reconnection semantics w/ mattp
                 _c = _ssf.create(SyncStat.URL, Cfg.user());
                 _c.signInRemote();
             } catch (Exception e) {
@@ -104,51 +157,78 @@ public class SyncStatusSynchronizer
     }
 
     /**
-     * Compare an epoch received in a verkehr notification to the latest
-     * local epoch and schedule a sync status pull if needed
+     * Handle a sync status notification received from verkher
      */
-    public void checkEpoch_(long serverEpoch) {
-        long localEpoch = 0;
+    void notificationReceived_(PBSyncStatNotification notification) throws SQLException
+    {
+        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
+        if (!_bt.isStaging()) return;
+
+        long localEpoch = _lsync.getPullEpoch_();
+        long serverEpoch = notification.getSsEpoch();
+
         if (serverEpoch > localEpoch) {
-            // TODO(huguesb): uncomment after proper testing
-            //schedulePull_();
+            if (notification.hasStatus()) {
+                boolean fastForward = serverEpoch == localEpoch + 1;
+                // always apply status change but only bump epoch if the difference between local
+                // epoch and server epoch is 1 (i.e. don't bump epoch if we missed a notification
+                updateDB(fastForward ? serverEpoch : localEpoch,
+                         Lists.newArrayList(notification.getStatus()));
+                // skip pull on successful fast forward
+                if (fastForward) {
+                    l.info("successful fast forward from " + localEpoch + " to " + serverEpoch);
+                    return;
+                }
+            }
+            schedulePull_();
         }
     }
 
-//    private void scheduleStartup() {
-//        _q.enqueueBlocking(new AbstractEBSelfHandling() {
-//            @Override
-//            public void handle_() {
-//                try {
-//                    bootstrap_();
-//                    scanActivityLog_();
-//                    pullSyncStatus_();
-//                } catch (Exception e) {
-//                    l.warn("Sync status startup failed", e);
-//                    // TODO: close connection?
-//                    // TODO: exp retry?
-//                }
-//            }
-//        }, Prio.LO);
-//    }
+    private void scheduleStartup()
+    {
+        final Callable<Void> startUp = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception
+            {
+                try {
+                    bootstrap_();
+                    scanActivityLog_();
+                    pullSyncStatus_();
+                } catch (Exception e) {
+                    // close connection
+                    _c = null;
+                    // rethrow to let ExponentialRetry kick in
+                    throw e;
+                }
+                return null;
+            }
+        };
+
+        _q.enqueueBlocking(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_() {
+                _er.retry("SyncStatStart", startUp);
+            }
+        }, Prio.LO);
+    }
 
     /**
-     * Read a batch of bootstrap SOIDS from the DB
-     * @throws SQLException
+     * @return a batch of bootstrap SOIDS from the DB
      */
-//    private List<SOID> getBootstrapBatch_() throws SQLException {
-//        final int BOOTSTRAP_BATCH_MAX_SIZE = 100;
-//        List<SOID> batch = new ArrayList<SOID>();
-//        IDBIterator<SOID> soids = _lsync.getBootstrapSOIDs_();
-//        try {
-//            while (soids.next_() && batch.size() < BOOTSTRAP_BATCH_MAX_SIZE) {
-//                batch.add(soids.get_());
-//            }
-//        } finally {
-//            soids.close_();
-//        }
-//        return batch;
-//    }
+    private List<SOID> getBootstrapBatch_() throws SQLException
+    {
+        final int BOOTSTRAP_BATCH_MAX_SIZE = 100;
+        List<SOID> batch = Lists.newArrayList();
+        IDBIterator<SOID> soids = _lsync.getBootstrapSOIDs_();
+        try {
+            while (soids.next_() && batch.size() < BOOTSTRAP_BATCH_MAX_SIZE) {
+                batch.add(soids.get_());
+            }
+        } finally {
+            soids.close_();
+        }
+        return batch;
+    }
 
     /**
      * Bootstrap sync status :
@@ -157,164 +237,203 @@ public class SyncStatusSynchronizer
      * A post update task will populate a bootstrap table with existing OIDs and
      * they will be sent to the server in the background.
      */
-//    private void bootstrap_() throws Exception {
-//        // batch DB reads
-//        List<SOID> batch = getBootstrapBatch_();
-//        while (!batch.isEmpty()) {
-//            // RPC calls
-//            for (SOID soid : batch) {
-//                l.warn("bootstrap push : " + soid.toString());
-//                pushVersionHash_(soid);
-//            }
-//
-//            // batch DB writes
-//            Trans t = _tm.begin_();
-//            try {
-//                for (SOID soid : batch)
-//                    _lsync.removeBootsrapSOID_(soid, t);
-//                t.commit_();
-//            } finally {
-//                t.end_();
-//            }
-//
-//            // batch DB reads
-//            batch = getBootstrapBatch_();
-//        }
-//    }
+    private void bootstrap_() throws Exception
+    {
+        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
+        if (!_bt.isStaging()) return;
 
-//    private void schedulePull_() {
-//        AbstractEBSelfHandling eb = new AbstractEBSelfHandling() {
-//            @Override
-//            public void handle_() {
-//                try {
-//                    pullSyncStatus_();
-//                } catch (Exception e) {
-//                    l.warn("Pull from sync status server failed", e);
-//                    // TODO: close connection?
-//                    // TODO: exp retry?
-//                }
-//            }
-//        };
-//
-//        // try non-blocking scheduling w/ core lock held
-//        if (_q.enqueue_(eb, Prio.LO)) return;
-//
-//        // fall back on blocking w/o core lock held
-//        try {
-//            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatq");
-//            TCB tcb = null;
-//            try {
-//                tcb = tk.pseudoPause_("syncstatq");
-//                _q.enqueueBlocking(eb, Prio.LO);
-//            } finally {
-//                if (tcb != null) tcb.pseudoResumed_();
-//                tk.reclaim_();
-//            }
-//        } catch (Exception e) {
-//            l.error("Failed to schedule sync status pull", e);
-//        }
-//    }
+        // batch DB reads
+        List<SOID> batch = getBootstrapBatch_();
+        while (!batch.isEmpty()) {
+            // RPC calls
+            for (SOID soid : batch) {
+                l.info("bootstrap push : " + soid.toString());
+                pushVersionHash_(soid);
+            }
+
+            // batch DB writes
+            Trans t = _tm.begin_();
+            try {
+                for (SOID soid : batch)
+                    _lsync.removeBootsrapSOID_(soid, t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+
+            // batch DB reads
+            batch = getBootstrapBatch_();
+        }
+    }
+
+    /**
+     * Schedule a pull from the sync status server with exponential retry
+     */
+    private void schedulePull_()
+    {
+        AbstractEBSelfHandling eb = new AbstractEBSelfHandling() {
+            @Override
+            public void handle_() {
+                // exp retry (w/ forced server reconnect) in case of failure
+                _er.retry("SyncStatPull", new Callable<Void>()
+                {
+                    @Override
+                    public Void call() throws Exception
+                    {
+                        try {
+                            pullSyncStatus_();
+                        } catch (Exception e) {
+                            _c = null;
+                            // let ExponentialRetry kick in
+                            throw e;
+                        }
+                        return null;
+                    }
+                });
+            }
+        };
+
+        // try non-blocking scheduling w/ core lock held
+        if (_q.enqueue_(eb, Prio.LO)) return;
+
+        // fall back on blocking w/o core lock held
+        try {
+            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatq");
+            TCB tcb = null;
+            try {
+                tcb = tk.pseudoPause_("syncstatq");
+                _q.enqueueBlocking(eb, Prio.LO);
+            } finally {
+                if (tcb != null) tcb.pseudoResumed_();
+                tk.reclaim_();
+            }
+        } catch (Exception e) {
+            l.error("Failed to schedule sync status pull", e);
+        }
+    }
 
     /**
      * Wrap LocalSyncStatus.addDevice_ in a transaction
      */
-//    private int addDevice_(SIndex sidx, DID did) throws SQLException
-//    {
-//        int idx;
-//        Trans t = _tm.begin_();
-//        try {
-//            idx = _lsync.addDevice_(sidx, did, t);
-//            t.commit_();
-//        } finally {
-//            t.end_();
-//        }
-//        return idx;
-//    }
+    private int addDevice_(SIndex sidx, DID did) throws SQLException
+    {
+        int idx;
+        Trans t = _tm.begin_();
+        try {
+            idx = _sidx2dbm.addDevice_(sidx, did, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+        return idx;
+    }
 
     /**
      * Make the actual GetSyncStatus call to the sync status server and update
      * local DB accordingly
      */
-//    private void pullSyncStatus_() throws Exception {
-//        boolean more = true;
-//
-//        while (more) {
-//            long localEpoch = _lsync.getPullEpoch_();
-//
-//            // release the core lock during the RPC call
-//            GetSyncStatusReply reply = null;
-//            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpull");
-//            TCB tcb = null;
-//            try {
-//                tcb = tk.pseudoPause_("syncstatpull");
-//                l.warn("SyncStatusClient.getSyncStatus : not implemented");
-//                reply = c().getSyncStatus(localEpoch);
-//            } finally {
-//                if (tcb != null) tcb.pseudoResumed_();
-//                tk.reclaim_();
-//            }
-//
-//            if (reply == null) return;
-//
-//            long localEpochAfterCall = _lsync.getPullEpoch_();
-//            long newEpoch = reply.getSsEpoch();
-//            // Check whether this pull bring us any new information
-//            if (newEpoch <= localEpochAfterCall) {
-//                if (reply.getMore()) {
-//                    // give a try to the next batch
-//                    continue;
-//                }
-//                // nothing new...
-//                return;
-//            }
-//
-//            Map<SOID, BitVector> update = new HashMap<SOID, BitVector>();
-//            // Must perform this computation outside of the update transaction
-//            // to avoid problems when registering a new DID
-//            for (OidSyncStatus ostat : reply.getOidSyncStatusesList()) {
-//                // TODO: group entries by sid in the reply to reduce number of lookups?
-//                SIndex sidx = _sidmap.get_(new SID(ostat.getSid()));
-//                if (sidx == null) continue;
-//
-//                SOID soid = new SOID(sidx, new OID(ostat.getOid()));
-//                IDIDBiMap dids = _lsync.getDeviceMapping_(sidx);
-//
-//                // compress the reply into a sync status bit vector
-//                BitVector bv = new BitVector(dids.size(), false);
-//                for (DeviceSyncStatus dstat : ostat.getDevicesList()) {
-//                    DID did = new DID(dstat.getDid());
-//                    Integer idx = dids.get(did);
-//                    if (idx == null) {
-//                        // new DID, register it with this store
-//                        idx = addDevice_(sidx, did);
-//                    }
-//                    bv.set(idx, dstat.getIsSynced());
-//                }
-//                update.put(soid,  bv);
-//            }
-//
-//            Trans t = _tm.begin_();
-//            try {
-//                // set the new sync status vector for the updated objects
-//                for (Entry<SOID, BitVector> e : update.entrySet()) {
-//                    _lsync.setSyncStatus_(e.getKey(), e.getValue(), t);
-//                }
-//                // update epoch to avoid re-downloading the information
-//                _lsync.setPullEpoch_(reply.getSsEpoch(), t);
-//                t.commit_();
-//            } finally {
-//                t.end_();
-//            }
-//
-//            more = reply.getMore();
-//        }
-//    }
+    private void pullSyncStatus_() throws Exception
+    {
+        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
+        if (!_bt.isStaging()) return;
+
+        boolean more = true;
+
+        while (more) {
+            long localEpoch = _lsync.getPullEpoch_();
+            l.info("pull " + localEpoch);
+
+            // release the core lock during the RPC call
+            GetSyncStatusReply reply = null;
+            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpull");
+            TCB tcb = null;
+            try {
+                tcb = tk.pseudoPause_("syncstatpull");
+                reply = c().getSyncStatus(localEpoch);
+            } finally {
+                if (tcb != null) tcb.pseudoResumed_();
+                tk.reclaim_();
+            }
+
+            if (reply == null) return;
+
+            long localEpochAfterCall = _lsync.getPullEpoch_();
+            long newEpoch = reply.getSsEpoch();
+            // Check whether this pull bring us any new information
+            if (newEpoch <= localEpochAfterCall) {
+                if (reply.getMore()) {
+                    // give a try to the next batch
+                    continue;
+                }
+                // nothing new...
+                l.info("Nothing new in server reply");
+                return;
+            }
+
+            updateDB(reply.getSsEpoch(), reply.getSyncStatusesList());
+            more = reply.getMore();
+        }
+    }
+
+    /**
+     * Update DB on reception of new sync status information
+     * @param newPullEpoch new value of pull epoch after update
+     * @param syncStatusList list of SyncStatus protobuf to received from server
+     */
+    private void updateDB(long newPullEpoch, Iterable<SyncStatus> syncStatusList)
+            throws SQLException {
+        Map<SOID, BitVector> update = Maps.newHashMap();
+        // Must perform this computation outside of the update transaction
+        // to avoid problems when registering a new DID
+        for (SyncStatus ostat : syncStatusList) {
+            // TODO: group entries by sid in the reply to reduce number of lookups?
+            SID sid = new SID(ostat.getSid());
+            SIndex sidx = _sid2sidx.getNullable_(sid);
+            if (sidx == null) {
+                l.warn("unknown SID : " + sid.toStringFormal());
+                continue;
+            }
+
+            SOID soid = new SOID(sidx, new OID(ostat.getOid()));
+            DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
+
+            l.info("new status for : " + soid.toString());
+
+            // compress the reply into a sync status bit vector
+            BitVector bv = new BitVector(dids.size(), false);
+            for (DeviceSyncStatus dstat : ostat.getDevicesList()) {
+                DID did = new DID(dstat.getDid());
+                Integer idx = dids.get(did);
+                if (idx == null) {
+                    // new DID, register it with this store
+                    idx = addDevice_(sidx, did);
+                    l.info("[" + sidx +  "] new DID : " + did.toStringFormal() + " -> " + idx);
+                }
+                bv.set(idx, dstat.getIsSynced());
+            }
+            update.put(soid,  bv);
+        }
+
+        Trans t = _tm.begin_();
+        try {
+            // set the new sync status vector for the updated objects
+            for (Entry<SOID, BitVector> e : update.entrySet()) {
+                _ds.setSyncStatus_(e.getKey(), e.getValue(), t);
+            }
+            // update epoch to avoid re-downloading the information
+            _lsync.setPullEpoch_(newPullEpoch, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
 
     /**
      * Read a batch of bootstrap SOIDS from the DB
      * @throws SQLException
      */
-    private List<ModifiedObject> getModifiedObjectBatch_(long pushEpoch) throws SQLException {
+    private List<ModifiedObject> getModifiedObjectBatch_(long pushEpoch) throws SQLException
+    {
         final int MODIFIED_OBJECT_BATCH_MAX_SIZE = 100;
         List<ModifiedObject> batch = new ArrayList<ModifiedObject>();
         IDBIterator<ModifiedObject> it = _aldb.getModifiedObjects_(pushEpoch);
@@ -328,12 +447,46 @@ public class SyncStatusSynchronizer
         return batch;
     }
 
-    // TODO(huguesb): set to false after proper testing
-    private boolean _scanInProgress = true;
     /**
      * Scans the activity log table and push new version hashes to the server
+     *
+     * Exponential retry in case of failure and automatic "batching" of concurrent scans (new scans
+     * will abort if a scan is already in progress and old failed scans will abort the exponential
+     * retry if a new scan comes in).
      */
-    public void scanActivityLog_() {
+    private long _scanSeq = 0;
+    private void scanActivityLog_()
+    {
+        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
+        if (!_bt.isStaging()) return;
+
+        // to avoid unbounded queueing of failing scans when connection to server is lost, each call
+        // added to the exp retry is assigned a sequence number
+        final long _seq = ++_scanSeq;
+        // exp retry (w/ forced server reconnect) in case of failure
+        // TODO(huguesb): reduce latency of retry when connection to server comes back
+        _er.retry("SyncStatActivityPush", new Callable<Void>()
+        {
+            @Override
+            public Void call() throws Exception
+            {
+                if (_scanSeq != _seq) return null;
+
+                try {
+                    scanActivityLogInternal_();
+                } catch (Exception e) {
+                    _c = null;
+                    // let ExponentialRetry kick in
+                    throw e;
+                }
+                return null;
+            }
+        });
+    }
+
+    private boolean _scanInProgress = false;
+    private void scanActivityLogInternal_() throws Exception
+    {
         // avoid concurrent scans : this method is called with the core lock held
         // but pushVersionHash release the core lock during the RPC call so we
         // need an extra check to avoid concurrent scans.
@@ -347,7 +500,7 @@ public class SyncStatusSynchronizer
             while (!batch.isEmpty()) {
                 // RPC calls
                 for (ModifiedObject mo : batch) {
-                    l.warn("activity push : " + mo._soid.toString());
+                    l.info("activity push : " + mo._soid.toString());
                     pushVersionHash_(mo._soid);
                     assert lastIndex < mo._idx;
                     lastIndex = mo._idx;
@@ -359,9 +512,6 @@ public class SyncStatusSynchronizer
                 // batch DB reads
                 batch = getModifiedObjectBatch_(lastIndex);
             }
-        } catch (Exception e) {
-            l.warn("Push to sync status server failed", e);
-            // TODO: better error handling
         } finally {
             _scanInProgress = false;
         }
@@ -370,7 +520,8 @@ public class SyncStatusSynchronizer
     /**
      * Wrap SyncStatusDatabase.setLastActivityIndex in a transaction
      */
-    private void setPushEpoch_(long idx) throws SQLException {
+    private void setPushEpoch_(long idx) throws SQLException
+    {
         Trans t = _tm.begin_();
         try {
             _lsync.setPushEpoch_(idx, t);
@@ -384,15 +535,17 @@ public class SyncStatusSynchronizer
      * Make the actual SetVersionHash call to the sync status server and update
      * local DB accordingly
      */
-    private void pushVersionHash_(SOID soid) throws Exception {
+    private void pushVersionHash_(SOID soid) throws Exception
+    {
         // TODO: batch pushes to reduce communication overhead?
         byte[] vh = getVersionHash_(soid);
+        l.warn(soid.toString() + " : " + Util.hexEncode(vh));
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpush");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("syncstatpush");
-            c().setVersionHash(_sidmap.get_(soid.sidx()).toPB(),
-                               soid.oid().toPB(),
+            c().setVersionHash(soid.oid().toPB(),
+                               _sidx2sid.get_(soid.sidx()).toPB(),
                                ByteString.copyFrom(vh));
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
@@ -406,31 +559,35 @@ public class SyncStatusSynchronizer
      * reduces the amount of data to digest by 33% and does not add significant
      * precomputation overhead since the entries need to be sorted anyway...
      */
-    private static class TickPair {
+    private static class TickPair
+    {
         public Tick _mt, _ct;
 
-        public long metaTick() {
+        public long metaTick()
+        {
             return _mt != null ? _mt.getLong() : 0;
         }
-        public long contentTick() {
+
+        public long contentTick()
+        {
             return _ct != null ? _ct.getLong() : 0;
         }
 
-        public TickPair(Tick meta) {
+        public TickPair(Tick meta)
+        {
             _mt = meta;
         }
     }
 
     /**
-     * Compute version hash for an object
-     * @param soid
-     * @return version hash
+     * @return version hash of the given object
      */
-    private byte[] getVersionHash_(SOID soid) throws SQLException {
+    private byte[] getVersionHash_(SOID soid) throws SQLException
+    {
         // aggregate all versions for both meta and content components
 
         // Map needs to be sorted for deterministic version hash computation
-        SortedMap<DID, TickPair> aggregated = new TreeMap<DID, TickPair>();
+        SortedMap<DID, TickPair> aggregated = Maps.newTreeMap();
 
         Version vm = _nvc.getAllLocalVersions_(new SOCID(soid, CID.META));
         for (Entry<DID, Tick> e : vm.getAll_().entrySet()) {

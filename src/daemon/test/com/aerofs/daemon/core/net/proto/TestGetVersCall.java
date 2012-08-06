@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.net.proto;
 
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class TestGetVersCall extends AbstractTest
     @Mock GetVersReply gvr;
     @Mock Metrics m;
     @Mock OutgoingStreams oss;
-    @Mock IMapSIndex2Store sidx2s;
+    @Mock MapSIndex2Store sidx2s;
     @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.mockCoreDBCW());
 
     // System Under Test

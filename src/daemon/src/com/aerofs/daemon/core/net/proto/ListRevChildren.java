@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -27,7 +27,7 @@ extends AbstractListRevChildrenHistory<IListRevChildrenListener>
     private final IPhysicalStorage _ps;
 
     @Inject
-    public ListRevChildren(IMapSIndex2Store sidx2s, DirectoryService ds, NSL nsl, IPhysicalStorage ps)
+    public ListRevChildren(MapSIndex2Store sidx2s, DirectoryService ds, NSL nsl, IPhysicalStorage ps)
     {
         super(nsl, ds, sidx2s);
         _ps = ps;

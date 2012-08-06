@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateMonitor;
 import com.aerofs.daemon.core.net.proto.GetVersCall;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
@@ -48,11 +48,11 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         private final LinkStateMonitor _lsm;
         private final GetVersCall _pgvc;
         private final To.Factory _factTo;
-        private final IMapSIndex2Store _sidx2s;
+        private final MapSIndex2Store _sidx2s;
         private final TokenManager _tokenManager;
 
         @Inject
-        public Factory(GetVersCall pgvc, LinkStateMonitor lsm, IMapSIndex2Store sidx2s,
+        public Factory(GetVersCall pgvc, LinkStateMonitor lsm, MapSIndex2Store sidx2s,
                 CoreScheduler sched, To.Factory factTo, TokenManager tokenManager)
         {
             _pgvc = pgvc;

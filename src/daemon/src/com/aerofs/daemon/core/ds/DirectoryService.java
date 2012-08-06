@@ -18,6 +18,7 @@ import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.BitVector;
 import com.aerofs.lib.id.*;
 
 import com.google.common.collect.Lists;
@@ -605,5 +606,34 @@ public class DirectoryService implements IDumpStatMisc
             name = Util.newNextFileName(name);
         } while (resolveNullable_(pParent.append(name)) != null);
         return name;
+    }
+
+    /**
+     * Retrieve the sync status for an object
+     * @return bitvector representing the sync status for all peers known to have {@code soid}
+     */
+    public BitVector getSyncStatus_(SOID soid) throws SQLException
+    {
+        return _mdb.getSyncStatus_(soid);
+    }
+
+    /**
+     * Set the sync status for an object
+     * NOTE: only SyncStatusSynchronizer should use that method
+     * @param status bitvector representation of the sync status
+     * @param t transaction (this method can only be called as part of a transaction)
+     */
+    public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
+    {
+        _mdb.setSyncStatus_(soid, status, t);
+    }
+
+    /**
+     * Clear the sync status for an object
+     * @param t transaction (this method can only be called as part of a transaction)
+     */
+    public void clearSyncStatus_(SOID soid, Trans t) throws SQLException
+    {
+        _mdb.clearSyncStatus_(soid, t);
     }
 }

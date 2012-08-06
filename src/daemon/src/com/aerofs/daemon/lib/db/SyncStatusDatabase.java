@@ -22,10 +22,10 @@ import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
 /**
- * Local sync status DB
+ * see {@link ISyncStatusDatabase}
  *
- * To reduce storage overhead, instead of creating brand new tables, columns have
- * been added to existing tables.
+ * NOTE: Whenever possible, use {@link com.aerofs.daemon.core.syncstatus.LocalSyncStatus} instead of
+ * this class.
  */
 public class SyncStatusDatabase extends AbstractDatabase implements
         ISyncStatusDatabase {
@@ -140,7 +140,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements
 
     private PreparedStatement _psRBO;
     @Override
-    public void removeBootsrapSOID_(SOID soid, Trans t) throws SQLException
+    public void removeBootstrapSOID_(SOID soid, Trans t) throws SQLException
     {
         try {
             if (_psRBO == null) {

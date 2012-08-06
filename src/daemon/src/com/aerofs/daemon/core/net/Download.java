@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.net.dependence.NameConflictDependencyEdge;
 import com.aerofs.daemon.core.net.dependence.ParentDependencyEdge;
 import com.aerofs.daemon.core.net.proto.ExSenderHasNoPerm;
 import com.aerofs.daemon.core.net.proto.GetComponentCall;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -53,7 +53,7 @@ public class Download
     {
         private final TC _tc;
         private final DownloadState _dlstate;
-        private final IMapSIndex2Store _sidx2s;
+        private final MapSIndex2Store _sidx2s;
         private final DirectoryService _ds;
         private final Downloads _dls;
         private final GetComponentCall _pgcc;
@@ -64,7 +64,7 @@ public class Download
         @Inject
         public Factory(NativeVersionControl nvc, GetComponentCall pgcc, Downloads dls,
                 DirectoryService ds, DownloadState dlstate, TC tc,
-                To.Factory factTo, IMapSIndex2Store sidx2s, DownloadDependenciesGraph dldg)
+                To.Factory factTo, MapSIndex2Store sidx2s, DownloadDependenciesGraph dldg)
         {
 
             _nvc = nvc;

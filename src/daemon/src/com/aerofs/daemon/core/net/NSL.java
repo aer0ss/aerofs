@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.device.Device;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -41,11 +41,11 @@ public class NSL
     private Transports _tps;
     private TC _tc;
     private IMapSIndex2SID _sidx2sid;
-    private IMapSIndex2Store _sidx2s;
+    private MapSIndex2Store _sidx2s;
 
     @Inject
     public void inject_(TC tc, Transports tps, DevicePresence dp, UnicastInputOutputStack stack,
-            Metrics m, IMapSIndex2SID sidx2sid, IMapSIndex2Store sidx2s)
+            Metrics m, IMapSIndex2SID sidx2sid, MapSIndex2Store sidx2s)
     {
         _tc = tc;
         _tps = tps;

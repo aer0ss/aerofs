@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.IExpulsionDatabase;
@@ -51,7 +51,7 @@ public class Expulsion
     private IExpulsionDatabase _exdb;
     private ICollectorSequenceDatabase _csdb;
     private NativeVersionControl _nvc;
-    private IMapSIndex2Store _sidx2s;
+    private MapSIndex2Store _sidx2s;
     private AdmittedToAdmittedAdjuster _adjA2A;
     private AdmittedToExpelledAdjuster _adjA2E;
     private ExpelledToAdmittedAdjuster _adjE2A;
@@ -61,7 +61,7 @@ public class Expulsion
     public void inject_(DirectoryService ds, IPulledDeviceDatabase pddb, IExpulsionDatabase exdb,
             ExpelledToExpelledAdjuster adjE2E, ExpelledToAdmittedAdjuster adjE2A,
             AdmittedToExpelledAdjuster adjA2E, AdmittedToAdmittedAdjuster adjA2A,
-            NativeVersionControl nvc, ICollectorSequenceDatabase csdb, IMapSIndex2Store sidx2s)
+            NativeVersionControl nvc, ICollectorSequenceDatabase csdb, MapSIndex2Store sidx2s)
     {
         _adjE2E = adjE2E;
         _adjE2A = adjE2A;

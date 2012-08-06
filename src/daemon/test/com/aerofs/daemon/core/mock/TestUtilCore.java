@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.mock;
 
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
@@ -134,7 +134,7 @@ public class TestUtilCore
     }
 
     public static void mockStore(@Nullable Store s, SID sid, SIndex sidx, SIndex sidxParent,
-            @Nullable IStores ss, @Nullable IMapSIndex2Store sidx2s, @Nullable
+            @Nullable IStores ss, @Nullable MapSIndex2Store sidx2s, @Nullable
             IMapSID2SIndex sid2sidx, @Nullable IMapSIndex2SID sidx2sid)
             throws ExNotFound, SQLException
     {
@@ -169,7 +169,7 @@ public class TestUtilCore
         }
     }
 
-    public static void mockAbsentStore(SIndex sidx, SID sid, @Nullable IMapSIndex2Store sidx2s,
+    public static void mockAbsentStore(SIndex sidx, SID sid, @Nullable MapSIndex2Store sidx2s,
             @Nullable IMapSID2SIndex sid2sidx, @Nullable IMapSIndex2SID sidx2sid) throws ExNotFound
     {
         if (sidx2s != null) {

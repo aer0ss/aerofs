@@ -6,7 +6,7 @@ import java.io.InputStream;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.proto.GetRevision;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
@@ -29,7 +29,7 @@ public class HdSaveRevision extends AbstractHdIMC<EISaveRevision>
 
     @Inject
     public HdSaveRevision(GetRevision gr, IPhysicalStorage ps,
-            DirectoryService ds, IMapSIndex2Store sidx2s,
+            DirectoryService ds, MapSIndex2Store sidx2s,
             InjectableFile.Factory factFile, TokenManager tokenManager)
     {
         _gr = gr;

@@ -90,7 +90,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     public void setupAbstractClass() throws Exception
     {
         osRoot.mock(factFile, dr);
-        logicRoot.mock(ds, null, null);
+        logicRoot.mock(ds, null, null, null, null, null);
 
         when(cfgAbsRootAnchor.get()).thenReturn(pRoot);
 

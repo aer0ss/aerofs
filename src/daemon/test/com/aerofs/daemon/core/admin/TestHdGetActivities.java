@@ -16,6 +16,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +105,9 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b"), did1, did2, did3);
 
         al = new ActivityLog(ds, aldb);
-        hd = new HdGetActivities(al, ds, d2u, udndb, tm, cfgLocalUser, cfgLocalDID, factSP);
+        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tm, d2u, udndb, factSP);
+
+        hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID);
 
         when(cfgLocalUser.get()).thenReturn(me);
 

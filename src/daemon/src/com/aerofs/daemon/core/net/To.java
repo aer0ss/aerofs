@@ -8,7 +8,7 @@ import java.util.Set;
 
 import com.aerofs.daemon.core.device.Device;
 import com.aerofs.daemon.core.device.DevicePresence;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.cfg.Cfg;
@@ -60,10 +60,10 @@ public class To
     public static class Factory
     {
         private final DevicePresence _dp;
-        private final IMapSIndex2Store _sidx2s;
+        private final MapSIndex2Store _sidx2s;
 
         @Inject
-        public Factory(DevicePresence dp, IMapSIndex2Store sidx2s)
+        public Factory(DevicePresence dp, MapSIndex2Store sidx2s)
         {
             _dp = dp;
             _sidx2s = sidx2s;

@@ -164,7 +164,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
 
     private PreparedStatement _psSetDeviceList;
     @Override
-    public void setDeviceMapping_(SIndex sidx, byte raw[]) throws SQLException
+    public void setDeviceMapping_(SIndex sidx, byte raw[], Trans t) throws SQLException
     {
         try {
             if (_psSetDeviceList == null) {

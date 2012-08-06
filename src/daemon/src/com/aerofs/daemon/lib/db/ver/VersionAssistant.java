@@ -4,7 +4,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -30,18 +30,18 @@ public class VersionAssistant extends AbstractTransListener
 
     private final INativeVersionDatabase _nvdb;
     private final IImmigrantVersionDatabase _ivdb;
-    private final IMapSIndex2Store _sidx2s;
+    private final MapSIndex2Store _sidx2s;
 
     public static class Factory
     {
         private final INativeVersionDatabase _nvdb;
         private final IImmigrantVersionDatabase _ivdb;
-        private final IMapSIndex2Store _sidx2s;
+        private final MapSIndex2Store _sidx2s;
 
         @Inject
         public Factory(INativeVersionDatabase nvdb,
                 IImmigrantVersionDatabase ivdb,
-                IMapSIndex2Store sidx2s)
+                MapSIndex2Store sidx2s)
         {
             _sidx2s = sidx2s;
             _nvdb = nvdb;
@@ -57,7 +57,7 @@ public class VersionAssistant extends AbstractTransListener
     /**
      * this method should be called only by the Trans class
      */
-    private VersionAssistant(IMapSIndex2Store sidx2s, INativeVersionDatabase nvdb,
+    private VersionAssistant(MapSIndex2Store sidx2s, INativeVersionDatabase nvdb,
             IImmigrantVersionDatabase ivdb)
     {
         _sidx2s = sidx2s;

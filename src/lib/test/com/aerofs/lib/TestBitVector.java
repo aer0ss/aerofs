@@ -90,6 +90,22 @@ public class TestBitVector extends AbstractTest
     }
 
     @Test
+    public void shouldCreateVectorFromBooleanSeq()
+    {
+        BitVector bv = new BitVector(true, true, true, false, false, true, false);
+
+        Assert.assertEquals(7, bv.size());
+
+        for (int i = 0; i < 3; ++i)
+            assertBitDefined(bv, i, true);
+        for (int i = 3; i < 5; ++i)
+            assertBitDefined(bv, i, false);
+        assertBitDefined(bv, 5, true);
+        assertBitDefined(bv, 6, false);
+        assertBitUndefined(bv, 7);
+    }
+
+    @Test
     public void shouldGrowAsNeededWhenSetting()
     {
         BitVector bv = new BitVector();

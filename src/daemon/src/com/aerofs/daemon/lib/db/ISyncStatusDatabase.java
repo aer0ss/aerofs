@@ -7,18 +7,17 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOID;
 
 /**
- * SyncStatus : each SOID as an associated bitvector representing its sync status
- * Each bit in said vector corresponds to a device sharing the SOID (which may or
- * may not belong to the same user) and indicates whether the device in question
- * has the same version of the file as the local device.
+ * The sync status database is actually split in multiple tables. The actual sync status data is
+ * stored in the object attribute table and can be accessed (at the lowest level) through
+ * {@link IMetaDatabase}. The per-store device mapping required to make sense of this data is itself
+ * stored (unsurprisignly) in {@link IStoreDatabase}.
  *
- * The pull epoch is used to control the sync status data being pulled from the
- * central server. It is issued by the server as part of a GetSyncStatusReply.
+ * Finally, this class controls access to push and pull epochs used by
+ * {@link com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer} as well as the bootstrap table
+ * which is only used on the first launch after the first update to a syncstatus-enabled client.
  *
- * The push epoch is used to control the version hashes being sent to the server.
- * It corresponds to an index in the activity log table.
- *
- * Each store as an associated device list.
+ * NOTE: Whenever possible, use {@link com.aerofs.daemon.core.syncstatus.LocalSyncStatus} instead of
+ * this class.
  */
 public interface ISyncStatusDatabase {
 
@@ -81,5 +80,5 @@ public interface ISyncStatusDatabase {
      * Use the methods defined there; they will update the epoch number correctly
      * @throws SQLException
      */
-    void removeBootsrapSOID_(SOID soid, Trans t) throws SQLException;
+    void removeBootstrapSOID_(SOID soid, Trans t) throws SQLException;
 }

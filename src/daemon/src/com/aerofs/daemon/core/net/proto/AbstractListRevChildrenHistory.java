@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.net.proto;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.NSL;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExProtocolError;
@@ -49,7 +49,7 @@ public abstract class AbstractListRevChildrenHistory<LISTENER>
         }
     }
 
-    protected final IMapSIndex2Store _sidx2s;
+    protected final MapSIndex2Store _sidx2s;
     protected final DirectoryService _ds;
     protected final NSL _nsl;
 
@@ -58,7 +58,7 @@ public abstract class AbstractListRevChildrenHistory<LISTENER>
     private final Map<Integer, Path> _seq2path = Maps.newHashMap();
     private final Map<Path, RCHListeners> _path2ls = Maps.newHashMap();
 
-    protected AbstractListRevChildrenHistory(NSL nsl, DirectoryService ds, IMapSIndex2Store sidx2s)
+    protected AbstractListRevChildrenHistory(NSL nsl, DirectoryService ds, MapSIndex2Store sidx2s)
     {
         _nsl = nsl;
         _ds = ds;

@@ -77,16 +77,16 @@ public class ActivityLog implements IDirectoryServiceListener
                 {
                     final Map<SOID, ActivityEntry> map = Maps.newTreeMap();
                     t.addListener_(new AbstractTransListener() {
-                        private boolean activitiesAdded = false;
+                        private boolean _activitiesAdded = false;
                         @Override
                         public void committing_(Trans t) throws SQLException
                         {
-                            activitiesAdded = ActivityLog.this.committing_(map, t);
+                            _activitiesAdded = ActivityLog.this.committing_(map, t);
                         }
                         @Override
                         public void committed_() {
                             // we can't start the scan before the transaction is committed
-                            if (activitiesAdded) {
+                            if (_activitiesAdded) {
                                 for (IActivityLogListener listener : _listeners) {
                                     listener.activitiesAdded_();
                                 }
@@ -185,7 +185,7 @@ public class ActivityLog implements IDirectoryServiceListener
 
     private boolean committing_(Map<SOID, ActivityEntry> map, Trans t) throws SQLException
     {
-        int n = 0;
+        int activitiesAdded = 0;
         for (Entry<SOID, ActivityEntry> en : map.entrySet()) {
             ActivityEntry ae = en.getValue();
 
@@ -205,9 +205,9 @@ public class ActivityLog implements IDirectoryServiceListener
             }
 
             _aldb.addActivity_(en.getKey(), ae._type, ae._path, ae._pathTo, ae._dids, t);
-            ++n;
+            ++activitiesAdded;
         }
-        return n > 0;
+        return activitiesAdded > 0;
     }
 
     /**

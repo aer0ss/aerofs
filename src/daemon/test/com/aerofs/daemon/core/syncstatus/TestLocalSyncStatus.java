@@ -1,12 +1,16 @@
 package com.aerofs.daemon.core.syncstatus;
 
-import static com.aerofs.lib.db.CoreSchema.C_SSBS_OID;
-import static com.aerofs.lib.db.CoreSchema.C_SSBS_SIDX;
-import static com.aerofs.lib.db.CoreSchema.T_SSBS;
-
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.store.DeviceBitMap;
+import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
+import com.aerofs.daemon.core.update.DPUTUpdateSchemaForSyncStatus;
+import com.aerofs.lib.id.UniqueID;
+import com.google.common.collect.Lists;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -19,9 +23,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.StoreCreator;
-import com.aerofs.daemon.core.store.Stores;
-import com.aerofs.daemon.core.store.Stores.IDIDBiMap;
-import com.aerofs.daemon.core.syncstatus.LocalSyncStatus;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
@@ -40,6 +41,8 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;
 
+import static org.mockito.Mockito.when;
+
 public class TestLocalSyncStatus extends AbstractTest
 {
     @Mock Trans t;
@@ -48,35 +51,37 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock SIDMap sm;
     @Mock MapSIndex2Store sidx2s;
     @Mock DevicePresence dp;
+    @Mock IPhysicalStorage ps;
+    @Mock MapAlias2Target alias2target;
+    @Mock IStores stores;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
     IStoreDatabase sdb = new StoreDatabase(dbcw.mockCoreDBCW());
-    ISyncStatusDatabase db = new SyncStatusDatabase(dbcw.mockCoreDBCW());
+    ISyncStatusDatabase ssdb = new SyncStatusDatabase(dbcw.mockCoreDBCW());
+    MapSIndex2DeviceBitMap sidx2dbm = new MapSIndex2DeviceBitMap(sdb);
 
-    Stores makeStores() {
-        Stores s = new Stores();
-        s.inject_(sdb, tm, sc, sm, sidx2s, dp);
-        return s;
-    }
-
-    Stores stores = makeStores();
-
-    LocalSyncStatus lsync = new LocalSyncStatus(dp, mdb, db, stores);
+    LocalSyncStatus lsync;
 
     final SIndex sidx = new SIndex(1);
-    final DID d0 = new DID(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-    final DID d1 = new DID(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
-    final DID d2 = new DID(new byte[] { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+    final DID d0 = new DID(UniqueID.generate());
+    final DID d1 = new DID(UniqueID.generate());
+    final DID d2 = new DID(UniqueID.generate());
 
-    final OID o1 = new OID(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1});
-    final OID o2 = new OID(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2});
-    final OID o3 = new OID(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3});
+    final SOID o1 = new SOID(sidx, new OID(UniqueID.generate()));
+    final SOID o2 = new SOID(sidx, new OID(UniqueID.generate()));
+    final SOID o3 = new SOID(sidx, new OID(UniqueID.generate()));
 
     @Before
     public void setup() throws Exception
     {
         dbcw.init_();
+
+        when(tm.begin_()).thenReturn(t);
+
+        DirectoryService r = new DirectoryService();
+        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm);
+        lsync = new LocalSyncStatus(r, ssdb, sidx2dbm);
     }
 
     @After
@@ -85,14 +90,15 @@ public class TestLocalSyncStatus extends AbstractTest
         dbcw.fini_();
     }
 
-    private void assertDeviceList(DID... expected) throws SQLException {
-        IDIDBiMap l = lsync.getDeviceMapping_(sidx);
+    private void assertDeviceList(DID... expected) throws SQLException
+    {
+        DeviceBitMap dbm = sidx2dbm.getDeviceMapping_(sidx);
         for (int i = 0; i < expected.length; ++i) {
-            Assert.assertTrue(i < l.size());
-            Assert.assertEquals(expected[i], l.get(i));
-            Assert.assertEquals(i, l.get(expected[i]).intValue());
+            Assert.assertTrue(i < dbm.size());
+            Assert.assertEquals(expected[i], dbm.get(i));
+            Assert.assertEquals(i, dbm.get(expected[i]).intValue());
         }
-        Assert.assertEquals(expected.length, l.size());
+        Assert.assertEquals(expected.length, dbm.size());
     }
 
     @Test
@@ -102,16 +108,13 @@ public class TestLocalSyncStatus extends AbstractTest
 
         assertDeviceList();
 
-        lsync.addDevice_(sidx, d0, t);
+        sidx2dbm.addDevice_(sidx, d0, t);
         assertDeviceList(d0);
 
-        lsync.addDevice_(sidx, d0, t);
-        assertDeviceList(d0);
-
-        lsync.addDevice_(sidx, d1, t);
+        sidx2dbm.addDevice_(sidx, d1, t);
         assertDeviceList(d0, d1);
 
-        lsync.addDevice_(sidx, d2, t);
+        sidx2dbm.addDevice_(sidx, d2, t);
         assertDeviceList(d0, d1, d2);
     }
 
@@ -120,35 +123,35 @@ public class TestLocalSyncStatus extends AbstractTest
     {
         sdb.add_(sidx, sidx, t);
         mdb.createOA_(sidx, OID.ROOT, OID.ROOT, "R", OA.Type.DIR, 0, t);
-        mdb.createOA_(sidx, o1, OID.ROOT, "foo", OA.Type.FILE, 0, t);
-        mdb.createOA_(sidx, o2, OID.ROOT, "bar", OA.Type.DIR, 0, t);
-        mdb.createOA_(sidx, o3, o2, "bar", OA.Type.FILE, 0, t);
+        mdb.createOA_(sidx, o1.oid(), OID.ROOT, "foo", OA.Type.FILE, 0, t);
+        mdb.createOA_(sidx, o2.oid(), OID.ROOT, "bar", OA.Type.DIR, 0, t);
+        mdb.createOA_(sidx, o3.oid(), o2.oid(), "bar", OA.Type.FILE, 0, t);
 
-        Assert.assertEquals(0, lsync.getSyncStatus_(new SOID(sidx, o1)).size());
-        Assert.assertEquals(0, lsync.getSyncStatus_(new SOID(sidx, o2)).size());
-        Assert.assertEquals(0, lsync.getSyncStatus_(new SOID(sidx, o3)).size());
+        Assert.assertEquals(0, mdb.getSyncStatus_(o1).size());
+        Assert.assertEquals(0, mdb.getSyncStatus_(o2).size());
+        Assert.assertEquals(0, mdb.getSyncStatus_(o3).size());
 
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o1)));
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o2)));
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o3)));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o1));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o2));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o3));
 
-        lsync.addDevice_(sidx, d0, t);
-        lsync.addDevice_(sidx, d1, t);
-        lsync.addDevice_(sidx, d2, t);
+        sidx2dbm.addDevice_(sidx, d0, t);
+        sidx2dbm.addDevice_(sidx, d1, t);
+        sidx2dbm.addDevice_(sidx, d2, t);
 
-        Assert.assertEquals(0, lsync.getSyncStatus_(new SOID(sidx, o1)).size());
-        Assert.assertEquals(0, lsync.getSyncStatus_(new SOID(sidx, o2)).size());
-        Assert.assertEquals(0, lsync.getSyncStatus_(new SOID(sidx, o3)).size());
+        Assert.assertEquals(0, mdb.getSyncStatus_(o1).size());
+        Assert.assertEquals(0, mdb.getSyncStatus_(o2).size());
+        Assert.assertEquals(0, mdb.getSyncStatus_(o3).size());
 
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o1)));
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o2)));
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o3)));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o1));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o2));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o3));
 
-        lsync.setSyncStatus_(new SOID(sidx, o1), new BitVector(3, true), t);
+        mdb.setSyncStatus_(o1, new BitVector(3, true), t);
 
-        Assert.assertEquals(new BitVector(3, true), lsync.getSyncStatus_(new SOID(sidx, o1)));
-        Assert.assertEquals(new BitVector(3, false), lsync.getSyncStatus_(new SOID(sidx, o2)));
-        Assert.assertEquals(new BitVector(), lsync.getSyncStatus_(new SOID(sidx, o3)));
+        Assert.assertEquals(new BitVector(3, true), mdb.getSyncStatus_(o1));
+        Assert.assertEquals(new BitVector(3, false), mdb.getSyncStatus_(o2));
+        Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(o3));
     }
 
     @Test
@@ -167,13 +170,19 @@ public class TestLocalSyncStatus extends AbstractTest
         Assert.assertEquals(42, lsync.getPushEpoch_());
     }
 
-    private void assertBootstrapSeq(OID... expected) throws SQLException
+    private void addBootstrapSOIDs(SOID... soids) throws SQLException
+    {
+        DPUTUpdateSchemaForSyncStatus.addBootstrapSOIDs(dbcw.getConnection(),
+                Lists.newArrayList(soids));
+    }
+
+    private void assertBootstrapSeq(SOID... expected) throws SQLException
     {
         IDBIterator<SOID> it = lsync.getBootstrapSOIDs_();
         try {
-            for (OID oid : expected) {
+            for (SOID soid : expected) {
                 Assert.assertTrue(it.next_());
-                Assert.assertEquals(new SOID(sidx, oid), it.get_());
+                Assert.assertEquals(soid, it.get_());
             }
             Assert.assertTrue(!it.next_());
         } finally {
@@ -185,26 +194,14 @@ public class TestLocalSyncStatus extends AbstractTest
     public void shouldListAndRemoveBootstrapSOIDs() throws SQLException
     {
         assertBootstrapSeq();
-
-        // CHEAT: bootstrap table filled by post update task, no API for that...
-        PreparedStatement ps = dbcw.getConnection().prepareStatement(
-                                    "insert into " + T_SSBS +
-                                    " (" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
-                                    " values(?,?)");
-        ps.setInt(1, sidx.getInt());
-        ps.setBytes(2, o1.getBytes());
-        ps.executeUpdate();
-        ps.setBytes(2, o2.getBytes());
-        ps.executeUpdate();
-        ps.setBytes(2, o3.getBytes());
-        ps.executeUpdate();
+        addBootstrapSOIDs(o1, o2, o3);
 
         assertBootstrapSeq(o1, o2, o3);
-        lsync.removeBootsrapSOID_(new SOID(sidx, o1), t);
+        lsync.removeBootsrapSOID_(o1, t);
         assertBootstrapSeq(o2, o3);
-        lsync.removeBootsrapSOID_(new SOID(sidx, o2), t);
+        lsync.removeBootsrapSOID_(o2, t);
         assertBootstrapSeq(o3);
-        lsync.removeBootsrapSOID_(new SOID(sidx, o3), t);
+        lsync.removeBootsrapSOID_(o3, t);
         assertBootstrapSeq();
     }
 }

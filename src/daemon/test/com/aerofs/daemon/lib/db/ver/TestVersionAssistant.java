@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.db.ver;
 
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -23,7 +23,7 @@ public class TestVersionAssistant extends AbstractTest
 {
     @Mock INativeVersionDatabase nvdb;
     @Mock IImmigrantVersionDatabase ivdb;
-    @Mock IMapSIndex2Store _sidx2s;
+    @Mock MapSIndex2Store _sidx2s;
 
     @InjectMocks VersionAssistant va;
 

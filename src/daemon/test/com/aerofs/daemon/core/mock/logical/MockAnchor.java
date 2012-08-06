@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.mock.logical;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.store.Store;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
@@ -80,8 +81,22 @@ public class MockAnchor extends AbstractMockLogicalObject
 
         when(s.sidx()).thenReturn(sidx);
 
-        if (ms.sid2sidx != null) when(ms.sid2sidx.getNullable_(sid)).thenReturn(sidx);
-        if (ms.sidx2s != null) when(ms.sidx2s.getNullable_(sidx)).thenReturn(s);
+        if (ms.sid2sidx != null) {
+            when(ms.sid2sidx.getNullable_(sid)).thenReturn(sidx);
+            when(ms.sid2sidx.get_(sid)).thenReturn(sidx);
+        }
+        if (ms.sidx2sid != null) {
+            when(ms.sidx2sid.getNullable_(sidx)).thenReturn(sid);
+            when(ms.sidx2sid.get_(sidx)).thenReturn(sid);
+        }
+        if (ms.sidx2s != null) {
+            when(ms.sidx2s.getNullable_(sidx)).thenReturn(s);
+            when(ms.sidx2s.get_(sidx)).thenReturn(s);
+        }
+
+        // Keep optional in-memory DB (sort of) consistent with mock object tree, mostly needed
+        // because the only sane way to test sync status synchronizer is to use such a database.
+        if (ms.im_sdb != null) ms.im_sdb.add_(sidx, new SIndex(-1), mock(Trans.class));
 
         new MockDir(OA.ROOT_DIR_NAME, OID.ROOT, children).mockRecursively(sidx, null, path, ms);
 

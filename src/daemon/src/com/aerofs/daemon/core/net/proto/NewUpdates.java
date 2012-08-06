@@ -12,13 +12,13 @@ import java.util.TreeSet;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.NSL;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.net.DigestedMessage;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
@@ -38,11 +38,11 @@ public class NewUpdates
     private NativeVersionControl _nvc;
     private NSL _nsl;
     private TransManager _tm;
-    private IMapSIndex2Store _sidx2s;
+    private MapSIndex2Store _sidx2s;
 
     @Inject
     public void inject_(TransManager tm, NSL nsl, NativeVersionControl nvc, Metrics m,
-            IMapSIndex2Store sidx2s)
+            MapSIndex2Store sidx2s)
     {
         _tm = tm;
         _nsl = nsl;

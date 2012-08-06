@@ -1,10 +1,13 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.AbstractMockLogicalObject.MockServices;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
+import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
@@ -63,10 +66,11 @@ public class MockRoot
     }
 
     public void mock(DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
-             @Nullable IMapSIndex2Store sidx2s)
+            @Nullable IMapSIndex2SID sidx2sid, @Nullable MapSIndex2Store sidx2s,
+            @Nullable IStoreDatabase sdb, @Nullable IMetaDatabase mdb)
              throws ExNotFound, SQLException, ExNotDir, ExExpelled
     {
-        MockServices ms = new MockServices(ds, sid2sidx, sidx2s);
+        MockServices ms = new MockServices(ds, sid2sidx, sidx2sid, sidx2s, sdb, mdb);
 
         Store s = MockAnchor.mockStore(_sid, new Path(), _children, ms);
 

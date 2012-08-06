@@ -81,15 +81,7 @@ public class DPUTUpdateSchemaForSyncStatus implements IDaemonPostUpdateTask {
                     rs.close();
                 }
                 CoreSchema.createSyncStatusBootstrapTable(s, _dbcw);
-                PreparedStatement ps = c.prepareStatement("insert into " + T_SSBS +
-                                                          " (" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
-                                                          " values(?,?)");
-                for (SOID soid : soids) {
-                    ps.setInt(1, soid.sidx().getInt());
-                    ps.setBytes(2, soid.oid().getBytes());
-                    ps.addBatch();
-                }
-                ps.executeBatch();
+                addBootstrapSOIDs(c, soids);
             }
         } finally {
             s.close();
@@ -97,4 +89,21 @@ public class DPUTUpdateSchemaForSyncStatus implements IDaemonPostUpdateTask {
         c.commit();
     }
 
+    /**
+     * Add a list of SOIDs to the bootstrap table
+     *
+     * NOTE: this is only public to avoid exposing the DB schema in unit tests
+     */
+    public static void addBootstrapSOIDs(Connection c, Iterable<SOID> soids) throws SQLException
+    {
+        PreparedStatement ps = c.prepareStatement("insert into " + T_SSBS +
+                " (" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
+                " values(?,?)");
+        for (SOID soid : soids) {
+            ps.setInt(1, soid.sidx().getInt());
+            ps.setBytes(2, soid.oid().getBytes());
+            ps.addBatch();
+        }
+        ps.executeBatch();
+    }
 }

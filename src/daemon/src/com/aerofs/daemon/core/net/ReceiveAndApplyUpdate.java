@@ -18,7 +18,7 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -72,7 +72,7 @@ public class ReceiveAndApplyUpdate
     private MapAlias2Target _a2t;
     private BranchDeleter _bd;
     private TransManager _tm;
-    private IMapSIndex2Store _sidx2s;
+    private MapSIndex2Store _sidx2s;
     private DownloadDependenciesGraph _dlOngoingDependencies;
 
     @Inject
@@ -80,7 +80,7 @@ public class ReceiveAndApplyUpdate
             Hasher hasher, ComMonitor cm, ObjectCreator oc, ObjectMover om,
             IPhysicalStorage ps, DownloadState dlState, GetHash pgh, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
-            IMapSIndex2Store sidx2s, MapAlias2Target alias2target,
+            MapSIndex2Store sidx2s, MapAlias2Target alias2target,
             DownloadDependenciesGraph dldg)
     {
         _ds = ds;

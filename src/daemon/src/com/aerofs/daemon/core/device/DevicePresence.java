@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
@@ -44,12 +44,12 @@ public class DevicePresence implements IDumpStatMisc
     private final CoreScheduler _sched;
     private final TC _tc;
     private final ExponentialRetry _cer;
-    private final IMapSIndex2Store _sidx2s;
+    private final MapSIndex2Store _sidx2s;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
     public DevicePresence(TC tc, CoreScheduler sched, Transports tps, CoreExponentialRetry cer,
-            IMapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
+            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid)
     {
         _tc = tc;
         _sched = sched;

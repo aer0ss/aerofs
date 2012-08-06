@@ -1,10 +1,15 @@
 package com.aerofs.daemon.core.mock.logical;
 
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2Store;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.store.MapSIndex2Store;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
+import com.aerofs.daemon.lib.db.IStoreDatabase;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
@@ -47,13 +52,20 @@ public abstract class AbstractMockLogicalObject
     protected static class MockServices
     {
         final DirectoryService ds;
-        final @Nullable IMapSIndex2Store sidx2s;
+        final @Nullable MapSIndex2Store sidx2s;
         final @Nullable IMapSID2SIndex sid2sidx;
+        final @Nullable IMapSIndex2SID sidx2sid;
+        final @Nullable IStoreDatabase im_sdb;
+        final @Nullable IMetaDatabase im_mdb;
 
-        MockServices(DirectoryService ds, IMapSID2SIndex sid2sidx, IMapSIndex2Store sidx2s)
+        MockServices(DirectoryService ds, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid,
+                MapSIndex2Store sidx2s, IStoreDatabase inMemory_sdb, IMetaDatabase inMemory_mdb)
         {
             this.sid2sidx = sid2sidx;
+            this.sidx2sid = sidx2sid;
             this.sidx2s = sidx2s;
+            this.im_sdb = inMemory_sdb;
+            this.im_mdb = inMemory_mdb;
             this.ds = ds;
         }
     }
@@ -77,6 +89,16 @@ public abstract class AbstractMockLogicalObject
         when(oa.type()).thenReturn(_type);
         when(oa.isExpelled()).thenReturn(_expelled);
         when(oa.parent()).thenReturn(root ? _oid : oidParent);
+
+        // Keep optional in-memory DB consistent with mock object tree
+        if (ms.im_mdb != null) {
+            try {
+                ms.im_mdb.createOA_(sidx, _oid, root ? _oid : oidParent, _name,
+                        _type, _expelled ? OA.FLAG_EXPELLED_ORG : 0, mock(Trans.class));
+            } catch (ExAlreadyExist e) {
+                assert false;
+            }
+        }
 
         ////////
         // wire services

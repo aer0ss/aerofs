@@ -86,7 +86,7 @@ public interface IActivityLogDatabase
     }
     /**
      * Return all object IDs with activities more recent than {@code from}.
-     * @param idxLast set to Long.MAX_VALUE to return all the activities
+     * @param from set to Long.MAX_VALUE to return all the activities
      */
     IDBIterator<ModifiedObject> getModifiedObjects_(long from) throws SQLException;
 }
