@@ -136,25 +136,23 @@ cat << EOF >> $DEBIAN_CONTROL_DIR/preinst
 #!/bin/bash
 rm -rf /usr{,/local}/bin/aerofs{,-sh,-cli,-gui}
 EOF
-chmod a+x $DEBIAN_CONTROL_DIR/preinst
 
 cat << EOF >> $DEBIAN_CONTROL_DIR/postinst
 #!/bin/bash
 invoke-rc.d procps start || echo "Warning: couldn't set sysctl parameters; file changes may take some time to propagate"
 EOF
-chmod a+x $DEBIAN_CONTROL_DIR/postinst
 
 # Remove symlinks on uninstallation.
 cat << EOF >> $DEBIAN_CONTROL_DIR/postrm
 #!/bin/bash
 invoke-rc.d procps start || true
 EOF
-chmod a+x $DEBIAN_CONTROL_DIR/postrm
 
 #################################
 # finally build the .deb
 
 find ./debian -type d | xargs chmod 755
+chmod 755 $DEBIAN_CONTROL_DIR/{preinst,postinst,postrm}
 fakeroot dpkg-deb --build debian #fakeroot allows deb to be built with root attributes for chown/chmod
 mv debian.deb $OUTPUT_DEB_NAME
 echo "successfully packaged $DEB_BUILD_DIR/$OUTPUT_DEB_NAME"
