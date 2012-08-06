@@ -449,7 +449,8 @@ public class SVClient
             throws Exception
     {
         if (Cfg.staging()) {
-            l.warn("sv defect sending disabled on staging");
+            l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(e));
+            l.warn("(sv defect sending disabled on staging.)");
             return;
         }
 
