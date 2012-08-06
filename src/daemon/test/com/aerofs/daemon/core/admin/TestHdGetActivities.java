@@ -16,6 +16,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -70,8 +71,8 @@ public class TestHdGetActivities extends AbstractTest
     HdGetActivities hd;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    ActivityLogDatabase aldb = new ActivityLogDatabase(dbcw.mockCoreDBCW());
-    ActivityLog al = new ActivityLog(aldb, sync);
+    IActivityLogDatabase aldb = new ActivityLogDatabase(dbcw.mockCoreDBCW());
+    ActivityLog al = new ActivityLog();
 
     EIGetActivities ev;
 
@@ -101,6 +102,8 @@ public class TestHdGetActivities extends AbstractTest
         dbcw.init_();
         addActivity(CREATION_VALUE, new Path("a"), null, did1, did2, did3);
         addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b"), did1, did2, did3);
+
+        al.inject_(aldb, sync);
 
         hd = new HdGetActivities(al, ds, d2u, udndb, tm, cfgLocalUser, cfgLocalDID, factSP);
 

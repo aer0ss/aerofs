@@ -52,7 +52,8 @@ import com.google.protobuf.ByteString;
  * This class keeps local sync status information in sync with the central server.
  *
  */
-public class SyncStatusSynchronizer {
+public class SyncStatusSynchronizer
+{
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
     private final TC _tc;
@@ -62,6 +63,7 @@ public class SyncStatusSynchronizer {
     private final SyncStatBlockingClient.Factory _ssf;
     private final IActivityLogDatabase _aldb;
     private final NativeVersionControl _nvc;
+    // TODO (MJ) rename to whichever interface you actually need
     private final SIDMap _sidmap;
 
     private SyncStatBlockingClient _c;

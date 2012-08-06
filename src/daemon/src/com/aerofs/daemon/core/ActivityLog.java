@@ -93,13 +93,18 @@ public class ActivityLog
                 }
             };
 
-    private final IActivityLogDatabase _aldb;
-    private final SyncStatusSynchronizer _sync;
+    private IActivityLogDatabase _aldb;
+    private SyncStatusSynchronizer _sync;
 
+    /**
+     * Use inject_ method because of circular dependency
+     * ActivityLog -> SyncStatusSynchronizer -> NVC -> ActivityLog
+     * TODO (MJ) for Hugues and Weihan, please break this dependency somehow?
+     */
     @Inject
-    public ActivityLog(IActivityLogDatabase sdb, SyncStatusSynchronizer sync)
+    public void inject_(IActivityLogDatabase aldb, SyncStatusSynchronizer sync)
     {
-        _aldb = sdb;
+        _aldb = aldb;
         _sync = sync;
     }
 
