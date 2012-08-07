@@ -1,5 +1,5 @@
 from pyramid.config import Configurator
-from pyramid.authentication import AuthTktAuthenticationPolicy
+from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 
@@ -14,11 +14,7 @@ def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
     """
 
-    authn_policy = AuthTktAuthenticationPolicy(
-        settings['auth.secret'],
-        callback=groupfinder,
-    )
-
+    authn_policy = SessionAuthenticationPolicy(callback=groupfinder)
     authz_policy = ACLAuthorizationPolicy()
     admin_session_factory = session_factory_from_settings(settings)
 

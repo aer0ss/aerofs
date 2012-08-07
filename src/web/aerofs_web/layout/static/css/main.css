@@ -17,6 +17,9 @@ div.input_container label input {
 div.input_container.submit {
   margin-top: 25px;
 }
+div#folders_table_container {
+  margin-bottom: 30px;
+}
 a.delete_permission {
   color: #9d261d;
   text-decoration: none;
