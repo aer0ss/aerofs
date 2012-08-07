@@ -23,7 +23,8 @@ import com.aerofs.lib.id.SOKID;
 
 /**
  * This class maintains persistent storage for object metadata including object attributes and
- * content attributes.
+ * content attributes. When possible, use the DirectoryService class which provides a high-level
+ * wrapper for this interface.
  */
 public interface IMetaDatabase
 {
