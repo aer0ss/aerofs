@@ -34,6 +34,9 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.inject.Inject;
 
+/*
+ * When possible, use the DirectoryService class which provides a high-level wrapper for this class.
+ */
 public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 {
     @Inject
