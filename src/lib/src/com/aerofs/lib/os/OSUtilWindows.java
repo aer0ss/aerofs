@@ -284,8 +284,35 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public void showInFolder(String path)
     {
+        /*
+        Work around Java bug 6511002 (http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6511002)
+
+        Java automatically adds quotes around arguments if they contain a space and don't start
+        with a quote. So this argument:
+        foo:"c:\some path"
+        gets incorrectly re-quoted to:
+        "foo:"c:\some path""
+        even though the additional quotes are not necessary and actually break the argument.
+
+        To work around this issue, we split the path on spaces, so Java 'sees' it as a series of
+        arguments that don't contain spaces, and therefore don't try to add any quotes.
+
+        Another possible work around would be to create a .bat file in a temp location that
+        actually runs the command that we want to perform.
+
+        NB: This is the command that we want to run:
+        explorer.exe /select,"C:\path to file\"
+        */
+        String[] arr = path.split(" ");
+        arr[0] = "/select,\"" + arr[0];
+        arr[arr.length - 1] += '"';
+
+        String[] arr2 = new String[arr.length + 1];
+        arr2[0] = "explorer.exe";
+        System.arraycopy(arr, 0, arr2, 1, arr.length);
+
         try {
-            Util.execBackground("explorer.exe", "/select," + '"' + path + '"');
+            Util.execBackground(arr2);
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }
