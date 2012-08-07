@@ -128,9 +128,7 @@ public class GetComponentCall
                 // Report this event to SV, then abort the current request.
                 ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this AE once. "
                         + msg);
-                // automatic = false because I want to know every time we get here
-                // (it should be only once)
-                SVClient.logSendDefectAsync(false, "abort gcc", e);
+                SVClient.logSendDefectAsync(true, "abort gcc", e);
                 throw e;
             }
         }

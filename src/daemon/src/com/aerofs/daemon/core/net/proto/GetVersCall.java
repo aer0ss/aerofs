@@ -503,14 +503,12 @@ public class GetVersCall
             return;
         }
 
-        // Either
+        // If execution arrived here, either
         // 1) One or both of the OAs are null, implying >= 1 of the duplicate ticks is a KML; OR
         // 2) Both OIDs have a downloaded component (ie the OAs are non-null) but
         //    neither OID seems to be aliased to the other.
         // Both are legitimate cases that require no database repair. See Comment A in
         // NativeVersionControl
-        SVClient.logSendDefectAsync(true,
-                "Duplicate ticks detected that are acceptable. " + loggedDataWithOA);
     }
 
     private void deleteDuplicateTick(SOCID socidToDelete, DID did, Tick tick,
