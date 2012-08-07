@@ -25,8 +25,8 @@ public class ThreadLocalHttpSessionUser implements ISessionUserID
             l.info("not authenticated: session " + _session.get().getId());
             throw new ExNoPerm();
         }
-        l.info("Session " + _session.get().getId() + " w user " + user);
 
+        l.info("Session:" + _session.get().getId() + " user:" + user);
         return user;
     }
 

@@ -16,7 +16,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
 
@@ -72,7 +72,8 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
     public void shouldGetCorrectSetOfInterestedDevices()
         throws Exception
     {
-        List<UserDevice> interested = db.getInterestedDevicesList(TEST_SID_1);
+        HashSet<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1,
+                sessionUser.getUser());
 
         // A little bit of debug printing.
         for (UserDevice ud : interested) {

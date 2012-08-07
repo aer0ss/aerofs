@@ -887,24 +887,28 @@ public class SPDatabase
     private PreparedStatement _psGIDS;
 
     /**
-     * Get the interested devices list for a given SID (i.e. the list of devices that sync with a
-     * particular shared folder).
+     * Get the interested devices set for a given SID belonging to a specific owner (i.e. the set
+     * of devices that sync with a particular shared folder).
+     *
+     * Note that all the devices belonging to the owner are always included in the interested
+     * devices set (regardless of exclusion).
      */
-    public synchronized LinkedList<UserDevice> getInterestedDevicesList(SID sid)
+    public synchronized HashSet<UserDevice> getInterestedDevicesSet(SID sid, String ownderId)
             throws SQLException, ExFormatError
     {
-        LinkedList<UserDevice> result = new LinkedList<UserDevice>();
+        HashSet<UserDevice> result = new HashSet<UserDevice>();
 
         try {
             if (_psGIDS == null) {
                 _psGIDS = _c.prepareStatement(
                         "select distinct dev." + C_DEVICE_ID + ", dev." + C_DEVICE_OWNER_ID +
-                                " from " + T_AC + " acl join " + T_DEVICE + " dev on acl." +
+                                " from " + T_AC + " acl right join " + T_DEVICE + " dev on acl." +
                                 C_AC_USER_ID + " = dev." + C_DEVICE_OWNER_ID + " where acl." +
-                                C_AC_STORE_ID + " = ?");
+                                C_AC_STORE_ID + " = ? or " + C_DEVICE_OWNER_ID + " = ?");
             }
 
             _psGIDS.setBytes(1, sid.getBytes());
+            _psGIDS.setString(2, ownderId);
 
             ResultSet rs = _psGIDS.executeQuery();
             try {
