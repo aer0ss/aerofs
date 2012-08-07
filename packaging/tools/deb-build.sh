@@ -74,7 +74,6 @@ echo "Version: $newversion" >> $control
 # brew install $HOME/repos/aerofs/tools/fakeroot.rb
 # if you lack fakeroot.
 tmpdir=$(mktemp -d "$debname-XXXXXX")
-echo "Building in ${tmpdir}"
 # We have to do the copy and chown under the fakeroot environment so the
 # package unpacks to files with root's uid/gid.
 fakeroot << EOF
@@ -90,7 +89,6 @@ then
     exit 1
 fi
 
-echo "Cleaning up ${tmpdir}"
 rm -rf ${tmpdir}
 
 # Clean up the control file (remove the version number, i.e. the last line).

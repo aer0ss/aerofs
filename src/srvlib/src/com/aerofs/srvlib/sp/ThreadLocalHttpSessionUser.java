@@ -2,7 +2,6 @@ package com.aerofs.srvlib.sp;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.srvlib.sp.SPParam;
 import com.aerofs.srvlib.sp.user.ISessionUserID;
 import org.apache.log4j.Logger;
 
@@ -26,7 +25,6 @@ public class ThreadLocalHttpSessionUser implements ISessionUserID
             throw new ExNoPerm();
         }
 
-        l.info("Session:" + _session.get().getId() + " user:" + user);
         return user;
     }
 
