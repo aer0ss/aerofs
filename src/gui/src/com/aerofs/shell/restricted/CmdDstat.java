@@ -1,19 +1,17 @@
 package com.aerofs.shell.restricted;
 
-import com.aerofs.proto.Ritual.DumpStatsReply;
-import com.aerofs.shell.IShellCommand;
-import com.aerofs.shell.ShellCommandRunner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBDID2User;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
-import com.aerofs.shell.ShProgram;
-import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.JsonFormat;
-import com.google.protobuf.ByteString;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import com.aerofs.proto.Ritual.DumpStatsReply;
+import com.aerofs.shell.IShellCommand;
+import com.aerofs.shell.ShProgram;
+import com.aerofs.shell.ShellCommandRunner;
 
 public class CmdDstat implements IShellCommand<ShProgram>
 {
@@ -33,10 +31,7 @@ public class CmdDstat implements IShellCommand<ShProgram>
 
         if (nonMisc) {
             template
-                .setLaunchTime(0)
-                .addDid2User(PBDID2User.newBuilder()
-                        .setDeviceId(ByteString.EMPTY)
-                        .setUser(""))
+                .setUpTime(0)
                 .addTp(PBTransport.newBuilder()
                         .setBytesIn(0)
                         .setBytesOut(0)

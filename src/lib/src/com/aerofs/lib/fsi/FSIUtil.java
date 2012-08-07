@@ -1,5 +1,12 @@
 package com.aerofs.lib.fsi;
 
+import java.io.File;
+import java.security.PrivateKey;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.log4j.Logger;
+
 import com.aerofs.lib.C;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.SecUtil;
@@ -11,7 +18,6 @@ import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBDID2User;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Fsi.PBFSICall;
 import com.aerofs.proto.Fsi.PBFSICall.Type;
@@ -20,12 +26,6 @@ import com.aerofs.proto.Fsi.PBTransportPingCall;
 import com.aerofs.proto.Fsi.PBTransportPingReply;
 import com.aerofs.proto.RitualNotifications.PBSOCKID;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
-
-import java.io.File;
-import java.security.PrivateKey;
-import java.util.List;
-import java.util.StringTokenizer;
 
 /**
  *
@@ -265,10 +265,7 @@ public class FSIUtil
     {
         try {
             PBDumpStat template = PBDumpStat.newBuilder()
-                    .setLaunchTime(0)
-                    .addDid2User(PBDID2User.newBuilder()
-                            .setDeviceId(ByteString.EMPTY)
-                            .setUser(""))
+                    .setUpTime(0)
                     .addTp(PBTransport.newBuilder()
                             .setBytesIn(0)
                             .setBytesOut(0)

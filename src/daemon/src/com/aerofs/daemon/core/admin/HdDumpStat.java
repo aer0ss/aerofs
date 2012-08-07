@@ -59,8 +59,8 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
 
         PBDumpStat.Builder bd = PBDumpStat.newBuilder();
 
-        if (template.hasLaunchTime()) {
-            bd.setLaunchTime(_launchTime);
+        if (template.hasUpTime()) {
+            bd.setUpTime(System.currentTimeMillis() - _launchTime);
         }
 
         if (template.getTpCount() != 0) {

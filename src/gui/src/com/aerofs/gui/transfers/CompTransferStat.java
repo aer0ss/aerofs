@@ -1,5 +1,13 @@
 package com.aerofs.gui.transfers;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CLabel;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.Images;
@@ -8,13 +16,6 @@ import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.PaintEvent;
-import org.eclipse.swt.events.PaintListener;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
 
 public class CompTransferStat extends Composite {
 
@@ -73,7 +74,7 @@ public class CompTransferStat extends Composite {
     }
 
     private final PBDumpStat TEMPLATE = PBDumpStat.newBuilder()
-        .setLaunchTime(0)
+        .setUpTime(0)
         .addTp(PBTransport.newBuilder().setBytesIn(0).setBytesOut(0))
         .build();
 
@@ -93,7 +94,7 @@ public class CompTransferStat extends Composite {
                     out += tp.getBytesOut();
                 }
 
-                if (_lastT == 0) _lastT = data.getLaunchTime();
+                if (_lastT == 0) _lastT = data.getUpTime();
 
                 long now = System.currentTimeMillis();
                 long deltaIn = in - _lastIn;

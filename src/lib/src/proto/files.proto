@@ -13,14 +13,7 @@ message PBDumpStat {
         optional string diagnosis = 5;
     }
 
-    message PBDID2User {
-        required bytes device_id = 1;
-        required string user = 2;
-    }
-
-    optional uint64 launch_time = 1;
-
-    repeated PBDID2User did2user = 2;
+    optional uint64 up_time = 1;
 
     repeated PBTransport tp = 3;
 
