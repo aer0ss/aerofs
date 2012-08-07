@@ -1,4 +1,8 @@
-package com.aerofs.sp.server.sp;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.srvlib.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SV;
@@ -8,31 +12,31 @@ import java.util.concurrent.TimeUnit;
 
 public class SPParam
 {
-    static final String SESS_ATTR_USER  = "user";
-    static final int SP_SQL_BATCH_IIC_BATCH_MAX = 0;
+    public static final String SESS_ATTR_USER  = "user";
+    public static final int SP_SQL_BATCH_IIC_BATCH_MAX = 0;
 
-    static final String VERKEHR_HOST_INIT_PARAMETER = "verkehr_host";
-    static final String VERKEHR_PUBLISH_PORT_INIT_PARAMETER = "verkehr_publish_port";
-    static final String VERKEHR_COMMAND_PORT_INIT_PARAMETER = "verkehr_command_port";
-    static final String VERKEHR_CACERT_INIT_PARAMETER = "verkehr_cacert";
+    public static final String VERKEHR_HOST_INIT_PARAMETER = "verkehr_host";
+    public static final String VERKEHR_PUBLISH_PORT_INIT_PARAMETER = "verkehr_publish_port";
+    public static final String VERKEHR_COMMAND_PORT_INIT_PARAMETER = "verkehr_command_port";
+    public static final String VERKEHR_CACERT_INIT_PARAMETER = "verkehr_cacert";
 
-    static final String MYSQL_ENDPOINT_INIT_PARAMETER = "mysql_endpoint";
-    static final String MYSQL_USER_INIT_PARAMETER = "mysql_user";
-    static final String MYSQL_PASSWORD_INIT_PARAMETER = "mysql_password";
-    static final String MYSQL_SP_SCHEMA_INIT_PARAMETER = "mysql_sp_schema";
+    public static final String MYSQL_ENDPOINT_INIT_PARAMETER = "mysql_endpoint";
+    public static final String MYSQL_USER_INIT_PARAMETER = "mysql_user";
+    public static final String MYSQL_PASSWORD_INIT_PARAMETER = "mysql_password";
+    public static final String MYSQL_SP_SCHEMA_INIT_PARAMETER = "mysql_sp_schema";
 
-    static final String VERKEHR_PUBLISHER_ATTRIBUTE = "verkehr_publisher";
-    static final String VERKEHR_COMMANDER_ATTRIBUTE = "verkehr_commander";
+    public static final String VERKEHR_PUBLISHER_ATTRIBUTE = "verkehr_publisher";
+    public static final String VERKEHR_COMMANDER_ATTRIBUTE = "verkehr_commander";
 
-    static final long VERKEHR_RECONNECT_DELAY = 5;
-    static final TimeUnit VERKEHR_RECONNECT_DELAY_TIMEUNIT = TimeUnit.SECONDS;
-    static final long VERKEHR_ACK_TIMEOUT = 1;
-    static final TimeUnit VERKEHR_ACK_TIMEOUT_TIMEUNIT = TimeUnit.SECONDS;
+    public static final long VERKEHR_RECONNECT_DELAY = 5;
+    public static final TimeUnit VERKEHR_RECONNECT_DELAY_TIMEUNIT = TimeUnit.SECONDS;
+    public static final long VERKEHR_ACK_TIMEOUT = 1;
+    public static final TimeUnit VERKEHR_ACK_TIMEOUT_TIMEUNIT = TimeUnit.SECONDS;
 
     /**
      * Number of bytes we use for the salt
      */
-    static final byte[] PASSWD_SALT = {
+    public static final byte[] PASSWD_SALT = {
         (byte)0x59, (byte)0xeb, (byte)0x04, (byte)0xb5,
         (byte)0xb7, (byte)0x32, (byte)0x8c, (byte)0xc9,
         (byte)0x92, (byte)0xcd, (byte)0xe4, (byte)0xad,

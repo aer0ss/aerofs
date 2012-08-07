@@ -1,4 +1,10 @@
-package com.aerofs.sp.server.sp;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.srvlib.db;
+
+import com.aerofs.srvlib.sp.SPDatabase;
 
 import java.io.IOException;
 import java.sql.SQLException;

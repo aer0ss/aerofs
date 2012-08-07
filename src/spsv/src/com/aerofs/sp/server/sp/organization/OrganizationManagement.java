@@ -9,8 +9,10 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
-import com.aerofs.sp.server.sp.user.AuthorizationLevel;
 import com.aerofs.sp.server.sp.user.UserManagement;
+import com.aerofs.srvlib.sp.organization.IOrganizationDatabase;
+import com.aerofs.srvlib.sp.organization.Organization;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;

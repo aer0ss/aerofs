@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.sp;
+package com.aerofs.srvlib.sp;
 
 final class SPSchema
 {

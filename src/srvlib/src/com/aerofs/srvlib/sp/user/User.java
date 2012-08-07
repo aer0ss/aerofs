@@ -2,10 +2,10 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.sp.user;
+package com.aerofs.srvlib.sp.user;
 
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.sp.server.sp.SPParam;
+import com.aerofs.srvlib.sp.SPParam;
 import com.google.protobuf.ByteString;
 
 public final class User

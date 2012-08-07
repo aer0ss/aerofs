@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.sp.user;
+package com.aerofs.srvlib.sp.user;
 
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;

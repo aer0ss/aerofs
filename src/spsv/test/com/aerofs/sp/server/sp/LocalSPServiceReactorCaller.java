@@ -15,9 +15,10 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.sp.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
-import com.aerofs.sp.server.sp.user.AuthorizationLevel;
-import com.aerofs.sp.server.sp.user.User;
 import com.aerofs.sp.server.sp.user.UserManagement;
+import com.aerofs.srvlib.db.LocalTestSPDatabase;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
+import com.aerofs.srvlib.sp.user.User;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 

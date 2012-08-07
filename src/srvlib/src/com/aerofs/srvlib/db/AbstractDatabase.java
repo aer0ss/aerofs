@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.sp;
+package com.aerofs.srvlib.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;

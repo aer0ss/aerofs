@@ -14,16 +14,16 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Util.join;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_ACK_TIMEOUT;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_ACK_TIMEOUT_TIMEUNIT;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_COMMAND_PORT_INIT_PARAMETER;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_HOST_INIT_PARAMETER;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_RECONNECT_DELAY;
-import static com.aerofs.sp.server.sp.SPParam.VERKEHR_RECONNECT_DELAY_TIMEUNIT;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_ACK_TIMEOUT;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_ACK_TIMEOUT_TIMEUNIT;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_COMMAND_PORT_INIT_PARAMETER;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_HOST_INIT_PARAMETER;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_RECONNECT_DELAY;
+import static com.aerofs.srvlib.sp.SPParam.VERKEHR_RECONNECT_DELAY_TIMEUNIT;
 
 public class SPLifecycleListener implements ServletContextListener
 {

@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.sp.organization;
+package com.aerofs.srvlib.sp.organization;
 
 public class Organization
 {
@@ -9,7 +9,7 @@ public class Organization
 
     // An organization with _allowedDomain matching ANY_DOMAIN permits users with any email
     // address to sign up.
-    static final String ANY_DOMAIN = "*";
+    public static final String ANY_DOMAIN = "*";
 
     public Organization(String id, String name, String domain, boolean shareExternally)
     {

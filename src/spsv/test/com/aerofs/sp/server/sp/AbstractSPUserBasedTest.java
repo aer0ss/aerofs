@@ -6,8 +6,9 @@ package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.sp.server.sp.user.AuthorizationLevel;
-import com.aerofs.sp.server.sp.user.User;
+import com.aerofs.srvlib.db.LocalTestSPDatabase;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
+import com.aerofs.srvlib.sp.user.User;
 import org.junit.Before;
 import org.mockito.Spy;
 

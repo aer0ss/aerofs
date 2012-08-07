@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.sp.server.sp.user.ISessionUserID;
+import com.aerofs.srvlib.sp.user.ISessionUserID;
 
 import static org.junit.Assert.assertFalse;
 

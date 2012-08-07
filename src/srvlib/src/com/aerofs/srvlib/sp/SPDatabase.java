@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.sp;
+package com.aerofs.srvlib.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Role;
@@ -18,10 +18,11 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
-import com.aerofs.sp.server.sp.organization.IOrganizationDatabase;
-import com.aerofs.sp.server.sp.organization.Organization;
-import com.aerofs.sp.server.sp.user.AuthorizationLevel;
-import com.aerofs.sp.server.sp.user.User;
+import com.aerofs.srvlib.db.AbstractDatabase;
+import com.aerofs.srvlib.sp.organization.IOrganizationDatabase;
+import com.aerofs.srvlib.sp.organization.Organization;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
+import com.aerofs.srvlib.sp.user.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Lists;
@@ -42,7 +43,7 @@ import java.util.Date;
 
 import javax.annotation.Nullable;
 
-import static com.aerofs.sp.server.sp.SPSchema.*;
+import static com.aerofs.srvlib.sp.SPSchema.*;
 import static com.google.common.collect.Maps.newHashMap;
 import static com.google.common.collect.Sets.newHashSet;
 
@@ -365,7 +366,7 @@ public class SPDatabase
     private PreparedStatement _psGIL;
 
     // return 0 if user not found
-    synchronized int getFolderlessInvitesQuota(String user) throws SQLException
+    public synchronized int getFolderlessInvitesQuota(String user) throws SQLException
     {
         try {
             if (_psGIL == null) {
@@ -394,7 +395,7 @@ public class SPDatabase
 
     private PreparedStatement _psSSIQ;
 
-    synchronized void setFolderlessInvitesQuota(String user, int quota)
+    public synchronized void setFolderlessInvitesQuota(String user, int quota)
             throws SQLException
     {
         try {
@@ -434,7 +435,7 @@ public class SPDatabase
      * @throws ExAlreadyExist if the user exists (i.e. a row exists in the user table with
      * the same user id) and is finalized
      */
-    synchronized boolean addUser(User ur, boolean standalone)
+    public synchronized boolean addUser(User ur, boolean standalone)
             throws SQLException, ExAlreadyExist
     {
         // We are not going to set the verified field, so make sure nobody asks us to do so
@@ -542,7 +543,7 @@ public class SPDatabase
      * Update a user row if it exists, or create one if it doesn't
      * Note: this method never updates the verified field.
      */
-    synchronized void setUser(User ur) throws SQLException
+    public synchronized void setUser(User ur) throws SQLException
     {
         try {
             l.info("set user row for " + ur);
@@ -595,7 +596,7 @@ public class SPDatabase
     }
 
     private PreparedStatement _psUVerified;
-    synchronized void markUserVerified(String userID)
+    public synchronized void markUserVerified(String userID)
             throws SQLException
     {
         try {
@@ -616,7 +617,7 @@ public class SPDatabase
 
     private PreparedStatement _psSUN;
 
-    synchronized void setUserName(String userID, String firstName, String lastName)
+    public synchronized void setUserName(String userID, String firstName, String lastName)
             throws SQLException
     {
         try {
@@ -641,14 +642,14 @@ public class SPDatabase
         throws SQLException
     {
         try {
-            if (_psAPRT == null){
+            if (_psAPRT == null) {
                 _psAPRT = _c.prepareStatement("insert into " + T_PASSWORD_RESET + "(" +
                         C_PASS_TOKEN + "," + C_PASS_USER + ") values (?,?)");
             }
             _psAPRT.setString(1, token);
             _psAPRT.setString(2, userID);
             Util.verify(_psAPRT.executeUpdate() == 1);
-        } catch (SQLException e){
+        } catch (SQLException e) {
             close(_psAPRT);
             _psAPRT = null;
             throw e;
@@ -698,14 +699,14 @@ public class SPDatabase
         throws SQLException
     {
         try{
-            if (_psDPRT == null){
+            if (_psDPRT == null) {
                 _psDPRT = _c.prepareStatement("delete from " + T_PASSWORD_RESET + " where " +
                         C_PASS_TOKEN + " = ?");
             }
             _psDPRT.setString(1, token);
             int updates = _psDPRT.executeUpdate();
             Util.verify(updates == 1);
-        } catch (SQLException e){
+        } catch (SQLException e) {
             close(_psDPRT);
             _psDPRT = null;
             throw e;
@@ -717,14 +718,14 @@ public class SPDatabase
         throws SQLException
     {
         try {
-            if (_psUUC == null){
+            if (_psUUC == null) {
                 _psUUC = _c.prepareStatement("update " + T_USER + " set " +
                         C_USER_CREDS + "=? where " + C_USER_ID + "=?");
             }
             _psUUC.setString(1, Base64.encodeBytes(credentials));
             _psUUC.setString(2, userID);
             Util.verify(_psUUC.executeUpdate() == 1);
-        } catch (SQLException e){
+        } catch (SQLException e) {
             close(_psUUC);
             _psUUC = null;
             throw e;
@@ -746,7 +747,7 @@ public class SPDatabase
             _psTASUC.setString(2,userID);
             _psTASUC.setString(3,Base64.encodeBytes(old_credentials));
             int updated = _psTASUC.executeUpdate();
-            if( updated == 0){
+            if (updated == 0) {
                 throw new ExNoPerm();
             }
 
@@ -770,7 +771,7 @@ public class SPDatabase
      * @return the device info corresponding to the supplied device ID. If no such device exists,
      * then return null.
      */
-    synchronized @Nullable PBDeviceInfo getDeviceInfo(DID did) throws SQLException
+    public synchronized @Nullable PBDeviceInfo getDeviceInfo(DID did) throws SQLException
     {
         try {
             if (_psGDI == null) {
@@ -822,7 +823,7 @@ public class SPDatabase
      *
      * @param user the user whose shared user set we are going to compute.
      */
-    synchronized HashSet<String> getSharedUsersSet(String user) throws SQLException
+    public synchronized HashSet<String> getSharedUsersSet(String user) throws SQLException
     {
         HashSet<String> result = new HashSet<String>();
 
@@ -927,7 +928,7 @@ public class SPDatabase
 
     private PreparedStatement _psSDN;
 
-    synchronized void setDeviceName(String user, DID did, String deviceName) throws SQLException
+    public synchronized void setDeviceName(String user, DID did, String deviceName) throws SQLException
     {
         try {
             _psSDN = _c.prepareStatement("replace into " + T_DEVICE + "(" + C_DEVICE_NAME + "," +
@@ -1035,7 +1036,7 @@ public class SPDatabase
 
     private PreparedStatement _psAddTI;
 
-    synchronized void addTargetedSignupCode(String code, String from, String to, String orgId)
+    public synchronized void addTargetedSignupCode(String code, String from, String to, String orgId)
         throws SQLException, ExAlreadyExist
     {
         try {
@@ -1061,7 +1062,7 @@ public class SPDatabase
 
     private PreparedStatement _psAddFI;
 
-    synchronized void addShareFolderCode(String code, String from, String to, byte[] sid,
+    public synchronized void addShareFolderCode(String code, String from, String to, byte[] sid,
             String folderName)
             throws SQLException
     {
@@ -1089,7 +1090,7 @@ public class SPDatabase
 
     private PreparedStatement _psInitBIC;
 
-    synchronized void initBatchSignUpCode(String bsc, int signUpCount)
+    public synchronized void initBatchSignUpCode(String bsc, int signUpCount)
         throws SQLException
     {
         try {
@@ -1126,7 +1127,7 @@ public class SPDatabase
 
     private PreparedStatement _psCountUnused;
 
-    synchronized int countUnusedBatchSignUps(String bsc)
+    public synchronized int countUnusedBatchSignUps(String bsc)
         throws SQLException
     {
         try {
@@ -1149,7 +1150,7 @@ public class SPDatabase
         }
     }
 
-    synchronized boolean isValidBatchSignUp(String bsc)
+    public synchronized boolean isValidBatchSignUp(String bsc)
         throws SQLException
     {
         int count = countUnusedBatchSignUps(bsc);
@@ -1160,7 +1161,7 @@ public class SPDatabase
      * Returns the organization id associated with a batch signup, or null if the signup
      * code is invalid.
      */
-    synchronized String checkBatchSignUpAndGetOrg(String bsc)
+    public synchronized String checkBatchSignUpAndGetOrg(String bsc)
             throws SQLException
     {
         if (isValidBatchSignUp(bsc)) {
@@ -1178,7 +1179,7 @@ public class SPDatabase
      * @param tsc the invitation code
      * @return null if not found
      */
-    synchronized ResolveTargetedSignUpCodeReply getTargetedSignUp(String tsc)
+    public synchronized ResolveTargetedSignUpCodeReply getTargetedSignUp(String tsc)
         throws SQLException
     {
         try {
@@ -1211,7 +1212,7 @@ public class SPDatabase
     private PreparedStatement _psGetFI;
 
     // TODO (GS) merge this class and PBFolderInvitation
-    static class FolderInvitation
+    public static class FolderInvitation
     {
         final byte[] _sid;
         final String _folderName;
@@ -1223,12 +1224,27 @@ public class SPDatabase
             _folderName = folderName;
             _invitee = invitee;
         }
+
+        public byte[] getSid()
+        {
+            return _sid;
+        }
+
+        public String getFolderName()
+        {
+            return _folderName;
+        }
+
+        public String getInvitee()
+        {
+            return _invitee;
+        }
     }
     /**
      * @param code the invitation code
      * @return null if not found
      */
-    synchronized FolderInvitation getFolderInvitation(String code)
+    public synchronized FolderInvitation getFolderInvitation(String code)
             throws SQLException
     {
         try {
@@ -1256,7 +1272,7 @@ public class SPDatabase
 
     private PreparedStatement _psListPFI;
 
-    synchronized List<PBFolderInvitation> listPendingFolderInvitations(String to)
+    public synchronized List<PBFolderInvitation> listPendingFolderInvitations(String to)
             throws SQLException
     {
         assert !to.isEmpty();
@@ -1313,6 +1329,11 @@ public class SPDatabase
         {
             return _did;
         }
+
+        public String getName()
+        {
+            return _name;
+        }
     }
 
     private PreparedStatement _psGetDeviceUser;
@@ -1347,7 +1368,7 @@ public class SPDatabase
 
     private PreparedStatement _psAddDev;
 
-    synchronized public void addDevice(DeviceRow dr) throws SQLException, ExAlreadyExist
+    public synchronized void addDevice(DeviceRow dr) throws SQLException, ExAlreadyExist
     {
         try {
             if (_psAddDev == null) {
@@ -1377,7 +1398,7 @@ public class SPDatabase
      * @param did the device which owns this certificate.
      * @param expireTs the date (in the future) at which this certificate expires.
      */
-    synchronized void addCertificate(long serial, DID did, Date expireTs)
+    public synchronized void addCertificate(long serial, DID did, Date expireTs)
             throws SQLException, ExAlreadyExist
     {
         try {
@@ -1407,7 +1428,7 @@ public class SPDatabase
      *
      * @param did the device whose certificates we are going to revoke.
      */
-    synchronized ImmutableList<Long> revokeDeviceCertificate(final DID did)
+    public synchronized ImmutableList<Long> revokeDeviceCertificate(final DID did)
             throws SQLException
     {
         try {
@@ -1458,7 +1479,7 @@ public class SPDatabase
      *
      * @param user the user whose certificates we are going to revoke.
      */
-    synchronized ImmutableList<Long> revokeUserCertificates(String user)
+    public synchronized ImmutableList<Long> revokeUserCertificates(String user)
             throws SQLException
     {
         try {
@@ -1531,7 +1552,7 @@ public class SPDatabase
      *
      * @return list of revoked certificates.
      */
-    synchronized ImmutableList<Long> getCRL()
+    public synchronized ImmutableList<Long> getCRL()
             throws SQLException
     {
         try {
@@ -1544,7 +1565,7 @@ public class SPDatabase
             ResultSet rs = _psGetCRL.executeQuery();
             try {
                 Builder<Long> builder = ImmutableList.builder();
-                while(rs.next()) {
+                while (rs.next()) {
                     builder.add(rs.getLong(1));
                 }
                 return builder.build();
@@ -1645,7 +1666,7 @@ public class SPDatabase
 
     private PreparedStatement _psGetRoles;
 
-    synchronized ACLReturn getACL(long userEpoch, String user)
+    public synchronized ACLReturn getACL(long userEpoch, String user)
             throws SQLException
     {
         //
@@ -1688,7 +1709,7 @@ public class SPDatabase
 
             ResultSet rs = _psGetRoles.executeQuery();
             try {
-                while(rs.next()) {
+                while (rs.next()) {
                     SID sid = new SID(rs.getBytes(1));
 
                     if (!storeToPairs.containsKey(sid)) {
@@ -1867,7 +1888,7 @@ public class SPDatabase
             Set<String> subjects = new HashSet<String>();
             ResultSet rs = _psGetSubjectsForStore.executeQuery();
             try {
-                while(rs.next()) {
+                while (rs.next()) {
                     subjects.add(rs.getString(1));
                 }
             } finally {
@@ -1891,7 +1912,7 @@ public class SPDatabase
      * has to call {@link SPDatabase#setAutoCommit} (with true) after method is done.
      * </strong>
      */
-    Map<String, Long> deleteACL(String user, SID sid, Set<String> subjects)
+    public Map<String, Long> deleteACL(String user, SID sid, Set<String> subjects)
             throws SQLException, ExNoPerm
     {
         assert !_c.getAutoCommit() : ("auto-commit should be turned off before calling deleteACL");

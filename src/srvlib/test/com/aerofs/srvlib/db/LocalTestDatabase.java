@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.sp;
+package com.aerofs.srvlib.db;
 
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;

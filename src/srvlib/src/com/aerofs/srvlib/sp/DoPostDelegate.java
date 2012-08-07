@@ -1,4 +1,8 @@
-package com.aerofs.sp.server.sp;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.srvlib.sp;
 
 import com.aerofs.lib.Base64;
 

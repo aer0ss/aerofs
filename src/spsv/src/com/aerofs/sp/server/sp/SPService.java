@@ -18,6 +18,17 @@ import javax.mail.internet.MimeMessage;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
+import com.aerofs.srvlib.db.AbstractDatabaseTransaction;
+import com.aerofs.srvlib.db.AbstractDatabase;
+import com.aerofs.srvlib.sp.SPDatabase;
+import com.aerofs.srvlib.sp.SPDatabase.DeviceRow;
+import com.aerofs.srvlib.sp.SPDatabase.FolderInvitation;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
+import com.aerofs.srvlib.sp.user.ISessionUserID;
+import com.aerofs.srvlib.sp.user.User;
+import com.aerofs.srvlib.sp.SPParam;
+import com.aerofs.srvlib.sp.organization.Organization;
+import com.aerofs.srvlib.sp.ACLReturn;
 import org.apache.log4j.Logger;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -61,15 +72,9 @@ import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.sp.server.email.EmailUtil;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.sp.SPDatabase.DeviceRow;
-import com.aerofs.sp.server.sp.SPDatabase.FolderInvitation;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
-import com.aerofs.sp.server.sp.organization.Organization;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
-import com.aerofs.sp.server.sp.user.AuthorizationLevel;
-import com.aerofs.sp.server.sp.user.ISessionUserID;
-import com.aerofs.sp.server.sp.user.User;
 import com.aerofs.sp.server.sp.user.UserManagement;
 import com.aerofs.sp.server.sp.user.UserManagement.UserListAndQueryCount;
 import com.aerofs.verkehr.client.commander.VerkehrCommander;
@@ -146,7 +151,7 @@ class SPService implements ISPService
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
                 .setFirstName(ur._firstName)
                 .setLastName(ur._lastName)
-                .setDeviceName(dr == null ? "" : dr._name)
+                .setDeviceName(dr == null ? "" : dr.getName())
                 .build();
 
         return createReply(reply);
@@ -429,14 +434,14 @@ class SPService implements ISPService
         FolderInvitation invitation = _db.getFolderInvitation(code);
         if (invitation != null) {
 
-            if (!u._id.equalsIgnoreCase(invitation._invitee)) {
+            if (!u._id.equalsIgnoreCase(invitation.getInvitee())) {
                 throw new ExNoPerm("Your email " + u._id + " does not match the expected " +
-                        invitation._invitee);
+                        invitation.getInvitee());
             }
 
             ResolveSharedFolderCodeReply reply = ResolveSharedFolderCodeReply.newBuilder()
-                    .setShareId(ByteString.copyFrom(invitation._sid))
-                    .setFolderName(invitation._folderName)
+                    .setShareId(ByteString.copyFrom(invitation.getSid()))
+                    .setFolderName(invitation.getFolderName())
                     .build();
 
             // Because the folder code is valid and was received by email, the user is verified.

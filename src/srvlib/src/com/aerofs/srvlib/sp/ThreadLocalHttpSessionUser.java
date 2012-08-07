@@ -1,8 +1,9 @@
-package com.aerofs.sp.server.sp;
+package com.aerofs.srvlib.sp;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.sp.server.sp.user.ISessionUserID;
+import com.aerofs.srvlib.sp.SPParam;
+import com.aerofs.srvlib.sp.user.ISessionUserID;
 import org.apache.log4j.Logger;
 
 import javax.servlet.http.HttpSession;

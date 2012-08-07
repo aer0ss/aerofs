@@ -1,4 +1,8 @@
-package com.aerofs.sp.server.sp;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.srvlib.sp;
 
 import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.id.SID;
@@ -6,7 +10,7 @@ import com.aerofs.lib.id.SID;
 import java.util.List;
 import java.util.Map;
 
-final class ACLReturn
+public final class ACLReturn
 {
     private final long _epoch;
     private final Map<SID, List<SubjectRolePair>> _sidToPairs;

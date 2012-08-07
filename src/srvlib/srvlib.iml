@@ -1,18 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="FacetManager">
-    <facet type="web" name="spsv servlet">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/web.xml" />
-        </descriptors>
-        <webroots />
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
-      </configuration>
-    </facet>
-  </component>
   <component name="NewModuleRootManager" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../approot/bin" />
     <output-test url="file://$MODULE_DIR$/../../approot/bin.test" />
@@ -34,9 +21,7 @@
     <orderEntry type="library" name="javamail" level="project" />
     <orderEntry type="library" name="mysql-connector" level="project" />
     <orderEntry type="module" module-name="lib" />
-    <orderEntry type="module" module-name="srvlib" />
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
-

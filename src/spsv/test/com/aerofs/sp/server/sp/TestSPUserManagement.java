@@ -6,9 +6,11 @@ package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.sp.user.AuthorizationLevel;
-import com.aerofs.sp.server.sp.user.User;
 import com.aerofs.sp.server.sp.user.UserManagement;
+import com.aerofs.srvlib.sp.SPDatabase;
+import com.aerofs.srvlib.sp.SPParam;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
+import com.aerofs.srvlib.sp.user.User;
 import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
 import org.junit.Before;

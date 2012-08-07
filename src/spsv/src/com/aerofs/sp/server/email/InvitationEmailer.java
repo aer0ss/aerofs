@@ -8,7 +8,7 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
-import com.aerofs.sp.server.sp.SPParam;
+import com.aerofs.srvlib.sp.SPParam;
 
 import javax.annotation.Nullable;
 import javax.mail.MessagingException;

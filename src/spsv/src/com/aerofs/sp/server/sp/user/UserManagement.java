@@ -7,8 +7,10 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.spsv.Base62CodeGenerator;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.sp.SPDatabase;
-import com.aerofs.sp.server.sp.SPParam;
+import com.aerofs.srvlib.sp.SPDatabase;
+import com.aerofs.srvlib.sp.SPParam;
+import com.aerofs.srvlib.sp.user.User;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
