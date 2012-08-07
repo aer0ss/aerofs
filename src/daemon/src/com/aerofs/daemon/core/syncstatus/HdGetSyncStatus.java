@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOID;
@@ -22,16 +21,13 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
 {
     private final DirectoryService _ds;
     private final DID2User _did2user;
-    private final IUserAndDeviceNameDatabase _udndb;
     private final LocalSyncStatus _lsync;
 
     @Inject
-    public HdGetSyncStatus(DirectoryService ds, DID2User did2user,
-                           IUserAndDeviceNameDatabase udndb, LocalSyncStatus lsync)
+    public HdGetSyncStatus(DirectoryService ds, DID2User did2user, LocalSyncStatus lsync)
     {
         _ds = ds;
         _did2user = did2user;
-        _udndb = udndb;
         _lsync = lsync;
     }
 

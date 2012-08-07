@@ -23,7 +23,7 @@
 		<link>
 			<name>libjingle_gen</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/java/libjingle.binding/gen/java</locationURI>
+			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/src/libjingle.binding/gen/java</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

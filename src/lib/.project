@@ -23,7 +23,7 @@
 		<link>
 			<name>swig_gen</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/java/swiglibs/gen</locationURI>
+			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/src/swiglibs/gen</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

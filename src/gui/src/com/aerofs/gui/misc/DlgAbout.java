@@ -65,12 +65,12 @@ public class DlgAbout extends AeroFSDialog
         lblAerofs.setText(S.PRODUCT + " (beta)" + (Cfg.staging() ? " staging" : ""));
 
         FontData fd = lblAerofs.getFont().getFontData()[0];
-        lblAerofs.setFont(SWTResourceManager.getFont(fd.getName(),
-                fd.getHeight() * 2, SWT.BOLD));
+        lblAerofs.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 2, SWT.BOLD));
 
         Label lblVersion = new Label(shell, SWT.NONE);
         lblVersion.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
         lblVersion.setText("Version " + Cfg.ver());
+
         new Label(shell, SWT.NONE);
         new Label(shell, SWT.NONE);
 
@@ -80,13 +80,13 @@ public class DlgAbout extends AeroFSDialog
 
         Link link = new Link(shell, SWT.NONE);
         link.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        link.setText("Visit " + S.PRODUCT + " <a>Web site</a> and <a>" +
-                S.TERMS_OF_SERVICE + "</a>.");
+        link.setText("Visit " + S.PRODUCT + " <a>Web site</a> and <a>Release Notes</a>.");
         link.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                Program.launch(e.text.equals(S.TERMS_OF_SERVICE) ? S.TOS_URL : SP.WEB_BASE);
+                Program.launch(e.text.equals("Web site") ? SP.WEB_BASE :
+                        "http://support.aerofs.com/knowledgebase/articles/93285-release-notes");
             }
         });
 
