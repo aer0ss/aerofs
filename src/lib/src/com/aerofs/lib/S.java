@@ -100,4 +100,5 @@ public class S
     public static final String CONNECET_FOR_ACCURACY = "Connect to Internet for more accurate results";
     public static final String COULDNT_LIST_ACTIVITIES = "Couldn't list activities";
     public static final String TRY_AGAIN_LATER = "Please try again later.";
+    public static final String MODIFIED = "updated";
 }

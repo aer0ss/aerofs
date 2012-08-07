@@ -17,6 +17,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.db.IUserAndDeviceNameDatabase;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.cfg.CfgLocalDID;
@@ -345,7 +346,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 
         if (modification) {
             first = and(sb, first);
-            sb.append("modified");
+            sb.append(S.MODIFIED);
         }
 
         if (deletion) {

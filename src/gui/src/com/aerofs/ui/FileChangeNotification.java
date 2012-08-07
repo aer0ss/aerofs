@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -106,11 +107,11 @@ public class FileChangeNotification
         String title;
         int size = _recents.size();
         if (size == 1) {
-            title = "A file was updated";
+            title = "A file was " + S.MODIFIED;
         } else if (size <= 10) {
-            title = NUMBERS[size - 2] + " files were updated";
+            title = NUMBERS[size - 2] + " files were " + S.MODIFIED;
         } else {
-            title = size + " files were updated";
+            title = size + " files were " + S.MODIFIED;
         }
 
         StringBuilder sb = new StringBuilder();
