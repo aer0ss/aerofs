@@ -88,28 +88,31 @@ public class GetComponentCall
         _tm = tm;
     }
 
-    public DigestedMessage rpc1_(SOCKID k, To src, Token tk)
+    public DigestedMessage rpc1_(SOCID socid, To src, Token tk)
         throws Exception
     {
-        l.info("send for " + k);
+        // Several of the version control and physical storage classes require a branch, not socid.
+        // We know that downloads will only ever act on the master branch.
+        SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
+        l.info("send for " + socid);
 
-        assert k.kidx().equals(KIndex.MASTER);
-        Version vKML = _nvc.getKMLVersion_(k.socid());
-        Version vLocal = _nvc.getLocalVersion_(k);
+        Version vKML = _nvc.getKMLVersion_(socid);
+        Version vLocal = _nvc.getLocalVersion_(sockid);
 
-        OID target = _a2t.getNullable_(k.soid());
+        OID target = _a2t.getNullable_(socid.soid());
         if (target != null) {
-            // If k is a locally-aliased object, all of its KMLs must be alias ticks
+            // If socid is a locally-aliased object, all of its KMLs must be alias ticks
             Version vKMLNonAlias = vKML.withoutAliasTicks_();
             if (!vKMLNonAlias.isZero_()) {
                 // Temporarily try to delete the alias non-tick KMLs if they are
                 // present in the target object's versions.
                 // TODO (MJ) remove this deletion and replace with assert (vKMLNonAlias.isZero())
-                SOCID socidTarget = new SOCID(k.sidx(), target, k.cid());
+                SOCID socidTarget = new SOCID(socid.sidx(), target, socid.cid());
                 Version vAllTarget = _nvc.getAllVersions_(socidTarget);
 
-                final String msg =  "(alias " + k + ")->(" + socidTarget + " target) vkmlnonalias "
-                     + vKMLNonAlias + " vLocal " + vLocal + " vAllTarget " + vAllTarget;
+                final String msg =  "(alias " + socid + ")->(" + socidTarget + " target) "
+                     + "vkmlnonalias " + vKMLNonAlias + " vLocal " + vLocal + " vAllTarget "
+                     + vAllTarget;
 
                 // Currently we'll try to delete the alias object's non-alias KMLs, but that's only
                 // safe if that version is completely shadowed by all the target's versions.
@@ -117,13 +120,13 @@ public class GetComponentCall
 
                 Trans t = _tm.begin_();
                 try {
-                    _nvc.deleteKMLVersionPermanently_(k.socid(), vKMLNonAlias, t);
+                    _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
                     t.commit_();
                 } finally {
                     t.end_();
                 }
 
-                assert _nvc.getKMLVersion_(k.socid()).withoutAliasTicks_().isZero_() : msg;
+                assert _nvc.getKMLVersion_(socid).withoutAliasTicks_().isZero_() : msg;
 
                 // Report this event to SV, then abort the current request.
                 ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this AE once. "
@@ -134,41 +137,46 @@ public class GetComponentCall
         }
 
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()
-            .setObjectId(k.oid().toPB())
-            .setComId(k.cid().getInt())
+            .setObjectId(socid.oid().toPB())
+            .setComId(socid.cid().getInt())
             .setKmlVersion(vKML.toPB_())
             .setLocalVersion(vLocal.toPB_());
+        // TODO (DF): Look into how the receiver uses the localVersion. Should we send all
+        // versions?  Does the receiver care for which branch we're sending versions?
 
-        if (k.cid().equals(CID.CONTENT)) setIncrementalDownloadInfo_(k, bd);
+        if (socid.cid().equals(CID.CONTENT)) setIncrementalDownloadInfo_(socid, bd);
 
         PBCore call = CoreUtil.newCall(Type.GET_COM_CALL)
             .setGetComCall(bd).build();
 
-        return _rpc.do_(src, k.sidx(), call, tk, "gcc " + k + " " + src);
+        return _rpc.do_(src, socid.sidx(), call, tk, "gcc " + socid + " " + src);
     }
 
-    private void setIncrementalDownloadInfo_(SOCKID k, Builder bd)
+    private void setIncrementalDownloadInfo_(SOCID socid, Builder bd)
         throws SQLException, IOException, ExNotFound
     {
-        OA oa = _ds.getOANullable_(k.soid());
+        OA oa = _ds.getOANullable_(socid.soid());
         if (oa == null) return;
         assert oa.isFile();
 
-        IPhysicalPrefix prefix = _ps.newPrefix_(k);
+        // TODO (DF): is this a reasonable usage of IPhysicalStorage?
+        // I can't tell if prefix files should even track branches
+        SOCKID branch = new SOCKID(socid, KIndex.MASTER);
+        IPhysicalPrefix prefix = _ps.newPrefix_(branch);
         long len = prefix.getLength_();
         if (len == 0) return;
 
-        Version vPre = _pvc.getPrefixVersion_(k.soid(), k.kidx());
+        Version vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx());
         l.info("prefix ver " + vPre + " len " + len);
 
         bd.setPrefixLength(len);
         bd.setPrefixVersion(vPre.toPB_());
     }
 
-    public void rpc2_(SOCKID k, To src, DigestedMessage reply, Token tk)
+    public void rpc2_(SOCID socid, To src, DigestedMessage reply, Token tk)
         throws Exception
     {
-        _gcr.processReply_(k, src, reply, tk);
+        _gcr.processReply_(socid, src, reply, tk);
     }
 
     public void processCall_(DigestedMessage msg)

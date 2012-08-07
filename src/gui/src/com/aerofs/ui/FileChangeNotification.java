@@ -58,14 +58,14 @@ public class FileChangeNotification
 
     private void received(final PBDownloadEvent ev)
     {
-        if (ev.getK().getCid() == CID.META.getInt() ||
+        if (ev.getSocid().getCid() == CID.META.getInt() ||
                 !ev.hasOkay() || !ev.getOkay() || !ev.hasPath() ||
                 UIUtil.isSystemFile(ev.getPath()) ||
                 UIUtil.shallHide(ev.getPath())) return;
 
         if (ev.getPath().getElemCount() == 0) return;
 
-        Util.l().warn("received FCN " + new OID(ev.getK().getOid()));
+        Util.l().warn("received FCN " + new OID(ev.getSocid().getOid()));
 
         UI.get().asyncExec(new Runnable() {
             @Override

@@ -21,7 +21,7 @@ message PBNotification {
 
 // TODO change to PBUpload/DownloadNotification?
 message PBUploadEvent {
-    required PBSOCKID k = 1;
+    required PBSOCID socid = 1;
     optional PBPath path = 2;   // absent if unknown
     required bytes device_id = 3;
     required uint64 done = 4;   // done == total means completion,
@@ -38,7 +38,7 @@ message PBDownloadEvent {
         ENDED = 3;
     }
 
-    required PBSOCKID k = 1;
+    required PBSOCID socid = 1;
     optional PBPath path = 2;   // absent if unknown
 
     required State state = 3;
@@ -55,9 +55,8 @@ message PBDownloadEvent {
 ////////
 // non-message data structures
 
-message PBSOCKID {
+message PBSOCID {
     required int32 sidx = 1;
     required bytes oid = 2;
     required int32 cid = 3;
-    required int32 kidx = 4;
 }

@@ -39,7 +39,6 @@ import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
@@ -365,7 +364,7 @@ public class Collector implements IDumpStatMisc
     {
         assert started_();
 
-        SOCKID k = new SOCKID(_s.sidx(), occs._ocid.oid(), occs._ocid.cid());
+        SOCID k = new SOCID(_s.sidx(), occs._ocid.oid(), occs._ocid.cid());
         final Set<DID> dids = _cfs.test_(occs._ocid);
         if (dids.isEmpty()) return true;
 

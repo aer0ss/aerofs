@@ -1,10 +1,18 @@
 package com.aerofs.lib.id;
 
+import com.aerofs.proto.RitualNotifications.PBSOCID;
+
 /** Store, Object, Component id */
 public class SOCID implements Comparable<SOCID> {
 
     private final SOID _soid;
     private final CID _cid;
+
+    public SOCID(PBSOCID pb)
+    {
+        this(new SIndex(pb.getSidx()), new OID(pb.getOid()), new CID(pb.getCid()));
+    }
+
 
     public SOCID(SIndex sidx, OID oid, CID cid)
     {

@@ -24,7 +24,7 @@ import com.aerofs.proto.Fsi.PBFSICall.Type;
 import com.aerofs.proto.Fsi.PBSetPrivateKeyCall;
 import com.aerofs.proto.Fsi.PBTransportPingCall;
 import com.aerofs.proto.Fsi.PBTransportPingReply;
-import com.aerofs.proto.RitualNotifications.PBSOCKID;
+import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.google.protobuf.ByteString;
 
 /**
@@ -48,45 +48,20 @@ public class FSIUtil
 {
     static final Logger l = Util.l(FSIUtil.class);
 
-    /**
-     * Compares two PBSOCKID objects
-     *
-     * @param k1 the first object
-     * @param k2 the second object
-     * @return -1, +1, 0, if <code>p1</code> is greater than, less than, or
-     * equal to, <code>p2</code>
-     */
-    public static int compare(PBSOCKID k1, PBSOCKID k2)
+    public static boolean equals(PBSOCID pbsocid1, PBSOCID pbsocid2)
     {
-        int comp = k1.getSidx() - k2.getSidx();
-        if (comp != 0) return comp;
+        if (pbsocid1 == pbsocid2) return true;
+        if (pbsocid1 == null || pbsocid2 == null) return false;
 
-        comp = k1.getCid() - k1.getCid();
-        if (comp != 0) return comp;
-
-        for (int i = 0; i < k1.getOid().size(); i++) {
-            comp = k1.getOid().byteAt(i) - k2.getOid().byteAt(i);
-            if (comp != 0) return comp;
-        }
-
-        return k1.getKidx() - k1.getKidx();
-    }
-
-    public static boolean equals(PBSOCKID k1, PBSOCKID k2)
-    {
-        if (k1 == k2) return true;
-        if (k1 == null || k2 == null) return false;
-
-        if (!k1.getOid().equals(k2.getOid())) return false;
-        if (k1.getSidx() != k2.getSidx()) return false;
-        if (k1.getCid() != k2.getCid()) return false;
-        if (k1.getKidx() != k2.getKidx()) return false;
+        if (!pbsocid1.getOid().equals(pbsocid2.getOid())) return false;
+        if (pbsocid1.getSidx() != pbsocid2.getSidx()) return false;
+        if (pbsocid1.getCid() != pbsocid2.getCid()) return false;
         return true;
     }
 
-    public static int hashCode(PBSOCKID k)
+    public static int hashCode(PBSOCID pbsocid)
     {
-        return k.getOid().hashCode();
+        return pbsocid.getOid().hashCode();
     }
 
     public static int compare(PBPath p1, PBPath p2)

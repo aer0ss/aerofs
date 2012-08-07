@@ -7,10 +7,10 @@ import com.aerofs.daemon.core.net.IDownloadStateListener;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBSOCKID;
+import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 
 class DownloadStateListener implements IDownloadStateListener
@@ -27,27 +27,26 @@ class DownloadStateListener implements IDownloadStateListener
     }
 
     @Override
-    public void stateChanged_(SOCKID k, State state)
+    public void stateChanged_(SOCID socid, State state)
     {
-        _notifier.sendEvent_(state2pb_(_tc, _ds, k, state));
+        _notifier.sendEvent_(state2pb_(_tc, _ds, socid, state));
     }
 
-    static PBNotification state2pb_(TC tc, DirectoryService ds, SOCKID k, State state)
+    static PBNotification state2pb_(TC tc, DirectoryService ds, SOCID socid, State state)
     {
         assert tc.isCoreThread();
 
-        PBSOCKID pbk = PBSOCKID.newBuilder()
-            .setSidx(k.sidx().getInt())
-            .setOid(k.oid().toPB())
-            .setCid(k.cid().getInt())
-            .setKidx(k.kidx().getInt())
+        PBSOCID pbsocid = PBSOCID.newBuilder()
+            .setSidx(socid.sidx().getInt())
+            .setOid(socid.oid().toPB())
+            .setCid(socid.cid().getInt())
             .build();
 
-        PBDownloadEvent.Builder bd = PBDownloadEvent.newBuilder().setK(pbk);
+        PBDownloadEvent.Builder bd = PBDownloadEvent.newBuilder().setSocid(pbsocid);
 
         Path path;
         try {
-            path = ds.resolveNullable_(k.soid());
+            path = ds.resolveNullable_(socid.soid());
         } catch (SQLException e) {
             Util.l(DownloadStateListener.class).warn(Util.e(e));
             path = null;

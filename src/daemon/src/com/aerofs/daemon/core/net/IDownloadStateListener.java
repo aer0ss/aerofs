@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 
-/* valid state transitions for a given k:
+/* valid state transitions for a given socid:
  *
  *  o -> enqueued
  *  enqueued -> started, ended
@@ -72,5 +72,5 @@ public interface IDownloadStateListener {
         }
     }
 
-    void stateChanged_(SOCKID k, State newState);
+    void stateChanged_(SOCID socid, State newState);
 }

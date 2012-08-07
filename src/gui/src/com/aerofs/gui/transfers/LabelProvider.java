@@ -4,11 +4,11 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
-import com.aerofs.proto.RitualNotifications.PBSOCKID;
+import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -96,9 +96,9 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
         }
     }
 
-    private String getText(PBSOCKID k, PBPath pbpath, Path path)
+    private String getText(PBSOCID pbsocid, PBPath pbpath, Path path)
     {
-        return _view.shortenPath(UIUtil.getUserFriendlyPath(k, pbpath, path));
+        return _view.shortenPath(UIUtil.getUserFriendlyPath(pbsocid, pbpath, path));
     }
 
     @Override
@@ -109,9 +109,9 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             switch (columnIndex) {
             case CompTransfersTable.COL_PATH:
                 if (ev.hasPath()) {
-                    return getText(ev.getK(), ev.getPath(), new Path(ev.getPath()));
+                    return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
                 } else {
-                    return new SOCKID(ev.getK()).toString();
+                    return new SOCID(ev.getSocid()).toString();
                 }
             case CompTransfersTable.COL_PROG:
                 return Util.formatProgress(ev.getDone(), ev.getTotal());
@@ -125,9 +125,9 @@ extends org.eclipse.jface.viewers.LabelProvider implements ITableLabelProvider
             switch (columnIndex) {
             case CompTransfersTable.COL_PATH:
                 if (ev.hasPath()) {
-                    return getText(ev.getK(), ev.getPath(), new Path(ev.getPath()));
+                    return getText(ev.getSocid(), ev.getPath(), new Path(ev.getPath()));
                 } else {
-                    return new SOCKID(ev.getK()).toString();
+                    return new SOCID(ev.getSocid()).toString();
                 }
             case CompTransfersTable.COL_PROG:
                 return downloadStateToProgressString(ev);

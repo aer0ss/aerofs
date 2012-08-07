@@ -13,7 +13,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -87,7 +87,7 @@ public class EmigrantDetector
             if (!sidTo.equals(sidAncestor)) sids.add(sidAncestor);
         }
 
-        SOCKID k = new SOCKID(soid, CID.META);
+        SOCID socidFrom = new SOCID(soid, CID.META);
         SIndex sidxTo = downloadEmigrantAncestorStores_(sids, did, tk, soid);
         if (sidxTo == null) return;
         assert sidxTo.equals(_sid2sidx.get_(sidTo));
@@ -96,9 +96,9 @@ public class EmigrantDetector
         // If the object is an anchor, moving the object causes the entire store under the anchor
         // to be moved as well.
         if (!oa.isDir()) {
-            SOCKID kTo = new SOCKID(sidxTo, soid.oid(), CID.META);
-            l.info("dl immigrant " + kTo.soid());
-            _dls.downloadSync_(kTo, _factTo.create_(did), tk, k);
+            SOCID socidTo = new SOCID(sidxTo, soid.oid(), CID.META);
+            l.info("dl immigrant " + socidTo.soid());
+            _dls.downloadSync_(socidTo, _factTo.create_(did), tk, socidFrom);
         } else {
             // Comment (A), referred to by ObjectDeletion.delete_().
             //
@@ -118,13 +118,13 @@ public class EmigrantDetector
             // peer.
             //
             for (OID oidChild : _ds.getChildren_(soid)) {
-                SOCKID kChild = new SOCKID(soid.sidx(), oidChild, CID.META);
+                SOCID socidChild = new SOCID(soid.sidx(), oidChild, CID.META);
                 try {
-                    _dls.downloadSync_(kChild, _factTo.create_(did), tk, k);
+                    _dls.downloadSync_(socidChild, _factTo.create_(did), tk, socidFrom);
                 } catch (Exception e) {
                     // it might be a false alarm, as the child may have been downloaded and migrated
                     // before the downloadSync above started the download thread.
-                    l.info("emigration child dl " + kChild + ", bug aerofs-165: " + Util.e(e));
+                    l.info("emigration child dl " + socidChild + ", bug aerofs-165: " + Util.e(e));
                 }
             }
         }
@@ -148,13 +148,13 @@ public class EmigrantDetector
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx != null) return sidx;
 
-        SOCKID k = new SOCKID(soid, CID.META);
+        SOCID socid = new SOCID(soid, CID.META);
         SIndex sidxAnchor = downloadEmigrantAncestorStores_(sids, did, tk, soid);
         if (sidxAnchor == null) return null;
 
         SOID soidAnchor = new SOID(sidxAnchor, SID.storeSID2anchorOID(sid));
         l.info("download ancestor anchor " + soidAnchor);
-        _dls.downloadSync_(new SOCKID(soidAnchor, CID.META), _factTo.create_(did), tk, k);
+        _dls.downloadSync_(new SOCID(soidAnchor, CID.META), _factTo.create_(did), tk, socid);
 
         // may return null even after downloading of the anchor succeeds.
         // for example, the remote peer may delete the anchor after the meta

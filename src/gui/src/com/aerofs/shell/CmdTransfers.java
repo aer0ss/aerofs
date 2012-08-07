@@ -4,7 +4,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBNotification;
@@ -102,7 +102,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         // print device id and sockid
         if (debug) {
             ps.print(new DID(ev.getDeviceId()).toStringFormal() + "\t| ");
-            ps.print(new SOCKID(ev.getK()) + "\t| ");
+            ps.print(new SOCID(ev.getSocid()) + "\t| ");
         }
 
         // print path
@@ -111,7 +111,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
             str = FSIUtil.toString(ev.getPath());
         } else {
             Path path = new Path(ev.getPath());
-            str = UIUtil.getUserFriendlyPath(ev.getK(), ev.getPath(), path);
+            str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
         }
         ps.println(str);
     }
@@ -131,7 +131,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         ps.print("\t| ");
 
         // print sockid
-        if (debug) ps.print(new SOCKID(ev.getK()) + "\t| ");
+        if (debug) ps.print(new SOCID(ev.getSocid()) + "\t| ");
 
         // print path
         String str;
@@ -139,7 +139,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
             str = FSIUtil.toString(ev.getPath());
         } else {
             Path path = new Path(ev.getPath());
-            str = UIUtil.getUserFriendlyPath(ev.getK(), ev.getPath(), path);
+            str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
         }
         ps.println(str);
     }

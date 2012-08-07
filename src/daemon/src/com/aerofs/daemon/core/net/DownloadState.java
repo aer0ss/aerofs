@@ -2,74 +2,74 @@ package com.aerofs.daemon.core.net;
 
 import java.io.PrintStream;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.core.net.IDownloadStateListener.*;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.notifier.Listeners;
+import com.google.common.collect.Maps;
 
 // see IDownloadStateListener for valid state transitions
 
 public class DownloadState extends Listeners<IDownloadStateListener>
 implements IDumpStatMisc {
 
-    private final Map<SOCKID, State> _states = new TreeMap<SOCKID, State>();
+    private final Map<SOCID, State> _states = Maps.newTreeMap();
 
-    public Map<SOCKID, State> getStates_()
+    public Map<SOCID, State> getStates_()
     {
         return _states;
     }
 
-    public void enqueued_(SOCKID k)
+    public void enqueued_(SOCID socid)
     {
-        //if (k.cid().isMeta()) return;
+        //if (socid.cid().isMeta()) return;
 
         State newState = Enqueued.SINGLETON;
-        State oldState = _states.put(k, newState);
+        State oldState = _states.put(socid, newState);
         assert oldState == null || oldState instanceof Started || oldState instanceof Ongoing :
-                k + " old state: " + oldState;
-        notifyListeners_(k, newState);
+                socid + " old state: " + oldState;
+        notifyListeners_(socid, newState);
     }
 
-    public void started_(SOCKID k)
+    public void started_(SOCID socid)
     {
-        //if (k.cid().isMeta()) return;
+        //if (socid.cid().isMeta()) return;
 
         State newState = Started.SINGLETON;
-        State oldState = _states.put(k, newState);
+        State oldState = _states.put(socid, newState);
         assert oldState instanceof Enqueued;
-        notifyListeners_(k, newState);
+        notifyListeners_(socid, newState);
     }
 
-    public void ongoing_(SOCKID k, Endpoint ep, long done, long total)
+    public void ongoing_(SOCID socid, Endpoint ep, long done, long total)
     {
-        //if (k.cid().isMeta()) return;
+        //if (socid.cid().isMeta()) return;
 
         State newState = new Ongoing(ep, done, total);
-        State oldState = _states.put(k, newState);
+        State oldState = _states.put(socid, newState);
         assert oldState instanceof Started || oldState instanceof Ongoing;
-        notifyListeners_(k, newState);
+        notifyListeners_(socid, newState);
     }
 
-    public void ended_(SOCKID k, boolean okay)
+    public void ended_(SOCID socid, boolean okay)
     {
-        //if (k.cid().isMeta()) return;
+        //if (socid.cid().isMeta()) return;
 
-        State oldState = _states.remove(k);
+        State oldState = _states.remove(socid);
         assert oldState instanceof Started || oldState instanceof Ongoing ||
             oldState instanceof Enqueued;
 
-        notifyListeners_(k, okay ? Ended.SINGLETON_OKAY : Ended.SINGLETON_FAILED);
+        notifyListeners_(socid, okay ? Ended.SINGLETON_OKAY : Ended.SINGLETON_FAILED);
     }
 
-    private void notifyListeners_(SOCKID k, State newState)
+    private void notifyListeners_(SOCID socid, State newState)
     {
         try {
             for (IDownloadStateListener l : beginIterating_()) {
-                l.stateChanged_(k, newState);
+                l.stateChanged_(socid, newState);
             }
         } finally {
             endIterating_();
@@ -79,7 +79,7 @@ implements IDumpStatMisc {
     @Override
     public void dumpStatMisc(String indent2, String indentUnit, PrintStream ps)
     {
-        for (Entry<SOCKID, State> en : getStates_().entrySet()) {
+        for (Entry<SOCID, State> en : getStates_().entrySet()) {
             State s = en.getValue();
             ps.println(indent2 + en.getKey() + " " + s);
         }
