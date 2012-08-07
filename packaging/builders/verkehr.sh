@@ -22,3 +22,4 @@ mkdir -p $INIT
 cp $RESOURCES/verkehr.conf $INIT
 cp $RESOURCES/verkehr $OPT
 cp $RESOURCES/verkehr.properties $OPT
+cp $RESOURCES/log4j.xml $OPT

@@ -13,5 +13,5 @@ import javax.net.ssl.TrustManager;
 public interface ITrustManagerProvider
 {
     @Nullable
-    public TrustManager[] getTms();
+    public TrustManager[] getTrustManagers();
 }

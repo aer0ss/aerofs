@@ -2,7 +2,7 @@
   <configuration default="false" name="VerkehrCommanderTestClient" type="Application" factoryName="Application">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
-        <option name="PATTERN" value="com.aerofs.verkehr.client.commander.*" />
+        <option name="PATTERN" value="com.aerofs.verkehr.client.lib.commander.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>

@@ -1,18 +1,5 @@
 package com.aerofs.daemon.core.syncstatus;
 
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_ACK_TIMEOUT;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
-import static java.util.concurrent.Executors.newCachedThreadPool;
-
-import java.util.concurrent.Callable;
-
-import javax.annotation.Nullable;
-
-import org.apache.log4j.Logger;
-import org.jboss.netty.util.HashedWheelTimer;
-
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
@@ -25,10 +12,22 @@ import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
-import com.aerofs.verkehr.client.subscriber.ISubscriberEventListener;
-import com.aerofs.verkehr.client.subscriber.VerkehrSubscriber;
+import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
+import com.aerofs.verkehr.client.lib.subscriber.ISubscriberEventListener;
+import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.apache.log4j.Logger;
+import org.jboss.netty.util.HashedWheelTimer;
+
+import javax.annotation.Nullable;
+import java.util.concurrent.Callable;
+
+import static com.aerofs.lib.Param.Verkehr.VERKEHR_ACK_TIMEOUT;
+import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
+import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
+import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class SyncStatusNotificationSubscriber {
     private static final Logger l = Util.l(SyncStatusNotificationSubscriber.class);
@@ -42,10 +41,12 @@ public class SyncStatusNotificationSubscriber {
     {
         l.info("creating sync status notification subscriber for t:" + localUser.get());
 
-        _sub = VerkehrSubscriber.getInstance(VERKEHR_HOST, VERKEHR_PORT, newCachedThreadPool(),
+        ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT, newCachedThreadPool(),
                 newCachedThreadPool(), cacert.get(), new CfgKeyManagersProvider(),
-                localDID.get() + localUser.get(), new SubscriberEventListener(q, sync, sched),
-                VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT, new HashedWheelTimer());
+                VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT, new HashedWheelTimer(),
+                localDID.get() + localUser.get(), new SubscriberEventListener(q, sync, sched));
+
+        _sub = factory.create();
     }
 
     public void start_()

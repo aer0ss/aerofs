@@ -1,39 +1,5 @@
 package com.aerofs.sp.server.sp;
 
-import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
-import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_NAME;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import javax.annotation.Nullable;
-import javax.mail.internet.MimeMessage;
-
-import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
-import com.aerofs.proto.Sp.ListSharedFoldersResponse;
-import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
-import com.aerofs.srvlib.db.AbstractDatabaseTransaction;
-import com.aerofs.srvlib.db.AbstractDatabase;
-import com.aerofs.srvlib.sp.SPDatabase;
-import com.aerofs.srvlib.sp.SPDatabase.DeviceRow;
-import com.aerofs.srvlib.sp.SPDatabase.FolderInvitation;
-import com.aerofs.srvlib.sp.user.AuthorizationLevel;
-import com.aerofs.srvlib.sp.user.ISessionUserID;
-import com.aerofs.srvlib.sp.user.User;
-import com.aerofs.srvlib.sp.SPParam;
-import com.aerofs.srvlib.sp.organization.Organization;
-import com.aerofs.srvlib.sp.ACLReturn;
-import org.apache.log4j.Logger;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-import sun.security.pkcs.PKCS10;
-
 import com.aerofs.lib.C;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
@@ -58,12 +24,15 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
+import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
 import com.aerofs.proto.Sp.GetPreferencesReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
+import com.aerofs.proto.Sp.ListSharedFoldersResponse;
+import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -77,12 +46,40 @@ import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.user.UserManagement;
 import com.aerofs.sp.server.sp.user.UserManagement.UserListAndQueryCount;
-import com.aerofs.verkehr.client.commander.VerkehrCommander;
-import com.aerofs.verkehr.client.publisher.VerkehrPublisher;
+import com.aerofs.srvlib.db.AbstractDatabase;
+import com.aerofs.srvlib.db.AbstractDatabaseTransaction;
+import com.aerofs.srvlib.sp.ACLReturn;
+import com.aerofs.srvlib.sp.SPDatabase;
+import com.aerofs.srvlib.sp.SPDatabase.DeviceRow;
+import com.aerofs.srvlib.sp.SPDatabase.FolderInvitation;
+import com.aerofs.srvlib.sp.SPParam;
+import com.aerofs.srvlib.sp.organization.Organization;
+import com.aerofs.srvlib.sp.user.AuthorizationLevel;
+import com.aerofs.srvlib.sp.user.ISessionUserID;
+import com.aerofs.srvlib.sp.user.User;
+import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import sun.security.pkcs.PKCS10;
+
+import javax.annotation.Nullable;
+import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
+import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_NAME;
 
 class SPService implements ISPService
 {
@@ -121,8 +118,7 @@ class SPService implements ISPService
         _certificateGenerator = certificateGenerator;
     }
 
-    public void setVerkehrClients_(VerkehrPublisher verkehrPublisher,
-            VerkehrCommander verkehrCommander)
+    public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrCommander verkehrCommander)
     {
         assert verkehrPublisher != null : ("cannot set null verkehr publisher client");
         assert verkehrCommander != null : ("cannot set null verkehr commander client");

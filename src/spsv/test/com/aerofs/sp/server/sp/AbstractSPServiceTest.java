@@ -1,8 +1,8 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.testlib.AbstractTest;
-import com.aerofs.verkehr.client.commander.VerkehrCommander;
-import com.aerofs.verkehr.client.publisher.VerkehrPublisher;
+import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;

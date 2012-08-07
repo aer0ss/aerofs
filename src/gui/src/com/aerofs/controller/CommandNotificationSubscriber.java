@@ -18,8 +18,9 @@ import com.aerofs.proto.Cmd.CommandCheckUpdate;
 import com.aerofs.proto.Cmd.CommandUploadDatabase;
 import com.aerofs.proto.Cmd.Commands;
 import com.aerofs.ui.UI;
-import com.aerofs.verkehr.client.subscriber.ISubscriberEventListener;
-import com.aerofs.verkehr.client.subscriber.VerkehrSubscriber;
+import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
+import com.aerofs.verkehr.client.lib.subscriber.ISubscriberEventListener;
+import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.log4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -42,10 +43,12 @@ public final class CommandNotificationSubscriber
         String topic = C.CMD_CHANNEL_TOPIC_PREFIX + user;
         l.info("creating command notification subscriber for t:" + topic);
 
-        _sub = VerkehrSubscriber.getInstance(VERKEHR_HOST, VERKEHR_PORT, newCachedThreadPool(),
-                newCachedThreadPool(), caCertFilename, new CfgKeyManagersProvider(),
-                topic, new SubscriberEventListener(), VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT,
-                new HashedWheelTimer());
+        ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
+                newCachedThreadPool(), newCachedThreadPool(), caCertFilename,
+                new CfgKeyManagersProvider(), VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT,
+                new HashedWheelTimer(), topic, new SubscriberEventListener());
+
+        _sub = factory.create();
     }
 
     public void start()

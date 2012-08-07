@@ -5,14 +5,15 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.Util;
 import com.aerofs.proto.Sp.PBACLNotification;
-import com.aerofs.verkehr.client.subscriber.ISubscriberEventListener;
-import com.aerofs.verkehr.client.subscriber.VerkehrSubscriber;
+import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
+import com.aerofs.verkehr.client.lib.subscriber.ISubscriberEventListener;
+import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.log4j.Logger;
@@ -38,11 +39,14 @@ public final class ACLNotificationSubscriber
             CoreScheduler sched, ACLSynchronizer aclsync)
     {
         l.info("creating acl notification subscriber for t:" + localUser.get());
+        localUser.get();
 
-        _sub = VerkehrSubscriber.getInstance(VERKEHR_HOST, VERKEHR_PORT, newCachedThreadPool(),
-                newCachedThreadPool(), cacert.get(), new CfgKeyManagersProvider(), localUser.get(),
-                new SubscriberEventListener(q, aclsync, sched), VERKEHR_RETRY_INTERVAL,
-                VERKEHR_ACK_TIMEOUT, new HashedWheelTimer());
+        ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
+                newCachedThreadPool(), newCachedThreadPool(), cacert.get(),
+                new CfgKeyManagersProvider(), VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT,
+                new HashedWheelTimer(), localUser.get(), new SubscriberEventListener(q, aclsync, sched));
+
+        _sub = factory.create();
     }
 
     public void start_()

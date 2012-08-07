@@ -9,15 +9,15 @@ import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.sp.server.AeroServlet;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
+import com.aerofs.sp.server.sp.cert.CertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.user.UserManagement;
-import com.aerofs.sp.server.sp.cert.CertificateGenerator;
 import com.aerofs.srvlib.sp.DoPostDelegate;
 import com.aerofs.srvlib.sp.SPDatabase;
 import com.aerofs.srvlib.sp.SPParam;
 import com.aerofs.srvlib.sp.ThreadLocalHttpSessionUser;
-import com.aerofs.verkehr.client.publisher.VerkehrPublisher;
-import com.aerofs.verkehr.client.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.util.concurrent.ExecutionError;
 import org.apache.log4j.Logger;
 
@@ -69,21 +69,34 @@ public class SPServlet extends AeroServlet
         init_();
 
         _certificateGenerator.setCAURL_(getServletContext().getInitParameter("ca_url"));
-
-        _service.setVerkehrClients_(
-                (VerkehrPublisher) getServletContext().getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE),
-                (VerkehrCommander) getServletContext().getAttribute(VERKEHR_COMMANDER_ATTRIBUTE));
+        _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrCommander());
 
         try {
-            String dbEndpoint = getServletContext().getInitParameter(MYSQL_ENDPOINT_INIT_PARAMETER);
-            String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
-            String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
-            String dbSchema = getServletContext().getInitParameter(MYSQL_SP_SCHEMA_INIT_PARAMETER);
-            _db.init_(dbEndpoint, dbSchema, dbUser, dbPass);
+            initdb_();
         } catch (Exception e) {
             l.error("init db:", e);
             throw new ServletException(e);
         }
+    }
+
+    private void initdb_()
+            throws SQLException, ClassNotFoundException
+    {
+        String dbEndpoint = getServletContext().getInitParameter(MYSQL_ENDPOINT_INIT_PARAMETER);
+        String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
+        String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
+        String dbSchema = getServletContext().getInitParameter(MYSQL_SP_SCHEMA_INIT_PARAMETER);
+        _db.init_(dbEndpoint, dbSchema, dbUser, dbPass);
+    }
+
+    private VerkehrCommander getVerkehrCommander()
+    {
+        return (VerkehrCommander) getServletContext().getAttribute(VERKEHR_COMMANDER_ATTRIBUTE);
+    }
+
+    private VerkehrPublisher getVerkehrPublisher()
+    {
+        return (VerkehrPublisher) getServletContext().getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
     }
 
     @Override
