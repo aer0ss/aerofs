@@ -22,6 +22,7 @@ import com.aerofs.lib.id.*;
 
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.net.ReceiveAndApplyUpdate.*;
@@ -371,7 +372,7 @@ public class Aliasing
      *        alias matches soidNoNewVersion
      */
     public void resolveNameConflictOnNewRemoteObjectByAliasing_(SOID soidRemote, SOID soidLocal,
-            OID parent, Version vRemote, PBMeta meta, SOID soidNoNewVersion, Trans t)
+            OID parent, Version vRemote, PBMeta meta, @Nullable SOID soidNoNewVersion, Trans t)
         throws Exception
     {
         l.info("Resolving name conflict by aliasing conflicting objects.");

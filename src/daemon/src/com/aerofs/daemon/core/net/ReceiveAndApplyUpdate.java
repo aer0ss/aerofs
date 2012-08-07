@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -357,8 +358,8 @@ public class ReceiveAndApplyUpdate
      * should be changed to OID types.
      */
     public boolean applyMeta_(DID did, SOID soid, PBMeta meta, OID oidParent,
-            final boolean wasPresent, int metaDiff, Trans t, SOID noNewVersion, Version vRemote,
-            final SOID soidMsg)
+            final boolean wasPresent, int metaDiff, Trans t, @Nullable SOID noNewVersion,
+            Version vRemote, final SOID soidMsg)
             throws Exception
     {
         final SOID soidParent = new SOID(soid.sidx(), oidParent);

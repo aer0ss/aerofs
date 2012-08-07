@@ -104,34 +104,23 @@ public class Downloads {
     }
 
     /**
-     * @param tk may be null
      * @param dependent the branch that depends on the downloading of k. this is
      * to detect cyclic downloadSync calls (deadlocks). may be null
      */
-    public DID downloadSync_(SOCKID k, To to, Token tk, SOCKID dependent)
+    public DID downloadSync_(SOCKID k, To to, @Nullable Token tk, SOCKID dependent)
         throws Exception
     {
         SyncDownloadImpl sdi = new SyncDownloadImpl(k, to, tk, dependent);
         return sdi._from;
     }
 
-    public void downloadAsyncThrows_(SOCKID k, To to)
-        throws ExNoResource
-    {
-        downloadAsyncThrows_(k, to, null, null);
-    }
-
     public Download downloadAsyncThrows_(SOCKID k, To to, IDownloadCompletionListener listener,
-            Token tk) throws ExNoResource
+            Token tk)
+            throws ExNoResource
     {
         Download dl = downloadAsync_(k, to, listener, tk);
         if (dl == null) throw new ExNoResource("cat is full");
         return dl;
-    }
-
-    public Download downloadAsync_(final SOCKID k, To src)
-    {
-        return downloadAsync_(k, src, null, null);
     }
 
     public Cat getCat()
@@ -150,7 +139,7 @@ public class Downloads {
      *
      * TODO merge tk with the existing one to adjust priorities
      */
-    public Download downloadAsync_(final SOCKID k, @Nullable To to,
+    public @Nullable Download downloadAsync_(final SOCKID k, @Nullable To to,
             @Nullable IDownloadCompletionListener listener, @Nullable final Token tk)
     {
         try {

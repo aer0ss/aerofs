@@ -178,7 +178,7 @@ public class DirectoryService implements IDumpStatMisc
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return unlike other versions of resolve(), it never returns null
      */
-    public Path resolve_(OA oa) throws SQLException
+    public @Nonnull Path resolve_(OA oa) throws SQLException
     {
         ArrayList<String> elems = new ArrayList<String>(16);
         while (true) {

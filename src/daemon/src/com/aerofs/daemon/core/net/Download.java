@@ -81,8 +81,7 @@ public class Download
         }
     }
 
-    // l maybe null
-    private Download(Factory f, SOCKID k, To src, IDownloadCompletionListener l, Token tk,
+    private Download(Factory f, SOCKID k, To src, @Nullable IDownloadCompletionListener l, Token tk,
             DownloadDependenciesGraph<SOCID> dldg)
     {
         _f = f;
@@ -105,11 +104,6 @@ public class Download
         return _k;
     }
 
-    public To src()
-    {
-        return _src;
-    }
-
     public void include_(To src, @Nullable IDownloadCompletionListener listener)
     {
         _src.addAll_(src);
@@ -119,11 +113,6 @@ public class Download
         if (_f._tc.prio() != _prio) {
             l.info("prio changed. take effect in the next round");
         }
-    }
-
-    public Prio prio_()
-    {
-        return _prio;
     }
 
     private static interface IDownloadCompletionListenerVisitor
@@ -150,7 +139,7 @@ public class Download
     /**
      * @return null if the download is successful and there' no kml version left
      */
-    Exception do_()
+    @Nullable Exception do_()
     {
         Prio prioOrg = _f._tc.prio();
         try {
@@ -245,8 +234,7 @@ public class Download
                 final SOCKID dep = new SOCKID(_k.sidx(), e.ocid());
                 l.info(_k + " depends on " + dep);
                 _dlOngoingDependencies.addEdge_(_k.socid(), dep.socid());
-                To to = e.did() == null ? _f._factTo.create_(_src) :
-                        _f._factTo.create_(e.did());
+                To to = e.did() == null ? _f._factTo.create_(_src) : _f._factTo.create_(e.did());
                 try {
                     _f._dls.downloadSync_(dep, to, _tk, _k);
                 } catch (Exception e2) {
