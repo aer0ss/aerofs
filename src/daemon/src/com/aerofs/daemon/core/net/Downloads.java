@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -38,19 +37,19 @@ public class Downloads {
         private TCB _tcb;
         private DID _from;
 
-        SyncDownloadImpl(SOCKID k, To to, Token tk, SOCKID dependent)
+        SyncDownloadImpl(SOCID socid, To to, Token tk, SOCID dependent)
                 throws Exception
         {
             Token tkWait = _tc.acquireThrows_(Cat.UNLIMITED, "syncDL");
             try {
-                downloadAsyncThrows_(k, to, this, tk);
-                _syncDownloadDeadlockDetector.addEdge_(dependent.socid(), k.socid());
+                downloadAsyncThrows_(socid, to, this, tk);
+                _syncDownloadDeadlockDetector.addEdge_(dependent, socid);
                 _tcb = TC.tcb();
-                tkWait.pause_("syncDL " + k);
+                tkWait.pause_("syncDL " + socid);
             } catch (ExAborted e) {
                 throw (Exception) e.getCause();
             } finally {
-                _syncDownloadDeadlockDetector.removeEdge_(dependent.socid(), k.socid());
+                _syncDownloadDeadlockDetector.removeEdge_(dependent, socid);
                 tkWait.reclaim_();
                 _tcb = null;
             }
@@ -80,7 +79,7 @@ public class Downloads {
     private To.Factory _factTo;
     private DirectoryService _ds;
 
-    private final Map<SOCKID, Download> _ongoing = Maps.newTreeMap();
+    private final Map<SOCID, Download> _ongoing = Maps.newTreeMap();
     private final DownloadDependenciesGraph<SOCID> _syncDownloadDeadlockDetector
             = new DownloadDependenciesGraph<SOCID>();
 
@@ -98,27 +97,27 @@ public class Downloads {
         _ds = ds;
     }
 
-    public boolean isOngoing_(SOCKID k)
+    public boolean isOngoing_(SOCID socid)
     {
-        return _ongoing.containsKey(k);
+        return _ongoing.containsKey(socid);
     }
 
     /**
      * @param dependent the branch that depends on the downloading of k. this is
      * to detect cyclic downloadSync calls (deadlocks). may be null
      */
-    public DID downloadSync_(SOCKID k, To to, @Nullable Token tk, SOCKID dependent)
+    public DID downloadSync_(SOCID socid, To to, @Nullable Token tk, SOCID dependent)
         throws Exception
     {
-        SyncDownloadImpl sdi = new SyncDownloadImpl(k, to, tk, dependent);
+        SyncDownloadImpl sdi = new SyncDownloadImpl(socid, to, tk, dependent);
         return sdi._from;
     }
 
-    public Download downloadAsyncThrows_(SOCKID k, To to, IDownloadCompletionListener listener,
+    public Download downloadAsyncThrows_(SOCID socid, To to, IDownloadCompletionListener listener,
             Token tk)
             throws ExNoResource
     {
-        Download dl = downloadAsync_(k, to, listener, tk);
+        Download dl = downloadAsync_(socid, to, listener, tk);
         if (dl == null) throw new ExNoResource("cat is full");
         return dl;
     }
@@ -139,38 +138,35 @@ public class Downloads {
      *
      * TODO merge tk with the existing one to adjust priorities
      */
-    public @Nullable Download downloadAsync_(final SOCKID k, @Nullable To to,
+    public @Nullable Download downloadAsync_(final SOCID socid, @Nullable To to,
             @Nullable IDownloadCompletionListener listener, @Nullable final Token tk)
     {
         try {
             // assert that the object is not expelled if the branch being downloaded is not metadata
             OA oa;
-            assert k.cid().equals(CID.META) || (oa = _ds.getOANullable_(k.soid())) == null ||
-                    !oa.isExpelled() : k;
+            assert socid.cid().equals(CID.META) ||
+                    (oa = _ds.getOANullable_(socid.soid())) == null ||
+                    !oa.isExpelled() : socid;
         } catch (SQLException e) { }
 
-        // we currently don't support non-master branches. see IListener.
-        // temporarily disabled the follow assertion to avoid sp daemon crashes
-        //assert k.kidx().equals(KIndex.MASTER);
-
         // make a copy so that the caller may reuse the src afterwards.
-        to = to == null ? _factTo.create_(k.sidx()) : _factTo.create_(to);
+        to = to == null ? _factTo.create_(socid.sidx()) : _factTo.create_(to);
 
-        Download dlExisting = _ongoing.get(k);
+        Download dlExisting = _ongoing.get(socid);
         if (dlExisting != null) {
             dlExisting.include_(to, listener);
             return dlExisting;
 
         } else {
-            final Token tk2 = tk == null ? _tc.acquire_(getCat(), "dl " + k) : tk;
+            final Token tk2 = tk == null ? _tc.acquire_(getCat(), "dl " + socid) : tk;
             if (tk2 == null) {
-                l.info("cat full 4 " + k);
+                l.info("cat full 4 " + socid);
                 return null;
             }
 
-            l.info(k);
+            l.info(socid);
 
-            final Download dl = _factDownload.create_(k, to, listener, tk2);
+            final Download dl = _factDownload.create_(socid, to, listener, tk2);
 
             IEvent ev = new AbstractEBSelfHandling() {
                     @Override
@@ -180,7 +176,7 @@ public class Downloads {
                             dl.do_();
                         } finally {
                             if (tk == null) tk2.reclaim_();
-                            Util.verify(_ongoing.remove(k));
+                            Util.verify(_ongoing.remove(socid));
                         }
                     }
                 };
@@ -188,9 +184,9 @@ public class Downloads {
             // try enqueue first. schedule it if the queue is full
             if (!_q.enqueue_(ev, _tc.prio())) _sched.schedule(ev, 0);
 
-            Util.verify(_ongoing.put(k, dl) == null);
+            Util.verify(_ongoing.put(socid, dl) == null);
 
-            _dlstate.enqueued_(k);
+            _dlstate.enqueued_(socid);
             return dl;
         }
     }

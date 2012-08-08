@@ -22,7 +22,7 @@ import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.aerofs.proto.RitualNotifications.PBSOCKID;
+import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.common.util.concurrent.FutureCallback;
@@ -183,9 +183,9 @@ public class UIUtil
         System.exit(0);
     }
 
-    private static String getUserFriendlyID(PBSOCKID k)
+    private static String getUserFriendlyID(PBSOCID pbsocid)
     {
-        ByteString oid = k.getOid();
+        ByteString oid = pbsocid.getOid();
         if (Cfg.staging()) {
             // for internal use we want the first 3 oid bytes (like git)
             return String.format("%1$02X%2$X", oid.byteAt(0), oid.byteAt(1) & 0xF);
@@ -198,13 +198,13 @@ public class UIUtil
     /**
      * @param path the result of new Path(pbpath)
      */
-    public static String getUserFriendlyPath(PBSOCKID k, PBPath pbpath, Path path)
+    public static String getUserFriendlyPath(PBSOCID pbsocid, PBPath pbpath, Path path)
     {
         String text;
         if (path.isEmpty() || UIUtil.isSystemFile(pbpath)) {
-            text = "metadata (" + getUserFriendlyID(k) + ")";
-        } else if (k.getCid() == CID.META.getInt()) {
-            text = "metadata (" + getUserFriendlyID(k) + ") for " + path;
+            text = "metadata (" + getUserFriendlyID(pbsocid) + ")";
+        } else if (pbsocid.getCid() == CID.META.getInt()) {
+            text = "metadata (" + getUserFriendlyID(pbsocid) + ") for " + path;
         } else {
             text = path.toString();
         }

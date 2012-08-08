@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.*;
 
+import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 import com.aerofs.daemon.core.ds.OA;
@@ -37,14 +38,13 @@ public class GetComponentReply
     private final MapAlias2Target _a2t;
     private final LocalACL _lacl;
     private final IncomingStreams _iss;
-    private final DownloadState _dlState;
     private final EmigrantDetector _emd;
     private final TransManager _tm;
     private final MetaDiff _mdiff;
 
     @Inject
     public GetComponentReply(DirectoryService ds, LocalACL lacl, ReceiveAndApplyUpdate ru,
-            Aliasing al, MetaDiff mdiff, IncomingStreams iss, DownloadState dlState,
+            Aliasing al, MetaDiff mdiff, IncomingStreams iss,
             EmigrantDetector emd, MapAlias2Target a2t, TransManager tm)
     {
         _ds = ds;
@@ -52,7 +52,6 @@ public class GetComponentReply
         _al = al;
         _lacl = lacl;
         _iss = iss;
-        _dlState = dlState;
         _emd = emd;
         _tm = tm;
         _a2t = a2t;
@@ -77,7 +76,7 @@ public class GetComponentReply
         }
     };
 
-    void processReply_(SOCKID k, To src, DigestedMessage msg, Token tk)
+    void processReply_(SOCID socid, To src, DigestedMessage msg, Token tk)
             throws Exception
     {
         try {
@@ -88,7 +87,7 @@ public class GetComponentReply
                 throw Exceptions.fromPB(msg.pb().getExceptionReply());
             }
 
-            doProcessReply_(k, msg, tk);
+            doProcessReply_(socid, msg, tk);
 
         } finally {
             // TODO put this statement into a more general method
@@ -103,11 +102,11 @@ public class GetComponentReply
     // downloading again after the dependency is solved.
     //
 
-    private void doProcessReply_(SOCKID k, DigestedMessage msg, Token tk)
+    private void doProcessReply_(SOCID socid, DigestedMessage msg, Token tk)
             throws Exception
     {
         PBGetComReply pbReply = msg.pb().getGetComReply();
-        CIDType type = CIDType.infer(k.cid());
+        CIDType type = CIDType.infer(socid.cid());
 
         /////////////////////////////////////////
         // determine meta diff, handle aliases, check permissions, etc
@@ -128,8 +127,8 @@ public class GetComponentReply
         int metaDiff;
         if (type != CIDType.META) {
             metaDiff = 0;
-            if (_ds.hasOA_(k.soid())) {
-                if (!_lacl.check_(msg.user(), k.sidx(), Role.EDITOR)) {
+            if (_ds.hasOA_(socid.soid())) {
+                if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
                     throw new ExSenderHasNoPerm();
                 }
             }
@@ -137,7 +136,7 @@ public class GetComponentReply
         } else {
             PBMeta meta = pbReply.getMeta();
             oidParent = new OID(meta.getParentObjectId());
-            assert !oidParent.equals(k.oid()) : "parent " + oidParent + " k " + k;
+            assert !oidParent.equals(socid.oid()) : "parent " + oidParent + " socid " + socid;
 
             // "Dereference" the parent OID if it has been aliased locally, otherwise:
             // *  the parent's OA is not present (aliased objects don't have
@@ -149,18 +148,18 @@ public class GetComponentReply
             // *  after the dependency is incorrectly "resolved", the download subsystem attempts
             //    the original object, causing step 1 to repeat.
             // as a result, the system would enter an infinite loop.
-            final OID oidParentTarget = _a2t.getNullable_(new SOID(k.sidx(), oidParent));
+            final OID oidParentTarget = _a2t.getNullable_(new SOID(socid.sidx(), oidParent));
             if (oidParentTarget != null) {
                 l.warn("dereferenced aliased parent " + oidParent + "->" + oidParentTarget);
 
                 // We don't gracefully handle the parent OID being the same as that sent in the msg
-                assert !oidParentTarget.equals(k.oid()) : "parent msg " + oidParent
-                        + " parent target " + oidParentTarget + " k " + k;
+                assert !oidParentTarget.equals(socid.oid()) : "parent msg " + oidParent
+                        + " parent target " + oidParentTarget + " socid " + socid;
 
                 oidParent = oidParentTarget;
             }
 
-            metaDiff = _mdiff.computeMetaDiff_(k.soid(), meta, oidParent);
+            metaDiff = _mdiff.computeMetaDiff_(socid.soid(), meta, oidParent);
 
             if (Util.test(metaDiff, MetaDiff.NAME | MetaDiff.PARENT)) {
                 // perform emigration only for the target object, because at this
@@ -168,7 +167,7 @@ public class GetComponentReply
                 // will be aliased or renamed, etc. this is all right as very rare
                 // that aliasing/name conflicts and emigration happen at the same
                 // time.
-                _emd.detectAndPerformEmigration_(k.soid(), oidParent, meta.getName(),
+                _emd.detectAndPerformEmigration_(socid.soid(), oidParent, meta.getName(),
                         meta.getEmigrantTargetAncestorSidList(), msg.did(), tk);
                 // N.B after the call the local meta might have been updated.
                 // but we don't need to update metaDiff.
@@ -179,10 +178,10 @@ public class GetComponentReply
                 assert meta.hasTargetVersion();
                 _al.processAliasMsg_(
                     msg.did(),
-                    k.soid(),                                           // alias
-                    new Version(pbReply.getVersion()),                  // vRemoteAlias
-                    new SOID(k.sidx(), new OID(meta.getTargetOid())),   // target
-                    new Version(meta.getTargetVersion()),               // vRemoteTarget
+                    socid.soid(),                                        // alias
+                    new Version(pbReply.getVersion()),                   // vRemoteAlias
+                    new SOID(socid.sidx(), new OID(meta.getTargetOid())),// target
+                    new Version(meta.getTargetVersion()),                // vRemoteTarget
                     oidParent,
                     metaDiff, meta);
 
@@ -191,16 +190,16 @@ public class GetComponentReply
                 return;
             } else {
                 // Process non-alias message.
-                OID targetOIDLocal = _a2t.getNullable_(k.soid());
+                OID targetOIDLocal = _a2t.getNullable_(socid.soid());
                 if (targetOIDLocal != null) {
-                    _al.processNonAliasMsgOnLocallyAliasedObject_(k.socid(), targetOIDLocal);
+                    _al.processNonAliasMsgOnLocallyAliasedObject_(socid, targetOIDLocal);
                     // processNonAliasMsgOnLocallyAliasedObject_() does the necessary processing
                     // for update on a locally aliased object hence return from this point.
                     return;
                 } else {
                     l.info("meta diff: " + String.format("0x%1$x", metaDiff));
-                    if (metaDiff != 0 && _ds.hasOA_(k.soid())) {
-                        if (!_lacl.check_(msg.user(), k.sidx(), Role.EDITOR)) {
+                    if (metaDiff != 0 && _ds.hasOA_(socid.soid())) {
+                        if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
                             throw new ExSenderHasNoPerm();
                         }
                     }
@@ -215,20 +214,21 @@ public class GetComponentReply
         ReceiveAndApplyUpdate.CausalityResult cr;
         switch (type) {
         case META:
-            cr = _ru.computeCausalityForMeta_(k.soid(), vRemote, metaDiff);
+            cr = _ru.computeCausalityForMeta_(socid.soid(), vRemote, metaDiff);
             break;
         case CONTENT:
-            cr = _ru.computeCausalityForContent_(k.soid(), vRemote, msg, tk);
+            cr = _ru.computeCausalityForContent_(socid.soid(), vRemote, msg, tk);
             break;
         default:
             cr = null;
-            Util.unimplemented("support CID: " + k.cid());
+            Util.unimplemented("support CID: " + socid.cid());
         }
 
         if (cr == null) return;
 
-        KIndex kidxOld = k.kidx();
-        k = new SOCKID(k.socid(), cr._kidx);
+        // This is the branch to which the update should be applied, as determined by
+        // ReceiveAndApplyUpdate.computeCausalityFor{Meta,Content}_().
+        SOCKID targetBranch = new SOCKID(socid, cr._kidx);
 
         /////////////////////////////////////////
         // apply update
@@ -237,38 +237,29 @@ public class GetComponentReply
         // It may be the case that it's not new but all the local ticks
         // have been replaced by remote ticks.
 
-        final boolean wasPresent = _ds.isPresent_(k);
+        final boolean wasPresent = _ds.isPresent_(targetBranch);
 
-        if (!kidxOld.equals(k.kidx())) {
-            // act as starting a new download if kidx has changed. as we're not
-            // going to change the kidx in the Download class, there will be
-            // two simultaneous downloads maintained in download state.
-            _dlState.enqueued_(k);
-            _dlState.started_(k);
-        }
         Trans t = null;
-        boolean okay = false;
         try {
             switch (type) {
             case META:
                 t = _tm.begin_();
                 if (metaDiff != 0) {
                     boolean oidsAliasedOnNameConflict =
-                        _ru.applyMeta_(msg.did(), k.soid(), pbReply.getMeta(),
+                        _ru.applyMeta_(msg.did(), targetBranch.soid(), pbReply.getMeta(),
                             oidParent,
                             wasPresent, metaDiff, t,
                             // for non-alias message create a new version
                             // on aliasing name conflict.
                             null,
                             vRemote,
-                            k.soid());
+                            targetBranch.soid());
 
                     // Aliasing objects on name conflicts updates versions and bunch
                     // of stuff (see resolveNameConflictOnNewRemoteObjectByAliasing_()). No further
                     // processing is required hence return from this point.
                     if (oidsAliasedOnNameConflict) {
                         t.commit_();
-                        okay = true;
                         return;
                     }
                 }
@@ -278,23 +269,26 @@ public class GetComponentReply
                 // TODO merge/delete branches (variable kidcs), including their prefix files, that
                 // are dominated by the new version
 
-                t = _ru.applyContent_(msg, k, kidxOld, wasPresent, vRemote, cr, tk);
+                // N.B. kidxOld appears to only be used to detect if prefix files should be
+                // accepted, migrated, or rejected in applyContent_(). It's unclear to me (DF)
+                // how kidxOld would ever acquire a value other than MASTER.
+                KIndex kidxOld = KIndex.MASTER;
+
+                t = _ru.applyContent_(msg, targetBranch, kidxOld, wasPresent, vRemote, cr, tk);
                 break;
 
             default:
-                Util.unimplemented("support CID: " + k.cid());
+                Util.unimplemented("support CID: " + socid.cid());
                 break;
             }
 
-            _ru.applyUpdateMetaAndContent_(k, vRemote, cr, type, t);
+            _ru.applyUpdateMetaAndContent_(targetBranch, vRemote, cr, type, t);
 
             t.commit_();
-            okay = true;
-            l.warn(k + " ok " + msg.ep());
+            l.warn(socid + " ok " + msg.ep());
 
         } finally {
             if (t != null) t.end_();
-            if (!kidxOld.equals(k.kidx())) _dlState.ended_(k, okay);
         }
     }
 }

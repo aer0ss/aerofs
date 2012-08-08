@@ -2,7 +2,7 @@ package com.aerofs.gui.shellext;
 
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.fsi.FSIUtil;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
@@ -18,8 +18,8 @@ import java.util.Map;
 public class TransferStateNotifier
 {
     // these two fields should be accessed only by the notification thread
-    private final Map<SOCKID, String> _dlMap = Maps.newHashMap(); // maps sockid -> file path
-    private final Map<SOCKID, String> _ulMap = Maps.newHashMap(); // maps sockid -> file path
+    private final Map<SOCID, String> _dlMap = Maps.newHashMap(); // maps socid -> file path
+    private final Map<SOCID, String> _ulMap = Maps.newHashMap(); // maps socid -> file path
 
     private final ShellextService _service;
 
@@ -47,54 +47,54 @@ public class TransferStateNotifier
 
     private void onDownloadNotification_(PBDownloadEvent ev)
     {
-        SOCKID k = new SOCKID(ev.getK());
+        SOCID socid = new SOCID(ev.getSocid());
         String path = Cfg.absRootAnchor() + FSIUtil.toString(ev.getPath());
 
-        if (!_dlMap.containsKey(k)) {
+        if (!_dlMap.containsKey(socid)) {
             if (ev.getState() == PBDownloadEvent.State.ONGOING) {
                 // This is a new download
-                _dlMap.put(k, path);
+                _dlMap.put(socid, path);
                 _service.notifyDownload(path, true); // no-op if path is empty
             }
         } else {
-            String previousPath = _dlMap.get(k);
+            String previousPath = _dlMap.get(socid);
             if (!path.equals(previousPath)) {
                 // The path has changed. We must clear the Downloading flag for the previous path
                 _service.notifyDownload(previousPath, false);
-                _dlMap.put(k, path);
+                _dlMap.put(socid, path);
                 _service.notifyDownload(path, true);
             }
             if (ev.getState() == PBDownloadEvent.State.ENDED) {
                 _service.notifyDownload(path, false);
-                _dlMap.remove(k);
+                _dlMap.remove(socid);
             }
         }
     }
 
     private void onUploadNotification_(PBUploadEvent ev)
     {
-        SOCKID k = new SOCKID(ev.getK());
+        SOCID socid = new SOCID(ev.getSocid());
         String path = Cfg.absRootAnchor() + FSIUtil.toString(ev.getPath());
 
-        if (!_ulMap.containsKey(k)) {
+        if (!_ulMap.containsKey(socid)) {
             if (ev.getTotal() > 0 && ev.getDone() > 0 && ev.getDone() != ev.getTotal()) {
                 // This is a new upload
-                _ulMap.put(k, path);
+                _ulMap.put(socid, path);
                 _service.notifyUpload(path, true);
                 return;
             }
         } else {
-            String previousPath = _ulMap.get(k);
+            String previousPath = _ulMap.get(socid);
             if (!path.equals(previousPath)) {
                 // The path has changed. We must clear the Uploading flag for the previous path
                 _service.notifyUpload(previousPath, false);
-                _ulMap.put(k, path);
+                _ulMap.put(socid, path);
                 _service.notifyUpload(path, true);
             }
             if (ev.getDone() == ev.getTotal()) {
                 // The upload finished
                 _service.notifyUpload(path, false);
-                _ulMap.remove(k);
+                _ulMap.remove(socid);
             }
         }
     }

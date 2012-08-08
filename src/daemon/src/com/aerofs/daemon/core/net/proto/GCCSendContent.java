@@ -218,7 +218,7 @@ public class GCCSendContent
             long readPosition = prefixLen;
             // Once rest == 0, the receiver has been sent the full content
             while (rest > 0) {
-                _ulstate.progress_(k, ep, len - rest, len);
+                _ulstate.progress_(k.socid(), ep, len - rest, len);
                 long bytesCopied;
 
                 if (os == null) {
@@ -264,7 +264,7 @@ public class GCCSendContent
         } finally {
             if (is != null) is.close();
             if (reason == null) outgoing.end_(); else outgoing.abort_(reason);
-            _ulstate.progress_(k, ep, len, len);
+            _ulstate.progress_(k.socid(), ep, len, len);
         }
     }
 }

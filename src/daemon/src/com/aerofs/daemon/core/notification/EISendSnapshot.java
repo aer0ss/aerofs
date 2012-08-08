@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.core.net.UploadState;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 
 /**
@@ -41,12 +41,12 @@ class EISendSnapshot extends AbstractEBSelfHandling
     @Override
     public void handle_()
     {
-        Map<SOCKID, State> dls = _dls.getStates_();
+        Map<SOCID, State> dls = _dls.getStates_();
         Map<Key, Value> uls = _uls.getStates_();
 
         PBNotification pbs[] = new PBNotification[dls.size() + uls.size()];
         int idx = 0;
-        for (Entry<SOCKID, State> en : dls.entrySet()) {
+        for (Entry<SOCID, State> en : dls.entrySet()) {
             pbs[idx++] = DownloadStateListener.state2pb_(_tc, _ds, en.getKey(), en.getValue());
         }
 

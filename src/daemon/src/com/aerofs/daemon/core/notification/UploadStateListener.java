@@ -7,9 +7,9 @@ import com.aerofs.daemon.core.net.IUploadStateListener;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
-import com.aerofs.proto.RitualNotifications.PBSOCKID;
+import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 
@@ -36,23 +36,22 @@ class UploadStateListener implements IUploadStateListener
     {
         assert tc.isCoreThread();
 
-        SOCKID k = key._k;
-        PBSOCKID pbk = PBSOCKID.newBuilder()
-                .setSidx(k.sidx().getInt())
-                .setOid(k.oid().toPB())
-                .setCid(k.cid().getInt())
-                .setKidx(k.kidx().getInt())
+        SOCID socid = key._socid;
+        PBSOCID pbsocid = PBSOCID.newBuilder()
+                .setSidx(socid.sidx().getInt())
+                .setOid(socid.oid().toPB())
+                .setCid(socid.cid().getInt())
                 .build();
 
         PBUploadEvent.Builder bd = PBUploadEvent.newBuilder()
-                .setK(pbk)
+                .setSocid(pbsocid)
                 .setDeviceId(key._ep.did().toPB())
                 .setDone(value._done)
                 .setTotal(value._total);
 
         Path path;
         try {
-            path = ds.resolveNullable_(k.soid());
+            path = ds.resolveNullable_(socid.soid());
         } catch (SQLException e) {
             Util.l(UploadStateListener.class).warn(Util.e(e));
             path = null;

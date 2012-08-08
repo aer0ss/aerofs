@@ -60,10 +60,10 @@ public class TestEmigrantDetector extends AbstractTest
     SOID soidSource = new SOID(sidxSource, new OID(UniqueID.generate()));
     SOID soidTarget = new SOID(sidxTarget, soidSource.oid());
 
-    SOCKID kAnchorTarget = new SOCKID(soidAnchorTarget, CID.META);
-    SOCKID kAnchorTargetParent = new SOCKID(soidAnchorTargetParent, CID.META);
-    SOCKID kSource = new SOCKID(soidSource, CID.META);
-    SOCKID kTarget = new SOCKID(soidTarget, CID.META);
+    SOCID socidAnchorTarget = new SOCID(soidAnchorTarget, CID.META);
+    SOCID socidAnchorTargetParent = new SOCID(soidAnchorTargetParent, CID.META);
+    SOCID socidSource = new SOCID(soidSource, CID.META);
+    SOCID socidTarget = new SOCID(soidTarget, CID.META);
 
     OID oidSourceParentFrom = new OID(UniqueID.generate());
     String nameSourceFrom = "Foo";
@@ -111,8 +111,8 @@ public class TestEmigrantDetector extends AbstractTest
 
         when(ds.getOANullable_(soidSource)).thenReturn(oa);
 
-        when(dls.downloadSync_(eq(kAnchorTargetParent), any(To.class), any(Token.class),
-                any(SOCKID.class))).then(new Answer<Void>() {
+        when(dls.downloadSync_(eq(socidAnchorTargetParent), any(To.class), any(Token.class),
+                any(SOCID.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock)
                     throws Throwable
@@ -123,8 +123,8 @@ public class TestEmigrantDetector extends AbstractTest
             }
         });
 
-        when(dls.downloadSync_(eq(kAnchorTarget), any(To.class), any(Token.class),
-                any(SOCKID.class))).then(new Answer<Void>() {
+        when(dls.downloadSync_(eq(socidAnchorTarget), any(To.class), any(Token.class),
+                any(SOCID.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock)
                     throws Throwable
@@ -157,7 +157,7 @@ public class TestEmigrantDetector extends AbstractTest
         mockChildren();
         shouldNotEmigrate();
         for (OID child : ds.getChildren_(soidSource)) {
-            verifyDownload(new SOCKID(sidxSource, child, CID.META));
+            verifyDownload(new SOCID(sidxSource, child, CID.META));
         }
     }
 
@@ -170,13 +170,13 @@ public class TestEmigrantDetector extends AbstractTest
         mockChildren();
         // mock exceptions
         for (OID child : ds.getChildren_(soidSource)) {
-            SOCKID kChild = new SOCKID(sidxSource, child, CID.META);
-            when(dls.downloadSync_(eq(kChild), any(To.class), eq(tk), eq(kSource)))
+            SOCID socidChild = new SOCID(sidxSource, child, CID.META);
+            when(dls.downloadSync_(eq(socidChild), any(To.class), eq(tk), eq(socidSource)))
                     .thenThrow(new ExArbitrary());
         }
         shouldNotEmigrate();
         for (OID child : ds.getChildren_(soidSource)) {
-            verifyDownload(new SOCKID(sidxSource, child, CID.META));
+            verifyDownload(new SOCID(sidxSource, child, CID.META));
         }
     }
 
@@ -186,12 +186,12 @@ public class TestEmigrantDetector extends AbstractTest
         shouldEmigrate();
 
         InOrder inOrder = inOrder(dls);
-        inOrder.verify(dls).downloadSync_(eq(kAnchorTargetParent), any(To.class),
-                eq(tk), eq(kSource));
-        inOrder.verify(dls).downloadSync_(eq(kAnchorTarget), any(To.class),
-                eq(tk), eq(kSource));
-        inOrder.verify(dls).downloadSync_(eq(kTarget), any(To.class),
-                eq(tk), eq(kSource));
+        inOrder.verify(dls).downloadSync_(eq(socidAnchorTargetParent), any(To.class),
+                eq(tk), eq(socidSource));
+        inOrder.verify(dls).downloadSync_(eq(socidAnchorTarget), any(To.class),
+                eq(tk), eq(socidSource));
+        inOrder.verify(dls).downloadSync_(eq(socidTarget), any(To.class),
+                eq(tk), eq(socidSource));
     }
 
     @Test
@@ -200,7 +200,7 @@ public class TestEmigrantDetector extends AbstractTest
         mockStore(null, sidTargetParent, sidxTargetParent, sidxTargetGrandParent, null, null,
                 sid2sidx, null);
         shouldEmigrate();
-        verifyNotDownload(kAnchorTargetParent);
+        verifyNotDownload(socidAnchorTargetParent);
     }
 
     @Test
@@ -208,8 +208,8 @@ public class TestEmigrantDetector extends AbstractTest
     {
         mockStore(null, sidTarget, sidxTarget, sidxTargetGrandParent, null, null, sid2sidx, null);
         shouldEmigrate();
-        verifyNotDownload(kAnchorTarget);
-        verifyNotDownload(kAnchorTargetParent);
+        verifyNotDownload(socidAnchorTarget);
+        verifyNotDownload(socidAnchorTargetParent);
     }
 
     @Test
@@ -244,8 +244,8 @@ public class TestEmigrantDetector extends AbstractTest
     public void shouldThrowIfDownloadingAncestorFailed() throws Exception
     {
         reset(dls);
-        when(dls.downloadSync_(eq(kAnchorTargetParent), any(To.class), any(Token.class),
-                any(SOCKID.class))).thenThrow(new ExArbitrary());
+        when(dls.downloadSync_(eq(socidAnchorTargetParent), any(To.class), any(Token.class),
+                any(SOCID.class))).thenThrow(new ExArbitrary());
         shouldEmigrate();
     }
 
@@ -253,24 +253,24 @@ public class TestEmigrantDetector extends AbstractTest
     {
         emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo,
                 sidsTargetAncestor, did, tk);
-        verifyDownload(kTarget);
+        verifyDownload(socidTarget);
     }
 
     private void shouldNotEmigrate() throws Exception
     {
         emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo,
                 sidsTargetAncestor, did, tk);
-        verifyNotDownload(kTarget);
+        verifyNotDownload(socidTarget);
     }
 
-    private void verifyDownload(SOCKID k) throws Exception
+    private void verifyDownload(SOCID socid) throws Exception
     {
-        verify(dls).downloadSync_(eq(k), any(To.class), eq(tk), eq(kSource));
+        verify(dls).downloadSync_(eq(socid), any(To.class), eq(tk), eq(socidSource));
     }
 
-    private void verifyNotDownload(SOCKID k) throws Exception
+    private void verifyNotDownload(SOCID k) throws Exception
     {
         verify(dls, never()).downloadSync_(eq(k), any(To.class),
-                any(Token.class), any(SOCKID.class));
+                any(Token.class), any(SOCID.class));
     }
 }

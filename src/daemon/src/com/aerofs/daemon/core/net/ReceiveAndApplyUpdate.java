@@ -471,7 +471,7 @@ public class ReceiveAndApplyUpdate
             return false;
         }
 
-        // N.B. We are assuming soidMsg == Download._k.soid().
+        // N.B. We are assuming soidMsg == Download._socid.soid().
         // TODO (MJ) this isn't very good design and should be addressed. It is currently
         // possible for a developer to break this assumption very easily in separate classes than
         // this one. Lets find a way to avoid breaking the assumption
@@ -625,6 +625,8 @@ public class ReceiveAndApplyUpdate
 
             Trans t = _tm.begin_();
             try {
+                // TODO (DF) : figure out if prefix files need a KIndex or are assumed
+                // to be MASTER like everything else in Download
                 IPhysicalPrefix pfPrefixOld = _ps.newPrefix_(new SOCKID(k.soid(),
                     k.cid(), kidxOld));
                 assert pfPrefixOld.getLength_() > 0;
@@ -665,7 +667,7 @@ public class ReceiveAndApplyUpdate
                 long total = reply.getFileTotalLength();
                 long remaining = total - copied - reply.getPrefixLength();
                 while (remaining > 0) {
-                    _dlState.ongoing_(k, msg.ep(), total - remaining, total);
+                    _dlState.ongoing_(k.socid(), msg.ep(), total - remaining, total);
                     is = _iss.recvChunk_(msg.streamKey(), tk);
                     remaining -= copyAChunk(is, os);
                 }

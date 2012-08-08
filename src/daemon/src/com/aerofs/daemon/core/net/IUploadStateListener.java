@@ -1,30 +1,30 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 
 public interface IUploadStateListener {
 
     public static class Key {
-        public final SOCKID _k;
+        public final SOCID _socid;
         public final Endpoint _ep;
 
-        Key(SOCKID k, Endpoint ep)
+        Key(SOCID socid, Endpoint ep)
         {
-            _k = k;
+            _socid = socid;
             _ep = ep;
         }
 
         @Override
         public int hashCode()
         {
-            return _k.hashCode() + _ep.hashCode();
+            return _socid.hashCode() + _ep.hashCode();
         }
 
         @Override
         public boolean equals(Object o)
         {
-            return this == o || (o != null && _k.equals(((Key) o)._k) &&
+            return this == o || (o != null && _socid.equals(((Key) o)._socid) &&
                     _ep.equals(((Key) o)._ep));
         }
     }

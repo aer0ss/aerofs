@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.net.IUploadStateListener.Key;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.notifier.Listeners;
 
 // see IDownloadListener for valid state transitions
@@ -25,9 +25,9 @@ implements IDumpStatMisc {
     }
 
     // @param done == total means completion, either failure or success
-    public void progress_(SOCKID k, Endpoint ep, long done, long total)
+    public void progress_(SOCID socid, Endpoint ep, long done, long total)
     {
-        Key key = new Key(k, ep);
+        Key key = new Key(socid, ep);
         Value value = new Value(done, total);
         if (done != total) {
             _state.put(key, value);
@@ -49,7 +49,7 @@ implements IDumpStatMisc {
             long done = en.getValue()._done;
             long total = en.getValue()._total;
             long percent = total == 0 ? 0 : (done * 100 / total);
-            ps.println(indent2 + en.getKey()._k + " -> " + en.getKey()._ep +
+            ps.println(indent2 + en.getKey()._socid + " -> " + en.getKey()._ep +
                     ' ' + String.format(".%1$02d ", percent) + done + '/' + total);
         }
     }

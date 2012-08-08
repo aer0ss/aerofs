@@ -24,10 +24,8 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.notifier.Listeners;
 
 import javax.annotation.Nullable;
@@ -42,7 +40,7 @@ public class Download
     // prevent dependency deadlocks, and avoid redownloading a completed dependency.
     private final DownloadDependenciesGraph<SOCID> _dlOngoingDependencies;
     private final Token _tk;
-    private SOCKID _k;
+    private final SOCID _socid;
     private Prio _prio;
     private final Factory _f;
 
@@ -75,18 +73,18 @@ public class Download
             _dlOngoingDependencies = dldg;
         }
 
-        Download create_(SOCKID k, To src, IDownloadCompletionListener listener, Token tk)
+        Download create_(SOCID socid, To src, IDownloadCompletionListener listener, Token tk)
         {
-            return new Download(this, k, src, listener, tk, _dlOngoingDependencies);
+            return new Download(this, socid, src, listener, tk, _dlOngoingDependencies);
         }
     }
 
-    private Download(Factory f, SOCKID k, To src, @Nullable IDownloadCompletionListener l, Token tk,
+    private Download(Factory f, SOCID socid, To src, @Nullable IDownloadCompletionListener l, Token tk,
             DownloadDependenciesGraph<SOCID> dldg)
     {
         _f = f;
 
-        _k = k;
+        _socid = socid;
         _tk = tk;
         _src = src;
         _prio = _f._tc.prio();
@@ -96,12 +94,7 @@ public class Download
 
     public SOCID socid()
     {
-        return _k.socid();
-    }
-
-    public SOCKID k()
-    {
-        return _k;
+        return _socid;
     }
 
     public void include_(To src, @Nullable IDownloadCompletionListener listener)
@@ -149,26 +142,26 @@ public class Download
                 @Override
                 public void notify_(IDownloadCompletionListener l)
                 {
-                    l.okay_(_k.socid(), from);
+                    l.okay_(_socid, from);
                 }
             });
-            _f._dlstate.ended_(_k, true);
+            _f._dlstate.ended_(_socid, true);
             return null;
 
         } catch (final Exception e) {
-            l.warn(_k + ": " + Util.e(e, ExNoAvailDevice.class, ExNoPerm.class));
+            l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class, ExNoPerm.class));
             notifyListeners_(new IDownloadCompletionListenerVisitor()
             {
                 @Override
                 public void notify_(IDownloadCompletionListener l)
                 {
-                    l.error_(_k.socid(), e);
+                    l.error_(_socid, e);
                 }
             });
-            _f._dlstate.ended_(_k, false);
+            _f._dlstate.ended_(_socid, false);
             return e;
         } finally {
-            _dlOngoingDependencies.removeOutwardEdges_(_k.socid());
+            _dlOngoingDependencies.removeOutwardEdges_(_socid);
             _f._tc.setPrio(prioOrg);
         }
     }
@@ -177,7 +170,7 @@ public class Download
     {
         while (true) {
 
-            if (_f._sidx2s.getNullable_(_k.sidx()) == null) throw new ExAborted("no store");
+            if (_f._sidx2s.getNullable_(_socid.sidx()) == null) throw new ExAborted("no store");
 
             _f._tc.setPrio(_prio);
 
@@ -186,33 +179,25 @@ public class Download
             try {
                 // Check for dependency and expulsion. Even though GetComReply will check again,
                 // we do it here to avoid useless round-trips with remote peers when possible.
-                if (!_k.cid().equals(CID.META)) {
-                    OA oa = _f._ds.getAliasedOANullable_(_k.soid());
+                if (!_socid.cid().equals(CID.META)) {
+                    OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
                     if (oa == null) {
-                        throw new ExDependsOn(new OCID(_k.oid(), CID.META), null, false);
+                        throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null, false);
                     } else if (oa.isExpelled()) {
-                        throw new ExAborted(_k + " is expelled");
+                        throw new ExAborted(_socid + " is expelled");
                     }
                 }
 
                 started = true;
-                _f._dlstate.started_(_k);
-                DigestedMessage msg = _f._pgcc.rpc1_(_k, _src, _tk);
+                _f._dlstate.started_(_socid);
+                DigestedMessage msg = _f._pgcc.rpc1_(_socid, _src, _tk);
                 replier = msg.did();
-                _f._pgcc.rpc2_(_k, _src, msg, _tk);
+                _f._pgcc.rpc2_(_socid, _src, msg, _tk);
 
-                if (_f._nvc.getKMLVersion_(_k.socid()).isZero_()) return replier;
+                if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
 
                 l.info("kml > 0. dl again");
                 _src.avoid_(replier);
-
-                // re-download the master branch only
-                if (!_k.kidx().equals(KIndex.MASTER)) {
-                    _f._dlstate.ended_(_k, true);
-                    _k = new SOCKID(_k.socid(), KIndex.MASTER);
-                    if (started) _f._dlstate.started_(_k);
-                    else _f._dlstate.enqueued_(_k);
-                }
 
                 reenqueue(started);
 
@@ -231,17 +216,17 @@ public class Download
 
             } catch (ExDependsOn e) {
                 reenqueue(started);
-                final SOCKID dep = new SOCKID(_k.sidx(), e.ocid());
-                l.info(_k + " depends on " + dep);
-                _dlOngoingDependencies.addEdge_(_k.socid(), dep.socid());
+                final SOCID dep = new SOCID(_socid.sidx(), e.ocid());
+                l.info(_socid + " depends on " + dep);
+                _dlOngoingDependencies.addEdge_(_socid, dep);
                 To to = e.did() == null ? _f._factTo.create_(_src) : _f._factTo.create_(e.did());
                 try {
-                    _f._dls.downloadSync_(dep, to, _tk, _k);
+                    _f._dls.downloadSync_(dep, to, _tk, _socid);
                 } catch (Exception e2) {
                     if (e.ignoreError()) l.info("dl dependency error, ignored: " + Util.e(e2));
                     else throw e2;
                 }
-                l.info("dependency " + _k + " -> " + dep + " solved");
+                l.info("dependency " + _socid + " -> " + dep + " solved");
 
             } catch (ExStreamInvalid e) {
                 reenqueue(started);
@@ -253,12 +238,12 @@ public class Download
 
             } catch (ExNoResource e) {
                 reenqueue(started);
-                l.info(_k + ": " + Util.e(e));
+                l.info(_socid + ": " + Util.e(e));
                 _tk.sleep_(3 * C.SEC, "retry dl (no rsc)");
 
             } catch (ExNoNewUpdate e) {
                 reenqueue(started);
-                if (_f._nvc.getKMLVersion_(_k.socid()).isZero_()) {
+                if (_f._nvc.getKMLVersion_(_socid).isZero_()) {
                     l.info("recv " + ExNoNewUpdate.class + " & kml = 0. done");
                     return replier;
                 } else {
@@ -273,12 +258,12 @@ public class Download
             } catch (ExNoPerm e) {
                 // collector should only collect permitted components. no_perm may happen when other
                 // user just changed the permission before this call.
-                l.error(_k + ": we have no perm");
+                l.error(_socid + ": we have no perm");
                 throw e;
 
             } catch (ExSenderHasNoPerm e) {
                 reenqueue(started);
-                l.error(_k + ": sender has no perm");
+                l.error(_socid + ": sender has no perm");
                 _src.avoid_(replier);
 
             } catch (Exception e) {
@@ -290,12 +275,12 @@ public class Download
 
     private void reenqueue(boolean started)
     {
-        if (started) _f._dlstate.enqueued_(_k);
+        if (started) _f._dlstate.enqueued_(_socid);
     }
 
     private void onUpdateInProgress() throws ExNoResource, ExAborted
     {
-        l.info(_k + ": update in prog. retry later");
+        l.info(_socid + ": update in prog. retry later");
         // TODO exponential retry
         _tk.sleep_(3 * C.SEC, "retry dl (update in prog)");
     }
@@ -307,13 +292,13 @@ public class Download
         //String eStr = mayPrintStack ? Util.e(e) : e.toString();
         // ignore the stack for now for less log output
         // RTN: retry now
-        l.warn(_k + ": " + Util.e(e) + " " + replier + " RTN");
+        l.warn(_socid + ": " + Util.e(e) + " " + replier + " RTN");
         if (replier != null) _src.avoid_(replier);
     }
 
     @Override
     public String toString()
     {
-        return _k + " prio " + _prio;
+        return _socid + " prio " + _prio;
     }
 }

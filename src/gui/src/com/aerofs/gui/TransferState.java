@@ -2,7 +2,7 @@ package com.aerofs.gui;
 
 import java.util.Map;
 
-import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
@@ -11,8 +11,8 @@ import com.google.common.collect.Maps;
 public class TransferState
 {
     // these two fields are protected by synchronized (this)
-    private final Map<SOCKID, PBDownloadEvent> _dls = Maps.newHashMap();
-    private final Map<SOCKID, PBUploadEvent> _uls = Maps.newHashMap();
+    private final Map<SOCID, PBDownloadEvent> _dls = Maps.newHashMap();
+    private final Map<SOCID, PBUploadEvent> _uls = Maps.newHashMap();
 
     private final boolean _onlyTrackOngoingDownloads;
 
@@ -40,9 +40,9 @@ public class TransferState
 
     private void updateUploadState_(PBUploadEvent pb)
     {
-        SOCKID k = new SOCKID(pb.getK());
-        if (pb.getDone() == pb.getTotal()) _uls.remove(k);
-        else _uls.put(k, pb);
+        SOCID socid = new SOCID(pb.getSocid());
+        if (pb.getDone() == pb.getTotal()) _uls.remove(socid);
+        else _uls.put(socid, pb);
     }
 
     @SuppressWarnings("fallthrough")
@@ -53,10 +53,10 @@ public class TransferState
             if (_onlyTrackOngoingDownloads) break;
             // fall through
         case ONGOING:
-            _dls.put(new SOCKID(pb.getK()), pb);
+            _dls.put(new SOCID(pb.getSocid()), pb);
             break;
         case ENDED:
-            _dls.remove(new SOCKID(pb.getK()));
+            _dls.remove(new SOCID(pb.getSocid()));
             break;
         }
     }
@@ -64,7 +64,7 @@ public class TransferState
     /**
      * N.B. access to the return value must be protected by synchronized (this)
      */
-    public Map<SOCKID, PBDownloadEvent> downloads_()
+    public Map<SOCID, PBDownloadEvent> downloads_()
     {
         return _dls;
     }
@@ -72,7 +72,7 @@ public class TransferState
     /**
      * N.B. access to the return value must be protected by synchronized (this)
      */
-    public Map<SOCKID, PBUploadEvent> uploads_()
+    public Map<SOCID, PBUploadEvent> uploads_()
     {
         return _uls;
     }
