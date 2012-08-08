@@ -63,7 +63,7 @@ class S3MagicChunk
             AmazonServiceException cause = getCauseOfClass(e, AmazonServiceException.class);
             if (cause == null) {
                 throw e;
-            } else if ("NoSuchKey".equals(cause.getErrorCode())) {
+            } else if (cause.getStatusCode() == 404 || "NoSuchKey".equals(cause.getErrorCode())) {
                 // continue
             } else {
                 throw cause;

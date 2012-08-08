@@ -335,6 +335,7 @@ public class FakeS3Client extends AbstractS3Client implements AmazonS3
     {
         AmazonServiceException e = new AmazonServiceException("File not found: " + key);
         e.setErrorType(ErrorType.Client);
+        e.setErrorCode("NoSuchKey");
         e.setStatusCode(404);
         return e;
     }
