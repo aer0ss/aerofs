@@ -10,9 +10,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
-import com.aerofs.servletlib.db.LocalTestSPDatabase;
 import org.junit.Before;
-import org.mockito.Spy;
 import org.mockito.Mock;
 import sun.security.pkcs.PKCS10;
 
@@ -29,9 +27,6 @@ import static org.mockito.Mockito.when;
  */
 public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
 {
-    // Inject a real (spy) local test SP database into the SPService of AbstractSPServiceTest.
-    @Spy LocalTestSPDatabase db;
-
     // Inject a certificate generator.
     @Mock ICertificateGenerator certificateGenerator;
 

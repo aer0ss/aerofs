@@ -11,12 +11,15 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
+import com.aerofs.servletlib.db.JUnitDatabaseConnectionFactory;
+import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
+import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.sp.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.user.UserManagement;
-import com.aerofs.servletlib.db.LocalTestSPDatabase;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
 import com.aerofs.servletlib.sp.user.User;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -37,7 +40,8 @@ import static org.mockito.Mockito.mock;
  */
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
-    private LocalTestSPDatabase _db = new LocalTestSPDatabase();
+    private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
+    private SPDatabase _db = new SPDatabase(new JUnitDatabaseConnectionFactory(_dbParams));
 
     private final SPServiceReactor _reactor;
 
@@ -69,6 +73,8 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
             throws IOException, ClassNotFoundException, SQLException, InterruptedException,
             ExAlreadyExist
     {
+        // Database setup.
+        new LocalTestDatabaseConfigurator(_dbParams).configure_();
         _db.init_();
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService

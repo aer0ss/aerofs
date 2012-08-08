@@ -6,11 +6,9 @@ package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.servletlib.db.LocalTestSPDatabase;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
 import com.aerofs.servletlib.sp.user.User;
 import org.junit.Before;
-import org.mockito.Spy;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
@@ -20,9 +18,6 @@ import static org.mockito.Mockito.when;
  */
 public class AbstractSPUserBasedTest extends AbstractSPServiceTest
 {
-    // Inject a real (spy) local test SP database into the SPService of AbstractSPServiceTest.
-    @Spy LocalTestSPDatabase db;
-
     protected static final String TEST_USER_1_NAME = "USER_1";
     protected static final byte[] TEST_USER_1_CRED = "CREDENTIALS".getBytes();
 

@@ -6,6 +6,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.SPServiceReactor;
+import com.aerofs.servletlib.db.DatabaseConnectionFactory;
 import com.aerofs.sp.server.AeroServlet;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
@@ -44,7 +45,8 @@ public class SPServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final SPDatabase _db = new SPDatabase();
+    private final DatabaseConnectionFactory _dbFactory = new DatabaseConnectionFactory();
+    private final SPDatabase _db = new SPDatabase(_dbFactory);
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
 
     private final UserManagement _userManagement =
@@ -86,7 +88,10 @@ public class SPServlet extends AeroServlet
         String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
         String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
         String dbSchema = getServletContext().getInitParameter(MYSQL_SP_SCHEMA_INIT_PARAMETER);
-        _db.init_(dbEndpoint, dbSchema, dbUser, dbPass);
+
+        // Be sure to initialize the factory before the database is initialized.
+        _dbFactory.init_(dbEndpoint, dbSchema, dbUser, dbPass);
+        _db.init_();
     }
 
     private VerkehrCommander getVerkehrCommander()
