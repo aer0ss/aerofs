@@ -5,6 +5,7 @@ import java.sql.SQLException;
 
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.alias.AliasingMover;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.EmigrantCreator;
@@ -66,12 +67,13 @@ public class GetComponentCall
     private GCCSendContent _sendContent;
     // TODO (MJ) remove when no longer deleting non-alias ticks from alias objects
     private TransManager _tm;
+    private AliasingMover _almv;
 
     @Inject
     public void inject_(NSL nsl, ComMonitor cm, GetComponentReply gcr, LocalACL lacl,
             IPhysicalStorage ps, DirectoryService ds, RPC rpc,
             PrefixVersionControl pvc, NativeVersionControl nvc, EmigrantCreator emc,
-            GCCSendContent sendContent, MapAlias2Target a2t, TransManager tm)
+            GCCSendContent sendContent, MapAlias2Target a2t, TransManager tm, AliasingMover almv)
     {
         _nsl = nsl;
         _cm = cm;
@@ -86,6 +88,7 @@ public class GetComponentCall
         _sendContent = sendContent;
         _a2t = a2t;
         _tm = tm;
+        _almv = almv;
     }
 
     public DigestedMessage rpc1_(SOCID socid, To src, Token tk)
@@ -101,35 +104,53 @@ public class GetComponentCall
 
         OID target = _a2t.getNullable_(socid.soid());
         if (target != null) {
-            // If socid is a locally-aliased object, all of its KMLs must be alias ticks
+            // If socid is a locally-aliased object,
+            // 1) it should have no local versions
+            // 2) all of its KMLs must be alias ticks
+            Version vAllLocal = _nvc.getAllLocalVersions_(socid);
+            assert vAllLocal.isZero_() : socid + " " + vAllLocal;
+
             Version vKMLNonAlias = vKML.withoutAliasTicks_();
             if (!vKMLNonAlias.isZero_()) {
-                // Temporarily try to delete the alias non-tick KMLs if they are
+                // Temporarily migrate the alias non-tick KMLs if they are
                 // present in the target object's versions.
-                // TODO (MJ) remove this deletion and replace with assert (vKMLNonAlias.isZero())
+                // TODO (MJ) remove this migration and replace with assert (vKMLNonAlias.isZero())
                 SOCID socidTarget = new SOCID(socid.sidx(), target, socid.cid());
-                Version vAllTarget = _nvc.getAllVersions_(socidTarget);
 
-                final String msg =  "(alias " + socid + ")->(" + socidTarget + " target) "
-                     + "vkmlnonalias " + vKMLNonAlias + " vLocal " + vLocal + " vAllTarget "
-                     + vAllTarget;
-
-                // Currently we'll try to delete the alias object's non-alias KMLs, but that's only
-                // safe if that version is completely shadowed by all the target's versions.
-                assert vKMLNonAlias.shadowedBy_(vAllTarget).equals(vKMLNonAlias) : msg;
+                String msg =  "(alias " + socid + ")->(" + socidTarget + " target) "
+                     + "vkmlnonalias " + vKMLNonAlias + " vLocal " + vLocal;
 
                 Trans t = _tm.begin_();
                 try {
-                    _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
+                    if (vKMLNonAlias.shadowedBy_(_nvc.getAllVersions_(socidTarget))
+                            .equals(vKMLNonAlias)) {
+                        // Delete the non-alias versions from the alias, *if* those versions have
+                        // already been migrated to the target
+                        _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
+                        msg = "by delete. " + msg;
+                    } else {
+                        // Migrate the non-alias versions from the alias object to its target
+                        // N.B. pass in a zero version for all local versions of the alias object,
+                        // as it should be zero anyway (asserted above)
+                        _almv.moveKMLVersion_(socid, socidTarget, new Version(),
+                                _nvc.getAllLocalVersions_(socidTarget), t);
+                        msg = "by migration. " + msg;
+                    }
                     t.commit_();
+                } catch (Exception e) {
+                    assert false : msg;
                 } finally {
                     t.end_();
                 }
 
+                Version vAllTarget = _nvc.getAllVersions_(socidTarget);
+                msg = msg + " vAllTarget " + vAllTarget;
+
                 assert _nvc.getKMLVersion_(socid).withoutAliasTicks_().isZero_() : msg;
+                assert vKMLNonAlias.shadowedBy_(vAllTarget).equals(vKMLNonAlias) : msg;
 
                 // Report this event to SV, then abort the current request.
-                ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this AE once. "
+                ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this log once. "
                         + msg);
                 SVClient.logSendDefectAsync(true, "abort gcc", e);
                 throw e;

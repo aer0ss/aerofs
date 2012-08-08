@@ -112,7 +112,7 @@ public class ReceiveAndApplyUpdate
         // the branches to be deleted. never be null
         public final Collection<KIndex> _kidcsDel;
 
-        public final ContentHash _hash;
+        @Nullable public final ContentHash _hash;
 
         public final Version _vLocal;
 
@@ -121,12 +121,9 @@ public class ReceiveAndApplyUpdate
             this(kidx, vAddLocal, null, false, null, vLocal);
         }
 
-        /**
-         * @param kidcsDel may be null
-         */
         CausalityResult(KIndex kidx, Version vAddLocal,
-            Collection<KIndex> kidcsDel, boolean incrementVersion,
-            ContentHash h, Version vLocal)
+            @Nullable Collection<KIndex> kidcsDel, boolean incrementVersion,
+            @Nullable ContentHash h, Version vLocal)
         {
             _kidx = kidx;
             _vAddLocal = vAddLocal;

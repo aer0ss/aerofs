@@ -481,7 +481,7 @@ public class DirectoryService implements IDumpStatMisc
         _cacheOA.invalidate_(soid);
     }
 
-    public void setCA_(SOKID sokid, long len, long mtime, ContentHash h, Trans t)
+    public void setCA_(SOKID sokid, long len, long mtime, @Nullable ContentHash h, Trans t)
         throws SQLException
     {
         OA oa = getOA_(sokid.soid());

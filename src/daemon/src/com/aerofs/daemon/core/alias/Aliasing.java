@@ -407,7 +407,7 @@ public class Aliasing
         _oc.createMeta_(fromPB(meta.getType()), soidRemote, parent, createName, meta.getFlags(),
                 PhysicalOp.APPLY, false, false, t);
 
-        OA oaLocal = _ds.getOANullable_(soidLocal);
+        OA oaLocal = _ds.getOA_(soidLocal);
         performAliasingOnLocallyAvailableObjects_(ar._alias, vAliasMeta, ar._target, vTargetMeta,
             oaLocal.isDir(), t);
 
