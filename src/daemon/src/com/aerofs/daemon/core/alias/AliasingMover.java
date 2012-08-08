@@ -100,26 +100,6 @@ public class AliasingMover
     }
 
     /**
-     * Unions local version vectors from all the branches.
-     *
-     * @param kidxs set of all conflict branches
-     */
-    private Version getAllLocalVersions_(SOCID socid, Set<KIndex> kidxs)
-        throws SQLException
-    {
-        Version vTotal = new Version();
-        for (KIndex kidx : kidxs) {
-            // Local versions should exclude KMLs
-            assert !kidx.equals(KIndex.KML);
-            SOCKID k = new SOCKID(socid, kidx);
-            Version v = _nvc.getLocalVersion_(k);
-            vTotal = vTotal.add_(v);
-        }
-
-        return vTotal;
-    }
-
-    /**
      * Move the content component of the alias as well as its versions to the target object.
      */
     public void moveContent_(SOCID alias, SOCID target, Trans t)
@@ -134,10 +114,10 @@ public class AliasingMover
         // TODO because SortedMap is a Map, its keyset is simply a Set, but we know it's
         // actually sorted. See Comment A at the end of this method for a more robust solution.
         Set<KIndex> kidxsTarget = _ds.getOAThrows_(target.soid()).cas().keySet();
-        Version vAllLocalTarget = getAllLocalVersions_(target, kidxsTarget);
-
         Set<KIndex> kidxsAlias = _ds.getOAThrows_(alias.soid()).cas().keySet();
-        Version vAllLocalAlias = getAllLocalVersions_(alias, kidxsAlias);
+
+        Version vAllLocalTarget = _nvc.getAllLocalVersions_(target);
+        Version vAllLocalAlias = _nvc.getAllLocalVersions_(alias);
 
         // KML version needs to be moved before local version.
         moveKMLVersion_(alias, target, vAllLocalAlias, vAllLocalTarget, t);
