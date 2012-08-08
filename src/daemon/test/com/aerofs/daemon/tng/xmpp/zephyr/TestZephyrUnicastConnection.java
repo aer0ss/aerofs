@@ -460,7 +460,7 @@ public class TestZephyrUnicastConnection extends AbstractTest
             // Simulate the remote peer signalling back again
             connection.processSignallingMessage_(buildKnowledgeMessage(remoteDID, LOCAL_ZID, REMOTE_ZID));
         } catch(AssertionError e) {
-            assertTrue(e.getCause() instanceof NoExitSecurityManager.ExitException);
+            assertTrue(e.getCause().getCause() instanceof NoExitSecurityManager.ExitException);
         }
     }
 
