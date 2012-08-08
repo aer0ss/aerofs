@@ -27,17 +27,20 @@ public class LocalTestDatabase
     private static final String JUNIT_MYSQL_PATH_PARAMETER = "junit.mysqlPath";
 
     // Cache these so the user can use them later.
-    private String _mysqlUser;
-    private String _mysqlPass;
-    private String _mysqlHost;
-    private String _mysqlSchema;
+    private final String _mysqlUser;
+    private final String _mysqlPass;
+    private final String _mysqlHost;
+    private final String _mysqlDatabase;
 
-    private String _mysqlSchemaPath;
+    private final String _mysqlSchemaPath;
+    private final String _mysqlSchemaName;
 
-    public LocalTestDatabase(String schema, String schemaPath)
+
+    public LocalTestDatabase(String databaseName, String schemaPath, String schemaName)
     {
-        this._mysqlSchema = schema;
+        this._mysqlDatabase = databaseName;
         this._mysqlSchemaPath = schemaPath;
+        this._mysqlSchemaName = schemaName;
 
         // These are just pulled from the env, but keep them here so that we eliminate duped code
         // in the derived classes.
@@ -49,25 +52,23 @@ public class LocalTestDatabase
     public void init_()
             throws SQLException, ClassNotFoundException, InterruptedException, IOException
     {
-
         String mysqlPath = getOrDefault(JUNIT_MYSQL_PATH_PARAMETER, DEFAULT_LOCAL_MYSQL_PATH);
 
         String dropProcedures = String.format(
                  "%s/mysql -u%s -h%s -p%s -e \"delete from mysql.proc where db='%s' and type='PROCEDURE'\"",
-                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlSchema);
+                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlDatabase);
 
         String dropDatabase = String.format(
                 "%s/mysql -u%s -h%s -p%s -e 'drop schema if exists %s'",
-                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlSchema);
+                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlDatabase);
 
         String createDatabase = String.format(
                 "%s/mysql -u%s -h%s -p%s -e 'create database if not exists %s'",
-                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlSchema);
+                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlDatabase);
 
         String loadSchema = String.format(
-                "%s/mysql -u%s -h%s -p%s %s < %s",
-                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlSchema, _mysqlSchemaPath);
-
+                "%s/mysql -u%s -h%s -p%s %s < %s/%s",
+                mysqlPath, _mysqlUser, _mysqlHost, _mysqlPass, _mysqlDatabase, _mysqlSchemaPath, _mysqlSchemaName);
 
         l.info("setting up database schema");
         Runtime runtime = Runtime.getRuntime();
@@ -135,6 +136,6 @@ public class LocalTestDatabase
 
     public String getSchema()
     {
-        return _mysqlSchema;
+        return _mysqlDatabase;
     }
 }
