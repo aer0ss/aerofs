@@ -34,7 +34,7 @@
     <orderEntry type="library" name="javamail" level="project" />
     <orderEntry type="library" name="mysql-connector" level="project" />
     <orderEntry type="module" module-name="lib" />
-    <orderEntry type="module" module-name="srvlib" />
+    <orderEntry type="module" module-name="servletlib" />
     <orderEntry type="module" module-name="verkehr" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

@@ -10,7 +10,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
-import com.aerofs.srvlib.db.LocalTestSPDatabase;
+import com.aerofs.servletlib.db.LocalTestSPDatabase;
 import org.junit.Before;
 import org.mockito.Spy;
 import org.mockito.Mock;

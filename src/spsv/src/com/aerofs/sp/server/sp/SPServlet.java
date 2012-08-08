@@ -12,10 +12,10 @@ import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.sp.cert.CertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.user.UserManagement;
-import com.aerofs.srvlib.sp.DoPostDelegate;
-import com.aerofs.srvlib.sp.SPDatabase;
-import com.aerofs.srvlib.sp.SPParam;
-import com.aerofs.srvlib.sp.ThreadLocalHttpSessionUser;
+import com.aerofs.servletlib.sp.DoPostDelegate;
+import com.aerofs.servletlib.sp.SPDatabase;
+import com.aerofs.servletlib.sp.SPParam;
+import com.aerofs.servletlib.sp.ThreadLocalHttpSessionUser;
 import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.util.concurrent.ExecutionError;
@@ -31,12 +31,12 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
-import static com.aerofs.srvlib.sp.SPParam.MYSQL_ENDPOINT_INIT_PARAMETER;
-import static com.aerofs.srvlib.sp.SPParam.MYSQL_PASSWORD_INIT_PARAMETER;
-import static com.aerofs.srvlib.sp.SPParam.MYSQL_SP_SCHEMA_INIT_PARAMETER;
-import static com.aerofs.srvlib.sp.SPParam.MYSQL_USER_INIT_PARAMETER;
-import static com.aerofs.srvlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
-import static com.aerofs.srvlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
+import static com.aerofs.servletlib.sp.SPParam.MYSQL_ENDPOINT_INIT_PARAMETER;
+import static com.aerofs.servletlib.sp.SPParam.MYSQL_PASSWORD_INIT_PARAMETER;
+import static com.aerofs.servletlib.sp.SPParam.MYSQL_SP_SCHEMA_INIT_PARAMETER;
+import static com.aerofs.servletlib.sp.SPParam.MYSQL_USER_INIT_PARAMETER;
+import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
+import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 
 public class SPServlet extends AeroServlet
 {

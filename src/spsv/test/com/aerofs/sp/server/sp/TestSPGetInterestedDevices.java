@@ -10,8 +10,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.srvlib.sp.SPDatabase.DeviceRow;
-import com.aerofs.srvlib.sp.SPDatabase.UserDevice;
+import com.aerofs.servletlib.sp.SPDatabase.DeviceRow;
+import com.aerofs.servletlib.sp.SPDatabase.UserDevice;
 import org.junit.Before;
 import org.junit.Test;
 
