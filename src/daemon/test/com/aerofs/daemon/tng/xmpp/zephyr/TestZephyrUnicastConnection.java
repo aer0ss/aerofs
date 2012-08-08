@@ -284,7 +284,6 @@ public class TestZephyrUnicastConnection extends AbstractTest
             public void writeRequested(MessageEvent e)
                     throws Exception
             {
-                assertTrue(e.getMessage() instanceof ZephyrBindRequest);
                 Exception cause = new IOException("Could not write to channel");
                 e.getFuture().setFailure(cause);
                 Channels.fireExceptionCaught(e.getChannel(), cause);
