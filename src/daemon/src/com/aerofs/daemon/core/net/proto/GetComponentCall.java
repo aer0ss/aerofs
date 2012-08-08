@@ -105,10 +105,10 @@ public class GetComponentCall
         OID target = _a2t.getNullable_(socid.soid());
         if (target != null) {
             // If socid is a locally-aliased object,
-            // 1) it should have no local versions
+            // 1) it should have no local non-alias versions
             // 2) all of its KMLs must be alias ticks
             Version vAllLocal = _nvc.getAllLocalVersions_(socid);
-            assert vAllLocal.isZero_() : socid + " " + vAllLocal;
+            assert vAllLocal.withoutAliasTicks_().isZero_() : socid + " " + vAllLocal;
 
             Version vKMLNonAlias = vKML.withoutAliasTicks_();
             if (!vKMLNonAlias.isZero_()) {
@@ -130,9 +130,7 @@ public class GetComponentCall
                         msg = "by delete. " + msg;
                     } else {
                         // Migrate the non-alias versions from the alias object to its target
-                        // N.B. pass in a zero version for all local versions of the alias object,
-                        // as it should be zero anyway (asserted above)
-                        _almv.moveKMLVersion_(socid, socidTarget, new Version(),
+                        _almv.moveKMLVersion_(socid, socidTarget, vAllLocal,
                                 _nvc.getAllLocalVersions_(socidTarget), t);
                         msg = "by migration. " + msg;
                     }
