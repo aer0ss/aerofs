@@ -28,3 +28,10 @@ CREATE TABLE `sv_event` (
   PRIMARY KEY (`ev_id`),
   INDEX ev_type_idx (`ev_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `sv_clicked_download` (
+  `cd_email` varchar(254) not null,
+  `cd_invited_ts` timestamp not null DEFAULT '0000-00-00 00:00:00',
+  `cd_downloaded_ts` timestamp not null DEFAULT CURRENT_TIMESTAMP,
+  INDEX cd_email_idx (`cd_email`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
