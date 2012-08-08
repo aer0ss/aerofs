@@ -15,9 +15,12 @@ import javax.annotation.Nonnull;
 
 import org.apache.log4j.Logger;
 
-public class FIDMaintainer implements IFIDMaintainer
+/**
+ * This class maintains the FID values for master branches of a file.
+ */
+public class MasterFIDMaintainer implements IFIDMaintainer
 {
-    private static final Logger l = Util.l(FIDMaintainer.class);
+    private static final Logger l = Util.l(MasterFIDMaintainer.class);
 
     private final DirectoryService _ds;
     private final InjectableDriver _dr;
@@ -25,8 +28,9 @@ public class FIDMaintainer implements IFIDMaintainer
     private final SOID _soid;
     private final InjectableFile _f;
 
-    FIDMaintainer(DirectoryService ds, InjectableDriver dr, SOID soid, InjectableFile f)
+    MasterFIDMaintainer(DirectoryService ds, InjectableDriver dr, InjectableFile f, SOID soid)
     {
+        assert soid != null;
         _dr = dr;
         _ds = ds;
         _soid = soid;
@@ -50,10 +54,11 @@ public class FIDMaintainer implements IFIDMaintainer
     @Override
     public void physicalObjectCreated_(Trans t) throws IOException, SQLException
     {
-        FID fid = getFID_();
+        FID fid = getFIDFromFilesystem_(_f);
 
         SOID soidOld = _ds.getSOID_(fid);
-        // The FID to be remapped must already exist in the db.
+
+        // unmap the FID first if it exist for other objects
         if (soidOld != null && !_soid.equals(soidOld)) _ds.setFID_(soidOld, null, t);
 
         _ds.setFID_(_soid, fid, t);
@@ -62,16 +67,24 @@ public class FIDMaintainer implements IFIDMaintainer
     @Override
     public void physicalObjectMoved_(IFIDMaintainer to, Trans t) throws IOException, SQLException
     {
-        // We don't support moving to a physical object with a NullFIDMaintainer right now.
-        FIDMaintainer fidmTo = (FIDMaintainer) to;
-
-        if (!_soid.equals(fidmTo._soid)) {
-            FID fid = fidmTo.getFID_();
-            // Fallible assertion (see above). It asserts that the FID is unchanged from the source
-            // object to the target object.
-            falliblyAssert(fid.equals(_ds.getOANullable_(_soid).fid()));
+        if (to instanceof NonMasterFIDMaintainer) {
+            // reset the FID of the source object
             _ds.setFID_(_soid, null, t);
-            _ds.setFID_(fidmTo._soid, fid, t);
+
+        } else {
+            assert to instanceof MasterFIDMaintainer;
+            MasterFIDMaintainer mfmTo = (MasterFIDMaintainer) to;
+
+            if (_soid.equals(mfmTo._soid)) return;
+
+            FID fid = getFIDFromFilesystem_(mfmTo._f);
+            // Fallible assertion (see above). It asserts that the FID is unchanged from the source
+            // logical object to the target physical object.
+            falliblyAssert(fid.equals(_ds.getOA_(_soid).fid()));
+            // reset the FID of the source object
+            _ds.setFID_(_soid, null, t);
+            // set the FID of the destination object
+            _ds.setFID_(mfmTo._soid, fid, t);
         }
     }
 
@@ -83,9 +96,17 @@ public class FIDMaintainer implements IFIDMaintainer
         _ds.setFID_(_soid, null, t);
     }
 
-    private @Nonnull FID getFID_() throws IOException, SQLException
+    /**
+     * Read the object's FID from the filesystem and write it to the database.
+     */
+    void setFIDFromFilesystem_(Trans t) throws SQLException, IOException
     {
-        FID fid = _dr.getFID(_f.getPath());
+        _ds.setFID_(_soid, getFIDFromFilesystem_(_f), t);
+    }
+
+    private @Nonnull FID getFIDFromFilesystem_(InjectableFile f) throws IOException
+    {
+        FID fid = _dr.getFID(f.getPath());
         if (fid == null) throw new IOException("OS-specific file");
         return fid;
     }

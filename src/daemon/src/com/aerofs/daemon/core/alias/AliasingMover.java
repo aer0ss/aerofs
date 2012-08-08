@@ -217,15 +217,13 @@ public class AliasingMover
             if (!match) {
                 KIndex kidxTarget = new KIndex(++kidxMax);
 
-                if (l.isInfoEnabled()) {
-                    l.info("move " + new SOCKID(alias, kidxAlias) + "->" +
-                            new SOCKID(target, kidxTarget));
-                }
+                l.warn("almov " + new SOCKID(alias, kidxAlias) + "->" +
+                        new SOCKID(target, kidxTarget));
 
                 // Compute hash only if the branch is a non-master branch on the target, since
                 // DS.setCA_() requires non-null hashes on these branches. See Hasher for detail.
-                // The computation on the alias must be done _before_ moving the physical file to the
-                // target.
+                // The computation on the alias must be done _before_ moving the physical file to
+                // the target.
                 if (hAlias == null && !kidxTarget.equals(KIndex.MASTER)) {
                     hAlias = _hasher.computeHashBlocking_(kAlias.sokid());
                 }

@@ -58,7 +58,7 @@ public interface IFIDMaintainer
          */
         public IFIDMaintainer create_(SOID soid, InjectableFile f)
         {
-            return new FIDMaintainer(_ds, _dr, soid, f);
+            return new MasterFIDMaintainer(_ds, _dr, f, soid);
         }
 
         /**
@@ -71,7 +71,7 @@ public interface IFIDMaintainer
             // Because the FID is relevant only to the master branch, passing a null maintainer for
             // non-master branches.
             if (sokid.kidx().equals(KIndex.MASTER)) return create_(sokid.soid(), f);
-            else return new NullFIDMaintainer();
+            else return new NonMasterFIDMaintainer();
         }
     }
 }
