@@ -65,7 +65,7 @@ build=$[$build+1]
 newversion=$major.$minor.$build
 
 echo "Current $debname version is $version. New version is $newversion."
-echo $newversion > $debname.current.ver
+echo $newversion > aerofs-$debname.current.ver
 echo "Version: $newversion" >> $control
 
 # And finally build the debian package.
