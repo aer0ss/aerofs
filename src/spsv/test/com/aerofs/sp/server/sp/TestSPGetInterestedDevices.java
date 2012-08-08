@@ -75,11 +75,6 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         HashSet<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1,
                 sessionUser.getUser());
 
-        // A little bit of debug printing.
-        for (UserDevice ud : interested) {
-            System.out.println(ud.getDID().toStringFormal() + " " + ud.getUserId());
-        }
-
         // The size is correct (only the correct devices were returned).
         assertEquals(interested.size(), 3);
     }
