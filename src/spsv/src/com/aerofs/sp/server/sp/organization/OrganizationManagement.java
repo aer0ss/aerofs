@@ -26,6 +26,10 @@ import java.util.regex.Pattern;
  */
 public class OrganizationManagement
 {
+    private static final int DEFAULT_MAX_RESULTS = 100;
+    // To avoid DoS attacks forbid listSharedFolders queries exceeding 1000 returned results
+    private static final int ABSOLUTE_MAX_RESULTS = 1000;
+
     private final IOrganizationDatabase _db;
     private final UserManagement _userManagement;
 
@@ -45,6 +49,15 @@ public class OrganizationManagement
     {
         Matcher matcher = DOMAIN_NAME_PATTERN.matcher(domainName);
         return matcher.find();
+    }
+
+    private static Integer sanitizeMaxResults(Integer maxResults)
+    {
+        if (maxResults == null) return DEFAULT_MAX_RESULTS;
+        else if (maxResults > ABSOLUTE_MAX_RESULTS) return ABSOLUTE_MAX_RESULTS;
+        else if (maxResults < 0) return 0;
+
+        else return maxResults;
     }
 
     /**
@@ -107,10 +120,13 @@ public class OrganizationManagement
         _db.moveUserToOrganization(user, orgId);
     }
 
-    public List<PBSharedFolder> listSharedFolders(String orgId, int maxResults, int offset)
+    public List<PBSharedFolder> listSharedFolders(String orgId, Integer maxResults, Integer offset)
             throws SQLException
     {
-        return _db.listSharedFolders(orgId, maxResults, offset);
+        if (offset == null) offset = 0;
+        assert offset >= 0;
+
+        return _db.listSharedFolders(orgId, sanitizeMaxResults(maxResults), offset);
     }
 
     public int countSharedFolders(String orgId)
