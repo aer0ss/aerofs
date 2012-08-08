@@ -12,7 +12,7 @@ import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
-import com.aerofs.srvlib.sp.SPDatabase.DeviceRow;
+import com.aerofs.servletlib.sp.SPDatabase.DeviceRow;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
