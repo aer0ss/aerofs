@@ -13,7 +13,6 @@ import com.aerofs.daemon.tng.xmpp.netty.MockChannelFactory;
 import com.aerofs.daemon.tng.xmpp.netty.MockSinkEventListener;
 import com.aerofs.daemon.tng.xmpp.zephyr.exception.ExZephyrFailedToBind;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.StrictChannelPipeline;
-import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrBindRequest;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
 import com.aerofs.lib.async.UncancellableFuture;
