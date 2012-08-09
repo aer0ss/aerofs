@@ -60,11 +60,11 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import static com.aerofs.proto.Sv.PBSVEvent.Type.*;
 
-public class MenuImplSWT implements IMenu
+public class TrayMenu
 {
-    static final Logger l = Util.l(MenuImplSWT.class);
+    static final Logger l = Util.l(TrayMenu.class);
     private final Menu _menu;
-    private final IIcon _icon;
+    private final TrayIcon _icon;
     private boolean _enabled;
 
     private MenuItem _transferStats1;    // menu item used to display information about ongoing transfers - line 1
@@ -86,7 +86,7 @@ public class MenuImplSWT implements IMenu
         }
     };
 
-    MenuImplSWT(IIcon icon)
+    TrayMenu(TrayIcon icon)
     {
         _icon = icon;
         _menu = new Menu(GUI.get().sh(), SWT.POP_UP);
@@ -624,7 +624,6 @@ public class MenuImplSWT implements IMenu
         }
     }
 
-    @Override
     public void dispose()
     {
         // TODO remove listeners
@@ -636,13 +635,11 @@ public class MenuImplSWT implements IMenu
         _pieChartCache.clear();
     }
 
-    @Override
     public void setVisible(boolean b)
     {
         _menu.setVisible(b);
     }
 
-    @Override
     public void enable()
     {
         _enabled = true;

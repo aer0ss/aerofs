@@ -15,15 +15,15 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sv;
 
-public class IconImplSWT implements IIcon {
-
+public class TrayIcon
+{
     private final SystemTray _st;
     private final TrayItem _ti;
     private Thread _thdSpinning;
     private boolean _showNotification;
     private int _iconIndex;
 
-    IconImplSWT(SystemTray st)
+    TrayIcon(SystemTray st)
     {
         _st = st;
         Tray tray = GUI.get().disp().getSystemTray();
@@ -45,13 +45,7 @@ public class IconImplSWT implements IIcon {
             {
             }
         });
-//        _ti.addListener(SWT.Selection, new GUIUtil.AbstractListener() {
-//            public void handleEventImpl(Event event)
-//            {
-//                Program.launch(Cfg.mount() ? UI.mountPoint() :
-//                    Util.getDefaultAnchorRoot());
-//            }
-//        });
+
         if (!OSUtil.isOSX()) {
             _ti.addListener(SWT.DefaultSelection, new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_DEFAULT_SELECTION) {
                 @Override
@@ -72,12 +66,6 @@ public class IconImplSWT implements IIcon {
         setSpin(false);
     }
 
-
-    /*
-     * (non-Javadoc)
-     * @see com.aerofs.gui.tray.ISystemTrayIcon#setSpin(boolean)
-     */
-    @Override
     public void setSpin(boolean spin)
     {
         assert GUI.get().isUIThread();
@@ -135,35 +123,21 @@ public class IconImplSWT implements IIcon {
         _thdSpinning.start();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see com.aerofs.gui.tray.ISystemTrayIcon#dispose()
-     */
-    @Override
     public void dispose()
     {
         _ti.dispose();
     }
 
-    @Override
     public boolean isDisposed()
     {
        return _ti.isDisposed();
     }
 
-    @Override
     public void setToolTipText(String str)
     {
         _ti.setToolTipText(str);
     }
 
-    @Override
-    public void attachMenu(SystemTray st, IMenu menu)
-    {
-        // do nothing
-    }
-
-    @Override
     public void showNotification(boolean b)
     {
        _showNotification = b;
