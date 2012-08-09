@@ -306,7 +306,7 @@ public class TestAliasing extends AbstractTest
             any(Version.class), anyInt());
         verify(ru, used ? atLeastOnce() : never()).applyMeta_(any(DID.class), any(SOID.class),
             any(PBMeta.class), any(OID.class), anyBoolean(), anyInt(), any(Trans.class),
-            any(SOID.class), any(Version.class), any(SOID.class));
+            any(SOID.class), any(Version.class), any(SOID.class), any(CausalityResult.class));
         verify(ru, never()).applyUpdateMetaAndContent_(any(SOCKID.class), any(Version.class),
             any(CausalityResult.class), any(CIDType.class), any(Trans.class));
     }
@@ -332,7 +332,8 @@ public class TestAliasing extends AbstractTest
     {
         when(ru.applyMeta_(any(DID.class), any(SOID.class), any(PBMeta.class),
                 any(OID.class), anyBoolean(), anyInt(), any(Trans.class), any(SOID.class),
-                any(Version.class), any(SOID.class))).thenAnswer(new Answer<Object>()
+                any(Version.class), any(SOID.class), any(CausalityResult.class)))
+                .thenAnswer(new Answer<Object>()
         {
             @Override
             public Object answer(InvocationOnMock invocationOnMock)

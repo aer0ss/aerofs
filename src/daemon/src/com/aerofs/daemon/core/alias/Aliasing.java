@@ -256,7 +256,8 @@ public class Aliasing
                         metaDiff, t,
                         alias, // noNewVersion
                         vRemoteTargetMeta,
-                        alias);
+                        alias,
+                        cr);
 
                 // Don't applyUpdate() if a name conflict was detected and
                 // performAliasingOnLocallyAvailableObjects_() was invoked.

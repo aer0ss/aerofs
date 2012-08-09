@@ -106,7 +106,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
             return false;
 
         } else if (_seq != s.getAntiEntropySeq_()) {
-            l.info(s + ": seq mismatch. return");
+            l.info(s + ": seq mismatch " + _seq + " v " + s.getAntiEntropySeq_() + ". return");
             return false;
 
         } else if (!s.hasOnlinePotentialMemberDevices_()) {

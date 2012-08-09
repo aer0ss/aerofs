@@ -109,6 +109,8 @@ public class ReceiveAndApplyUpdate
         public final Version _vAddLocal;
         // if a true conflict (vs. false conflict) is to be merged
         public final boolean _incrementVersion;
+        // if the remote object was renamed to resolve a conflict (increment its version)
+        public boolean _conflictRename;
         // the branches to be deleted. never be null
         public final Collection<KIndex> _kidcsDel;
 
@@ -132,6 +134,7 @@ public class ReceiveAndApplyUpdate
             else _kidcsDel = kidcsDel;
             _hash = h;
             _vLocal = vLocal;
+            _conflictRename = false;
         }
     }
 
@@ -349,14 +352,13 @@ public class ReceiveAndApplyUpdate
     /**
      * @param oidParent is assumed to be a target object (i.e. not in the alias table)
      * @return true if a name conflict was detected and oids were aliased.
-     * assumes {@code oidParent} belongs to the same store as {@code soid}
      * TODO (MJ) there should be only one source of the SIndex of interest,
      * but right now it can be acquired from soid, noNewVersion, and soidMsg. The latter two
      * should be changed to OID types.
      */
     public boolean applyMeta_(DID did, SOID soid, PBMeta meta, OID oidParent,
             final boolean wasPresent, int metaDiff, Trans t, @Nullable SOID noNewVersion,
-            Version vRemote, final SOID soidMsg)
+            Version vRemote, final SOID soidMsg, CausalityResult cr)
             throws Exception
     {
         final SOID soidParent = new SOID(soid.sidx(), oidParent);
@@ -400,7 +402,7 @@ public class ReceiveAndApplyUpdate
         } catch (ExAlreadyExist e) {
             l.warn(Util.e(e));
             return resolveNameConflict_(did, soid, oidParent, meta, wasPresent, metaDiff, t,
-                    noNewVersion, vRemote, soidMsg);
+                    noNewVersion, vRemote, soidMsg, cr);
         } catch (ExNotDir e) {
             Util.fatal(e);
         }
@@ -424,7 +426,7 @@ public class ReceiveAndApplyUpdate
      */
     private boolean resolveNameConflict_(DID did, SOID soidRemote, OID parent, PBMeta meta,
             boolean wasPresent, int metaDiff, Trans t, SOID soidNoNewVersion, Version vRemote,
-            final SOID soidMsg)
+            final SOID soidMsg, CausalityResult cr)
             throws Exception
     {
         Path pParent = _ds.resolveNullable_(new SOID(soidRemote.sidx(), parent));
@@ -464,7 +466,7 @@ public class ReceiveAndApplyUpdate
 
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);
             applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
-                    vRemote, soidMsg);
+                    vRemote, soidMsg, cr);
             return false;
         }
 
@@ -486,7 +488,7 @@ public class ReceiveAndApplyUpdate
             } else {
                 l.warn("Cyclic dependency created when noting " + socidMsg + "->" + socidLocal);
                 resolveNameConflictByRenaming(did, soidRemote, soidLocal, wasPresent, parent,
-                        pParent, vRemote, meta, metaDiff, soidNoNewVersion, soidMsg, t);
+                        pParent, vRemote, meta, metaDiff, soidNoNewVersion, soidMsg, cr, t);
                 return false;
             }
         }
@@ -505,14 +507,14 @@ public class ReceiveAndApplyUpdate
             return true;
         } else {
             resolveNameConflictByRenaming(did, soidRemote, soidLocal, wasPresent, parent,
-                    pParent, vRemote, meta, metaDiff, soidNoNewVersion, soidMsg, t);
+                    pParent, vRemote, meta, metaDiff, soidNoNewVersion, soidMsg, cr, t);
             return false;
         }
     }
 
     private void resolveNameConflictByRenaming(DID did, SOID soidRemote, SOID soidLocal,
             boolean wasPresent, OID parent, Path pParent, Version vRemote, PBMeta meta,
-            int metaDiff, SOID soidNoNewVersion, SOID soidMsg, Trans t)
+            int metaDiff, SOID soidNoNewVersion, SOID soidMsg, CausalityResult cr, Trans t)
             throws Exception
     {
         // Resolve name conflict by generating a new name.
@@ -524,18 +526,24 @@ public class ReceiveAndApplyUpdate
         if (comp > 0) {
             // local wins
             l.info("change remote name");
+
             PBMeta newMeta = PBMeta.newBuilder().mergeFrom(meta).setName(newName).build();
             applyMeta_(did, soidRemote, newMeta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
-                    vRemote, soidMsg);
+                    vRemote, soidMsg, cr);
 
-            _cm.atomicWrite_(new SOCKID(soidRemote, CID.META), t);
+            // The version for soidRemote should be incremented, (with _cm.atomicWrite).
+            // Unfortunately that can't be done here, as applyUpdateMetaAndContent will detect
+            // that the version changed during the application of the update, and throw ExAborted,
+            // effectively making this code path a no-op. Instead, set cr._conflictRename to true
+            // so that applyUpdateMetaAndContent will increment the version for us.
+            cr._conflictRename = true;
         } else {
             // remote wins
             l.info("change local name");
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, true, t);
 
             applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
-                    vRemote, soidMsg);
+                    vRemote, soidMsg, cr);
         }
     }
 
@@ -785,8 +793,10 @@ public class ReceiveAndApplyUpdate
         _nvc.deleteKMLVersion_(k.socid(), vDelKML, t);
         _nvc.addLocalVersion_(k, res._vAddLocal, t);
 
-        // increment the version if it's merge of true conflicts
-        if (res._incrementVersion) {
+        // increment the version if
+        // 1) this update was a merge of true conflicts OR
+        // 2) the object in the msg was renamed to resolve a local name conflict
+        if (res._incrementVersion || res._conflictRename) {
             assert type == CIDType.META;
             _cm.atomicWrite_(k, t);
         }

@@ -253,7 +253,8 @@ public class GetComponentReply
                             // on aliasing name conflict.
                             null,
                             vRemote,
-                            targetBranch.soid());
+                            targetBranch.soid(),
+                            cr);
 
                     // Aliasing objects on name conflicts updates versions and bunch
                     // of stuff (see resolveNameConflictOnNewRemoteObjectByAliasing_()). No further
