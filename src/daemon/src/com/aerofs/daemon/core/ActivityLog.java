@@ -166,20 +166,20 @@ public class ActivityLog
         for (Entry<SOID, ActivityEntry> en : map.entrySet()) {
             ActivityEntry ae = en.getValue();
 
-            // remove the movement activity if the path is not changed. this may happen if, say,
-            // the object is moved to a new location and back to the old one during the transaction.
-            if (ae._path.equals(ae._pathTo)) {
-                ae._type &= ~MOVEMENT_VALUE;
-                ae._pathTo = null;
-            }
-
             // add to the activity log only if the entry has both activities and contributing dids.
-            // see class-level comment for detail. the test has to be done _after_ removing the
-            // MOVEMENT type above.
+            // see class-level comment for detail.
             if (ae._type == 0 || ae._dids.isEmpty()) continue;
 
             // the assertion may fail if placed _before_ the above test
             assert ae._path != null;
+
+            // remove the movement activity if the path is not changed. this may happen if, say,
+            // the object is moved to a new location and back to the old one during the transaction.
+            if (ae._path.equals(ae._pathTo)) {
+                ae._type &= ~MOVEMENT_VALUE;
+                if (ae._type == 0) continue;
+                ae._pathTo = null;
+            }
 
             _aldb.addActivity_(en.getKey(), ae._type, ae._path, ae._pathTo, ae._dids, t);
             ++n;

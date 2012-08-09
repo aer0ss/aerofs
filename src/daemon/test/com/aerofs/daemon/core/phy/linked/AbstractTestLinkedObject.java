@@ -53,6 +53,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
         when(cfgAbsRootAnchor.get()).thenReturn("");
         when(factFile.create(any(String.class))).then(RETURNS_MOCKS);
 
+        when(ds.getOA_(soid)).thenReturn(oa);
         when(ds.getOANullable_(soid)).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
 
