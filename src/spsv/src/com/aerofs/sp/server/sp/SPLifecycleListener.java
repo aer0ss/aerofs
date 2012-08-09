@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.Util;
+import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.apache.log4j.Logger;
@@ -23,6 +24,8 @@ import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_RECONNECT_DELAY;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_RECONNECT_DELAY_TIMEUNIT;
+import static com.aerofs.verkehr.client.lib.IConnectionListener.NOOP_CONNECTION_LISTENER;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.lang.Short.parseShort;
 
 public class SPLifecycleListener implements ServletContextListener
@@ -52,38 +55,52 @@ public class SPLifecycleListener implements ServletContextListener
         Executor workers = Executors.newCachedThreadPool();
         HashedWheelTimer timer = new HashedWheelTimer();
 
-        // HMMMMMMMM...notice how similar the commander is to a publisher?
+        // FIXME (AG): HMMMMMMMM...notice how similar the commander is to a publisher?
+        // FIXME (AG): really we should simply store the factories
 
-        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer);
+        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer,
+                NOOP_CONNECTION_LISTENER, sameThreadExecutor());
+        publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
-        VerkehrCommander commander = getCommander(host, commandPort, cacert, boss, workers, timer);
-        ctx.setAttribute(VERKEHR_COMMANDER_ATTRIBUTE, commander);
-
-        publisher.start();
+        VerkehrCommander commander = getCommander(host, commandPort, cacert, boss, workers, timer,
+                NOOP_CONNECTION_LISTENER, sameThreadExecutor());
         commander.start();
+        ctx.setAttribute(VERKEHR_COMMANDER_ATTRIBUTE, commander);
     }
 
-    private VerkehrCommander getCommander(String host, short commandPort, String cacert,
-            Executor bossExecutor, Executor ioWorkerExecutor, HashedWheelTimer timer)
+    private VerkehrCommander getCommander(String host, short commandPort,
+            String cacert,
+            Executor bossExecutor, Executor ioWorkerExecutor,
+            HashedWheelTimer timer,
+            IConnectionListener listener, Executor listenerExecutor)
     {
         com.aerofs.verkehr.client.lib.commander.ClientFactory commanderFactory =
                 new com.aerofs.verkehr.client.lib.commander.ClientFactory(host, commandPort,
-            bossExecutor, ioWorkerExecutor, cacert,
-            VERKEHR_RECONNECT_DELAY, VERKEHR_RECONNECT_DELAY_TIMEUNIT,
-            VERKEHR_ACK_TIMEOUT, VERKEHR_ACK_TIMEOUT_TIMEUNIT, timer);
+                        bossExecutor, ioWorkerExecutor,
+                        cacert,
+                        VERKEHR_RECONNECT_DELAY, VERKEHR_RECONNECT_DELAY_TIMEUNIT,
+                        VERKEHR_ACK_TIMEOUT, VERKEHR_ACK_TIMEOUT_TIMEUNIT,
+                        timer,
+                        listener, listenerExecutor);
 
         return commanderFactory.create();
     }
 
-    private VerkehrPublisher getPublisher(String host, short publishPort, String cacert,
-            Executor bossExecutor, Executor ioWorkerExecutor, HashedWheelTimer timer)
+    private VerkehrPublisher getPublisher(String host, short publishPort,
+            String cacert,
+            Executor bossExecutor, Executor ioWorkerExecutor,
+            HashedWheelTimer timer,
+            IConnectionListener listener, Executor listenerExecutor)
     {
         com.aerofs.verkehr.client.lib.publisher.ClientFactory publisherFactory =
                 new com.aerofs.verkehr.client.lib.publisher.ClientFactory(host, publishPort,
-            bossExecutor, ioWorkerExecutor, cacert,
-            VERKEHR_RECONNECT_DELAY, VERKEHR_RECONNECT_DELAY_TIMEUNIT, VERKEHR_ACK_TIMEOUT,
-            VERKEHR_ACK_TIMEOUT_TIMEUNIT, timer);
+                        bossExecutor, ioWorkerExecutor,
+                        cacert,
+                        VERKEHR_RECONNECT_DELAY, VERKEHR_RECONNECT_DELAY_TIMEUNIT,
+                        VERKEHR_ACK_TIMEOUT, VERKEHR_ACK_TIMEOUT_TIMEUNIT,
+                        timer,
+                        listener, listenerExecutor);
 
         return publisherFactory.create();
     }

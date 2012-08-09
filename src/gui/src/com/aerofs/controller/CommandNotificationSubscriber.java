@@ -15,8 +15,9 @@ import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.Commands;
 import com.aerofs.ui.UI;
+import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
-import com.aerofs.verkehr.client.lib.subscriber.ISubscriberEventListener;
+import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.log4j.Logger;
@@ -29,40 +30,42 @@ import java.util.Iterator;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public final class CommandNotificationSubscriber
 {
     private static final Logger l = Util.l(CommandNotificationSubscriber.class);
-    private final VerkehrSubscriber _sub;
+
+    private final String _topic;
+    private final VerkehrSubscriber _subscriber;
 
     public CommandNotificationSubscriber(String user, String caCertFilename)
     {
-        String topic = C.CMD_CHANNEL_TOPIC_PREFIX + user;
-        l.info("creating command notification subscriber for t:" + topic);
+        VerkehrListener listener = new VerkehrListener();
 
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
-                newCachedThreadPool(), newCachedThreadPool(), caCertFilename,
-                new CfgKeyManagersProvider(), VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT),
-                new HashedWheelTimer(), topic, new SubscriberEventListener());
+                newCachedThreadPool(), newCachedThreadPool(),
+                caCertFilename, new CfgKeyManagersProvider(),
+                VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
+                listener, listener, sameThreadExecutor());
 
-        _sub = factory.create();
+        this._topic = C.CMD_CHANNEL_TOPIC_PREFIX + user;
+        this._subscriber = factory.create();
     }
 
     public void start()
     {
         l.info("started cmd notification subscriber");
-        _sub.start();
+        _subscriber.start();
     }
 
-    private static final class SubscriberEventListener implements ISubscriberEventListener
+    private final class VerkehrListener implements IConnectionListener, ISubscriptionListener
     {
-        private static final Logger l = Util.l(SubscriberEventListener.class);
-
         @Override
-        public void onSubscribed()
+        public void onConnected()
         {
-            l.info("cmd: subscribed");
+            _subscriber.subscribe_(_topic);
         }
 
         @Override
@@ -182,5 +185,12 @@ public final class CommandNotificationSubscriber
             l.info("cmd: check for updates");
             UI.updater().checkForUpdate(true);
         }
+
+        @Override
+        public void onDisconnected()
+        {
+            // noop
+        }
+
     }
 }
