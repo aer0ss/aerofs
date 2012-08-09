@@ -97,8 +97,12 @@ public class Cfg
         if (readPasswd) readCreds();
 
         _timeout = _db.getInt(Key.TIMEOUT);
-        _absRootAnchor = _db.get(Key.ROOT);
-        assert new File(_absRootAnchor).isAbsolute();
+
+        // We want to keep the user-specified path in the DB, but we need the canonical path to
+        // watch for filesystem changes on OSX.
+        File rootAnchor = new File(_db.get(Key.ROOT));
+        assert rootAnchor.isAbsolute();
+        _absRootAnchor = rootAnchor.getCanonicalPath();
 
         _portbase = readPortbase();
         _rootSID = Util.getRootSID(_user);
