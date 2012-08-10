@@ -14,8 +14,6 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.spsv.InvitationCode;
-import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
@@ -40,7 +38,6 @@ import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.sp.server.email.EmailUtil;
-import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
@@ -101,11 +98,12 @@ class SPService implements ISPService
 
     private final UserManagement _userManagement;
     private final OrganizationManagement _organizationManagement;
-    private final InvitationEmailer _invitationEmailer;
+    private final SharedFolderManagement _sharedFolderManagement;
     private final ICertificateGenerator _certificateGenerator;
 
     SPService(SPDatabase db, ISessionUserID sessionUser, UserManagement userManagement,
-            OrganizationManagement organizationManagement, InvitationEmailer invitationEmailer,
+            OrganizationManagement organizationManagement,
+            SharedFolderManagement sharedFolderManagement,
             ICertificateGenerator certificateGenerator)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
@@ -114,7 +112,7 @@ class SPService implements ISPService
         _sessionUser = sessionUser;
         _userManagement = userManagement;
         _organizationManagement = organizationManagement;
-        _invitationEmailer = invitationEmailer;
+        _sharedFolderManagement = sharedFolderManagement;
         _certificateGenerator = certificateGenerator;
     }
 
@@ -351,73 +349,10 @@ class SPService implements ISPService
             List<String> emailAddresses, String note)
             throws Exception
     {
-        User sharer = _userManagement.getUser(_sessionUser.getUser());
-
-        // Check that the user is verified - only verified users can share
-        if (!sharer._isVerified) {
-            // TODO (GS): We want to throw a specific exception if the inviter isn't verified
-            // to allow easier error handling on the client-side
-            throw new ExNoPerm();
-        }
-
-        // TODO could look up sharer Organization once, outside the loop.
-        // But if supporting list of email addresses is temporary, don't bother.
-        for (String sharee : emailAddresses) {
-            shareFolderWithOne(sharer, sharee, folderName, shareId.toByteArray(), note);
-        }
+        _sharedFolderManagement.shareFolder(folderName, shareId.toByteArray(),
+                _sessionUser.getUser(), emailAddresses, note);
 
         return createVoidReply();
-    }
-
-    private void shareFolderWithOne(User sharer, String shareeEmail, String folderName,
-            byte[] shareId, @Nullable String note)
-            throws Exception
-    {
-        Organization sharerOrg = _db.getOrganization(sharer._orgId);
-        Organization shareeOrg;
-
-        User sharee = _db.getUser(shareeEmail);
-        if (sharee == null) {  // Sharing with a non-AeroFS user.
-            boolean domainMatch = sharerOrg.domainMatches(shareeEmail);
-            shareeOrg = _db.getOrganization(domainMatch ? sharerOrg._id : C.DEFAULT_ORGANIZATION);
-            createFolderInvitation(sharer._id, shareeEmail, sharerOrg, shareeOrg, shareId,
-                    folderName);
-            inviteOneUser(sharer, shareeEmail, shareeOrg, folderName, note);
-        } else {
-            shareeOrg = _db.getOrganization(sharee._orgId);
-            String code = createFolderInvitation(sharer._id, sharee._id, sharerOrg, shareeOrg,
-                    shareId, folderName);
-            _invitationEmailer.sendFolderInvitationEmail(sharer._id, sharee._id, sharer._firstName,
-                    folderName, note, code);
-        }
-
-        l.info("folder sharer " + sharer + " sharee " + shareeEmail);
-    }
-
-    /**
-     * Creates a folder invitation in the database
-     * @return the share folder code
-     * @throws ExNoPerm if either the sharer's or sharee's organization does not permit external
-     *                  sharing (and they are not the same organization)
-     */
-    private String createFolderInvitation(String sharerId, String shareeId,
-            Organization sharerOrg, Organization shareeOrg, byte[] sid, String folderName)
-            throws ExNoPerm, SQLException, ExNotFound
-    {
-        if (!sharerOrg.equals(shareeOrg)) {
-            if (!sharerOrg._shareExternally) {
-                throw new ExNoPerm("Sharing outside this organization is not permitted");
-            } else if (!shareeOrg._shareExternally) {
-                throw new ExNoPerm("Sharing outside the organization " + shareeOrg
-                        + " is not permitted");
-            }
-        }
-
-        String code = InvitationCode.generate(CodeType.SHARE_FOLDER);
-
-        _db.addShareFolderCode(code, sharerId, shareeId, sid, folderName);
-
-        return code;
     }
 
     @Override
@@ -524,38 +459,10 @@ class SPService implements ISPService
 
         // Invite all invitees to Organization "org"
         for (String invitee : emailAddresses) {
-            inviteOneUser(user, invitee, org, null, null);
+            _userManagement.inviteOneUser(user, invitee, org, null, null);
         }
 
         return createVoidReply();
-    }
-
-    private void inviteOneUser(User inviter, String inviteeId, Organization inviteeOrg,
-            @Nullable String folderName, @Nullable String note)
-            throws Exception
-    {
-        assert inviteeId != null;
-
-        // TODO could change userId field in DB to be case-insensitive to avoid normalization
-        inviteeId = User.normalizeUserId(inviteeId);
-
-        // Check that the invitee doesn't exist already
-        _userManagement.checkUserIdDoesNotExist(inviteeId);
-
-        // USER-level inviters can only invite to an organization that matches the domain
-        if (inviter._level.equals(AuthorizationLevel.USER)
-                && !inviteeOrg.domainMatches(inviteeId)) {
-            throw new ExNoPerm(inviter._id + " cannot invite + " + inviteeId
-                    + " to " + inviteeOrg._id);
-        }
-
-        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-
-        _db.addTargetedSignupCode(code, inviter._id, inviteeId, inviteeOrg._id);
-
-        _invitationEmailer.sendUserInvitationEmail(inviter._id, inviteeId, inviter._firstName,
-                folderName, note, code);
-
     }
 
     @Override

@@ -80,6 +80,13 @@ CREATE TABLE `sp_batch_signup_code` (
   PRIMARY KEY (`b_idx`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+CREATE TABLE `sp_shared_folder` (
+  `sf_id` BINARY(16) NOT NULL,
+  `sf_name` VARCHAR(255) CHARSET utf8 NOT NULL,
+  INDEX sf_name_idx (`sf_name`),
+  PRIMARY KEY (`sf_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 CREATE TABLE `sp_shared_folder_code` (
   `f_code` CHAR(8) NOT NULL,
   `f_from` VARCHAR(320) NOT NULL, -- used to be null if the invites was sent by aerofs
