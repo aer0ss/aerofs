@@ -8,14 +8,11 @@ import com.aerofs.lib.cfg.Cfg;
 
 class DTLSMessage<T>
 {
-
     static enum Type
     {
         UNICAST_RECV, STREAM_BEGUN, CHUNK_RECV,
         SEND_UNICAST, BEGIN_STREAM, SEND_CHUNK
-    }
-
-    ;
+    };
 
     final Type _type;
     final T _msg;
