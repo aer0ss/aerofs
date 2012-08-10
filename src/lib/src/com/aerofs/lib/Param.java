@@ -1,10 +1,10 @@
 package com.aerofs.lib;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import com.aerofs.l.L;
 import com.aerofs.lib.cfg.Cfg;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class Param
 {
@@ -82,8 +82,7 @@ public class Param
     {
         public static final String VERKEHR_HOST = Cfg.staging() ? "sp.aerofs.com" : "verkehr.aerofs.com";
         public static final short VERKEHR_PORT = (short) (Cfg.staging() ? 80 : 443);
-        public static final long VERKEHR_RETRY_INTERVAL = 5000;
-        public static final long VERKEHR_ACK_TIMEOUT = 4000;
+        public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
     }
 
     public static class SyncStat

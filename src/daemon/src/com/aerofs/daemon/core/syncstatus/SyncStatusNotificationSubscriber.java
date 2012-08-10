@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -23,7 +24,6 @@ import org.jboss.netty.util.HashedWheelTimer;
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
 
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_ACK_TIMEOUT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
@@ -43,7 +43,7 @@ public class SyncStatusNotificationSubscriber {
 
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT, newCachedThreadPool(),
                 newCachedThreadPool(), cacert.get(), new CfgKeyManagersProvider(),
-                VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT, new HashedWheelTimer(),
+                VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 localDID.get() + localUser.get(), new SubscriberEventListener(q, sync, sched));
 
         _sub = factory.create();

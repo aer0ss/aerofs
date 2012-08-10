@@ -4,14 +4,11 @@
 
 package com.aerofs.controller;
 
-import java.sql.SQLException;
-import java.util.Iterator;
-
+import com.aerofs.lib.C;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
-import com.aerofs.lib.C;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SVClient;
@@ -26,8 +23,9 @@ import org.apache.log4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.annotation.Nullable;
+import java.sql.SQLException;
+import java.util.Iterator;
 
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_ACK_TIMEOUT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
@@ -45,7 +43,7 @@ public final class CommandNotificationSubscriber
 
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
                 newCachedThreadPool(), newCachedThreadPool(), caCertFilename,
-                new CfgKeyManagersProvider(), VERKEHR_RETRY_INTERVAL, VERKEHR_ACK_TIMEOUT,
+                new CfgKeyManagersProvider(), VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT),
                 new HashedWheelTimer(), topic, new SubscriberEventListener());
 
         _sub = factory.create();
