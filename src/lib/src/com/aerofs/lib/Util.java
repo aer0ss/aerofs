@@ -1011,7 +1011,7 @@ public abstract class Util
 
     public static class FileName
     {
-        public String name;
+        public String base;
         public String extension;
     }
     /**
@@ -1031,10 +1031,10 @@ public abstract class Util
 
         int dot = name.lastIndexOf('.');
         if  (dot < 1) {
-            result.name = name;
+            result.base = name;
             result.extension = "";
         } else {
-            result.name = name.substring(0, dot);
+            result.base = name.substring(0, dot);
             result.extension = name.substring(dot);
         }
 
@@ -1062,14 +1062,21 @@ public abstract class Util
         FileName file = splitFileName(name);
 
         // find the pattern of "(N)" at the end of the main part
-        Matcher m = NEXT_NAME_PATTERN.matcher(file.name);
+        Matcher m = NEXT_NAME_PATTERN.matcher(file.base);
         String prefix;
         int num;
         if (m.find()) {
             prefix = m.group(1);
-            num = Integer.valueOf(m.group(2)) + 1;
+            try {
+                num = Integer.valueOf(m.group(2)) + 1;
+            } catch (NumberFormatException e) {
+                // If the number can't be parsed because it's too large, it's probably not us who
+                // generated that number. In this case, add a new number after it.
+                prefix = file.base + " ";
+                num = 2;
+            }
         } else {
-            prefix = file.name + " ";
+            prefix = file.base + " ";
             num = 2;
         }
 

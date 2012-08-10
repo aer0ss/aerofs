@@ -390,7 +390,7 @@ public class CompConflictFiles extends Composite {
         for (Entry en : getSelectedEntries()) {
             FileName file = Util.splitFileName(FSIUtil.getLast(en._path));
             InjectableFile fTmp = _factFile.createTempFile(
-                    file.name + " (CONFLICT COPY. READ-ONLY) ", file.extension);
+                    file.base + " (CONFLICT COPY. READ-ONLY) ", file.extension);
             _factFile.create(en._fspath).copy(fTmp, false, false);
             if (!Program.launch(fTmp.getPath())) {
                 throw new Exception(S.FILE_OPEN_FAIL);

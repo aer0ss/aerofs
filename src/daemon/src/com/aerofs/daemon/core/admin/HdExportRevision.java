@@ -28,7 +28,7 @@ public class HdExportRevision extends AbstractHdIMC<EIExportRevision> {
         // Create a temp file that has the same extension has the original file
         // This is important so that we can open the temp file using the appropriate program
         FileName file = Util.splitFileName(ev._path.last());
-        File dst = FileUtil.createTempFile(file.name, file.extension, null, true);
+        File dst = FileUtil.createTempFile(file.base, file.extension, null, true);
 
         FileOutputStream os = new FileOutputStream(dst);
         try {

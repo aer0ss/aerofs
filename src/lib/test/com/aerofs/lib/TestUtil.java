@@ -18,37 +18,37 @@ public class TestUtil
 
         // standard case
         result = Util.splitFileName("abc.def");
-        assertEquals(result.name, "abc");
+        assertEquals(result.base, "abc");
         assertEquals(result.extension, ".def");
 
         // no extension
         result = Util.splitFileName("abcdef");
-        assertEquals(result.name, "abcdef");
+        assertEquals(result.base, "abcdef");
         assertEquals(result.extension, "");
 
         // no name (.file)
         result = Util.splitFileName(".def");
-        assertEquals(result.name, ".def");
+        assertEquals(result.base, ".def");
         assertEquals(result.extension, "");
 
         // corner case: just a dot
         result = Util.splitFileName(".");
-        assertEquals(result.name, ".");
+        assertEquals(result.base, ".");
         assertEquals(result.extension, "");
 
         // corner case: empty name
         result = Util.splitFileName("");
-        assertEquals(result.name, "");
+        assertEquals(result.base, "");
         assertEquals(result.extension, "");
 
         // several dots in name
         result = Util.splitFileName("ab.cd.ef");
-        assertEquals(result.name, "ab.cd");
+        assertEquals(result.base, "ab.cd");
         assertEquals(result.extension, ".ef");
 
         // counter-intuitive result, but technically correct
         result = Util.splitFileName("..abc");
-        assertEquals(result.name, ".");
+        assertEquals(result.base, ".");
         assertEquals(result.extension, ".abc");
     }
 

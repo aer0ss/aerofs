@@ -154,6 +154,8 @@ public final class CommandNotificationSubscriber
          */
         private void logThreads() throws Exception
         {
+            l.info("cmd: log threads");
+
             // The delay is required by the command (see cmd.proto). It also blocks the subscriber
             // thread from processing more commands. Otherwise, multiple LOG_THREADS requests would
             // be processed at the same time, defeating the purpose of the delay. However, this
