@@ -66,11 +66,13 @@ private:
 	std::wstring getPathFromPidl(PCIDLIST_ABSOLUTE) const;
 
 	typedef enum {
+		SyncStatusMenuId,
 		ShareFolderMenuId,
 		AeroFSMenuId  // this should always be the last item of this enum. (see comment in QueryContextMenu)
 	} MenuId;
 
 	AeroFSShellExtension* m_instance;
+
 	std::wstring m_path;
 	HBITMAP m_menuIcon;
 };

@@ -15,7 +15,7 @@
 #define GUIPORT_DEFAULT 50195
 #define GUIPORT_OFFSET 2
 #define DELAY_BEFORE_CONNECTION_RETRY 2000 // milliseconds
-#define PROTOCOL_VERSION 1
+#define PROTOCOL_VERSION 2
 
 AeroFSShellExtension _instance;
 
@@ -88,30 +88,44 @@ void AeroFSShellExtension::reconnect()
 }
 
 /**
-* Returns whether we should display an AeroFS context menu for a given path
-* Returns true if and only if:
-*   - path is under root anchor
-*   - path is a directory
-*/
-bool AeroFSShellExtension::shouldDisplayContextMenu(const std::wstring& path)
+ * Returns true if and only if: path is under root anchor
+ * Note: the test is inclusive (i.e returns true for root anchor)
+ */
+bool AeroFSShellExtension::isUnderRootAnchor(const std::wstring& path)
 {
 	if (path.empty() || path.length() >= MAX_PATH
 			|| m_rootAnchor.empty() || m_rootAnchor.length() >= MAX_PATH
-			|| path.length() <= m_rootAnchor.length()) {
-		return false;
-	}
-
-	// Check that path is a directory
-	if (!PathIsDirectory(path.c_str())) {
+			|| path.length() < m_rootAnchor.length()) {
 		return false;
 	}
 
 	// Check that path starts with root anchor
-	if (str_starts_with(lowercase(path), m_rootAnchor)) {
-		return true;
-	}
+	return str_starts_with(lowercase(path), m_rootAnchor);
+}
 
-	return false;
+/**
+ * Return true if the root anchor the shellext is operating on belongs to an
+ * @aerofs.com user
+ */
+bool AeroFSShellExtension::shouldEnableTestingFeatures() const
+{
+	return str_ends_with(m_userId, L"@aerofs.com");
+}
+
+/**
+ * Compute path flags for a given path to adapt context menu
+ * The flags are an OR combination of values defined in the PathFlag enum
+ */
+int AeroFSShellExtension::pathFlags(const std::wstring& path) const
+{
+	int flags = 0;
+	if (path == m_rootAnchor) {
+		flags |= RootAnchor;
+	}
+	if (PathIsDirectory(path.c_str())) {
+		flags |= Directory;
+	}
+	return flags;
 }
 
 /**
@@ -126,6 +140,9 @@ void AeroFSShellExtension::parseNotification(const ShellextNotification& notific
 
 		case ShellextNotification_Type_ROOT_ANCHOR:
 			setRootAnchor(notification.root_anchor().path());
+			if (notification.root_anchor().has_user()) {
+				setUserId(notification.root_anchor().user());
+			}
 			break;
 
 		case ShellextNotification_Type_CLEAR_STATUS_CACHE:
@@ -192,6 +209,11 @@ void AeroFSShellExtension::setRootAnchor(const std::string& path)
 	clearCache();
 }
 
+void AeroFSShellExtension::setUserId(const std::string& user)
+{
+	m_userId = to_wstring(user);
+}
+
 /**
 Clear the file status cache - all icon overlays are reset.
 */
@@ -207,6 +229,15 @@ void AeroFSShellExtension::clearCache()
 
 	// Tell the shell to refresh the icons
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+}
+
+void AeroFSShellExtension::showSyncStatusDialog(const std::wstring& path)
+{
+	ShellextCall call;
+	call.set_type(ShellextCall_Type_SYNC_STATUS);
+	call.mutable_sync_status()->set_path(to_string(path.c_str()));
+
+	m_socket->sendMessage(call);
 }
 
 void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)

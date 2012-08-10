@@ -4,6 +4,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
+import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
@@ -366,6 +367,21 @@ public class UIUtil
                 } else {
                     new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
                 }
+            }
+        });
+    }
+
+    /**
+     * This method can be run in a non-UI thread
+     */
+    public static void showSyncStatus(final Path path)
+    {
+        GUI.get().asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                new DlgSyncStatus(GUI.get().sh(), path).openDialog();
             }
         });
     }

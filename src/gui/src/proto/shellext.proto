@@ -16,10 +16,12 @@ message ShellextCall {
     enum Type {
         GREETING = 0;
         SHARE_FOLDER = 1;
+        SYNC_STATUS = 2;
     }
     required Type type = 1;
     optional GreetingCall greeting = 2;
     optional ShareFolderCall share_folder = 3;
+    optional SyncStatusCall sync_status = 4;
 }
 
 message GreetingCall {
@@ -28,6 +30,11 @@ message GreetingCall {
 
 message ShareFolderCall {
     // absolute path to the folder
+    required string path = 1;
+}
+
+message SyncStatusCall {
+    // absolute path to the file / folder
     required string path = 1;
 }
 
@@ -57,6 +64,7 @@ message ShellextNotification {
 message RootAnchorNotification {
     // absolute path to the root anchor. Must NOT include a trailing separator
     required string path = 1;
+    optional string user = 2;
 }
 
 message FileStatusNotification {

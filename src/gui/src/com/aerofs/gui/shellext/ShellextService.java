@@ -27,7 +27,7 @@ public class ShellextService
      * Used to make sure we are communicating with the right version of the shell extension
      * Bump this number every time shellext.proto changes
      */
-    private final static int PROTOCOL_VERSION = 1;
+    private final static int PROTOCOL_VERSION = 2;
 
     public static ShellextService get()
     {
@@ -60,7 +60,8 @@ public class ShellextService
         ShellextNotification notification = ShellextNotification.newBuilder()
                 .setType(Type.ROOT_ANCHOR)
                 .setRootAnchor(RootAnchorNotification.newBuilder()
-                    .setPath(Cfg.absRootAnchor()))
+                    .setPath(Cfg.absRootAnchor())
+                    .setUser(Cfg.user()))
                 .build();
 
         _server.send(notification.toByteArray());
@@ -111,6 +112,10 @@ public class ShellextService
             assert (call.hasShareFolder());
             shareFolder(call.getShareFolder().getPath());
             break;
+        case SYNC_STATUS:
+            assert (call.hasSyncStatus());
+            syncStatus(call.getSyncStatus().getPath());
+            break;
         default:
             throw new ExProtocolError(ShellextCall.Type.class);
         }
@@ -139,5 +144,22 @@ public class ShellextService
         }
 
         UIUtil.createOrManageSharedFolder(Path.fromAbsoluteString(absRootAnchor, absPath));
+    }
+
+    /**
+     * @param absPath the absolute path
+     */
+    private void syncStatus(final String absPath)
+    {
+        String absRootAnchor = Cfg.absRootAnchor();
+        if (!Path.isUnder(absRootAnchor, absPath)) {
+            l.warn("shellext provided an external path " + absPath);
+            return;
+        }
+
+        // TODO(huguesb): remove rthis check when sync stat ready for all users
+        if (Cfg.user().endsWith("@aerofs.com")) {
+            UIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
+        }
     }
 }

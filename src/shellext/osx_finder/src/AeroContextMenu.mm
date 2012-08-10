@@ -37,7 +37,7 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
         // Call the original method
         [self aero_addViewSpecificStuffToMenu:menu browserViewController:browserVC context:ctx];
 
-        if(![[AeroFinderExt instance] shouldModifyFinder]) {
+        if (![[AeroFinderExt instance] shouldModifyFinder]) {
             return;
         }
 
@@ -47,20 +47,34 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
             return;
         }
 
-        if([[AeroFinderExt instance] shouldDisplayContextMenu:path]) {
-
-            NSMenuItem* item = [menu insertItemWithTitle:@"AeroFS" action:nil keyEquivalent:@"" atIndex:2];
+        if ([[AeroFinderExt instance] isUnderRootAnchor:path]) {
+            int flags = [[AeroFinderExt instance] flagsForPath:path];
 
             NSMenu* submenu = [[[NSMenu alloc] init] autorelease];
 
-            NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share Folder...", @"Context menu")
-                                                      action:@selector(showShareFolderDialog:)
-                                               keyEquivalent:@""
-                                                     atIndex:0];
+            if ([[AeroFinderExt instance] shouldEnableTestingFeatures]) {
+                NSMenuItem* syncstat = [submenu insertItemWithTitle:NSLocalizedString(@"Sync status...", @"Context menu")
+                                                             action:@selector(showSyncStatusDialog:)
+                                                      keyEquivalent:@""
+                                                            atIndex:0];
+                [syncstat setTarget: [AeroFinderExt instance]];
+                [syncstat setRepresentedObject:path];
+            }
 
-            [share setTarget: [AeroFinderExt instance]];
-            [share setRepresentedObject:path];
-            [item setSubmenu: submenu];
+            if ((flags & Directory) && !(flags & RootAnchor)) {
+                NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share Folder...", @"Context menu")
+                                                          action:@selector(showShareFolderDialog:)
+                                                   keyEquivalent:@""
+                                                         atIndex:1];
+
+                [share setTarget: [AeroFinderExt instance]];
+                [share setRepresentedObject:path];
+            }
+
+            if ([submenu numberOfItems] > 0) {
+                NSMenuItem* item = [menu insertItemWithTitle:@"AeroFS" action:nil keyEquivalent:@"" atIndex:2];
+                [item setSubmenu: submenu];
+            }
         }
     } @catch (NSException* exception) {
         NSLog(@"AeroFS: Exception in aero_addViewSpecificStuffToMenu: %@", exception);
