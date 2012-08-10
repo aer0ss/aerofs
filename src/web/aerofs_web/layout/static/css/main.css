@@ -25,6 +25,9 @@ a.delete_permission {
   text-decoration: none;
   padding-left: 8px;
 }
+p.sid_container {
+  display: none;
+}
 #empty_message_bar {
   position: fixed;
   top: 0;
