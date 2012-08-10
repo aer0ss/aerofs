@@ -76,6 +76,6 @@ public class PeerContext
     @Override
     public String toString()
     {
-        return "[" + _ep + " " + _sidx + "]";
+        return "[" + _ep + " " + _sidx + " "  + _user + "]";
     }
 }

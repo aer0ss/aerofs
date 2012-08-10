@@ -317,9 +317,9 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
             assert is.available() == 0 : is.available();
             // make sure the footer didn't get corrupted
-            assert footer < Footer.values().length : pc + " " + pc.user() + " " + available + " " +
-                    footer + " " + Footer.values().length + " :: " +
-                    msg._type + " " + msg._sid + " " + msg._seq + " " + msg._tk;
+            assert footer < Footer.values().length : pc + " " + available + " " + footer + " " +
+                    Footer.values().length + " :: " + msg._type + " " + msg._sid + " " + msg._seq +
+                    " " + msg._tk;
 
             Footer f = Footer.values()[footer];
             l.info("recv " + f);
