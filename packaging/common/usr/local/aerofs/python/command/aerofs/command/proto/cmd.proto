@@ -1,12 +1,31 @@
 package com.aerofs.proto;
 
+/**
+ * Steps to add a command:
+ *
+ * 1. Edit this file to add a CommandType.
+ * 2. Edit packaging/python/command/aerofs/command/client/request.py to add support for the command
+ *    on the controller side.
+ * 3. Edit src/gui/src/com/aerofs/controller/CommandNotificationSubscriber.java to add command
+ *    implemention on the client side.
+ */
+
 //
 // Command Types
 //
 
 enum CommandType {
     UPLOAD_DATABASE = 0;
+
     CHECK_UPDATE = 1;
+
+    // Send an automatic defect with a description "cmd call"
+    SEND_DEFECT = 2;
+
+    // Wait for a few seconds and dump stack traces of all the GUI and daemon threads to their
+    // respective log files. Mostly used for Monte-Carlo sampling to debug CPU issues. A delay is
+    // needed to pace out consecutive sampling requests.
+    LOG_THREADS = 3;
 }
 
 //
@@ -23,16 +42,8 @@ message Command {
     required bytes payload = 3;
 }
 
-//
-// Command Payloads
-//
-
-message CommandUploadDatabase {
-    // Nothing.
-}
-
-message CommandCheckUpdate {
-    // Nothing.
+// TODO (WW) remove this
+message Void {
 }
 
 //

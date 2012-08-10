@@ -8,7 +8,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExTimeout;
 
-public class Token {
+public class Token
+{
     private final TokenManager _tokenManager;
     private final TC _tc;
     private final Cat _cat;

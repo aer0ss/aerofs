@@ -311,9 +311,9 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 Util.waitUninterruptable(_mxMain, DaemonParam.Jingle.CALL_TIMEOUT);
 
                 if (!_wake) {
-                    l.fatal("call() too long"); // I'm paranoid
-                    l.fatal("failed m_id:" + postMessageId + " t:" + task);
-                    l.fatal(Util.getAllThreadStackTraces());
+                    // I'm paranoid
+                    l.fatal("call() too long. failed m_id:" + postMessageId + " t:" + task);
+                    Util.logAllThreadStackTraces();
                     System.exit(C.EXIT_CODE_JINGLE_CALL_TOO_LONG);
                 }
             }

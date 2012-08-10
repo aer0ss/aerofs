@@ -329,6 +329,14 @@ public class RitualService implements IRitualService
     }
 
     @Override
+    public ListenableFuture<Void> logThreads()
+            throws Exception
+    {
+        Util.logAllThreadStackTraces();
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<GetSyncStatusReply> getSyncStatus(PBPath path) throws Exception
     {
         EIGetSyncStatus ev = new EIGetSyncStatus(new Path(path), Core.imce());

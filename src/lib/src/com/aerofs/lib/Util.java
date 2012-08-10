@@ -343,9 +343,9 @@ public abstract class Util
         return builder.toString();
     }
 
-    public static String getAllThreadStackTraces()
+    public static void logAllThreadStackTraces()
     {
-        return getAllThreadStackTraces(getAllThreads());
+        l().warn("stack traces:\n" + getAllThreadStackTraces(getAllThreads()));
     }
 
     public static ThreadFactory threadGroupFactory(ThreadGroup group)

@@ -20,7 +20,9 @@ class Enum(set):
 
 Commands = Enum([
     'UPLOAD_DATABASE',
-    'CHECK_UPDATE'])
+    'CHECK_UPDATE',
+    'SEND_DEFECT',
+    'LOG_THREADS'])
 
 """
 A class that represents the payload of a command message.
@@ -34,10 +36,16 @@ class CommandPayload(object):
         # Create the appropriate protobuf object depending on the type.
         if type == Commands.UPLOAD_DATABASE:
             self._type = aerofs.command.gen.cmd_pb2.UPLOAD_DATABASE
-            self._pb = aerofs.command.gen.cmd_pb2.CommandUploadDatabase()
+            self._pb = aerofs.command.gen.cmd_pb2.Void()
         elif type == Commands.CHECK_UPDATE:
             self._type = aerofs.command.gen.cmd_pb2.CHECK_UPDATE
-            self._pb = aerofs.command.gen.cmd_pb2.CommandCheckUpdate()
+            self._pb = aerofs.command.gen.cmd_pb2.Void()
+        elif type == Commands.SEND_DEFECT:
+            self._type = aerofs.command.gen.cmd_pb2.SEND_DEFECT
+            self._pb = aerofs.command.gen.cmd_pb2.Void()
+        elif type == Commands.LOG_THREADS:
+            self._type = aerofs.command.gen.cmd_pb2.LOG_THREADS
+            self._pb = aerofs.command.gen.cmd_pb2.Void()
         else:
             # Should never reach here because of the first assert, assuming all enums are handled.
             assert False, 'unhandled command type'

@@ -12,10 +12,11 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Cmd.Command;
-import com.aerofs.proto.Cmd.CommandCheckUpdate;
-import com.aerofs.proto.Cmd.CommandUploadDatabase;
+import com.aerofs.proto.Cmd.Void;
 import com.aerofs.proto.Cmd.Commands;
 import com.aerofs.ui.UI;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
@@ -110,41 +111,84 @@ public final class CommandNotificationSubscriber
                 try {
                     switch (cmd.getType()) {
                     case UPLOAD_DATABASE:
-                        CommandUploadDatabase upload = CommandUploadDatabase.parseFrom(cmd.getPayload());
-                        handleUploadDatabase(upload);
+                        // TODO (WW) remove parsing of the Void message
+                        Void.parseFrom(cmd.getPayload());
+                        handleUploadDatabase();
                         break;
                     case CHECK_UPDATE:
-                        CommandCheckUpdate check = CommandCheckUpdate.parseFrom(cmd.getPayload());
-                        handleCheckUpdate(check);
+                        // TODO (WW) remove parsing of the Void message
+                        Void.parseFrom(cmd.getPayload());
+                        handleCheckUpdate();
+                        break;
+                    case SEND_DEFECT:
+                        // TODO (WW) remove parsing of the Void message
+                        Void.parseFrom(cmd.getPayload());
+                        sendDefect();
+                        break;
+                    case LOG_THREADS:
+                        // TODO (WW) remove parsing of the Void message
+                        Void.parseFrom(cmd.getPayload());
+                        logThreads();
                         break;
                     default:
                         l.error("unkown cmd type: " + cmd.getType());
                         break;
                     }
-                }
-                catch (InvalidProtocolBufferException e) {
-                    l.error("invalid cmd received (protobuf error): " + e.toString());
+                } catch (InvalidProtocolBufferException e) {
+                    l.error("invalid cmd (protobuf error): " + Util.e(e));
+                } catch (Exception e) {
+                    l.warn("execute cmd: " + Util.e(e));
                 }
             }
 
             // Save the max command ID.
             try {
                 Cfg.db().set(Key.CMD_CHANNEL_ID, newMaxCmdId);
-            }
-            catch (SQLException e) {
-                l.error("cannot set cmd channel id in db" + e.toString());
+            } catch (SQLException e) {
+                l.error("set cmd channel id: " + Util.e(e));
             }
         }
 
-        private void handleUploadDatabase(CommandUploadDatabase upload)
+        /**
+         * N.B. this method blocks for a few seconds. See commments below.
+         */
+        private void logThreads() throws Exception
         {
-            l.warn("cmd: upload database");
+            // The delay is required by the command (see cmd.proto). It also blocks the subscriber
+            // thread from processing more commands. Otherwise, multiple LOG_THREADS requests would
+            // be processed at the same time, defeating the purpose of the delay. However, this
+            // approach has an undesired side effect: processing of other command types are also
+            // block. If it becomes a problem, we can work around by, e.g., having a dedicated
+            // request queue for LOG_THREADS, or by changing the semantics of the command.
+            Util.sleepUninterruptable(5 * C.SEC);
+
+            // Log threads for the current process
+            Util.logAllThreadStackTraces();
+
+            // Log threads for the daemon process
+            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+            try {
+                ritual.logThreads();
+            } finally {
+                ritual.close();
+            }
+        }
+
+        private void sendDefect()
+        {
+            l.info("cmd: send defect");
+            SVClient.logSendDefectAsync(true, "cmd call");
+        }
+
+        private void handleUploadDatabase()
+        {
+            l.info("cmd: upload database");
             SVClient.sendCoreDatabaseAsync();
         }
 
-        private void handleCheckUpdate(CommandCheckUpdate check)
+        private void handleCheckUpdate()
         {
-            l.warn("cmd: check for updates");
+            l.info("cmd: check for updates");
             UI.updater().checkForUpdate(true);
         }
     }

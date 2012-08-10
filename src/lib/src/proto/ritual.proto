@@ -97,7 +97,13 @@ service RitualService {
     rpc ExportRevision(ExportRevisionCall) returns(ExportRevisionReply);
 
     ////////
-    // Methods for testing purposes only. not available on production.
+    // Methods for debugging purposes only.
+
+    // Log stack traces of all the threads. See LOG_THREADS in cmd.proto for detail.
+    rpc LogThreads(Void) returns(Void);
+
+    ////////
+    // Methods for testing purposes only.
 
     // Return SOID of the object. Throw NOT_FOUND if the object doesn't exists
     rpc TestGetObjectIdentifier(TestGetObjectIdentifierCall) returns(TestGetObjectIdentifierReply);
