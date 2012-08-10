@@ -122,7 +122,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        l.info("datagram received " + pc);
+        if (l.isInfoEnabled()) l.info("onUnicastDatagramReceived " + pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.UNICAST_RECV, r._is);
@@ -133,7 +133,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
-        l.info("begin incoming stream:" + streamId + " " + pc);
+        if (l.isInfoEnabled()) l.info("onStreamBegun " + streamId + " " + pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.STREAM_BEGUN, r._is, streamId, 0);
@@ -144,7 +144,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc)
     {
-        l.info("received chunk incoming stream:" + streamId + " " + seq + " " + pc);
+        if (l.isInfoEnabled()) l.info("onStreamChunkReceived " + streamId + " " + seq + " " + pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.CHUNK_RECV, r._is, streamId, seq);
@@ -155,7 +155,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason)
     {
-        l.info("aborted incoming stream:" + ep + " " + streamId + " " + reason);
+        if (l.isInfoEnabled()) l.info("onStreamAborted " + ep + " " + streamId + " " + reason);
 
         _upper.onStreamAborted_(streamId, ep, reason);
     }
@@ -163,7 +163,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void sessionEnded_(Endpoint ep, boolean outbound, boolean inbound)
     {
-        l.info("sessionEnded " + ep + " inbound " + inbound);
+        if (l.isInfoEnabled()) l.info("sessionEnded " + ep + " inbound " + inbound);
         _upper.sessionEnded_(ep, outbound, inbound);
 
         // TODO discard all contexts belonging to this session. Note: be very
@@ -175,7 +175,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
             throws Exception
     {
-        l.info("send datagram " + pc);
+        if (l.isInfoEnabled()) l.info("sendUnicastDatagram " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_UNICAST, bs);
 
@@ -186,7 +186,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        l.info("begin outgoing stream:" + streamId.toString() + " " + pc);
+        if (l.isInfoEnabled()) l.info("beginOutgoingStream " + streamId.toString() + " " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.BEGIN_STREAM, bs, streamId, 0, tk);
 
@@ -199,7 +199,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        l.info("send outgoing chunk stream:" + streamId + " " + seq + " " + pc);
+        if (l.isInfoEnabled()) l.info("sendOutgoingStreamChunk " + streamId + " " + seq + " " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_CHUNK, bs, streamId, seq, tk);
 
@@ -212,7 +212,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void endOutgoingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        l.info("end outgoing stream:" + streamId + " " + pc);
+        if (l.isInfoEnabled()) l.info("endOutgoingStream " + streamId + " " + pc);
 
         _lower.endOutgoingStream_(streamId, pc);
     }
@@ -221,7 +221,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        l.info("abort outgoing stream:" + streamId + " " + pc);
+        if (l.isInfoEnabled()) l.info("abortOutgoingStream " + streamId + " " + pc);
 
         _lower.abortOutgoingStream_(streamId, reason, pc);
     }
@@ -237,7 +237,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void endIncomingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        l.info("end incoming stream:" + streamId + " " + pc);
+        if (l.isInfoEnabled()) l.info("endIncomingStream " + streamId + " " + pc);
 
         _lower.endIncomingStream_(streamId, pc);
     }
