@@ -321,7 +321,7 @@ public class SVClient
      * @param secret the string that should be hidden from the log files
      */
     public static void logSendDefectSync(boolean automatic, String desc,
-            Throwable e, String secret) throws Exception
+            @Nullable Throwable e, String secret) throws Exception
     {
         try {
             doLogSendDefect(automatic, desc, e, newHeader(), getCfgDatabase(), Cfg.absRTRoot(),

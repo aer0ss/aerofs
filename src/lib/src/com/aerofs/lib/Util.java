@@ -345,7 +345,9 @@ public abstract class Util
 
     public static void logAllThreadStackTraces()
     {
-        l().warn("stack traces:\n" + getAllThreadStackTraces(getAllThreads()));
+        l().warn("==== BEGIN STACKS ====\n" +
+                getAllThreadStackTraces(getAllThreads()) +
+                "\n==== END STACKS ====");
     }
 
     public static ThreadFactory threadGroupFactory(ThreadGroup group)

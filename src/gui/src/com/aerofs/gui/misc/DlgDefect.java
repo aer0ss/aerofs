@@ -1,5 +1,7 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClientFactory;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -40,7 +42,6 @@ public class DlgDefect extends AeroFSJFaceDialog {
 
     /**
      * Create contents of the dialog.
-     * @param parent
      */
     @Override
     protected Control createDialogArea(Composite parent)
@@ -57,7 +58,7 @@ public class DlgDefect extends AeroFSJFaceDialog {
         lblFrom.setText("From: " + Cfg.user());
 
         Label lblWhatsUp = new Label(container, SWT.NONE);
-        lblWhatsUp.setText("What is the problem? (optional)");
+        lblWhatsUp.setText("What is the problem?");
 
         _txt = new Text(container, SWT.BORDER | SWT.WRAP | SWT.V_SCROLL | SWT.MULTI);
         GridData gd_text = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
@@ -100,21 +101,36 @@ public class DlgDefect extends AeroFSJFaceDialog {
             @Override
             public void run()
             {
-                Object prog = UI.get().addProgress("Submitting", true);
+                boolean cpuIssue = message.toLowerCase().contains("cpu");
+
+                Object prog = UI.get().addProgress(cpuIssue ? "Sampling and submitting " +
+                        S.PRODUCT + " CPU usage" : "Submitting", true);
                 try {
+                    if (cpuIssue) {
+                        for (int i = 0; i < 20; i++) {
+                            Util.sleepUninterruptable(1 * C.SEC);
+
+                            Util.logAllThreadStackTraces();
+
+                            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+                            try {
+                                ritual.logThreads();
+                            } finally {
+                                ritual.close();
+                            }
+                        }
+                    }
+
                     SVClient.logSendDefectSync(false, message +
                             "\n" + C.END_OF_DEFECT_MESSAGE, null, verbose ?
                         FSIUtil.dumpStatForDefectLogging() : null);
                     UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
 
                 } catch (Exception e) {
-                    Util.l(DlgDefect.class).warn("submit issue: " + Util.e(e));
+                    Util.l(DlgDefect.class).warn("submit defect: " + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Failed to submit the " +
-                                "issue " + UIUtil.e2msg(e) + ". Please try again.");
+                                "problem " + UIUtil.e2msg(e) + ". Please try again.");
                     s_failedMessage = message;
-
-                    SVClient.logSendDefectAsync(true, "can't send manual" +
-                                " defect report: " + message, e);
 
                 } finally {
                     UI.get().removeProgress(prog);
@@ -138,7 +154,6 @@ public class DlgDefect extends AeroFSJFaceDialog {
 
     /**
      * Create contents of the button bar.
-     * @param parent
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent)
