@@ -22,8 +22,8 @@ Creating new modules for AeroFS website
 - Create module in modules folder (copy an existing module as a reference, edit
   as needed)
 - Add module name to __all__ in modules/__init__.py
-- If the module has its own templates, add the module's template directory to
-  development.ini and production.ini
+- If the module has templates, make sure to put them in a directory named
+  "templates" inside the module folder
 
 Localization:
 ================================================

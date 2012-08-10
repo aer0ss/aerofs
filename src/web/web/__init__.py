@@ -18,6 +18,14 @@ def main(global_config, **settings):
     authz_policy = ACLAuthorizationPolicy()
     admin_session_factory = session_factory_from_settings(settings)
 
+    modulePackageName = 'modules.'
+    builtinfunc = re.compile('__\w+__') # Regular expression for python builtin module names (i.e. __init__)
+
+    # Import template directories from modules
+    for module in dir(modules):
+        if not builtinfunc.match(module):
+            settings['mako.directories'] += '\n' + modulePackageName + module + ':templates'
+
     config = Configurator(
         settings=settings,
         authentication_policy=authn_policy,
@@ -40,11 +48,10 @@ def main(global_config, **settings):
     config.add_route('homepage', '/')
 
     # Import routes from modules
-    builtinfunc = re.compile('__\w+__') # Regular expression for python builtin module names (i.e. __init__)
     for module in dir(modules):
         if not builtinfunc.match(module):
-            config.include('modules.' + module)
-            config.scan(package='modules.' + module)
+            config.include(modulePackageName + module)
+            config.scan(package=modulePackageName + module)
 
     config.scan()
     return config.make_wsgi_app()
