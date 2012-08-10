@@ -3,6 +3,7 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "common.proto";
 import "files.proto";
+import "syncstat.proto";
 
 /**
  * NOTE: When modifying the service declaration below, if you are not appending your new RPC
@@ -531,8 +532,11 @@ message PBACLNotification {
     required uint64 acl_epoch = 1;
 }
 
+// The notification will include the sync status for the sid/oid pair that was updated most
+// recently.
 message PBSyncStatNotification {
     required uint64 ss_epoch = 1;
+    required GetSyncStatusReply.SyncStatus status = 2;
 }
 
 message VerifyEmailCall {
