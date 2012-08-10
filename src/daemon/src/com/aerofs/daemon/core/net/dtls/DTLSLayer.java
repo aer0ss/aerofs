@@ -301,8 +301,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     }
 
     // alternatively, pass origMsgLen in...
-    private void processRecvdMsg_(DTLSMessage<ByteArrayInputStream> msg,
-            int wirelen, PeerContext pc)
+    private void processRecvdMsg_(DTLSMessage<ByteArrayInputStream> msg, int wirelen,
+            PeerContext pc)
     {
         Byte footer = null;
         boolean delivered = false;
@@ -310,12 +310,16 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         try {
             ByteArrayInputStream is = msg._msg;
             byte[] input = new byte[is.available() - Footer.SIZE]; // remove footer
-
+            int available = is.available();
             Util.verify(is.available() - Footer.SIZE == is.read(input));
 
             footer = (byte) is.read();
 
-            assert footer < Footer.values().length; // make sure the footer didn't get corrupted
+            assert is.available() == 0 : is.available();
+            // make sure the footer didn't get corrupted
+            assert footer < Footer.values().length : pc + " " + pc.user() + " " + available + " " +
+                    footer + " " + Footer.values().length + " :: " +
+                    msg._type + " " + msg._sid + " " + msg._seq + " " + msg._tk;
 
             Footer f = Footer.values()[footer];
             l.info("recv " + f);
@@ -336,8 +340,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                     // Should return null bytestream
                     OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
-                    Util.verify(null == entry.decrypt(input, pc,
-                            Footer.IN_OLD, hsSent));
+                    Util.verify(null == entry.decrypt(input, pc, Footer.IN_OLD, hsSent));
                     assert hsSent.get() == true;
 
                     break;
@@ -369,9 +372,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                             OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
-                            ByteArrayInputStream isToDeliver =
-                                    entry.decrypt(input, pc,
-                                            Footer.IN_OLD, hsSent);
+                            ByteArrayInputStream isToDeliver = entry.decrypt(input, pc,
+                                    Footer.IN_OLD, hsSent);
 
 
                             //if handshake message was sent through decrypt()
@@ -391,8 +393,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                             }
 
                             if (null != isToDeliver) {
-                                deliverOrVerifyUser_(entry, msg, wirelen, pc,
-                                        isToDeliver, false);
+                                deliverOrVerifyUser_(entry, msg, wirelen, pc, isToDeliver, false);
                                 delivered = true;
                                 // if we successfully decrypted, no need
                                 // to iterate over the rest of the entries
@@ -423,9 +424,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                             OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
-                            ByteArrayInputStream isToDeliver =
-                                    entry.decrypt(input, pc,
-                                            Footer.OUT_OLD, hsSent);
+                            ByteArrayInputStream isToDeliver = entry.decrypt(input, pc,
+                                    Footer.OUT_OLD, hsSent);
 
                             //hanshake message sent through decrypt();
                             if (hsSent.get()) {
