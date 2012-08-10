@@ -5,7 +5,11 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.spsv.Base62CodeGenerator;
+import com.aerofs.lib.spsv.InvitationCode;
+import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.servletlib.sp.organization.Organization;
+import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.servletlib.sp.SPParam;
@@ -15,6 +19,7 @@ import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -29,13 +34,16 @@ public class UserManagement
     private static final int ABSOLUTE_MAX_RESULTS = 1000;
 
     private final SPDatabase _db;
+    private final InvitationEmailer _invitationEmailer;
     private final PasswordResetEmailer _passwordResetEmailer;
 
     private static final Logger l = Util.l(UserManagement.class);
 
-    public UserManagement(SPDatabase db, PasswordResetEmailer passwordResetEmailer)
+    public UserManagement(SPDatabase db, InvitationEmailer invitationEmailer,
+            PasswordResetEmailer passwordResetEmailer)
     {
         _db = db;
+        _invitationEmailer = invitationEmailer;
         _passwordResetEmailer = passwordResetEmailer;
     }
 
@@ -61,6 +69,34 @@ public class UserManagement
         User u = _db.getUser(userID);
         if (u == null) throw new ExNotFound("email address not found (" + userID + ")");
         return u;
+    }
+
+    public void inviteOneUser(User inviter, String inviteeId, Organization inviteeOrg,
+            @Nullable String folderName, @Nullable String note)
+            throws Exception
+    {
+        assert inviteeId != null;
+
+        // TODO could change userId field in DB to be case-insensitive to avoid normalization
+        inviteeId = User.normalizeUserId(inviteeId);
+
+        // Check that the invitee doesn't exist already
+        checkUserIdDoesNotExist(inviteeId);
+
+        // USER-level inviters can only invite to an organization that matches the domain
+        if (inviter._level.equals(AuthorizationLevel.USER)
+                && !inviteeOrg.domainMatches(inviteeId)) {
+            throw new ExNoPerm(inviter._id + " cannot invite + " + inviteeId
+                    + " to " + inviteeOrg._id);
+        }
+
+        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+
+        _db.addTargetedSignupCode(code, inviter._id, inviteeId, inviteeOrg._id);
+
+        _invitationEmailer.sendUserInvitationEmail(inviter._id, inviteeId, inviter._firstName,
+                folderName, note, code);
+
     }
 
     public void checkUserIdDoesNotExist(String userId)

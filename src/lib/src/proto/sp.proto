@@ -653,15 +653,9 @@ message ListSharedFoldersCall {
 
 message ListSharedFoldersResponse {
     message PBSharedFolder {
-        required string store_id = 1;                   // store id (unique identifier)
-        repeated PBSubjectRolePair subject_role = 2;    // list of users
-
-        /**
-         * TODO: Find a way to return folder names that are up to date, and change store_id to type
-         *       bytes when we do so (currently string because we need a user-displayable version
-         *       of store_id in the admin panel)
-         * required string name = 3;
-         */
+        required bytes store_id = 1;                   // store id (unique identifier)
+        required string name = 2;                      // folder name (user facing)
+        repeated PBSubjectRolePair subject_role = 3;   // list of users
     }
 
     repeated PBSharedFolder shared_folders = 1;

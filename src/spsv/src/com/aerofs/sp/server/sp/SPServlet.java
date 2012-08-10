@@ -49,16 +49,20 @@ public class SPServlet extends AeroServlet
     private final SPDatabase _db = new SPDatabase(_dbFactory);
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
 
+    private final InvitationEmailer _emailer = new InvitationEmailer();
+
     private final UserManagement _userManagement =
-            new UserManagement(_db, new PasswordResetEmailer());
+            new UserManagement(_db, _emailer, new PasswordResetEmailer());
     private final OrganizationManagement _organizationManagement =
             new OrganizationManagement(_db, _userManagement);
 
-    private final InvitationEmailer _emailer = new InvitationEmailer();
+    private final SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(
+            _db, _userManagement, _organizationManagement, _emailer);
+
     private final CertificateGenerator _certificateGenerator = new CertificateGenerator();
 
     private final SPService _service = new SPService(_db, _sessionUser, _userManagement,
-            _organizationManagement, _emailer, _certificateGenerator);
+            _organizationManagement, _sharedFolderManagement, _certificateGenerator);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
