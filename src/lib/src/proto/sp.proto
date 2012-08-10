@@ -536,7 +536,7 @@ message PBACLNotification {
 // recently.
 message PBSyncStatNotification {
     required uint64 ss_epoch = 1;
-    required GetSyncStatusReply.SyncStatus status = 2;
+    optional GetSyncStatusReply.SyncStatus status = 2;
 }
 
 message VerifyEmailCall {
