@@ -33,28 +33,20 @@ class CommandPayload(object):
         # commands enum.
         assert type in Commands
 
-        # Create the appropriate protobuf object depending on the type.
         if type == Commands.UPLOAD_DATABASE:
             self._type = aerofs.command.gen.cmd_pb2.UPLOAD_DATABASE
-            self._pb = aerofs.command.gen.cmd_pb2.Void()
         elif type == Commands.CHECK_UPDATE:
             self._type = aerofs.command.gen.cmd_pb2.CHECK_UPDATE
-            self._pb = aerofs.command.gen.cmd_pb2.Void()
         elif type == Commands.SEND_DEFECT:
             self._type = aerofs.command.gen.cmd_pb2.SEND_DEFECT
-            self._pb = aerofs.command.gen.cmd_pb2.Void()
         elif type == Commands.LOG_THREADS:
             self._type = aerofs.command.gen.cmd_pb2.LOG_THREADS
-            self._pb = aerofs.command.gen.cmd_pb2.Void()
         else:
             # Should never reach here because of the first assert, assuming all enums are handled.
             assert False, 'unhandled command type'
 
     def get_type(self):
         return self._type
-
-    def get_payload(self):
-        return self._pb.SerializeToString()
 
 """
 A class that represents a command message.
@@ -67,7 +59,6 @@ class CommandRequest(object):
         self._pb.ttl_hours = ttl_hours
         self._pb.command.command_id = 0 # Doesn't matter.
         self._pb.command.type = command_payload.get_type()
-        self._pb.command.payload = command_payload.get_payload()
 
     def get_serialized_pb(self):
         return self._pb.SerializeToString()

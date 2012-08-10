@@ -16,7 +16,6 @@ import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Cmd.Command;
-import com.aerofs.proto.Cmd.Void;
 import com.aerofs.proto.Cmd.Commands;
 import com.aerofs.ui.UI;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
@@ -111,23 +110,15 @@ public final class CommandNotificationSubscriber
                 try {
                     switch (cmd.getType()) {
                     case UPLOAD_DATABASE:
-                        // TODO (WW) remove parsing of the Void message
-                        Void.parseFrom(cmd.getPayload());
-                        handleUploadDatabase();
+                        uploadDatabase();
                         break;
                     case CHECK_UPDATE:
-                        // TODO (WW) remove parsing of the Void message
-                        Void.parseFrom(cmd.getPayload());
-                        handleCheckUpdate();
+                        checkUpdate();
                         break;
                     case SEND_DEFECT:
-                        // TODO (WW) remove parsing of the Void message
-                        Void.parseFrom(cmd.getPayload());
                         sendDefect();
                         break;
                     case LOG_THREADS:
-                        // TODO (WW) remove parsing of the Void message
-                        Void.parseFrom(cmd.getPayload());
                         logThreads();
                         break;
                     default:
@@ -160,7 +151,7 @@ public final class CommandNotificationSubscriber
             // thread from processing more commands. Otherwise, multiple LOG_THREADS requests would
             // be processed at the same time, defeating the purpose of the delay. However, this
             // approach has an undesired side effect: processing of other command types are also
-            // block. If it becomes a problem, we can work around by, e.g., having a dedicated
+            // blocked. If it becomes a problem, we can work around by, e.g., having a dedicated
             // request queue for LOG_THREADS, or by changing the semantics of the command.
             Util.sleepUninterruptable(5 * C.SEC);
 
@@ -182,13 +173,13 @@ public final class CommandNotificationSubscriber
             SVClient.logSendDefectAsync(true, "cmd call");
         }
 
-        private void handleUploadDatabase()
+        private void uploadDatabase()
         {
             l.info("cmd: upload database");
             SVClient.sendCoreDatabaseAsync();
         }
 
-        private void handleCheckUpdate()
+        private void checkUpdate()
         {
             l.info("cmd: check for updates");
             UI.updater().checkForUpdate(true);

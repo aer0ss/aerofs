@@ -39,11 +39,6 @@ message Commands {
 message Command {
     required uint64 command_id = 1;
     required CommandType type = 2;
-    required bytes payload = 3;
-}
-
-// TODO (WW) remove this
-message Void {
 }
 
 //
