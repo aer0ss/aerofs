@@ -47,14 +47,12 @@ include motd
         ensure => absent
     }
 
-    # to make this overridable (needed for the puppet master), we can't use
-    # paramaterizable classes.  So we have to define the puppetmaster here
-    # and include the puppet module
-    $puppetmaster = "puppet"
     include puppet
 
     # run apt-get update every time.
-    exec{"apt-get update":}
+    exec{"apt-get update":
+        logoutput => "on_failure",
+    }
 }
 
 import "nodes/*.pp"
