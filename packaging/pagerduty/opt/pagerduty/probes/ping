@@ -1,12 +1,19 @@
-# test if ping succeeds
+#!/bin/bash
+#
+# Test if ping succeeds for a given host.
 #
 # usage: $0 <hostname>
 #
 # exit 1 if bad arguments
 # exit the exit code of 'ping -c <hostname>'
 
+usage()
+{
+    echo "usage: $0 <hostname>"
+}
+
 if [ x"$1" == x ]; then
-    echo bad arguments
+    usage
     exit 1
 fi
 

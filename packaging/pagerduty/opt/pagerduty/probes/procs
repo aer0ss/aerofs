@@ -1,13 +1,18 @@
-# test if the number of certain processes on the specified remote host >= the expected number
+#!/bin/bash
 #
-# usage: $0 <user@host> <port> <grep keyword for ps> <number of processes expected>>
+# Test if the number of certain processes on the specified remote host >= the expected number
 #
 # exit 1 if the process count < the expected count
 # exit 2 if the query failed
 # exit 3 if bad arguments
 
+usage()
+{
+    echo "usage: $0 <user@host> <port> <grep keyword for ps> <number of processes expected>"
+}
+
 if [ $# != 4 ]; then
-    echo bad arguments
+    usage
     exit 3
 fi
 

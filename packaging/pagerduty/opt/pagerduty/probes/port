@@ -1,15 +1,20 @@
-# test if the specified TCP port is open
+#!/bin/bash
 #
-# usage: $0 <host> <port>
+# Test if the specified TCP port is open
 #
 # exit 1 if bad arguments
 # exit the exit code of 'nc -z <host> <port>'
+
+usage()
+{
+    echo "usage: $0 <host> <port>"
+}
 
 HOST=$1
 PORT=$2
 
 if [ x"$PORT" == x ]; then
-    echo bad arguments
+    usage
     exit 1
 fi
 

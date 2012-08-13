@@ -6,7 +6,7 @@ define pagerduty::probe::base(
   $minute
 ) {
   cron{$command:
-    command => "/opt/aerofs.pagerduty/probe ${command}",
+    command => "/opt/pagerduty/probe ${command}",
     user => root,
     hour => $hour,
     minute => $minute
