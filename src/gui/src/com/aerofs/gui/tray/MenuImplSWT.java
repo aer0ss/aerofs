@@ -319,7 +319,7 @@ public class MenuImplSWT implements IMenu
                 }
 
                 if (added && reply.getHasUnresolvedDevices()) {
-                    MenuItem mi = addMenuItem(menu, S.CONNECET_FOR_ACCURACY, null);
+                    MenuItem mi = addMenuItem(menu, S.FAILED_FOR_ACCURACY, null);
                     mi.setEnabled(false);
                     mi.setImage(Images.get(Images.ICON_WARNING));
                 }

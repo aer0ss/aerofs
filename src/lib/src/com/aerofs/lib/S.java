@@ -97,7 +97,8 @@ public class S
     public static final String CLI_NAME = L.get().productUnixName() + "-cli";
     public static final String PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login." +
         " Please check your network connection and try again.";
-    public static final String CONNECET_FOR_ACCURACY = "Connect to Internet for more accurate results";
+    public static final String FAILED_FOR_ACCURACY = "Couldn't retrieve accurate results." +
+            " Please try again later";
     public static final String COULDNT_LIST_ACTIVITIES = "Couldn't list activities";
     public static final String TRY_AGAIN_LATER = "Please try again later.";
     public static final String MODIFIED = "updated";
