@@ -217,13 +217,15 @@ public class SPServlet extends AeroServlet
             throws ExAlreadyExist, SQLException, IOException, MessagingException, Exception
     {
         to = to.toLowerCase();
+        String orgId = C.DEFAULT_ORGANIZATION;
 
-        // Check that the invitee doesn't exist already
+        // Check that the invitee isn't already a user
         _userManagement.checkUserIdDoesNotExist(to);
 
-        String orgId = C.DEFAULT_ORGANIZATION;
-        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+        // Check that we haven't already invited this user
+        if (_db.isAlreadyInvited(to, orgId)) throw  new ExAlreadyExist("user already invited");
 
+        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
         _db.addTargetedSignupCode(code, SP_EMAIL_ADDRESS, to, orgId);
 
         _emailer.sendUserInvitationEmail(SP_EMAIL_ADDRESS, to, fromPerson, null, null, code);
