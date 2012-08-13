@@ -285,7 +285,7 @@ public class MightCreate
 
         // can't rename the root
         assert pc._path.elements().length > 0;
-        assert pc._path.equals(_ds.resolve_(oa)) :
+        assert pc._path.equalsIgnoreCase(_ds.resolve_(oa)) :
                 "pc._path " + pc._path + " does not match resolved oa " + _ds.resolve_(oa);
 
         // generate a new name for the logical object

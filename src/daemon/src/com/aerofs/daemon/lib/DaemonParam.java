@@ -15,7 +15,7 @@ public class DaemonParam
     public static final int MAX_PULSE_FAILURES      = 3;
     public static final long INIT_PULSE_TIMEOUT     = 1 * C.SEC;
     public static final long MAX_PULSE_TIMEOUT      = 60 * C.SEC;
-    public static final long CONNECT_TIMEOUT         = 30 * C.SEC;
+    public static final long CONNECT_TIMEOUT        = 30 * C.SEC;
 
     public static class TCP
     {
@@ -24,7 +24,7 @@ public class DaemonParam
         public static final long RETRY_INTERVAL         = 5 * C.SEC;
         public static final int BACKLOG                 = 128;
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
-        public static final long ARP_GC_INTERVAL                = HEARTBEAT_INTERVAL * 2;
+        public static final long ARP_GC_INTERVAL        = HEARTBEAT_INTERVAL * 2;
     }
 
     public static class XMPP

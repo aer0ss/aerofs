@@ -42,7 +42,7 @@ public class CfgDatabase
         // Absolute path to Root Anchor. N.B. must not use canonical paths so users can use symbolic
         // links as root anchor and repoint to different paths later.
         ROOT("root", null),
-        TIMEOUT("timeout", 45000),
+        TIMEOUT("timeout", 45 * C.SEC),
         NOTIFY("notify", true),
 
         // bind address for the Ritual socket. Use "*" to bind to all local addresses.
@@ -205,8 +205,7 @@ public class CfgDatabase
     }
 
     /**
-     * Nop if init_() is already called
-     * @throws ExNotSetup if the database hasn't been setup yet
+     * Nop if this method has been called and succeeded before
      */
     void init_() throws SQLException
     {

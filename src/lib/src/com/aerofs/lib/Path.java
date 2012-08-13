@@ -96,8 +96,7 @@ public class Path implements Comparable<Path>
         if (s1.length != s2.length) return false;
 
         for (int i = 0; i < this.elements().length; i++) {
-            if (!s1[i].equalsIgnoreCase(s2[i]))
-                return false;
+            if (!s1[i].equalsIgnoreCase(s2[i])) return false;
         }
         return true;
     }
