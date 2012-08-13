@@ -239,7 +239,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     // TODO (GS): This error message should be improved if ExNoPerm because user
                     // tried to invite outside the organization and org is closed sharing
                     // (in this case should say something about sharing outside not allowed)
-                    msg = "You don't have the enough permissions to invite users to this folder";
+                    msg = "You don't have permission to invite users to this folder";
                 } else {
                     msg = S.COULDNT_SEND_INVITATION + " " + S.TRY_AGAIN_LATER + "\n\n" +
                             "Error message: " + UIUtil.e2msgSentenceNoBracket(e);
