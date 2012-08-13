@@ -10,4 +10,9 @@ class puppet::master inherits puppet {
     ensure => running,
     subscribe => Class["puppet::config"]
   }
+
+  file { "/usr/local/bin/kick":
+    mode => 755,
+    content => template("puppet/kick.erb"),
+  }
 }

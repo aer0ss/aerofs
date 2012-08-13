@@ -1,0 +1,9 @@
+<% require "yaml"   -%>
+<% require "puppet" -%>
+<% directory = Dir.new("/var/lib/puppet/yaml/node") -%>
+<% nodes = directory.map do |file| -%>
+<%    next if File.directory?(file)  -%>
+<%    node = YAML.load_file(File.join(directory.path, file)) -%>
+<%    node.name -%>
+<% end -%>
+puppet kick <%= nodes.join(" ") %>
