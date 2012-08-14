@@ -140,8 +140,7 @@ public class Downloads
     }
 
     public Download downloadAsyncThrows_(SOCID socid, To to, IDownloadCompletionListener listener,
-            Token tk)
-            throws ExNoResource
+            Token tk) throws ExNoResource
     {
         Download dl = downloadAsync_(socid, to, listener, tk);
         if (dl == null) throw new ExNoResource("cat is full");

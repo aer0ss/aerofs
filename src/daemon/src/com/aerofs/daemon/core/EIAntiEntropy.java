@@ -38,9 +38,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
                 final ImmutableSet<NetworkInterface> current,
                 final ImmutableSet<NetworkInterface> previous)
         {
-            if (previous.isEmpty() && !current.isEmpty()) {
-                performAntiEntropy_();
-            }
+            if (previous.isEmpty() && !current.isEmpty()) performAntiEntropy_();
         }
     };
 

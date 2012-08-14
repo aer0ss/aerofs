@@ -23,19 +23,14 @@ import com.aerofs.daemon.core.admin.HdSetPrivateKey;
 import com.aerofs.daemon.core.admin.HdTransportFlood;
 import com.aerofs.daemon.core.admin.HdTransportFloodQuery;
 import com.aerofs.daemon.core.admin.HdTransportPing;
-import com.aerofs.daemon.core.fs.HdBeginRead;
-import com.aerofs.daemon.core.fs.HdBeginWrite;
 import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdDeleteBranch;
 import com.aerofs.daemon.core.fs.HdDeleteObject;
-import com.aerofs.daemon.core.fs.HdEndRead;
-import com.aerofs.daemon.core.fs.HdEndWrite;
 import com.aerofs.daemon.core.fs.HdGetAttr;
 import com.aerofs.daemon.core.fs.HdGetChildrenAttr;
 import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
 import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdMoveObject;
-import com.aerofs.daemon.core.fs.HdPreWrite;
 import com.aerofs.daemon.core.fs.HdSetAttr;
 import com.aerofs.daemon.core.fs.HdShareFolder;
 import com.aerofs.daemon.core.net.HdPresence;
@@ -71,17 +66,12 @@ import com.aerofs.daemon.event.admin.EISetPrivateKey;
 import com.aerofs.daemon.event.admin.EITransportFlood;
 import com.aerofs.daemon.event.admin.EITransportFloodQuery;
 import com.aerofs.daemon.event.admin.EITransportPing;
-import com.aerofs.daemon.event.fs.EIBeginRead;
-import com.aerofs.daemon.event.fs.EIBeginWrite;
 import com.aerofs.daemon.event.fs.EICreateObject;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
-import com.aerofs.daemon.event.fs.EIEndRead;
-import com.aerofs.daemon.event.fs.EIEndWrite;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.fs.EIMoveObject;
-import com.aerofs.daemon.event.fs.EIPreWrite;
 import com.aerofs.daemon.event.fs.EISetAttr;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.EventDispatcher;
@@ -129,14 +119,10 @@ public class CoreEventDispatcher extends EventDispatcher
             HdGetACL hdGetACL,
             HdSetACL hdSetACL,
             HdDeleteACL hdDeleteACL,
-            HdSetAttr hdSetAttr, HdPreWrite hdPreWrite,
+            HdSetAttr hdSetAttr,
             HdGetChildrenAttr hdGetChildrenAttr,
             HdGetAttr hdGetAttr,
             HdShareFolder hdShareFolder,
-            HdBeginRead hdBeginRead,
-            HdEndRead hdEndRead,
-            HdBeginWrite hdBeginWrite,
-            HdEndWrite hdEndWrite,
             HdExportFile hdExportFile,
             HdRelocateRootAnchor hdRelocateRootAnchor,
             HdListRevChildren hdListRevChildren,
@@ -152,13 +138,8 @@ public class CoreEventDispatcher extends EventDispatcher
             .setHandler_(EIMoveObject.class, hdMoveObject)
             .setHandler_(EIDeleteObject.class, hddo)
             .setHandler_(EIDeleteBranch.class, hddb)
-            .setHandler_(EIBeginWrite.class, hdBeginWrite)
-            .setHandler_(EIEndWrite.class, hdEndWrite)
-            .setHandler_(EIBeginRead.class, hdBeginRead)
-            .setHandler_(EIEndRead.class, hdEndRead)
             .setHandler_(EIGetAttr.class, hdGetAttr)
             .setHandler_(EIGetChildrenAttr.class, hdGetChildrenAttr)
-            .setHandler_(EIPreWrite.class, hdPreWrite)
             .setHandler_(EIGetACL.class, hdGetACL)
             .setHandler_(EISetACL.class, hdSetACL)
             .setHandler_(EIDeleteACL.class, hdDeleteACL)

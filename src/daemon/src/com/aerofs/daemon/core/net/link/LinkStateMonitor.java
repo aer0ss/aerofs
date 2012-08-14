@@ -58,9 +58,7 @@ public class LinkStateMonitor extends AbstractNetworkLinkStateService
     protected ImmutableSet<NetworkInterface> getActiveInterfaces_()
             throws Exception
     {
-        if (_markedDown) {
-            return ImmutableSet.of();
-        }
+        if (_markedDown) return ImmutableSet.of();
 
         // on some Windows machines actually getting the network interfaces is a very slow
         // operation and can take a long time to finish. To prevent the daemon from hanging we'll

@@ -119,20 +119,17 @@ public class GCCSendContent
 
             Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GCRSendBig");
             try {
-                sendBig_(ep, k, os, vLocal, writeCount, newPrefixLen, tk, mtime, fileLength, h,
-                        pf);
+                sendBig_(ep, k, os, vLocal, writeCount, newPrefixLen, tk, mtime, fileLength, h, pf);
             } finally {
                 tk.reclaim_();
             }
         }
     }
 
-    private boolean hasMoreWritesSince_(SOCKID k, Version v, int wc, long mtime,
-            long len, IPhysicalFile pf)
-                throws SQLException, IOException, ExNotFound
+    private boolean hasMoreWritesSince_(SOCKID k, Version v, int wc, long mtime, long len,
+            IPhysicalFile pf) throws SQLException, IOException, ExNotFound
     {
-        return _cm.hasMoreWritesSince_(k, v, wc) ||
-            pf.wasModifiedSince(mtime, len);
+        return _cm.hasMoreWritesSince_(k, v, wc) || pf.wasModifiedSince(mtime, len);
     }
 
     private int copyAChunk(ByteArrayOutputStream to, InputStream is)
@@ -152,7 +149,8 @@ public class GCCSendContent
     }
 
     private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply, Version v,
-            int wc, long mtime, long len, ContentHash hash, IPhysicalFile pf) throws Exception
+            int writeCount, long mtime, long len, ContentHash hash, IPhysicalFile pf)
+            throws Exception
     {
         if (hash != null) {
             os.write(hash.toPB().toByteArray());
@@ -169,7 +167,7 @@ public class GCCSendContent
                 copied = 0;
             }
 
-            if (copied != len || hasMoreWritesSince_(k, v, wc, mtime, len, pf)) {
+            if (copied != len || hasMoreWritesSince_(k, v, writeCount, mtime, len, pf)) {
                 l.info(k + " updated while being sent. nak");
                 reply = CoreUtil.newReply(reply.getRpcid())
                         .setExceptionReply(Exceptions.toPB(new ExUpdateInProgress()))
@@ -185,9 +183,9 @@ public class GCCSendContent
         }
     }
 
-    private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os, Version v, int wc,
-            long prefixLen, Token tk, long mtime, long len, ContentHash hash, IPhysicalFile pf)
-        throws Exception
+    private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os, Version v,
+            int writeCount, long prefixLen, Token tk, long mtime, long len, ContentHash hash,
+            IPhysicalFile pf) throws Exception
     {
         l.debug("sendBig_: os.size() = " + os.size());
         assert prefixLen >= 0;
@@ -248,7 +246,7 @@ public class GCCSendContent
                 }
 
                 rest -= bytesCopied;
-                if (rest < 0 || hasMoreWritesSince_(k, v, wc, mtime, len, pf)) {
+                if (rest < 0 || hasMoreWritesSince_(k, v, writeCount, mtime, len, pf)) {
                     reason = InvalidationReason.UPDATE_IN_PROGRESS;
                     throw new IOException(k + " updated");
                 }

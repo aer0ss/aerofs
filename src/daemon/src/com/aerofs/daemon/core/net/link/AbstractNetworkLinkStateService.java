@@ -140,9 +140,7 @@ public abstract class AbstractNetworkLinkStateService implements INetworkLinkSta
 
         // 3. bail out early if nothing has changed
 
-        if (current.equals(previous)) {
-            return;
-        }
+        if (current.equals(previous)) return;
 
         // 4. calculate the difference between the current and previous set
 

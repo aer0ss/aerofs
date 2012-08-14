@@ -63,16 +63,8 @@ public class ComMonitor implements IDumpStatMisc
                     SOCKID k = en.getKey();
                     ComState com = en.getValue();
 
-                    // can't exchange the positions of the two 'if' blocks,
-                    // as writes concurrent with us may increment write
-                    // counts between the two blocks. The current code
-                    // catches any write in between the second block and the
-                    // first one in the next round of scanning
-                    if (com.getWriterCount_() + com.getReaderCount_() == 0) {
-                        it.remove();
-
-                        if (com.hasMoreWrites_()) updated.add(k);
-                    }
+                    it.remove();
+                    if (com.hasMoreWrites_()) updated.add(k);
                 }
 
                 if (!updated.isEmpty()) {
@@ -103,36 +95,20 @@ public class ComMonitor implements IDumpStatMisc
     private void atomicWriteImpl_(SOCKID k, boolean alias, Trans t)
         throws ExNotFound, SQLException, IOException
     {
-        l.info("Atomic write for: " + k);
-        ComState ws = beginWrite_(k, t);
-        if (ws.preWrite()) handlePreWriteEvent_(k, alias, t);
-        endWrite_(k, t);
-    }
+        if (l.isInfoEnabled()) l.info("write " + k);
+        assert t != null;
 
-    /**
-     * when the method returns, write count of the component is set to one
-     *
-     * @param t may be null if transaction hasn't started
-     */
-    public ComState beginWrite_(SOCKID k, Trans t)
-    {
-        // the following code won't be executed upon SQL exceptions
         ComState cs = _map.get(k);
         if (cs == null) {
             cs = new ComState();
             _map.put(k, cs);
         }
-        cs.addWriter_();
 
-        return cs;
-    }
+        if (cs.preWrite_()) {
+            _nvc.updateMyVersion_(k, alias, t);
+            cs.generateVersionOnNextWrite_(false);
+        }
 
-    public void endWrite_(SOCKID k, Trans t)
-        throws SQLException, ExNotFound, IOException
-    {
-        assert t != null;
-
-        _map.get(k).removeWriter_();
         _dsScan.schedule_();
 
         if (!k.cid().isMeta()) {
@@ -141,52 +117,12 @@ public class ComMonitor implements IDumpStatMisc
             IPhysicalFile pf = _ds.getOA_(k.soid()).ca(k.kidx()).physicalFile();
 
             long mtime = pf.getLastModificationOrCurrentTime_();
+
             // We are about to set a null hash, which is allowed only on master branches. See Hasher
             // for detail.
             assert k.kidx().equals(KIndex.MASTER) : k;
             _ds.setCA_(k.sokid(), pf.getLength_(), mtime, null, t);
         }
-    }
-
-    public void beginRead_(SOCKID k) throws Exception
-    {
-        ComState cs = _map.get(k);
-        if (cs == null) {
-            cs = new ComState();
-            _map.put(k, cs);
-        }
-
-        cs.addReader_();
-    }
-
-    public void endRead_(SOCKID k)
-    {
-        _map.get(k).removeReader_();
-        _dsScan.schedule_();
-    }
-
-    public int getWritersCount_(SOCKID k)
-    {
-        ComState cs = _map.get(k);
-        return cs == null ? 0 : cs.getWriterCount_();
-    }
-
-    public int getReadersCount_(SOCKID k)
-    {
-        ComState cs = _map.get(k);
-        return cs == null ? 0 : cs.getReaderCount_();
-    }
-
-    public void handlePreWriteEvent_(SOCKID k, boolean alias, Trans t)
-            throws SQLException, ExNotFound
-    {
-        ComState cs = _map.get(k);
-        assert cs != null;
-
-        _nvc.updateMyVersion_(k, alias, t);
-
-        cs.generateVersionOnNextWrite_(false);
-        l.info("Version updated for sockid:" + k);
     }
 
     /**
@@ -208,7 +144,7 @@ public class ComMonitor implements IDumpStatMisc
             return 0;
         } else {
             cs.generateVersionOnNextWrite_(true);
-            return cs.getWriteCount();
+            return cs.getWriteCount_();
         }
     }
 
@@ -221,7 +157,7 @@ public class ComMonitor implements IDumpStatMisc
             //  1) wc may overflow
             //  2) the ComState object may be a different one from which the wc is
             //     sampled at
-            if (cs.getWriteCount() != wc) return true;
+            if (cs.getWriteCount_() != wc) return true;
         }
 
         Version vNow = _nvc.getLocalVersion_(k);

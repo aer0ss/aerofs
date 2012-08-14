@@ -691,11 +691,6 @@ public class ReceiveAndApplyUpdate
         boolean okay = false;
         Trans t = _tm.begin_();
         try {
-            // we don't want to disrupt the reader if any
-            if (_cm.getReadersCount_(k) != 0) {
-                throw new ExAborted("reader count > 0");
-            }
-
             // can't use the old values as the attributes might have changed
             // during pauses, due to aliasing and such
             OA oa = _ds.getOAThrows_(k.soid());
@@ -772,7 +767,7 @@ public class ReceiveAndApplyUpdate
         }
 
         // check if the local version has changed during our pauses
-        if (_cm.getWritersCount_(k) != 0 || !_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
+        if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
             throw new ExAborted(k + " version changed locally.");
         }
 

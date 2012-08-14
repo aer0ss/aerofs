@@ -63,14 +63,12 @@ public class Hasher
     private final NativeVersionControl _nvc;
     private final BranchDeleter _bd;
     private final TransManager _tm;
-    private final ComMonitor _cm;
     private final TC _tc;
 
     @Inject
-    public Hasher(ComMonitor cm, TransManager tm, BranchDeleter bd, TC tc, DirectoryService ds,
+    public Hasher(TransManager tm, BranchDeleter bd, TC tc, DirectoryService ds,
             NativeVersionControl nvc)
     {
-        _cm = cm;
         _tm = tm;
         _bd = bd;
         _nvc = nvc;
@@ -203,8 +201,7 @@ public class Hasher
                 // Look for file content modification using version vectors.
                 // This check is necessary for Local files.
                 // TODO do the following check in checkAbortion() above?
-                if (_cm.getWritersCount_(sockid) > 0 ||
-                        !_nvc.getLocalVersion_(sockid).sub_(vBeforeHash).isZero_())
+                if (!_nvc.getLocalVersion_(sockid).sub_(vBeforeHash).isZero_())
                     throw new ExAborted(FILE_MODIFIED_MSG);
 
                 Trans t = _tm.begin_();
@@ -353,9 +350,6 @@ public class Hasher
     {
         final IPhysicalFile pf = _ds.getOAThrows_(k.soid()).caThrows(k.kidx()).physicalFile();
 
-        // Check for writers.
-        if (_cm.getWritersCount_(k) > 0) throw new ExAborted(FILE_MODIFIED_MSG);
-
         final long len = pf.getLength_();
         final long mtime = pf.getLastModificationOrCurrentTime_();
         IAborter aborter = new IAborter() {
@@ -397,14 +391,6 @@ public class Hasher
             in.close();
         }
         assert h != null;
-
-        // Ensure no writers while hash was being computed.
-        // Similar check is made before start of hash computation in
-        // prepareToComputeHash_().
-        if (_cm.getWritersCount_(k) > 0) {
-            throw new ExAborted(FILE_MODIFIED_MSG);
-        }
-
         return h;
     }
 }
