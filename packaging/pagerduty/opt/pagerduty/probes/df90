@@ -1,13 +1,18 @@
-# test if the specified filesystem on the specified remote host exceeds 90
+#!/bin/bash
 #
-# usage: $0 <user@host> <port> <filesystem, e.g. rootfs>
+# Test if the specified filesystem on the specified remote host exceeds 90% capacity.
 #
 # exit 1 if the usage exceeds 90%
 # exit 2 if the hostname or filesystem is not found
 # exit 3 if bad arguments
 
+usage()
+{
+    echo "usage: $0 <user@host> <port> <filesystem, e.g. rootfs>"
+}
+
 if [ $# != 3 ]; then
-    echo bad arguments
+    usage
     exit 3
 fi
 
