@@ -49,14 +49,11 @@ node "z.arrowfs.org" inherits default {
     # Staging
     "port sp.aerofs.com 443",
     "port sp.aerofs.com 80",
-    # Dev servers
-    "url https://g.arrowfs.org 8443",
-    "port g.arrowfs.org 44353",
     # Meta (not used right now)
     #"ping z.arrowfs.org"
   ]:
     hour => "*",
-    minute => "0",
+    minute => "*/10",
     require => Class["pagerduty"]
   }
 }
