@@ -92,9 +92,8 @@ public class Param
         static {
             URL url;
             try {
-                // TODO (MP) update URLs when we move syncstat to two different servers.
                 url = new URL(Cfg.staging() ?
-                        "https://syncstat.aerofs.com/staging/syncstat" :
+                        "https://syncstat-staging.aerofs.com/staging/syncstat" :
                         "https://" + L.get().ssHost() + "/prod/syncstat");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
