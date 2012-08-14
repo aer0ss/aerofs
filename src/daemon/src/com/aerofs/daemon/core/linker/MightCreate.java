@@ -111,8 +111,8 @@ public class MightCreate
             // Logical object of the same FID is not found.
             cond = null;
         } else {
-            assert !_ds.getOANullable_(soid).isExpelled();
-            if (fnt._dir == _ds.getOANullable_(soid).isDirOrAnchor()) {
+            assert !_ds.getOA_(soid).isExpelled();
+            if (fnt._dir == _ds.getOA_(soid).isDirOrAnchor()) {
                 cond = Condition.SAME_FID_SAME_TYPE;
             } else {
                 // The logical object has the same FID but different type than the physical object.

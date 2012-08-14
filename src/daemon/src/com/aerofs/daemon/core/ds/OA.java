@@ -5,6 +5,7 @@ import java.util.SortedMap;
 
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
@@ -82,7 +83,8 @@ public class OA
     @Override
     public String toString()
     {
-        return "s " + _soid + " p " + _parent + " n " + _name + " cas " + _cas;
+        return "s " + _soid + " p " + _parent + " n " + (Cfg.staging() ? _name : Util.crc32(_name))
+                + " cas " + _cas;
     }
 
     /**
