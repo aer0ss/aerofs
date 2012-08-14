@@ -5,7 +5,7 @@ import os
 import code
 
 file_root = os.path.dirname(__file__)
-python_aerofs_lib = os.path.join(file_root,"../java/aerofs.python-lib")
+python_aerofs_lib = os.path.join(file_root,"../src/python-lib")
 sys.path.append(python_aerofs_lib)
 
 from aerofs.scrypt import scrypt
