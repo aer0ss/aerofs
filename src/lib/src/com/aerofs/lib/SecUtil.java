@@ -29,6 +29,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
 
+import javax.annotation.Nonnull;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
@@ -224,7 +225,7 @@ public class SecUtil
     /**
      * export the private key to PEM format
      */
-    public static String exportPrivateKey(PrivateKey privKey)
+    public static String exportPrivateKey(@Nonnull PrivateKey privKey)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("-----BEGIN RSA PRIVATE KEY-----\n");
