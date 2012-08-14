@@ -8,6 +8,7 @@ all: \
 	create_output_dir \
 	gen_rpc_proto \
 	sp.gen_proto \
+	syncstat.gen_proto \
 	common.gen_proto \
 	files.gen_proto
 
