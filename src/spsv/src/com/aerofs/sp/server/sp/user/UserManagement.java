@@ -63,12 +63,21 @@ public class UserManagement
      * Query the User identified by userID from the db, never returning null
      * @throws ExNotFound if the specified userID was not found in the db
      */
-    public User getUser(@Nonnull String userID)
+    public @Nonnull User getUser(@Nonnull String userID)
             throws ExNotFound, IOException, SQLException
     {
         User u = _db.getUser(userID);
         if (u == null) throw new ExNotFound("email address not found (" + userID + ")");
         return u;
+    }
+
+    /**
+     * Query the User identified by userID from the db, returning null if it doesn't exist
+     */
+    public @Nullable User getUserNullable(@Nonnull String userID)
+            throws IOException, SQLException
+    {
+        return _db.getUser(userID);
     }
 
     public void inviteOneUser(User inviter, String inviteeId, Organization inviteeOrg,

@@ -82,7 +82,7 @@ public class SharedFolderManagement
         Organization sharerOrg = _organizationManagement.getOrganization(sharer._orgId);
         Organization shareeOrg;
 
-        User sharee = _userManagement.getUser(shareeEmail);
+        User sharee = _userManagement.getUserNullable(shareeEmail);
         if (sharee == null) {  // Sharing with a non-AeroFS user.
             boolean domainMatch = sharerOrg.domainMatches(shareeEmail);
             shareeOrg = _organizationManagement.getOrganization(
