@@ -1,7 +1,10 @@
 package com.aerofs.daemon.lib.exception;
 
+import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
+
+import javax.annotation.Nullable;
 
 /**
  * used to abort the current download transaction to download another object on
@@ -9,40 +12,24 @@ import com.aerofs.lib.id.OCID;
  * is ongoing and has to aborted. otherwise, downloading the requested object
  * from the current calling context is recommended, as it incurs less overhead
  * in exception handling and re-processing.
+ *
+ * N.B. This class could have consolidated with the Dependency Edge classes, but the Ex*DependsOn
+ * exceptions don't know the source SOCID on purpose, so that throwers need not know the source.
  */
-public class ExDependsOn extends Exception {
-
+public class ExDependsOn extends Exception
+{
     private static final long serialVersionUID = 1L;
 
-    private final OCID _ocid;
-    private final DID _did;
-    private final boolean _ignoreError;
+    public final OCID _ocid;
+    public final DID _did;
+    public final DependencyType _type;
+    public final boolean _ignoreError;
 
-    /**
-     * @param did null if not specified
-     */
-    public ExDependsOn(OCID ocid, DID did, boolean ignoreError)
+    public ExDependsOn(OCID ocid, @Nullable DID did, DependencyType type, boolean ignoreError)
     {
         _ocid = ocid;
         _did = did;
+        _type = type;
         _ignoreError = ignoreError;
-    }
-
-    public OCID ocid()
-    {
-        return _ocid;
-    }
-
-    /**
-     * @return null if not specified
-     */
-    public DID did()
-    {
-        return _did;
-    }
-
-    public boolean ignoreError()
-    {
-        return _ignoreError;
     }
 }

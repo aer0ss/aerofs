@@ -6,6 +6,8 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph;
+import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.net.proto.GetHash;
 import com.aerofs.daemon.core.net.proto.MetaDiff;
 import com.aerofs.daemon.core.net.proto.PrefixVersionControl;
@@ -23,6 +25,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExIncrementalDownload;
+import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
@@ -70,7 +73,7 @@ public class ReceiveAndApplyUpdate
     private BranchDeleter _bd;
     private TransManager _tm;
     private IMapSIndex2Store _sidx2s;
-    private DownloadDependenciesGraph<SOCID> _dlOngoingDependencies;
+    private DownloadDependenciesGraph _dlOngoingDependencies;
 
     @Inject
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
@@ -78,7 +81,7 @@ public class ReceiveAndApplyUpdate
             IPhysicalStorage ps, DownloadState dlState, GetHash pgh, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
             IMapSIndex2Store sidx2s, MapAlias2Target alias2target,
-            DownloadDependenciesGraph<SOCID> dldg)
+            DownloadDependenciesGraph dldg)
     {
         _ds = ds;
         _pvc = pvc;
@@ -101,7 +104,7 @@ public class ReceiveAndApplyUpdate
         _dlOngoingDependencies = dldg;
     }
 
-    public static final class CausalityResult
+    public static class CausalityResult
     {
         // the kidx to which the downloaded update will be applied
         public final KIndex _kidx;
@@ -370,13 +373,7 @@ public class ReceiveAndApplyUpdate
 
         // The parent must exist locally, otherwise this SOID depends on the parent
         if (!_ds.hasOA_(soidParent)) {
-            OCID ocidParent = new OCID(oidParent, CID.META);
-            if (!_dlOngoingDependencies.pathExists_(new SOCID(soid.sidx(), ocidParent),
-                    new SOCID(soidMsg, CID.META))) {
-                throw new ExDependsOn(ocidParent, did, false);
-            } else {
-                throw new ExAborted("Avoid deadlock when trying " + soidMsg + "->" + ocidParent);
-            }
+            throw new ExDependsOn(new OCID(oidParent, CID.META), did, DependencyType.PARENT, false);
         }
 
         try {
@@ -429,14 +426,13 @@ public class ReceiveAndApplyUpdate
             final SOID soidMsg, CausalityResult cr)
             throws Exception
     {
-        Path pParent = _ds.resolveNullable_(new SOID(soidRemote.sidx(), parent));
-        assert pParent != null;
+        Path pParent = _ds.resolve_(new SOID(soidRemote.sidx(), parent));
 
         Path pLocal = pParent.append(meta.getName());
         SOID soidLocal = _ds.resolveNullable_(pLocal);
         assert soidLocal != null && soidLocal.sidx().equals(soidRemote.sidx()) :
                 soidLocal + " " + soidRemote + " " + pLocal;
-        OA oaLocal = _ds.getOANullable_(soidLocal);
+        OA oaLocal = _ds.getOA_(soidLocal);
         OA.Type typeRemote = fromPB(meta.getType());
 
         if (l.isInfoEnabled()) l.info("name conflict on " + pLocal + ": local " + soidLocal.oid() +
@@ -470,26 +466,19 @@ public class ReceiveAndApplyUpdate
             return false;
         }
 
-        // N.B. We are assuming soidMsg == Download._socid.soid().
-        // TODO (MJ) this isn't very good design and should be addressed. It is currently
-        // possible for a developer to break this assumption very easily in separate classes than
-        // this one. Lets find a way to avoid breaking the assumption
-        SOCID socidLocal = new SOCID(soidLocal, CID.META);
-        SOCID socidMsg = new SOCID(soidMsg, CID.META);
-
         // Detect and declare a dependency if
         // 1) the local logical object for the msg's file name doesn't match the remote
         // 2) new updates about the local logical object haven't already been synced
-        // AND 3) no cyclic dependency would be created among the ongoing downloads
-        if (!socidLocal.equals(socidMsg)
-                && !_dlOngoingDependencies.edgeExists_(socidMsg, socidLocal)) {
-            if (!_dlOngoingDependencies.pathExists_(socidLocal, socidMsg)) {
-                throw new ExDependsOn(new OCID(socidLocal.oid(), socidLocal.cid()), did, true);
-            } else {
-                l.warn("Cyclic dependency created when noting " + socidMsg + "->" + socidLocal);
-                resolveNameConflictByRenaming(did, soidRemote, soidLocal, wasPresent, parent,
-                        pParent, vRemote, meta, metaDiff, soidNoNewVersion, soidMsg, cr, t);
-                return false;
+        if (!soidLocal.equals(soidMsg)) {
+            // N.B. We are assuming soidMsg == Download._k.soid().
+            // TODO (MJ) this isn't very good design and should be addressed. It is currently
+            // possible for a developer to break this assumption very easily in separate classes
+            // than this one. Lets find a way to avoid breaking the assumption
+            SOCID socidLocal = new SOCID(soidLocal, CID.META);
+            SOCID socidMsg = new SOCID(soidMsg, CID.META);
+            if (!_dlOngoingDependencies.edgeExists_(socidMsg, socidLocal)) {
+                throw new ExNameConflictDependsOn(socidLocal.oid(), did, true, parent, vRemote,
+                        meta, soidMsg);
             }
         }
 
@@ -506,15 +495,15 @@ public class ReceiveAndApplyUpdate
                 vRemote, meta, soidNoNewVersion, t);
             return true;
         } else {
-            resolveNameConflictByRenaming(did, soidRemote, soidLocal, wasPresent, parent,
-                    pParent, vRemote, meta, metaDiff, soidNoNewVersion, soidMsg, cr, t);
+            resolveNameConflictByRenaming_(did, soidRemote, soidLocal, wasPresent, parent, pParent,
+                    vRemote, meta, metaDiff, soidMsg, cr, t);
             return false;
         }
     }
 
-    private void resolveNameConflictByRenaming(DID did, SOID soidRemote, SOID soidLocal,
+    public void resolveNameConflictByRenaming_(DID did, SOID soidRemote, SOID soidLocal,
             boolean wasPresent, OID parent, Path pParent, Version vRemote, PBMeta meta,
-            int metaDiff, SOID soidNoNewVersion, SOID soidMsg, CausalityResult cr, Trans t)
+            int metaDiff, SOID soidMsg, CausalityResult cr, Trans t)
             throws Exception
     {
         // Resolve name conflict by generating a new name.
@@ -526,9 +515,8 @@ public class ReceiveAndApplyUpdate
         if (comp > 0) {
             // local wins
             l.info("change remote name");
-
             PBMeta newMeta = PBMeta.newBuilder().mergeFrom(meta).setName(newName).build();
-            applyMeta_(did, soidRemote, newMeta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
+            applyMeta_(did, soidRemote, newMeta, parent, wasPresent, metaDiff, t, null,
                     vRemote, soidMsg, cr);
 
             // The version for soidRemote should be incremented, (with _cm.atomicWrite).
@@ -541,8 +529,7 @@ public class ReceiveAndApplyUpdate
             // remote wins
             l.info("change local name");
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, true, t);
-
-            applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, soidNoNewVersion,
+            applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, null,
                     vRemote, soidMsg, cr);
         }
     }
@@ -758,8 +745,8 @@ public class ReceiveAndApplyUpdate
     /**
      * Delete obsolete branches, update version vectors
      */
-    public void applyUpdateMetaAndContent_(SOCKID k, Version vRemote, CausalityResult res,
-            CIDType type, Trans t) throws Exception
+    public void applyUpdateMetaAndContent_(SOCKID k, Version vRemote, CausalityResult res, Trans t)
+            throws SQLException, IOException, ExNotFound, ExAborted
     {
         // delete branches
         for (KIndex kidxDel : res._kidcsDel) {
@@ -786,7 +773,7 @@ public class ReceiveAndApplyUpdate
 
         // check if the local version has changed during our pauses
         if (_cm.getWritersCount_(k) != 0 || !_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
-            throw new ExAborted(k + " version changed locally");
+            throw new ExAborted(k + " version changed locally.");
         }
 
         // update version vectors
@@ -797,7 +784,7 @@ public class ReceiveAndApplyUpdate
         // 1) this update was a merge of true conflicts OR
         // 2) the object in the msg was renamed to resolve a local name conflict
         if (res._incrementVersion || res._conflictRename) {
-            assert type == CIDType.META;
+            assert k.cid().equals(CID.META);
             _cm.atomicWrite_(k, t);
         }
     }

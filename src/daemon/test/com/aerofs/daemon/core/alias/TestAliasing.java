@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.net.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.net.ReceiveAndApplyUpdate.CausalityResult;
 import com.aerofs.daemon.core.net.proto.PrefixVersionControl;
-import com.aerofs.daemon.core.net.proto.GetComponentReply.CIDType;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -308,7 +307,7 @@ public class TestAliasing extends AbstractTest
             any(PBMeta.class), any(OID.class), anyBoolean(), anyInt(), any(Trans.class),
             any(SOID.class), any(Version.class), any(SOID.class), any(CausalityResult.class));
         verify(ru, never()).applyUpdateMetaAndContent_(any(SOCKID.class), any(Version.class),
-            any(CausalityResult.class), any(CIDType.class), any(Trans.class));
+            any(CausalityResult.class), any(Trans.class));
     }
 
     private void verifyReceiveAndApplyUpdateObjectIsNotUsed() throws Exception

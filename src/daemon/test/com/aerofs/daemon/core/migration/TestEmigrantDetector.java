@@ -6,12 +6,14 @@ import java.util.*;
 import com.aerofs.daemon.core.mock.TestUtilCore;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.net.dependence.DependencyEdge;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -93,6 +95,27 @@ public class TestEmigrantDetector extends AbstractTest
         when(ds.getChildren_(soidSource)).thenReturn(children);
     }
 
+    /**
+     * Repeated uses of this class require the use of doAnswer().when or doThrow().when
+     * instead of when(...).thenAnswer, etc., to avoid an NPE
+     * http://stackoverflow.com/questions/10342461/mockito-acts-strangely-when-i-assign-multiple-custom-matchers-to-a-single-method
+     */
+    private class IsDependencyWithDestination extends ArgumentMatcher<DependencyEdge>
+    {
+        private final SOCID _expectedDst;
+        IsDependencyWithDestination(SOCID expectedDst)
+        {
+            _expectedDst = expectedDst;
+        }
+
+        @Override
+        public boolean matches(Object o)
+        {
+            DependencyEdge dep = (DependencyEdge) o;
+            return _expectedDst.equals(dep.dst);
+        }
+    }
+
     @Before
     public void setup() throws Exception
     {
@@ -111,8 +134,7 @@ public class TestEmigrantDetector extends AbstractTest
 
         when(ds.getOANullable_(soidSource)).thenReturn(oa);
 
-        when(dls.downloadSync_(eq(socidAnchorTargetParent), any(To.class), any(Token.class),
-                any(SOCID.class))).then(new Answer<Void>() {
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock)
                     throws Throwable
@@ -121,18 +143,20 @@ public class TestEmigrantDetector extends AbstractTest
                         null, sid2sidx, null);
                 return null;
             }
-        });
+        }).when(dls).downloadSync_(argThat(new IsDependencyWithDestination(socidAnchorTargetParent)),
+                any(To.class), any(Token.class));
 
-        when(dls.downloadSync_(eq(socidAnchorTarget), any(To.class), any(Token.class),
-                any(SOCID.class))).then(new Answer<Void>() {
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock)
                     throws Throwable
             {
-                mockStore(null, sidTarget, sidxTarget, sidxTargetParent, null, null, sid2sidx, null);
+                mockStore(null, sidTarget, sidxTarget, sidxTargetParent, null, null, sid2sidx,
+                        null);
                 return null;
             }
-        });
+        }).when(dls).downloadSync_(argThat(new IsDependencyWithDestination(socidAnchorTarget)),
+                any(To.class), any(Token.class));
     }
 
     @Test
@@ -186,12 +210,12 @@ public class TestEmigrantDetector extends AbstractTest
         shouldEmigrate();
 
         InOrder inOrder = inOrder(dls);
-        inOrder.verify(dls).downloadSync_(eq(socidAnchorTargetParent), any(To.class),
-                eq(tk), eq(socidSource));
-        inOrder.verify(dls).downloadSync_(eq(socidAnchorTarget), any(To.class),
-                eq(tk), eq(socidSource));
-        inOrder.verify(dls).downloadSync_(eq(socidTarget), any(To.class),
-                eq(tk), eq(socidSource));
+        inOrder.verify(dls).downloadSync_(
+                eq(new DependencyEdge(socidSource, socidAnchorTargetParent)), any(To.class),
+                eq(tk));
+        inOrder.verify(dls).downloadSync_(
+                eq(new DependencyEdge(socidSource, socidAnchorTarget)), any(To.class), eq(tk));
+        inOrder.verify(dls).downloadSync_(eq(socidTarget), any(To.class), eq(tk), eq(socidSource));
     }
 
     @Test
@@ -244,15 +268,16 @@ public class TestEmigrantDetector extends AbstractTest
     public void shouldThrowIfDownloadingAncestorFailed() throws Exception
     {
         reset(dls);
-        when(dls.downloadSync_(eq(socidAnchorTargetParent), any(To.class), any(Token.class),
-                any(SOCID.class))).thenThrow(new ExArbitrary());
+        doThrow(new ExArbitrary()).when(dls).downloadSync_(
+                argThat(new IsDependencyWithDestination(socidAnchorTargetParent)), any(To.class),
+                any(Token.class));
         shouldEmigrate();
     }
 
     private void shouldEmigrate() throws Exception
     {
-        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo,
-                sidsTargetAncestor, did, tk);
+        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo, sidsTargetAncestor, did,
+                tk);
         verifyDownload(socidTarget);
     }
 

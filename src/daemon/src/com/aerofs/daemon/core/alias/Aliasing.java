@@ -10,7 +10,6 @@ import com.google.inject.Inject;
 
 
 import com.aerofs.daemon.core.net.ReceiveAndApplyUpdate;
-import com.aerofs.daemon.core.net.proto.GetComponentReply.CIDType;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -262,7 +261,7 @@ public class Aliasing
                 // Don't applyUpdate() if a name conflict was detected and
                 // performAliasingOnLocallyAvailableObjects_() was invoked.
                 if (!oidsAliasedOnNameConflict) {
-                    _ru.applyUpdateMetaAndContent_(k, vRemoteTargetMeta, cr, CIDType.META, t);
+                    _ru.applyUpdateMetaAndContent_(k, vRemoteTargetMeta, cr, t);
                 }
                 l.info("Done receiving new target object");
             }
