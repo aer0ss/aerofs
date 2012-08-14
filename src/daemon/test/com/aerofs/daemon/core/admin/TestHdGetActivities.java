@@ -72,7 +72,7 @@ public class TestHdGetActivities extends AbstractTest
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IActivityLogDatabase aldb = new ActivityLogDatabase(dbcw.mockCoreDBCW());
-    ActivityLog al = new ActivityLog();
+    ActivityLog al;
 
     EIGetActivities ev;
 
@@ -103,8 +103,7 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(CREATION_VALUE, new Path("a"), null, did1, did2, did3);
         addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b"), did1, did2, did3);
 
-        al.inject_(aldb, sync);
-
+        al = new ActivityLog(ds, aldb);
         hd = new HdGetActivities(al, ds, d2u, udndb, tm, cfgLocalUser, cfgLocalDID, factSP);
 
         when(cfgLocalUser.get()).thenReturn(me);

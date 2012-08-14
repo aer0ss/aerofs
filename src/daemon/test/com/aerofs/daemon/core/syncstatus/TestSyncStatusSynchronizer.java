@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.daemon.core.ActivityLog;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +30,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest {
     @Mock IActivityLogDatabase aldb;
     @Mock INativeVersionDatabase nvdb;
     @Mock SIDMap sidmap;
+    @Mock ActivityLog al;
 
     @InjectMocks SyncStatusSynchronizer sync;
 

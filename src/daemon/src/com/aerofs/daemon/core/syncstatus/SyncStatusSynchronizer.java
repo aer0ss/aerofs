@@ -8,6 +8,8 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.aerofs.daemon.core.ActivityLog;
+import com.aerofs.daemon.core.ActivityLog.IActivityLogListener;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -57,7 +59,7 @@ public class SyncStatusSynchronizer
     @Inject
     public SyncStatusSynchronizer(TC tc, TransManager tm,
             LocalSyncStatus lsync, SyncStatBlockingClient.Factory ssf,
-            IActivityLogDatabase aldb, NativeVersionControl nvc, SIDMap sidmap) {
+            ActivityLog al, IActivityLogDatabase aldb, NativeVersionControl nvc, SIDMap sidmap) {
         _c = null;
         _tc = tc;
         _tm = tm;
@@ -66,6 +68,15 @@ public class SyncStatusSynchronizer
         _aldb = aldb;
         _nvc = nvc;
         _sidmap = sidmap;
+
+        al.addListener_(new IActivityLogListener()
+        {
+            @Override
+            public void activitiesAdded_()
+            {
+                scanActivityLog_();
+            }
+        });
 
         // 1) process items in the bootstrap table, if any
         // 2) process items in the activity log left by a previous run

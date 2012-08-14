@@ -3,11 +3,11 @@ package com.aerofs.daemon.core.ds;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
 
-import com.aerofs.daemon.core.ActivityLog;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -20,6 +20,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.*;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -46,15 +47,34 @@ public class DirectoryService implements IDumpStatMisc
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
     private IStores _ss;
-    private ActivityLog _al;
 
     private DBCache<Path, SOID> _cacheDS;
     private DBCache<SOID, OA> _cacheOA;
 
+    private final List<IDirectoryServiceListener> _listeners = Lists.newArrayList();
+
+    /**
+     * Interface for DirectoryService listeners
+     *
+     * All the methods are called during a transaction
+     */
+    public interface IDirectoryServiceListener
+    {
+        void objectCreated_(SOID obj, SOID parent, Path pathTo, Trans t);
+        void objectDeleted_(SOID obj, SOID parent, Path pathFrom, Trans t);
+        void objectMoved_(SOID obj, SOID parentFrom, SOID parentTo,
+                Path pathFrom, Path pathTo, Trans t);
+        void objectModified_(SOID obj, Path path, Trans t);
+    }
+
+    public void addListener_(IDirectoryServiceListener listener)
+    {
+        _listeners.add(listener);
+    }
+
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
-            IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
-            ActivityLog al)
+            IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
     {
         _ps = ps;
         _mdb = mdb;
@@ -62,7 +82,6 @@ public class DirectoryService implements IDumpStatMisc
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
         _ss = ss;
-        _al = al;
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
@@ -311,9 +330,10 @@ public class DirectoryService implements IDumpStatMisc
         // all the children under the path need to be invalidated.
         _cacheDS.invalidateAll_();
 
-        // TODO consider using a listener once DirectoryService activity listeners are supported
         if (!oidParent.equals(OID.TRASH)) {
-            _al.objectCreated_(soid, resolve_(oaParent).append(name), t);
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectCreated_(soid, oaParent.soid(), resolve_(oaParent).append(name), t);
+            }
         }
     }
 
@@ -322,7 +342,9 @@ public class DirectoryService implements IDumpStatMisc
         _mdb.createCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
-        _al.objectModified_(soid, resolve_(soid), t);
+        for (IDirectoryServiceListener listener : _listeners) {
+            listener.objectModified_(soid, resolve_(soid), t);
+        }
     }
 
     public void deleteCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
@@ -364,15 +386,22 @@ public class DirectoryService implements IDumpStatMisc
         }
 
         // update activity log
-        // TODO consider using a listener once DirectoryService activity listeners are supported
         boolean fromTrash = oa.parent().equals(OID.TRASH);
         boolean toTrash = oaParent.soid().oid().equals(OID.TRASH);
         if (fromTrash && !toTrash) {
-            _al.objectCreated_(oa.soid(), pathTo, t);
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectCreated_(oa.soid(), oaParent.soid(), pathTo, t);
+            }
         } else if (!fromTrash && toTrash) {
-            _al.objectDeleted_(oa.soid(), pathFrom, t);
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectDeleted_(oa.soid(), new SOID(oa.soid().sidx(), oa.parent()),
+                        pathFrom, t);
+            }
         } else if (!fromTrash && !toTrash) {
-            _al.objectMoved_(oa.soid(), pathFrom, pathTo, t);
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectMoved_(oa.soid(), new SOID(oa.soid().sidx(), oa.parent()),
+                        oaParent.soid(), pathFrom, pathTo, t);
+            }
         } else {
             assert fromTrash && toTrash;
         }
@@ -498,7 +527,9 @@ public class DirectoryService implements IDumpStatMisc
         oa.ca(sokid.kidx()).length(len);
         oa.ca(sokid.kidx()).mtime(mtime);
 
-        _al.objectModified_(sokid.soid(), resolve_(oa), t);
+        for (IDirectoryServiceListener listener : _listeners) {
+            listener.objectModified_(sokid.soid(), resolve_(oa), t);
+        }
     }
 
     /**

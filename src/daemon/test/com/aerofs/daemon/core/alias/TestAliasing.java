@@ -122,7 +122,7 @@ public class TestAliasing extends AbstractTest
     public void setUp() throws Exception
     {
         DirectoryService realDS = new DirectoryService();
-        realDS.inject_(ps, mdb, alias2target, mock(IStores.class), tm, sidx2sid, sid2sidx, alog);
+        realDS.inject_(ps, mdb, alias2target, mock(IStores.class), tm, sidx2sid, sid2sidx);
         ds = spy(realDS);
 
         AliasingMover almv = new AliasingMover(ds, hasher, om, pvc, nvc, bd);

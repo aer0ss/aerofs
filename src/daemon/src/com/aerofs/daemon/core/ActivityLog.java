@@ -6,6 +6,7 @@ import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATI
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -13,7 +14,8 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
-import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
@@ -24,6 +26,7 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -48,7 +51,7 @@ import com.google.common.collect.Sets;
  * Fortunately, most transactions only deal with a small number of objects at a time. Transactions
  * by the scanner may be big, but its size is limited by ScanSession.CONTINUATION_UPDATES_THRESHOLD.
  */
-public class ActivityLog
+public class ActivityLog implements IDirectoryServiceListener
 {
     // the per-object entry for the trans-local map
     private static class ActivityEntry
@@ -84,7 +87,9 @@ public class ActivityLog
                         public void committed_() {
                             // we can't start the scan before the transaction is committed
                             if (activitiesAdded) {
-                                _sync.scanActivityLog_();
+                                for (IActivityLogListener listener : _listeners) {
+                                    listener.activitiesAdded_();
+                                }
                             }
                         }
                     });
@@ -94,18 +99,31 @@ public class ActivityLog
             };
 
     private IActivityLogDatabase _aldb;
-    private SyncStatusSynchronizer _sync;
 
     /**
-     * Use inject_ method because of circular dependency
-     * ActivityLog -> SyncStatusSynchronizer -> NVC -> ActivityLog
-     * TODO (MJ) for Hugues and Weihan, please break this dependency somehow?
+     * Interface for ActivityLog listener
      */
-    @Inject
-    public void inject_(IActivityLogDatabase aldb, SyncStatusSynchronizer sync)
+    public interface IActivityLogListener
     {
+        /**
+         * Whenever a transaction adds new rows to the activity log table, this method will be
+         * called from the commited_() callback of an ITransListener
+         */
+        void activitiesAdded_();
+    }
+
+    private final List<IActivityLogListener> _listeners = Lists.newArrayList();
+
+    public void addListener_(IActivityLogListener listener)
+    {
+        _listeners.add(listener);
+    }
+
+    @Inject
+    public ActivityLog(DirectoryService ds, IActivityLogDatabase aldb)
+    {
+        ds.addListener_(this);
         _aldb = aldb;
-        _sync = sync;
     }
 
     private ActivityEntry getEntry_(SOID soid, Trans t)
@@ -133,22 +151,27 @@ public class ActivityLog
         return en;
     }
 
-    public void objectCreated_(SOID soid, Path path, Trans t)
+    @Override
+    public void objectCreated_(SOID soid, SOID parent, Path path, Trans t)
     {
         setEntryFields_(soid, CREATION_VALUE, path, t);
     }
 
-    public void objectMoved_(SOID soid, Path pathFrom, Path pathTo, Trans t)
+    @Override
+    public void objectMoved_(SOID soid, SOID parentFrom, SOID parentTo,
+            Path pathFrom, Path pathTo, Trans t)
     {
         ActivityEntry en = setEntryFields_(soid, MOVEMENT_VALUE, pathFrom, t);
         en._pathTo = pathTo;
     }
 
-    public void objectDeleted_(SOID soid, Path path, Trans t)
+    @Override
+    public void objectDeleted_(SOID soid, SOID parent, Path path, Trans t)
     {
         setEntryFields_(soid, DELETION_VALUE, path, t);
     }
 
+    @Override
     public void objectModified_(SOID soid, Path path, Trans t)
     {
         setEntryFields_(soid, MODIFICATION_VALUE, path, t);
