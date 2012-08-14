@@ -188,11 +188,13 @@ public class DirectoryService implements IDumpStatMisc
                 } else {
                     // parent oid of the root encodes the parent store's sid
                     SOID soidAnchor = getAnchor_(oa.soid().sidx());
-                    oa = getOANullable_(soidAnchor);
+                    oa = getOA_(soidAnchor);
                 }
             }
 
             elems.add(oa.name());
+
+            assert !oa.parent().equals(oa.soid().oid()) : oa;
             oa = getOANullable_(new SOID(oa.soid().sidx(), oa.parent()));
             assert oa != null;
         }
