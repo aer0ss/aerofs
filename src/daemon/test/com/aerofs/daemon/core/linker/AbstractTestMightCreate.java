@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.linker;
 
-import com.aerofs.daemon.core.ComMonitor;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.fs.HdMoveObject;
@@ -53,7 +53,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     @Mock ObjectMover om;
     @Mock ObjectCreator oc;
     @Mock CfgLocalUser cfgUser;
-    @Mock ComMonitor cm;
+    @Mock VersionUpdater vu;
     @Mock InjectableFile.Factory factFile;
     @Mock InjectableDriver dr;
     @Mock CfgAbsRootAnchor cfgAbsRootAnchor;

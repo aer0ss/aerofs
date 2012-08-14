@@ -44,6 +44,10 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         _al = al;
     }
 
+    /**
+     * Do not call this method directly. Use VersionUpdater instead, which provides more high-level
+     * functions than merely updating the version database.
+     */
     public void updateMyVersion_(SOCKID k, boolean alias, Trans t)
             throws SQLException
     {

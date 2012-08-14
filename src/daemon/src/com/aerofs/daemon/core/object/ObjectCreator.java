@@ -18,17 +18,17 @@ import static com.aerofs.daemon.core.ds.OA.*;
 public class ObjectCreator
 {
     private DirectoryService _ds;
-    private ComMonitor _cm;
+    private VersionUpdater _vu;
     private ImmigrantDetector _imd;
     private Expulsion _ex;
     private StoreCreator _sc;
 
     @Inject
-    public void inject_(DirectoryService ds, ComMonitor cm, ImmigrantDetector imd, Expulsion ex,
+    public void inject_(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
             StoreCreator sc)
     {
         _ds = ds;
-        _cm = cm;
+        _vu = vu;
         _imd = imd;
         _ex = ex;
         _sc = sc;
@@ -51,7 +51,7 @@ public class ObjectCreator
 
             _ds.getOANullable_(soid).caMaster().physicalFile().create_(op, t);
 
-            _cm.atomicWrite_(new SOCKID(soid, CID.CONTENT, kidx), t);
+            _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
         }
     }
 
@@ -82,7 +82,7 @@ public class ObjectCreator
 
         _ds.createOA_(type, soid.sidx(), soid.oid(), oidParent, name, flags, t);
 
-        if (updateVersion) _cm.atomicWrite_(new SOCKID(soid, CID.META, KIndex.MASTER), t);
+        if (updateVersion) _vu.update_(new SOCKID(soid, CID.META, KIndex.MASTER), t);
 
         boolean immigrated = !detectImmigration || expelled ? false :
             _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);

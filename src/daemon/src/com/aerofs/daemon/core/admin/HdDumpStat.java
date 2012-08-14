@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.admin;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import com.aerofs.daemon.core.ComMonitor;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -30,16 +29,14 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
     private final UploadState _ulstate;
     private final CoreQueue _q;
     private final DevicePresence _dp;
-    private final ComMonitor _cm;
     private final TokenManager _tokenManager;
     private final ScanSessionQueue _ssq;
 
     @Inject
-    public HdDumpStat(ComMonitor cm, DevicePresence dp, CoreQueue q, UploadState ulstate,
-            DownloadState dlstate, DirectoryService ds, TC tc, Transports tps,
-            TokenManager tokenManager, ScanSessionQueue ssq)
+    public HdDumpStat(DevicePresence dp, CoreQueue q, UploadState ulstate, DownloadState dlstate,
+            DirectoryService ds, TC tc, Transports tps, TokenManager tokenManager,
+            ScanSessionQueue ssq)
     {
-        _cm = cm;
         _dp = dp;
         _q = q;
         _ulstate = ulstate;
@@ -94,9 +91,6 @@ public class HdDumpStat extends AbstractHdIMC<EIDumpStat>
 
             ps.println(indent + "dp");
             _dp.dumpStatMisc(indent2, indentUnit, ps);
-
-            ps.println(indent + "cm");
-            _cm.dumpStatMisc(indent2, indentUnit, ps);
 
             ps.println(indent + "ssq");
             _ssq.dumpStatMisc(indent2, indentUnit, ps);

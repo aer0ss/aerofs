@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.core.ComMonitor;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -43,21 +43,21 @@ public class MightCreate
     private final HdMoveObject _hdmo;
     private final ObjectMover _om;
     private final ObjectCreator _oc;
-    private final ComMonitor _cm;
+    private final VersionUpdater _vu;
     private final InjectableFile.Factory _factFile;
     private final InjectableDriver _dr;
     private final Analytics _a;
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, HdMoveObject hdmo,
             ObjectMover om, ObjectCreator oc, InjectableDriver driver, HdCreateObject hdco,
-            ComMonitor cm, InjectableFile.Factory factFile, Analytics a)
+            VersionUpdater vu, InjectableFile.Factory factFile, Analytics a)
     {
         _il = ignoreList;
         _ds = ds;
         _hdmo = hdmo;
         _oc = oc;
         _om = om;
-        _cm = cm;
+        _vu = vu;
         _factFile = factFile;
         _dr = driver;
         _a = a;
@@ -357,7 +357,7 @@ public class MightCreate
 
         if (modified) {
             l.info("modify " + soid);
-            _cm.atomicWrite_(new SOCKID(soid, CID.CONTENT), t);
+            _vu.update_(new SOCKID(soid, CID.CONTENT), t);
             _a.incSaveCount();
         }
     }

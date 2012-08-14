@@ -80,7 +80,7 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
 
         mightCreate(physicalName, namef1);
 
-        verifyZeroInteractions(cm, oc);
+        verifyZeroInteractions(vu, oc);
 
         verify(hdmo).move_(soidf1, soidRoot, physicalName, PhysicalOp.MAP, t);
     }

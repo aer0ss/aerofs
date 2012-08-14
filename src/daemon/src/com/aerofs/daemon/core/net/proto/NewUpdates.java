@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 
@@ -15,6 +14,7 @@ import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -30,6 +30,9 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.proto.Core.PBNewUpdate;
 import com.aerofs.proto.Core.PBCore.Type;
 
+/**
+ * This class is responsible for sending and receiving NEW_UPDATE messages
+ */
 public class NewUpdates
 {
     private static final Logger l = Util.l(NewUpdates.class);
@@ -55,19 +58,18 @@ public class NewUpdates
         throws Exception
     {
         // group components into stores
-        final Map<SIndex, List<SOCKID>> lists =
-            new TreeMap<SIndex, List<SOCKID>>();
+        final Map<SIndex, List<SOCKID>> sidx2ks = Maps.newTreeMap();
         for (SOCKID k : ks) {
-            List<SOCKID> list = lists.get(k.sidx());
+            List<SOCKID> list = sidx2ks.get(k.sidx());
             if (list == null) {
                 list = new ArrayList<SOCKID>();
-                lists.put(k.sidx(), list);
+                sidx2ks.put(k.sidx(), list);
             }
             list.add(k);
         }
 
         // send one message for each group
-        for (Entry<SIndex, List<SOCKID>> en : lists.entrySet()) {
+        for (Entry<SIndex, List<SOCKID>> en : sidx2ks.entrySet()) {
 
             SIndex sidx = en.getKey();
 

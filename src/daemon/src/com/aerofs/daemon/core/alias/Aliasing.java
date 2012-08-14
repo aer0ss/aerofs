@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.alias;
 
-import com.aerofs.daemon.core.ComMonitor;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -50,7 +50,7 @@ public class Aliasing
 
     private DirectoryService _ds;
     private NativeVersionControl _nvc;
-    private ComMonitor _cm;
+    private VersionUpdater _vu;
     private ObjectCreator _oc;
     private ObjectMover _om;
     private ReceiveAndApplyUpdate _ru;
@@ -60,12 +60,12 @@ public class Aliasing
 
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc,
-            ComMonitor cm, ObjectCreator oc, ObjectMover om, ReceiveAndApplyUpdate ru,
+            VersionUpdater vu, ObjectCreator oc, ObjectMover om, ReceiveAndApplyUpdate ru,
             AliasingMover almv, MapAlias2Target a2t, TransManager tm)
     {
         _ds = ds;
         _nvc = nvc;
-        _cm = cm;
+        _vu = vu;
         _oc = oc;
         _om = om;
         _ru = ru;
@@ -412,19 +412,7 @@ public class Aliasing
 
         // Increment local version of the alias object, if required.
         if (!ar._alias.equals(soidNoNewVersion)) {
-            // FIXME:
-            // 1) since the argument list doesn't have a version, specify in
-            //    the method name that it increments the local vers
-            // 2) atomicWrite does not represent "increment version"
-            // 3) the documentation of atomicWrite_(...) doesn't really explain
-            //    what this method does (ie how is it different from
-            //    _nvc.addKMLVersion_(socid, v, t)
-            // 4) in the interest of simplifying the dependency graph, this is
-            //    the only place _cm is used in this class... any way to get
-            //    rid of it? So many version manipulation methods go through
-            //    NativeVersionControl, why does _cm *increment* versions
-            //    but the former does not?
-            _cm.atomicWriteAliased_(new SOCKID(ar._alias, CID.META), t);
+            _vu.updateAliased_(new SOCKID(ar._alias, CID.META), t);
         }
     }
 

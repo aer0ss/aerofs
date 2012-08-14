@@ -98,11 +98,12 @@ public class DaemonParam
     // test with pathologically small lengths e.g. 1
     public static final int QUEUE_LENGTH_CORE               = QUEUE_LENGTH_DEFAULT;
 
-    public static final long CM_SCAN_DELAY                  = 0;
+    // the delay to send NEW_UPDATE messages
+    public static final long NEW_UPDATE_MESSAGE_DELAY                  = 0;
 
     // it is the initial limit of maxcast message sizes. the limit may be further
     // reduced at runtime based on metrics feedback from transports
-    public static final int MAX_MAX_MAXCAST_MESSAGE_SIZE    = 1024;
+    public static final int MAX_MAX_MAXCAST_MESSAGE_SIZE    = 1 * C.KB;
 
     // 16+ KB is the maximum TLS application buffer size
     // it defines the maximum size for atomic messages and chunks

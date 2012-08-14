@@ -27,7 +27,7 @@ public class TestMightCreate_SameFIDSamePathSameType extends AbstractTestMightCr
     {
         mightCreate("f1", "f1");
 
-        verifyZeroInteractions(cm, om, oc);
+        verifyZeroInteractions(vu, om, oc);
     }
 
     @Test

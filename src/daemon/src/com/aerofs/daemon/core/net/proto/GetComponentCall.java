@@ -62,7 +62,6 @@ public class GetComponentCall
     private IPhysicalStorage _ps;
     private LocalACL _lacl;
     private GetComponentReply _gcr;
-    private ComMonitor _cm;
     private NSL _nsl;
     private GCCSendContent _sendContent;
     // TODO (MJ) remove when no longer deleting non-alias ticks from alias objects
@@ -70,13 +69,12 @@ public class GetComponentCall
     private AliasingMover _almv;
 
     @Inject
-    public void inject_(NSL nsl, ComMonitor cm, GetComponentReply gcr, LocalACL lacl,
-            IPhysicalStorage ps, DirectoryService ds, RPC rpc,
-            PrefixVersionControl pvc, NativeVersionControl nvc, EmigrantCreator emc,
-            GCCSendContent sendContent, MapAlias2Target a2t, TransManager tm, AliasingMover almv)
+    public void inject_(NSL nsl, GetComponentReply gcr, LocalACL lacl, IPhysicalStorage ps,
+            DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
+            EmigrantCreator emc, GCCSendContent sendContent, MapAlias2Target a2t, TransManager tm,
+            AliasingMover almv)
     {
         _nsl = nsl;
-        _cm = cm;
         _gcr = gcr;
         _lacl = lacl;
         _ps = ps;
@@ -287,8 +285,6 @@ public class GetComponentCall
     {
         l.info("send to " + msg.ep() + " for " + k);
 
-        int wc = _cm.versionPublished_(k);
-
         Version vLocal = _nvc.getLocalVersion_(k);
 
         PBCore.Builder bdCore = CoreUtil.newReply(msg.pb());
@@ -297,9 +293,9 @@ public class GetComponentCall
             .setVersion(vLocal.toPB_());
 
         if (k.cid().isMeta()) {
-            sendMeta_(msg.did(), k, bdCore, bdReply, vLocal, wc);
+            sendMeta_(msg.did(), k, bdCore, bdReply, vLocal);
         } else if (k.cid().equals(CID.CONTENT)) {
-            _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal, wc,
+            _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
                     msg.pb().getGetComCall().getPrefixLength(),
                     new Version(msg.pb().getGetComCall().getPrefixVersion()));
         } else {
@@ -313,7 +309,7 @@ public class GetComponentCall
      *  - build ancestors for leaf nodes on these devices
      */
     private void sendMeta_(DID did, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply,
-            Version v, int wc)
+            Version v)
         throws ExNotFound, SQLException, Exception
     {
         // guaranteed by the caller
@@ -348,9 +344,6 @@ public class GetComponentCall
         }
 
         bdReply.setMeta(bdMeta);
-
-        // all metadata updates should be atomic
-        assert !_cm.hasMoreWritesSince_(k, v, wc);
 
         _nsl.sendUnicast_(did, k.sidx(), bdCore.setGetComReply(bdReply).build());
     }

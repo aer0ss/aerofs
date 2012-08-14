@@ -8,8 +8,8 @@ import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.core.ComMonitor;
 import com.aerofs.daemon.core.CoreUtil;
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -47,20 +47,20 @@ public class GCCSendContent
 
     private final DirectoryService _ds;
     private final Metrics _m;
-    private final ComMonitor _cm;
+    private final NativeVersionControl _nvc;
     private final NSL _nsl;
     private final OutgoingStreams _oss;
     private final UploadState _ulstate;
     private final TokenManager _tokenManager;
 
     @Inject
-    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, NSL nsl, ComMonitor cm,
-            Metrics m, DirectoryService ds, TokenManager tokenManager)
+    public GCCSendContent(UploadState ulstate, OutgoingStreams oss, NSL nsl,
+            NativeVersionControl nvc, Metrics m, DirectoryService ds, TokenManager tokenManager)
     {
         _ulstate = ulstate;
         _oss = oss;
         _nsl = nsl;
-        _cm = cm;
+        _nvc = nvc;
         _m = m;
         _ds = ds;
         _tokenManager = tokenManager;
@@ -68,8 +68,7 @@ public class GCCSendContent
 
     // raw file bytes are appended after BPCore
     void send_(Endpoint ep, SOCKID k, PBCore.Builder bdCore, Builder bdReply, Version vLocal,
-            int writeCount, long prefixLen, Version vPrefix)
-        throws Exception
+            long prefixLen, Version vPrefix) throws Exception
     {
         // guaranteed by the caller
         assert _ds.isPresent_(k);
@@ -94,10 +93,8 @@ public class GCCSendContent
 
         PBCore core = bdCore.setGetComReply(bdReply).build();
         ByteArrayOutputStream os = Util.writeDelimited(core);
-        l.warn("os.size() = " + os.size());
         if (os.size() + hashLength + fileLength <= _m.getMaxUnicastSize_()) {
-            l.debug("sendSmall_()");
-            sendSmall_(ep.did(), k, os, core, vLocal, writeCount, mtime, fileLength, h, pf);
+            sendSmall_(ep.did(), k, os, core, vLocal, mtime, fileLength, h, pf);
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
@@ -119,17 +116,17 @@ public class GCCSendContent
 
             Token tk = _tokenManager.acquireThrows_(Cat.SERVER, "GCRSendBig");
             try {
-                sendBig_(ep, k, os, vLocal, writeCount, newPrefixLen, tk, mtime, fileLength, h, pf);
+                sendBig_(ep, k, os, vLocal, newPrefixLen, tk, mtime, fileLength, h, pf);
             } finally {
                 tk.reclaim_();
             }
         }
     }
 
-    private boolean hasMoreWritesSince_(SOCKID k, Version v, int wc, long mtime, long len,
+    private boolean wasContentModifiedSince_(SOCKID k, Version v, long mtime, long len,
             IPhysicalFile pf) throws SQLException, IOException, ExNotFound
     {
-        return _cm.hasMoreWritesSince_(k, v, wc) || pf.wasModifiedSince(mtime, len);
+        return pf.wasModifiedSince(mtime, len) || !_nvc.getLocalVersion_(k).sub_(v).isZero_();
     }
 
     private int copyAChunk(ByteArrayOutputStream to, InputStream is)
@@ -149,7 +146,7 @@ public class GCCSendContent
     }
 
     private void sendSmall_(DID did, SOCKID k, ByteArrayOutputStream os, PBCore reply, Version v,
-            int writeCount, long mtime, long len, ContentHash hash, IPhysicalFile pf)
+            long mtime, long len, ContentHash hash, IPhysicalFile pf)
             throws Exception
     {
         if (hash != null) {
@@ -167,7 +164,7 @@ public class GCCSendContent
                 copied = 0;
             }
 
-            if (copied != len || hasMoreWritesSince_(k, v, writeCount, mtime, len, pf)) {
+            if (copied != len || wasContentModifiedSince_(k, v, mtime, len, pf)) {
                 l.info(k + " updated while being sent. nak");
                 reply = CoreUtil.newReply(reply.getRpcid())
                         .setExceptionReply(Exceptions.toPB(new ExUpdateInProgress()))
@@ -184,8 +181,8 @@ public class GCCSendContent
     }
 
     private void sendBig_(Endpoint ep, SOCKID k, ByteArrayOutputStream os, Version v,
-            int writeCount, long prefixLen, Token tk, long mtime, long len, ContentHash hash,
-            IPhysicalFile pf) throws Exception
+            long prefixLen, Token tk, long mtime, long len, ContentHash hash, IPhysicalFile pf)
+            throws Exception
     {
         l.debug("sendBig_: os.size() = " + os.size());
         assert prefixLen >= 0;
@@ -246,7 +243,7 @@ public class GCCSendContent
                 }
 
                 rest -= bytesCopied;
-                if (rest < 0 || hasMoreWritesSince_(k, v, writeCount, mtime, len, pf)) {
+                if (rest < 0 || wasContentModifiedSince_(k, v, mtime, len, pf)) {
                     reason = InvalidationReason.UPDATE_IN_PROGRESS;
                     throw new IOException(k + " updated");
                 }

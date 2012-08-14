@@ -18,13 +18,13 @@ import javax.inject.Inject;
 public class ObjectMover
 {
     private DirectoryService _ds;
-    private ComMonitor _cm;
+    private VersionUpdater _vu;
     private Expulsion _expulsion;
 
     @Inject
-    public void inject_(ComMonitor cm, DirectoryService ds, Expulsion expulsion)
+    public void inject_(VersionUpdater vu, DirectoryService ds, Expulsion expulsion)
     {
-        _cm = cm;
+        _vu = vu;
         _ds = ds;
         _expulsion = expulsion;
     }
@@ -57,7 +57,7 @@ public class ObjectMover
 
         if (updateVersion) {
             SOCKID k = new SOCKID(soid, CID.META);
-            _cm.atomicWrite_(k, t);
+            _vu.update_(k, t);
         }
 
         _expulsion.objectMoved_(emigrate, op, soid, pOld, t);

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.daemon.core.ComMonitor;
+import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -20,12 +20,12 @@ public class HdSetAttr extends AbstractHdIMC<EISetAttr>
     private final LocalACL _lacl;
     private final DirectoryService _ds;
     private final TransManager _tm;
-    private final ComMonitor _cm;
+    private final VersionUpdater _vu;
 
     @Inject
-    public HdSetAttr(ComMonitor cm, TransManager tm, DirectoryService ds, LocalACL lacl)
+    public HdSetAttr(VersionUpdater vu, TransManager tm, DirectoryService ds, LocalACL lacl)
     {
-        _cm = cm;
+        _vu = vu;
         _tm = tm;
         _ds = ds;
         _lacl = lacl;
@@ -45,7 +45,7 @@ public class HdSetAttr extends AbstractHdIMC<EISetAttr>
         try {
             if (flg) _ds.setOAFlags_(soid, ev._flags, t);
 
-            _cm.atomicWrite_(new SOCKID(soid, CID.META), t);
+            _vu.update_(new SOCKID(soid, CID.META), t);
             t.commit_();
         } finally {
             t.end_();

@@ -94,7 +94,7 @@ public class TestAliasing extends AbstractTest
 
     private final ObjectCreator oc = mock(ObjectCreator.class);
     private final ReceiveAndApplyUpdate ru = mock(ReceiveAndApplyUpdate.class);
-    private final ComMonitor cm = mock(ComMonitor.class);
+    private final VersionUpdater vu = mock(VersionUpdater.class);
     private final TransManager tm = mock(TransManager.class);
 
     // System under test.
@@ -129,7 +129,7 @@ public class TestAliasing extends AbstractTest
         MapAlias2Target a2t = new MapAlias2Target(aldb);
 
         al = new Aliasing();
-        al.inject_(ds, nvc, cm, oc, om, ru, almv, a2t, tm);
+        al.inject_(ds, nvc, vu, oc, om, ru, almv, a2t, tm);
 
         when(cfgLocalDID.get()).thenReturn(localDID);
         dbcw.init_();
@@ -242,7 +242,7 @@ public class TestAliasing extends AbstractTest
                 nvc.updateMyVersion_(k, true, t);
                 return null;
             }
-        }).when(cm).atomicWriteAliased_(any(SOCKID.class), any(Trans.class));
+        }).when(vu).updateAliased_(any(SOCKID.class), any(Trans.class));
     }
 
     /**
@@ -491,7 +491,7 @@ public class TestAliasing extends AbstractTest
         // Ensure required methods were invoked.
         verify(bd).deleteBranch_(new SOCKID(aliasContent, KIndex.MASTER), vAliasContent, false,
                 true, t);
-        verify(cm).atomicWriteAliased_(new SOCKID(aliasMeta, KIndex.MASTER), t);
+        verify(vu).updateAliased_(new SOCKID(aliasMeta, KIndex.MASTER), t);
         verify(hasher, never()).computeHashBlocking_(any(SOKID.class));
 
         verify(ds).deleteOA_(soidAlias, t);
@@ -570,7 +570,7 @@ public class TestAliasing extends AbstractTest
         verify(hasher, never()).computeHashBlocking_(any(SOKID.class));
         verify(ds, never()).deleteCA_(any(SOID.class), any(KIndex.class), any(Trans.class));
 
-        verify(cm).atomicWriteAliased_(new SOCKID(aliasMeta, KIndex.MASTER), t);
+        verify(vu).updateAliased_(new SOCKID(aliasMeta, KIndex.MASTER), t);
 
         verify(ds).deleteOA_(soidAlias, t);
     }
@@ -632,7 +632,7 @@ public class TestAliasing extends AbstractTest
         assertNotNull(targetOA);
         assertEquals(targetOA.name(), conflictFileName);
 
-        verify(cm, never()).atomicWriteAliased_(any(SOCKID.class), any(Trans.class));
+        verify(vu, never()).updateAliased_(any(SOCKID.class), any(Trans.class));
 
         verifyReceiveAndApplyUpdateObjectIsNotUsed();
     }
@@ -667,7 +667,7 @@ public class TestAliasing extends AbstractTest
         // Verification
 
         assertEquals(soidTarget.oid(), aldb.getTargetOID_(soidAlias.sidx(), soidAlias.oid()));
-        verify(cm, never()).atomicWriteAliased_(any(SOCKID.class), any(Trans.class));
+        verify(vu, never()).updateAliased_(any(SOCKID.class), any(Trans.class));
         Version vKMLAliasMetaAfter = nvdb.getKMLVersion_(aliasMeta);
         for (Entry<DID, Tick> dt: vKMLAliasMetaAfter.getAll_().entrySet()) {
             assertTrue(dt.getValue().isAlias());
@@ -1153,6 +1153,6 @@ public class TestAliasing extends AbstractTest
 
         verify(bd).deleteBranch_(new SOCKID(aliasContent, KIndex.MASTER), vAliasContent, true, true,
                 t);
-        verify(cm, never()).atomicWriteAliased_(new SOCKID(aliasMeta, KIndex.MASTER), t);
+        verify(vu, never()).updateAliased_(new SOCKID(aliasMeta, KIndex.MASTER), t);
     }
 }

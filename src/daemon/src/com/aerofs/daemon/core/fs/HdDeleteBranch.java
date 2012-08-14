@@ -27,14 +27,14 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
     private final NativeVersionControl _nvc;
     private final DirectoryService _ds;
     private final TransManager _tm;
-    private final ComMonitor _cm;
+    private final VersionUpdater _vu;
     private final BranchDeleter _bd;
 
     @Inject
-    public HdDeleteBranch(ComMonitor cm, TransManager tm, DirectoryService ds,
+    public HdDeleteBranch(VersionUpdater vu, TransManager tm, DirectoryService ds,
             NativeVersionControl nvc, LocalACL lacl, BranchDeleter bd)
     {
-        _cm = cm;
+        _vu = vu;
         _tm = tm;
         _ds = ds;
         _nvc = nvc;
@@ -73,7 +73,7 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
             _nvc.addLocalVersion_(kMaster, vB_M, t);
             // no need to call _cd.updateMaxTicks() here as atomicWrite below
             // calls it any way
-            _cm.atomicWrite_(kMaster, t);
+            _vu.update_(kMaster, t);
             _bd.deleteBranch_(kBranch, vBranch, true, t);
             t.commit_();
         } finally {

@@ -39,7 +39,7 @@ public class TestMightCreate_DiffFIDSamePathDiffType extends AbstractTestMightCr
     {
         mightCreate("f2", null);
 
-        verifyZeroInteractions(cm);
+        verifyZeroInteractions(vu);
 
         verify(om).moveInSameStore_(soidF2, OID.ROOT, "f2 (4)", PhysicalOp.MAP, false, true, t);
     }
@@ -49,7 +49,7 @@ public class TestMightCreate_DiffFIDSamePathDiffType extends AbstractTestMightCr
     {
         mightCreate("f2", null);
 
-        verifyZeroInteractions(cm);
+        verifyZeroInteractions(vu);
 
         verify(oc).create_(eq(Type.FILE), any(SOID.class), eq("f2"), eq(PhysicalOp.MAP), eq(t));
     }

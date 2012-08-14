@@ -24,7 +24,7 @@ public class TestMightCreate_NoMatching extends AbstractTestMightCreate
     {
         mightCreate("f2 (3)", null);
 
-        verifyZeroInteractions(cm, om);
+        verifyZeroInteractions(vu, om);
 
         verify(oc).create_(eq(Type.FILE), any(SOID.class), eq("f2 (3)"), eq(PhysicalOp.MAP), eq(t));
     }

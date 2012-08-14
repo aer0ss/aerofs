@@ -59,7 +59,7 @@ public class ReceiveAndApplyUpdate
     private PrefixVersionControl _pvc;
     private NativeVersionControl _nvc;
     private Hasher _hasher;
-    private ComMonitor _cm;
+    private VersionUpdater _vu;
     private ObjectCreator _oc;
     private ObjectMover _om;
     private IPhysicalStorage _ps;
@@ -77,7 +77,7 @@ public class ReceiveAndApplyUpdate
 
     @Inject
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
-            Hasher hasher, ComMonitor cm, ObjectCreator oc, ObjectMover om,
+            Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
             IPhysicalStorage ps, DownloadState dlState, GetHash pgh, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
             MapSIndex2Store sidx2s, MapAlias2Target alias2target,
@@ -87,7 +87,7 @@ public class ReceiveAndApplyUpdate
         _pvc = pvc;
         _nvc = nvc;
         _hasher = hasher;
-        _cm = cm;
+        _vu = vu;
         _oc = oc;
         _om = om;
         _ps = ps;
@@ -780,7 +780,7 @@ public class ReceiveAndApplyUpdate
         // 2) the object in the msg was renamed to resolve a local name conflict
         if (res._incrementVersion || res._conflictRename) {
             assert k.cid().equals(CID.META);
-            _cm.atomicWrite_(k, t);
+            _vu.update_(k, t);
         }
     }
 }

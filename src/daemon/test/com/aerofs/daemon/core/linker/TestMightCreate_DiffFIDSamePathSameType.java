@@ -37,7 +37,7 @@ public class TestMightCreate_DiffFIDSamePathSameType extends AbstractTestMightCr
     {
         mightCreate("f1", "f1");
 
-        verifyZeroInteractions(cm, om, oc);
+        verifyZeroInteractions(vu, om, oc);
         FID fidPhysical = dr.getFID(Util.join(pRoot, "f1"));
         verify(ds).setFID_(soidF1, fidPhysical, t);
     }
@@ -51,6 +51,6 @@ public class TestMightCreate_DiffFIDSamePathSameType extends AbstractTestMightCr
 
         SOID soidF5 = ds.resolveNullable_(new Path("f5"));
         verify(ds).createCA_(soidF5, KIndex.MASTER, t);
-        verify(cm).atomicWrite_(new SOCKID(soidF5, CID.CONTENT, KIndex.MASTER), t);
+        verify(vu).update_(new SOCKID(soidF5, CID.CONTENT, KIndex.MASTER), t);
     }
 }
