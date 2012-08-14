@@ -1,0 +1,297 @@
+#!/bin/bash -e -u
+
+###############################################################################
+#
+# error codes
+#
+###############################################################################
+
+readonly ERRBADARGS=17
+readonly ERRBADMODE=18
+
+###############################################################################
+#
+# usage and variable definitions
+#
+###############################################################################
+
+function usage() {
+    echo "usage: $0 [build_mode] [release_version] [aerofs_root] [release_dir] [passphrase]"
+    echo " "
+    echo "[build_mode]: STAGING or PROD"
+    echo "[release_version]: release version (for example: 0.1.0)"
+    echo "[aerofs_root]: root of the aerofs git tree (usually ~/repos/aerofs)"
+    echo "[release_dir]: path into which all release jars and libs are placed (usually ~/repos/aerofs/out.ant/release)"
+    echo "[passphrase]: release password"
+    echo " "
+    echo "example: $0 STAGING 0.1.0 /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant/release password"
+}
+
+function to_lower() {
+     echo "$1" | tr '[A-Z]' '[a-z]'
+}
+
+if [[ x"${1:-}" == x || x"${2:-}" == x || x"${3:-}" == x || x"${4:-}" == x || x"${5:-}" == x ]] ; then
+    usage
+    exit $ERRBADARGS
+fi
+
+# build mode: only PROD or STAGING allowed
+if [[ "$1" != "PROD" && "$1" != "STAGING" ]]; then
+    echo "Invalid build mode $1.  Expected STAGING or PROD."
+    exit $ERRBADMODE
+fi
+
+readonly MODE="$1"
+readonly LOWERCASE_MODE=$( to_lower "$1" )
+
+readonly RELEASE_VERSION="$2"
+readonly LOCAL_AEROFS_GIT_ROOT="$3"
+readonly LOCAL_RELEASE_DIR="$4"
+readonly PASSPHRASE="$5"
+
+# gets the directory this script is in, no matter where it's called from
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+readonly RELEASE_SERVER_LOGIN="release-${LOWERCASE_MODE}@b.arrowfs.org"
+readonly RELEASE_SERVER_SHELL='bash -s -e -u'
+readonly RELEASE_FILES_DIR="/home/release-${LOWERCASE_MODE}"
+readonly RELEASE_UNPACK_DIR=aerofs.release/${LOWERCASE_MODE} # directory on the server with the unpacked aerofs jars, libs, etc. for this release # FIXME: (AG) see if I can remove this
+readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
+readonly MAP_SERVER_LOGIN="maps@sv.aerofs.com"
+readonly MAP_FILES_DIR="/maps"
+
+readonly RELEASE_NAME=aerofs-$RELEASE_VERSION-${LOWERCASE_MODE}
+readonly RELEASE_ZIP_FILENAME=$RELEASE_NAME.zip
+readonly RELEASE_MAP_FILENAME=$RELEASE_NAME.map
+
+###############################################################################
+#
+# make and upload installer functions
+#
+###############################################################################
+
+# FIXME (AG) : the linux tgz and deb can both be built locally on OSX
+
+function make_and_upload_release_zip_and_map_to_release_server() {
+    local local_TEMP_RELEASE_ZIP_FILENAME="$( mktemp -t aerofs_temp_zip )".zip
+
+    # FIXME (AG): I don't want to be in the $LOCAL_RELEASE_DIR in order to zip these files (prefer not to have to cd anywhere)
+    # zip -9rqy "$local_TEMP_RELEASE_ZIP_FILENAME" "${LOCAL_RELEASE_DIR}" -i {aerofs,aerofs.osx,aerofs.win,aerofs.linux32,aerofs.linux64,aerofs.linux,aerofs.linux.inst}/*
+
+    echo ">> make release zip temp:$local_TEMP_RELEASE_ZIP_FILENAME final:$RELEASE_ZIP_FILENAME"
+    pushd $LOCAL_RELEASE_DIR > /dev/null
+    trap "popd > /dev/null || true; rm $local_TEMP_RELEASE_ZIP_FILENAME" EXIT
+    zip -9rqy "$local_TEMP_RELEASE_ZIP_FILENAME" {aerofs,aerofs.osx,aerofs.win,aerofs.linux32,aerofs.linux64,aerofs.linux,aerofs.linux.inst}
+
+    echo ">> copy release zip to local release directory"
+    cp "$local_TEMP_RELEASE_ZIP_FILENAME" "${LOCAL_RELEASE_DIR}/$RELEASE_ZIP_FILENAME"
+
+    echo ">> upload release zip and map"
+    kscp "$local_TEMP_RELEASE_ZIP_FILENAME" $RELEASE_SERVER_LOGIN:~/$RELEASE_ZIP_FILENAME
+    kscp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:$MAP_FILES_DIR/$RELEASE_MAP_FILENAME
+}
+
+function unpack_release_zip_on_release_server() {
+    echo ">> unzip release zip on release server"
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        rm -rf ~/$RELEASE_UNPACK_DIR
+        mkdir -p ~/$RELEASE_UNPACK_DIR
+        unzip -qo -d $RELEASE_UNPACK_DIR ~/$RELEASE_ZIP_FILENAME
+ENDCMDS
+}
+
+function make_linux_installer_deb_on_release_server() {
+    # FIXME (AG): I don't want to have to kscp make_deb to the remote machine
+    echo ">> make arch independent installer deb on release server"
+    kscp "$SCRIPT_DIR/make_deb" $RELEASE_SERVER_LOGIN:~/
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        chmod a+x ~/make_deb
+        ~/make_deb $MODE $RELEASE_VERSION ~/$RELEASE_UNPACK_DIR $INSTALLERS_DOWNLOAD_DIR/aerofs-installer.deb
+ENDCMDS
+}
+
+function make_linux_installer_tgz_on_release_server() {
+    echo ">> make arch independent installer tgz on release server"
+    local local_LINUX_INSTALLER_TGZ_FILENAME=aerofs-installer.tgz
+    kssh $RELEASE_SERVER_LOGIN RELEASE_UNPACK_DIR="$RELEASE_UNPACK_DIR" LOWERCASE_MODE="$LOWERCASE_MODE" local_LINUX_INSTALLER_TGZ_FILENAME="$local_LINUX_INSTALLER_TGZ_FILENAME" INSTALLERS_DOWNLOAD_DIR="$INSTALLERS_DOWNLOAD_DIR" $RELEASE_SERVER_SHELL << 'ENDCMDS'
+        readonly INSTALLER_TGZ_TEMP_DIR=$( mktemp -d -t temp_tgz_${LOWERCASE_MODE}_XXXXXX )
+        trap "rm -r $INSTALLER_TGZ_TEMP_DIR" EXIT
+        mkdir -p $INSTALLER_TGZ_TEMP_DIR/aerofs
+        cp -rf $RELEASE_UNPACK_DIR/aerofs.linux.inst/* $INSTALLER_TGZ_TEMP_DIR/aerofs
+        tar -C $INSTALLER_TGZ_TEMP_DIR -zcf $INSTALLER_TGZ_TEMP_DIR/$local_LINUX_INSTALLER_TGZ_FILENAME aerofs
+        cp $INSTALLER_TGZ_TEMP_DIR/$local_LINUX_INSTALLER_TGZ_FILENAME $INSTALLERS_DOWNLOAD_DIR
+ENDCMDS
+}
+
+#
+# usage:
+#   make_linux_arch_dependent_tgz_on_release_server [bits]
+#
+# parameters:
+#   [bits]: 32|64 (all other values treated as errors)
+#
+# example:
+#   make_linux_arch_dependent_tgz_on_release_server 32
+#
+function make_linux_arch_dependent_tgz_on_release_server() {
+    if [ $# -ne 1 ] || [[ "x$1" != "x32" && "x$1" != "x64" ]]; then
+        echo "error: unsupported bits:$1" >&2
+        echo "usage: make_linux_arch_dependent_tgz_on_release_server [32|64]" >&2
+        exit $ERRBADARGS
+    fi
+
+    local local_BITS="$1"
+    local local_TGZ_SUFFIX=""
+    case "$local_BITS" in
+    "32")
+        local_TGZ_SUFFIX="x86"
+        ;;
+    "64")
+        local_TGZ_SUFFIX="x86_64"
+        ;;
+    *)
+        echo "error: unsupported bits:$local_BITS" >&2
+        ;;
+    esac
+
+    echo ">> make arch dependent tgz (${local_BITS}-bits) on release server"
+    local local_VERSIONED_ARCH_TGZ_FILENAME=aerofs-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
+    local local_UNVERSIONED_ARCH_TGZ_FILENAME=aerofs-${local_TGZ_SUFFIX}.tgz
+    kssh $RELEASE_SERVER_LOGIN RELEASE_UNPACK_DIR="$RELEASE_UNPACK_DIR" LOWERCASE_MODE="$LOWERCASE_MODE" INSTALLERS_DOWNLOAD_DIR="$INSTALLERS_DOWNLOAD_DIR" local_BITS="$local_BITS" local_VERSIONED_ARCH_TGZ_FILENAME="$local_VERSIONED_ARCH_TGZ_FILENAME" local_UNVERSIONED_ARCH_TGZ_FILENAME="$local_UNVERSIONED_ARCH_TGZ_FILENAME" $RELEASE_SERVER_SHELL << 'ENDCMDS'
+        readonly ARCH_TGZ_TEMP_DIR=$( mktemp -d -t temp_arch_tgz_${LOWERCASE_MODE}_XXXXXX )
+        trap "rm -r $ARCH_TGZ_TEMP_DIR" EXIT
+        mkdir -p $ARCH_TGZ_TEMP_DIR/aerofs
+        cp -rf $RELEASE_UNPACK_DIR/aerofs/* $ARCH_TGZ_TEMP_DIR/aerofs
+        cp -rf $RELEASE_UNPACK_DIR/aerofs.linux/* $ARCH_TGZ_TEMP_DIR/aerofs
+        cp -rf $RELEASE_UNPACK_DIR/aerofs.linux${local_BITS}/* $ARCH_TGZ_TEMP_DIR/aerofs
+        tar -C $ARCH_TGZ_TEMP_DIR -zcf $ARCH_TGZ_TEMP_DIR/$local_VERSIONED_ARCH_TGZ_FILENAME aerofs
+        cp -rf $ARCH_TGZ_TEMP_DIR/$local_VERSIONED_ARCH_TGZ_FILENAME $INSTALLERS_DOWNLOAD_DIR
+        cp -rf $ARCH_TGZ_TEMP_DIR/$local_VERSIONED_ARCH_TGZ_FILENAME $INSTALLERS_DOWNLOAD_DIR/$local_UNVERSIONED_ARCH_TGZ_FILENAME
+ENDCMDS
+}
+
+function make_windows_exe_and_patches_on_release_server() {
+    echo ">> make windows exe and patches on release server"
+
+    local local_NSIS_DIR=win_installer
+    local local_PATCHER=$RELEASE_FILES_DIR/$local_NSIS_DIR/patcher
+    local local_PACKAGER=$RELEASE_FILES_DIR/$local_NSIS_DIR/packager
+
+    readonly local_NSIS_DIR
+    readonly local_PATCHER
+    readonly local_PACKAGER
+
+    # deploy NSIS scripts. knock ports first to allow rsync to go through
+    kssh $RELEASE_SERVER_LOGIN 'echo > /dev/null'
+    rsync --archive --compress --relative --rsh ssh $LOCAL_AEROFS_GIT_ROOT/tools/./$local_NSIS_DIR $RELEASE_SERVER_LOGIN:$RELEASE_FILES_DIR
+
+    # now make the installer and the patches
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        rm -rf $local_PACKAGER/aerofs*
+        cd $local_PACKAGER
+        unzip -qo ~/$RELEASE_ZIP_FILENAME
+        cp -r $local_PACKAGER/aerofs.win/* $local_PACKAGER/aerofs
+        chmod -R a+rx $local_PACKAGER/aerofs*
+        makensis -V1 -DAEROFS_SETUP_FOLDER=$INSTALLERS_DOWNLOAD_DIR -DAEROFS_VERSION=$RELEASE_VERSION $local_PACKAGER/setup.nsi
+
+        export PASSPHRASE="$PASSPHRASE"
+        printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \
+            -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll \
+            -tr 10 -n "AeroFS" -i "http://www.aerofs.com" $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall-$RELEASE_VERSION.exe > /dev/null
+
+        chmod a+r $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall-$RELEASE_VERSION.exe
+        rm -f $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall.exe
+        cp $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall-$RELEASE_VERSION.exe $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall.exe
+        chmod a+r $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall.exe
+
+        # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
+        # we also upload the install file for whitelisting, as some versions of the antivirus flag the
+        # installer as a potential virus
+        if [ $MODE == "PROD" ]; then
+            lftp -e 'mirror -R $local_PACKAGER/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+            lftp -e 'put $INSTALLERS_DOWNLOAD_DIR/AeroFSInstall.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+        fi
+
+        bash $local_PATCHER/createPatches.sh ~/ $local_PATCHER $RELEASE_VERSION ${LOWERCASE_MODE}
+        rm $INSTALLERS_DOWNLOAD_DIR/patch-* || true
+        mv $local_PATCHER/patch-* $INSTALLERS_DOWNLOAD_DIR || true
+        chmod a+r $INSTALLERS_DOWNLOAD_DIR/patch-* || true
+ENDCMDS
+}
+
+function make_and_upload_mac_osx_dmg_and_zip_to_release_server() {
+    local local_LOCAL_RELEASE_ZIP_FILENAME=aerofs-${RELEASE_VERSION}-${LOWERCASE_MODE}.zip
+    local local_TEMPLATE_DMG_FILENAME="osx.dmg.template"
+    local local_TEMPLATE_APP_FILENAME="osx.app.template"
+    local local_LOCAL_MAC_APP_DIR=Release/AeroFS.app/Contents/Resources/Java
+    local local_AEROFS_INSTALLER_VOLUME_DIR="/Volumes/AeroFS Installer"
+    local local_VERSIONED_MAC_ZIP_FILENAME="aerofs-osx-${RELEASE_VERSION}.zip"
+    local local_VERSIONED_MAC_DMG_FILENAME="AeroFSInstall-${RELEASE_VERSION}.dmg"
+    local local_UNVERSIONED_MAC_DMG_FILENAME="AeroFSInstall.dmg"
+
+    readonly local_LOCAL_RELEASE_ZIP_FILENAME
+    readonly local_TEMPLATE_DMG_FILENAME
+    readonly local_TEMPLATE_APP_FILENAME
+    readonly local_LOCAL_MAC_APP_DIR
+    readonly local_AEROFS_INSTALLER_VOLUME_DIR
+    readonly local_VERSIONED_MAC_ZIP_FILENAME
+    readonly local_VERSIONED_MAC_DMG_FILENAME
+    readonly local_UNVERSIONED_MAC_DMG_FILENAME
+
+    echo ">> copy aerofs release and resources to dmg tmp dir"
+    local local_DMG_TEMP_DIR="$( mktemp -d -t dmg )"
+    trap "rm -r \"$local_DMG_TEMP_DIR\"" EXIT # FIXME (AG): hmm...what if dir not created?
+    mkdir $local_DMG_TEMP_DIR/Release
+    cp $LOCAL_RELEASE_DIR/$local_LOCAL_RELEASE_ZIP_FILENAME $local_DMG_TEMP_DIR/
+    cp -R $SCRIPT_DIR/$local_TEMPLATE_APP_FILENAME $local_DMG_TEMP_DIR/Release/AeroFS.app
+    cp $SCRIPT_DIR/$local_TEMPLATE_DMG_FILENAME $local_DMG_TEMP_DIR/AeroFSInstall-temp.dmg
+
+    # FIXME (AG) : see if I can avoid changing directories
+    # FIXME (AG) : I don't pop in the trap
+    # from this point on, do all work in the dmg temp dir
+    pushd $local_DMG_TEMP_DIR > /dev/null
+
+    unzip -q $local_LOCAL_RELEASE_ZIP_FILENAME
+    rm -rf aerofs-* aerofs.win* aerofs.linux* aerofs.map
+    cp -R aerofs/* $local_LOCAL_MAC_APP_DIR
+    cp -R aerofs.osx/* $local_LOCAL_MAC_APP_DIR
+
+    if [ "$MODE" == "PROD" ]; then
+        echo ">> sign AeroFS.app for Mac App Store"
+        # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
+        # for information on signing frameworks
+        codesign -f -s "Air Computing, Inc." Release/AeroFS.app/Contents/Resources/Java/Growl.framework/Versions/A
+        codesign -f -s "Air Computing, Inc." Release/AeroFS.app/Contents/Resources/Java/AeroFSFinderExtension.osax
+        codesign -f -s "Air Computing, Inc." Release/AeroFS.app
+    fi
+
+    echo ">> make release zip and dmg"
+    zip -9rq $local_VERSIONED_MAC_ZIP_FILENAME Release/
+    hdiutil mount -quiet AeroFSInstall-temp.dmg
+    rm -rf "$local_AEROFS_INSTALLER_VOLUME_DIR"/AeroFS.app
+    cp -R Release/AeroFS.app "$local_AEROFS_INSTALLER_VOLUME_DIR"
+    hdiutil eject -quiet "$local_AEROFS_INSTALLER_VOLUME_DIR"
+    hdiutil convert -quiet -format UDBZ -o $local_VERSIONED_MAC_DMG_FILENAME AeroFSInstall-temp.dmg
+
+    echo ">> upload release zip and dmg"
+    kscp $local_VERSIONED_MAC_ZIP_FILENAME $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR
+    kscp $local_VERSIONED_MAC_DMG_FILENAME $RELEASE_SERVER_LOGIN:$INSTALLERS_DOWNLOAD_DIR
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        cd $INSTALLERS_DOWNLOAD_DIR
+        cp $local_VERSIONED_MAC_DMG_FILENAME $local_UNVERSIONED_MAC_DMG_FILENAME
+ENDCMDS
+
+    popd > /dev/null || true
+}
+
+make_and_upload_release_zip_and_map_to_release_server
+unpack_release_zip_on_release_server
+make_linux_installer_deb_on_release_server
+make_linux_installer_tgz_on_release_server
+make_linux_arch_dependent_tgz_on_release_server 32
+make_linux_arch_dependent_tgz_on_release_server 64
+make_windows_exe_and_patches_on_release_server
+make_and_upload_mac_osx_dmg_and_zip_to_release_server
+
+exit 0

@@ -1,70 +1,173 @@
-#!/bin/sh
+#!/bin/bash -e -u
 
-set -e -u
+###############################################################################
+#
+# error codes
+#
+###############################################################################
 
-#################################
-# arguments
+readonly ERRBADARGS=17
+readonly ERRBADMODE=18
+readonly ERRBADPASS=19
 
-if [ $# -lt 1 ] || [ $# -gt 2 ]; then
-    echo "usage: $0 [build_mode] [passphrase]"
-    echo "[build mode]: STAGING or PROD"
-    echo "[passphrase]: passphrase for pushing"
-    echo
-    echo "example: $0 STAGING"
-    echo "example: $0 PROD [passphrase]"
-    exit 2
+###############################################################################
+#
+# usage, arguments and parameters
+#
+###############################################################################
+
+function usage() {
+    echo "usage: $0 [build_mode] [passphrase]" >&2
+    echo " " >&2
+    echo "[build mode]: STAGING or PROD" >&2
+    echo "[passphrase]: release passphrase" >&2
+    echo " " >&2
+    echo "example: $0 STAGING" >&2
+    echo "example: $0 PROD [passphrase]" >&2
+}
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+    usage
+    exit $ERRBADARGS
 fi
 
-#################################
-# build mode
-
 MODE=""
+LOWERCASE_MODE=""
+INSTALLER_DOWNLOAD_BUCKET=""
+RELEASE_VERSION_URL=""
 if [ "$1" == "PROD" ]; then
-    MODE="PROD"
     echo
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo "!! DEPLOY PRODUCTION !!"
     echo "!!!!!!!!!!!!!!!!!!!!!!!"
     echo
+
+    MODE="PROD"
+    LOWERCASE_MODE="prod"
+    INSTALLER_DOWNLOAD_BUCKET='s3://nocache.client.aerofs.com'
+    RELEASE_VERSION_URL='https://nocache.client.aerofs.com/current.ver'
 elif [ "$1" == "STAGING" ]; then
     MODE="STAGING"
+    LOWERCASE_MODE="staging"
+    INSTALLER_DOWNLOAD_BUCKET='s3://nocache.client.stg.aerofs.com'
+    RELEASE_VERSION_URL='https://nocache.client.stg.aerofs.com/current.ver'
 else
-    echo "Invalid build mode $1.  Expected STAGING or PROD."
-    exit 2
+    echo "error: invalid build mode: $1 - expect STAGING or PROD" >&2
+    exit $ERRBADMODE
+fi
+readonly MODE
+readonly LOWERCASE_MODE
+readonly INSTALLER_DOWNLOAD_BUCKET
+readonly RELEASE_VERSION_URL
+
+if [[ x"${2:-}" == x && $MODE == "PROD" ]]; then
+    echo "error: passphrase required for production release" >&2
+    exit $ERRBADPASS
 fi
 
-#################################
-# set parameters
+readonly STAGING_PASSPHRASE=temp123
+readonly PASSPHRASE=${2:-$STAGING_PASSPHRASE}
 
-STAGING_PASSPHRASE=temp123
-
-# passphrase
-PASSPHRASE=${2:-} # if $2 doesn't exist, then "" is substituted
-if [ x"$PASSPHRASE" == x ]; then
-    if [ $MODE == "PROD" ]; then
-        echo "cannot use staging passphrase to push to prod"
-        exit 3
-    else
-        PASSPHRASE="$STAGING_PASSPHRASE"
-    fi
-fi
-
-# directories
+# FIXME (AG): have build and release directories passed in
 # see: http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
-AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )" # get the absolute path
-BUILD_DIR=$AEROFS_GIT_ROOT/out.ant
-RELEASE_DIR=$BUILD_DIR/release
+readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
+readonly AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )" # get the absolute path
+readonly BUILD_DIR=$AEROFS_GIT_ROOT/out.ant
+readonly RELEASE_DIR=$BUILD_DIR/release
 
-#################################
-# jar the aerofs code; create windows and linux installers and zip files
+readonly RELEASE_SERVER_LOGIN="release-${LOWERCASE_MODE}@b.arrowfs.org"
+readonly RELEASE_SERVER_VERSION_FILE="current.ver"
+readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
 
-./package $MODE "$AEROFS_GIT_ROOT" "$BUILD_DIR" "$RELEASE_DIR"
-./publish $MODE "$AEROFS_GIT_ROOT" "$RELEASE_DIR" "$PASSPHRASE"
+###############################################################################
+#
+# deployment step functions
+#
+###############################################################################
 
-#################################
-# create mac installer and zipfile
+function compute_next_release_version() {
+    local local_CURRENT_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- $RELEASE_VERSION_URL )"
+    local local_CURRENT_RELEASE_VERSION="$( echo $local_CURRENT_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+    local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
+    local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
+    local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 $SCRIPT_DIR/version )"
 
-cd osx/
-./package $MODE "$AEROFS_GIT_ROOT" "$RELEASE_DIR"
-./publish $MODE
+    readonly local_CURRENT_RELEASE_VERSION_STRING
+    readonly local_CURRENT_RELEASE_VERSION
+    readonly local_CURRENT_RELEASE_VERSION_MAJOR_MINOR
+    readonly local_CURRENT_RELEASE_VERSION_BUILD_NUMBR
+    readonly local_LOCAL_VERSION_MAJOR_MINOR
+
+    local local_BUILD_NUMBER=""
+    if [ $local_CURRENT_RELEASE_VERSION_MAJOR_MINOR == $local_LOCAL_VERSION_MAJOR_MINOR ]; then  #FIXME (AG): verify they've actually bumped the number
+        local_BUILD_NUMBER="$( expr $local_CURRENT_RELEASE_VERSION_BUILD_NUMBR \+ 1 )"
+    else
+        local_BUILD_NUMBER=1 # reset build number to 1
+    fi
+
+    readonly RELEASE_VERSION="$local_LOCAL_VERSION_MAJOR_MINOR.$local_BUILD_NUMBER"
+
+    echo '+-------------------------'
+    echo '|' $RELEASE_VERSION $MODE
+    echo '+-------------------------'
+    echo ">> version: current => [major.minor.build:$local_CURRENT_RELEASE_VERSION major.minor:$local_CURRENT_RELEASE_VERSION_MAJOR_MINOR build:$local_CURRENT_RELEASE_VERSION_BUILD_NUMBR] next => [major.minor.build:$RELEASE_VERSION]"
+}
+
+function build_and_upload_installers() {
+    echo ">> build and upload client installers"
+    "${SCRIPT_DIR}/make_release_resources" $MODE "$RELEASE_VERSION" "$AEROFS_GIT_ROOT" "$BUILD_DIR" "$RELEASE_DIR"
+    "${SCRIPT_DIR}/make_client_installers" $MODE "$RELEASE_VERSION" "$AEROFS_GIT_ROOT" "$RELEASE_DIR" "$PASSPHRASE"
+}
+
+function update_server_release_version() {
+    echo ">> update current.ver"
+    kssh $RELEASE_SERVER_LOGIN 'bash -s -e -u -x' << ENDCMDS
+        rm $INSTALLERS_DOWNLOAD_DIR/$RELEASE_SERVER_VERSION_FILE || true
+        echo Version=$RELEASE_VERSION > $INSTALLERS_DOWNLOAD_DIR/$RELEASE_SERVER_VERSION_FILE
+        chmod a+r $INSTALLERS_DOWNLOAD_DIR/$RELEASE_SERVER_VERSION_FILE
+        echo ' ' | mail -s "[$MODE] $RELEASE_VERSION deployed by $USER" team@aerofs.com
+ENDCMDS
+}
+
+function run_prepublish_tests() {
+    echo ">> run pre-publishing tests (safety net)"
+    "${SCRIPT_DIR}/exec_prepublish_checks" $MODE
+}
+
+##########
+# Note: to rollback a release for any reason:
+# log into release-prod@b.arrowfs.org
+# go to /data/prod-downloads
+# change current.ver
+# s3cmd -P --cf-invalidate sync /data/prod-downloads/current.ver s3://nocache.client.aerofs.com
+##########
+function publish() {
+    echo ">> publish all $MODE installers to cloudfront"
+    kssh $RELEASE_SERVER_LOGIN 'bash -s -e -u' << ENDCMDS
+        s3cmd -P --cf-invalidate sync /data/${LOWERCASE_MODE}-downloads/* $INSTALLER_DOWNLOAD_BUCKET > /dev/null
+ENDCMDS
+}
+
+function tag_release() {
+    if [ "$MODE" == "PROD" ]; then
+        echo ">> update release tag"
+        git tag -a "$RELEASE_VERSION" -m "$RELEASE_VERSION"
+        git push --tags
+    fi
+}
+
+###############################################################################
+#
+# run deployment steps
+#
+###############################################################################
+
+compute_next_release_version
+build_and_upload_installers
+update_server_release_version
+run_prepublish_tests
+publish
+tag_release
+
+echo ">> successfully deployed $MODE release version $RELEASE_VERSION"
+exit 0
