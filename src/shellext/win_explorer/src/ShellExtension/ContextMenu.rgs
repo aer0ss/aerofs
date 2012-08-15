@@ -15,6 +15,17 @@ HKCU
 				}
 			}
 
+			NoRemove AllFileSystemObjects
+			{
+				NoRemove ShellEx
+				{
+					NoRemove ContextMenuHandlers
+					{
+						ForceRemove %NAME% = s '%CLSID%'
+					}
+				}
+			}
+
 			NoRemove Directory
 			{
 				NoRemove ShellEx

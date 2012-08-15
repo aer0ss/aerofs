@@ -6,12 +6,19 @@
 @class ShellextNotification;
 @class FileStatusNotification;
 
+// flags are bitwise OR'ed
+typedef enum {
+    RootAnchor = 1 << 0,
+    Directory  = 1 << 1
+} PathFlag;
+
 @interface AeroFinderExt : NSObject {
 @private
     AeroSocket* socket;
     AeroOverlay* overlay;
     AeroContextMenu* contextMenu;
     NSString* rootAnchor;
+    NSString* userId;
 }
 
 @property (readonly) AeroOverlay* overlay;
@@ -22,9 +29,12 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 + (AeroFinderExt*)instance;
 - (id)init;
 - (void)reconnect:(UInt16)port;
-- (BOOL)shouldDisplayContextMenu:(NSString*)path;
+- (BOOL)isUnderRootAnchor:(NSString*)path;
+- (int)flagsForPath:(NSString*)path;
 - (BOOL)shouldModifyFinder;
+- (BOOL)shouldEnableTestingFeatures;
 - (void)showShareFolderDialog:(id)sender;
+- (void)showSyncStatusDialog:(id)sender;
 - (void)sendGreeting;
 - (void)parseNotification:(ShellextNotification*)notification;
 - (void)onFileStatus:(FileStatusNotification*)notification;

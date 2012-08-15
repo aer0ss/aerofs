@@ -6,7 +6,7 @@
 
 #define AEROFS_MENUITEM_MAGIC 0xAAEE00FF  // Used to tell if we already inserted the AeroFS item in a context menu,
                                           // because in certain circumstances, the Shell can call us twice on the same context menu.
-                                          // Why? Because we register our extension to handle several types of shell objects, 
+                                          // Why? Because we register our extension to handle several types of shell objects,
                                           // but some objects can belong to more than one type. We would get called once for each type we registered.
 
 // Initialization code should go here
@@ -32,6 +32,8 @@ HRESULT ContextMenu::Initialize(PCIDLIST_ABSOLUTE pidlFolder, IDataObject* pdtob
 {
 	// Do not show the AeroFS menu if we are not connected to the GUI
 	if (!m_instance->isConnectedToGUI()) {
+		// FIXME(huguesb): sometimes the first right click will fail because the shell ext is not
+		// yet connected...
 		return E_INVALIDARG;
 	}
 
@@ -40,7 +42,7 @@ HRESULT ContextMenu::Initialize(PCIDLIST_ABSOLUTE pidlFolder, IDataObject* pdtob
 		return E_INVALIDARG;
 	}
 
-	if (m_instance->shouldDisplayContextMenu(m_path)) {
+	if (m_instance->isUnderRootAnchor(m_path)) {
 		return S_OK;
 	}
 
@@ -108,9 +110,22 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 		}
 	}
 
+	int entryCount = 0;
 	HMENU submenu = CreatePopupMenu();
+	if (m_instance->shouldEnableTestingFeatures()) {
+		AppendMenu(submenu, MF_STRING, idCmdFirst + SyncStatusMenuId, L"Sync status...");
+		++entryCount;
+	}
+	int pflags = m_instance->pathFlags(m_path);
+	if ((pflags & Directory) && !(pflags & RootAnchor)) {
+		AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share Folder...");
+		++entryCount;
+	}
 
-	AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share Folder...");
+	if (entryCount <= 0) {
+		DestroyMenu(submenu);
+		return MAKE_HRESULT(SEVERITY_SUCCESS, FACILITY_NULL, 0);
+	}
 
 	MENUITEMINFO mSep = {};
 	mSep.cbSize = sizeof(MENUITEMINFO);
@@ -146,6 +161,9 @@ HRESULT ContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO pInfo)
 
 	switch ((MenuId) LOWORD(pInfo->lpVerb)) {
 
+	case SyncStatusMenuId:
+		m_instance->showSyncStatusDialog(m_path);
+		return S_OK;
 	case ShareFolderMenuId:
 		m_instance->showShareFolderDialog(m_path);
 		return S_OK;
