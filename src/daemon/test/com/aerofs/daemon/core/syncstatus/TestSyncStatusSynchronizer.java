@@ -40,7 +40,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.cfg.CfgBuildType;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
@@ -98,7 +98,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     @Mock MapAlias2Target alias2target;
     @Mock IStores stores;
     @Mock ActivityLog al;
-    @Mock CfgBuildType buildType;
+    @Mock CfgLocalUser localUser;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
@@ -137,7 +137,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     {
         // Create synchronizer with mix of mocks and real objects operating on mock DB
         sync = new SyncStatusSynchronizer(q, sched, tc, tm, lsync, ds, ssf, sm, sm,
-                sidx2dbm, al, aldb, nvc, buildType);
+                sidx2dbm, al, aldb, nvc, localUser);
     }
 
     private SOID resolve(String s) throws Exception
@@ -174,7 +174,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         o_a233 = resolve("d2/a2.3/a2.3.3");
 
         // TODO(huguesb): remove this hack when sync stat is enabled on prod
-        when(buildType.isStaging()).thenReturn(true);
+        when(localUser.get()).thenReturn("someone@aerofs.com");
 
         when(nvc.getAllLocalVersions_(any(SOCID.class))).thenReturn(new Version());
 

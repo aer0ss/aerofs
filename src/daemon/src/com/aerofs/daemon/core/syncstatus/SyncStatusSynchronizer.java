@@ -22,7 +22,7 @@ import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.BitVector;
-import com.aerofs.lib.cfg.CfgBuildType;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
@@ -98,7 +98,7 @@ public class SyncStatusSynchronizer
     private final DirectoryService _ds;
     private final ExponentialRetry _er;
 
-    private final CfgBuildType _bt;
+    private final boolean _enable;
 
     private SyncStatBlockingClient _c;
 
@@ -107,7 +107,7 @@ public class SyncStatusSynchronizer
             LocalSyncStatus lsync, DirectoryService ds, SyncStatBlockingClient.Factory ssf,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, MapSIndex2DeviceBitMap sidx2dbm,
             ActivityLog al, IActivityLogDatabase aldb, NativeVersionControl nvc,
-            CfgBuildType buildType)
+            CfgLocalUser localUser)
     {
         _c = null;
         _q = q;
@@ -122,7 +122,7 @@ public class SyncStatusSynchronizer
         _sid2sidx = sid2sidx;
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
-        _bt = buildType;
+        _enable = localUser.get().endsWith("@aerofs.com");
 
         al.addListener_(new IActivityLogListener()
         {
@@ -161,8 +161,8 @@ public class SyncStatusSynchronizer
      */
     void notificationReceived_(PBSyncStatNotification notification) throws SQLException
     {
-        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
-        if (!_bt.isStaging()) return;
+        // TODO (huguesb): remove check when ready for all users
+        if (!_enable) return;
 
         long localEpoch = _lsync.getPullEpoch_();
         long serverEpoch = notification.getSsEpoch();
@@ -239,8 +239,8 @@ public class SyncStatusSynchronizer
      */
     private void bootstrap_() throws Exception
     {
-        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
-        if (!_bt.isStaging()) return;
+        // TODO (huguesb): remove check when ready for all users
+        if (!_enable) return;
 
         // batch DB reads
         List<SOID> batch = getBootstrapBatch_();
@@ -334,8 +334,8 @@ public class SyncStatusSynchronizer
      */
     private void pullSyncStatus_() throws Exception
     {
-        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
-        if (!_bt.isStaging()) return;
+        // TODO (huguesb): remove check when ready for all users
+        if (!_enable) return;
 
         boolean more = true;
 
@@ -457,8 +457,8 @@ public class SyncStatusSynchronizer
     private long _scanSeq = 0;
     private void scanActivityLog_()
     {
-        // TODO (huguesb): change check to aerofs.com domain once syncstat prod server is up
-        if (!_bt.isStaging()) return;
+        // TODO (huguesb): remove check when ready for all users
+        if (!_enable) return;
 
         // to avoid unbounded queueing of failing scans when connection to server is lost, each call
         // added to the exp retry is assigned a sequence number
