@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
 import java.sql.SQLException;
 
 public class MightDelete
@@ -43,7 +44,7 @@ public class MightDelete
     /**
      * @return true if the object should not be added to the deletion buffer in any case
      */
-    public static boolean shouldNotDelete(OA oa)
+    public static boolean shouldNotDelete(@Nonnull OA oa)
     {
         if (oa.isExpelled()) return true;
 

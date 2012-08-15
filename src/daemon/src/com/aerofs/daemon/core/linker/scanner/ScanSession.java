@@ -280,7 +280,7 @@ class ScanSession
         if (soidParent != null) {
             for (OID oid : _f._ds.getChildren_(soidParent)) {
                 SOID soid = new SOID(soidParent.sidx(), oid);
-                OA oa = _f._ds.getOANullable_(soid);
+                OA oa = _f._ds.getOA_(soid);
                 if (!MightDelete.shouldNotDelete(oa)) _holder.hold_(soid);
             }
         }

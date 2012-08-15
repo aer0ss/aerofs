@@ -36,7 +36,7 @@ public class HdSetAttr extends AbstractHdIMC<EISetAttr>
     {
         SOID soid = _lacl.checkThrows_(ev.user(), ev._path, Role.EDITOR);
 
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         boolean flg = ev._flags != null && oa.flags() != ev._flags;
 
         if (!flg) return;

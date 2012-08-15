@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.Path;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 public class HdListConflicts extends AbstractHdIMC<EIListConflicts>
@@ -37,11 +38,11 @@ public class HdListConflicts extends AbstractHdIMC<EIListConflicts>
         try {
             while (iter.next_()) {
                 SOKID sokid = iter.get_();
-                OA oa = _ds.getOANullable_(sokid.soid());
+                OA oa = _ds.getOA_(sokid.soid());
                 Path path = _ds.resolve_(oa);
 
                 // figure editors. TODO
-                HashSet<String> editors = new HashSet<String>();
+                HashSet<String> editors = Sets.newHashSet();
 //                Version vMaster = _cd.getLocalVersion_(new SOCKID(sokid.soid(), CID.CONTENT));
 //                Version v = _cd.getLocalVersion_(new SOCKID(sokid, CID.CONTENT));
 //                Version vDiff = v.sub_(vMaster);

@@ -517,7 +517,7 @@ public class GetVersCall
             throws SQLException, ExAborted
     {
         // The alias object socid should have no oa
-        assert _ds.getOANullable_(socidToDelete.soid()) == null : socidToDelete + " " + loggedData;
+        assert !_ds.hasOA_(socidToDelete.soid()) : socidToDelete + " " + loggedData;
 
         Version vToDelete = new Version();
         vToDelete.set_(did, tick);

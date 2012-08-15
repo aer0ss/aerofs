@@ -12,6 +12,8 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 
+import javax.annotation.Nullable;
+
 /**
  * Object Attribute
  */
@@ -197,7 +199,7 @@ public class OA
     /**
      * @return may be null if it's not a linked file or it's not present
      */
-    public FID fid()
+    public @Nullable FID fid()
     {
         if (isFile()) {
             assert (_fid == null) == cas().isEmpty() : soid() + " " + _fid + " " + cas();

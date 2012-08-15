@@ -36,6 +36,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SID;
 
+import javax.annotation.Nonnull;
+
 /**
  * This class implements cross-store movement of file contents and child stores.
  * ImmigrantDetector avoids these contents and child stores from being deleted and
@@ -164,7 +166,7 @@ public class ImmigrantDetector
      * @param oaTo the OA of the destination object
      * @return true if immigration has been performed
      */
-    public boolean detectAndPerformImmigration_(OA oaTo, PhysicalOp op, Trans t)
+    public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
             throws Exception
     {
         // assert for assumption 1) above

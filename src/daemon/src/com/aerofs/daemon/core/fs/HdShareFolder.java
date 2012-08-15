@@ -206,7 +206,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         SOID soidToRoot = new SOID(sidxTo, OID.ROOT);
         for (OID oidChild : _ds.getChildren_(soid)) {
             SOID soidChild = new SOID(soid.sidx(), oidChild);
-            OA oaChild = _ds.getOANullable_(soidChild);
+            OA oaChild = _ds.getOA_(soidChild);
             _imc.createImmigrantRecursively_(soidChild, soidToRoot, oaChild.name(), MAP, t);
         }
 

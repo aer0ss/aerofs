@@ -153,7 +153,7 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
      */
     private Map<DID, PBSyncStatus.Status> aggregateSyncStatusRecursively_(SOID soid)
             throws Exception {
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         Map<DID, PBSyncStatus.Status> aggregated;
         if (oa.isAnchor()) {
             aggregated = _lsync.getSyncStatusMap_(soid);

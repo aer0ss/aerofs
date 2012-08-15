@@ -44,7 +44,7 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
         h = delBuffer.newHolder();
         when(ds.hasOA_(any(SOID.class))).thenReturn(true);
         when(ds.hasAliasedOA_(any(SOID.class))).thenReturn(true);
-        when(ds.getOANullable_(any(SOID.class))).thenReturn(oa);
+        when(ds.getOA_(any(SOID.class))).thenReturn(oa);
         when(oa.name()).thenReturn("name");
     }
 

@@ -285,7 +285,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                         assert _ds.hasAliasedOA_(soid);
                     } else {
                         l.warn("delete " + soid + " " + PathCombo.toLogString(
-                                _ds.getOANullable_(soid).name()));
+                                _ds.getOA_(soid).name()));
                         _od.delete_(soid, PhysicalOp.MAP, null, t);
                         deletedSOIDs.add(soid);
                     }
