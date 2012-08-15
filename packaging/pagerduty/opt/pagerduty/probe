@@ -22,6 +22,7 @@ for i in `seq 1 $TRIES`; do
         TITLE="$PROBE returned $RET: $ARGS"
         echo sending alert \"$TITLE\"
         echo " " | mail $SERVICE@aerofs.pagerduty.com -s "$TITLE"
+        echo " " | mail team@aerofs.com -s "PagerDuty Probe Failed: $TITLE"
         exit 1
     fi
 done
