@@ -308,6 +308,7 @@ public class Aliasing
                 // and not for content of alias object. Hence KML version for content can be
                 // safely moved from alias to target.
 
+                // earlier code asserts _ds.hasOA_(target)
                 OA oaTarget = _ds.getOA_(target);
 
                 // Move KML version of the alias content to the target, if it's a file. Non-files
