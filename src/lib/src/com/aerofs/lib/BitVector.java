@@ -1,6 +1,7 @@
 package com.aerofs.lib;
 
 import java.util.Arrays;
+import java.util.BitSet;
 
 /**
  * A simple bitvector implementation that grows as needed
@@ -8,6 +9,7 @@ import java.util.Arrays;
  */
 public class BitVector
 {
+    final int BITS_PER_BYTE = 8;
 
     private int _size;
     private byte[] _d;
@@ -19,7 +21,6 @@ public class BitVector
      */
     private int byteCount(int size)
     {
-        final int BITS_PER_BYTE = 8;
         // add BITS_PER_BYTE-1 to the input for proper upwards rounding
         return (size + BITS_PER_BYTE - 1) / BITS_PER_BYTE;
     }
@@ -135,18 +136,9 @@ public class BitVector
         if (!(o instanceof BitVector))
             return false;
         BitVector bv = (BitVector)o;
-        int ms = Math.min(_size, bv._size);
-        int mbc = byteCount(ms);
-        // compare common bits
-        for (int i = 0; i < mbc; ++i)
-            if (_d[i] != bv._d[i])
-                return false;
-        // ensure trailing bits are reset
-        for (int i = mbc; i < _d.length; ++i)
-            if (_d[i] != 0)
-                return false;
-        for (int i = mbc; i < bv._d.length; ++i)
-            if (bv._d[i] != 0)
+        int ml = Math.max(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i)
+            if (getByte(i) != bv.getByte(i))
                 return false;
         return true;
     }
@@ -188,7 +180,7 @@ public class BitVector
     {
         assert idx >= 0;
         if (idx >= _size) return defaultValue;
-        return (_d[idx / 8] & (1 << (idx % 8))) != 0;
+        return (_d[idx / BITS_PER_BYTE] & (1 << (idx % BITS_PER_BYTE))) != 0;
     }
 
     /**
@@ -212,7 +204,7 @@ public class BitVector
     {
         assert idx >= 0;
         if (idx >= _size) grow(idx + 1);
-        _d[idx / 8] |= (1 << (idx % 8));
+        _d[idx / BITS_PER_BYTE] |= (1 << (idx % BITS_PER_BYTE));
     }
 
     /**
@@ -223,7 +215,7 @@ public class BitVector
     {
         assert idx >= 0;
         if (idx >= _size) grow(idx + 1);
-        _d[idx / 8] ^= (1 << (idx % 8));
+        _d[idx / BITS_PER_BYTE] ^= (1 << (idx % BITS_PER_BYTE));
     }
 
     /**
@@ -234,6 +226,132 @@ public class BitVector
     {
         assert idx >= 0;
         if (idx >= _size) return;
-        _d[idx / 8] &= ~(1 << (idx % 8));
+        _d[idx / BITS_PER_BYTE] &= ~(1 << (idx % BITS_PER_BYTE));
+    }
+
+    /**
+     * @return A bitwise or of two bitvectors
+     */
+    public BitVector or(BitVector bv)
+    {
+        BitVector r = new BitVector(Math.max(_size, bv._size), false);
+        int ml = Math.max(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i) {
+            r._d[i] = (byte)(getByte(i) | bv.getByte(i));
+        }
+        return r;
+    }
+
+    /**
+     * @return A bitwise and of two bitvectors
+     */
+    public BitVector and(BitVector bv)
+    {
+        BitVector r = new BitVector(Math.min(_size, bv._size), false);
+        int ml = Math.min(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i) {
+            r._d[i] = (byte)(getByte(i) & bv.getByte(i));
+        }
+        return r;
+    }
+
+    /**
+     * @return A bitwise xor of two bitvectors
+     */
+    public BitVector xor(BitVector bv)
+    {
+        BitVector r = new BitVector(Math.max(_size, bv._size), false);
+        int ml = Math.max(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i) {
+            r._d[i] = (byte)(getByte(i) ^ bv.getByte(i));
+        }
+        BitSet bs = new BitSet();
+        return r;
+    }
+
+    /**
+     * @return the index of the first set bit in the vector, or -1 if no bit is set
+     */
+    public int findFirst()
+    {
+        return findNext(0);
+    }
+
+    /**
+     * @param idx index from which to look for a set bit (inclusive)
+     * @return the index of the next set bit in the vector, or -1 if no bit is set
+     */
+    public int findNext(int idx)
+    {
+        int partial = (getByte(idx / BITS_PER_BYTE) & 0xff) >> (idx % BITS_PER_BYTE);
+        if (partial != 0) return idx + getFirstBit(partial);
+
+        for (int i = idx / BITS_PER_BYTE + 1; i < _d.length; ++i) {
+            int b = getByte(i) & 0xff;
+            if (b != 0) return i * BITS_PER_BYTE + getFirstBit(b);
+        }
+        return -1;
+    }
+
+    /**
+     * @return the index of the last set bit in the vector, or -1 if not bit is set
+     */
+    public int findLast()
+    {
+        return findPrevious(_size - 1);
+    }
+
+    /**
+     * @param idx index from which to look for a set bit (inclusive)
+     * @return the index of the previous set bit in the vector, or -1 if no bit is set
+     */
+    public int findPrevious(int idx)
+    {
+        int partial = (getByte(idx / BITS_PER_BYTE) & (0xff >> (BITS_PER_BYTE - 1 - (idx % BITS_PER_BYTE))));
+        if (partial != 0) return (idx & ~(BITS_PER_BYTE - 1)) + getLastBit(partial);
+
+        for (int i = idx / BITS_PER_BYTE - 1; i >= 0; --i) {
+            int b = getByte(i) & 0xff;
+            if (b != 0) return i * BITS_PER_BYTE + getLastBit(b);
+        }
+        return -1;
+    }
+
+    /**
+     * Internal helper for operation on bitvectors of different sizes
+     */
+    private byte getByte(int idx)
+    {
+        assert idx >= 0;
+        return idx < _d.length ? _d[idx] : 0;
+    }
+
+    /**
+     * Find index of first bit set in a byte
+     * @pre b is as one its lower 8 bit set
+     */
+    private int getFirstBit(int b)
+    {
+        for (int i = 0; i < BITS_PER_BYTE; ++i) {
+            if ((b & 1) != 0) return i;
+            b >>>= 1;
+        }
+        assert false;
+        return -1;
+    }
+
+    /**
+     * Find index of last bit set in a byte
+     * @pre b is as one its lower 8 bit set
+     */
+    private int getLastBit(int b)
+    {
+        int mask = 1 << (BITS_PER_BYTE - 1);
+        for (int i = BITS_PER_BYTE - 1; i >= 0; --i) {
+            if ((b & mask) != 0) return i;
+            mask >>>= 1;
+        }
+        assert false;
+        return -1;
     }
 }
