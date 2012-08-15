@@ -1201,7 +1201,7 @@ public abstract class Util
     /**
      * @param excludes exceptions for which stacktraces should not be printed
      */
-    private static void exponentialRetry(String name, Callable<Void> call, Class<?> ... excludes)
+    public static void exponentialRetry(String name, Callable<Void> call, Class<?> ... excludes)
     {
         long interval = Param.EXP_RETRY_MIN_DEFAULT;
         while (true) {

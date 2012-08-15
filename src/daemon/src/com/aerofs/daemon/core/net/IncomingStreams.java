@@ -6,10 +6,10 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.TreeMap;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -30,7 +30,8 @@ public class IncomingStreams
 {
     private static final Logger l = Util.l(IncomingStreams.class);
 
-    public static class StreamKey implements Comparable<StreamKey> {
+    public static class StreamKey implements Comparable<StreamKey>
+    {
         final DID _did;
         final StreamID _strid;
 
@@ -54,7 +55,8 @@ public class IncomingStreams
         }
     }
 
-    private static class IncomingStream {
+    private static class IncomingStream
+    {
         final PeerContext _pc;
         final Queue<ByteArrayInputStream> _chunks = new LinkedList<ByteArrayInputStream>();
         TCB _tcb;
@@ -67,15 +69,13 @@ public class IncomingStreams
         }
     }
 
-    private final Map<StreamKey, IncomingStream> _map =
-        new TreeMap<StreamKey, IncomingStream>();
+    private final Map<StreamKey, IncomingStream> _map = Maps.newTreeMap();
 
     // streams that are ended but failed to call endIncomingStream_.
     // new streams are not allowed to create until all ended streams are gone.
     // the size of this list is bounded by Categories.
-    //
-    private final Map<StreamKey, IncomingStream> _ended =
-        new TreeMap<StreamKey, IncomingStream>();
+    private final Map<StreamKey, IncomingStream> _ended = Maps.newTreeMap();
+
     private final UnicastInputOutputStack _stack;
 
     @Inject

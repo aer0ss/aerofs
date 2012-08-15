@@ -32,6 +32,7 @@ import com.aerofs.gui.revision.DlgRevision;
 import com.aerofs.gui.sharing.DlgJoinSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
+import com.aerofs.lib.C;
 import com.aerofs.lib.DelayedRunner;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
@@ -51,12 +52,13 @@ import com.aerofs.proto.RitualNotifications.PBDownloadEvent.State;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBUploadEvent;
-import com.aerofs.proto.Sv;
+import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
+import static com.aerofs.proto.Sv.PBSVEvent.Type.*;
 
 public class MenuImplSWT implements IMenu
 {
@@ -64,12 +66,14 @@ public class MenuImplSWT implements IMenu
     private final Menu _menu;
     private final IIcon _icon;
     private boolean _enabled;
+
     private MenuItem _transferStats1;    // menu item used to display information about ongoing transfers - line 1
     private MenuItem _transferStats2;    // menu item used to display information about ongoing transfers - line 2
     private Object _transferProgress;    // non-null if transfer is in progress
     private final Map<Integer, Image> _pieChartCache = new HashMap<Integer, Image>();
-
     private final TransferState _ts = new TransferState(true);
+
+    private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
 
     private final IListener _l = new IListener() {
         @Override
@@ -118,7 +122,7 @@ public class MenuImplSWT implements IMenu
                 image = Images.get(Images.ICON_WARNING);
             }
 
-            addMenuItem(_menu, label, new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_APPLY_UPDATE) {
+            addMenuItem(_menu, label, new AbstractListener(CLICKED_TASKBAR_APPLY_UPDATE) {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
@@ -130,7 +134,7 @@ public class MenuImplSWT implements IMenu
         }
 
         addMenuItem(_menu, "Open " + S.PRODUCT + " Folder",
-                new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_OPEN_AEROFS) {
+                new AbstractListener(CLICKED_TASKBAR_OPEN_AEROFS) {
                     @Override
                     protected void handleEventImpl(Event event)
                     {
@@ -147,7 +151,7 @@ public class MenuImplSWT implements IMenu
 
         } else {
 
-            addMenuItem(_menu, "Share Folder...", new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_SHARE_FOLDER) {
+            addMenuItem(_menu, "Share Folder...", new AbstractListener(CLICKED_TASKBAR_SHARE_FOLDER) {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
@@ -155,7 +159,7 @@ public class MenuImplSWT implements IMenu
                 }
             });
 
-            addMenuItem(_menu, "Accept Invitation...", new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_ACCEPT_INVITE) {
+            addMenuItem(_menu, "Accept Invitation...", new AbstractListener(CLICKED_TASKBAR_ACCEPT_INVITE) {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
@@ -220,9 +224,25 @@ public class MenuImplSWT implements IMenu
             _transferStats2 = null;
             updateTransferMenus();
 
+            final boolean paused = _prs.isPaused();
+            String strPauseOrResume = paused ? "Resume syncing" : "Pause for an hour";
+            addMenuItem(_menu, strPauseOrResume , new AbstractListener(null) {
+                @Override
+                protected void handleEventImpl(Event event)
+                {
+                    try {
+                        if (paused) _prs.resume(); else _prs.pause(1 * C.HOUR);
+                    } catch (Exception e) {
+                        UI.get().show(MessageType.ERROR, "Couldn't " +
+                                (paused ? "resume" : "pause") + " syncing. " + S.TRY_AGAIN_LATER);
+                    }
+                }
+            });
+
             new MenuItem(_menu, SWT.SEPARATOR);
 
-            addMenuItem(_menu, S.PREFERENCES + "...", new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_PREFERENCES) {
+            addMenuItem(_menu, S.PREFERENCES + "...", new AbstractListener(
+                    CLICKED_TASKBAR_PREFERENCES) {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
@@ -244,7 +264,8 @@ public class MenuImplSWT implements IMenu
             String text = (OSUtil.isLinux() ? "\u2665 " : "") + "Invite " +
                     (quota > 1 ? String.valueOf(quota) +
                     " Friends" : "a Friend") + "...";
-            MenuItem mi = addMenuItem(_menu, text, new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_INVITE_FOLDERLESS) {
+            MenuItem mi = addMenuItem(_menu, text, new AbstractListener(
+                    CLICKED_TASKBAR_INVITE_FOLDERLESS) {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
@@ -258,7 +279,7 @@ public class MenuImplSWT implements IMenu
         new MenuItem(_menu, SWT.SEPARATOR);
 
         addMenuItem(_menu, (OSUtil.isWindows() ? "Exit" : "Quit") + " " +
-                S.PRODUCT, new AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_EXIT) {
+                S.PRODUCT, new AbstractListener(CLICKED_TASKBAR_EXIT) {
             @Override
             protected void handleEventImpl(Event event)
             {
@@ -377,7 +398,8 @@ public class MenuImplSWT implements IMenu
             try {
                 for (PBPath pbpath : ritual.listSharedFolders().getPathList()) {
                     final Path path = new Path(pbpath);
-                    addMenuItem(submenu, path.last(), new GUIUtil.AbstractListener(Sv.PBSVEvent.Type.CLICKED_TASKBAR_MANAGER_SHARED_FOLDER) {
+                    addMenuItem(submenu, path.last(), new GUIUtil.AbstractListener(
+                            CLICKED_TASKBAR_MANAGER_SHARED_FOLDER) {
                         @Override
                         protected void handleEventImpl(Event event)
                         {

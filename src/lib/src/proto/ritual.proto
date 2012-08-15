@@ -76,8 +76,10 @@ service RitualService {
 
     rpc ReloadConfig(Void) returns(Void);
 
+    // Pause syncing activities, no matter how many times ResumeSyncing has been called before.
     rpc PauseSyncing(Void) returns(Void);
 
+    // Resume syncing activities, no matter how many times PauseSyncing has been called before.
     rpc ResumeSyncing(Void) returns(Void);
 
     // Get the list of recent activities. This method may block for an extended period of time when

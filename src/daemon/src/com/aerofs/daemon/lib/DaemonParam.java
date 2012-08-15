@@ -99,7 +99,7 @@ public class DaemonParam
     public static final int QUEUE_LENGTH_CORE               = QUEUE_LENGTH_DEFAULT;
 
     // the delay to send NEW_UPDATE messages
-    public static final long NEW_UPDATE_MESSAGE_DELAY                  = 0;
+    public static final long NEW_UPDATE_MESSAGE_DELAY       = 0;
 
     // it is the initial limit of maxcast message sizes. the limit may be further
     // reduced at runtime based on metrics feedback from transports

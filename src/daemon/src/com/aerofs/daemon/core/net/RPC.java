@@ -1,6 +1,8 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
+import com.aerofs.daemon.core.net.link.LinkStateMonitor;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -8,17 +10,22 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import java.net.NetworkInterface;
 import java.util.Map;
+
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
  * RPC: Remote Procedure Calls
@@ -39,10 +46,21 @@ public class RPC
     private final Map<Integer, MapEntry> _waiters = Maps.newTreeMap();
 
     @Inject
-    public RPC(DevicePresence dp, NSL nsl)
+    public RPC(DevicePresence dp, NSL nsl, LinkStateMonitor lsm)
     {
         _dp = dp;
         _nsl = nsl;
+
+        lsm.addListener_(new INetworkLinkStateListener() {
+            @Override
+            public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
+                    ImmutableSet<NetworkInterface> removed,
+                    ImmutableSet<NetworkInterface> current,
+                    ImmutableSet<NetworkInterface> previous)
+            {
+                if (current.isEmpty()) linkDown_();
+            }
+        }, sameThreadExecutor());
     }
 
     /**
@@ -116,6 +134,8 @@ public class RPC
         if (!msg.pb().hasRpcid()) throw new ExProtocolError("missing rpcid");
         int rpcid = msg.pb().getRpcid();
 
+        // Remove the entry to prevent further motification on it after this method
+        // returns and before the waiting thread acquires the core lock and proceeds execution.
         MapEntry me = _waiters.remove(rpcid);
 
         if (me != null) {
@@ -125,5 +145,21 @@ public class RPC
             l.info("spurious reply " + rpcid);
             return false;
         }
+    }
+
+    /**
+     * Abort all pending RPCs. Outgoing and incoming streams also need to be aborted. However,
+     * instead of initiating the abortion in the core, it's initiated by the transports since
+     * they need to release stream-related resources specific to each transport.
+     */
+    private void linkDown_()
+    {
+        if (_waiters.isEmpty()) return;
+
+        Exception e = new ExDeviceOffline();
+        for (MapEntry me : _waiters.values()) me._tcb.abort_(e);
+        // Remove all the entires to prevent further motification on them after this method
+        // returns and before the waiting threads acquire the core lock and proceed execution.
+        _waiters.clear();
     }
 }
