@@ -122,8 +122,7 @@ public class GetComponentCall
 
                 Trans t = _tm.begin_();
                 try {
-                    if (vKMLNonAlias.shadowedBy_(_nvc.getAllVersions_(socidTarget))
-                            .equals(vKMLNonAlias)) {
+                    if (vKMLNonAlias.isEntirelyShadowedBy_(_nvc.getAllVersions_(socidTarget))) {
                         // Delete the non-alias versions from the alias, *if* those versions have
                         // already been migrated to the target
                         _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
@@ -136,7 +135,7 @@ public class GetComponentCall
                     }
                     t.commit_();
                 } catch (Exception e) {
-                    assert false : msg;
+                    l.warn(Util.e(e));
                 } finally {
                     t.end_();
                 }
@@ -145,7 +144,7 @@ public class GetComponentCall
                 msg = msg + " vAllTarget " + vAllTarget;
 
                 assert _nvc.getKMLVersion_(socid).withoutAliasTicks_().isZero_() : msg;
-                assert vKMLNonAlias.shadowedBy_(vAllTarget).equals(vKMLNonAlias) : msg;
+                assert vKMLNonAlias.isEntirelyShadowedBy_(vAllTarget) : msg;
 
                 // Report this event to SV, then abort the current request.
                 ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this log once. "

@@ -17,6 +17,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.spsv.SVClient;
 import org.apache.log4j.Logger;
 
@@ -489,8 +490,8 @@ public class GetVersCall
             assert oaLast != null && oa.soid().equals(oaLast.soid()) : loggedDataWithOA;
 
             // delete the tick for socid
-            deleteDuplicateTick(socid, did, tick, loggedDataWithOA);
-            return;
+            deleteDuplicateTick(socid, new SOCID(oa.soid(), socid.cid()), did, tick,
+                    loggedDataWithOA);
 
         } else if (oaLast != null && !oaLast.soid().equals(socidLast.soid())) {
             l.warn(oaLast + " is the target of " + socidLast);
@@ -499,8 +500,8 @@ public class GetVersCall
             assert oa != null && oa.soid().equals(oaLast.soid()) : loggedDataWithOA;
 
             // delete the tick for socidLast
-            deleteDuplicateTick(socidLast, did, tick, loggedDataWithOA);
-            return;
+            deleteDuplicateTick(socidLast, new SOCID(oaLast.soid(), socidLast.cid()), did, tick,
+                    loggedDataWithOA);
         }
 
         // If execution arrived here, either
@@ -511,44 +512,65 @@ public class GetVersCall
         // NativeVersionControl
     }
 
-    private void deleteDuplicateTick(SOCID socidToDelete, DID did, Tick tick,
-            final String loggedData)
+    private void deleteDuplicateTick(SOCID socidToDelete, SOCID socidTarget, DID did, Tick tick,
+            String loggedData)
             throws SQLException, ExAborted
     {
-        // This method should additionally delete the OA for socidToDelete,
-        // any components for the object, etc. This is riskier than simply deleting the tick,
-        // so let's wait to do this properly until we observe some users
-        // with this case.
-        assert false : loggedData;
+        // The alias object socid should have no oa
+        assert _ds.getOANullable_(socidToDelete.soid()) == null : socidToDelete + " " + loggedData;
 
-        // Delete the duplicate tick for socidToDelete, only if the tick is in its KML,
-        // otherwise assert false: we don't want to handle this until we observe users with
-        // that problem.
-        if (tick.equals(_nvc.getKMLVersion_(socidToDelete).get_(did))) {
-            Version vToDelete = new Version();
-            vToDelete.set_(did, tick);
-            Trans t = _tm.begin_();
-            try {
+        Version vToDelete = new Version();
+        vToDelete.set_(did, tick);
+
+        // Assume that vToDelete is entirely duplicated in the target object's versions.
+        // (so it is safe to simply delete it from the alias object (either KML or local))
+        Version vAllTarget = _nvc.getAllVersions_(socidTarget);
+        assert vToDelete.isEntirelyShadowedBy_(vAllTarget) : vToDelete + " " + vAllTarget
+                + " " + loggedData;
+
+        Trans t = _tm.begin_();
+        try {
+            if (vToDelete.isEntirelyShadowedBy_(_nvc.getKMLVersion_(socidToDelete))) {
+                // vToDelete is a KML for socidToDelete
                 _nvc.deleteKMLVersionPermanently_(socidToDelete, vToDelete, t);
-                t.commit_();
-            } finally {
-                t.end_();
+
+                loggedData = "Delete KML " + vToDelete + " of " + socidToDelete + ". " + loggedData;
+
+            } else {
+                // vToDelete is not a KML (as it failed the previous branch)
+                // so assert that it is in the local versions of socidToDelete
+                Version vAllLocalVersions = _nvc.getAllLocalVersions_(socidToDelete);
+                assert vToDelete.isEntirelyShadowedBy_(vAllLocalVersions)
+                        : vToDelete + " " + vAllLocalVersions + " " + loggedData;
+
+                // Assume the branch of the version to delete is MASTER
+                // (otherwise I'm unsure how to resolve this)
+                SOCKID sockidToDelete = new SOCKID(socidTarget);
+                Version vsockidToDelete = _nvc.getLocalVersion_(sockidToDelete);
+                assert vToDelete.isEntirelyShadowedBy_(vsockidToDelete)
+                        : vToDelete + " " + vsockidToDelete + " " + loggedData;
+
+                _nvc.deleteLocalVersionPermanently_(sockidToDelete, vToDelete, t);
+
+                loggedData = "Delete " + vToDelete + " of " + sockidToDelete + ". " + loggedData;
             }
-
-            // Assert that the tick has been deleted from the KML version and all versions
-            assert !tick.equals(_nvc.getKMLVersion_(socidToDelete).get_(did)) :
-                    socidToDelete + " " + loggedData;
-            assert !tick.equals(_nvc.getAllVersions_(socidToDelete).get_(did)) :
-                    socidToDelete + " " + loggedData;
-
-            // Throw an exception to abort the current GetVersCall response,
-            // but on the next try the db should be fixed.
-            ExAborted e = new ExAborted("Repaired nvdb by deleting " + socidToDelete + " " +
-                    vToDelete + " due to dup tick");
-            SVClient.logSendDefectAsync(true, loggedData, e);
-            throw e;
+            t.commit_();
+        } catch (Exception e) {
+            l.warn(Util.e(e));
+        } finally {
+            t.end_();
         }
 
-        assert false : loggedData;
+        // Assert that the given alias object has no non-alias ticks remaining
+        // (it's possible to fail here; then need to do a more thorough cleaning of the object)
+        Version vAllSocidToDelete = _nvc.getAllVersions_(socidToDelete);
+        assert vAllSocidToDelete.withoutAliasTicks_().isZero_() :
+                vAllSocidToDelete + " " + loggedData;
+
+        // Throw an exception to abort the current GetVersCall response,
+        // but on the next try the db should be fixed.
+        ExAborted e = new ExAborted("GVC dup tick repair. " + loggedData);
+        SVClient.logSendDefectAsync(true, "GVC dup tick repair", e);
+        throw e;
     }
 }

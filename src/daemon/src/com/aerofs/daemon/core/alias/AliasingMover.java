@@ -96,7 +96,6 @@ public class AliasingMover
 
         // Delete alias KML
         _nvc.deleteKMLVersionPermanently_(alias, vKMLAlias, t);
-        //assert Aliasing.extractNonAliasVersion_(_nvc.getKMLVersion_(alias)).isZero_();
     }
 
     /**
@@ -231,8 +230,8 @@ public class AliasingMover
                 // Create CA for the new branch on the target.
                 _ds.createCA_(target.soid(), kidxTarget, t);
 
-                CA caFrom = _ds.getOANullable_(alias.soid()).ca(kidxAlias);
-                CA caTo = _ds.getOANullable_(target.soid()).ca(kidxTarget);
+                CA caFrom = _ds.getOA_(alias.soid()).ca(kidxAlias);
+                CA caTo = _ds.getOA_(target.soid()).ca(kidxTarget);
                 caFrom.physicalFile().move_(caTo.physicalFile(), PhysicalOp.APPLY, t);
 
                 SOCKID kTarget = new SOCKID(target, kidxTarget);
@@ -265,8 +264,8 @@ public class AliasingMover
     public void moveChildrenFromAliasToTargetDir_(SIndex sidx, SOID alias, SOID target, Trans t)
         throws Exception
     {
-        assert _ds.getOANullable_(alias).isDir();
-        assert _ds.getOANullable_(target).isDir();
+        assert _ds.getOA_(alias).isDir();
+        assert _ds.getOA_(target).isDir();
 
         Path targetPath = _ds.resolveNullable_(target);
         assert targetPath != null;
@@ -275,7 +274,7 @@ public class AliasingMover
         // under alias dir will be renamed avoiding name conflict.
         for (OID oid : _ds.getChildren_(alias)) {
             SOID aliasChild = new SOID(sidx, oid);
-            String aliasChildNameOrig = _ds.getOANullable_(aliasChild).name();
+            String aliasChildNameOrig = _ds.getOA_(aliasChild).name();
             String aliasChildNameNew = aliasChildNameOrig;
             boolean updateVersion = false;
 

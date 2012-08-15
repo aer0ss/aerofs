@@ -154,6 +154,14 @@ public class Version
     }
 
     /**
+     * @return true iff *this* version is entirely shadowed by v
+     */
+    public boolean isEntirelyShadowedBy_(Version v)
+    {
+        return this.shadowedBy_(v).equals(this);
+    }
+
+    /**
      * @return a new version object, keeping only this Version's non-alias ticks
      */
     public Version withoutAliasTicks_()
