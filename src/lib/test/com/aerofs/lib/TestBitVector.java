@@ -172,4 +172,81 @@ public class TestBitVector extends AbstractTest
 
         Assert.assertEquals(new BitVector(3, true), new BitVector(3, new byte[] {0x0f}));
     }
+
+    @Test
+    public void shouldPerformBitwiseOperations()
+    {
+        /*
+         * Small exception to regular coding style to make the truth tables stand out
+         */
+        Assert.assertEquals(new BitVector(false, false, false,  true),
+                            new BitVector(false, false,  true,  true)
+                       .and(new BitVector(false, true, false, true)));
+
+        Assert.assertEquals(new BitVector(false, true, true, false),
+                new BitVector(false, false, true, true).xor(
+                        new BitVector(false, true, false, true)));
+
+        Assert.assertEquals(new BitVector(false, true, true, true),
+                new BitVector(false, false, true, true).or(new BitVector(false, true, false, true)));
+
+        // test operations on vectors of different sizes
+        Assert.assertEquals(new BitVector(12, false),
+                            new BitVector(12, false)
+                       .and(new BitVector(false, true, false, true)));
+
+        Assert.assertEquals(new BitVector(false, true, false, true),
+                new BitVector(12, false).xor(new BitVector(false, true, false, true)));
+
+        Assert.assertEquals(new BitVector(false, true, false, true),
+                new BitVector(12, false).or(new BitVector(false, true, false, true)));
+
+        Assert.assertEquals(new BitVector(false,  true, false,  true),
+                            new BitVector(12, true)
+                       .and(new BitVector(false,  true, false,  true)));
+
+        Assert.assertEquals(new BitVector( true, false,  true, false,
+                                           true,  true,  true,  true, true, true, true, true),
+                            new BitVector(12, true)
+                       .xor(new BitVector(false,  true, false,  true)));
+
+        Assert.assertEquals(new BitVector(12, true),
+                            new BitVector(12, true)
+                        .or(new BitVector(false,  true, false,  true)));
+
+    }
+
+    @Test
+    public void shouldFindFirstAndNext()
+    {
+        BitVector bv = new BitVector(false, true, true, false, false, true, false, false, false);
+        Assert.assertEquals(1, bv.findFirst());
+        Assert.assertEquals(1, bv.findNext(0));
+        Assert.assertEquals(1, bv.findNext(1));
+        Assert.assertEquals(2, bv.findNext(2));
+        Assert.assertEquals(5, bv.findNext(3));
+        Assert.assertEquals(5, bv.findNext(4));
+        Assert.assertEquals(5, bv.findNext(5));
+        Assert.assertEquals(-1, bv.findNext(6));
+        Assert.assertEquals(-1, bv.findNext(7));
+        Assert.assertEquals(-1, bv.findNext(8));
+        Assert.assertEquals(-1, bv.findNext(9));
+    }
+
+    @Test
+    public void shouldFindLastAndPrevious()
+    {
+        BitVector bv = new BitVector(false, true, true, false, false, true, false, false, false);
+        Assert.assertEquals(5, bv.findLast());
+        Assert.assertEquals(5, bv.findPrevious(9));
+        Assert.assertEquals(5, bv.findPrevious(8));
+        Assert.assertEquals(5, bv.findPrevious(7));
+        Assert.assertEquals(5, bv.findPrevious(6));
+        Assert.assertEquals(5, bv.findPrevious(5));
+        Assert.assertEquals(2, bv.findPrevious(4));
+        Assert.assertEquals(2, bv.findPrevious(3));
+        Assert.assertEquals(2, bv.findPrevious(2));
+        Assert.assertEquals(1, bv.findPrevious(1));
+        Assert.assertEquals(-1, bv.findPrevious(0));
+    }
 }
