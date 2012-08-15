@@ -104,7 +104,7 @@ public class Expulsion
     public void objectMoved_(boolean emigrate, PhysicalOp op, SOID soid, Path pathOld,
             Trans t) throws Exception
     {
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         int flagsOld = oa.flags();
 
         // compute the object's flags based on the parent's
@@ -130,7 +130,7 @@ public class Expulsion
      */
     public void setExpelled_(boolean expelled, SOID soid, Trans t) throws Exception
     {
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
 
         // only folder expulsion is supported
         if (!oa.isDirOrAnchor()) throw new ExNotDir();
@@ -179,7 +179,7 @@ public class Expulsion
         // TODO right now this method is called from two places. Ideally the call from createMeta
         // should be removed. Afterward, we can move expel/admitFile() to the caller's classes.
 
-        assert _ds.getOANullable_(soid).isFile();
+        assert _ds.getOA_(soid).isFile();
 
         /*
          * Intentionally, do not delete DIDs for soid's stored in the pddb;

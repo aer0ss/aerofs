@@ -73,7 +73,7 @@ public class GCCSendContent
     {
         // guaranteed by the caller
         assert _ds.isPresent_(k);
-        OA oa = _ds.getOANullable_(k.soid());
+        OA oa = _ds.getOA_(k.soid());
         CA ca = oa.ca(k.kidx());
         long mtime = ca.mtime();
         // N.B. this is the length of the complete file contents, regardless of whether we're

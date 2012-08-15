@@ -32,6 +32,8 @@ import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
+
 public class MightCreate
 {
     private static Logger l = Util.l(MightCreate.class);
@@ -136,7 +138,7 @@ public class MightCreate
                 cond = Condition.NO_MATCHING;
             } else {
                 // Found a logical object with a different FID but the same path.
-                oaSamePath = _ds.getOANullable_(soidSamePath);
+                oaSamePath = _ds.getOA_(soidSamePath);
 
                 // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
                 // the no branch is present. See also detectAndApplyModification_()
@@ -236,7 +238,7 @@ public class MightCreate
             SOID soidConflict = _ds.resolveNullable_(pPhysical);
             if (soidConflict != null && !soid.equals(soidConflict)) {
                 // the path is taken by another logical object. rename it
-                OA oaConflict = _ds.getOANullable_(soidConflict);
+                OA oaConflict = _ds.getOA_(soidConflict);
                 renameConflictingLogicalObject_(oaConflict, pcPhysical, t);
             } else if (soidConflict != null) {
                 // the soids are equal: the DirectoryService should only return an equal soid if
@@ -249,7 +251,7 @@ public class MightCreate
                     PathCombo.toLogString(pPhysical));
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
-            OA oaToParent = _ds.getOANullable_(soidToParent);
+            OA oaToParent = _ds.getOA_(soidToParent);
             if (oaToParent.isAnchor()) soidToParent = _ds.followAnchorThrows_(oaToParent);
             soid = _hdmo.move_(soid, soidToParent, pPhysical.last(), MAP, t);
         }
@@ -277,7 +279,8 @@ public class MightCreate
      * @param pc the path to the logical object, must be identical to what _ds.resolve_(oa) would
      * return
      */
-    private void renameConflictingLogicalObject_(OA oa, PathCombo pc, Trans t) throws Exception
+    private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, Trans t)
+            throws Exception
     {
         if (l.isInfoEnabled()) {
             l.info("rename conflict " + oa.soid() + ":" + PathCombo.toLogString(pc._path));
@@ -320,7 +323,7 @@ public class MightCreate
 
         // create the object
         SOID soidParent = _ds.resolveThrows_(pcPhysical._path.removeLast());
-        OA oaParent = _ds.getOANullable_(soidParent);
+        OA oaParent = _ds.getOA_(soidParent);
         if (oaParent.isExpelled()) {
             // after the false return, scanner or linker should create the parent and recurse down
             // to the child again. exact implementations depend on operating systems.
@@ -336,7 +339,7 @@ public class MightCreate
     private void detectAndApplyModification_(SOID soid, String absPath, Trans t)
             throws IOException, ExNotFound, SQLException
     {
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         assert oa.isFile();
         CA caMaster = oa.caMaster();
 

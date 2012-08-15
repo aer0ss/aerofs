@@ -46,7 +46,7 @@ public class BranchDeleter
         assert k.cid().equals(CID.CONTENT);
         assert !v.isZero_();
 
-        final CA ca = _ds.getOANullable_(k.soid()).ca(k.kidx());
+        final CA ca = _ds.getOA_(k.soid()).ca(k.kidx());
         // guaranteed by the caller
         assert ca != null;
 

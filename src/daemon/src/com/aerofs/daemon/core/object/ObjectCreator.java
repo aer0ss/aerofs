@@ -85,9 +85,9 @@ public class ObjectCreator
         if (updateVersion) _cm.atomicWrite_(new SOCKID(soid, CID.META, KIndex.MASTER), t);
 
         boolean immigrated = !detectImmigration || expelled ? false :
-            _imd.detectAndPerformImmigration_(_ds.getOANullable_(soid), op, t);
+            _imd.detectAndPerformImmigration_(_ds.getOA_(soid), op, t);
 
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         if (!expelled && !immigrated) {
             // create physical object and sub-store
             if (oa.isDir()) {

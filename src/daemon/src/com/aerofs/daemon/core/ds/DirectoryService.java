@@ -112,8 +112,7 @@ public class DirectoryService implements IDumpStatMisc
                 while (i < elems.length) {
                     OID child = getChild_(sidx, oid, elems[i]);
                     if (child == null) {
-                        OA oa = getOANullable_(new SOID(sidx, oid));
-                        assert oa != null;
+                        OA oa = getOA_(new SOID(sidx, oid));
                         if (!oa.isAnchor()) {
                             return null;
                         } else {
@@ -198,7 +197,7 @@ public class DirectoryService implements IDumpStatMisc
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return unlike other versions of resolve(), it never returns null
      */
-    public @Nonnull Path resolve_(OA oa) throws SQLException
+    public @Nonnull Path resolve_(@Nonnull OA oa) throws SQLException
     {
         ArrayList<String> elems = new ArrayList<String>(16);
         while (true) {
@@ -215,8 +214,7 @@ public class DirectoryService implements IDumpStatMisc
             elems.add(oa.name());
 
             assert !oa.parent().equals(oa.soid().oid()) : oa;
-            oa = getOANullable_(new SOID(oa.soid().sidx(), oa.parent()));
-            assert oa != null;
+            oa = getOA_(new SOID(oa.soid().sidx(), oa.parent()));
         }
 
         String[] path = new String[elems.size()];

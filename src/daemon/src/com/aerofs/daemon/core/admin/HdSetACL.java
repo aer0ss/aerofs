@@ -29,7 +29,7 @@ public class HdSetACL extends AbstractHdIMC<EISetACL>
     {
         // Don't check ACL here. SP Servlet will check it for us.
         SOID soid = _ds.resolveThrows_(ev._path);
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         if (oa.isAnchor()) soid = _ds.followAnchorThrows_(oa);
 
         if (!soid.oid().equals(OID.ROOT)) throw new ExNotShared();
