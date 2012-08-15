@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.mail.MessagingException;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -154,7 +155,7 @@ public class UserManagement
     }
 
     public void sendPasswordResetEmail(String user_email)
-            throws Exception
+            throws SQLException, ExNotFound, IOException, MessagingException
     {
         User user;
         try {
@@ -172,13 +173,14 @@ public class UserManagement
     }
 
     public void resetPassword(String password_reset_token, ByteString new_credentials)
-            throws SQLException, ExNotFound, IOException
+            throws SQLException, ExNotFound, IOException, MessagingException
     {
         String user_id = _db.resolvePasswordResetToken(password_reset_token);
         User user = getUser(user_id);
         _db.updateUserCredentials(user._id, SPParam.getShaedSP(new_credentials.toByteArray()));
         _db.deletePasswordResetToken(password_reset_token);
         l.info("Reset " + user_id + "'s Password");
+        _passwordResetEmailer.sendPasswordResetConfirmation(user._id);
     }
 
     public void changePassword(String userId, ByteString old_credentials,
