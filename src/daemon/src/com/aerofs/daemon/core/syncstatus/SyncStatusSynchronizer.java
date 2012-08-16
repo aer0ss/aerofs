@@ -142,7 +142,7 @@ public class SyncStatusSynchronizer
     /**
      * Wrapper to access sync status client
      */
-    private SyncStatBlockingClient c() throws Exception
+    private synchronized SyncStatBlockingClient c() throws Exception
     {
         if (_c == null) {
             try {
@@ -154,6 +154,14 @@ public class SyncStatusSynchronizer
             }
         }
         return _c;
+    }
+
+    /**
+     * Force reconnection to sync stat server on next RPC call
+     */
+    private synchronized void closeClient()
+    {
+        _c = null;
     }
 
     /**
@@ -195,8 +203,7 @@ public class SyncStatusSynchronizer
                     scanActivityLog_();
                     pullSyncStatus_();
                 } catch (Exception e) {
-                    // close connection
-                    _c = null;
+                    closeClient();
                     // rethrow to let ExponentialRetry kick in
                     throw e;
                 }
@@ -283,7 +290,7 @@ public class SyncStatusSynchronizer
                         try {
                             pullSyncStatus_();
                         } catch (Exception e) {
-                            _c = null;
+                            closeClient();
                             // let ExponentialRetry kick in
                             throw e;
                         }
@@ -482,11 +489,10 @@ public class SyncStatusSynchronizer
                     public Void call() throws Exception
                     {
                         if (_scanSeq != _seq) return null;
-
                         try {
                             scanActivityLogInternal_();
                         } catch (Exception e) {
-                            _c = null;
+                            closeClient();
                             // let ExponentialRetry kick in
                             throw e;
                         }
