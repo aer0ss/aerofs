@@ -118,7 +118,7 @@ public class AA implements ILabeling
     @Override
     public String ssHost()
     {
-        return "syncstat.aerofs.com";
+        return "sss.aerofs.com";
     }
 
     @Override

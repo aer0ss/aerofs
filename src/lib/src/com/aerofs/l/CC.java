@@ -114,7 +114,7 @@ public class CC implements ILabeling
     @Override
     public String ssHost()
     {
-        return "syncstat.aerofs.com";
+        return "sss.aerofs.com";
     }
 
     @Override
