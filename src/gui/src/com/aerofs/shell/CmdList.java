@@ -22,7 +22,7 @@ public class CmdList implements IShellCommand<ShProgram>
             throws Exception
     {
         boolean longFormat = cl.hasOption('l');
-        boolean history = cl.hasOption('r');
+        boolean history = cl.hasOption('h');
 
         ArrayList<List<String>> paths = new ArrayList<List<String>>();
         for (String arg : cl.getArgs()) {
@@ -92,7 +92,7 @@ public class CmdList implements IShellCommand<ShProgram>
     }
 
     private static void listHistory(ShellCommandRunner<ShProgram> s,
-                                    List<String> path, boolean longFormat)
+            List<String> path, boolean longFormat)
             throws Exception
     {
         PBPath parent = ShProgram.buildPath_(path);
@@ -130,6 +130,7 @@ public class CmdList implements IShellCommand<ShProgram>
     {
         return new Options()
                 .addOption("l", "long", false, "use long format")
-                .addOption("r", "revision", false, "list revision tree");
+                .addOption("h", "history", false, "list version history tree." +
+                        " see also 'vh' and 'export -h' commands");
     }
 }

@@ -29,19 +29,21 @@ public class CmdExport implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "export a file to the local file system, either at its current version or at a past version";
+        return "export a file to the local file system at its current version or at a" +
+                " past version";
     }
 
     @Override
     public Options getOpts()
     {
-        return ShellCommandRunner.EMPTY_OPTS;
+        return new Options().addOption("h", "history", true, "export a past version. the argument" +
+                " specifies the version index. see also 'ls -h' and 'vh' commands");
     }
 
     @Override
     public String getOptsSyntax()
     {
-        return "SOURCE DEST [REVINDEX]";
+        return "SOURCE DEST_FOLDER";
     }
 
     class Downloader
@@ -59,7 +61,8 @@ public class CmdExport implements IShellCommand<ShProgram>
 
         void download(Path source, File dest) throws Exception
         {
-            GetObjectAttributesReply objectAttributesReply = _ritualClient.getObjectAttributes(_user, source.toPB());
+            GetObjectAttributesReply objectAttributesReply =
+                    _ritualClient.getObjectAttributes(_user, source.toPB());
             PBObjectAttributes oa = objectAttributesReply.getObjectAttributes();
             download(source, oa, dest);
         }
@@ -78,7 +81,8 @@ public class CmdExport implements IShellCommand<ShProgram>
                 case FOLDER:
                 case SHARED_FOLDER: {
                     FileUtil.mkdir(dest);
-                    GetChildrenAttributesReply reply = _ritualClient.getChildrenAttributes(_user, source.toPB());
+                    GetChildrenAttributesReply reply = _ritualClient.getChildrenAttributes(_user,
+                            source.toPB());
                     int count = reply.getChildrenNameCount();
                     assert count == reply.getChildrenAttributesCount();
                     for (int i = 0; i < count; ++i) {
@@ -98,7 +102,9 @@ public class CmdExport implements IShellCommand<ShProgram>
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
         String[] args = cl.getArgs();
-        if (args.length < 2 || args.length > 3) throw new ExBadArgs();
+        if (args.length != 2) throw new ExBadArgs();
+
+        String revIndex = cl.getOptionValue('h');
 
         Path source = new Path(s.d().buildPathElemList_(args[0]));
         File dest = new File(args[1]);
@@ -106,10 +112,9 @@ public class CmdExport implements IShellCommand<ShProgram>
             dest = new File(dest, source.last());
         }
 
-        if (args.length == 3) {
+        if (revIndex != null) {
             ExportRevisionReply reply = s.d().getRitualClient_()
-                                             .exportRevision(source.toPB(),
-                                                             ByteString.copyFromUtf8(args[2]));
+                    .exportRevision(source.toPB(), ByteString.copyFromUtf8(revIndex));
             FileUtil.moveInOrAcrossFileSystem(new File(reply.getDest()), dest);
         } else {
             Downloader downloader = new Downloader(s);
