@@ -10,6 +10,37 @@ import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 
 public class DBUtil
 {
+    /**
+     * @return string "select <field>,<field> ... <field> from <table>"
+     */
+    public static String selectFrom(String table, String ...fields)
+    {
+        return selectFromImpl(table, fields).toString();
+    }
+
+    /**
+     * @return string "select <field>,<field> ... <field> from <table> where <condition>"
+     */
+    public static String selectFromWhere(String table, String condition, String ...fields)
+    {
+        return selectFromImpl(table, fields).append(" where ").append(condition).toString();
+    }
+
+    private static StringBuilder selectFromImpl(String table, String ... fields)
+    {
+        StringBuilder sb = new StringBuilder("select ");
+        boolean first = true;
+        for (String field : fields) {
+            if (!first) sb.append(',');
+            else first = false;
+            sb.append(field);
+        }
+        sb.append(" from ");
+        sb.append(table);
+
+        return sb;
+    }
+
     public static void close(Statement s)
     {
         try {

@@ -11,21 +11,27 @@ import com.google.inject.Inject;
 public class DBChecker
 {
     private static final Logger l = Util.l(DBChecker.class);
-    private final DBCheckAttrs _checkAttrs;
+    private final DBCheckOAAndCA _checkOACA;
+    private final DBCheckCA _checkCA;
     private final DBCheckFID _checkFID;
 
     @Inject
-    public DBChecker(DBCheckAttrs checkAttrs, DBCheckFID checkFID) throws SQLException
+    public DBChecker(DBCheckOAAndCA checkAttrs, DBCheckCA checkCA, DBCheckFID checkFID)
+            throws SQLException
     {
-        _checkAttrs = checkAttrs;
+        _checkOACA = checkAttrs;
+        _checkCA = checkCA;
         _checkFID = checkFID;
     }
 
     public void check_(boolean fix, InOutArg<Boolean> okay)
             throws SQLException
     {
-        l.warn("checking m/c consistency...");
-        _checkAttrs.check_(okay);
+        l.warn("checking meta/content consistency...");
+        _checkOACA.check_(okay);
+
+        l.warn("checking content consistency...");
+        _checkCA.check_(okay);
 
         l.warn("checking fid consistency...");
         _checkFID.check_(fix, okay);

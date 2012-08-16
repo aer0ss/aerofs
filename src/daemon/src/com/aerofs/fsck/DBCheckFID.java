@@ -176,6 +176,7 @@ public class DBCheckFID
 
         } else {
             assert type == OA.Type.ANCHOR;
+            Util.l().warn("anchors are not supported yet");
         }
     }
 }

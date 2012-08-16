@@ -14,12 +14,13 @@ import com.google.inject.Inject;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 
-public class DBCheckAttrs
+public class DBCheckOAAndCA
 {
     // TODO close these statements after use
     private PreparedStatement _psListChildren;
@@ -34,7 +35,7 @@ public class DBCheckAttrs
     }
 
     @Inject
-    public DBCheckAttrs(CoreDBCW dbcw)
+    public DBCheckOAAndCA(CoreDBCW dbcw)
     {
         _dbcw = dbcw.get();
     }
@@ -107,11 +108,16 @@ public class DBCheckAttrs
                     int count = rs.getInt(1);
                     if (a._type != OA.Type.FILE) {
                         if (count != 0) {
-                            String soid = a._soid.sidx() + "." + a._soid.oid()
-                                    .toStringFormal();
+                            String soid = a._soid.sidx() + "." + a._soid.oid().toStringFormal();
                             DBChecker.error("dir has no ca", soid + " " +
                                     a._name + " " + a._type + " has " + count, okay);
                         }
+
+                        // currently don't support anchors
+                        if (a._type == OA.Type.ANCHOR) {
+                            Util.l().warn("anchors are not supported yet");
+                        }
+
                         for (Args child : getChildren(a._soid)) {
                             checkRecursive_(child, okay);
                         }

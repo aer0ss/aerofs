@@ -549,7 +549,7 @@ public class DirectoryService implements IDumpStatMisc
         if (ret == null) ret = _mdb.getCAHash_(sokid.soid(), sokid.kidx());
 
         // Hashes of non-master branches should never be null.
-        assert sokid.kidx().equals(KIndex.MASTER) || ret != null;
+        assert sokid.kidx().equals(KIndex.MASTER) || ret != null : sokid;
 
         return ret;
     }
