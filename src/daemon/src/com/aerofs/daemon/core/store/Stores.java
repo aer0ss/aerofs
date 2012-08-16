@@ -12,14 +12,18 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase.StoreRow;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -30,7 +34,9 @@ public class Stores implements IStores
     private StoreCreator _sc;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;
+    private IMapSIndex2SID _sidx2sid;
     private MapSIndex2DeviceBitMap _sidx2dbm;
+    private DirectoryService _ds;
     private DevicePresence _dp;
 
     // map: sidx -> parent sidx for locally present stores
@@ -40,14 +46,17 @@ public class Stores implements IStores
 
     @Inject
     public void inject_(IStoreDatabase sdb, TransManager tm, StoreCreator sc, SIDMap sm,
-            MapSIndex2Store sidx2s, MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp)
+            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, MapSIndex2DeviceBitMap sidx2dbm,
+            DirectoryService ds, DevicePresence dp)
     {
         _sdb = sdb;
         _tm = tm;
         _sc = sc;
         _sm = sm;
         _sidx2s = sidx2s;
+        _sidx2sid = sidx2sid;
         _sidx2dbm = sidx2dbm;
+        _ds = ds;
         _dp = dp;
     }
 
@@ -200,5 +209,36 @@ public class Stores implements IStores
     public Set<SIndex> getAll_() throws SQLException
     {
         return Collections.unmodifiableSet(_s2parent.keySet());
+    }
+
+    @Override
+    public Set<SIndex> getDescendants_(SOID soid) throws SQLException
+    {
+        Set<SIndex> set = Sets.newHashSet();
+
+        SIndex sidx = soid.sidx();
+        Path path = _ds.resolve_(soid);
+
+        // among immediate children of the given store, find those who are under the given path
+        Set<SIndex> children = getChildren_(sidx);
+        for (SIndex csidx : children) {
+            if (csidx == sidx) continue;
+
+            SID csid = _sidx2sid.get_(csidx);
+            Path cpath = _ds.resolve_(new SOID(sidx, SID.storeSID2anchorOID(csid)));
+            if (cpath.isUnder(path)) {
+                // recursively add child stores to result set
+                addChildren_(csidx, set);
+            }
+        }
+
+        return set;
+    }
+
+    private void addChildren_(SIndex sidx, Set<SIndex> set) throws SQLException
+    {
+        if (set.contains(sidx)) return;
+        set.add(sidx);
+        for (SIndex csidx : getChildren_(sidx)) addChildren_(csidx, set);
     }
 }

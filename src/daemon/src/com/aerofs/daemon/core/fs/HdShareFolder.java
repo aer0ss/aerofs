@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.fs;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -83,11 +84,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // throw if a parent folder is already shared
         if (!_stores.getRoot_().equals(soid.sidx())) throw new ExParentAlreadyShared();
 
-        // throw if a child folder is already shared
-        for (SIndex sidx : _stores.getChildren_(soid.sidx())) {
-            Path path = _ds.resolveNullable_(new SOID(sidx, OID.ROOT));
-            if (path.isUnder(ev._path)) throw new ExChildAlreadyShared();
-        }
+        Set<SIndex> descendants = _stores.getDescendants_(soid);
+        if (!descendants.isEmpty()) throw new ExChildAlreadyShared();
 
         // check ACL
         assert !ev._path.isEmpty(); // guaranteed by the above check

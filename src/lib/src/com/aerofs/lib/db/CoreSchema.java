@@ -97,6 +97,7 @@ public class CoreSchema
             // local attributes. never transmitted through wire
             C_OA_FID      = "o_f",          // blob. file id (i.e. i-node number)
             C_OA_SYNC     = "o_st",         // blob. syncstatus bitvector
+            C_OA_AG_SYNC  = "o_as",         // blob. aggregate sync status (folder only)
 
             // Content Attributes
             T_CA            = "c",
@@ -359,6 +360,7 @@ public class CoreSchema
                     C_OA_FID + _dbcw.fidType(_dr.getFIDLength()) + "," +
                     C_OA_FLAGS + " integer not null," +
                     C_OA_SYNC + " blob," +
+                    C_OA_AG_SYNC + " blob," +
                     "primary key (" + C_OA_SIDX + "," + C_OA_OID + ")" +
                 ")" + _dbcw.charSet());
 

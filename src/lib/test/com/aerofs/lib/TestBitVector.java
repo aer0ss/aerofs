@@ -8,20 +8,22 @@ import com.aerofs.testlib.AbstractTest;
 
 public class TestBitVector extends AbstractTest
 {
-    private void assertBitDefined(BitVector bv, int idx, boolean value) {
+    private void assertBitDefined(BitVector bv, int idx, boolean value)
+    {
         Assert.assertEquals(value, bv.test(idx));
         Assert.assertEquals(value, bv.test(idx, false));
         Assert.assertEquals(value, bv.test(idx, true));
     }
 
-    private void assertBitUndefined(BitVector bv, int idx) {
+    private void assertBitUndefined(BitVector bv, int idx)
+    {
         Assert.assertEquals(false, bv.test(idx));
         Assert.assertEquals(false, bv.test(idx, false));
         Assert.assertEquals(true, bv.test(idx, true));
     }
 
     @Test
-    public void shouldCreateEmpyVector()
+    public void shouldCreateEmptyVector()
     {
         BitVector bv = new BitVector();
         Assert.assertEquals(0, bv.size());
@@ -220,33 +222,33 @@ public class TestBitVector extends AbstractTest
     public void shouldFindFirstAndNext()
     {
         BitVector bv = new BitVector(false, true, true, false, false, true, false, false, false);
-        Assert.assertEquals(1, bv.findFirst());
-        Assert.assertEquals(1, bv.findNext(0));
-        Assert.assertEquals(1, bv.findNext(1));
-        Assert.assertEquals(2, bv.findNext(2));
-        Assert.assertEquals(5, bv.findNext(3));
-        Assert.assertEquals(5, bv.findNext(4));
-        Assert.assertEquals(5, bv.findNext(5));
-        Assert.assertEquals(-1, bv.findNext(6));
-        Assert.assertEquals(-1, bv.findNext(7));
-        Assert.assertEquals(-1, bv.findNext(8));
-        Assert.assertEquals(-1, bv.findNext(9));
+        Assert.assertEquals(1, bv.findFirstSetBit());
+        Assert.assertEquals(1, bv.findNextSetBit(0));
+        Assert.assertEquals(1, bv.findNextSetBit(1));
+        Assert.assertEquals(2, bv.findNextSetBit(2));
+        Assert.assertEquals(5, bv.findNextSetBit(3));
+        Assert.assertEquals(5, bv.findNextSetBit(4));
+        Assert.assertEquals(5, bv.findNextSetBit(5));
+        Assert.assertEquals(-1, bv.findNextSetBit(6));
+        Assert.assertEquals(-1, bv.findNextSetBit(7));
+        Assert.assertEquals(-1, bv.findNextSetBit(8));
+        Assert.assertEquals(-1, bv.findNextSetBit(9));
     }
 
     @Test
     public void shouldFindLastAndPrevious()
     {
         BitVector bv = new BitVector(false, true, true, false, false, true, false, false, false);
-        Assert.assertEquals(5, bv.findLast());
-        Assert.assertEquals(5, bv.findPrevious(9));
-        Assert.assertEquals(5, bv.findPrevious(8));
-        Assert.assertEquals(5, bv.findPrevious(7));
-        Assert.assertEquals(5, bv.findPrevious(6));
-        Assert.assertEquals(5, bv.findPrevious(5));
-        Assert.assertEquals(2, bv.findPrevious(4));
-        Assert.assertEquals(2, bv.findPrevious(3));
-        Assert.assertEquals(2, bv.findPrevious(2));
-        Assert.assertEquals(1, bv.findPrevious(1));
-        Assert.assertEquals(-1, bv.findPrevious(0));
+        Assert.assertEquals(5, bv.findLastSetBit());
+        Assert.assertEquals(5, bv.findPreviousSetBit(9));
+        Assert.assertEquals(5, bv.findPreviousSetBit(8));
+        Assert.assertEquals(5, bv.findPreviousSetBit(7));
+        Assert.assertEquals(5, bv.findPreviousSetBit(6));
+        Assert.assertEquals(5, bv.findPreviousSetBit(5));
+        Assert.assertEquals(2, bv.findPreviousSetBit(4));
+        Assert.assertEquals(2, bv.findPreviousSetBit(3));
+        Assert.assertEquals(2, bv.findPreviousSetBit(2));
+        Assert.assertEquals(1, bv.findPreviousSetBit(1));
+        Assert.assertEquals(-1, bv.findPreviousSetBit(0));
     }
 }

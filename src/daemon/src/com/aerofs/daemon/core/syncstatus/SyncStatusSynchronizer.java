@@ -354,7 +354,7 @@ public class SyncStatusSynchronizer
         // Must perform this computation outside of the update transaction
         // to avoid problems when registering a new DID
         for (SyncStatus ostat : syncStatusList) {
-            // TODO: group entries by sid in the reply to reduce number of lookups?
+            // TODO(huguesb): group entries by sid in the reply to reduce number of lookups?
             SID sid = new SID(ostat.getSid());
             SIndex sidx = _sid2sidx.getNullable_(sid);
             if (sidx == null) {
@@ -364,10 +364,13 @@ public class SyncStatusSynchronizer
 
             SOID soid = new SOID(sidx, new OID(ostat.getOid()));
 
-            // ignore missing and expelled SOIDs
+            // ignore missing SOIDs
+            // NOTE: expelled SOIDs are still updated. This is required to keep sync status
+            // consistent upon readmission in case the only version available from online peers
+            // is the same as the last local version before expulsion
             // TODO(huguesb): keep store-level count of new out_sync objects?
             OA oa = _ds.getOANullable_(soid);
-            if (oa == null || oa.isExpelled()) continue;
+            if (oa == null) continue;
 
             DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
 
@@ -403,8 +406,8 @@ public class SyncStatusSynchronizer
     }
 
     /**
-     * Read a batch of bootstrap SOIDS from the DB
-     * @throws SQLException
+     * Read a batch of modified SOIDs from the activity log
+     * @return the highest push epoch for the batch
      */
     private long getModifiedObjectBatch_(long pushEpoch, Set<SOID> soids) throws SQLException
     {

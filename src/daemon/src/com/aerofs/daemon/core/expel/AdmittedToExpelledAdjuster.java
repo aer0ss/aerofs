@@ -81,18 +81,10 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     Version vKMLOld = _nvc.getKMLVersion_(socid);
                     _nvc.addKMLVersionNoAssert_(socid, vKMLAdd.sub_(vKMLOld), t);
 
-                    // expelled objects should be considered out-of-sync. This is especially important
-                    // to make sure they are not mistakenly considered in sync when they are readmitted.
-                    _ds.clearSyncStatus_(oa.soid(), t);
-
                     _expulsion.fileExpelled_(oa.soid());
                     return null;
 
                 case DIR:
-                    // expelled objects should be considered out-of-sync. This is especially important
-                    // to make sure they are not mistakenly considered in sync when they are readmitted.
-                    _ds.clearSyncStatus_(oa.soid(), t);
-
                     // skip children if the expulsion state of the current object doesn't change
                     return oldExpelled ? null : pathOld;
 

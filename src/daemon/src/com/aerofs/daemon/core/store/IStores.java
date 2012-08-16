@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
@@ -47,4 +48,9 @@ public interface IStores
     Set<SIndex> getChildren_(SIndex sidx) throws SQLException;
 
     Set<SIndex> getAll_() throws SQLException;
+
+    /**
+     * Get a set of all stores (recursively) under a given SOID
+     */
+    Set<SIndex> getDescendants_(SOID soid) throws SQLException;
 }

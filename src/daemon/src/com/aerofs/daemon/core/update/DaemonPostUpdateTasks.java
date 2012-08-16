@@ -2,7 +2,11 @@ package com.aerofs.daemon.core.update;
 
 import javax.inject.Inject;
 
+import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
+import com.aerofs.daemon.lib.db.IStoreDatabase;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -17,14 +21,23 @@ public class DaemonPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
     private final CoreDBCW _dbcw;
+    private final TransManager _tm;
     private final InjectableDriver _dr;
+    private final IStoreDatabase _sdb;
+    private final IMetaDatabase _mdb;
+    private final MapSIndex2DeviceBitMap _sidx2dbm;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, InjectableDriver dr)
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, InjectableDriver dr,
+            TransManager tm, IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm)
     {
         _cfgDB = cfgDB;
         _dbcw = dbcw;
         _dr = dr;
+        _tm = tm;
+        _sdb = sdb;
+        _mdb = mdb;
+        _sidx2dbm = sidx2dbm;
     }
 
     public void run() throws Exception
@@ -35,6 +48,7 @@ public class DaemonPostUpdateTasks
                 new DPUTUpdateEpochTable(_dbcw),
                 new DPUTCreateActivityLogTables(_dbcw, _dr),
                 new DPUTUpdateSchemaForSyncStatus(_dbcw),
+                new DPUTAddAggregateSyncColumn(_dbcw, _tm, _sdb, _mdb, _sidx2dbm),
                 // new tasks go here
         };
 

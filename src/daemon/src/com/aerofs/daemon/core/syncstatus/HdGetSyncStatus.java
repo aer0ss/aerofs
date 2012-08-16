@@ -15,10 +15,9 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames.DeviceInfo;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;
@@ -38,8 +37,6 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
     private final DevicePresence _dp;
     private final ServerConnectionStatus _scs;
 
-    // TODO(huguesb): cache results of recursive aggregation
-
     @Inject
     public HdGetSyncStatus(CfgLocalUser localUser, DirectoryService ds, DevicePresence dp,
             ServerConnectionStatus scs, UserAndDeviceNames didinfo, LocalSyncStatus lsync)
@@ -55,35 +52,17 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
     /**
      * Adjust sync status based on device presence (online/offline status)
      */
-    private Status presenceAwareStatus(DID did, Status status)
+    private Status presenceAwareStatus(DID did, boolean status)
     {
-        if (status == Status.IN_SYNC) return status;
+        if (status) return Status.IN_SYNC;
         return _dp.getOPMDevice_(did) != null ? Status.IN_PROGRESS : Status.OFFLINE;
-    }
-
-    /**
-     * Aggregate sync status for multiple files in a directory.
-     * Keeps the "worst" status
-     */
-    private Status worstSyncStatus(@Nullable Status a, Status b) {
-        if (a == null) return b;
-        switch (a) {
-        case IN_SYNC:
-            return b;
-        case IN_PROGRESS:
-            return b == Status.IN_SYNC ? a : b;
-        case OFFLINE:
-            return a;
-        }
-        assert false;
-        return a;
     }
 
     /**
      * Aggregate sync status for multiple devices belonging to the same user.
      * Keeps the "best" status
      */
-    private Status bestSyncStatus(@Nullable Status a, Status b)
+    private static Status bestSyncStatus(@Nullable Status a, Status b)
     {
         if (a == null) return b;
         switch (a) {
@@ -120,8 +99,14 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
             return;
         }
 
+        OA oa = _ds.getOA_(soid);
+        if (oa.isExpelled()) throw new ExExpelled(ev.getPath().toString() + " is expelled");
+
         // map (DID -> sync status)
-        Map<DID, PBSyncStatus.Status> syncStatus = aggregateSyncStatusRecursively_(soid);
+        Map<DID, Boolean> syncStatus = _lsync.getFullyAggregatedSyncStatusMap_(soid);
+
+        // recently admitted files whose content has not been resynced yet are considered OUT_SYNC
+        boolean recentlyAdmittedNotSynced = (oa.isFile() && oa.caMasterNullable() == null);
 
         // map (DID -> device name and user name)
         Map<DID, DeviceInfo> deviceInfo = _didinfo.getDeviceInfoMap_(syncStatus.keySet());
@@ -129,25 +114,26 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         Map<String, PBSyncStatus.Status> aggregated = Maps.newTreeMap();
 
         // first round: add devices owned by local user to result and aggregate foreign devices
-        for (Entry<DID, PBSyncStatus.Status> e : syncStatus.entrySet()) {
-            DeviceInfo info = deviceInfo.get(e.getKey());
+        for (Entry<DID, Boolean> e : syncStatus.entrySet()) {
+            DID did = e.getKey();
+            Status status = presenceAwareStatus(did, e.getValue() && !recentlyAdmittedNotSynced);
+            DeviceInfo info = deviceInfo.get(did);
             if (info == null) continue;
             if (info.owner.userId.equals(_localUser.get())) {
                 result.add(PBSyncStatus.newBuilder()
                         .setUserName(info.owner.getName())
-                        .setDeviceName(info.deviceName != null ? info.deviceName : e.getKey()
+                        .setDeviceName(info.deviceName != null ? info.deviceName : did
                                 .toStringFormal())
-                        .setStatus(presenceAwareStatus(e.getKey(), e.getValue()))
+                        .setStatus(status)
                         .build());
             } else {
                 aggregated.put(info.owner.userId,
-                               bestSyncStatus(aggregated.get(info.owner.userId),
-                                              presenceAwareStatus(e.getKey(), e.getValue())));
+                               bestSyncStatus(aggregated.get(info.owner.userId), status));
             }
         }
 
         // second round add aggregated foreign devices to result
-        for (Entry<String, PBSyncStatus.Status> e : aggregated.entrySet()) {
+        for (Entry<String, Status> e : aggregated.entrySet()) {
             FullName fn = _didinfo.getUserNameNullable_(e.getKey());
             result.add(PBSyncStatus.newBuilder()
                     .setUserName(fn != null ? fn.combine() : e.getKey())
@@ -156,57 +142,5 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         }
 
         ev.setResult_(true, result);
-    }
-
-    /**
-     * Aggregate sync status recursively for directories, with caching
-     */
-    private Map<DID, PBSyncStatus.Status> aggregateSyncStatusRecursively_(SOID soid)
-            throws Exception {
-        OA oa = _ds.getOA_(soid);
-        Map<DID, PBSyncStatus.Status> aggregated;
-        if (oa.isAnchor()) {
-            aggregated = _lsync.getSyncStatusMap_(soid);
-            aggregateWorst(aggregated,
-                    aggregateSyncStatusRecursively_(_ds.followAnchorNullable_(oa)));
-        } else if (oa.isDir()) {
-            // TODO(huguesb): cache lookup
-            aggregated = null;
-
-            if (aggregated == null) {
-                Util.l(this).warn("cache miss " + soid.toString());
-                // cache miss : must re-aggregate sync status of children
-
-                if (soid.oid().isRoot()) {
-                    // sync status of root directories is always empty
-                    aggregated = Maps.newHashMap();
-                } else {
-                    aggregated = _lsync.getSyncStatusMap_(soid);
-                }
-
-                for (OID oid : _ds.getChildren_(soid)) {
-                    if (!oid.equals(OID.TRASH)) {
-                        aggregateWorst(aggregated,
-                                aggregateSyncStatusRecursively_(new SOID(soid.sidx(), oid)));
-                    }
-                }
-
-                // TODO(huguesb): update cache
-            }
-        } else {
-            aggregated = _lsync.getSyncStatusMap_(soid);
-        }
-        return aggregated;
-    }
-
-    /**
-     * Aggregate two maps using {@link #worstSyncStatus}
-     */
-    private void aggregateWorst(Map<DID, PBSyncStatus.Status> aggregated,
-                                Map<DID, PBSyncStatus.Status> child) {
-        for (Entry<DID, PBSyncStatus.Status> e : child.entrySet()) {
-            aggregated.put(e.getKey(),
-                           worstSyncStatus(aggregated.get(e.getKey()), e.getValue()));
-        }
     }
 }

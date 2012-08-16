@@ -21,10 +21,12 @@ import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
+import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -152,30 +154,44 @@ public class ActivityLog implements IDirectoryServiceListener
     }
 
     @Override
-    public void objectCreated_(SOID soid, SOID parent, Path path, Trans t)
+    public void objectCreated_(SOID soid, OID parent, Path path, Trans t) throws SQLException
     {
         setEntryFields_(soid, CREATION_VALUE, path, t);
     }
 
     @Override
-    public void objectMoved_(SOID soid, SOID parentFrom, SOID parentTo,
-            Path pathFrom, Path pathTo, Trans t)
+    public void objectMoved_(SOID soid, OID parentFrom, OID parentTo,
+            Path pathFrom, Path pathTo, Trans t) throws SQLException
     {
         ActivityEntry en = setEntryFields_(soid, MOVEMENT_VALUE, pathFrom, t);
         en._pathTo = pathTo;
     }
 
     @Override
-    public void objectDeleted_(SOID soid, SOID parent, Path path, Trans t)
+    public void objectDeleted_(SOID soid, OID parent, Path path, Trans t) throws SQLException
     {
         setEntryFields_(soid, DELETION_VALUE, path, t);
     }
 
     @Override
-    public void objectModified_(SOID soid, Path path, Trans t)
+    public void objectContentModified_(SOID soid, Path path, boolean firstBranchCreated, Trans t)
+            throws SQLException
     {
         setEntryFields_(soid, MODIFICATION_VALUE, path, t);
     }
+
+    @Override
+    public void objectExpelled_(SOID soid, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectAdmitted_(SOID soid, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus,
+            Trans t) throws SQLException
+    {}
 
     public void localVersionAdded_(SOID soid, Version vLocalAdded, Trans t)
     {

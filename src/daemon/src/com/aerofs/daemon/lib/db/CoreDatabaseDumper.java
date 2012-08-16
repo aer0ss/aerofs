@@ -12,6 +12,8 @@ import java.util.Set;
 
 import com.aerofs.daemon.core.collector.CollectorSeq;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
+import com.aerofs.lib.BitVector;
+import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Role;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
@@ -152,11 +154,13 @@ public class CoreDatabaseDumper extends AbstractDatabase
         ResultSet rs = c().createStatement().executeQuery(
                 "select " + C_OA_SIDX + "," + C_OA_OID + "," + C_OA_NAME
                         + "," + C_OA_PARENT + "," + C_OA_TYPE + "," +
-                        C_OA_FLAGS + "," + C_OA_FID + "," + C_OA_SYNC + " from " + T_OA +
+                        C_OA_FLAGS + "," + C_OA_FID + "," + C_OA_SYNC + "," + C_OA_AG_SYNC +
+                        " from " + T_OA +
                         " order by " + C_OA_SIDX + ", " + C_OA_OID);
         ps.println("================== " + T_OA + " =====================");
         ps.println(C_OA_SIDX + "\t" + C_OA_OID + "\t" + C_OA_PARENT
-                + "\t" + C_OA_TYPE + "\t" + C_OA_FLAGS + "\t" + C_OA_FID + "\t\tcrc " + C_OA_NAME + "\t" + C_OA_SYNC);
+                + "\t" + C_OA_TYPE + "\t" + C_OA_FLAGS + "\t" + C_OA_FID + "\t\tcrc " + C_OA_NAME
+                + "\t" + C_OA_SYNC + "\t" + C_OA_AG_SYNC);
         ps.println("------------------------------------------");
 
         while (rs.next()) {
@@ -179,15 +183,20 @@ public class CoreDatabaseDumper extends AbstractDatabase
             String strFID = fid == null ? sbNullFID.toString() : fid.toString();
 
             byte[] sync = rs.getBytes(8);
+            BitVector bv = sync != null ? new BitVector(sync.length * 8, sync) : new BitVector();
+
+            byte[] agsync = rs.getBytes(9);
+            CounterVector cv = agsync != null ? CounterVector.fromByteArrayCompressed(agsync)
+                    : new CounterVector();
 
             if (formal) {
                 ps.println(sidx.toString() + '\t' + oid.toStringFormal() + '\t' +
                         parent.toStringFormal() + '\t' + + type + '\t' + flags + '\t' + strFID +
-                        '\t' + Util.crc32(name) + " " + name + '\t' + sync);
+                        '\t' + Util.crc32(name) + " " + name + '\t' + bv + '\t' + cv);
             } else {
                 ps.println(sidx.toString() + '\t' + oid + '\t' + parent + '\t'
                         + type + '\t' + flags + '\t' + strFID + '\t' + '\t'
-                        + Util.crc32(name) + " " + name + '\t' + sync);
+                        + Util.crc32(name) + " " + name + '\t' + bv + '\t' + cv);
             }
         }
     }

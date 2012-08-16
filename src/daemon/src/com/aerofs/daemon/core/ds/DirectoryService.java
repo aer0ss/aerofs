@@ -18,6 +18,7 @@ import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
+import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.id.*;
 
 import com.google.common.collect.Lists;
@@ -60,11 +61,16 @@ public class DirectoryService implements IDumpStatMisc
      */
     public interface IDirectoryServiceListener
     {
-        void objectCreated_(SOID obj, SOID parent, Path pathTo, Trans t);
-        void objectDeleted_(SOID obj, SOID parent, Path pathFrom, Trans t);
-        void objectMoved_(SOID obj, SOID parentFrom, SOID parentTo,
-                Path pathFrom, Path pathTo, Trans t);
-        void objectModified_(SOID obj, Path path, Trans t);
+        void objectCreated_(SOID obj, OID parent, Path pathTo, Trans t) throws SQLException;
+        void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException;
+        void objectMoved_(SOID obj, OID parentFrom, OID parentTo,
+                Path pathFrom, Path pathTo, Trans t) throws SQLException;
+        void objectContentModified_(SOID obj, Path path, boolean firstBranchAdded, Trans t)
+                throws SQLException;
+        void objectExpelled_(SOID obj, Trans t) throws SQLException;
+        void objectAdmitted_(SOID obj, Trans t) throws SQLException;
+        void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus, Trans t)
+                throws SQLException;
     }
 
     public void addListener_(IDirectoryServiceListener listener)
@@ -332,19 +338,25 @@ public class DirectoryService implements IDumpStatMisc
         _cacheDS.invalidateAll_();
 
         if (!oidParent.equals(OID.TRASH)) {
+            Path path = resolve_(oaParent).append(name);
             for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectCreated_(soid, oaParent.soid(), resolve_(oaParent).append(name), t);
+                listener.objectCreated_(soid, oaParent.soid().oid(), path, t);
             }
         }
     }
 
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
+        OA oa = getOA_(soid);
+        boolean first = oa.cas().isEmpty() && kidx == KIndex.MASTER;
+
         _mdb.createCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
+        // OA was invalidated so resolve from SOID
+        Path path = resolve_(soid);
         for (IDirectoryServiceListener listener : _listeners) {
-            listener.objectModified_(soid, resolve_(soid), t);
+            listener.objectContentModified_(soid, path, first, t);
         }
     }
 
@@ -395,17 +407,17 @@ public class DirectoryService implements IDumpStatMisc
         boolean toTrash = oaParent.soid().oid().equals(OID.TRASH);
         if (fromTrash && !toTrash) {
             for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectCreated_(oa.soid(), oaParent.soid(), pathTo, t);
+                listener.objectCreated_(oa.soid(), oaParent.soid().oid(), pathTo, t);
             }
         } else if (!fromTrash && toTrash) {
             for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectDeleted_(oa.soid(), new SOID(oa.soid().sidx(), oa.parent()),
+                listener.objectDeleted_(oa.soid(), oa.parent(),
                         pathFrom, t);
             }
         } else if (!fromTrash && !toTrash) {
             for (IDirectoryServiceListener listener : _listeners) {
-                listener.objectMoved_(oa.soid(), new SOID(oa.soid().sidx(), oa.parent()),
-                        oaParent.soid(), pathFrom, pathTo, t);
+                listener.objectMoved_(oa.soid(), oa.parent(), oaParent.soid().oid(),
+                        pathFrom, pathTo, t);
             }
         } else {
             //noinspection ConstantConditions
@@ -416,10 +428,26 @@ public class DirectoryService implements IDumpStatMisc
     public void setOAFlags_(SOID soid, int flags, Trans t)
         throws SQLException
     {
+        OA oa = getOA_(soid);
+        boolean oldExpelled = oa.isExpelled();
+        boolean newExpelled = Util.test(flags, OA.FLAG_EXPELLED_ORG_OR_INH);
+
         _mdb.setOAFlags_(soid, flags, t);
 
-        OA oa = _cacheOA.get_(soid);
+        oa = _cacheOA.get_(soid);
         if (oa != null) oa.flags(flags);
+
+        if (oldExpelled != newExpelled) {
+            if (newExpelled) {
+                for (IDirectoryServiceListener listener : _listeners) {
+                    listener.objectExpelled_(soid, t);
+                }
+            } else {
+                for (IDirectoryServiceListener listener : _listeners) {
+                    listener.objectAdmitted_(soid, t);
+                }
+            }
+        }
     }
 
     /**
@@ -513,7 +541,6 @@ public class DirectoryService implements IDumpStatMisc
     {
         // Roots do not have a valid FID
         assert !soid.oid().isRoot();
-
         _mdb.setFID_(soid, fid, t);
         _cacheOA.invalidate_(soid);
     }
@@ -536,8 +563,9 @@ public class DirectoryService implements IDumpStatMisc
         oa.ca(sokid.kidx()).length(len);
         oa.ca(sokid.kidx()).mtime(mtime);
 
+        Path path = resolve_(oa);
         for (IDirectoryServiceListener listener : _listeners) {
-            listener.objectModified_(sokid.soid(), resolve_(oa), t);
+            listener.objectContentModified_(sokid.soid(), path, false, t);
         }
     }
 
@@ -633,15 +661,33 @@ public class DirectoryService implements IDumpStatMisc
      */
     public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
     {
-        _mdb.setSyncStatus_(soid, status, t);
+        BitVector oldStatus = getSyncStatus_(soid);
+
+        if (!oldStatus.equals(status)) {
+            _mdb.setSyncStatus_(soid, status, t);
+
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectSyncStatusChanged_(soid, oldStatus, status, t);
+            }
+        }
     }
 
     /**
-     * Clear the sync status for an object
-     * @param t transaction (this method can only be called as part of a transaction)
+     * Do not access aggregate sync status directly, always go through:
+     * {@link com.aerofs.daemon.core.syncstatus.AggregateSyncStatus}
      */
-    public void clearSyncStatus_(SOID soid, Trans t) throws SQLException
+    public CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException
     {
-        _mdb.clearSyncStatus_(soid, t);
+        return _mdb.getAggregateSyncStatus_(soid);
+    }
+
+    /**
+     * Do not modify aggregate sync status directly, it is automatically maintained by:
+     * see {@link com.aerofs.daemon.core.syncstatus.AggregateSyncStatus}
+     */
+    public void setAggregateSyncStatus_(SOID soid, CounterVector agstat, Trans t)
+            throws SQLException
+    {
+        _mdb.setAggregateSyncStatus_(soid, agstat, t);
     }
 }

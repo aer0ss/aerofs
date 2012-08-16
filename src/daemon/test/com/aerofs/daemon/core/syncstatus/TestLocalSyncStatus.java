@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DeviceBitMap;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.update.DPUTUpdateSchemaForSyncStatus;
@@ -54,6 +55,8 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock IPhysicalStorage ps;
     @Mock MapAlias2Target alias2target;
     @Mock IStores stores;
+    @Mock IMapSIndex2SID sidx2sid;
+    @Mock AggregateSyncStatus assc;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
@@ -81,7 +84,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
         DirectoryService r = new DirectoryService();
         r.inject_(ps, mdb, alias2target, stores, tm, sm, sm);
-        lsync = new LocalSyncStatus(r, ssdb, sidx2dbm);
+        lsync = new LocalSyncStatus(r, stores, ssdb, sidx2sid, sidx2dbm, assc);
     }
 
     @After

@@ -21,10 +21,12 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
@@ -585,66 +587,114 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         }
     }
 
-    private PreparedStatement _psGet;
+    private PreparedStatementWrapper _pswGetSync = new PreparedStatementWrapper();
     @Override
     public BitVector getSyncStatus_(SOID soid) throws SQLException
     {
+        byte[] d = getNullableBlob_(_pswGetSync, soid, C_OA_SYNC);
+        return d != null ? new BitVector(8 * d.length, d) : new BitVector();
+    }
+
+    private PreparedStatementWrapper _pswSetSync = new PreparedStatementWrapper();
+    @Override
+    public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
+    {
+        setNullableBlob_(_pswSetSync, soid, C_OA_SYNC, status.data(), t);
+    }
+
+    private PreparedStatementWrapper _pswGetAgSync = new PreparedStatementWrapper();
+    @Override
+    public CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException
+    {
+        byte[] d = getNullableBlob_(_pswGetAgSync, soid, C_OA_AG_SYNC);
+        return d != null ? CounterVector.fromByteArrayCompressed(d) : new CounterVector();
+    }
+
+    private PreparedStatementWrapper _pswSetAgSync = new PreparedStatementWrapper();
+    @Override
+    public void setAggregateSyncStatus_(SOID soid, CounterVector agstat, Trans t)
+            throws SQLException
+    {
+        setNullableBlob_(_pswSetAgSync, soid, C_OA_AG_SYNC, agstat.toByteArrayCompressed(), t);
+    }
+
+    /**
+     * Read a blob from a given column of the object attribute table
+     *
+     * @param psw PreparedStatement wrapper to be used for the DB lookup
+     * @param soid Object for which to lookup the blob
+     * @param column name of the column of interest
+     * @return a byte array containing the blob of interest, null if not found
+     *
+     * Note: the return value will be null if the given {@code soid} is not present in the DB,
+     * if the value stored in the DB is an explicit NULL or if it is an empty byte array.
+     *
+     * The prepared statement will be automatically initialized by this method. The use of a wrapper
+     * is necessary as Java does not support passing arguments by reference.
+     */
+    private @Nullable byte[] getNullableBlob_(PreparedStatementWrapper psw, SOID soid,
+            String column) throws SQLException
+    {
         try {
-            if (_psGet == null) {
-                _psGet = c().prepareStatement(
-                        "select " + C_OA_SYNC + " from " + T_OA +
-                                " where " + C_OA_SIDX + "=? and " + C_OA_OID + "=?");
+            if (psw.get() == null) {
+                psw.set(c().prepareStatement(
+                        "select " + column + " from " + T_OA +
+                                " where " + C_OA_SIDX + "=? and " + C_OA_OID + "=?"));
             }
-            _psGet.setInt(1, soid.sidx().getInt());
-            _psGet.setBytes(2, soid.oid().getBytes());
-            ResultSet rs = _psGet.executeQuery();
-            BitVector bv = null;
+            psw.get().setInt(1, soid.sidx().getInt());
+            psw.get().setBytes(2, soid.oid().getBytes());
+            ResultSet rs = psw.get().executeQuery();
+            byte[] blob = null;
             try {
                 if (rs.next()) {
-                    byte[] d = rs.getBytes(1);
-                    bv = d != null ? new BitVector(8 * d.length, d) : new BitVector();
+                    blob = rs.getBytes(1);
                     Util.verify(!rs.next()); // and only one entry...
-                } else {
-                    bv = new BitVector();
                 }
             } finally {
                 rs.close();
             }
-            return bv;
+            return blob;
         } catch (SQLException e) {
-            DBUtil.close(_psGet);
-            _psGet = null;
+            DBUtil.close(psw.get());
+            psw.set(null);
             throw e;
         }
     }
 
-    private PreparedStatement _psSet;
-    @Override
-    public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
+    /**
+     * Write a blob to a given column of the object attribute table
+     *
+     * @param psw PreparedStatement wrapper to be used for the DB update
+     * @param soid Object for which to update the blob
+     * @param column name of the column of interest
+     * @param blob byte array containing the blob to write
+     *
+     * The prepared statement will be automatically initialized by this method. The use of a wrapper
+     * is necessary as Java does not support passing arguments by reference.
+     */
+    private void setNullableBlob_(PreparedStatementWrapper psw, SOID soid, String column,
+            @Nullable byte[] blob, Trans t) throws SQLException
     {
         try {
-            if (_psSet == null) {
-                _psSet = c().prepareStatement(
-                        "update " + T_OA + " set " + C_OA_SYNC + "=?" +
-                                " where " + C_OA_SIDX + "=? and " + C_OA_OID + "=?");
+            if (psw.get() == null) {
+                psw.set(c().prepareStatement("update " + T_OA + " set " + column + "=?" +
+                        " where " + C_OA_SIDX + "=? and " + C_OA_OID + "=?"));
             }
-            _psSet.setBytes(1, status.data());
-            _psSet.setInt(2, soid.sidx().getInt());
-            _psSet.setBytes(3, soid.oid().getBytes());
+            if (blob == null) {
+                psw.get().setNull(1, Types.BLOB);
+            } else {
+                psw.get().setBytes(1, blob);
+            }
+            psw.get().setInt(2, soid.sidx().getInt());
+            psw.get().setBytes(3, soid.oid().getBytes());
 
-            int affectedRows = _psSet.executeUpdate();
+            int affectedRows = psw.get().executeUpdate();
             // NOTE: Silently ignore missing SOID (should we use a boolean return flag instead?)
             assert affectedRows <= 1;
         } catch (SQLException e) {
-            DBUtil.close(_psSet);
-            _psSet = null;
+            DBUtil.close(psw.get());
+            psw.set(null);
             throw e;
         }
-    }
-
-    @Override
-    public void clearSyncStatus_(SOID soid, Trans t) throws SQLException
-    {
-        setSyncStatus_(soid, new BitVector(), t);
     }
 }

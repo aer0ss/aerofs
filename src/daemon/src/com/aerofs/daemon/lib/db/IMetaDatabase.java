@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.FID;
@@ -86,27 +87,23 @@ public interface IMetaDatabase
 
     /**
      * Retrieve the sync status for an object
-     * @param soid
-     * @return
-     * @throws SQLException
      */
     BitVector getSyncStatus_(SOID soid) throws SQLException;
 
     /**
      * Set the sync status for an object
-     * @param soid
-     * @param status
-     * @param t transaction (this method can only be called as part of a transaction)
-     * @throws SQLException
      */
     void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException;
 
     /**
-     * Clear the sync status for an object
-     * @param soid
-     * @param t transaction (this method can only be called as part of a transaction)
-     * @throws SQLException
+     * Retrieve the aggregate sync status for an object
      */
-    void clearSyncStatus_(SOID soid, Trans t) throws SQLException;
+    CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException;
+
+    /**
+     * Set the aggregate sync status for an object
+     */
+    void setAggregateSyncStatus_(SOID soid, CounterVector aggregateStatus, Trans t)
+            throws SQLException;
 
 }

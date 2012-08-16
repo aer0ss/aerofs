@@ -20,6 +20,7 @@ import com.aerofs.daemon.core.mock.logical.MockDir;
 import com.aerofs.daemon.core.mock.logical.MockFile;
 import com.aerofs.daemon.core.mock.logical.MockRoot;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -91,6 +92,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     @Mock StoreCreator sc;
     @Mock SIDMap sm;
     @Mock MapSIndex2Store sidx2s;
+    @Mock IMapSIndex2SID sidx2sid;
     @Mock DevicePresence dp;
     @Mock DirectoryService ds;
     @Mock SyncStatusConnection ssc;
@@ -99,6 +101,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     @Mock IStores stores;
     @Mock ActivityLog al;
     @Mock CfgLocalUser localUser;
+    @Mock AggregateSyncStatus assc;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
@@ -231,7 +234,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
             }
         });
 
-        lsync = new LocalSyncStatus(ds, db, sidx2dbm);
+        lsync = new LocalSyncStatus(ds, stores, db, sidx2sid, sidx2dbm, assc);
 
         sidx2dbm.addDevice_(o_r.sidx(), d0, t);
 

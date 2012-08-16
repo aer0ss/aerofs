@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 /**
  * A simple bitvector implementation that grows as needed
- *
  */
 public class BitVector
 {
@@ -154,6 +153,17 @@ public class BitVector
     }
 
     /**
+     * @return true if the bit vector is empty (i.e no bits are set)
+     */
+    public boolean isEmpty()
+    {
+        for (int i = 0; i < _d.length; ++i)
+            if (_d[i] != 0)
+                return false;
+        return true;
+    }
+
+    /**
      * Test a bit in the vector
      * @param idx index of the bit to test
      * @return value of the bit at the given index
@@ -229,64 +239,92 @@ public class BitVector
     }
 
     /**
-     * @return A bitwise or of two bitvectors
+     * In-place bitwise OR of two bitvectors
+     */
+    public BitVector orInPlace(BitVector bv)
+    {
+        if (_size < bv._size)
+            grow(bv._size);
+        int ml = Math.max(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i) {
+            _d[i] |= bv.getByte(i);
+        }
+        return this;
+    }
+
+    /**
+     * In-place bitwise AND of two bitvectors
+     */
+    public BitVector andInPlace(BitVector bv)
+    {
+        int ml = Math.min(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i) {
+            _d[i] &= bv.getByte(i);
+        }
+        // shrink the array if possible
+        _size = Math.min(_size, bv._size);
+        _d = Arrays.copyOf(_d, byteCount(_size));
+        return this;
+    }
+
+    /**
+     * In-place bitwise XOR of two bitvectors
+     */
+    public BitVector xorInPlace(BitVector bv)
+    {
+        if (_size < bv._size)
+            grow(bv._size);
+        int ml = Math.max(_d.length, bv._d.length);
+        for (int i = 0; i < ml; ++i) {
+            _d[i] ^= bv.getByte(i);
+        }
+        return this;
+    }
+
+    /**
+     * @return A bitwise OR of two bitvectors
      */
     public BitVector or(BitVector bv)
     {
-        BitVector r = new BitVector(Math.max(_size, bv._size), false);
-        int ml = Math.max(_d.length, bv._d.length);
-        for (int i = 0; i < ml; ++i) {
-            r._d[i] = (byte)(getByte(i) | bv.getByte(i));
-        }
-        return r;
+        return new BitVector(this).orInPlace(bv);
     }
 
     /**
-     * @return A bitwise and of two bitvectors
+     * @return A bitwise AND of two bitvectors
      */
     public BitVector and(BitVector bv)
     {
-        BitVector r = new BitVector(Math.min(_size, bv._size), false);
-        int ml = Math.min(_d.length, bv._d.length);
-        for (int i = 0; i < ml; ++i) {
-            r._d[i] = (byte)(getByte(i) & bv.getByte(i));
-        }
-        return r;
+        return new BitVector(this).andInPlace(bv);
     }
 
     /**
-     * @return A bitwise xor of two bitvectors
+     * @return A bitwise XOR of two bitvectors
      */
     public BitVector xor(BitVector bv)
     {
-        BitVector r = new BitVector(Math.max(_size, bv._size), false);
-        int ml = Math.max(_d.length, bv._d.length);
-        for (int i = 0; i < ml; ++i) {
-            r._d[i] = (byte)(getByte(i) ^ bv.getByte(i));
-        }
-        return r;
+        return new BitVector(this).xorInPlace(bv);
     }
 
     /**
      * @return the index of the first set bit in the vector, or -1 if no bit is set
      */
-    public int findFirst()
+    public int findFirstSetBit()
     {
-        return findNext(0);
+        return findNextSetBit(0);
     }
 
     /**
      * @param idx index from which to look for a set bit (inclusive)
      * @return the index of the next set bit in the vector, or -1 if no bit is set
      */
-    public int findNext(int idx)
+    public int findNextSetBit(int idx)
     {
         int partial = (getByte(idx / BITS_PER_BYTE) & 0xff) >> (idx % BITS_PER_BYTE);
-        if (partial != 0) return idx + getFirstBit(partial);
+        if (partial != 0) return idx + getFirstSetBit(partial);
 
         for (int i = idx / BITS_PER_BYTE + 1; i < _d.length; ++i) {
             int b = getByte(i) & 0xff;
-            if (b != 0) return i * BITS_PER_BYTE + getFirstBit(b);
+            if (b != 0) return i * BITS_PER_BYTE + getFirstSetBit(b);
         }
         return -1;
     }
@@ -294,23 +332,23 @@ public class BitVector
     /**
      * @return the index of the last set bit in the vector, or -1 if not bit is set
      */
-    public int findLast()
+    public int findLastSetBit()
     {
-        return findPrevious(_size - 1);
+        return findPreviousSetBit(_size - 1);
     }
 
     /**
      * @param idx index from which to look for a set bit (inclusive)
      * @return the index of the previous set bit in the vector, or -1 if no bit is set
      */
-    public int findPrevious(int idx)
+    public int findPreviousSetBit(int idx)
     {
         int partial = (getByte(idx / BITS_PER_BYTE) & (0xff >> (BITS_PER_BYTE - 1 - (idx % BITS_PER_BYTE))));
-        if (partial != 0) return (idx & ~(BITS_PER_BYTE - 1)) + getLastBit(partial);
+        if (partial != 0) return (idx & ~(BITS_PER_BYTE - 1)) + getLastSetBit(partial);
 
         for (int i = idx / BITS_PER_BYTE - 1; i >= 0; --i) {
             int b = getByte(i) & 0xff;
-            if (b != 0) return i * BITS_PER_BYTE + getLastBit(b);
+            if (b != 0) return i * BITS_PER_BYTE + getLastSetBit(b);
         }
         return -1;
     }
@@ -328,28 +366,21 @@ public class BitVector
      * Find index of first bit set in a byte
      * @pre b is as one its lower 8 bit set
      */
-    private int getFirstBit(int b)
+    private int getFirstSetBit(int b)
     {
-        for (int i = 0; i < BITS_PER_BYTE; ++i) {
-            if ((b & 1) != 0) return i;
-            b >>>= 1;
-        }
-        assert false;
-        return -1;
+        int n = Integer.numberOfTrailingZeros(b);
+        assert n < BITS_PER_BYTE : b + " " + n;
+        return n;
     }
 
     /**
      * Find index of last bit set in a byte
      * @pre b is as one its lower 8 bit set
      */
-    private int getLastBit(int b)
+    private int getLastSetBit(int b)
     {
-        int mask = 1 << (BITS_PER_BYTE - 1);
-        for (int i = BITS_PER_BYTE - 1; i >= 0; --i) {
-            if ((b & mask) != 0) return i;
-            mask >>>= 1;
-        }
-        assert false;
-        return -1;
+        int n = Integer.numberOfLeadingZeros(b);
+        assert n < Integer.SIZE : b + " " + n;
+        return (Integer.SIZE - 1) - n;
     }
 }
