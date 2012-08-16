@@ -318,6 +318,8 @@ public class DirectoryService implements IDumpStatMisc
         SOID soid = new SOID(sidx, oid);
         if (l.isInfoEnabled()) l.info(soid + ": create " + oidParent + "/" + name);
 
+        assert !oid.equals(oidParent) : "s " + sidx + " o " + oid + " p " + oidParent;
+
         OA oaParent = getOAThrows_(new SOID(sidx, oidParent));
 
         assert oaParent.isDir();
@@ -362,6 +364,10 @@ public class DirectoryService implements IDumpStatMisc
 
         // assigning the child to a parent in a different store is always wrong.
         assert oa.soid().sidx().equals(oaParent.soid().sidx()) : oa + " " + oaParent;
+
+        // assigning the child itself as the parent is always wrong (apart from anchors, which don't
+        // call this)
+        assert !oa.soid().equals(oaParent.soid()) : oa + " " + oaParent;
 
         if (!oaParent.isDir()) throw new ExNotDir();
 
