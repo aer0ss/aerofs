@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.ds;
 
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -199,7 +198,7 @@ public class DirectoryService implements IDumpStatMisc
      */
     public @Nonnull Path resolve_(@Nonnull OA oa) throws SQLException
     {
-        ArrayList<String> elems = new ArrayList<String>(16);
+        List<String> elems = Lists.newArrayListWithCapacity(16);
         while (true) {
             if (oa.soid().oid().isRoot()) {
                 if (oa.soid().sidx().equals(_ss.getRoot_())) {
@@ -207,6 +206,7 @@ public class DirectoryService implements IDumpStatMisc
                 } else {
                     // parent oid of the root encodes the parent store's sid
                     SOID soidAnchor = getAnchor_(oa.soid().sidx());
+                    assert !soidAnchor.equals(oa.soid()) : soidAnchor + " " + oa;
                     oa = getOA_(soidAnchor);
                 }
             }

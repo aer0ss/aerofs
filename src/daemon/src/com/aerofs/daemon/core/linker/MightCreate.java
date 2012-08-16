@@ -243,7 +243,7 @@ public class MightCreate
             } else if (soidConflict != null) {
                 // the soids are equal: the DirectoryService should only return an equal soid if
                 // the two paths are equal when ignoring case
-                assert pPhysical.equalsIgnoreCase(pLogical);
+                assert pPhysical.equalsIgnoreCase(pLogical) : pPhysical + " " + pLogical;
             }
 
             // move the logical object
