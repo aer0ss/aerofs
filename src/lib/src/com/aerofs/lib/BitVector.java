@@ -1,7 +1,6 @@
 package com.aerofs.lib;
 
 import java.util.Arrays;
-import java.util.BitSet;
 
 /**
  * A simple bitvector implementation that grows as needed
@@ -265,7 +264,6 @@ public class BitVector
         for (int i = 0; i < ml; ++i) {
             r._d[i] = (byte)(getByte(i) ^ bv.getByte(i));
         }
-        BitSet bs = new BitSet();
         return r;
     }
 

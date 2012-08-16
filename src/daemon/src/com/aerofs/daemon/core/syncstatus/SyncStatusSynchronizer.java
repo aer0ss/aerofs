@@ -271,7 +271,7 @@ public class SyncStatusSynchronizer
      */
     private void schedulePull_()
     {
-        AbstractEBSelfHandling eb = new AbstractEBSelfHandling() {
+        schedule_(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
                 // exp retry (w/ forced server reconnect) in case of failure
@@ -291,8 +291,15 @@ public class SyncStatusSynchronizer
                     }
                 });
             }
-        };
+        });
+    }
 
+    /**
+     * Schedule a self handling event : try non-blocking enqueue first and on filaure release core
+     * lock and do a blocking enqueue
+     */
+    private void schedule_(AbstractEBSelfHandling eb)
+    {
         // try non-blocking scheduling w/ core lock held
         if (_q.enqueue_(eb, Prio.LO)) return;
 
@@ -460,26 +467,32 @@ public class SyncStatusSynchronizer
         // TODO (huguesb): remove check when ready for all users
         if (!_enable) return;
 
-        // to avoid unbounded queueing of failing scans when connection to server is lost, each call
-        // added to the exp retry is assigned a sequence number
-        final long _seq = ++_scanSeq;
-        // exp retry (w/ forced server reconnect) in case of failure
-        // TODO(huguesb): reduce latency of retry when connection to server comes back
-        _er.retry("SyncStatActivityPush", new Callable<Void>()
-        {
+        schedule_(new AbstractEBSelfHandling() {
             @Override
-            public Void call() throws Exception
-            {
-                if (_scanSeq != _seq) return null;
+            public void handle_() {
+                // to avoid unbounded queueing of failing scans when connection to server is lost, each call
+                // added to the exp retry is assigned a sequence number
+                final long _seq = ++_scanSeq;
 
-                try {
-                    scanActivityLogInternal_();
-                } catch (Exception e) {
-                    _c = null;
-                    // let ExponentialRetry kick in
-                    throw e;
-                }
-                return null;
+                // exp retry (w/ forced server reconnect) in case of failure
+                // TODO(huguesb): reduce latency of retry when connection to server comes back
+                _er.retry("SyncStatActivityPush", new Callable<Void>()
+                {
+                    @Override
+                    public Void call() throws Exception
+                    {
+                        if (_scanSeq != _seq) return null;
+
+                        try {
+                            scanActivityLogInternal_();
+                        } catch (Exception e) {
+                            _c = null;
+                            // let ExponentialRetry kick in
+                            throw e;
+                        }
+                        return null;
+                    }
+                });
             }
         });
     }
