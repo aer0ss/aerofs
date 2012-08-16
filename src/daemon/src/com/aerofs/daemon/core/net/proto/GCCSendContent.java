@@ -257,7 +257,13 @@ public class GCCSendContent
             }
 
             assert rest == 0;
-            assert OSUtil.isWindows() || is == null || is.available() == 0;
+            // The following assertion is overzealous - it is possible that after we read the last
+            // file chunk from the PhysicalFile and check that the file hasn't changed, but before
+            // we finish uploading the last chunk, the file will change or be appended to.  In this
+            // case, is.available() will be greater than 0, but the file will have been uploaded
+            // correctly in its entirety, and we'll pick up the new version once the notifier
+            // catches up.
+            //assert OSUtil.isWindows() || is == null || is.available() == 0;
             reason = null;
         } finally {
             if (is != null) is.close();
