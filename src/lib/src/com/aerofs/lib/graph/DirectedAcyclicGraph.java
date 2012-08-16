@@ -72,8 +72,9 @@ public abstract class DirectedAcyclicGraph<V extends Comparable<V>, E extends Di
             E e = edgesToVisit.poll();
             predecessors.put(e.dst, e);
             if (e.dst.equals(dst)) {
-                l.info("path " + src + "->...->" + dst + " exists");
-                return predecessorsMapToPath_(predecessors, src, dst);
+                final List<E> path = predecessorsMapToPath_(predecessors, src, dst);
+                l.info(src + "-...->" + dst + " path exists: " + path);
+                return path;
             }
 
             edgesToVisit.addAll(_mmap.get(e.dst));

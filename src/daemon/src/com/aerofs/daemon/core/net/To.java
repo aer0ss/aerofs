@@ -18,6 +18,8 @@ import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
+
 public class To
 {
     public static final int ANYCAST = 0x1;
@@ -186,7 +188,7 @@ public class To
         return this;
     }
 
-    public void avoid_(DID did)
+    public void avoid_(@Nonnull DID did)
     {
         assert did != null;
         _dids.remove(did);

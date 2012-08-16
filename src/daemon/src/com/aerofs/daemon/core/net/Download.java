@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.net;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -18,6 +17,7 @@ import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.*;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -96,11 +96,6 @@ public class Download
         _dlOngoingDependencies = dldg;
     }
 
-    public SOCID socid()
-    {
-        return _socid;
-    }
-
     public void include_(To src, @Nullable IDownloadCompletionListener listener)
     {
         _src.addAll_(src);
@@ -129,7 +124,7 @@ public class Download
                 if (!prev.contains(l)) nl.notify_(l);
             }
             if (!_ls.endIterating_()) break;
-            else prev = new HashSet<IDownloadCompletionListener>(cur);
+            else prev = Sets.newHashSet(cur);
         }
     }
 
@@ -203,7 +198,13 @@ public class Download
 
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
 
-                l.info("kml > 0. dl again");
+                l.info("kml > 0 for " + _socid + ". dl again");
+                // TODO (MJ) maybe uncomment this line. We'll have to devise a test to see
+                // The idea is that if you get to this point, you're re-running the Download having
+                // successfully resolved some KML last time. We should therefore clear out the
+                // memory of existing dependencies.
+                // This will be irrelevant if Download objects have a synced set again.
+                //_dlOngoingDependencies.removeOutwardEdges_(_socid);
                 _src.avoid_(replier);
 
                 reenqueue(started);
