@@ -148,9 +148,8 @@ public class Collector implements IDumpStatMisc
 
     public void offline_(DID did)
     {
-        // if no more device is left online, and the collection is on going,
-        // the next iteration of the collector will find no filters are
-        // available, and therefore stop collecting.
+        // if no more device is left online, and the collection is on going, the next iteration of
+        // the collector will find no filters are available, and therefore stop collecting.
         _cfs.unloadAllFilters_(did);
     }
 
@@ -226,7 +225,7 @@ public class Collector implements IDumpStatMisc
      *
      * @param t may be null
      */
-    private void collect_(Trans t) throws Exception
+    private void collect_(@Nullable Trans t) throws Exception
     {
         // depending on _occs, we may either perform a iterating continuation or
         // start a new iteration
@@ -333,13 +332,10 @@ public class Collector implements IDumpStatMisc
     }
 
     /**
-     * TODO why is this called testStop?
-     *
-     * finalized the collection if 1) the collection iteration is done, and 2)
-     * all the downloads initiated by the iteration have finished. Note that
-     * before the last download finishes, there may be one or more other
-     * collection iterations have started and then stopped, or still on going,
-     * which is okay.
+     * Stop and finalized collection if the following conditions are met:
+     * 1) the collection iteration is done, and 2) all the downloads initiated by the iteration have
+     * finished. Note that before the last download finishes, there may be one or more other
+     * collection iterations have started and then stopped, or still on going, which is okay.
      */
     private void testStop_(@Nullable Trans t)
     {
@@ -368,7 +364,7 @@ public class Collector implements IDumpStatMisc
         final Set<DID> dids = _cfs.test_(occs._ocid);
         if (dids.isEmpty()) return true;
 
-        l.warn("clct " + _s.sidx() + occs + " " + dids);
+        l.info("clct " + _s.sidx() + occs + " " + dids);
 
         final Token tk;
         if (_f._dls.isOngoing_(k)) {

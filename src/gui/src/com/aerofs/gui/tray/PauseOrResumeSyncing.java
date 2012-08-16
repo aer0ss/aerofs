@@ -6,6 +6,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 
+/**
+ * TODO (WW) reissue the pause ritual command if the daemon restarts.
+ */
 public class PauseOrResumeSyncing
 {
     // access to all member variables should be protected by synchronized (this)
@@ -28,6 +31,7 @@ public class PauseOrResumeSyncing
 
     private void pause_(final long timeout) throws Exception
     {
+        Util.l(this).warn("pause syncing");
         assert !_paused;
 
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
@@ -63,6 +67,7 @@ public class PauseOrResumeSyncing
 
     private void resume_() throws Exception
     {
+        Util.l(this).warn("resume syncing");
         assert _paused;
 
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();

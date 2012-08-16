@@ -448,14 +448,14 @@ public class SVClient
             @Nullable String secret, boolean verbose, final boolean sendLogs, final boolean sendDB)
             throws Exception
     {
+        if (e == null) e = new Exception(desc);
+        String stackTrace = Util.stackTrace2string(e);
+
         if (Cfg.staging()) {
             l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(e));
             l.warn("(sv defect sending disabled on staging.)");
             return;
         }
-
-        if (e == null) e = new Exception(desc);
-        String stackTrace = Util.stackTrace2string(e);
 
         // always send non-automatic defects
         boolean isLastSent = automatic && isLastSentDefect(e.getMessage(), stackTrace);

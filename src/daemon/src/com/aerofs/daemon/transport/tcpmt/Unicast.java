@@ -44,17 +44,17 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
      * we listen to the internal port but getListingPort() returns the external
      * port.
      */
-    Unicast(IPipeController pc, ARP arp, Stores ms, int port, Integer internalPort) throws IOException
+    Unicast(IPipeController pc, ARP arp, Stores ss, int port, Integer internalPort)
+            throws IOException
     {
         // external port must be a specific value if internal port is specified
         assert internalPort == null || port != TCP.PORT_ANY;
 
-        this.pc = pc;
-        this.arp = arp;
-        this.ms = ms;
-        _proactor = new TCPProactorMT("tp", this, null, internalPort == null ?
-                port : internalPort, C.CORE_MAGIC,
-                true, DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE);
+        _pc = pc;
+        _arp = arp;
+        _ss = ss;
+        _proactor = new TCPProactorMT("tp", this, null, internalPort == null ? port : internalPort,
+                C.CORE_MAGIC, true, DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE);
         _port = internalPort == null ? _proactor.getListeningPort() : port;
 
         l.info("port " + _port + " internal " + _proactor.getListeningPort());
@@ -63,11 +63,6 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     void start_()
     {
         _proactor.start_();
-    }
-
-    void stop()
-    {
-        // FIXME: end all sessions
     }
 
     /**
@@ -100,7 +95,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     @Override
     public long getBytesRx(DID did)
     {
-        ARPEntry arpentry = arp.get(did);
+        ARPEntry arpentry = _arp.get(did);
         return arpentry == null ? 0 : _proactor.getBytesRx(arpentry._isa);
     }
 
@@ -120,8 +115,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     }
 
     @Override
-    public Object send_(DID did, IResultWaiter wtr, Prio pri, byte[][] bss,
-        Object cke)
+    public Object send_(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
         throws ExDeviceOffline, ExNoResource, IOException
     {
         // use the address specified as the cookie to send the packet if the
@@ -136,7 +130,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         // 5. the rest of the chunks in the stream will be sent via the latter
         //    link, which violates streams' guarantee of in-order delivery.
         //
-        InetSocketAddress addr = cke == null ? arp.getThrows(did)._isa : (InetSocketAddress) cke;
+        InetSocketAddress addr = cke == null ? _arp.getThrows(did)._isa : (InetSocketAddress) cke;
         _proactor.send(addr, bss, did, wtr, pri);
         return addr;
     }
@@ -151,7 +145,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
     public void sendControl(DID did, PBTPHeader h, Prio prio)
         throws ExDeviceOffline, IOException, ExNoResource
     {
-        InetSocketAddress remaddr = arp.getThrows(did)._isa;
+        InetSocketAddress remaddr = _arp.getThrows(did)._isa;
         sendControl(did, remaddr, h, prio);
     }
 
@@ -196,7 +190,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         tpbuilder.setBytesIn(getBytesRx());
         tpbuilder.setBytesOut(getBytesTx());
 
-        if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + arp);
+        if (tp.hasDiagnosis()) tpbuilder.setDiagnosis("arp:\n" + _arp);
 
         if (tp.getConnectionCount() != 0) {
             for (String c : getConnections()) {
@@ -238,7 +232,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         public void connectorDisconnected_()
         {
             l.info("connector disconnected" + did);
-            pc.closePeerStreams(did, true, false);
+            _pc.closePeerStreams(did, true, false);
         }
 
         private final DID did;
@@ -259,6 +253,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             l.info("reactor created rem: " + _remaddr);
         }
 
+        @Override
         public byte[][] getReactorPreamble_()
         {
             return newPreamble();
@@ -278,7 +273,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
                     return null;
                 }
 
-                pc.processUnicastPayload(_did, h, is, wirelen); // silently discard data
+                _pc.processUnicastPayload(_did, h, is, wirelen); // silently discard data
             } else if (type == Type.TCP_UNICAST_PREAMBLE) {
                 PBTCPUnicastPreamble preamble = h.getTcpPreamble();
 
@@ -301,7 +296,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
                 if (!Cfg.isSP()) {
                     ret = PBTPHeader.newBuilder()
                         .setType(Type.TCP_STORES)
-                        .setTcpStores(ms.newStoresForNonSP(_did))
+                        .setTcpStores(_ss.newStoresForNonSP(_did))
                         .build();
                 }
             } else if (type == Type.TCP_STORES) {
@@ -310,11 +305,11 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
                     return null;
                 }
 
-                ms.storesReceived(_did, _remaddr,
+                _ss.storesReceived(_did, _remaddr,
                     _remoteListeningPort, h.getTcpStores(), false);
 
                 if (Cfg.isSP()) {
-                    ARPEntry arpentry = arp.get(_did);
+                    ARPEntry arpentry = _arp.get(_did);
                     if (arpentry == null || arpentry._prefixes == null) {
                         // don't send member stores if the peer doesn't provide
                         // the prefixes. so it's critical for non-SP client
@@ -323,16 +318,16 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
                     } else {
                         ret = PBTPHeader.newBuilder()
                                 .setType(Type.TCP_STORES)
-                                .setTcpStores(ms.newStoresForSP(_did, arpentry._prefixes))
+                                .setTcpStores(_ss.newStoresForSP(_did, arpentry._prefixes))
                                 .build();
                     }
                 }
             } else if (type == Type.TCP_PONG) {
                 Transport.PBTCPPong pong = h.getTcpPong();
-                ms.filterReceived(_did, _remaddr,
+                _ss.filterReceived(_did, _remaddr,
                     pong.getUnicastListeningPort(), pong.getFilter(), false);
             } else {
-                pc.processUnicastControl(_did, h);
+                _pc.processUnicastControl(_did, h);
             }
 
             return ret == null ? null : TPUtil.newControl(ret);
@@ -344,7 +339,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             l.info("reactor disconnected: d:" +
                 (_did == null ? "null" : _did) +" rem:" + printaddr(_printaddr));
 
-            if (_did != null) pc.closePeerStreams(_did, false, true);
+            if (_did != null) _pc.closePeerStreams(_did, false, true);
         }
 
         private final InetAddress _remaddr;
@@ -355,13 +350,23 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         private int _remoteListeningPort;
     }
 
+    public void pauseAccept()
+    {
+        _proactor.pauseAccept();
+    }
+
+    public void resumeAccept()
+    {
+        _proactor.resumeAccept();
+    }
+
     //
     // members
     //
 
-    private final IPipeController pc;
-    private final ARP arp;
-    private final Stores ms;
+    private final IPipeController _pc;
+    private final ARP _arp;
+    private final Stores _ss;
     private final TCPProactorMT _proactor;
     private final int _port;
 

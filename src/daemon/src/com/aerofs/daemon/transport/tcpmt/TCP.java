@@ -11,15 +11,16 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.event.IEvent;
@@ -59,6 +60,26 @@ import com.aerofs.proto.Transport.PBTPHeader.Type;
 
 public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
 {
+    private static final Logger l = Util.l(TCP.class);
+
+    public static final int PORT_ANY = 0;
+
+    private Unicast _ucast;
+    private volatile boolean _ready;
+
+    private final MaxcastFilterReceiver _mcfr;
+    private final ARP _arp = new ARP();
+    private final Multicast _mcast = new Multicast(this);
+    private final IBlockingPrioritizedEventSink<IEvent> _sink;
+    private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
+    private final Scheduler _sched = new Scheduler(_q, id());
+    private final EventDispatcher _disp = new EventDispatcher();
+    private final HostnameMonitor _hm = new HostnameMonitor(this);
+    private final StreamManager _sm = new StreamManager();
+    private final TransportDiagnosisState _tds = new TransportDiagnosisState();
+    private final Stores _ss = new Stores(this, _arp, _hm);
+    private final PulseManager _pm = new PulseManager();
+
     public TCP(IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
     {
         _sink = sink;
@@ -86,23 +107,26 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
             internalPort = null;
         }
 
-        reconfigUnicast_(port, internalPort);
+        _ucast = new Unicast(this, _arp, _ss, port, internalPort);
+
+        // must be called *after* the Unicast object is initialized.
+        TPUtil.registerCommonHandlers(this);
 
         _mcast.init_();
 
         _sched.schedule(new AbstractEBSelfHandling() {
-                        @Override
-                        public void handle_()
-                        {
+            @Override
+            public void handle_()
+            {
                 arpGC();
 
                 _sched.schedule(this, ARP_GC_INTERVAL);
-                        }
+            }
 
             private void arpGC()
             {
                 final long now = System.currentTimeMillis();
-                final Set<DID> evicted = new HashSet<DID>();
+                final List<DID> evicted = Lists.newArrayList();
 
                 _arp.visitARPEntries(new ARP.IARPVisitor()
                 {
@@ -110,38 +134,69 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
                     public void visit_(DID did, ARPEntry arp)
                     {
                         if (now - arp._lastUpdated > ARP_GC_INTERVAL &&
-                            !_ucast.isConnected(arp._isa)) {
+                                !_ucast.isConnected(arp._isa)) {
                             evicted.add(did);
                         }
                     }
                 });
 
-                for (DID did : evicted) _ms.remove(did, true);
+                // Call remove() out of the visitor to avoid holding the ARP lock
+                for (DID did : evicted) remove(did, true);
             }
 
         }, ARP_GC_INTERVAL);
     }
 
-    /*
-     * Creates a new {@link Unicast} and starts it. Ignores the request if the
-     * port hasn't changed even though <code>internalPort </code> might change.
+    /**
+     * Call remove(did, true) for all the devices stored in the ARP
      */
-    private void reconfigUnicast_(int port, Integer internalPort) throws IOException // FIXME: combine with init_()?
+    void removeAll()
     {
-        if (_ucast == null || (port != TCP.PORT_ANY &&
-                port != _ucast.getListeningPort())) {
-            Unicast ucast = new Unicast(this, _arp, _ms, port, internalPort);
-            if (_ucast != null) _ucast.stop();
-            _ucast = ucast;
-            _ucast.start_();
+        final List<DID> dids = Lists.newArrayList();
+        _arp.visitARPEntries(new ARP.IARPVisitor()
+        {
+            @Override
+            public void visit_(DID did, ARPEntry arp)
+            {
+                dids.add(did);
+            }
+        });
 
-            TPUtil.registerCommonHandlers(this);
+        // Call remove() out of the visitor to avoid holding the ARP lock
+        for (DID did : dids) remove(did, true);
+    }
+
+    /**
+     * Remove a peer from ARP and disconnect from it.
+     *
+     * @param did {@link DID} of the peer to remove
+     * @param notifyOffline if true, then the peer's {@link ARPEntry} is removed, and all
+     * outstanding connections are killed.
+     */
+    private void remove(DID did, boolean notifyOffline)
+    {
+        l.info("remove: did:" + did + " force:" + notifyOffline);
+
+        _hm.offline(did);
+
+        ARPEntry arpentry = notifyOffline ? _arp.remove(did) : _arp.get(did);
+
+        if (arpentry != null) {
+            l.info("remove: disconnect connections");
+            _ucast.disconnect(arpentry._isa);
+
+            if (notifyOffline) {
+                l.info("remove: send offline presence");
+                _sink.enqueueBlocking(new EIPresence(this, false, did, arpentry._sidsOnline),
+                        Prio.LO);
+            }
         }
     }
 
     @Override
     public void start_()
     {
+        _ucast.start_();
         _mcast.start_();
         _hm.start();
 
@@ -253,9 +308,9 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         return _hm;
     }
 
-    Stores ms()
+    Stores ss()
     {
-        return _ms;
+        return _ss;
     }
 
     MaxcastFilterReceiver mcfr()
@@ -273,13 +328,13 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
     {
         assert _ready;
-        _ms.updateStores_(sidsAdded, sidsRemoved);
+        _ss.updateStores_(sidsAdded, sidsRemoved);
     }
 
     @Override
     public void disconnect_(DID did)
     {
-        _ms.remove(did, false);
+        remove(did, false);
     }
 
     @Override
@@ -289,16 +344,23 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         Set<NetworkInterface> prev,
         Set<NetworkInterface> current)
     {
-        mcast().linkStateChanged(added, removed);
+        boolean becameLinkDown = !prev.isEmpty() && current.isEmpty();
 
-        if (!added.isEmpty()) {
-            try {
-                mcast().sendControlMessage(newTcpPing());
-                PBTPHeader pong = ms().newPongMessage(true);
-                if (pong != null) mcast().sendControlMessage(pong);
-            } catch (IOException e) {
-                l.warn("cannot send ping or pong: " + e);
-            }
+        mcast().linkStateChanged(added, removed, becameLinkDown);
+
+        // Disconnect from remote peers.
+        if (becameLinkDown) {
+            // We don't have to disconnect or pause accept if the the links are physically down.
+            // But in case of a logical mark-down (LinkStateMonitor#markLinksDown_()), we need
+            // manual disconnection.
+            ucast().pauseAccept();
+            removeAll();
+
+            // TODO should we stop hostname monitor?
+        }
+
+        if (prev.isEmpty() && !current.isEmpty()) {
+            ucast().resumeAccept();
         }
     }
 
@@ -314,7 +376,8 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         assert false : "tcp unimplemented method";
     }
 
-    // FIXME: refactor how we process control message - I suspect this is the first step to separating this into different classes
+    // FIXME: refactor how we process control message - I suspect this is the first step to
+    // separating this into different classes
     @Override
     public void processUnicastControl(DID did, PBTPHeader hdr)
     {
@@ -323,10 +386,10 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         try {
             switch (hdr.getType()) {
             case TCP_PING:
-                ret = processTcpPing(false);
+                ret = processPing(false);
                 break;
             case TCP_GO_OFFLINE:
-                processTcpGoOffline(did);
+                processGoOffline(did);
                 break;
             case TCP_NOP:
                 break;
@@ -392,13 +455,13 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         switch (hdr.getType())
         {
         case TCP_PING:
-            ret = processTcpPing(true);
+            ret = processPing(true);
             break;
         case TCP_PONG:
-            processTcpPong(rem, ep.did(), hdr.getTcpPong(), true);
+            processPong(rem, ep.did(), hdr.getTcpPong(), true);
             break;
         case TCP_GO_OFFLINE:
-            processTcpGoOffline(ep.did());
+            processGoOffline(ep.did());
             break;
         case TCP_NOP:
             break;
@@ -423,7 +486,7 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     @Override
     public void closePeerStreams(DID did, boolean outbound, boolean inbound)
     {
-        _ms.remove(did, false);
+        remove(did, false);
         TPUtil.sessionEnded(new Endpoint(this, did), _sink, _sm, outbound, inbound);
     }
 
@@ -434,9 +497,9 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
      * @return null in some cases, a {@link PBTPHeader} with a response to a
      * <code>TCP_PING</code>
      */
-    private PBTPHeader processTcpPing(boolean multicast)
+    private PBTPHeader processPing(boolean multicast)
     {
-        PBTPHeader pong = _ms.newPongMessage(multicast);
+        PBTPHeader pong = _ss.newPongMessage(multicast);
         return pong;
     }
 
@@ -449,9 +512,9 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
      * @param pong the <code>TCP_PONG</code> itself
      * @param multicast whether this message was received on a multicast channel
      */
-    private void processTcpPong(InetAddress rem, DID did, PBTCPPong pong, boolean multicast)
+    private void processPong(InetAddress rem, DID did, PBTCPPong pong, boolean multicast)
     {
-        _ms.filterReceived(did, rem, pong.getUnicastListeningPort(), pong.getFilter(), multicast);
+        _ss.filterReceived(did, rem, pong.getUnicastListeningPort(), pong.getFilter(), multicast);
     }
 
     /**
@@ -459,9 +522,9 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
      *
      * @param did {@link DID} of the remote peer from whom the message was received
      */
-    private void processTcpGoOffline(DID did)
+    private void processGoOffline(DID did)
     {
-        _ms.remove(did, true);
+        remove(did, true);
     }
 
     /**
@@ -532,7 +595,7 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
      *
      * @return {@link PBTPHeader} of type <code>TCP_PING</code>
      */
-    static PBTPHeader newTcpPing()
+    static PBTPHeader newPingMessage()
     {
         return PBTPHeader.newBuilder()
                 .setType(Type.TCP_PING)
@@ -540,31 +603,11 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
                 .build();
     }
 
-    //
-    // members
-    //
-
-    private Unicast _ucast;
-    private volatile boolean _ready;
-
-    private final MaxcastFilterReceiver _mcfr;
-    private final ARP _arp = new ARP();
-    private final Multicast _mcast = new Multicast(this);
-    private final IBlockingPrioritizedEventSink<IEvent> _sink;
-    private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
-    private final Scheduler _sched = new Scheduler(_q, id());
-    private final EventDispatcher _disp = new EventDispatcher();
-    private final HostnameMonitor _hm = new HostnameMonitor(this);
-    private final StreamManager _sm = new StreamManager();
-    private final TransportDiagnosisState _tds = new TransportDiagnosisState();
-    private final Stores _ms = new Stores(this, _arp, _hm);
-    private final PulseManager _pm = new PulseManager();
-
-    private static final Logger l = Util.l(TCP.class);
-
-    //
-    // constants
-    //
-
-    public static final int PORT_ANY = 0;
+    static PBTPHeader newGoOfflineMessage()
+    {
+        return PBTPHeader.newBuilder()
+                .setType(Type.TCP_GO_OFFLINE)
+                .setTcpMulticastDeviceId(Cfg.did().toPB())
+                .build();
+    }
 }

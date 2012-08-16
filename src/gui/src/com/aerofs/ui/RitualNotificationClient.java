@@ -92,7 +92,8 @@ public class RitualNotificationClient
     }
 
     /**
-     * Call this method _before_ starting the daemon or calling start() to avoid missing events
+     * Call this method _before_ starting the daemon or _before_ calling start() to avoid missing
+     * events.
      */
     public void addListener(IListener l)
     {

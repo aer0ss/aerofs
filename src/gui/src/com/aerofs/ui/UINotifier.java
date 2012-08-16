@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.controller.IViewNotifier;
 import com.aerofs.lib.notifier.Listeners;
 import com.aerofs.proto.ControllerNotifications.Type;
+import com.google.common.collect.Maps;
 import com.google.protobuf.GeneratedMessageLite;
 
 import javax.annotation.Nullable;
@@ -16,7 +17,7 @@ import java.util.EnumMap;
 public class UINotifier implements IViewNotifier
 {
     private final EnumMap<Type, Listeners<IUINotificationListener>> map =
-            new EnumMap<Type, Listeners<IUINotificationListener>>(Type.class);
+            Maps.newEnumMap(Type.class);
 
     /**
      * Add a listener for a specific notification type.

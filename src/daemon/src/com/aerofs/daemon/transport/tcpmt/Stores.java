@@ -75,9 +75,9 @@ public class Stores
 
     private static final Logger l = Util.l(Stores.class);
 
-    private final TCP tcp;
-    private final ARP arp;
-    private final HostnameMonitor hnm;
+    private final TCP _tcp;
+    private final ARP _arp;
+    private final HostnameMonitor _hm;
 
     private final static int FILTER_SEQ_INVALID = -1;
     private int _filterSeq = FILTER_SEQ_INVALID;
@@ -94,11 +94,11 @@ public class Stores
     private final Map<Prefix, Set<SID>> _prefix2sids =
         new HashMap<Prefix, Set<SID>>();
 
-    Stores(TCP tcp, ARP arp, HostnameMonitor hnm)
+    Stores(TCP tcp, ARP arp, HostnameMonitor hm)
     {
-        this.tcp = tcp;
-        this.arp = arp;
-        this.hnm = hnm;
+        this._tcp = tcp;
+        this._arp = arp;
+        this._hm = hm;
     }
 
     PBTCPStores.Builder newStoresForNonSP(DID did)
@@ -148,10 +148,10 @@ public class Stores
         PBTPHeader.Builder bd = PBTPHeader.newBuilder()
             .setType(Type.TCP_PONG)
             .setTcpPong(PBTCPPong.newBuilder()
-                .setUnicastListeningPort(tcp.ucast().getListeningPort())
-                .setFilter(PBTCPFilterAndSeq.newBuilder()
-                        .setFilter(_filter.toPB())
-                        .setSequence(_filterSeq)));
+                    .setUnicastListeningPort(_tcp.ucast().getListeningPort())
+                    .setFilter(PBTCPFilterAndSeq.newBuilder()
+                            .setFilter(_filter.toPB())
+                            .setSequence(_filterSeq)));
 
         if (multicast) bd.setTcpMulticastDeviceId(Cfg.did().toPB());
         return bd.build();
@@ -174,7 +174,7 @@ public class Stores
     private void prefixesReceived(DID did, InetAddress addr, int port,
             ImmutableSet<Prefix> prefixes, boolean multicast)
     {
-        ARPEntry arpentry = arp.get(did);
+        ARPEntry arpentry = _arp.get(did);
         InetSocketAddress ep = new InetSocketAddress(addr, port);
 
         if (l.isInfoEnabled()) {
@@ -191,9 +191,9 @@ public class Stores
             sidsOnline = builder.build();
         }
 
-        arp.put(did, ep, arpentry == null ? null : arpentry._filter,
-            arpentry == null ? FILTER_SEQ_INVALID : arpentry._filterSeq,
-            prefixes, sidsOnline, multicast, System.currentTimeMillis());
+        _arp.put(did, ep, arpentry == null ? null : arpentry._filter,
+                arpentry == null ? FILTER_SEQ_INVALID : arpentry._filterSeq, prefixes, sidsOnline,
+                multicast, System.currentTimeMillis());
 
         resetOnlinePresense(did, arpentry, sidsOnline);
     }
@@ -214,7 +214,7 @@ public class Stores
         boolean recompute;
 
         // XXX IMPORTANT: if you add a field in one block add it in the other block
-        ARPEntry arpentry = arp.get(did);
+        ARPEntry arpentry = _arp.get(did);
         if (arpentry == null || (arpentry._filterSeq != fs.getSequence())) {
             recompute = true;
             filter = new BFSID(fs.getFilter());
@@ -241,10 +241,10 @@ public class Stores
             sidsOnline = arpentry._sidsOnline;
         }
 
-        arp.put(did, ep, filter, fs.getSequence(), arpentry == null ? null : arpentry._prefixes,
-            sidsOnline, multicast, System.currentTimeMillis());
+        _arp.put(did, ep, filter, fs.getSequence(), arpentry == null ? null : arpentry._prefixes,
+                sidsOnline, multicast, System.currentTimeMillis());
 
-        if (arpentry == null) hnm.online(did); // really don't have to do check - can always set online
+        if (arpentry == null) _hm.online(did); // really don't have to do check - can always set online
         if (recompute) resetOnlinePresense(did, arpentry, sidsOnline);
     }
 
@@ -269,43 +269,15 @@ public class Stores
         if (!added.isEmpty()) {
             // enqueue mustn't fail because we won't enqueue again after
             // arp already added the entry
-            tcp.sink().enqueueBlocking(new EIPresence(tcp, true, did, added),
+            _tcp.sink().enqueueBlocking(new EIPresence(_tcp, true, did, added),
                     Prio.LO);
         }
 
         if (!removed.isEmpty()) {
             // enqueue mustn't fail because we won't enqueue again after
             // arp already added the entry
-            tcp.sink().enqueueBlocking(new EIPresence(tcp, false, did, removed),
+            _tcp.sink().enqueueBlocking(new EIPresence(_tcp, false, did, removed),
                     Prio.LO);
-        }
-    }
-
-    /**
-     * Remove a peer from the tcpmt transport. This differs on the value of
-     * <code>notifyOffline</code>
-     *
-     * @param did {@link DID} of the peer to remove
-     * @param notifyOffline if true, then the peer's {@link ARPEntry} is removed,
-     * all outstanding connections are killed
-     */
-    void remove(DID did, boolean notifyOffline)
-    {
-        l.info("remove: did:" + did + " force:" + notifyOffline);
-
-        hnm.offline(did);
-
-        ARPEntry arpentry = notifyOffline ? arp.remove(did) : arp.get(did);
-
-        if (arpentry != null) {
-            l.info("remove: disconnect connections");
-            tcp.ucast().disconnect(arpentry._isa);
-
-            if (notifyOffline) {
-                l.info("remove: send offline presence");
-                tcp.sink().enqueueBlocking(
-                        new EIPresence(tcp, false, did, arpentry._sidsOnline), Prio.LO);
-            }
         }
     }
 
@@ -369,7 +341,7 @@ public class Stores
             final Map<DID, Collection<SID>> did2sids =
                     new TreeMap<DID, Collection<SID>>();
 
-            arp.visitARPEntries(new ARP.IARPVisitor()
+            _arp.visitARPEntries(new ARP.IARPVisitor()
             {
                 @Override
                 public void visit_(DID did, ARPEntry arpentry)
@@ -380,8 +352,7 @@ public class Stores
                         for (Entry<SID, int[]> en2 : added.entrySet()) {
                             SID sid = en2.getKey();
                             int[] index = en2.getValue();
-                            if (arpentry._filter.contains_(index))
-                                sids.add(sid);
+                            if (arpentry._filter.contains_(index)) sids.add(sid);
                         }
                     }
 
@@ -410,7 +381,7 @@ public class Stores
                 // N.B. for simplicity, we don't add the sids to ARPEntry._sids.
                 // It will cause redundant online notification next time the remote
                 // device modifies the filter (see online()), which is fine.
-                tcp.sink().enqueueBlocking(new EIPresence(tcp, true, did2sids),
+                _tcp.sink().enqueueBlocking(new EIPresence(_tcp, true, did2sids),
                         Prio.LO);
             }
         }
@@ -425,24 +396,24 @@ public class Stores
             _filterSeq = (int) (Math.random() * Integer.MAX_VALUE);
             // because EOUpdateStores is issued each time the daemon
             // launches, we kick off periodical pong messages here
-            tcp.sched().schedule(new AbstractEBSelfHandling() {
+            _tcp.sched().schedule(new AbstractEBSelfHandling() {
                 @Override
                 public void handle_()
                 {
                     try {
                         l.info("arp sender: sched pong");
-                        tcp.mcast().sendControlMessage(newPongMessage(true));
+                        _tcp.mcast().sendControlMessage(newPongMessage(true));
                     } catch (Exception e) {
                         l.error("mc pong: " + Util.e(e));
                     }
-                    tcp.sched().schedule(this, DaemonParam.TCP.HEARTBEAT_INTERVAL);
+                    _tcp.sched().schedule(this, DaemonParam.TCP.HEARTBEAT_INTERVAL);
                 }
             }, DaemonParam.TCP.HEARTBEAT_INTERVAL);
         }
 
         try {
             // it must be done after the filter sequence is updated
-            tcp.mcast().sendControlMessage(newPongMessage(true));
+            _tcp.mcast().sendControlMessage(newPongMessage(true));
         } catch (Exception e) {
             l.error("mc pong: " + Util.e(e));
         }
@@ -451,8 +422,8 @@ public class Stores
         // send unicast to MUOD about the update
 
         PBTPHeader h = null;
-        for (DID did : arp.getMulticastUnreachableOnlineDevices()) {
-            ARPEntry arpentry = arp.get(did);
+        for (DID did : _arp.getMulticastUnreachableOnlineDevices()) {
+            ARPEntry arpentry = _arp.get(did);
             if (arpentry == null) continue;
 
             if (Cfg.isSP()) {
@@ -494,7 +465,7 @@ public class Stores
             }
 
             try {
-                tcp.ucast().sendControl(did, arpentry._isa, h, Prio.LO);
+                _tcp.ucast().sendControl(did, arpentry._isa, h, Prio.LO);
             } catch (Exception e) {
                 // we should retry on errors because otherwise the peer will
                 // never receive the update. But because an IOException usually

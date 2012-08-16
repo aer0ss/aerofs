@@ -350,9 +350,6 @@ public class TPUtil
         return PBTPHeader.newBuilder().setType(DIAGNOSIS).setDiagnosis(dg).build();
     }
 
-    /*
-     * @param wcast set to null if wildcast not supported
-     */
     public static void registerCommonHandlers(ITransportImpl tp)
     {
         tp.disp()

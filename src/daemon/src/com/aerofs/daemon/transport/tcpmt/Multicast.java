@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
@@ -50,7 +49,7 @@ class Multicast implements IMaxcast
     private static final Logger l = Util.l(Multicast.class);
 
     private final TCP t;
-    private final Map<NetworkInterface, MulticastSocket> _ss =
+    private final Map<NetworkInterface, MulticastSocket> _iface2sock =
         Collections.synchronizedMap(new HashMap<NetworkInterface, MulticastSocket>());
 
     Multicast(TCP tcp)
@@ -66,11 +65,7 @@ class Multicast implements IMaxcast
             public void run()
             {
                 try {
-                    PBTPHeader h = PBTPHeader.newBuilder()
-                        .setType(Type.TCP_GO_OFFLINE)
-                        .setTcpMulticastDeviceId(Cfg.did().toPB())
-                        .build();
-                    sendControlMessage(h);
+                    sendControlMessage(TCP.newGoOfflineMessage());
                 } catch (IOException e) {
                     l.warn("error sending offline notification. ignored" + e);
                 }
@@ -99,7 +94,8 @@ class Multicast implements IMaxcast
         }
     }
 
-    void linkStateChanged(Set<NetworkInterface> added, Set<NetworkInterface> removed)
+    void linkStateChanged(Set<NetworkInterface> added, Set<NetworkInterface> removed,
+            boolean becameLinkDown)
     {
         for (NetworkInterface iface : added) {
             try {
@@ -114,7 +110,7 @@ class Multicast implements IMaxcast
                 s.setLoopbackMode(!Cfg.staging());
                 s.joinGroup(InetAddress.getByName(L.get().mcastAddr()));
 
-                MulticastSocket old = _ss.put(iface, s);
+                MulticastSocket old = _iface2sock.put(iface, s);
                 if (old != null) close(old);
 
                 l.info("linkStateChanged->mc:add:");
@@ -134,8 +130,30 @@ class Multicast implements IMaxcast
             }
         }
 
+        if (!added.isEmpty()) {
+            try {
+                sendControlMessage(TCP.newPingMessage());
+                PBTPHeader pong = t.ss().newPongMessage(true);
+                if (pong != null) sendControlMessage(pong);
+            } catch (IOException e) {
+                l.warn("send ping or pong: " + Util.e(e));
+            }
+        }
+
+        if (becameLinkDown) {
+            // We don't have to send offline messages if the the links are physically down. But in
+            // case of a logical mark-down (LinkStateMonitor#markLinksDown_()), we need manual
+            // disconnection. N.B. this needs to be done *before* closing the sockets.
+
+            try {
+                sendControlMessage(TCP.newGoOfflineMessage());
+            } catch (IOException e) {
+                l.warn("send offline: " + Util.e(e));
+            }
+        }
+
         for (NetworkInterface iface : removed) {
-            MulticastSocket s = _ss.remove(iface);
+            MulticastSocket s = _iface2sock.remove(iface);
             if (s == null) continue;
 
             l.info("linkStateChanged->mc:rem:");
@@ -145,7 +163,7 @@ class Multicast implements IMaxcast
         }
 
         l.info("mc:current ifs:");
-        Set<Map.Entry<NetworkInterface, MulticastSocket>> entries = _ss.entrySet();
+        Set<Map.Entry<NetworkInterface, MulticastSocket>> entries = _iface2sock.entrySet();
         int i = 0;
         for (Map.Entry<NetworkInterface, MulticastSocket> e : entries) {
             int sval = (e.getValue() == null ? 0 : 1);
@@ -263,8 +281,8 @@ class Multicast implements IMaxcast
                                  L.get().mcastPort());
             //_bytesOut += bs.length;
 
-            synchronized (_ss) {
-                for (MulticastSocket s : _ss.values()) {
+            synchronized (_iface2sock) {
+                for (MulticastSocket s : _iface2sock.values()) {
                     try {
                         if (l.isInfoEnabled()) {
                             l.info("beg mc send:" + h.getType().name() + " s:" + pkt.getSocketAddress());

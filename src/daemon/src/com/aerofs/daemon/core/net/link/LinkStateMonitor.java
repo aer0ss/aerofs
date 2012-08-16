@@ -42,7 +42,6 @@ public class LinkStateMonitor extends AbstractNetworkLinkStateService
             @Override
             public void handle_()
             {
-
                 try {
                     checkLinkState_();
                 } catch (Exception e) {

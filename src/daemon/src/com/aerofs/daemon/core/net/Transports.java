@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
@@ -64,15 +63,13 @@ public class Transports implements IDumpStatMisc, IDumpStat
     private final CoreQueue _q;
     private final TC _tc;
     private final LinkStateMonitor _lsm;
-    private final TokenManager _tokenManager;
 
     @Inject
-    public Transports(CoreQueue q, TC tc, TokenManager tokenManager, LinkStateMonitor lsm)
+    public Transports(CoreQueue q, TC tc, LinkStateMonitor lsm)
     {
         _q = q;
         _tc = tc;
         _lsm = lsm;
-        _tokenManager = tokenManager;
 
         int count = 0;
         if (Cfg.useTCP()) count++;
@@ -114,10 +111,6 @@ public class Transports implements IDumpStatMisc, IDumpStat
 
     private void addLinkStateListener_(final ITransport tp, final IIMCExecutor imce)
     {
-        // IMPORTANT: I can process the event on the same thread as the lss because _in our impl_
-        // I know that the link-state-changed callback happens on a core thread
-        // See LinkStateMonitor
-
         _lsm.addListener_(new INetworkLinkStateListener()
         {
             @Override
@@ -125,19 +118,19 @@ public class Transports implements IDumpStatMisc, IDumpStat
                     ImmutableSet<NetworkInterface> removed, ImmutableSet<NetworkInterface> current,
                     ImmutableSet<NetworkInterface> previous)
             {
+                // TODO (WW) re-run the event if the transport failed to handle it. the solution
+                // would be easier once we converted events to Futures.
                 try {
-                    Token tk = _tokenManager.acquireThrows_(Cat.UNLIMITED, "lsc");
-                    try {
-                        CoreIMC.execute_(
-                                new EOLinkStateChanged(imce, previous, current, added, removed),
-                                _tc, tk);
-                    } finally {
-                        tk.reclaim_();
-                    }
+                    CoreIMC.enqueueBlocking_(
+                            new EOLinkStateChanged(imce, previous, current, added, removed),
+                            _tc, Cat.UNLIMITED);
                 } catch (Exception e) {
-                    Util.l(this).error("failed to handle lsc for tp:" + tp.toString());
+                    Util.l(this).error("failed to enqueue:" + tp.toString());
                 }
             }
+
+        // IMPORTANT: I can use sameThreadExecutor because I know that the link-state-changed
+        // callback happens on a core thread. See LinkStateMonitor
         }, sameThreadExecutor());
     }
 

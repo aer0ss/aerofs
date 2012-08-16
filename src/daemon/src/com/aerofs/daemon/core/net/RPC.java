@@ -10,7 +10,6 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
@@ -33,6 +32,11 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 public class RPC
 {
     private static final Logger l = Util.l(RPC.class);
+
+    private static class ExLinkDown extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+    }
 
     private static class MapEntry
     {
@@ -156,7 +160,7 @@ public class RPC
     {
         if (_waiters.isEmpty()) return;
 
-        Exception e = new ExDeviceOffline();
+        Exception e = new ExLinkDown();
         for (MapEntry me : _waiters.values()) me._tcb.abort_(e);
         // Remove all the entires to prevent further motification on them after this method
         // returns and before the waiting threads acquire the core lock and proceed execution.

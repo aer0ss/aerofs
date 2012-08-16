@@ -91,6 +91,27 @@ public class TCPProactorMT
         return _ss.getLocalPort();
     }
 
+    /**
+     * Stop accepting new connections regardless how many times resumeAccept() has been called
+     * before.
+     */
+    public void pauseAccept()
+    {
+        _acceptPaused = true;
+    }
+
+    /**
+     * Resume accepting new connections regardless how many times stopAccept() has been called
+     * before.
+     */
+    public void resumeAccept()
+    {
+        _acceptPaused = false;
+        synchronized (_resumeAcceptSynchronizer) {
+            _resumeAcceptSynchronizer.notify();
+        }
+    }
+
     public Collection<String> getConnections()
     {
         synchronized (_map) {
@@ -135,6 +156,14 @@ public class TCPProactorMT
         while (true) {
             try {
                 Socket s = _ss.accept();
+
+                if (_acceptPaused) {
+                    s.close();
+                    synchronized (_resumeAcceptSynchronizer) {
+                        while (_acceptPaused) Util.waitUninterruptable(_resumeAcceptSynchronizer);
+                    }
+                }
+
                 InetSocketAddress remaddr = getaddr(s, false);
                 InetSocketAddress locaddr = getaddr(s, true);
 
@@ -683,6 +712,8 @@ public class TCPProactorMT
     private final ServerSocket _ss;
     private final boolean _sendable;
     private final int _maxRecvMsgSize;
+    private volatile boolean _acceptPaused;
+    private final Object _resumeAcceptSynchronizer = new Object();
 
     // socket map
     private final Map<InetSocketAddress, Peer> _map = new HashMap<InetSocketAddress, Peer>();
