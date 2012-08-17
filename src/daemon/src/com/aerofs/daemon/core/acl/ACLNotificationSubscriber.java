@@ -2,8 +2,9 @@ package com.aerofs.daemon.core.acl;
 
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
-import com.aerofs.daemon.lib.async.CoreExecutor;
+import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
@@ -27,6 +28,7 @@ import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.Futures.addCallback;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public final class ACLNotificationSubscriber
@@ -35,16 +37,14 @@ public final class ACLNotificationSubscriber
 
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
-    private final CoreExecutor _executor;
+    private final CoreQueue _q;
 
     @Inject
-    public ACLNotificationSubscriber(CfgLocalUser localUser,
-            CfgCACertFilename cacert,
-            CoreQueue q, CoreScheduler sched,
-            ACLSynchronizer aclsync)
+    public ACLNotificationSubscriber(CfgLocalUser localUser, CfgCACertFilename cacert, CoreQueue q,
+            CoreScheduler sched, ACLSynchronizer aclsync)
     {
+        this._q = q;
         this._topic = localUser.get();
-        this._executor = new CoreExecutor(q, sched);
 
         VerkehrListener listener = new VerkehrListener(aclsync, new ExponentialRetry(sched));
 
@@ -52,7 +52,7 @@ public final class ACLNotificationSubscriber
                 newCachedThreadPool(), newCachedThreadPool(),
                 cacert.get(), new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT) , new HashedWheelTimer(),
-                listener, listener, _executor);
+                listener, listener, sameThreadExecutor());
 
         this._subscriber = factory.create();
     }
@@ -83,15 +83,22 @@ public final class ACLNotificationSubscriber
                 @Override
                 public void onSuccess(Void v)
                 {
-                    _er.retry("aclsync", new Callable<Void>()
+                    runInCoreThread_(new AbstractEBSelfHandling()
                     {
                         @Override
-                        public Void call()
-                                throws Exception
+                        public void handle_()
                         {
-                            l.info("sync to local");
-                            _aclsync.syncToLocal_();
-                            return null;
+                            _er.retry("aclsync", new Callable<Void>()
+                            {
+                                @Override
+                                public Void call()
+                                        throws Exception
+                                {
+                                    l.info("sync to local");
+                                    _aclsync.syncToLocal_();
+                                    return null;
+                                }
+                            });
                         }
                     });
                 }
@@ -101,7 +108,7 @@ public final class ACLNotificationSubscriber
                 {
                     l.warn("fail subscribe t:" + _topic);
                 }
-            }, _executor);
+            });
         }
 
         @Override
@@ -109,16 +116,23 @@ public final class ACLNotificationSubscriber
         {
             assert topic.equals(_topic);
 
-            _er.retry("aclsync", new Callable<Void>()
+            runInCoreThread_(new AbstractEBSelfHandling()
             {
                 @Override
-                public Void call()
-                        throws Exception
+                public void handle_()
                 {
-                    l.info("recv notification t:" + topic);
-                    long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
-                    _aclsync.syncToLocal_(aclEpoch);
-                    return null;
+                    _er.retry("aclsync", new Callable<Void>()
+                    {
+                        @Override
+                        public Void call()
+                                throws Exception
+                        {
+                            l.info("recv notification t:" + topic);
+                            long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
+                            _aclsync.syncToLocal_(aclEpoch);
+                            return null;
+                        }
+                    });
                 }
             });
         }
@@ -127,6 +141,11 @@ public final class ACLNotificationSubscriber
         public void onDisconnected()
         {
             // noop - the client auto-reconnects for you
+        }
+
+        private void runInCoreThread_(AbstractEBSelfHandling event)
+        {
+            _q.enqueueBlocking(event, Prio.LO);
         }
     }
 }

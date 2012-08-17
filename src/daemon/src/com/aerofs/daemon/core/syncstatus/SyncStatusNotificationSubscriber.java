@@ -2,8 +2,9 @@ package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
-import com.aerofs.daemon.lib.async.CoreExecutor;
+import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
@@ -26,6 +27,7 @@ import java.util.concurrent.Callable;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
+import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
 /**
@@ -38,20 +40,21 @@ public class SyncStatusNotificationSubscriber
 
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
+    private final CoreQueue _q;
 
     @Inject
     public SyncStatusNotificationSubscriber(CfgLocalUser localUser, CfgLocalDID localDID,
-            CfgCACertFilename cacert,
-            CoreQueue q, CoreScheduler sched,
-            SyncStatusSynchronizer sync)
+            CfgCACertFilename cacert, CoreQueue q, CoreScheduler sched, SyncStatusSynchronizer sync)
     {
+        this._q = q;
+
         VerkehrListener listener = new VerkehrListener(sync, new ExponentialRetry(sched));
 
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
                 newCachedThreadPool(), newCachedThreadPool(),
                 cacert.get(), new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
-                listener, listener, new CoreExecutor(q, sched));
+                listener, listener, sameThreadExecutor());
 
         this._topic = localDID.get().toStringFormal() + localUser.get();
         this._subscriber = factory.create();
@@ -86,22 +89,35 @@ public class SyncStatusNotificationSubscriber
         {
             assert topic.equals(_topic);
 
-            _er.retry("syncstatus", new Callable<Void>()
+            runInCoreThread_(new AbstractEBSelfHandling()
             {
                 @Override
-                public Void call()
-                        throws Exception
+                public void handle_()
                 {
-                    _sync.notificationReceived_(PBSyncStatNotification.parseFrom(payload));
-                    return null;
+                    _er.retry("syncstatus", new Callable<Void>()
+                    {
+                        @Override
+                        public Void call()
+                                throws Exception
+                        {
+                            _sync.notificationReceived_(PBSyncStatNotification.parseFrom(payload));
+                            return null;
+                        }
+                    });
                 }
             });
+
         }
 
         @Override
         public void onDisconnected()
         {
             // noop - the client auto-reconnects for you
+        }
+
+        private void runInCoreThread_(AbstractEBSelfHandling event)
+        {
+            _q.enqueueBlocking(event, Prio.LO);
         }
     }
 }
