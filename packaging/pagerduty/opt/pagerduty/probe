@@ -10,6 +10,9 @@ SCRIPT=`readlink -f "$0"`
 SCRIPT=`dirname "$SCRIPT"`/probes/$PROBE
 
 TRIES=3
+
+# set the reply to for emails to the team
+export REPLYTO="team@aerofs.com"
 for i in `seq 1 $TRIES`; do
     /bin/bash "$SCRIPT" $@
     RET=$?
