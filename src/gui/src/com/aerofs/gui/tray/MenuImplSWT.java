@@ -225,7 +225,7 @@ public class MenuImplSWT implements IMenu
             updateTransferMenus();
 
             final boolean paused = _prs.isPaused();
-            String strPauseOrResume = paused ? "Resume syncing" : "Pause for an hour";
+            String strPauseOrResume = paused ? "Resume Syncing" : "Pause syncing for an hour";
             addMenuItem(_menu, strPauseOrResume , new AbstractListener(null) {
                 @Override
                 protected void handleEventImpl(Event event)
