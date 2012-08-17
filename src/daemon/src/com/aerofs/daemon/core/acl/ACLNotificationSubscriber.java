@@ -2,120 +2,56 @@ package com.aerofs.daemon.core.acl;
 
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.verkehr.AbstractVerkehrListener;
+import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgCACertFilename;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.Sp.PBACLNotification;
-import com.aerofs.verkehr.client.lib.IConnectionListener;
-import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
-import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
-import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
-import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
-import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
-
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
-import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
-import static com.google.common.util.concurrent.Futures.addCallback;
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
-import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public final class ACLNotificationSubscriber
 {
     private static final Logger l = Util.l(ACLNotificationSubscriber.class);
 
     private final String _topic;
-    private final VerkehrSubscriber _subscriber;
-    private final CoreQueue _q;
+    private final VerkehrListener _listener;
+    private final VerkehrNotificationSubscriber _subscriber;
 
     @Inject
-    public ACLNotificationSubscriber(CfgLocalUser localUser, CfgCACertFilename cacert, CoreQueue q,
-            CoreScheduler sched, ACLSynchronizer aclsync)
+    public ACLNotificationSubscriber(VerkehrNotificationSubscriber subscriber,
+            CfgLocalUser localUser, CoreQueue q, CoreScheduler sched, ACLSynchronizer aclsync)
     {
-        this._q = q;
-        this._topic = localUser.get();
-
-        VerkehrListener listener = new VerkehrListener(aclsync, new ExponentialRetry(sched));
-
-        ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
-                newCachedThreadPool(), newCachedThreadPool(),
-                cacert.get(), new CfgKeyManagersProvider(),
-                VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT) , new HashedWheelTimer(),
-                listener, listener, sameThreadExecutor());
-
-        this._subscriber = factory.create();
+        _topic = localUser.get();
+        _subscriber = subscriber;
+        _listener = new VerkehrListener(q, new ExponentialRetry(sched), aclsync);
     }
 
-    public void start_()
+    public void init_()
     {
-        l.info("started acl notification subscriber");
-        _subscriber.start();
+        _subscriber.subscribe_(_topic, _listener);
     }
 
-    private final class VerkehrListener implements IConnectionListener, ISubscriptionListener
+    private final class VerkehrListener extends AbstractVerkehrListener
     {
-        private final ACLSynchronizer _aclsync;
         private final ExponentialRetry _er;
+        private final ACLSynchronizer _aclsync;
 
-        @Inject
-        public VerkehrListener(ACLSynchronizer aclsync, ExponentialRetry er)
+        VerkehrListener(CoreQueue q, ExponentialRetry er, ACLSynchronizer aclsync)
         {
-            _aclsync = aclsync;
+            super(q);
             _er = er;
+            _aclsync = aclsync;
         }
 
         @Override
-        public void onConnected()
+        public void onSubscribed()
         {
-            addCallback(_subscriber.subscribe_(_topic), new FutureCallback<Void>()
-            {
-                @Override
-                public void onSuccess(Void v)
-                {
-                    runInCoreThread_(new AbstractEBSelfHandling()
-                    {
-                        @Override
-                        public void handle_()
-                        {
-                            _er.retry("aclsync", new Callable<Void>()
-                            {
-                                @Override
-                                public Void call()
-                                        throws Exception
-                                {
-                                    l.info("sync to local");
-                                    _aclsync.syncToLocal_();
-                                    return null;
-                                }
-                            });
-                        }
-                    });
-                }
-
-                @Override
-                public void onFailure(Throwable t)
-                {
-                    l.warn("fail subscribe t:" + _topic);
-                }
-            });
-        }
-
-        @Override
-        public void onNotificationReceived(final String topic, @Nullable final byte[] payload)
-        {
-            assert topic.equals(_topic);
-
             runInCoreThread_(new AbstractEBSelfHandling()
             {
                 @Override
@@ -127,9 +63,8 @@ public final class ACLNotificationSubscriber
                         public Void call()
                                 throws Exception
                         {
-                            l.info("recv notification t:" + topic);
-                            long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
-                            _aclsync.syncToLocal_(aclEpoch);
+                            l.info("sync to local");
+                            _aclsync.syncToLocal_();
                             return null;
                         }
                     });
@@ -138,14 +73,28 @@ public final class ACLNotificationSubscriber
         }
 
         @Override
-        public void onDisconnected()
+        public void onNotificationReceived(final String topic, @Nullable final byte[] payload)
         {
-            // noop - the client auto-reconnects for you
-        }
-
-        private void runInCoreThread_(AbstractEBSelfHandling event)
-        {
-            _q.enqueueBlocking(event, Prio.LO);
+            assert topic.equals(_topic);
+            l.info("recv notification t:" + topic);
+            runInCoreThread_(new AbstractEBSelfHandling()
+            {
+                @Override
+                public void handle_()
+                {
+                    _er.retry("aclsync", new Callable<Void>()
+                    {
+                        @Override
+                        public Void call()
+                                throws Exception
+                        {
+                            long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
+                            _aclsync.syncToLocal_(aclEpoch);
+                            return null;
+                        }
+                    });
+                }
+            });
         }
     }
 }
