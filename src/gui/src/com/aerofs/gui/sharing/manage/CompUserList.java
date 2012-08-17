@@ -16,9 +16,11 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.GetACLReply;
 import com.aerofs.ui.UIUtil;
+import com.aerofs.ui.ex.ExUIMessage;
 import com.google.common.collect.Lists;
 
 import org.eclipse.swt.SWT;
@@ -212,9 +214,13 @@ public class CompUserList extends Composite
                 if (subject.equals(Cfg.user())) _rSelf = role;
             }
             elems = srps.toArray();
-
+        } catch (ExNoPerm e) {
+            Util.l(this).warn("no perm to list acl");
+            elems = new Object[] {
+                new ExUIMessage("You are no longer a member of this shared folder.")
+            };
         } catch (Exception e) {
-            Util.l(this).warn("can't get roles: " + Util.e(e));
+            Util.l(this).warn("list acl: " + Util.e(e));
             elems = new Object[] { e };
         }
 
