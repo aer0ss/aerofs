@@ -19,7 +19,6 @@ import com.aerofs.servletlib.sp.SPParam;
 import com.aerofs.servletlib.sp.ThreadLocalHttpSessionUser;
 import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import com.google.common.util.concurrent.ExecutionError;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -30,7 +29,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
-
 import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
 import static com.aerofs.servletlib.sp.SPParam.MYSQL_ENDPOINT_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.MYSQL_PASSWORD_INIT_PARAMETER;
@@ -112,35 +110,29 @@ public class SPServlet extends AeroServlet
     protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
         throws IOException
     {
-        try {
-            _sessionUser.setSession(req.getSession());
+        _sessionUser.setSession(req.getSession());
 
-            // Receive protocol version number.
-            int protocol = _postDelegate.getProtocolVersion(req);
-            if (protocol != C.SP_PROTOCOL_VERSION) {
-                throw new IOException("sp protocol version mismatch. servlet: "
-                        + C.SP_PROTOCOL_VERSION + " client: " + protocol);
-            }
-
-            byte[] decodedMessage = _postDelegate.getDecodedMessage(req);
-
-            // Process call
-            byte [] bytes;
-            try {
-                bytes = _reactor.react(decodedMessage).get();
-            } catch (ExecutionError e) {
-                l.warn("Exception in reactor " + Util.e(e));
-                throw e.getCause();
-            }
-
-            _postDelegate.sendReply(resp, bytes);
-        } catch (IOException e) {
-            l.error("doPost: ", e);
-            throw e;
-        } catch (Throwable e) {
-            l.error("doPost: ", e);
-            throw new IOException(e);
+        // Receive protocol version number.
+        int protocol = _postDelegate.getProtocolVersion(req);
+        if (protocol != C.SP_PROTOCOL_VERSION) {
+            l.warn("protocol version mismatch. servlet: " + C.SP_PROTOCOL_VERSION + " client: " +
+                    protocol);
+            resp.sendError(400, "prototcol version mismatch");
+            return;
         }
+
+        byte[] decodedMessage = _postDelegate.getDecodedMessage(req);
+
+        // Process call
+        byte [] bytes;
+        try {
+            bytes = _reactor.react(decodedMessage).get();
+        } catch (Exception e) {
+            l.warn("exception in reactor: " + Util.e(e));
+            throw new IOException(e.getCause());
+        }
+
+        _postDelegate.sendReply(resp, bytes);
     }
 
     protected void handleBatchInvite(HttpServletRequest req, HttpServletResponse rsp)
