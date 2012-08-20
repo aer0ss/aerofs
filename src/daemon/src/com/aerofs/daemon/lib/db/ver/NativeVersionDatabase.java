@@ -312,8 +312,9 @@ public class NativeVersionDatabase
                 Version v = new Version();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
-                    assert v.get_(did).equals(Tick.ZERO);
-                    v.set_(did, rs.getLong(2));
+                    long newTick = rs.getLong(2);
+                    Tick oldTick = v.get_(did);
+                    v.set_(did, oldTick != null ? Math.max(oldTick.getLong(), newTick) : newTick);
                 }
                 return v;
             } finally {
