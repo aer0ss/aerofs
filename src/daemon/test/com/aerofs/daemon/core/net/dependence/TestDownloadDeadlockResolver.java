@@ -15,6 +15,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -31,6 +32,7 @@ import org.mockito.Mock;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -115,12 +117,12 @@ public class TestDownloadDeadlockResolver extends AbstractTest
         verify(_ru).resolveNameConflictByRenaming_(eq(_did), eq(_socidRemAncestor.soid()),
                 eq(_socidLocalChild.soid()), anyBoolean(), eq(_oidCommonParent), any(Path.class),
                 any(Version.class), any(PBMeta.class), anyInt(), any(SOID.class),
-                any(CausalityResult.class), eq(_t));
+                anySetOf(OCID.class), any(CausalityResult.class), eq(_t));
     }
 
     private NameConflictDependencyEdge newNameConflictDependency(SOCID src, SOCID dst)
     {
         return new NameConflictDependencyEdge(src, dst, _did, _oidCommonParent, mock(Version.class),
-                null, mock(SOID.class));
+                null, mock(SOID.class), null);
     }
 }

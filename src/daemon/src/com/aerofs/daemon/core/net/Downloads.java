@@ -83,7 +83,7 @@ public class Downloads
     private DirectoryService _ds;
 
     // A global directed graph representing dependencies from ongoing downloads. It is used to
-    // detect dependency deadlocks, and avoid redownloading a completed dependency.
+    // detect dependency deadlocks, and pass cycles to the DownloadDeadlockResolver.
     private DownloadDependenciesGraph _dlOngoingDependencies;
     private DownloadDeadlockResolver _ddr;
 
@@ -128,7 +128,6 @@ public class Downloads
         try {
             // Edges are added to the dependency graph here instead of in Download.java because
             // there are callers of downloadSync_, in addition to Download.java
-            // Edges are removed in Download.java after a download completes or aborts
             _dlOngoingDependencies.addEdge_(dependency);
             SyncDownloadImpl sdi = new SyncDownloadImpl(dependency, to, tk);
             return sdi._from;
@@ -136,6 +135,12 @@ public class Downloads
             // Try to resolve the deadlock, or else crash the app in this method
             _ddr.resolveDeadlock_(edldl._cycle);
             return null;
+        } finally {
+            // Edges are removed here because some download dependencies (in EmigrationDetector)
+            // will add the same edge multiple times for a single download. Alternatively all
+            // outward edges for a SOCID could be removed at the end of Download.do_, but this would
+            // conflict with the latter download behaviour of EmigrationDetector.
+            _dlOngoingDependencies.removeEdge_(dependency);
         }
     }
 

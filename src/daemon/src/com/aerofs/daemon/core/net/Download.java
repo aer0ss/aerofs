@@ -5,7 +5,6 @@ import java.util.Set;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge;
-import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.net.dependence.NameConflictDependencyEdge;
 import com.aerofs.daemon.core.net.dependence.ParentDependencyEdge;
@@ -42,11 +41,20 @@ public class Download
 
     private final To _src;
     private final Listeners<IDownloadCompletionListener> _ls = Listeners.newListeners();
-    // See Downloads.java: A global directed graph representing dependencies from ongoing downloads.
-    private final DownloadDependenciesGraph _dlOngoingDependencies;
     private final Token _tk;
     private final SOCID _socid;
     private Prio _prio;
+
+    // Before resolving a name conflict with a remote object, the local peer requests information
+    // from the remote peer about its knowledge of the local name-conflicting object. The following
+    // set represents all OCIDs *this* download object has requested---its download "memory";
+    // if an encountered OCID has a name conflict and it has already been requested from the
+    // remote peer, then we should proceed to resolve the name conflict, not ask for more
+    // information.
+    // N.B. it is tempting to use the DownloadDependenciesGraph to act as the "download memory,"
+    // but that would require removing edges at the end of Download.do_, which is forbidden
+    // (see Downloads.downloadSync_)
+    private final Set<OCID> _requested = Sets.newTreeSet();
     private final Factory _f;
 
     public static class Factory
@@ -59,12 +67,11 @@ public class Download
         private final GetComponentCall _pgcc;
         private final NativeVersionControl _nvc;
         private final To.Factory _factTo;
-        private final DownloadDependenciesGraph _dlOngoingDependencies;
 
         @Inject
         public Factory(NativeVersionControl nvc, GetComponentCall pgcc, Downloads dls,
                 DirectoryService ds, DownloadState dlstate, TC tc,
-                To.Factory factTo, MapSIndex2Store sidx2s, DownloadDependenciesGraph dldg)
+                To.Factory factTo, MapSIndex2Store sidx2s)
         {
 
             _nvc = nvc;
@@ -75,17 +82,16 @@ public class Download
             _tc = tc;
             _factTo = factTo;
             _sidx2s = sidx2s;
-            _dlOngoingDependencies = dldg;
         }
 
         Download create_(SOCID socid, To src, IDownloadCompletionListener listener, Token tk)
         {
-            return new Download(this, socid, src, listener, tk, _dlOngoingDependencies);
+            return new Download(this, socid, src, listener, tk);
         }
     }
 
     private Download(Factory f, SOCID socid, To src, @Nullable IDownloadCompletionListener l,
-            Token tk, DownloadDependenciesGraph dldg)
+            Token tk)
     {
         _f = f;
         _socid = socid;
@@ -93,7 +99,6 @@ public class Download
         _src = src;
         _prio = _f._tc.prio();
         if (l != null) _ls.addListener_(l);
-        _dlOngoingDependencies = dldg;
     }
 
     public void include_(To src, @Nullable IDownloadCompletionListener listener)
@@ -160,8 +165,6 @@ public class Download
             _f._dlstate.ended_(_socid, false);
             return e;
         } finally {
-            // Clear all dependencies of this socid on others, since we're "done" with this socid
-            _dlOngoingDependencies.removeOutwardEdges_(_socid);
             _f._tc.setPrio(prioOrg);
         }
     }
@@ -194,7 +197,7 @@ public class Download
                 _f._dlstate.started_(_socid);
                 DigestedMessage msg = _f._pgcc.rpc1_(_socid, _src, _tk);
                 replier = msg.did();
-                _f._pgcc.rpc2_(_socid, _src, msg, _tk);
+                _f._pgcc.rpc2_(_socid, msg, _requested, _tk);
 
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
 
@@ -203,8 +206,7 @@ public class Download
                 // The idea is that if you get to this point, you're re-running the Download having
                 // successfully resolved some KML last time. We should therefore clear out the
                 // memory of existing dependencies.
-                // This will be irrelevant if Download objects have a synced set again.
-                //_dlOngoingDependencies.removeOutwardEdges_(_socid);
+                //_requested.clear();
                 _src.avoid_(replier);
 
                 reenqueue(started);
@@ -229,7 +231,7 @@ public class Download
 
                 SOCID dst = new SOCID(_socid.sidx(), e._ocid);
                 DependencyEdge dependency = new NameConflictDependencyEdge(_socid, dst, e._did,
-                        e._parent, e._vRemote, e._meta, e._soidMsg);
+                        e._parent, e._vRemote, e._meta, e._soidMsg, e._requested);
                 onDependency_(dependency, e);
 
             } catch (ExDependsOn e) {
@@ -330,6 +332,8 @@ public class Download
             else throw e2;
         }
         l.info("dependency " + dependency + " solved");
+        assert dependency.dst.oid().equals(e._ocid.oid());
+        _requested.add(e._ocid);
     }
 
     @Override

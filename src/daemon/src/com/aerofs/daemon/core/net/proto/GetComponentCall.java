@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.net.proto;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Set;
 
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -18,6 +19,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoNewUpdate;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.spsv.SVClient;
 import com.google.inject.Inject;
@@ -189,10 +191,13 @@ public class GetComponentCall
         bd.setPrefixVersion(vPre.toPB_());
     }
 
-    public void rpc2_(SOCID socid, To src, DigestedMessage reply, Token tk)
+    /**
+     * @param requested see Download._requested for more information
+     */
+    public void rpc2_(SOCID socid, DigestedMessage reply, Set<OCID> requested, Token tk)
         throws Exception
     {
-        _gcr.processReply_(socid, src, reply, tk);
+        _gcr.processReply_(socid, reply, requested, tk);
     }
 
     public void processCall_(DigestedMessage msg)

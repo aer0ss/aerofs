@@ -227,7 +227,7 @@ public class DownloadDeadlockResolver
             assert cr != null : socidRemote + " " + vRemote + " " + metaDiff;
             _ru.resolveNameConflictByRenaming_(dependency._did, socidRemote.soid(),
                     socidLocal.soid(), wasPresent, dependency._parent, pParent, vRemote,
-                    dependency._meta, metaDiff, dependency._soidMsg, cr, t);
+                    dependency._meta, metaDiff, dependency._soidMsg, dependency._requested, cr, t);
             _ru.applyUpdateMetaAndContent_(sockidRemote, vRemote, cr, t);
             t.commit_();
         } catch (IOException e) {

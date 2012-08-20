@@ -39,6 +39,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -49,6 +50,8 @@ import org.mockito.stubbing.Answer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Map.Entry;
+import java.util.Set;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
@@ -111,6 +114,7 @@ public class TestAliasing extends AbstractTest
     private static final long mtime = 1329528440;
     private SOID soidTarget, soidAlias;
     private SOID soidLocal, soidRemote;
+    private Set<OCID> requested = Sets.newTreeSet();
     SOCID aliasMeta, aliasContent, targetMeta, targetContent;
 
     private void tearDownInMemoryDatabase() throws Exception
@@ -305,7 +309,8 @@ public class TestAliasing extends AbstractTest
             any(Version.class), anyInt());
         verify(ru, used ? atLeastOnce() : never()).applyMeta_(any(DID.class), any(SOID.class),
             any(PBMeta.class), any(OID.class), anyBoolean(), anyInt(), any(Trans.class),
-            any(SOID.class), any(Version.class), any(SOID.class), any(CausalityResult.class));
+            any(SOID.class), any(Version.class), any(SOID.class), anySetOf(OCID.class),
+            any(CausalityResult.class));
         verify(ru, never()).applyUpdateMetaAndContent_(any(SOCKID.class), any(Version.class),
             any(CausalityResult.class), any(Trans.class));
     }
@@ -331,61 +336,65 @@ public class TestAliasing extends AbstractTest
     {
         when(ru.applyMeta_(any(DID.class), any(SOID.class), any(PBMeta.class),
                 any(OID.class), anyBoolean(), anyInt(), any(Trans.class), any(SOID.class),
-                any(Version.class), any(SOID.class), any(CausalityResult.class)))
+                any(Version.class), any(SOID.class), anySetOf(OCID.class),
+                any(CausalityResult.class)))
                 .thenAnswer(new Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock)
-                throws Throwable
-            {
-                Object[] args = invocationOnMock.getArguments();
+                {
+                    @Override
+                    public Object answer(InvocationOnMock invocationOnMock)
+                            throws Throwable
+                    {
+                        Object[] args = invocationOnMock.getArguments();
 
-                SOID soidReceived = (SOID) args[1];
-                OID oidParent = (OID) args[3];
-                Trans t = (Trans) args[6];
-                Version vReceivedMeta = (Version) args[9];
-                OID alias, target;
+                        SOID soidReceived = (SOID) args[1];
+                        OID oidParent = (OID) args[3];
+                        Trans t = (Trans) args[6];
+                        Version vReceivedMeta = (Version) args[9];
+                        OID alias, target;
 
-                AliasAndTarget ar = Aliasing.determineAliasAndTarget_(soidReceived, soidLocal);
-                if (ar._target.equals(soidReceived)) {
-                    mdb.deleteOA_(soidLocal.sidx(), soidLocal.oid(), t);
-                    mdb.deleteCA_(soidLocal, KIndex.MASTER, t);
+                        AliasAndTarget ar = Aliasing.determineAliasAndTarget_(soidReceived,
+                                soidLocal);
+                        if (ar._target.equals(soidReceived)) {
+                            mdb.deleteOA_(soidLocal.sidx(), soidLocal.oid(), t);
+                            mdb.deleteCA_(soidLocal, KIndex.MASTER, t);
 
-                    mdb.createOA_(soidReceived.sidx(), soidReceived.oid(), oidParent,
-                        conflictFileName, Type.FILE, 0x0, t);
-                    mdb.createCA_(soidReceived, KIndex.MASTER, t);
-                    mdb.setCA_(soidReceived, KIndex.MASTER, len, mtime, null, t);
+                            mdb.createOA_(soidReceived.sidx(), soidReceived.oid(), oidParent,
+                                    conflictFileName, Type.FILE, 0x0, t);
+                            mdb.createCA_(soidReceived, KIndex.MASTER, t);
+                            mdb.setCA_(soidReceived, KIndex.MASTER, len, mtime, null, t);
 
-                    SOCKID kLocalMeta = new SOCKID(soidLocal, CID.META, KIndex.MASTER);
-                    SOCKID kLocalContent = new SOCKID(soidLocal, CID.CONTENT, KIndex.MASTER);
+                            SOCKID kLocalMeta = new SOCKID(soidLocal, CID.META, KIndex.MASTER);
+                            SOCKID kLocalContent = new SOCKID(soidLocal, CID.CONTENT,
+                                    KIndex.MASTER);
 
-                    Version vLocalMeta = nvdb.getLocalVersion_(kLocalMeta);
-                    Version vLocalContent = nvdb.getLocalVersion_(kLocalContent);
-                    nvdb.deleteLocalVersion_(kLocalMeta, vLocalMeta, t);
-                    nvdb.deleteLocalVersion_(kLocalContent, vLocalContent, t);
+                            Version vLocalMeta = nvdb.getLocalVersion_(kLocalMeta);
+                            Version vLocalContent = nvdb.getLocalVersion_(kLocalContent);
+                            nvdb.deleteLocalVersion_(kLocalMeta, vLocalMeta, t);
+                            nvdb.deleteLocalVersion_(kLocalContent, vLocalContent, t);
 
-                    Version vMergedMeta = vReceivedMeta.add_(vLocalMeta);
-                    nvdb.addLocalVersion_(new SOCKID(soidReceived, CID.META, KIndex.MASTER),
-                        vMergedMeta, t);
-                    nvdb.addLocalVersion_(new SOCKID(soidReceived, CID.CONTENT, KIndex.MASTER),
-                        vLocalContent, t);
-                    alias = soidLocal.oid();
-                    target = soidReceived.oid();
-                } else {
-                    nvdb.addLocalVersion_(new SOCKID(soidLocal, CID.META, KIndex.MASTER),
-                        vReceivedMeta.withoutAliasTicks_(), t);
-                    nvdb.addLocalVersion_(new SOCKID(soidReceived, CID.META, KIndex.MASTER),
-                        vReceivedMeta.sub_(vReceivedMeta.withoutAliasTicks_()), t);
+                            Version vMergedMeta = vReceivedMeta.add_(vLocalMeta);
+                            nvdb.addLocalVersion_(new SOCKID(soidReceived, CID.META, KIndex.MASTER),
+                                    vMergedMeta, t);
+                            nvdb.addLocalVersion_(
+                                    new SOCKID(soidReceived, CID.CONTENT, KIndex.MASTER),
+                                    vLocalContent, t);
+                            alias = soidLocal.oid();
+                            target = soidReceived.oid();
+                        } else {
+                            nvdb.addLocalVersion_(new SOCKID(soidLocal, CID.META, KIndex.MASTER),
+                                    vReceivedMeta.withoutAliasTicks_(), t);
+                            nvdb.addLocalVersion_(new SOCKID(soidReceived, CID.META, KIndex.MASTER),
+                                    vReceivedMeta.sub_(vReceivedMeta.withoutAliasTicks_()), t);
 
-                    alias = soidReceived.oid();
-                    target = soidLocal.oid();
-                }
-                aldb.addAliasToTargetMapping_(sidx, alias, target, t);
-                aldb.resolveAliasChaining_(sidx, alias, target, t);
+                            alias = soidReceived.oid();
+                            target = soidLocal.oid();
+                        }
+                        aldb.addAliasToTargetMapping_(sidx, alias, target, t);
+                        aldb.resolveAliasChaining_(sidx, alias, target, t);
 
-                return true;
-            }
-        });
+                        return true;
+                    }
+                });
     }
 
     private void mockLocalOA(SOID soid, OA oa, String fileName) throws Exception
@@ -615,7 +624,7 @@ public class TestAliasing extends AbstractTest
 
         // Run the test method.
         al.processAliasMsg_(remoteDID, soidAlias, vRemoteAlias, soidTarget, vRemoteTarget,
-            oidParent, 0x0, meta);
+                oidParent, 0x0, meta, requested);
 
         // Verification phase.
         assertEquals(soidTarget.oid(), aldb.getTargetOID_(soidAlias.sidx(), soidAlias.oid()));
@@ -737,7 +746,7 @@ public class TestAliasing extends AbstractTest
         PBMeta meta = buildAliasPBMeta(soid2.oid(), v2);
         // Done mocking objects.
 
-        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, null, 0x0, meta);
+        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, null, 0x0, meta, requested);
 
         // Verify the alias mappings and no chaining.
         assertEquals(soid3.oid(), aldb.getTargetOID_(sidx, soid1.oid()));
@@ -769,7 +778,7 @@ public class TestAliasing extends AbstractTest
         // Done mocking objects.
 
         al.processAliasMsg_(remoteDID, soidAlias, vAlias, soidTarget, vTarget, oidParent,
-            0x0, meta);
+            0x0, meta, requested);
 
         // Verification phase.
         assertEquals(soidTarget.oid(), aldb.getTargetOID_(sidx, soidAlias.oid()));
@@ -815,7 +824,7 @@ public class TestAliasing extends AbstractTest
         // Done mocking objects.
 
         al.processAliasMsg_(remoteDID, soidAlias, vRemoteAlias, soidTarget, vTargetMergedMeta,
-            oidParent, 0x0, meta);
+            oidParent, 0x0, meta, requested);
 
         // Verification phase
         verifyReceiveAndApplyUpdateObjectIsUsedAndNameConflictIsDetected();
@@ -871,7 +880,7 @@ public class TestAliasing extends AbstractTest
         PBMeta meta = buildAliasPBMeta(soid3.oid(), v3);
         // Done mocking objects.
 
-        al.processAliasMsg_(remoteDID, soid2, v2, soid3, v3, oidParent, 0x0, meta);
+        al.processAliasMsg_(remoteDID, soid2, v2, soid3, v3, oidParent, 0x0, meta, requested);
 
         // Verification phase
         verifyReceiveAndApplyUpdateObjectIsUsedAndNameConflictIsDetected();
@@ -929,7 +938,7 @@ public class TestAliasing extends AbstractTest
         PBMeta meta = buildAliasPBMeta(soid2.oid(), v2);
         // Done mocking objects.
 
-        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, oidParent, 0x0, meta);
+        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, oidParent, 0x0, meta, requested);
 
         // Verification phase
         verifyReceiveAndApplyUpdateObjectIsUsedAndNameConflictIsDetected();
@@ -980,7 +989,7 @@ public class TestAliasing extends AbstractTest
         aldb.addAliasToTargetMapping_(sidx, soid1.oid(), soid3.oid(), t);
         aldb.addAliasToTargetMapping_(sidx, soid2.oid(), soid3.oid(), t);
 
-        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, oidParent, 0x0, meta);
+        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, oidParent, 0x0, meta, requested);
 
         // Verification phase
         verifyReceiveAndApplyUpdateObjectIsNotUsed();
@@ -1027,7 +1036,7 @@ public class TestAliasing extends AbstractTest
         PBMeta meta = buildAliasPBMeta(soid2.oid(), v2);
         aldb.addAliasToTargetMapping_(sidx, soid1.oid(), soid3.oid(), t);
 
-        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, oidParent, 0x0, meta);
+        al.processAliasMsg_(remoteDID, soid1, v1, soid2, v2, oidParent, 0x0, meta, requested);
 
         // Verification phase
         verifyReceiveAndApplyUpdateObjectIsUsedAndNameConflictIsDetected();
@@ -1076,7 +1085,7 @@ public class TestAliasing extends AbstractTest
         PBMeta meta = buildAliasPBMeta(soid3.oid(), v3);
 
         aldb.addAliasToTargetMapping_(sidx, soid1.oid(), soid2.oid(), t);
-        al.processAliasMsg_(remoteDID, soid1, v1, soid3, v3, oidParent, 0x0, meta);
+        al.processAliasMsg_(remoteDID, soid1, v1, soid3, v3, oidParent, 0x0, meta, requested);
 
         verifyReceiveAndApplyUpdateObjectIsUsedAndNameConflictIsDetected();
         verifyAliasMappingAndNoChainingFor3OIDs(soid1, soid2, soid3);
@@ -1131,7 +1140,7 @@ public class TestAliasing extends AbstractTest
 
         // Invoke alias message handler
         al.processAliasMsg_(did3, soidAlias, vAliasRemoteMeta, soidTarget, vTargetRemoteMeta,
-            oidParent, 0x0, meta);
+            oidParent, 0x0, meta, requested);
 
         // Verification phase.
         assertNull(mdb.getOA_(soidAlias));

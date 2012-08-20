@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.Set;
 
 import static com.aerofs.daemon.core.net.ReceiveAndApplyUpdate.*;
 import static com.aerofs.daemon.core.net.proto.GetComponentReply.*;
@@ -222,9 +223,11 @@ public class Aliasing
      * @param vRemoteTargetMeta Meta-data version of the target from the remote peer
      * @param metaDiff Meta-diff between local object and remote alias object
      * @param meta Meta-data information sent by the remote peer about alias
+     * @param requested see Download._requested for more information
      */
     public void processAliasMsg_(DID did, SOID alias, Version vRemoteAliasMeta, SOID target,
-            Version vRemoteTargetMeta, OID oidParent, int metaDiff, PBMeta meta)
+            Version vRemoteTargetMeta, OID oidParent, int metaDiff, PBMeta meta,
+            Set<OCID> requested)
             throws Exception
     {
         // Alias message processing is only for meta-data updates.
@@ -256,6 +259,7 @@ public class Aliasing
                         alias, // noNewVersion
                         vRemoteTargetMeta,
                         alias,
+                        requested,
                         cr);
 
                 // Don't applyUpdate() if a name conflict was detected and

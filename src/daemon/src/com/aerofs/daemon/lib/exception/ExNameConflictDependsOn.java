@@ -13,6 +13,8 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBMeta;
 
+import java.util.Set;
+
 public class ExNameConflictDependsOn extends ExDependsOn
 {
     private static final long serialVersionUID = 1L;
@@ -21,10 +23,11 @@ public class ExNameConflictDependsOn extends ExDependsOn
     public final Version _vRemote;
     public final PBMeta _meta;
     public final SOID _soidMsg;
+    public final Set<OCID> _requested;
 
 
     public ExNameConflictDependsOn(OID oid, DID did, boolean ignoreError, OID parent,
-            Version vRemote, PBMeta meta, SOID soidMsg)
+            Version vRemote, PBMeta meta, SOID soidMsg, Set<OCID> requested)
     {
         // Name conflicts only apply to META components
         super(new OCID(oid, CID.META), did, DependencyType.NAME_CONFLICT, ignoreError);
@@ -32,5 +35,6 @@ public class ExNameConflictDependsOn extends ExDependsOn
         _vRemote = vRemote;
         _meta = meta;
         _soidMsg = soidMsg;
+        _requested = requested;
     }
 }

@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.*;
 
+import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -27,6 +28,8 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
+
+import java.util.Set;
 
 public class GetComponentReply
 {
@@ -76,7 +79,10 @@ public class GetComponentReply
         }
     }
 
-    void processReply_(SOCID socid, To src, DigestedMessage msg, Token tk)
+    /*
+     * @param requested see Download._requested for more information
+     */
+    void processReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
             throws Exception
     {
         try {
@@ -87,7 +93,7 @@ public class GetComponentReply
                 throw Exceptions.fromPB(msg.pb().getExceptionReply());
             }
 
-            doProcessReply_(socid, msg, tk);
+            doProcessReply_(socid, msg, requested, tk);
 
         } finally {
             // TODO put this statement into a more general method
@@ -102,7 +108,7 @@ public class GetComponentReply
     // downloading again after the dependency is solved.
     //
 
-    private void doProcessReply_(SOCID socid, DigestedMessage msg, Token tk)
+    private void doProcessReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
             throws Exception
     {
         PBGetComReply pbReply = msg.pb().getGetComReply();
@@ -183,7 +189,7 @@ public class GetComponentReply
                     new SOID(socid.sidx(), new OID(meta.getTargetOid())),// target
                     new Version(meta.getTargetVersion()),                // vRemoteTarget
                     oidParent,
-                    metaDiff, meta);
+                    metaDiff, meta, requested);
 
                 // processAliasMsg_() does all the processing necessary for alias msg hence
                 // return from this point.
@@ -254,6 +260,7 @@ public class GetComponentReply
                             null,
                             vRemote,
                             targetBranch.soid(),
+                            requested,
                             cr);
 
                     // Aliasing objects on name conflicts updates versions and bunch

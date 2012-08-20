@@ -1,7 +1,6 @@
 package com.aerofs.daemon.lib.db.ver;
 
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.Set;
 
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -12,6 +11,7 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 /**
@@ -23,10 +23,10 @@ public class VersionAssistant extends AbstractTransListener
 {
     private boolean _committed;   // for debugging
 
-    private final Set<SOCID> _changed = new HashSet<SOCID>();
-    private final Set<SOID> _addedLocal = new HashSet<SOID>();
-    private final Set<SOCID> _deletedPermanently = new HashSet<SOCID>();
-    private final Set<SIndex> _deletedStores = new HashSet<SIndex>();
+    private final Set<SOCID> _changed = Sets.newHashSet();
+    private final Set<SOID> _addedLocal = Sets.newHashSet();
+    private final Set<SOCID> _deletedPermanently = Sets.newHashSet();
+    private final Set<SIndex> _deletedStores = Sets.newHashSet();
 
     private final INativeVersionDatabase _nvdb;
     private final IImmigrantVersionDatabase _ivdb;
