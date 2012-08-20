@@ -35,7 +35,8 @@ def main(global_config, **settings):
     config.add_translation_dirs('../locale/')
 
     # Global routes
-    config.add_static_view('common', 'aerofs_web.layout:static/', cache_max_age=3600)
+    static_prefix = settings['static.prefix']
+    config.add_static_view(static_prefix, 'aerofs_web.layout:static/', cache_max_age=3600)
     config.add_route('homepage', '/')
 
     # Import routes from modules
