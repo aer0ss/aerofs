@@ -369,6 +369,29 @@ service SPService {
      *   ExNoPerm       if the user calling this does not have admin privileges
      */
     rpc ListSharedFolders(ListSharedFoldersCall) returns(ListSharedFoldersResponse);
+
+    /**
+     * Get the user's organization's preferences (allowed domain, open sharing, etc)
+     *
+     * Required Auth Level: admin
+     *
+     * Throws:
+     *   ExNoPerm       if the user calling this does not have admin privileges
+     */
+    rpc GetOrgPreferences(Void) returns (GetOrgPreferencesReply);
+
+    /**
+     * Set the user's organization's preferences (name, device name, etc)
+     * Optional fields that aren't present won't be changed, but if an empty string is sent as the
+     * allowed domain the allowed domain will be set to Organization.ANY_DOMAIN, permitting all
+     * domain names.
+     *
+     * Required Auth Level: admin
+     *
+     * Throws:
+     *   ExNoPerm       if the user calling this does not have admin privileges
+     */
+    rpc SetOrgPreferences(SetOrgPreferencesCall) returns (Void);
 }
 
 message SignUpCall {
@@ -662,4 +685,17 @@ message ListSharedFoldersResponse {
 
     // Total number of shared folders in the database for this organization
     required int32 total_count = 2;
+}
+
+message GetOrgPreferencesReply {
+    required string org_id = 1;
+    required string org_name = 2;
+    required bool org_allow_open_sharing = 3;
+    required string org_allowed_domain = 4;
+}
+
+message SetOrgPreferencesCall {
+    optional string org_name = 1;
+    optional bool org_allow_open_sharing = 2;
+    optional string org_allowed_domain = 3;
 }

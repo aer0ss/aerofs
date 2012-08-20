@@ -29,7 +29,7 @@ parser.add_argument('server', help="The complete url of the server to connect to
 if __name__ == "__main__":
     args = parser.parse_args()
     url = args.server
-    conn = connection.SyncConnectionService(url,7)
+    conn = connection.SyncConnectionService(url,8)
     sp = sp_pb2.SPServiceRpcStub(conn)
     class Command:
         def __init__(self,fn):

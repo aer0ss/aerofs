@@ -24,6 +24,7 @@ import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
+import com.aerofs.proto.Sp.GetOrgPreferencesReply;
 import com.aerofs.proto.Sp.GetPreferencesReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
@@ -256,6 +257,39 @@ class SPService implements ISPService
 
         _organizationManagement.addOrganization(orgId, orgName, shareExternal, allowedDomain,
                 callerUser);
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetOrgPreferencesReply> getOrgPreferences()
+        throws Exception
+    {
+        User user = _userManagement.getUser(_sessionUser.getUser());
+        user.verifyIsAdmin();
+
+        Organization org = _organizationManagement.getOrganization(user._orgId);
+
+        GetOrgPreferencesReply orgPreferences = GetOrgPreferencesReply.newBuilder()
+                .setOrgId(org._id)
+                .setOrgAllowedDomain(org._allowedDomain)
+                .setOrgAllowOpenSharing(org._shareExternally)
+                .setOrgName(org._name)
+                .build();
+
+        return createReply(orgPreferences);
+    }
+
+    @Override
+    public ListenableFuture<Void> setOrgPreferences(@Nullable String orgName,
+            @Nullable Boolean orgAllowOpenSharing, @Nullable String orgAllowedDomain)
+            throws Exception
+    {
+        User user = _userManagement.getUser(_sessionUser.getUser());
+        user.verifyIsAdmin();
+
+        _organizationManagement.setOrganizationPreferences(user._orgId, orgName, orgAllowedDomain,
+                orgAllowOpenSharing);
 
         return createVoidReply();
     }

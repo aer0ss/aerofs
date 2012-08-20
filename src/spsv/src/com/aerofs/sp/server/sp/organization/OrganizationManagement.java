@@ -109,6 +109,34 @@ public class OrganizationManagement
         return _db.getOrganization(orgId);
     }
 
+    public void setOrganizationPreferences(String orgId, @Nullable String orgName,
+            @Nullable String allowedDomain, @Nullable Boolean shareExternal)
+            throws ExNotFound, SQLException, ExBadArgs
+    {
+        Organization oldOrg = getOrganization(orgId);
+
+        if (orgName == null) {
+            orgName = oldOrg._name;
+        }
+
+        if (allowedDomain == null) {
+            allowedDomain = oldOrg._allowedDomain;
+        } else if (allowedDomain.isEmpty()) {
+            allowedDomain = Organization.ANY_DOMAIN;
+        } else if (!allowedDomain.equals(Organization.ANY_DOMAIN) &&
+                !isValidDomainName(allowedDomain)) {
+            throw new ExBadArgs("Domain '" + allowedDomain + "' is not a valid domain name.");
+        }
+
+        if (shareExternal == null) {
+            shareExternal = oldOrg._shareExternally;
+        }
+
+        Organization newOrg = new Organization(orgId, orgName, allowedDomain, shareExternal);
+
+        _db.setOrganizationPreferences(newOrg);
+    }
+
     public void moveUserToOrganization(String user, String orgId)
             throws SQLException, ExNotFound, ExBadArgs
     {
