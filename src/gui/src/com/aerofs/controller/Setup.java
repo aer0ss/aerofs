@@ -15,6 +15,7 @@ import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.lib.ex.ExBadCredential;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.AppRoot;
@@ -243,10 +244,12 @@ class Setup
             runNonEssential(userId, did, deviceName, returning, sp);
         } catch (Exception e) {
             UI.dm().stopIgnoreException();
-            if (Cfg.inited()) {
-                SVClient.logSendDefectSyncIgnoreError(true, "setup", e);
-            } else {
-                SVClient.logSendDefectSyncNoCfgIgnoreError(true, "setup", e, userId, _rtRoot);
+            if (!(e instanceof ExBadCredential)) { // Don't send SV defect for bad credentials
+                if (Cfg.inited()) {
+                    SVClient.logSendDefectSyncIgnoreError(true, "setup", e);
+                } else {
+                    SVClient.logSendDefectSyncNoCfgIgnoreError(true, "setup", e, userId, _rtRoot);
+                }
             }
 
             // Enable lots of logs so future attempts can be analyzed (even if the user canceled the
