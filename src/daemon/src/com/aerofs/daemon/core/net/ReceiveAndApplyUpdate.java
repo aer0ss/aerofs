@@ -779,7 +779,7 @@ public class ReceiveAndApplyUpdate
         // 1) this update was a merge of true conflicts OR
         // 2) the object in the msg was renamed to resolve a local name conflict
         if (res._incrementVersion || res._conflictRename) {
-            assert k.cid().equals(CID.META);
+            assert k.cid().isMeta();
             _vu.update_(k, t);
         }
     }

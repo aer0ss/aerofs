@@ -180,7 +180,7 @@ public class Download
                 // Check for dependency and expulsion. Even though GetComponentReply will check
                 // again, we do it here to avoid useless round-trips with remote peers when
                 // possible.
-                if (!_socid.cid().equals(CID.META)) {
+                if (!_socid.cid().isMeta()) {
                     OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
                     if (oa == null) {
                         throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null,
