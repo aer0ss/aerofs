@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="VerkehrSubscriberStressTestClient (topic1)" type="Application" factoryName="Application">
-    <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr-stress-client.log" checked="true" skipped="true" show_all="false" alias="stress" />
+    <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr-subscriber-stress-client.log" checked="true" skipped="true" show_all="false" alias="subscriber-stress" />
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
         <option name="PATTERN" value="com.aerofs.verkehr.client.lib.subscriber.*" />
@@ -8,8 +8,8 @@
       </pattern>
     </extension>
     <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.client.benchmark.VerkehrSubscriberStressTestClient" />
-    <option name="VM_PARAMETERS" value="-ea -Xmx1024m" />
-    <option name="PROGRAM_PARAMETERS" value="localhost 9091 topic1 1000 30 client.crt client.key cacert.pem" />
+    <option name="VM_PARAMETERS" value="-ea -Xmx1024m -Djavax.net.debug=ssl:handshake:sessioncache:sslctx" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 9091 topic1 10000 10 client.crt client.key cacert.pem" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../src/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />

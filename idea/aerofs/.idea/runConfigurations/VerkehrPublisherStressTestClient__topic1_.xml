@@ -1,15 +1,15 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Verkehr" type="Application" factoryName="Application">
-    <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr.log" checked="true" skipped="true" show_all="false" alias="verkehr" />
+  <configuration default="false" name="VerkehrPublisherStressTestClient (topic1)" type="Application" factoryName="Application">
+    <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr-publisher-stress-client.log" checked="true" skipped="true" show_all="false" alias="publisher-stress" />
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
-        <option name="PATTERN" value="com.aerofs.verkehr.server.*" />
+        <option name="PATTERN" value="com.aerofs.verkehr.client.lib.subscriber.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrTestServer" />
-    <option name="VM_PARAMETERS" value="-ea -Xmx1024m -Djavax.net.debug=ssl:handshake:sessioncache:sslctx:keygen" />
-    <option name="PROGRAM_PARAMETERS" value="verkehr.properties" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.client.benchmark.VerkehrPublisherStressTestClient" />
+    <option name="VM_PARAMETERS" value="-ea -Xmx1024m" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 9090 topic1 1000 10 cacert.pem" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../src/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
