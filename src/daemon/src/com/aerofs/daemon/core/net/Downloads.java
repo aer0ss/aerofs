@@ -169,7 +169,7 @@ public class Downloads
         try {
             // assert that the object is not expelled if the branch being downloaded is not metadata
             OA oa;
-            assert socid.cid().equals(CID.META) ||
+            assert socid.cid().isMeta() ||
                     (oa = _ds.getOANullable_(socid.soid())) == null ||
                     !oa.isExpelled() : socid;
         } catch (SQLException e) { }

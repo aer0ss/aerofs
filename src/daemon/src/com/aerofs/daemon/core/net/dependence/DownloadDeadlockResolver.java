@@ -207,7 +207,7 @@ public class DownloadDeadlockResolver
         Version vRemote = dependency._vSrc;
 
         // A name conflict should only involve META socids
-        assert socidRemote.cid().equals(CID.META) && socidRemote.cid().equals(socidLocal.cid())
+        assert socidRemote.cid().isMeta() && socidRemote.cid().equals(socidLocal.cid())
                 : dependency;
 
         Path pParent = _ds.resolve_(new SOID(socidLocal.sidx(), dependency._parent));

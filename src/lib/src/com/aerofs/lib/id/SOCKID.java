@@ -44,7 +44,7 @@ public class SOCKID implements Comparable<SOCKID> {
     public SOCKID(SOCID socid, KIndex xidx)
     {
         // we don't support conflicting metadata for the moment
-        assert !socid.cid().equals(CID.META) || xidx.equals(KIndex.MASTER);
+        assert !socid.cid().isMeta() || xidx.equals(KIndex.MASTER);
         _socid = socid;
         _kidx = xidx;
     }
