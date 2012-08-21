@@ -11,7 +11,9 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
 import com.aerofs.lib.cfg.Cfg;
 import org.apache.log4j.Logger;
@@ -28,12 +30,15 @@ public class EmailUtil
     protected static final String SENDGRID_HOST = "smtp.sendgrid.net";
     protected static final String SENDGRID_USERNAME = "yuri@aerofs.com";
     protected static final String SENDGRID_PASSWORD = "2vyXBb2sJDWl";
-    private static String LOCAL_HOST = "svmail.aerofs.com";
-    private static String LOCAL_USERNAME = "noreply";
-    private static String LOCAL_PASSWORD = "qEphE2uzuBr5";
+    private static final String LOCAL_HOST = "svmail.aerofs.com";
+    private static final String LOCAL_USERNAME = "noreply";
+    private static final String LOCAL_PASSWORD = "qEphE2uzuBr5";
     private static Session session = null;
 
     static final String CHARSET = "UTF-8";
+    static final String DEFAULT_PS = "Have questions or comments? Email us at " +
+            SP_EMAIL_ADDRESS;
+
 
     static {
         Properties props = System.getProperties();
@@ -110,6 +115,24 @@ public class EmailUtil
             }
         });
     }
+
+    public static MimeMultipart createMultipartEmail(Email email) throws MessagingException
+    {
+        MimeMultipart multiPart = new MimeMultipart("alternative");
+
+        MimeBodyPart textPart = new MimeBodyPart();
+        MimeBodyPart htmlPart = new MimeBodyPart();
+
+        textPart.setContent(email.getTextEmail(), "text/plain; charset=\"" + CHARSET +
+                "\"");
+        htmlPart.setContent(email.getHTMLEmail(), "text/html; charset=\"" + CHARSET + "\"");
+
+        multiPart.addBodyPart(textPart);
+        multiPart.addBodyPart(htmlPart);
+
+        return multiPart;
+    }
+
 
     public static void emailSVNotification(final String subject, final String body)
     {
