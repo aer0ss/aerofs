@@ -85,6 +85,8 @@ public class S
         " connected to the Internet and run " + S.PRODUCT + " again.";
     public static final String PRIVACY_URL = SP.WEB_BASE + "privacy";
     public static final String TOS_URL = SP.WEB_BASE + "tos";
+    public static final String PASSWORD_RESET_REQUEST_URL = SP.WEB_BASE + "request_password_reset";
+    public static final String PASSWORD_RESET_URL = SP.WEB_BASE + "password_reset";
     // use trailing spaces to force right margins
     public static final String TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ";
     public static final String SENDING_INVITATION = "Inviting";

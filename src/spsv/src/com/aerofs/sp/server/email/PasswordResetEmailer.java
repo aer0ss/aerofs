@@ -26,7 +26,7 @@ public class PasswordResetEmailer
 
         Email email = new Email(subject);
 
-        String url = "https://www.aerofs.com/password_reset?" +
+        String url = S.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(to) +
                 "&token=" + reset_token;
         String body = "\nForgot your password? It happens to the best of us.\n\nFollow this link " +

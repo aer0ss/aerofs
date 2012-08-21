@@ -63,7 +63,7 @@ public class Param
 
     public static class SP
     {
-        public static final String WEB_BASE = "http://" + L.get().webHost() + "/";
+        public static final String WEB_BASE = "https://" + L.get().webHost() + "/";
         public static final URL URL;
 
         static {

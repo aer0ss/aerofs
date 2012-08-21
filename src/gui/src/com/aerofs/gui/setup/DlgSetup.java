@@ -82,6 +82,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         !(OSUtil.isOSX() && System.getProperty("os.version").startsWith("10.5"));
     private Composite _compStack;
     private Composite _compTOS;
+    private Composite _compForgotPassword;
     private Composite _compBlank;
     private CompSpin _compSpin;
     private Label _lblError;
@@ -143,7 +144,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                 _compSpinIC.setVisible(!r);
 
                 if (r) {
-                    _layoutStack.topControl = _compBlank;
+                    _layoutStack.topControl = _compForgotPassword;
                 } else {
                     _layoutStack.topControl = _compTOS;
                     _txtUserID.setText(_isTargetedInvite ? _invitedUser : "");
@@ -316,6 +317,24 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             public void widgetSelected(SelectionEvent e)
             {
                 Program.launch(S.TOS_URL);
+            }
+        });
+
+        _compForgotPassword= new Composite(_compStack, SWT.NONE);
+        GridLayout gl_compForgotPassword= new GridLayout(1, false);
+        gl_compForgotPassword.marginHeight = 0;
+        gl_compForgotPassword.marginWidth = 0;
+        _compForgotPassword.setLayout(gl_compForgotPassword);
+
+        Link linkForgotPassword = new Link(_compForgotPassword, SWT.NONE);
+        linkForgotPassword.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, true, 1, 1));
+        linkForgotPassword.setToolTipText("");
+        linkForgotPassword.setText("Forgot your password? <a>Click here to reset it.</a>");
+        linkForgotPassword.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e)
+            {
+                Program.launch(S.PASSWORD_RESET_REQUEST_URL);
             }
         });
 
