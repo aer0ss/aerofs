@@ -43,14 +43,14 @@ node "z.arrowfs.org" inherits default {
     "url http://www.aerofs.com",
     "url https://sv.aerofs.com/sv_beta/sv",
     "url https://sv.aerofs.com/sv_beta/sv",
-    "url https://syncstat.aerofs.com/prod/syncstat",
+    "url https://sss.aerofs.com/prod/syncstat",
     "port verkehr.aerofs.com 443",
     "port zephyr.aerofs.com 443",
     "port x.aerofs.com 443",
     # Staging
     "port sp.aerofs.com 443",
     "port sp.aerofs.com 80",
-    "url https://syncstat-staging.aerofs.com/staging/syncstat",
+    "url https://sss-staging.aerofs.com/staging/syncstat",
     # Meta (not used right now)
     #"ping z.arrowfs.org"
   ]:
