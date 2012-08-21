@@ -42,8 +42,8 @@ node "z.arrowfs.org" inherits default {
     # Production
     "url http://www.aerofs.com",
     "url https://sv.aerofs.com/sv_beta/sv",
-    "url https://sv.aerofs.com/sv_beta/sv",
     "url https://sss.aerofs.com/prod/syncstat",
+    "url https://reloadedsp.aerofs.com/sp",
     "port verkehr.aerofs.com 443",
     "port zephyr.aerofs.com 443",
     "port x.aerofs.com 443",
