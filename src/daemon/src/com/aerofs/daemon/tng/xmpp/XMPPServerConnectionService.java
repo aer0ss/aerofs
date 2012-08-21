@@ -235,19 +235,6 @@ final class XMPPServerConnectionService implements INetworkLinkStateListener, IS
         return muc;
     }
 
-    private void createAccount_()
-            throws XMPPException
-    {
-        XMPPConnection c = createNewConnection();
-        c.connect();
-        try {
-            AccountManager am = c.getAccountManager();
-            am.createAccount(_user, ID.getShaedXMPP());
-        } finally {
-            c.disconnect();
-        }
-    }
-
     /**
      * Thread-safe
      *
@@ -336,31 +323,7 @@ final class XMPPServerConnectionService implements INetworkLinkStateListener, IS
 
         l.info("connected. logging in");
 
-        try {
-            c.login(_user, ID.getShaedXMPP(), _resource);
-        } catch (Exception e) {
-            l.info("failed logging in. try to create_: " + e);
-            // a new connection is needed in case the old one becomes unavailable
-            // after login failure
-            c.disconnect();
-            createAccount_();
-
-            l.info("try to log in again");
-            c = createNewConnection();
-            c.connect();
-            try {
-                c.login(_user, ID.getShaedXMPP(), _resource);
-            } finally {
-                c.disconnect();
-            }
-
-            // this is because shortly after the first login we noticed an error
-            // from the xmpp library
-            l.info("log in once more");
-            c = createNewConnection();
-            c.connect();
-            c.login(_user, ID.getShaedXMPP(), _resource);
-        }
+        c.login(_user, ID.getShaedXMPP(), _resource);
 
         l.info("logged in");
         _conn = c; // this is the point at which changes are visible
