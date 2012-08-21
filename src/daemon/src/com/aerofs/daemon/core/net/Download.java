@@ -199,6 +199,10 @@ public class Download
                 replier = msg.did();
                 _f._pgcc.rpc2_(_socid, msg, _requested, _tk);
 
+                // TODO (MJ) Weihan says we can remove the following code (up to the catch)
+                // - if there are more KMLs, the Collector algorithm will ensure a new Download
+                //   object is created to resolve the KMLs
+                // - see if any DownloadState code can be simplified.
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
 
                 l.info("kml > 0 for " + _socid + ". dl again");
