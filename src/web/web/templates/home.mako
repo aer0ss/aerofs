@@ -7,7 +7,7 @@
 <h1>AeroFS Web Interface</h1>
 <p>Welcome to the AeroFS Web Interface! Use the links below to get started.</p>
 <ul class="nav">
-    <li><a href="${request.route_path('send_password_reset_email')}">Reset Your Password</a></li>
+    <li><a href="${request.route_path('request_password_reset')}">Reset Your Password</a></li>
     %if request.session['group'] == ADMIN:
         <li><a href="${request.route_path('dashboard')}">Admin Panel</a></li>
     %else:
