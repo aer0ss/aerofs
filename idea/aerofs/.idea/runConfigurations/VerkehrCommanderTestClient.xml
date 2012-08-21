@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="VerkehrCommanderTestClient" type="Application" factoryName="Application" singleton="true">
+  <configuration default="false" name="VerkehrCommanderTestClient" type="Application" factoryName="Application">
     <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr-commander.log" checked="true" skipped="true" show_all="false" alias="commander" />
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="verkehr-cli" type="GroovyScriptRunConfiguration" factoryName="Groovy" singleton="true">
+  <configuration default="false" name="verkehr-cli" type="GroovyScriptRunConfiguration" factoryName="Groovy">
     <module name="verkehr" />
     <setting name="path" value="$PROJECT_DIR$/../../src/verkehr/src/com/aerofs/verkehr/client/cli/VerkehrCli.groovy" />
     <setting name="vmparams" value="" />
