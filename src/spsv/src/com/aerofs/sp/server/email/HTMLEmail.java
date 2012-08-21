@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.l.L;
+import com.aerofs.lib.S;
 
 public class HTMLEmail implements IEmail {
 
@@ -32,7 +33,7 @@ public class HTMLEmail implements IEmail {
         "   <table cellpadding=\"0\" cellspacing=\"0\" style=\"font-size:11px;color:#999999;width:100%;\">" +
         "       <tr>"+
         "            <td align=\"left\">" +
-        "                Copyrights &copy; Air Computing Inc. 2011" +
+        "                Copyrights &copy; " + S.COPYRIGHT +
         "            </td>" +
         "            <td align=\"right\">" +
         "                <table align=\"right\">" +

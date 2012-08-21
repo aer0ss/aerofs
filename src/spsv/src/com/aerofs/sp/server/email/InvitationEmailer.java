@@ -12,12 +12,10 @@ import com.aerofs.servletlib.sp.SPParam;
 
 import javax.annotation.Nullable;
 import javax.mail.MessagingException;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.UnsupportedEncodingException;
 
-import static com.aerofs.sp.server.email.EmailUtil.CHARSET;
 import static com.aerofs.sp.server.SPSVParam.*;
 
 /**
@@ -83,18 +81,7 @@ public class InvitationEmailer
                             ". We'd love to hear your feedback!");
         }
 
-        MimeMultipart multiPart = new MimeMultipart("alternative");
-
-        // create the body part
-        MimeBodyPart textPart = new MimeBodyPart();
-        MimeBodyPart htmlPart = new MimeBodyPart();
-
-        textPart.setContent(email.getTextEmail(), "text/plain; charset=\"" + CHARSET +
-                "\"");
-        htmlPart.setContent(email.getHTMLEmail(), "text/html; charset=\"" + CHARSET + "\"");
-
-        multiPart.addBodyPart(textPart);
-        multiPart.addBodyPart(htmlPart);
+        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
 
         MimeMessage msg;
         msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, null);
@@ -132,19 +119,9 @@ public class InvitationEmailer
                 HEADER_SIZE.H1, body);
 
         email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team",
-                "Have questions or comments? Email us at " + SP_EMAIL_ADDRESS);
+                EmailUtil.DEFAULT_PS);
 
-        MimeMultipart multiPart = new MimeMultipart("alternative");
-
-        // create the body part
-        MimeBodyPart textPart = new MimeBodyPart();
-        MimeBodyPart htmlPart = new MimeBodyPart();
-
-        textPart.setContent(email.getTextEmail(), "text/plain; charset=\"" + CHARSET + "\"");
-        htmlPart.setContent(email.getHTMLEmail(), "text/html; charset=\"" + CHARSET + "\"");
-
-        multiPart.addBodyPart(textPart);
-        multiPart.addBodyPart(htmlPart);
+        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
 
         MimeMessage msg;
         msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, null);

@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.email;
 
 import javax.mail.MessagingException;
-import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
@@ -16,7 +15,6 @@ import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import java.io.UnsupportedEncodingException;
 
 import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
-import static com.aerofs.sp.server.email.EmailUtil.CHARSET;
 
 
 public class PasswordResetEmailer
@@ -38,22 +36,12 @@ public class PasswordResetEmailer
         email.addSection(S.PRODUCT + " password request", HEADER_SIZE.H1, body);
 
         email.addSignature("Happy Syncing,", "The " + S.PRODUCT + " Team",
-                "Have questions or comments? Email us at " + SP_EMAIL_ADDRESS);
-
-        MimeMultipart multiPart = new MimeMultipart("alternative");
-
-        MimeBodyPart textPart = new MimeBodyPart();
-        MimeBodyPart htmlPart = new MimeBodyPart();
-
-        textPart.setContent(email.getTextEmail(), "text/plain; charset=\"" + CHARSET +
-                "\"");
-        htmlPart.setContent(email.getHTMLEmail(), "text/html; charset=\"" + CHARSET + "\"");
-
-        multiPart.addBodyPart(textPart);
-        multiPart.addBodyPart(htmlPart);
+                EmailUtil.DEFAULT_PS);
 
         MimeMessage msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS,null,to,null,
                 subject,null);
+
+        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
 
         msg.setContent(multiPart);
 
@@ -67,31 +55,25 @@ public class PasswordResetEmailer
 
         Email email = new Email(subject);
 
-        String body = "\nYour password has been successfully reset.";
+        String body = "\nCongrats! You've successfully created a new password " +
+                "for your " + S.PRODUCT + " account!\n" +
+                "You should now be able to continue syncing privately and securely.\n\n" +
+                "If you didn't request a password reset, " +
+                "please email " + SP_EMAIL_ADDRESS + " right away.";
 
         email.addSection(S.PRODUCT + " password request was successful", HEADER_SIZE.H1, body);
 
-        email.addSignature("Happy Syncing,", "The " + S.PRODUCT + " Team",
-                "Have questions or comments? Email us at " + SP_EMAIL_ADDRESS);
-
-        MimeMultipart multiPart = new MimeMultipart("alternative");
-
-        MimeBodyPart textPart = new MimeBodyPart();
-        MimeBodyPart htmlPart = new MimeBodyPart();
-
-        textPart.setContent(email.getTextEmail(), "text/plain; charset=\"" + CHARSET +
-                "\"");
-        htmlPart.setContent(email.getHTMLEmail(), "text/html; charset=\"" + CHARSET + "\"");
-
-        multiPart.addBodyPart(textPart);
-        multiPart.addBodyPart(htmlPart);
+        email.addSignature("Thank you for using " + S.PRODUCT + ",",
+                "The " + S.PRODUCT + " Support Team",
+                EmailUtil.DEFAULT_PS);
 
         MimeMessage msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS,null,to,null,
                 subject,null);
+
+        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
 
         msg.setContent(multiPart);
 
         EmailUtil.sendEmail(msg,true);
     }
-
 }
