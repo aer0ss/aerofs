@@ -26,7 +26,7 @@
 
     {% for answer in question.answers %}
         <section>
-          <p><strong>{{ answer.from_name }}</strong> {% unless answer.user.is_customer %}&nbsp<span style="font-style:italic;font-weight:normal;display:inline;">&nbsp;{{ site.company_name }} Staff</span>{% endunless %}</p>
+          <p><strong>{{ answer.from_name }}</strong></p>
           <span class="avatar">
             {{ answer.from_email | gravatar_image: gravatar_unknown_user,   ssl }}
           </span>
