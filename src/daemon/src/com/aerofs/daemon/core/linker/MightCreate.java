@@ -332,6 +332,7 @@ public class MightCreate
         } else {
            if (oaParent.isAnchor()) soidParent = _ds.followAnchorThrows_(oaParent);
            _oc.create_(dir ? Type.DIR : Type.FILE, soidParent, pcPhysical._path.last(), MAP, t);
+           _a.incSaveCount();
            return true;
         }
     }
