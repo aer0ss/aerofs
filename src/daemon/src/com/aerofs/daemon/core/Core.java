@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import java.io.IOException;
 
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
+import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
@@ -41,6 +42,7 @@ public class Core implements IModule
     private final CoreScheduler _sched;
     private final CoreQueue _q;
     private final TC _tc;
+    private final VerkehrNotificationSubscriber _vksub;
     private final ACLNotificationSubscriber _aclsub;
     private final SyncStatusNotificationSubscriber _sssub;
     private final UnicastInputOutputStack _stack;
@@ -60,6 +62,7 @@ public class Core implements IModule
             NativeVersionControl nvc,
             ImmigrantVersionControl ivc,
             CoreDBCW dbcw,
+            VerkehrNotificationSubscriber vksub,
             ACLNotificationSubscriber aclsub,
             SyncStatusNotificationSubscriber sssub,
             UnicastInputOutputStack stack,
@@ -77,6 +80,7 @@ public class Core implements IModule
         _nvc = nvc;
         _ivc = ivc;
         _dbcw = dbcw;
+        _vksub = vksub;
         _aclsub = aclsub;
         _sssub = sssub;
         _stack = stack;
@@ -99,6 +103,8 @@ public class Core implements IModule
         _tps.init_();
         _stack.init_();
         _linker.init_();
+        _aclsub.init_();
+        _sssub.init_();
         _notifier.init_();
         _imce2core = new QueueBasedIMCExecutor(_q);
 
@@ -135,8 +141,7 @@ public class Core implements IModule
         // to heart beats requires that everything is ready, tc should start last.
         _tc.start_();
         _linker.start_();
-        _aclsub.start_();
-        _sssub.start_();
+        _vksub.start_();
         _notifier.start_();
     }
 
