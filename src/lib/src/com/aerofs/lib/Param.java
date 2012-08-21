@@ -93,7 +93,7 @@ public class Param
             URL url;
             try {
                 url = new URL(Cfg.staging() ?
-                        "https://syncstat-staging.aerofs.com/staging/syncstat" :
+                        "https://sss-staging.aerofs.com/staging/syncstat" :
                         "https://" + L.get().ssHost() + "/prod/syncstat");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
