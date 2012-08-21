@@ -16,27 +16,6 @@ import org.apache.commons.cli.Options;
 
 public class CmdInvite implements IShellCommand<ShProgram>
 {
-    private final String _optionString;
-
-    public CmdInvite()
-    {
-        _optionString = buildOptionString_();
-    }
-
-    private static String buildOptionString_()
-    {
-        String options = "[PATH] [USER] {";
-        boolean first = true;
-        for (Role role : Role.values()) {
-            if (!first) options += ", ";
-            first = false;
-            options += role.toString();
-        }
-        options += "}";
-
-        return options;
-    }
-
     @Override
     public String getName()
     {
@@ -52,24 +31,34 @@ public class CmdInvite implements IShellCommand<ShProgram>
     @Override
     public String getOptsSyntax()
     {
-        return _optionString;
+        return "[PATH] [USER]";
     }
 
     @Override
     public Options getOpts()
     {
-        return ShellCommandRunner.EMPTY_OPTS;
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Role role : Role.supportedValues()) {
+            if (!first) sb.append(" or ");
+            first = false;
+            sb.append(role.getDescription());
+        }
+
+        return new Options().addOption("r", "role", true, "specify the role (" +
+                sb.toString() + "). Default is " + Role.EDITOR.getDescription());
     }
 
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
             throws Exception
     {
-        if (cl.getArgList().size() != 3) throw new ExBadArgs();
+        if (cl.getArgList().size() != 2) throw new ExBadArgs();
+
+        String role = cl.getOptionValue('r', Role.EDITOR.getDescription());
 
         PBPath path = s.d().buildPath_(cl.getArgs()[0]);
-        SubjectRolePair srp = new SubjectRolePair(cl.getArgs()[1],
-                Role.fromString(cl.getArgs()[2]));
+        SubjectRolePair srp = new SubjectRolePair(cl.getArgs()[1], Role.fromString(role));
 
         RitualBlockingClient ritual = s.d().getRitualClient_();
         SID sid = new SID(ritual.shareFolder(Cfg.user(), path,

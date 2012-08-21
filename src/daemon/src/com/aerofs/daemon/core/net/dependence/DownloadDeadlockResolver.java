@@ -15,7 +15,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;

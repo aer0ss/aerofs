@@ -29,10 +29,12 @@ public enum Role
         _pb = pb;
     }
 
-    @Override
-    public String toString()
+    /**
+     * @return a list of Roles that are currently supported in the UI
+     */
+    public static Role[] supportedValues()
     {
-        return getDescription();
+        return new Role[] { EDITOR, OWNER };
     }
 
     public String getDescription()
@@ -56,12 +58,10 @@ public enum Role
 
     public static Role fromString(String roleDescription) throws ExBadArgs
     {
-        if (roleDescription.equals(EDITOR.toString())) {
+        if (roleDescription.equals(EDITOR.getDescription())) {
             return EDITOR;
-        } else if (roleDescription.equals(OWNER.toString())) {
+        } else if (roleDescription.equals(OWNER.getDescription())) {
             return OWNER;
-        } else if (roleDescription.equals(VIEWER.toString())) {
-            throw new ExBadArgs("Viewers not supported");
         } else {
             throw new ExBadArgs("invalid role description " + roleDescription);
         }
@@ -78,10 +78,7 @@ public enum Role
 
     public static Role fromOrdinal(int ordinal)
     {
-        if (ordinal < 0 || ordinal >= Role.values().length) {
-            throw new IllegalArgumentException("invalid role ordinal:" + ordinal);
-        }
-
+        assert ordinal >= 0 && ordinal < Role.values().length;
         return Role.values()[ordinal];
     }
 }

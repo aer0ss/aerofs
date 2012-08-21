@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph;
 import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
 import com.aerofs.daemon.core.net.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
