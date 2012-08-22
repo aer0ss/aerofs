@@ -52,23 +52,26 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
 
             NSMenu* submenu = [[[NSMenu alloc] init] autorelease];
 
+            int idx = 0;
             if ([[AeroFinderExt instance] shouldEnableTestingFeatures]) {
-                NSMenuItem* syncstat = [submenu insertItemWithTitle:NSLocalizedString(@"Sync status...", @"Context menu")
+                NSMenuItem* syncstat = [submenu insertItemWithTitle:NSLocalizedString(@"Sync Status...", @"Context menu")
                                                              action:@selector(showSyncStatusDialog:)
                                                       keyEquivalent:@""
-                                                            atIndex:0];
+                                                            atIndex:idx];
                 [syncstat setTarget: [AeroFinderExt instance]];
                 [syncstat setRepresentedObject:path];
+                ++idx;
             }
 
             if ((flags & Directory) && !(flags & RootAnchor)) {
                 NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share Folder...", @"Context menu")
                                                           action:@selector(showShareFolderDialog:)
                                                    keyEquivalent:@""
-                                                         atIndex:1];
+                                                         atIndex:idx];
 
                 [share setTarget: [AeroFinderExt instance]];
                 [share setRepresentedObject:path];
+                ++idx;
             }
 
             if ([submenu numberOfItems] > 0) {
