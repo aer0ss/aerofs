@@ -105,7 +105,7 @@ public class VerkehrNotificationSubscriber
                     @Override
                     public void onFailure(Throwable t)
                     {
-                        l.warn("fail subscribe t:" + topic);
+                        l.warn("fail subscribe vk t:" + topic);
                     }
                 });
             }

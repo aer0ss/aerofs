@@ -26,7 +26,18 @@ public abstract class AbstractVerkehrListener implements IVerkehrListener
         _q.enqueueBlocking(event, Prio.LO);
     }
 
-    @Override public void onSubscribed() {}
-    @Override public void onConnected() {}
-    @Override public void onDisconnected() {}
+    @Override public void onSubscribed()
+    {
+        // noop
+    }
+
+    @Override public void onConnected()
+    {
+        // noop
+    }
+
+    @Override public void onDisconnected()
+    {
+        // noop
+    }
 }

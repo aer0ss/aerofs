@@ -42,11 +42,14 @@ public final class ACLNotificationSubscriber
         private final ExponentialRetry _er;
         private final ACLSynchronizer _aclsync;
 
+        private long _aclSyncSeqNum;
+
         VerkehrListener(CoreQueue q, ExponentialRetry er, ACLSynchronizer aclsync)
         {
             super(q);
-            _er = er;
-            _aclsync = aclsync;
+
+            this._er = er;
+            this._aclsync = aclsync;
         }
 
         @Override
@@ -57,17 +60,30 @@ public final class ACLNotificationSubscriber
                 @Override
                 public void handle_()
                 {
-                    _er.retry("aclsync", new Callable<Void>()
-                    {
-                        @Override
-                        public Void call()
-                                throws Exception
-                        {
-                            l.info("sync to local");
-                            _aclsync.syncToLocal_();
-                            return null;
-                        }
-                    });
+                    handleSuccessfulSubscription();
+                }
+            });
+        }
+
+        private void handleSuccessfulSubscription()
+        {
+            final long currentACLSyncSeqNum = ++_aclSyncSeqNum;
+
+            _er.retry("aclsync", new Callable<Void>()
+            {
+                @Override
+                public Void call()
+                        throws Exception
+                {
+                    if (currentACLSyncSeqNum == _aclSyncSeqNum) {
+                        l.info("sync to local");
+                        _aclsync.syncToLocal_();
+                    } else {
+                        l.warn("seqnum mismatch: "
+                                + "exp:" + currentACLSyncSeqNum + " act:" + _aclSyncSeqNum);
+                    }
+
+                    return null;
                 }
             });
         }
@@ -76,7 +92,9 @@ public final class ACLNotificationSubscriber
         public void onNotificationReceived(final String topic, @Nullable final byte[] payload)
         {
             assert topic.equals(_topic);
+
             l.info("recv notification t:" + topic);
+
             runInCoreThread_(new AbstractEBSelfHandling()
             {
                 @Override
@@ -93,6 +111,23 @@ public final class ACLNotificationSubscriber
                             return null;
                         }
                     });
+                }
+            });
+        }
+
+        @Override
+        public void onDisconnected()
+        {
+            l.warn("disconnected from vk");
+
+            runInCoreThread_(new AbstractEBSelfHandling()
+            {
+                @Override
+                public void handle_()
+                {
+                    // we want to stop on-going exponential retries if the verkehr connection dies
+                    // before a call to SP succeeds
+                    ++_aclSyncSeqNum;
                 }
             });
         }
