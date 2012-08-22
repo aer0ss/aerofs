@@ -113,7 +113,7 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 	int entryCount = 0;
 	HMENU submenu = CreatePopupMenu();
 	if (m_instance->shouldEnableTestingFeatures()) {
-		AppendMenu(submenu, MF_STRING, idCmdFirst + SyncStatusMenuId, L"Sync status...");
+		AppendMenu(submenu, MF_STRING, idCmdFirst + SyncStatusMenuId, L"Sync Status...");
 		++entryCount;
 	}
 	int pflags = m_instance->pathFlags(m_path);
