@@ -5,19 +5,20 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
@@ -132,7 +133,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             throws Exception
     {
         String auxPath = Util.join(_pathBase, Util.join(path.elements()));
-        HashSet<Child> children = new HashSet<Child>();
+        Set<Child> children = Sets.newHashSet();
 
         InjectableFile parent = _factFile.create(auxPath);
         InjectableFile[] files = parent.listFiles();
@@ -166,7 +167,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         String auxPath = Util.join(_pathBase, parentPath);
 
         InjectableFile parent = _factFile.create(auxPath);
-        List<Revision> revisions = new ArrayList<Revision>();
+        List<Revision> revisions = Lists.newArrayList();
         InjectableFile[] files = parent.listFiles();
 
         if (files != null) {

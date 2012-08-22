@@ -27,4 +27,15 @@ public class RitualBlockingClient extends RitualServiceBlockingStub implements C
     {
         _handler.disconnect();
     }
+
+    /**
+     * For DI
+     */
+    public static class Factory
+    {
+        public RitualBlockingClient create()
+        {
+            return RitualClientFactory.newBlockingClient();
+        }
+    }
 }
