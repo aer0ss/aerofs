@@ -41,7 +41,7 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     public @Nonnull SIndex get_(SID sid)
     {
         SIndex sidx = getNullable_(sid);
-        assert sidx != null;
+        assert sidx != null : sid;
         return sidx;
     }
 
@@ -55,7 +55,7 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     public @Nonnull SID get_(SIndex sidx)
     {
         SID sid = getNullable_(sidx);
-        assert sid != null;
+        assert sid != null : sidx;
         return sid;
     }
 
@@ -68,16 +68,16 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     }
 
     @Override
-    public SID getAbsent_(SIndex sidx) throws SQLException
+    public @Nonnull SID getAbsent_(SIndex sidx) throws SQLException
     {
-        assert getNullable_(sidx) == null;
+        assert getNullable_(sidx) == null : sidx;
         return _db.getSID_(sidx);
     }
 
     @Override
-    public SIndex getAbsent_(SID sid, Trans t) throws SQLException
+    public @Nonnull SIndex getAbsent_(SID sid, Trans t) throws SQLException
     {
-        assert getNullable_(sid) == null;
+        assert getNullable_(sid) == null : sid;
 
         // because absent stores are queried less frequently, we don't cache the results in memory.
         SIndex sidx = _db.getSIndex_(sid);
@@ -88,7 +88,6 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     void add_(SIndex sidx) throws SQLException
     {
         SID sid = _db.getSID_(sidx);
-        assert sid != null;
         Util.verify(_sid2sidx.put(sid, sidx) == null);
         Util.verify(_sidx2sid.put(sidx, sid) == null);
     }
@@ -96,7 +95,7 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     SID delete_(SIndex sidx)
     {
         SID sid = _sidx2sid.remove(sidx);
-        assert sid != null;
+        assert sid != null : sidx;
         Util.verify(_sid2sidx.remove(sid));
         return sid;
     }
