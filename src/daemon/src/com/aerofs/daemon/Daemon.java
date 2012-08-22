@@ -21,7 +21,7 @@ public class Daemon implements IModule
     }
 
     @Override
-    public void start_() throws Exception
+    public void start_()
     {
         _core.start_();
     }

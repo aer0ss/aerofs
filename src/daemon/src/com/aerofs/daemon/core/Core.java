@@ -130,7 +130,6 @@ public class Core implements IModule
 
     @Override
     public void start_()
-            throws Exception
     {
         _tps.start_();
         _lss.start_();

@@ -13,6 +13,7 @@ import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.lib.IDumpStat;
 import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
@@ -22,6 +23,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 import java.io.PrintStream;
@@ -36,7 +38,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 /**
  * The clients of this class may assume the list of transports never changes during run time.
  */
-public class Transports implements IDumpStatMisc, IDumpStat
+public class Transports implements IDumpStatMisc, IDumpStat, IStartable
 {
     // the more preferred the transport, the smaller value it has.
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
@@ -53,7 +55,7 @@ public class Transports implements IDumpStatMisc, IDumpStat
 
     private final ITransport[] _tps;
 
-    private final HashMap<ITransport, IIMCExecutor> _tp2imce = new HashMap<ITransport, IIMCExecutor>();
+    private final HashMap<ITransport, IIMCExecutor> _tp2imce = Maps.newHashMap();
 
     private final IIMCExecutor[] _imces;
 
@@ -140,8 +142,8 @@ public class Transports implements IDumpStatMisc, IDumpStat
         for (ITransport tp : _tps) tp.init_();
     }
 
+    @Override
     public void start_()
-            throws Exception
     {
         for (ITransport tp : _tps) tp.start_();
     }

@@ -1,15 +1,16 @@
 package com.aerofs.daemon.core.linker;
 
-import java.io.IOException;
+import com.aerofs.daemon.lib.IStartable;
 
-public interface ILinker
+public interface ILinker extends IStartable
 {
     public void init_();
-    public void start_() throws IOException;
 
     public static class NullLinker implements ILinker
     {
+        @Override
         public void init_() {}
-        public void start_() throws IOException {}
+        @Override
+        public void start_() {}
     }
 }

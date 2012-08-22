@@ -15,10 +15,10 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.google.inject.Inject;
-import net.contentobjects.jnotify.JNotifyException;
-
 import java.util.Collections;
 import java.util.Set;
+
+import net.contentobjects.jnotify.JNotifyException;
 
 public class Linker implements ILinker
 {
@@ -98,10 +98,19 @@ public class Linker implements ILinker
     }
 
     @Override
-    public void start_() throws JNotifyException
+    public void start_()
     {
-        // start the notifier before scanning to avoid losing notifications.
-        _notifier.start_();
+        try {
+            // start the notifier before scanning to avoid losing notifications.
+            _notifier.start_();
+        } catch (JNotifyException e) {
+            // Notifier failed to start, either because the root anchor is missing or AeroFS
+            // couldn't access it. In either case, hopefully RootAnchorWatch in UI would notify the
+            // user about the issue. We don't want to throw it out because 1) start() methods are
+            // not supposed to throw, and 2) we'd like a better error message from RootAnchorWatch
+            // than "daemon exited with code XX".
+            Util.l(this).warn("ignored: " + Util.e(e));
+        }
 
         fullScan();
     }

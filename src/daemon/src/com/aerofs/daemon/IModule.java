@@ -1,5 +1,7 @@
 package com.aerofs.daemon;
 
+import com.aerofs.daemon.lib.IStartable;
+
 /**
  * To be implemented by any module that:
  * <ol>
@@ -7,7 +9,7 @@ package com.aerofs.daemon;
  *      <li>Has threads or tasks that need to be explicitly started</li>
  * </ol>
  */
-public interface IModule
+public interface IModule extends IStartable
 {
     /**
      * Perform data-structure setup operations for this module. Implementation of this method may
@@ -19,9 +21,9 @@ public interface IModule
     public void init_() throws Exception;
 
     /**
-     * Start any threads and/or threads that need to be started for this module to work.
      * Implementation of this method may assume that all other modules it depends on have been
      * init_()'ed.
      */
-    public void start_() throws Exception;
+    @Override
+    public void start_();
 }
