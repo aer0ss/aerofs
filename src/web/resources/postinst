@@ -20,7 +20,7 @@ $PYTHON setup.py install
 
 # Install aerofs.python-lib
 # cd to directory first because setuptools can't find setup.py otherwise
-cd /opt/web/extra/aerofs.python-lib
+cd /opt/web/extra/python-lib
 $PYTHON setup.py install
 cd $TMPDIR
 
