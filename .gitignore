@@ -4,3 +4,4 @@ workspace.xml
 .DS_Store
 build.properties
 out.*
+jmeter.log

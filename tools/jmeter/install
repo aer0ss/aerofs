@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+list=$(brew list | grep jmeter)
+if [ -z "$list" ]
+then
+    echo "Installing JMeter."
+    brew install jmeter
+fi
+
+cd $(dirname $0)/../..
+
+jarname="jmeter-plugins-0.5.3.jar"
+dst="/usr/local/Cellar/jmeter/2.7/libexec/lib/ext"
+src="as-is/common/lib.test"
+
+if [ ! -f "$dst/$jarname" ]
+then
+    echo "Copy jmeter plugins to jmeter lib/ext directory."
+    cp $src/$jarname.gz $dst
+    gunzip $dst/$jarname.gz
+fi
