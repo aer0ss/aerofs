@@ -6,6 +6,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,6 +44,8 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.OID;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
@@ -53,6 +56,7 @@ import com.aerofs.proto.Syncstat.*;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import junit.framework.Assert;
 import org.junit.After;
@@ -74,7 +78,6 @@ import com.aerofs.testlib.AbstractTest;
 
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.Set;
 
 public class TestSyncStatusSynchronizer extends AbstractTest
@@ -176,6 +179,9 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         // TODO(huguesb): remove this hack when sync stat is enabled on prod
         when(localUser.get()).thenReturn("someone@aerofs.com");
 
+        // SyncStatusSynchronizer calls this to compute the version hash of an object
+        // these tests do not care about the actual value of the version vector, just that it
+        // isn't null (the default of Mockito, which causes NPE...)
         when(nvc.getAllLocalVersions_(any(SOCID.class))).thenReturn(new Version());
 
         when(tm.begin_()).thenReturn(t);
@@ -443,7 +449,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
                 Assert.assertTrue(it.next_());
                 Assert.assertEquals(soid, it.get_());
             }
-            Assert.assertTrue(!it.next_());
+            Assert.assertFalse(it.next_());
         } finally {
             it.close_();
         }
@@ -458,6 +464,12 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         }
     }
 
+    /**
+     * The bootstrap table is populated once by a post update task so there is no public API
+     * to add entries to it.
+     *
+     * see {@link DPUTUpdateSchemaForSyncStatus}
+     **/
     private void addBootstrapSOIDs(SOID... soids) throws SQLException
     {
         DPUTUpdateSchemaForSyncStatus.addBootstrapSOIDs(dbcw.getConnection(),
@@ -476,8 +488,27 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
 
         // check calls made during bootstrap sequence
-
         checkSVHcalls(o_f1, o_d2, o_f232);
+
+        // check state of bootstrap table after startup
+        assertBootstrapSeq();
+    }
+
+    @Test
+    public void shouldIgnoreBootstrapForNonExistingStore() throws Exception
+    {
+        SOID dummy = new SOID(new SIndex(42), new OID(UniqueID.generate()));
+        addBootstrapSOIDs(dummy);
+
+        // check state of bootstrap table before startup
+        assertBootstrapSeq(dummy);
+
+        // startup
+        createSynchronizer();
+
+        // check calls made during bootstrap sequence
+        verify(ssc, never()).setVersionHash(any(ByteString.class), any(ByteString.class),
+                any(ByteString.class));
 
         // check state of bootstrap table after startup
         assertBootstrapSeq();
@@ -492,7 +523,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
                 ModifiedObject mo = it.get_();
                 Assert.assertEquals(soid, mo._soid);
             }
-            Assert.assertTrue(!it.next_());
+            Assert.assertFalse(it.next_());
         } finally {
             it.close_();
         }
@@ -501,22 +532,50 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     @Test
     public void shouldPushVersionForActivityOnStartup() throws Exception
     {
-        lsync.setPullEpoch_(0, t);
-        Set<DID> dids = new HashSet<DID>();
+        // fill activity log table
+        Set<DID> dids = Sets.newHashSet();
         dids.add(d0);
-
         aldb.addActivity_(o_f1, ActivityType.CREATION.getNumber(),
                 Path.fromString("f1"), null, dids, t);
         aldb.addActivity_(o_d2, ActivityType.CREATION.getNumber(),
                 Path.fromString("d2"), null, dids, t);
 
+        // check state of activity log table before startup
         assertActivitySeq(o_f1, o_d2);
 
+        // startup
         createSynchronizer();
 
+        // check that the version hash are pushed through the sync stat client
         checkSVHcalls(o_f1, o_d2);
 
+        // check that push epoch was increased past the two existing activity log entries
         Assert.assertEquals(2, lsync.getPushEpoch_());
+        assertActivitySeq();
+    }
+
+    @Test
+    public void shouldIgnoreActivityForNonExistingStore() throws Exception
+    {
+        // add an invalid SOID to the activity log table
+        Set<DID> dids = Sets.newHashSet();
+        dids.add(d0);
+        SOID dummy = new SOID(new SIndex(42), new OID(UniqueID.generate()));
+        aldb.addActivity_(dummy, ActivityType.CREATION.getNumber(),
+                Path.fromString("d2"), null, dids, t);
+
+        // check state of activity log table before startup
+        assertActivitySeq(dummy);
+
+        // startup
+        createSynchronizer();
+
+        // check that no version hash is pushed for invalid SOID
+        verify(ssc, never()).setVersionHash(any(ByteString.class), any(ByteString.class),
+                any(ByteString.class));
+
+        // check that push epoch was increased past invalid SOID
+        Assert.assertEquals(1, lsync.getPushEpoch_());
         assertActivitySeq();
     }
 
