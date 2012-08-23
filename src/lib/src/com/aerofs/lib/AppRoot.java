@@ -12,29 +12,38 @@ public class AppRoot
     static {
         // use class paths to figure out where AeroFS is installed. This is not ideal but the only
         // reliable way that we know of.
+        // TODO (DF): once launcher is used for both the monitor and the daemon process, we can
+        // switch to using much more reliable platform-specific ways to retrieve the absolute path
+        // of the executable:
+        // - On Linux, just new File("/proc/self/exe").getCanonicalPath()
+        // - On OSX, use realpath() and _NSGetExecutablePath() (man 3 dyld)
+        // - On Windows, GetModuleFileName (with NULL hModule)
+        // From there, we can simply take the dirname of the executable path to find the approot.
         String cp = System.getProperty("java.class.path");
-        String v;
-        if (cp.endsWith(C.AEROFS_JAR)) {
-            // this is a deployed version of AeroFS where all class files are bundled into the jar
-            // file under AppRoot.
-            v = cp.substring(0, cp.length() - C.AEROFS_JAR.length() - 1);
-        } else {
-            // this is an un-deployed version where all class files are saved in the bin folder
-            // under AppRoot.
-            v = null;
-            // We use Cygwin to launch the un-deployed vesion on Windows, so forward slash rather
-            // than File.separator is used here for all platforms.
-            String suffix = "/bin";
-            for (String path : cp.split(File.pathSeparator)) {
-                if (path.endsWith(suffix)) {
-                    assert v == null;   // assume only one of the paths ends with the suffix
-                    v = path.substring(0, path.length() - suffix.length());
-                }
+        String v = null;
+        String suffix = "bin";
+        for (String s : cp.split(File.pathSeparator)) {
+            // First case: ./bin is on the classpath when we run development code in an
+            // exploded approot.  We don't name a file separator because on Windows, Cygwin uses
+            // forward slashes, but aerofsd uses backslashes.
+            if (s.endsWith("bin")) {
+                // Trim 'bin', but also trim the path separator
+                v = s.substring(0, s.length() - (suffix.length() + 1));
+                break;
+            }
+            // Second case: aerofs.jar is on the classpath when using a normal deployed jar
+            // N.B. we have a library named ./lib/guice-aerofs.jar , which will match
+            // C.AEROFS_JAR without the separator
+            if (s.contains(File.separator + C.AEROFS_JAR)) {
+                v = s.substring(0,s.length() - C.AEROFS_JAR.length() - 1);
+                break;
             }
         }
 
         // v might be still null for servlets
-        if (v != null) set(v);
+        if (v != null) {
+            set(v);
+        }
     }
 
     /**

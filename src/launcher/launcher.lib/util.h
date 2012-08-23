@@ -3,22 +3,26 @@
 
 #include <string>
 #include <jni.h>
+#include "liblauncher.h"
 
 #if WIN32
-#define DIRECTORY_SEPARATOR '\\'
-#define PATH_SEPARATOR ';'
+#define DIRECTORY_SEPARATOR _T('\\')
+#define PATH_SEPARATOR _T(';')
+#define snprintf sprintf_s
 #else
 #define DIRECTORY_SEPARATOR '/'
 #define PATH_SEPARATOR ':'
 #endif
 
+#define SET_ERROR(...) snprintf(g_errmsg, sizeof(g_errmsg), ##__VA_ARGS__);
+
 // Implemented in util.cpp
-bool file_exists(const std::string& file);
-bool ends_with(const std::string& str, const std::string& end);
-std::string dir_name(const std::string& path);
+bool ends_with(const tstring& str, const tstring& end);
+tstring dir_name(const tstring& path);
 
 // Implemented in the platform-specific util
+bool file_exists(const tstring& file);
 jint create_jvm(JavaVM **pvm, void **penv, void *args);
-int spawn(const std::string& program, char* argv[]);
+tstring list_jars(const tstring& jars_path);
 
 #endif // UTIL_H

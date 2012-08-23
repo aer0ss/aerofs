@@ -3,7 +3,6 @@ package com.aerofs.ui;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.fsi.FSIUtil;
@@ -20,7 +19,6 @@ import org.apache.log4j.Logger;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DaemonMonitor {
@@ -45,43 +43,7 @@ public class DaemonMonitor {
         assert Cfg.useDM();
 
         Process proc;
-        if (!new File(Util.join(AppRoot.abs(), "aerofs.jar")).exists()) {
-            String run = Util.join(AppRoot.abs(), "run");
-            proc = Util.execBackground("bash", run, Cfg.absRTRoot(), "daemon");
-
-        } else {
-            String vmargs = Cfg.db().getNullable(Key.DAEMON_VMARGS);
-
-            if (vmargs == null) {
-                vmargs = "-ea -Xmx64m -XX:+UseConcMarkSweepGC -Djava.net.preferIPv4Stack=true";
-                if (OSUtil.isOSX()) {
-                    // without this flag some OSX machines run the daemon in 32bit mode :S
-                    vmargs += " -d64";
-                }
-            }
-
-            ArrayList<String> cmd = new ArrayList<String>();
-            if (OSUtil.isOSX()) {
-                OutArg<String> javaHome = new OutArg<String>();
-                int retVal = Util.execForeground(javaHome, "/usr/libexec/java_home", "-d64", "-F");
-                String path = javaHome.get().trim() + "/bin/java";
-                if (retVal != 0 || !_factFile.create(path).exists()) {
-                    throw new Exception(S.PRODUCT + " requires Java 6 to be installed");
-                }
-                cmd.add(path);
-            } else {
-                cmd.add("java");
-            }
-            for (String arg : vmargs.split(" ")) cmd.add(arg);
-
-            cmd.add("-jar");
-            cmd.add(Util.join(AppRoot.abs(), "aerofs.jar"));
-            cmd.add(Cfg.absRTRoot());
-            cmd.add("daemon");
-
-            String[] strs = new String[cmd.size()];
-            proc = Util.execBackground(cmd.toArray(strs));
-        }
+        proc = Util.execBackground(Util.join(AppRoot.abs(), "aerofsd"), Cfg.absRTRoot());
 
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         while (true) {

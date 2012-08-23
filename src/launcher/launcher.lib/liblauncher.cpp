@@ -5,43 +5,33 @@
 #include <assert.h>
 #include <stdio.h>
 #include <vector>
-
-#if WIN32
-#include "dirent_win.h"
-#define snprintf sprintf_s
-#else
-#include <dirent.h>
-#endif
+#include <iostream>
 
 #include "util.h"
 
 using namespace std;
 
+char g_errmsg[512];
+
 namespace {
 
 // AeroFS constants
-static const char* const AEROFS_JAR = "aerofs.jar";
-static const char* const BIN_DIR = "bin";
-static const char* const JARS_DIR = "lib";
+static const _TCHAR* const AEROFS_JAR = _T("aerofs.jar");
+static const _TCHAR* const BIN_DIR = _T("bin");
+static const _TCHAR* const JARS_DIR = _T("lib");
 static const char* const AEROFS_MAIN_CLASS = "com/aerofs/Main";
 
-// Other constants
-static const char* const JAR_EXTENSION = ".jar";
-
 // Global variables
-static char** g_args;
-static char g_errmsg[512];
+static _TCHAR** g_args;
 
 // internal functions
-int launch(JNIEnv* env, const char* class_name, char* argv[]);
-string construct_classpath(const string& approot);
-string list_jars(const string& jars_path);
-vector<string> get_default_options();
-bool parse_options(char*** pargv, vector<string>* options);
+int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[]);
+tstring construct_classpath(const tstring& approot);
+//tstring list_jars(const tstring& jars_path);
+vector<tstring> get_default_options();
+bool parse_options(_TCHAR*** pargv, vector<tstring>* options);
 
 }
-
-#define SET_ERROR(...) snprintf(g_errmsg, sizeof(g_errmsg), ##__VA_ARGS__);
 
 /**
   Creates a JVM
@@ -57,13 +47,13 @@ bool parse_options(char*** pargv, vector<string>* options);
 
    See also: launcher_destroy_jvm()
  */
-bool launcher_create_jvm(const char* approot, char** args, JavaVM** pjvm, JNIEnv** penv, char** perrmsg)
+bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JNIEnv** penv, char** perrmsg)
 {
     *perrmsg = g_errmsg;
     *pjvm = NULL;
     *penv = NULL;
 
-    vector<string> options = get_default_options();
+    vector<tstring> options = get_default_options();
 
     // parse the command line arguments
     // arguments starting with a dash are added as JVM options
@@ -74,12 +64,52 @@ bool launcher_create_jvm(const char* approot, char** args, JavaVM** pjvm, JNIEnv
         return false;
     }
 
-    string classpath = construct_classpath(approot);
+    tstring t_approot(approot);
+    tstring classpath = construct_classpath(t_approot);
     options.push_back(classpath);
 
+#ifdef _WIN32
+    vector<char*> utf8_strings_to_delete;
+#endif
     JavaVMOption* vmopt = new JavaVMOption[options.size()];
     for (size_t i = 0; i < options.size(); i++) {
-        vmopt[i].optionString = const_cast<char*>(options.at(i).c_str());
+#ifdef _WIN32
+        // Windows needs options converted from UTF16 to UTF8.
+        // Query required buffer size
+        int size = WideCharToMultiByte(CP_UTF8, // Codepage
+                    0,                          // Flags
+                    options.at(i).c_str(),      // UTF16 string data
+                    -1,                         // # of characters, or -1 if null-terminated
+                    NULL,                       // outarg UTF8 data
+                    0,                          // bytes available at UTF8 data pointer
+                    NULL,                       // default char (must be NULL)
+                    NULL);                      // default char used (must be NULL)
+        if (size == 0) {
+            SET_ERROR("WideCharToMultiByte: %d\n", GetLastError());
+            return false;
+        }
+        // Allocate buffer
+        char* buffer = new char[size];
+        // Perform conversion
+        size = WideCharToMultiByte(CP_UTF8, // Codepage
+                    0,                      // Flags
+                    options.at(i).c_str(),  // UTF16 string data
+                    -1,                     // # of UTF16 characters (-1 for null-terminated)
+                    buffer,                 // outarg UTF8 data
+                    size,                   // bytes available at UTF8 data pointer
+                    NULL,                   // default char (must be NULL)
+                    NULL);                  // default char used (must be NULL)
+        if (size == 0) {
+            SET_ERROR("WideCharToMultiByte: %d\n", GetLastError());
+            return false;
+        }
+        // Save buffer pointer to be deleted later
+        utf8_strings_to_delete.push_back(buffer);
+        // Set option string
+        vmopt[i].optionString = buffer;
+#else
+        vmopt[i].optionString = (char*)(options.at(i).c_str());
+#endif
     }
 
     JavaVMInitArgs vm_args;
@@ -91,6 +121,12 @@ bool launcher_create_jvm(const char* approot, char** args, JavaVM** pjvm, JNIEnv
     jint result = create_jvm(pjvm, (void**)penv, &vm_args);
 
     delete vmopt;
+#ifdef _WIN32
+    for (size_t i = 0; i < utf8_strings_to_delete.size() ; i++) {
+        delete [] utf8_strings_to_delete.at(i);
+    }
+    utf8_strings_to_delete.clear();
+#endif
 
     if (result < 0) {
         SET_ERROR("Call to JNI_CreateJavaVM failed");
@@ -117,19 +153,18 @@ void launcher_destroy_jvm(JavaVM* jvm)
 
 // Internal functions
 namespace {
-vector<string> get_default_options()
+vector<tstring> get_default_options()
 {
-    vector<string> result;
-    result.push_back("-ea");
-    result.push_back("-Xmx64m");
-    result.push_back("-XX:+UseConcMarkSweepGC");
-    result.push_back("-XX:+HeapDumpOnOutOfMemoryError");
-    result.push_back("-Djava.net.preferIPv4Stack=true");
-
+    vector<tstring> result;
+    result.push_back(_T("-ea"));
+    result.push_back(_T("-Xmx64m"));
+    result.push_back(_T("-XX:+UseConcMarkSweepGC"));
+    result.push_back(_T("-XX:+HeapDumpOnOutOfMemoryError"));
+    result.push_back(_T("-Djava.net.preferIPv4Stack=true"));
     return result;
 }
 
-int launch(JNIEnv* env, const char* class_name, char* argv[])
+int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
 {
     assert(strlen(class_name) < 128);  // sanity check on class_name
 
@@ -158,7 +193,11 @@ int launch(JNIEnv* env, const char* class_name, char* argv[])
     while (argv[argc] != NULL) { argc++; }
     jobjectArray args = env->NewObjectArray(argc, env->FindClass("java/lang/String"), NULL);
     for (int i = 0; i < argc; i++) {
+#ifdef _WIN32
+        env->SetObjectArrayElement(args, i, env->NewString(argv[i], _tcslen(argv[i])));
+#else
         env->SetObjectArrayElement(args, i, env->NewStringUTF(argv[i]));
+#endif
     }
 
     // Call main()
@@ -182,12 +221,12 @@ int launch(JNIEnv* env, const char* class_name, char* argv[])
 
   returns false if the launch should not proceed.
 */
-bool parse_options(char*** pargv, vector<string>* options)
+bool parse_options(_TCHAR*** pargv, vector<tstring>* options)
 {
-    char** argv = *pargv;
-    char* arg;
+    _TCHAR** argv = *pargv;
+    _TCHAR* arg;
 
-    while ((arg = *argv) != NULL && arg[0] == '-') {
+    while ((arg = *argv) != NULL && arg[0] == _T('-')) {
         options->push_back(arg);
         argv++;
     }
@@ -199,47 +238,20 @@ bool parse_options(char*** pargv, vector<string>* options)
 /**
   Returns a string with the classpath
 */
-string construct_classpath(const string& approot)
+tstring construct_classpath(const tstring& approot)
 {
-    string aerofs_classes = approot + DIRECTORY_SEPARATOR + AEROFS_JAR;
-    if (!file_exists(aerofs_classes.c_str())) {
+    tstring aerofs_classes = approot + DIRECTORY_SEPARATOR + AEROFS_JAR;
+    if (!file_exists(aerofs_classes)) {
         aerofs_classes = approot + DIRECTORY_SEPARATOR + BIN_DIR;
     }
 
-    string classpath = "-Djava.class.path=" + aerofs_classes;
+    tstring classpath = _T("-Djava.class.path=") + aerofs_classes;
 
     // Append the path to each jar to classpath
-    const string jars_path = approot + DIRECTORY_SEPARATOR + JARS_DIR + DIRECTORY_SEPARATOR;
+    const tstring jars_path = approot + DIRECTORY_SEPARATOR + JARS_DIR + DIRECTORY_SEPARATOR;
     classpath += list_jars(jars_path);
 
     return classpath;
 }
 
-/**
-  Return a string with the path of all *.jar files at `jars_path` concatenated
-  Important:
-    - jars_path must include a trailing slash
- */
-string list_jars(const string& jars_path)
-{
-    assert(jars_path[jars_path.length() - 1] == DIRECTORY_SEPARATOR);
-    string result;
-
-    DIR* dir = opendir(jars_path.c_str());
-    if (dir) {
-        struct dirent* entry;
-        while ((entry = readdir(dir))) {
-            string jar(entry->d_name);
-            if (!ends_with(jar, JAR_EXTENSION)) {
-                continue;
-            }
-            result += PATH_SEPARATOR + jars_path + jar;
-        }
-        closedir(dir);
-    } else {
-        SET_ERROR("Warning: could not open directory: %s\n", jars_path.c_str());
-    }
-
-    return result;
-}
 }
