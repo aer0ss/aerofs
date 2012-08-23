@@ -109,8 +109,8 @@ public class IncomingStreams
             throws ExTimeout, ExStreamInvalid, ExNoResource, ExAborted
     {
         IncomingStream v = _map.get(key);
-        assert v != null;
-        assert v._tcb == null;
+        assert v != null : key;
+        assert v._tcb == null : v._tcb;
 
         if (v._invalidationReason == null && v._chunks.isEmpty()) {
             // no chunk available. wait for one
