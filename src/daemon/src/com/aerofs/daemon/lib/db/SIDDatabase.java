@@ -13,6 +13,8 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
+
 /**
  * TODO split this giant class into smaller ones with better defined responsibilities, similar to
  * what we have done for, say, IVersionDatabase, IAliasDatabase, etc.
@@ -60,7 +62,7 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
 
     private PreparedStatement _psGetSID;
     @Override
-    public SID getSID_(SIndex sidx) throws SQLException
+    public @Nonnull SID getSID_(SIndex sidx) throws SQLException
     {
         try {
             if (_psGetSID == null) {
@@ -90,7 +92,7 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
 
     private PreparedStatement _psAdd;
     @Override
-    public SIndex addSID_(SID sid, Trans t) throws SQLException
+    public @Nonnull SIndex addSID_(SID sid, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {
