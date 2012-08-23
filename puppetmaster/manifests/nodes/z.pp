@@ -2,6 +2,17 @@ node "z.arrowfs.org" inherits default {
 
   # TODO: pagerduty ssh key
 
+  class{"hipchat":
+    token => bbae0c9263d4a3e0f614c7058eac6d,
+  }
+
+  hipchat::periodic{"STANDUP TIME":
+    from => "An annoying duck",
+    hour => "12",
+    minute => "45",
+    color => "purple"
+  }
+
   users::add_user {
     [ hiera('dev_users') ]:
   }
