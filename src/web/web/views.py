@@ -22,7 +22,8 @@ def homepage(request):
     permission=NO_PERMISSION_REQUIRED,
     renderer = 'not_found.mako'
 )
-def not_found_view(self):
+def not_found_view(request):
+    request.response_status = '404 Not Found'
     return {'navigation':[]}
 
 @view_config(
@@ -32,6 +33,8 @@ def not_found_view(self):
 )
 def not_authorized_view(request):
     _ = request.translate
+
+    request.response_status = '401 Unauthorized'
     return {
         'next': request.matched_route.path,
         'not_authorized': _("You are not authorized to view this page. Please log in to continue."),
