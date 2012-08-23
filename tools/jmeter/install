@@ -1,5 +1,18 @@
 #!/bin/bash -e
 
+if [ $# -ne 1 ]
+then
+    echo "usage: $0 <module>"
+    exit 1
+fi
+
+module=$1
+cd $(dirname $0)/../..
+
+# --------------------------------------------------------------------
+# Install JMeter
+# --------------------------------------------------------------------
+
 list=$(brew list | grep jmeter)
 if [ -z "$list" ]
 then
@@ -7,15 +20,32 @@ then
     brew install jmeter
 fi
 
-cd $(dirname $0)/../..
+# --------------------------------------------------------------------
+# Install graphing plugin
+# --------------------------------------------------------------------
 
-jarname="jmeter-plugins-0.5.3.jar"
-dst="/usr/local/Cellar/jmeter/2.7/libexec/lib/ext"
-src="as-is/common/lib.test"
+PLUGINJAR="jmeter-plugins-0.5.3.jar"
+PLUGINSRC="as-is/common/lib.test"
+LIBEXT="/usr/local/Cellar/jmeter/2.7/libexec/lib/ext"
 
-if [ ! -f "$dst/$jarname" ]
+if [ ! -f "$LIBEXT/$PLUGINJAR" ]
 then
     echo "Copy jmeter plugins to jmeter lib/ext directory."
-    cp $src/$jarname.gz $dst
-    gunzip $dst/$jarname.gz
+    cp $PLUGINSRC/$PLUGINJAR.gz $LIBEXT
+    gunzip $LIBEXT/$PLUGINJAR.gz
 fi
+
+# --------------------------------------------------------------------
+# Install our jars.
+# --------------------------------------------------------------------
+
+for jar in $(ls out.ant/jmeter/${module}/*.jar)
+do
+    basejar=$(basename $jar)
+
+    if [ ! -f "$LIBEXT/$basejar" ]
+    then
+        echo "Create soft link for $basejar"
+        ln -s $(pwd)/$jar $LIBEXT
+    fi
+done
