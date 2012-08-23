@@ -557,15 +557,20 @@ public class SyncStatusSynchronizer
     private void pushVersionHash_(SOID soid) throws Exception
     {
         // TODO: batch pushes to reduce communication overhead?
+
+        // NOTE: store might have been deleted between the creation of an activity log / bootstrap
+        // entry and a subsequent scan, if so ignore the object.
+        // TODO: markj wants to make this stricter but it requires discussion with weihanw first
+        SID sid = _sidx2sid.getNullable_(soid.sidx());
+        if (sid == null) return;
+
         byte[] vh = getVersionHash_(soid);
         l.warn(soid.toString() + " : " + Util.hexEncode(vh));
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpush");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("syncstatpush");
-            c().setVersionHash(soid.oid().toPB(),
-                               _sidx2sid.get_(soid.sidx()).toPB(),
-                               ByteString.copyFrom(vh));
+            c().setVersionHash(soid.oid().toPB(), sid.toPB(), ByteString.copyFrom(vh));
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
