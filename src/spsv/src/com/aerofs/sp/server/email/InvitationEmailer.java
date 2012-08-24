@@ -7,14 +7,11 @@ package com.aerofs.sp.server.email;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.servletlib.sp.SPParam;
 
 import javax.annotation.Nullable;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-import java.io.UnsupportedEncodingException;
 
 import static com.aerofs.sp.server.SPSVParam.*;
 
@@ -66,7 +63,7 @@ public class InvitationEmailer
                     "securely.\n" + "Any data that you put inside your " + S.PRODUCT + " folder " +
                     "will be synced *only* with your personal\n" +
                     "devices, and anyone you invite to share files with you.\n\n" +
-                    "Please keep in mind that " + S.PRODUCT + " is still in early beta! We " +
+                    "Please keep in mind that " + S.PRODUCT + " is still in beta! We " +
                     "release updates regularly and appreciate any and all feedback.\n\n" +
                     "You can now download " + S.PRODUCT + " at:\n\n" + url + "\n\n" +
                     "And when prompted, enter the following invitation code:\n\n" +
@@ -76,27 +73,22 @@ public class InvitationEmailer
                     HEADER_SIZE.H1,
                     body);
 
-            email.addSignature("Happy Testing :)", fromPerson,
+            email.addSignature("Happy Syncing :)", fromPerson,
                     "p.s. Let us know what you think at " + SP_EMAIL_ADDRESS +
                             ". We'd love to hear your feedback!");
         }
 
-        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
+        SVClient.sendEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, email.getTextEmail(),
+                email.getHTMLEmail(), true, "aerofs_invite");
 
-        MimeMessage msg;
-        msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, null);
-        msg.setContent(multiPart);
-
-        EmailUtil.sendEmail(msg, true);
-
-        EmailUtil.emailSPNotification(from + " invited " + to +
-                (folderName != null ? " to " + folderName : " folderless"), "code " + signupCode);
+        EmailUtil.emailSPNotification(from + " invited " + to + (folderName != null ? " to " + folderName : " folderless"),
+                "code " + signupCode);
     }
 
 
     public void sendFolderInvitationEmail(@Nullable String from, String to, String fromPerson,
             @Nullable String folderName, @Nullable String note, String shareFolderCode)
-            throws MessagingException, UnsupportedEncodingException
+            throws Exception
     {
         String subject = "Join my " + S.PRODUCT + " folder";
 
@@ -119,15 +111,18 @@ public class InvitationEmailer
                 HEADER_SIZE.H1, body);
 
         email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team",
-                EmailUtil.DEFAULT_PS);
+                Email.DEFAULT_PS);
 
-        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
-
-        MimeMessage msg;
-        msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, null);
-        msg.setContent(multiPart);
-
-        EmailUtil.sendEmail(msg, true);
+        SVClient.sendEmail(SP_EMAIL_ADDRESS,
+                fromPerson,
+                to,
+                null,
+                subject,
+                email.getTextEmail(),
+                email.getHTMLEmail(),
+                true,
+                "folder_invite"
+                );
 
         EmailUtil.emailSPNotification(from + " shared " + folderName + " with " + to,
                 "code " + shareFolderCode);

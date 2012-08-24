@@ -4,23 +4,20 @@
 
 package com.aerofs.sp.server.email;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
-
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 
-import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
-
+import static com.aerofs.sp.server.SPSVParam.*;
 
 public class PasswordResetEmailer
 {
     public void sendPasswordResetEmail(String to, String reset_token)
-            throws MessagingException, UnsupportedEncodingException
+            throws IOException
+
     {
         String subject = S.PRODUCT + " password request";
 
@@ -36,20 +33,17 @@ public class PasswordResetEmailer
         email.addSection(S.PRODUCT + " password request", HEADER_SIZE.H1, body);
 
         email.addSignature("Happy Syncing,", "The " + S.PRODUCT + " Team",
-                EmailUtil.DEFAULT_PS);
+                Email.DEFAULT_PS);
 
-        MimeMessage msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS,null,to,null,
-                subject,null);
+        SVClient.sendEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME, to, null, subject, email.getTextEmail(),
+                email.getHTMLEmail(), true, "password_reset");
 
-        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
-
-        msg.setContent(multiPart);
-
-        EmailUtil.sendEmail(msg,true);
+        EmailUtil.emailSPNotification(to + " initiated a password reset ", "");
     }
 
     public void sendPasswordResetConfirmation(String to)
-            throws MessagingException, UnsupportedEncodingException
+            throws IOException
+
     {
         String subject = S.PRODUCT + " password request confirmation";
 
@@ -65,15 +59,18 @@ public class PasswordResetEmailer
 
         email.addSignature("Thank you for using " + S.PRODUCT + ",",
                 "The " + S.PRODUCT + " Support Team",
-                EmailUtil.DEFAULT_PS);
+                Email.DEFAULT_PS);
 
-        MimeMessage msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS,null,to,null,
-                subject,null);
+        SVClient.sendEmail(SP_EMAIL_ADDRESS,
+                SP_EMAIL_NAME,
+                to,
+                null,
+                subject,
+                email.getTextEmail(),
+                email.getHTMLEmail(),
+                true,
+                "password_reset");
 
-        MimeMultipart multiPart = EmailUtil.createMultipartEmail(email);
-
-        msg.setContent(multiPart);
-
-        EmailUtil.sendEmail(msg,true);
+        EmailUtil.emailSPNotification(to + " completed a password reset ", "");
     }
 }

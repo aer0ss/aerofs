@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.aerofs.proto.Sv.PBSVEmail;
 import org.apache.log4j.Logger;
 
 import com.aerofs.l.L;
@@ -436,6 +437,37 @@ public class SVClient
         }
     }
 
+    public static void sendEmail(String from, String fromName, String to,
+            @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
+            boolean usingSendGrid, @Nullable String category)
+            throws IOException
+    {
+        PBSVEmail.Builder bdEmail = PBSVEmail.newBuilder()
+                                                .setFrom(from)
+                                                .setFromName(fromName)
+                                                .setTo(to)
+                                                .setSubject(subject)
+                                                .setTextBody(textBody)
+                                                .setUsingSendgrid(usingSendGrid);
+
+        if (replyTo != null)  bdEmail.setReplyTo(replyTo);
+        if (htmlBody != null) bdEmail.setHtmlBody(htmlBody);
+        if (category != null) bdEmail.setCategory(category);
+        PBSVCall call = PBSVCall.newBuilder().setType(Type.EMAIL)
+                                .setEmail(bdEmail).build();
+
+        Socket s = send(call, 0);
+        try {
+            recv(s);
+        } catch (Exception e) {
+            throw new IOException(e);
+        } finally {
+            if (!s.isClosed()) s.close();
+        }
+    }
+
+
+
     /**
      * @param verbose false to collect as less data as possible
      * @param e may be null if no exception is available
@@ -648,7 +680,7 @@ public class SVClient
      */
     private static Socket send(PBSVCall call, long len) throws IOException
     {
-        assert !Cfg.staging();
+        assert !Cfg.staging() || call.hasEmail();
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         call.writeDelimitedTo(bos);

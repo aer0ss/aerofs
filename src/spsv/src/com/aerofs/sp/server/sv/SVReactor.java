@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import com.aerofs.proto.Sv.PBSVEmail;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -37,12 +39,14 @@ import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.aerofs.sp.server.SPSVParam;
-import com.aerofs.sp.server.email.EmailUtil;
 import com.google.common.collect.Maps;
+
+import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_RECEIVER;
+import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_SENDER;
 
 public class SVReactor
 {
-    private static final Logger l = Util.l(SVServlet.class);
+    private static final Logger l = Util.l(SVReactor.class);
 
     private static final String DEFECT_LOG_PREFIX = "log.defect-";
     private static final int FILE_BUF_SIZE = 1 * C.MB;
@@ -88,6 +92,9 @@ public class SVReactor
             case EVENT:
                 event(call, client);
                 break;
+            case EMAIL:
+                email(call);
+                break;
             default:
                 throw new Exception("unknown call type: " + call.getType());
             }
@@ -112,6 +119,27 @@ public class SVReactor
         PBSVHeader header = call.getHeader();
         _db.addEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
     }
+
+    private void email(PBSVCall call)
+            throws ExProtocolError, MessagingException, UnsupportedEncodingException
+    {
+        Util.checkPB(call.hasEmail(), PBSVEmail.class);
+
+        PBSVEmail emailContents = call.getEmail();
+        EmailSender.sendEmail(
+                emailContents.getFrom(),
+                emailContents.getFromName(),
+                emailContents.getTo(),
+                emailContents.hasReplyTo() ? emailContents.getReplyTo() : null,
+                emailContents.getSubject(),
+                emailContents.getTextBody(),
+                emailContents.hasHtmlBody() ? emailContents.getHtmlBody() : null,
+                emailContents.getUsingSendgrid(),
+                emailContents.hasCategory() ? emailContents.getCategory() : null);
+
+
+    }
+
 
     private void gzippedLog(PBSVCall call, InputStream is, String client)
         throws ExProtocolError, IOException
@@ -171,6 +199,15 @@ public class SVReactor
         }
     }
 
+    public static void emailSVNotification(final String subject, final String body)
+    {
+        try {
+            EmailSender.sendEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
+                    SV_NOTIFICATION_RECEIVER, null, subject, body, null, false, null);
+        } catch (Exception e) {
+            l.error("cannot email notification: ", e);
+        }
+    }
     private void defect(PBSVCall call, InputStream is, String client)
         throws SQLException, ExProtocolError, IOException, MessagingException
     {
@@ -205,9 +242,15 @@ public class SVReactor
         int eom = desc.indexOf(C.END_OF_DEFECT_MESSAGE);
         if (eom >= 0) {
             String msg = desc.substring(0, eom);
-            EmailUtil.sendEmail(EmailUtil.composeEmail(header.getUser(), header.getUser(),
-                    SPSVParam.SUPPORT_SYSTEM_EMAIL_SINK, null, S.PRODUCT + " Problem # " + id, msg),
-                    true);
+            EmailSender.sendEmail(header.getUser(),
+                                  header.getUser(),
+                                  SPSVParam.SUPPORT_SYSTEM_EMAIL_SINK,
+                                  null,
+                                  S.PRODUCT + " Problem # " + id,
+                                  msg,
+                                  null,
+                                  true,
+                                  "defect");
         }
 
         // create defect file directory
@@ -236,7 +279,7 @@ public class SVReactor
         String subject = (defect.getAutomatic() ? "" : "Priority ") + " Defect " +
             id + ": " + header.getUser();
 
-        EmailUtil.emailSVNotification(subject, body);
+        emailSVNotification(subject, body);
     }
 
     // in short, we want to take something like:

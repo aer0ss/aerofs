@@ -12,6 +12,7 @@ message PBSVCall {
         EVENT = 1;
         GZIPPED_LOG = 4;
         ANALYTICS = 5;
+        EMAIL = 6;
     }
 
     required Type type = 1;
@@ -21,6 +22,7 @@ message PBSVCall {
     optional PBSVGzippedLog gzipped_log = 5;
     optional PBSVEvent event = 6;
     optional PBSVAnalytics analytics = 7;
+    optional PBSVEmail email = 8;
 }
 
 message PBSVReply {
@@ -100,4 +102,17 @@ message PBSVAnalytics {
     required uint64 db_dump_len = 1;
 
     // followed by a gzipped db dump
+}
+
+message PBSVEmail {
+    required string from = 1;
+    required string from_name = 2;
+    required string to = 3;
+    optional string reply_to = 4;
+    required string subject = 5;
+    required string text_body = 6;
+    optional string html_body = 7;
+
+    required bool using_sendgrid = 8;
+    optional string category = 9;
 }

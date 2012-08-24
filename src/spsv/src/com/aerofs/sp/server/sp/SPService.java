@@ -14,6 +14,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
@@ -69,7 +70,6 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nullable;
-import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -373,9 +373,8 @@ class SPService implements ISPService
     public ListenableFuture<Void> emailUser(String subject, String body)
             throws Exception
     {
-        MimeMessage msg = EmailUtil.composeEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME,
-                _sessionUser.getUser(), null, subject, body);
-        EmailUtil.sendEmail(msg, true);
+        SVClient.sendEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME, _sessionUser.getUser(), null, subject,
+                body, null, true,null);
 
         return createVoidReply();
     }
