@@ -35,6 +35,7 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 - (BOOL)shouldEnableTestingFeatures;
 - (void)showShareFolderDialog:(id)sender;
 - (void)showSyncStatusDialog:(id)sender;
+- (void)showVersionHistoryDialog:(id)sender;
 - (void)sendGreeting;
 - (void)parseNotification:(ShellextNotification*)notification;
 - (void)onFileStatus:(FileStatusNotification*)notification;

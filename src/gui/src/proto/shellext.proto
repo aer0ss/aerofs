@@ -17,11 +17,13 @@ message ShellextCall {
         GREETING = 0;
         SHARE_FOLDER = 1;
         SYNC_STATUS = 2;
+        VERSION_HISTORY = 3;
     }
     required Type type = 1;
     optional GreetingCall greeting = 2;
     optional ShareFolderCall share_folder = 3;
     optional SyncStatusCall sync_status = 4;
+    optional VersionHistoryCall version_history = 5;
 }
 
 message GreetingCall {
@@ -34,6 +36,11 @@ message ShareFolderCall {
 }
 
 message SyncStatusCall {
+    // absolute path to the file / folder
+    required string path = 1;
+}
+
+message VersionHistoryCall {
     // absolute path to the file / folder
     required string path = 1;
 }

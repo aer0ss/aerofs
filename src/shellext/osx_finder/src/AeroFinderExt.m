@@ -8,7 +8,7 @@
 #import "../gen/Shellext.pb.h"
 
 #define GUIPORT_DEFAULT 50195
-#define PROTOCOL_VERSION 2
+#define PROTOCOL_VERSION 3
 
 @interface AeroFinderExt (Private)
 - (void)setRootAnchor:(NSString*) path;
@@ -124,6 +124,21 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     ShellextCall_Builder* builder = [ShellextCall builder];
     builder.type = ShellextCall_TypeSyncStatus;
     builder.syncStatus = [[[SyncStatusCall builder] setPath:path] build];
+
+    [socket sendMessage: builder.build];
+}
+
+/**
+ * Implementation of the "Version History" context menu item
+ * The sender must set its represented object to the path of the folder
+ */
+- (void)showVersionHistoryDialog:(id)sender
+{
+    NSString* path = [sender representedObject];
+
+    ShellextCall_Builder* builder = [ShellextCall builder];
+    builder.type = ShellextCall_TypeVersionHistory;
+    builder.versionHistory = [[[VersionHistoryCall builder] setPath:path] build];
 
     [socket sendMessage: builder.build];
 }

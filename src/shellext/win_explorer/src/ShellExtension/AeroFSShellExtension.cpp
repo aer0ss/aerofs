@@ -15,7 +15,7 @@
 #define GUIPORT_DEFAULT 50195
 #define GUIPORT_OFFSET 2
 #define DELAY_BEFORE_CONNECTION_RETRY 2000 // milliseconds
-#define PROTOCOL_VERSION 2
+#define PROTOCOL_VERSION 3
 
 AeroFSShellExtension _instance;
 
@@ -239,6 +239,16 @@ void AeroFSShellExtension::showSyncStatusDialog(const std::wstring& path)
 
 	m_socket->sendMessage(call);
 }
+
+void AeroFSShellExtension::showVersionHistoryDialog(const std::wstring& path)
+{
+	ShellextCall call;
+	call.set_type(ShellextCall_Type_VERSION_HISTORY);
+	call.mutable_version_history()->set_path(to_string(path.c_str()));
+
+	m_socket->sendMessage(call);
+}
+
 
 void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
 {

@@ -115,6 +115,8 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 	if (m_instance->shouldEnableTestingFeatures()) {
 		AppendMenu(submenu, MF_STRING, idCmdFirst + SyncStatusMenuId, L"Sync Status...");
 		++entryCount;
+		AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Version History...");
+		++entryCount;
 	}
 	int pflags = m_instance->pathFlags(m_path);
 	if ((pflags & Directory) && !(pflags & RootAnchor)) {
@@ -163,6 +165,9 @@ HRESULT ContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO pInfo)
 
 	case SyncStatusMenuId:
 		m_instance->showSyncStatusDialog(m_path);
+		return S_OK;
+	case VersionHistoryMenuId:
+		m_instance->showVersionHistoryDialog(m_path);
 		return S_OK;
 	case ShareFolderMenuId:
 		m_instance->showShareFolderDialog(m_path);

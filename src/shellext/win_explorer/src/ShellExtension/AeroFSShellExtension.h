@@ -38,6 +38,7 @@ public:
 	int pathFlags(const std::wstring& path) const;
 	void parseNotification(const ShellextNotification& reply);
 	void showSyncStatusDialog(const std::wstring& path);
+	void showVersionHistoryDialog(const std::wstring& path);
 	void showShareFolderDialog(const std::wstring& path);
 	void sendGreeting();
 	AeroNode* rootNode() const;

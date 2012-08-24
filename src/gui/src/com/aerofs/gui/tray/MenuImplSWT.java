@@ -3,6 +3,7 @@ package com.aerofs.gui.tray;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.aerofs.gui.history.DlgHistory;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
@@ -28,7 +29,6 @@ import com.aerofs.gui.misc.DlgAbout;
 import com.aerofs.gui.misc.DlgDefect;
 import com.aerofs.gui.misc.DlgFolderlessInvite;
 import com.aerofs.gui.preferences.DlgPreferences;
-import com.aerofs.gui.revision.DlgRevision;
 import com.aerofs.gui.sharing.DlgJoinSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
@@ -210,7 +210,7 @@ public class MenuImplSWT implements IMenu
                 addMenuItem(_menu, "Version History...", new AbstractListener(null) {
                     @Override
                     protected void handleEventImpl(Event event) {
-                       new DlgRevision(GUI.get().sh()).openDialog();
+                       new DlgHistory(GUI.get().sh()).openDialog();
                     }
                 });
             }

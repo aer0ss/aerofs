@@ -27,7 +27,7 @@ public class ShellextService
      * Used to make sure we are communicating with the right version of the shell extension
      * Bump this number every time shellext.proto changes
      */
-    private final static int PROTOCOL_VERSION = 2;
+    private final static int PROTOCOL_VERSION = 3;
 
     public static ShellextService get()
     {
@@ -116,6 +116,10 @@ public class ShellextService
             assert (call.hasSyncStatus());
             syncStatus(call.getSyncStatus().getPath());
             break;
+        case VERSION_HISTORY:
+            assert (call.hasVersionHistory());
+            versionHistory(call.getVersionHistory().getPath());
+            break;
         default:
             throw new ExProtocolError(ShellextCall.Type.class);
         }
@@ -157,9 +161,23 @@ public class ShellextService
             return;
         }
 
-        // TODO(huguesb): remove rthis check when sync stat ready for all users
+        // TODO(huguesb): remove this check when sync stat ready for all users
         if (Cfg.user().endsWith("@aerofs.com")) {
             UIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
+        }
+    }
+
+    private void versionHistory(final String absPath)
+    {
+        String absRootAnchor = Cfg.absRootAnchor();
+        if (!Path.isUnder(absRootAnchor, absPath)) {
+            l.warn("shellext provided an external path " + absPath);
+            return;
+        }
+
+        // TODO(huguesb): remove this check when version history ready for all users
+        if (Cfg.user().endsWith("@aerofs.com")) {
+            UIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
         }
     }
 }
