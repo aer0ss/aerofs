@@ -170,7 +170,6 @@ public class SPServlet extends AeroServlet
         return bsc;
     }
 
-
     protected void handleTargetedInvite(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException
     {

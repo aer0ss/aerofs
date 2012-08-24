@@ -7,18 +7,7 @@ then
 fi
 
 module=$1
-basedir=$(dirname $0)/../..
-
-cd ${basedir}
-
-# So that the GUI doesn't muck with our jmx we have to make sure our jar is in their classpath.
-# Unfortunately they ignore search_path, so we need to copy it there.
-dst="/usr/local/Cellar/jmeter/2.7/libexec/lib/ext"
-if [ ! -f "$dst/jmeter-$module.jar" ]
-then
-    echo "Create soft link in JMeter home."
-    ln -s $(pwd)/out.ant/jmeter/$module/jmeter-$module.jar $dst
-fi
+cd $(dirname $0)/../..
 
 echo "Starting java GUI for $module..."
 jmeter -t src/$module/resources/$module.jmx &
