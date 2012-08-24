@@ -9,5 +9,6 @@
     - %{hostname}
     - users
     - common
+
 :yaml:
     :datadir: '/etc/puppet/hieradata'

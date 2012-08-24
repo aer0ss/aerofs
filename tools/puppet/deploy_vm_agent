@@ -3,11 +3,7 @@
 set -e -u
 
 if [ $# -ne 2 ]; then
-    echo "usage: $0 puppetmaster puppetagent"
-    echo "puppetmaster: the address of the puppetmaster server"
-    echo "puppetagent: the address of the puppetagent server"
-    echo
-    echo "example: $0 192.168.1.83 192.168.1.86"
+    echo "usage: $0 <puppetmaster_ip> <puppetagent_ip>"
     exit 2
 fi
 
@@ -24,8 +20,10 @@ if [ x"$PUPPET_AGENT" == x ]; then
 fi
 
 USER=root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" # get the directory this script is in no matter where it's called from
-AEROFS_GIT_ROOT="$(cd $SCRIPT_DIR/../..; pwd)" # get the absolute path
+# Get the directory this script is in no matter where it's called from
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the absolute path
+AEROFS_GIT_ROOT="$(cd $SCRIPT_DIR/../..; pwd)"
 PUPPET_ROOT=${AEROFS_GIT_ROOT}/puppetmaster/
 SSH_KEY=${SCRIPT_DIR}/id_rsa
 SSH_COMMAND="ssh -l ${USER} -i ${SSH_KEY}"
@@ -33,6 +31,7 @@ HOSTNAME=$($SSH_COMMAND $PUPPET_MASTER -C "hostname")
 
 echo "Configuring puppet agent vm: ${PUPPET_AGENT}"
 echo "Installing puppet"
+$SSH_COMMAND ${PUPPET_AGENT} -C "apt-get update"
 $SSH_COMMAND ${PUPPET_AGENT} -C "apt-get install puppet"
 echo "Adding entry in hosts file:  ${PUPPET_MASTER}     ${HOSTNAME}"
 $SSH_COMMAND ${PUPPET_AGENT} -C "echo ${PUPPET_MASTER}  ${HOSTNAME} >> /etc/hosts"

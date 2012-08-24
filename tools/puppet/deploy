@@ -3,9 +3,7 @@
 set -e -u
 
 if [ $# -gt 1 ]; then
-    echo "usage: $0 [puppetmaster]"
-    echo "[puppetmaster]: the address of the puppetmaster server"
-    echo
+    echo "usage: $0 <puppetmaster>"
     echo "example: $0 puppet.arrowfs.org"
     exit 2
 fi
@@ -16,11 +14,13 @@ if [ x"$PUPPET_MASTER" == x ]; then
     exit 3
 fi
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
-AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )" # get the absolute path
+# Get the directory this script is in no matter where it's called from
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get the absolute path
+AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )"
 PUPPET_ROOT=${AEROFS_GIT_ROOT}/puppetmaster/
 
-# rsync - recursuve/follow symlinks - use kssh - exclude ./local (used for vm testing only) - exclude .swp
+# rsync - recursuve/follow symlinks - use kssh - exclude ./local (used for vm testing only).
 rsync -v -rl -e "kssh" --exclude "local" --exclude ".swp" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
 
 echo "Success"
