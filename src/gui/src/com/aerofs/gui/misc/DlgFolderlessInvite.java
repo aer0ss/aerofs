@@ -57,7 +57,8 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
     {
         if (GUIUtil.isWindowBuilderPro()) // $hide$
             shell = new Shell(getParent(), getStyle());
-            shell.setSize(680, 303);
+
+        shell.setSize(680, 303);
 
         GridLayout glShell = new GridLayout(1, false);
         glShell.marginHeight = GUIParam.MARGIN;
@@ -71,6 +72,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         _compAddresses = new CompEmailAddressTextBox(shell, SWT.NONE);
         GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
         gd_composite.heightHint = 90;
+        gd_composite.widthHint = 350;
         _compAddresses.setLayoutData(gd_composite);
 
         _compAddresses.addInputChangeListener(this);
@@ -163,11 +165,16 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         int invalid = _compAddresses.getInvalidAddressesCount();
         int left = Cfg.db().getInt(Key.FOLDERLESS_INVITES) - addresses.size() - invalid;
 
-        setStatusText(left + " invite" + (left != 1 ? "s" : "") + " left", false);
         if (left < 0) {
-                _compSpin.error();
+            setStatusText("Remove " + -left + " address" + (left != -1 ? "es" : ""), true);
+            _compSpin.error();
         } else {
-                _compSpin.stop();
+            if (left > 0) {
+                setStatusText(left + " invite" + (left != 1 ? "s" : "") + " left", false);
+            } else {
+                setStatusText("No invites left", false);
+            }
+            _compSpin.stop();
         }
 
         // do not change the size of the dialog otherwise it would grow as
