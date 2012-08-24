@@ -133,6 +133,7 @@ public class ReceiveAndApplyUpdate
             if (kidcsDel == null) _kidcsDel = Collections.emptyList();
             else _kidcsDel = kidcsDel;
             _hash = h;
+            assert vLocal != null;
             _vLocal = vLocal;
             _conflictRename = false;
         }

@@ -8,6 +8,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Common.PBVer;
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
+
 public class Version
 {
     private final Map<DID, Tick> _map;
@@ -132,7 +134,7 @@ public class Version
      *
      * N.B. Existing objects are not modified.
      */
-    public Version sub_(Version v)
+    public Version sub_(@Nonnull Version v)
     {
         Version ret = new Version();
         for (Entry<DID, Tick> en : this._map.entrySet()) {
