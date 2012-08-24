@@ -66,3 +66,14 @@ Localization Management Commands:
     Compile Language Catalogs: ~/env/bin/python setup.py compile_catalog
         Compiles all .po files in locale folders to .mo (machine object) files
         so that Pyramid can use them at runtime.
+
+Updating Libraries:
+==================
+If you decide to download a new version of bootstrap.js note that the following modification
+needs to be applied under the Typeahead object for the function lookup:
+if (this.query === "") {
+    items = this.source;
+    if (items.length > 0) {
+        return this.render(items.slice(0, this.options.items)).show();
+    }
+}

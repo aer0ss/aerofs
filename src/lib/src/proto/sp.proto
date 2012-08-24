@@ -246,6 +246,17 @@ service SPService {
     rpc ListUsers(ListUsersCall) returns(ListUsersReply);
 
     /**
+     * Get the list of users with the desired authentication level in the system
+     * Used by the admin panel
+     *
+     * Required Auth Level: admin
+     *
+     * Throws:
+     *   ExNoPerm if the user does not have admin privileges
+     */
+    rpc ListUsersAuth(ListUsersAuthCall) returns(ListUsersAuthReply);
+
+    /**
      * Sends an email to a user with instructions to reset his password. The user
      * will be sent an email containing a link with a reset password token. The link
      * will take the user to a form when they can set a new password.
@@ -588,6 +599,31 @@ message ListUsersReply {
     required int32 total_count = 2;
 
     // Total number of users in the database that match the 'search' parameter
+    required int32 filtered_count = 3;
+}
+
+message ListUsersAuthCall {
+    // Return only admins whose name match this string. Empty string matches all admins
+    optional string search = 1;
+
+    // Authentication level of the users that we want to fetch
+    required PBAuthorizationLevel auth_level = 2;
+
+    // Maximum number of admins returned on one page
+    optional int32 max_results = 3 [default = 100];
+
+    // Offet to start retrieving the results
+    optional int32 offset = 4;
+}
+
+message ListUsersAuthReply {
+    // A subset of the admins. There will be at most 'max_results' users.
+    repeated PBUser users = 1;
+
+    // Total number of users in the database with the desired auth_level.
+    required int32 total_count = 2;
+
+    // Total number of users in the database that match the 'search' parameter.
     required int32 filtered_count = 3;
 }
 

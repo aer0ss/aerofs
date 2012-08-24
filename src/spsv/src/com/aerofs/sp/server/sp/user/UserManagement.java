@@ -154,6 +154,43 @@ public class UserManagement
         return new UserListAndQueryCount(list, userCount);
     }
 
+    public List<PBUser> listUsersAuth(String search, AuthorizationLevel authLevel,
+            Integer maxResults, Integer offset, String orgId) throws SQLException
+    {
+        if (search == null) search = "";
+
+        if (!authLevel.equals(AuthorizationLevel.ADMIN)
+                && !authLevel.equals(AuthorizationLevel.USER)) authLevel = AuthorizationLevel.USER;
+
+        if (offset == null) offset = 0;
+
+        maxResults = sanitizeMaxResults(maxResults);
+
+        assert offset >= 0;
+
+        return _db.listUsers(search, authLevel.ordinal(), maxResults, offset, orgId);
+    }
+
+    public int getUsersAuthCount(AuthorizationLevel authLevel, String orgId)
+            throws SQLException
+    {
+        if (!authLevel.equals(AuthorizationLevel.ADMIN)
+                && !authLevel.equals(AuthorizationLevel.USER)) authLevel = AuthorizationLevel.USER;
+
+        return _db.getUsersAuthCount(null, authLevel.ordinal(), orgId);
+    }
+
+    public int getUsersAuthCount(String search, AuthorizationLevel authLevel, String orgId)
+            throws SQLException
+    {
+        if (search == null) search = "";
+
+        if (!authLevel.equals(AuthorizationLevel.ADMIN)
+                && !authLevel.equals(AuthorizationLevel.USER)) authLevel = AuthorizationLevel.USER;
+
+        return _db.getUsersAuthCount(search, authLevel.ordinal(), orgId);
+    }
+
     public void sendPasswordResetEmail(String user_email)
             throws SQLException, ExNotFound, IOException, MessagingException
     {

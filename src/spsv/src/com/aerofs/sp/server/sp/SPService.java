@@ -32,9 +32,11 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
+import com.aerofs.proto.Sp.ListUsersAuthReply;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
+import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
@@ -201,6 +203,30 @@ class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<ListUsersAuthReply> listUsersAuth(String search,
+            PBAuthorizationLevel authLevel, Integer maxResults, Integer offset)
+        throws Exception
+    {
+        User user = _userManagement.getUser(_sessionUser.getUser());
+        user.verifyIsAdmin();
+
+        String orgId = user._orgId;
+        AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
+        List<PBUser> pbUsers =
+                _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
+        int totalCount = _userManagement.getUsersAuthCount(level, orgId);
+        int filteredCount = _userManagement.getUsersAuthCount(search, level, orgId);
+
+        ListUsersAuthReply reply;
+        reply = ListUsersAuthReply.newBuilder()
+                .addAllUsers(pbUsers)
+                .setTotalCount(totalCount)
+                .setFilteredCount(filteredCount)
+                .build();
+        return createReply(reply);
+    }
+
+    @Override
     public ListenableFuture<ListSharedFoldersResponse> listSharedFolders(Integer maxResults,
             Integer offset)
             throws Exception
@@ -220,30 +246,46 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setAuthorizationLevel(String userEmail,
-            PBAuthorizationLevel authLevel)
+    public ListenableFuture<Void> setAuthorizationLevel(final String userEmail,
+            final PBAuthorizationLevel authLevel)
             throws Exception
     {
-        User callerUser = _userManagement.getUser(_sessionUser.getUser());
-        User subjectUser = _userManagement.getUser(userEmail);
+        AbstractDatabaseTransaction<ListenableFuture<Void>> trans =
+                new AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
+        {
+            @Override
+            protected ListenableFuture<Void> impl_(AbstractDatabase db,
+                    AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
+                    throws Exception
+            {
+                User callerUser = _userManagement.getUser(_sessionUser.getUser());
+                User subjectUser = _userManagement.getUser(userEmail);
 
-        // Verify caller and subject's organization match
-        if (!callerUser._orgId.equals(subjectUser._orgId))
-            throw new ExNoPerm("Organization mismatch.");
+                // Verify caller and subject's organization match
+                if (!callerUser._orgId.equals(subjectUser._orgId))
+                    throw new ExNoPerm("Organization mismatch.");
 
-        // Verify caller's authorization level dominates the subject's
-        if (!callerUser._level.dominates(subjectUser._level))
-            throw new ExNoPerm(callerUser + " cannot change authorization of " + subjectUser);
+                // Verify caller's authorization level dominates the subject's
+                if (callerUser._level != AuthorizationLevel.ADMIN)
+                    throw new ExNoPerm(callerUser +
+                            " cannot change authorization of " + subjectUser);
 
-        AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
+                if (callerUser._id.equals(subjectUser._id)) {
+                    throw new ExNoPerm(callerUser + " cannot change itself");
+                }
 
-        // Verify caller's authorization level dominates or matches the new level
-        if (!callerUser._level.covers(newAuth))
-            throw new ExNoPerm(callerUser + " cannot change authorization to " + authLevel);
+                AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
-        _userManagement.setAuthorizationLevel(subjectUser._id, newAuth);
+                // Verify caller's authorization level dominates or matches the new level
+                if (!callerUser._level.covers(newAuth))
+                    throw new ExNoPerm(callerUser + " cannot change authorization to " + authLevel);
 
-        return createVoidReply();
+                _userManagement.setAuthorizationLevel(subjectUser._id, newAuth);
+                trans.commit_();
+                return createVoidReply();
+            }
+        };
+        return trans.run_();
     }
 
     @Override

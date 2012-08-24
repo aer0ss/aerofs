@@ -1622,6 +1622,13 @@
 
       this.query = this.$element.val()
 
+      if (this.query === "") {
+        items = this.source;
+        if (items.length > 0) {
+          return this.render(items.slice(0, this.options.items)).show();
+        }
+      }
+
       if (!this.query) {
         return this.shown ? this.hide() : this
       }
