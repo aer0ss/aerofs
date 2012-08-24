@@ -8,6 +8,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
 import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.proto.Common.Void;
 import org.junit.Before;
 
 import static org.mockito.Matchers.any;

@@ -10,7 +10,6 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;

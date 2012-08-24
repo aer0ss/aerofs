@@ -639,7 +639,7 @@ class SPService implements ISPService
      * Utility to minimize duped code in the below verkehr-related methods.
      * @param future either the verkehr publisher or commander.
      */
-    private void verkehrFutureGet_(ListenableFuture<java.lang.Void> future)
+    private void verkehrFutureGet_(ListenableFuture<Void> future)
             throws Exception
     {
         try {
@@ -667,7 +667,7 @@ class SPService implements ISPService
                     .setAclEpoch(entry.getValue())
                     .build();
 
-            ListenableFuture<java.lang.Void> published =
+            ListenableFuture<Void> published =
                     _verkehrPublisher.publish_(entry.getKey(), notification.toByteArray());
 
             verkehrFutureGet_(published);
@@ -678,7 +678,7 @@ class SPService implements ISPService
             throws Exception
     {
         l.info("command verkehr, #serials: " + serials.size());
-        ListenableFuture<java.lang.Void> succeeded = _verkehrCommander.updateCRL_(serials);
+        ListenableFuture<Void> succeeded = _verkehrCommander.updateCRL_(serials);
         verkehrFutureGet_(succeeded);
     }
 

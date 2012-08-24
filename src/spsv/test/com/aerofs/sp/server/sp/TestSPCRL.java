@@ -11,6 +11,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Sp.GetCRLReply;
+import com.aerofs.proto.Common.Void;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
