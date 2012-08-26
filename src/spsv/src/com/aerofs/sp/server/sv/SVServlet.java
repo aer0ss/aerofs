@@ -1,11 +1,15 @@
 package com.aerofs.sp.server.sv;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 
+import com.aerofs.servletlib.db.DatabaseConnectionFactory;
+import com.aerofs.servletlib.sv.SVDatabase;
+import static com.aerofs.servletlib.sv.SVParam.*;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
@@ -19,7 +23,8 @@ public class SVServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final SVDatabase _db = new SVDatabase();
+    private final DatabaseConnectionFactory _dbFactory = new DatabaseConnectionFactory();
+    private final SVDatabase _db = new SVDatabase(_dbFactory);
     private final SVReactor _reactor = new SVReactor(_db);
 
     @Override
@@ -30,17 +35,24 @@ public class SVServlet extends AeroServlet
 
         try {
             _reactor.init_();
-
-            String dbEndpoint = getServletContext().getInitParameter("mysql_endpoint");
-            String dbUser = getServletContext().getInitParameter("mysql_user");
-            String dbPass = getServletContext().getInitParameter("mysql_password");
-            String dbSchema = getServletContext().getInitParameter("mysql_sv_schema");
-            _db.init_(dbEndpoint, dbSchema, dbUser, dbPass);
-
+            initdb_();
         } catch (Exception e) {
             l.error("init: ", e);
             throw new ServletException(e);
         }
+    }
+
+    private void initdb_()
+            throws SQLException, ClassNotFoundException
+    {
+        String dbEndpoint = getServletContext().getInitParameter(MYSQL_ENDPOINT_INIT_PARAMETER);
+        String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
+        String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
+        String dbSchema = getServletContext().getInitParameter(MYSQL_SV_SCHEMA_INIT_PARAMETER);
+
+        // Be sure to initialize the factory before the database is initialized.
+        _dbFactory.init_(dbEndpoint, dbSchema, dbUser, dbPass);
+        _db.init_();
     }
 
     @Override

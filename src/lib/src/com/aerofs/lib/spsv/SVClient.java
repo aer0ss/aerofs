@@ -40,6 +40,7 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVAnalytics;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
@@ -439,9 +440,11 @@ public class SVClient
 
     public static void sendEmail(String from, String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            boolean usingSendGrid, @Nullable String category)
+            boolean usingSendGrid, @Nullable Sendgrid.Category category)
             throws IOException
     {
+        assert !usingSendGrid || category != null;
+
         PBSVEmail.Builder bdEmail = PBSVEmail.newBuilder()
                                                 .setFrom(from)
                                                 .setFromName(fromName)
@@ -452,7 +455,7 @@ public class SVClient
 
         if (replyTo != null)  bdEmail.setReplyTo(replyTo);
         if (htmlBody != null) bdEmail.setHtmlBody(htmlBody);
-        if (category != null) bdEmail.setCategory(category);
+        if (category != null) bdEmail.setCategory(category.name());
         PBSVCall call = PBSVCall.newBuilder().setType(Type.EMAIL)
                                 .setEmail(bdEmail).build();
 

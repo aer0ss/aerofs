@@ -4,7 +4,9 @@
 
 package com.aerofs.sp.server.sv;
 
+import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
@@ -49,17 +51,23 @@ class EmailSender
     }
 
 
-    public static void sendEmail(String from, String fromName, String to,
+    public static void sendEmail(String from, @Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            boolean usingSendGrid, @Nullable String category)
+            boolean usingSendGrid, @Nullable Category category)
             throws MessagingException, UnsupportedEncodingException
     {
+        assert !usingSendGrid || category != null;
+
         MimeMessage msg;
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
-        msg = composeMessage(from, fromName, to, replyTo, subject);
+        msg = composeMessage(from,
+                (fromName == null) ? S.PRODUCT : fromName,
+                to,
+                replyTo,
+                subject);
         msg.setContent(multiPart);
 
-        if (category != null) msg.addHeaderLine("X-SMTPAPI: {\"category\": \"" + category + "\"}");
+        if (category != null) msg.addHeaderLine("X-SMTPAPI: {\"category\": \"" + category.name() + "\"}");
 
         sendEmail(msg, usingSendGrid);
     }

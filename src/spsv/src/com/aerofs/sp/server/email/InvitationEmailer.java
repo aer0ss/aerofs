@@ -8,6 +8,7 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.servletlib.sp.SPParam;
 
@@ -79,7 +80,7 @@ public class InvitationEmailer
         }
 
         SVClient.sendEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, email.getTextEmail(),
-                email.getHTMLEmail(), true, "aerofs_invite");
+                email.getHTMLEmail(), true, Category.FOLDERLESS_INVITE);
 
         EmailUtil.emailSPNotification(from + " invited " + to + (folderName != null ? " to " + folderName : " folderless"),
                 "code " + signupCode);
@@ -110,8 +111,7 @@ public class InvitationEmailer
         email.addSection(nameOrEmail + " wants to share " + Util.q(folderName) + " with you.",
                 HEADER_SIZE.H1, body);
 
-        email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team",
-                Email.DEFAULT_PS);
+        email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team", Email.DEFAULT_PS);
 
         SVClient.sendEmail(SP_EMAIL_ADDRESS,
                 fromPerson,
@@ -121,7 +121,7 @@ public class InvitationEmailer
                 email.getTextEmail(),
                 email.getHTMLEmail(),
                 true,
-                "folder_invite"
+                Category.FOLDER_INVITE
                 );
 
         EmailUtil.emailSPNotification(from + " shared " + folderName + " with " + to,

@@ -35,3 +35,24 @@ CREATE TABLE `sv_clicked_download` (
   `cd_downloaded_ts` timestamp not null DEFAULT CURRENT_TIMESTAMP,
   INDEX cd_email_idx (`cd_email`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `email_event` (
+  `ee_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ee_email` varchar(254) not null,
+  `ee_event` varchar(64) NOT NULL,
+  `ee_desc` text,
+  `ee_category` varchar(64) NOT NULL,
+  `ee_ts` bigint NOT NULL,
+  PRIMARY KEY (`ee_id`),
+  INDEX ee_event_idx (`ee_event`),
+  INDEX ee_category_idx (`ee_category`),
+  INDEX ee_email_idx (`ee_email`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `email_subscriptions` (
+    `es_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+    `es_email` varchar(254) unique not null,
+    `es_subscriptions` int not null,
+    PRIMARY KEY(`es_id`),
+    INDEX es_email_idx(`es_email`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

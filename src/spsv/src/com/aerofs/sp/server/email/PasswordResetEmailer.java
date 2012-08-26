@@ -7,6 +7,7 @@ package com.aerofs.sp.server.email;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class PasswordResetEmailer
                 Email.DEFAULT_PS);
 
         SVClient.sendEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME, to, null, subject, email.getTextEmail(),
-                email.getHTMLEmail(), true, "password_reset");
+                email.getHTMLEmail(), true, Category.PASSWORD_RESET);
 
         EmailUtil.emailSPNotification(to + " initiated a password reset ", "");
     }
@@ -61,15 +62,8 @@ public class PasswordResetEmailer
                 "The " + S.PRODUCT + " Support Team",
                 Email.DEFAULT_PS);
 
-        SVClient.sendEmail(SP_EMAIL_ADDRESS,
-                SP_EMAIL_NAME,
-                to,
-                null,
-                subject,
-                email.getTextEmail(),
-                email.getHTMLEmail(),
-                true,
-                "password_reset");
+        SVClient.sendEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME, to, null, subject, email.getTextEmail(),
+                email.getHTMLEmail(), true, Category.PASSWORD_RESET);
 
         EmailUtil.emailSPNotification(to + " completed a password reset ", "");
     }

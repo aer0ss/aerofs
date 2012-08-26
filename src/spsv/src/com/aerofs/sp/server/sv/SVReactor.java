@@ -17,7 +17,11 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVEmail;
+import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
+import com.aerofs.servletlib.sv.SVDatabase;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -118,6 +122,10 @@ public class SVReactor
         PBSVEvent ev = call.getEvent();
         PBSVHeader header = call.getHeader();
         _db.addEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
+
+        if (ev.getType() == Type.SIGN_UP) {
+            _db.subscribeAllEmails(header.getUser());
+        }
     }
 
     private void email(PBSVCall call)
@@ -126,16 +134,13 @@ public class SVReactor
         Util.checkPB(call.hasEmail(), PBSVEmail.class);
 
         PBSVEmail emailContents = call.getEmail();
-        EmailSender.sendEmail(
-                emailContents.getFrom(),
-                emailContents.getFromName(),
+        EmailSender.sendEmail(emailContents.getFrom(), emailContents.getFromName(),
                 emailContents.getTo(),
                 emailContents.hasReplyTo() ? emailContents.getReplyTo() : null,
-                emailContents.getSubject(),
-                emailContents.getTextBody(),
+                emailContents.getSubject(), emailContents.getTextBody(),
                 emailContents.hasHtmlBody() ? emailContents.getHtmlBody() : null,
                 emailContents.getUsingSendgrid(),
-                emailContents.hasCategory() ? emailContents.getCategory() : null);
+                emailContents.hasCategory() ? Category.valueOf(emailContents.getCategory()) : null);
 
 
     }
@@ -164,7 +169,7 @@ public class SVReactor
         int len;
         FileOutputStream zlogos = new FileOutputStream(path);
         try {
-            while ((len = is.read(bs)) > 0) zlogos.write(bs, 0, len);
+            while ((len = is.read(bs)) > 0) { zlogos.write(bs, 0, len); }
         } finally {
             zlogos.close();
         }
@@ -250,7 +255,7 @@ public class SVReactor
                                   msg,
                                   null,
                                   true,
-                                  "defect");
+                                  Sendgrid.Category.SUPPORT);
         }
 
         // create defect file directory
@@ -267,7 +272,7 @@ public class SVReactor
         FileOutputStream zlogos = new FileOutputStream(
                 _pathDefect + File.separator + DEFECT_LOG_PREFIX + id + ".zip");
         try {
-            while ((len = is.read(bs)) > 0) zlogos.write(bs, 0, len);
+            while ((len = is.read(bs)) > 0) { zlogos.write(bs, 0, len); }
         } finally {
             zlogos.close();
         }
