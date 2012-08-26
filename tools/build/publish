@@ -213,6 +213,7 @@ DATA="set -e; \
     "
 if [ $MODE == "PROD" ]; then
   DATA="$DATA lftp -e 'mirror -R $PACKAGER/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com;"
+  DATA="$DATA lftp -e 'put $DOWNLOADS/AeroFSInstall.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com;"
 fi
 
 kssh $SVR_LOGIN $DATA;
