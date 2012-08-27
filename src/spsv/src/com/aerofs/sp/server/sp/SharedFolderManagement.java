@@ -54,7 +54,7 @@ public class SharedFolderManagement
     }
 
     public void shareFolder(String folderName, byte[] sid, String userID,
-            List<String> emailAddresses, String note)
+            List<String> emailAddresses, @Nullable String note)
             throws Exception
     {
         User sharer = _userManagement.getUser(userID);

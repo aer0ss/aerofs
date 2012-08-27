@@ -50,9 +50,10 @@ public enum Role
     public static Role fromPB(PBRole pb) throws ExBadArgs
     {
         switch (pb) {
-        case EDITOR: return EDITOR;
         case VIEWER: throw new ExBadArgs("Viewers not supported");
-        default: assert pb == PBRole.OWNER; return OWNER;
+        case EDITOR: return EDITOR;
+        case OWNER: return OWNER;
+        default: throw new ExBadArgs("Unknown role: " + pb.toString());
         }
     }
 
