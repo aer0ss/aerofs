@@ -11,7 +11,7 @@ public class Balloons {
 
     private final IBalloonsImpl _impl;
 
-    Balloons(IIcon icon)
+    Balloons(TrayIcon icon)
     {
         IBalloonsImpl impl = null;
         try {

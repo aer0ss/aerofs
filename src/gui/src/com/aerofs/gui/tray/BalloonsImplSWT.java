@@ -16,9 +16,9 @@ public class BalloonsImplSWT implements IBalloonsImpl {
 
     private final TrayItem _ti;
 
-    BalloonsImplSWT(IIcon icon)
+    BalloonsImplSWT(TrayIcon icon)
     {
-        _ti = ((IconImplSWT)icon).getTrayItem();
+        _ti = icon.getTrayItem();
     }
 
     @Override

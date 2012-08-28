@@ -2,21 +2,17 @@ package com.aerofs.gui.tray;
 
 public class SystemTray
 {
-    private final ISystemTray _st;
-    private final IIcon _icon;
-    private final IMenu _menu;
+    private final TrayIcon _icon;
+    private final TrayMenu _menu;
     private final Balloons _bm;
     private final Progresses _progs;
 
     public SystemTray()
     {
-        _st = new SystemTrayImplSWT(this);
-        _icon = _st.getTrayIcon();
+        _icon = new TrayIcon(this);
         _progs = new Progresses(this);
         _bm = new Balloons(_icon);
-        _menu = new MenuImplSWT(_icon);
-
-        _icon.attachMenu(this, _menu);
+        _menu = new TrayMenu(_icon);
     }
 
     public Balloons getBalloons()
@@ -24,7 +20,7 @@ public class SystemTray
         return _bm;
     }
 
-    public IIcon getIcon()
+    public TrayIcon getIcon()
     {
         return _icon;
     }
@@ -42,7 +38,7 @@ public class SystemTray
         return _progs;
     }
 
-    public IMenu getMenu()
+    public TrayMenu getMenu()
     {
         return _menu;
     }

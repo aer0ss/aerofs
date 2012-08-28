@@ -26,7 +26,7 @@ public class Progresses {
 
     private int _lastProgressID;
     private final SystemTray _st;
-    private final IIcon _ti;
+    private final TrayIcon _ti;
 
     Progresses(SystemTray st)
     {
