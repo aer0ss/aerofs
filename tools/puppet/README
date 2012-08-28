@@ -4,7 +4,7 @@ Prepare sensitive files and data:
         be set during deployment, do so here. Just replace any values you need updated
         in either users.yaml, common.yaml, or the yaml file for the hostname you are
         deploying.
-    2)  In <repo/puppetmaster/local/aerofs we have a bunch of certs and keys and stuff.
+    2)  In <repo>/puppetmaster/local/aerofs we have a bunch of certs and keys and stuff.
         The certs at this location in the repo are useless. Whatever certs and keys you
         need should replace these files before deployment. If you forget you can just
         fix these files on the deployed machine.

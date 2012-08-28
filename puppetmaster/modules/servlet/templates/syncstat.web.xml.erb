@@ -24,19 +24,19 @@
 
   <!-- SS Database -->
   <context-param>
-    <param-name>mysql_ss_endpoint</param-name>
+    <param-name>mysql_syncstat_endpoint</param-name>
     <param-value><%= @mysql_endpoint || "sp.mysql.aws.aerofs.com" %></param-value>
   </context-param>
   <context-param>
-    <param-name>mysql_ss_user</param-name>
+    <param-name>mysql_syncstat_user</param-name>
     <param-value><%= @mysql_syncstat_user || "aerofs_syncstat" %></param-value>
   </context-param>
   <context-param>
-    <param-name>mysql_ss_password</param-name>
+    <param-name>mysql_syncstat_password</param-name>
     <param-value><%= @mysql_syncstat_password %></param-value>
   </context-param>
   <context-param>
-    <param-name>mysql_ss_schema</param-name>
+    <param-name>mysql_syncstat_schema</param-name>
     <param-value>aerofs_syncstat</param-value>
   </context-param>
 
