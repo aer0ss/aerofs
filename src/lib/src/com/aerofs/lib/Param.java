@@ -69,7 +69,7 @@ public class Param
         static {
             URL url;
             try {
-                url = new URL("https://" + (Cfg.staging() ? "sp.aerofs.com/staging" : L.get().spHost()) + "/sp");
+                url = new URL("https://" + (Cfg.staging() ? "sp.aerofs.com" : L.get().spHost()) + "/sp");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
                 url = null;
@@ -93,8 +93,8 @@ public class Param
             URL url;
             try {
                 url = new URL(Cfg.staging() ?
-                        "https://sss-staging.aerofs.com/staging/syncstat" :
-                        "https://" + L.get().ssHost() + "/prod/syncstat");
+                        "https://sss-staging.aerofs.com/syncstat" :
+                        "https://" + L.get().ssHost() + "/syncstat");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
                 url = null;

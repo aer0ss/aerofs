@@ -45,4 +45,4 @@ done
 
 # package-data files
 cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"_"$MODE"/exploded/* "$INSTALL"/
-cp -R "$RESOURCES"/context.xml "$CONTEXT"/"$MODE".xml
+cp -R "$RESOURCES"/context.xml "$CONTEXT"/ROOT.xml
