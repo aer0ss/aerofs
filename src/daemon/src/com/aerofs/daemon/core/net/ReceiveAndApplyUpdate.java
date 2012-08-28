@@ -116,7 +116,10 @@ public class ReceiveAndApplyUpdate
 
         @Nullable public final ContentHash _hash;
 
-        public final Version _vLocal;
+        // TODO (MJ) this shouldn't be Nullable as there are users of this Version that expect it
+        // to be non-null (e.g. Version.sub_). Unfortunately some callers of the constructor
+        // pass in a null object for unknown reasons (specifically in computeCausalityForContent_)
+        @Nullable public final Version _vLocal;
 
         CausalityResult(KIndex kidx, Version vAddLocal, Version vLocal)
         {
@@ -125,7 +128,7 @@ public class ReceiveAndApplyUpdate
 
         CausalityResult(KIndex kidx, Version vAddLocal,
             @Nullable Collection<KIndex> kidcsDel, boolean incrementVersion,
-            @Nullable ContentHash h, Version vLocal)
+            @Nullable ContentHash h, @Nullable Version vLocal)
         {
             _kidx = kidx;
             _vAddLocal = vAddLocal;
@@ -133,7 +136,6 @@ public class ReceiveAndApplyUpdate
             if (kidcsDel == null) _kidcsDel = Collections.emptyList();
             else _kidcsDel = kidcsDel;
             _hash = h;
-            assert vLocal != null;
             _vLocal = vLocal;
             _conflictRename = false;
         }
