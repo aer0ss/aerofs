@@ -67,7 +67,7 @@ public class UserManagement
     public @Nonnull User getUser(@Nonnull String userID)
             throws ExNotFound, IOException, SQLException
     {
-        User u = _db.getUser(userID);
+        User u = getUserNullable(userID);
         if (u == null) throw new ExNotFound("email address not found (" + userID + ")");
         return u;
     }
