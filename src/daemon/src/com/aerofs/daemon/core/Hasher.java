@@ -326,6 +326,7 @@ public class Hasher
 
             outPos += hashSize;
             totalBytesRead += chunkBytes;
+            l.info("Hashed " + totalBytesRead + " bytes of " + fileLen);
         } while (totalBytesRead < fileLen);
 
         assert outPos == totalHashLength;

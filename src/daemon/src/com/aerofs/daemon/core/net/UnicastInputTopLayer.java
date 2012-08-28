@@ -3,9 +3,9 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
+import com.aerofs.daemon.core.net.proto.ComputeHashCall;
 import com.aerofs.daemon.core.net.proto.Diagnosis;
 import com.aerofs.daemon.core.net.proto.GetComponentCall;
-import com.aerofs.daemon.core.net.proto.GetHash;
 import com.aerofs.daemon.core.net.proto.GetRevision;
 import com.aerofs.daemon.core.net.proto.GetVersCall;
 import com.aerofs.daemon.core.net.proto.ListRevChildren;
@@ -48,18 +48,18 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         private final ListRevChildren _rlc;
         private final ListRevHistory _rlh;
         private final Diagnosis _diag;
-        private final GetHash _pgh;
+        private final ComputeHashCall _computeHashCall;
         private final IncomingStreams _iss;
         private final CoreDeviceLRU _dlru;
 
         @Inject
-        public Factory(IncomingStreams iss, GetHash pgh, Diagnosis diag, ListRevHistory rlh,
+        public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, Diagnosis diag, ListRevHistory rlh,
                 ListRevChildren rlc, GetRevision gr, UpdateSenderFilter pusf, GetVersCall pgvc,
                 NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u, NSL nsl,
                 CoreDeviceLRU dlru)
         {
             _iss = iss;
-            _pgh = pgh;
+            _computeHashCall = computeHashCall;
             _diag = diag;
             _rlh = rlh;
             _rlc = rlc;
@@ -174,8 +174,8 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             case DIAGNOSIS:
                 _f._diag.process_(msg);
                 break;
-            case GET_HASH_CALL:
-                _f._pgh.processCall_(msg);
+            case COMPUTE_HASH_CALL:
+                _f._computeHashCall.processCall_(msg);
                 break;
             case NOP:
                 break;

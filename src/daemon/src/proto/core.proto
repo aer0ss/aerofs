@@ -28,7 +28,9 @@ message PBCore {
         UPDATE_SENDER_FILTER = 3;
         GET_COM_CALL = 4;
         LIST_CHILDREN_CALL = 5;
-        GET_HASH_CALL = 6;
+        // Tell a peer to compute the hash for the named object+version so it'll be available to
+        // future GetComponentCalls
+        COMPUTE_HASH_CALL = 6;
         NOP = 7;
         LIST_REV_CHILDREN_REQUEST = 16;
         LIST_REV_CHILDREN_RESPONSE = 17;
@@ -46,13 +48,12 @@ message PBCore {
     optional PBGetVersCall get_vers_call = 3;
     optional PBGetComCall get_com_call = 4;
     optional PBGetRevisionCall get_revision_call = 5;
-    optional PBGetHashCall get_hash_call = 6;
+    optional PBComputeHashCall compute_hash_call = 6;
 
     // rpc replies
     optional PBGetVersReply get_vers_reply = 7;
     optional PBGetComReply get_com_reply = 8;
     optional PBGetRevisionReply get_revision_reply = 9;
-    optional PBGetHashReply get_hash_reply = 10;
     optional PBException exception_reply = 11;
 
     // non-rpc stuff
@@ -181,16 +182,9 @@ message PBGetComCall {
     optional PBVer prefix_version = 6;
 }
 
-message PBGetHashCall {
+message PBComputeHashCall {
     required bytes object_id = 1;
     required PBVer remote_version = 2;
-}
-
-message PBGetHashReply {
-    required uint32 hash_length = 1;
-    // followed by: required bytes hash_content
-    // the hash bytes can grow arbitrarily large, and the receiving end expects the entire PBCore
-    // in a single datagram.
 }
 
 message PBGetComReply {

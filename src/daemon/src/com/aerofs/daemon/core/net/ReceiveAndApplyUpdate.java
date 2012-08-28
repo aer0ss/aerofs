@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
-import com.aerofs.daemon.core.net.proto.GetHash;
+import com.aerofs.daemon.core.net.proto.ComputeHashCall;
 import com.aerofs.daemon.core.net.proto.MetaDiff;
 import com.aerofs.daemon.core.net.proto.PrefixVersionControl;
 import com.aerofs.daemon.core.object.BranchDeleter;
@@ -64,7 +64,7 @@ public class ReceiveAndApplyUpdate
     private ObjectMover _om;
     private IPhysicalStorage _ps;
     private DownloadState _dlState;
-    private GetHash _pgh;
+    private ComputeHashCall _computeHashCall;
     private StoreCreator _sc;
     private IncomingStreams _iss;
     private Metrics _m;
@@ -77,7 +77,7 @@ public class ReceiveAndApplyUpdate
     @Inject
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
             Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
-            IPhysicalStorage ps, DownloadState dlState, GetHash pgh, StoreCreator sc,
+            IPhysicalStorage ps, DownloadState dlState, ComputeHashCall computeHashCall, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
             MapSIndex2Store sidx2s, MapAlias2Target alias2target)
     {
@@ -90,7 +90,7 @@ public class ReceiveAndApplyUpdate
         _om = om;
         _ps = ps;
         _dlState = dlState;
-        _pgh = pgh;
+        _computeHashCall = computeHashCall;
         _sc = sc;
         _iss = iss;
         _m = m;
@@ -266,7 +266,7 @@ public class ReceiveAndApplyUpdate
                     // are allowed to fragment/reassemble.
                     ByteArrayInputStream is = _iss.recvChunk_(msg.streamKey(), tk);
                     try {
-                        hashBytesRead += copyAChunk(is, os);
+                        hashBytesRead += copyOneChunk(is, os);
                     } finally {
                         is.close();
                     }
@@ -312,7 +312,22 @@ public class ReceiveAndApplyUpdate
                 // only once.
                 final boolean isRemoteDominating = vBranch.sub_(vRemote).isZero_();
                 if (!isRemoteDominating && hRemote == null) {
-                    hRemote = _pgh.rpc_(soid, vRemote, msg.did(), tk);
+                    l.info("Fetching hash on demand");
+                    // Abort the ongoing transfer.  If we don't, the peer will continue sending
+                    // file content which we will queue until we exhaust the heap.
+                    if (msg.streamKey() != null) {
+                        _iss.end_(msg.streamKey());
+                    }
+                    // Compute the local ContentHash first.  This ensures that the local ContentHash
+                    // is available by the next time we try to download this component.
+                    _hasher.computeHash_(kBranch.sokid(), false, tk);
+                    // Send a ComputeHashCall to make the remote peer also compute the ContentHash.
+                    // This will block for a while until the remote peer computes the hash.
+                    _computeHashCall.rpc_(soid, vRemote, msg.did(), tk);
+                    // Once the above call returns, throw so Downloads will restart this Download.
+                    // The next time through, the peer should send the hash. Since we already
+                    // computed the local hash, we can compare them.
+                    throw new ExRestartWithHashComputed("restart dl after hash");
                 }
 
                 if (isRemoteDominating || isContentSame_(kBranch, hRemote, tk)) {
@@ -534,9 +549,11 @@ public class ReceiveAndApplyUpdate
         }
     }
 
-    private int copyAChunk(ByteArrayInputStream from, OutputStream to)
+    private int copyOneChunk(ByteArrayInputStream from, OutputStream to)
         throws IOException
     {
+        // N.B. we can't use Util.copy because it uses the file buffer size, not the max
+        // unicast packet size.
         byte[] buf = new byte[_m.getMaxUnicastSize_()];
         int total = 0;
         while (true) {
@@ -652,7 +669,7 @@ public class ReceiveAndApplyUpdate
                 k + " " + pfPrefix.getLength_() + " != " + reply.getPrefixLength();
 
             ByteArrayInputStream is = msg.is();
-            int copied = copyAChunk(is, os);
+            int copied = copyOneChunk(is, os);
 
             if (msg.streamKey() != null) {
                 // it's a stream
@@ -661,7 +678,7 @@ public class ReceiveAndApplyUpdate
                 while (remaining > 0) {
                     _dlState.ongoing_(k.socid(), msg.ep(), total - remaining, total);
                     is = _iss.recvChunk_(msg.streamKey(), tk);
-                    remaining -= copyAChunk(is, os);
+                    remaining -= copyOneChunk(is, os);
                 }
                 assert remaining >= 0;
             }

@@ -283,6 +283,9 @@ public class Download
                 reenqueue(started);
                 onUpdateInProgress();
 
+            } catch (ExRestartWithHashComputed e) {
+                reenqueue(started);
+
             } catch (ExNoPerm e) {
                 // collector should only collect permitted components. no_perm may happen when other
                 // user just changed the permission before this call.

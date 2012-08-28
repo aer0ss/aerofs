@@ -4,7 +4,7 @@ import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
 /**
- * This is a base class for all the exception that have a corresponding type in BPException, and
+ * This is a base class for all the exceptions that have a corresponding type in PBException, and
  * thus can be sent over the wire. When a sender sends a wirable exception, it converts the
  * exception to a PBException message. On receiving the message, the receiver converts it back to an
  * exception of the same type. All non-wirable exceptions will be converted to ExInternalError on
