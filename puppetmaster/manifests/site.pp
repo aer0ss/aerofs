@@ -53,6 +53,19 @@ include motd
     exec{"apt-get update":
         logoutput => "on_failure",
     }
+
+    logrotate::log{"standard_aerofs_logs":
+        filename => "/var/log/aerofs/*.log",
+        quantity => 7,
+        frequency => "daily",
+        compress => true,
+    }
+
+    file{"/etc/ssl/certs/AeroFS_CA.pem":
+        source  => "puppet:///aerofs_ssl/cacert.pem",
+        ensure  => present
+    }
+
 }
 
 import "nodes/*.pp"

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE web-app
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+    "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+  <!-- SP Database -->
+  <context-param>
+    <param-name>mysql_sp_endpoint</param-name>
+    <param-value><%= @mysql_endpoint || "sp.mysql.aws.aerofs.com" %></param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_sp_user</param-name>
+    <param-value><%= @mysql_sp_user || "aerofs_spsv" %></param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_sp_password</param-name>
+    <param-value><%= @mysql_sp_password %></param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_sp_schema</param-name>
+    <param-value>aerofs_sp</param-value>
+  </context-param>
+
+  <!-- SS Database -->
+  <context-param>
+    <param-name>mysql_ss_endpoint</param-name>
+    <param-value><%= @mysql_endpoint || "sp.mysql.aws.aerofs.com" %></param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_ss_user</param-name>
+    <param-value><%= @mysql_syncstat_user || "aerofs_syncstat" %></param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_ss_password</param-name>
+    <param-value><%= @mysql_syncstat_password %></param-value>
+  </context-param>
+  <context-param>
+    <param-name>mysql_ss_schema</param-name>
+    <param-value>aerofs_syncstat</param-value>
+  </context-param>
+
+  <!-- Verkehr -->
+  <context-param>
+    <param-name>verkehr_host</param-name>
+    <param-value>verkehr.aerofs.com</param-value>
+  </context-param>
+  <context-param>
+    <param-name>verkehr_port</param-name>
+    <param-value>9293</param-value>
+  </context-param>
+  <context-param>
+    <param-name>verkehr_cacert</param-name>
+    <param-value><%= @cacert_location || "/etc/ssl/certs/AeroFS_CA.pem" %></param-value>
+  </context-param>
+
+  <!-- initialization listener -->
+  <listener>
+    <listener-class>com.aerofs.syncstat.server.SyncStatLifecycleListener</listener-class>
+  </listener>
+
+  <!-- servlets -->
+  <servlet>
+    <servlet-name>ServletSyncStat</servlet-name>
+    <servlet-class>com.aerofs.syncstat.server.SyncStatServlet</servlet-class>
+  </servlet>
+
+  <!-- url mapping -->
+  <servlet-mapping>
+    <servlet-name>ServletSyncStat</servlet-name>
+    <url-pattern>/syncstat</url-pattern>
+  </servlet-mapping>
+
+  <!-- Default page to serve -->
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+  </welcome-file-list>
+</web-app>

@@ -36,26 +36,21 @@
 # Copyright 2011 Your name here, unless otherwise noted.
 #
 class tomcat6 {
-        import "*.pp"
-        include tomcat6::install, tomcat6::service
-}
 
-class tomcat6::install {
-        package { "tomcat6": 
-           ensure => installed,
-        }
+    package { "tomcat6":
+       ensure => installed,
+    }
 
-        package { "tomcat6-admin":
-            ensure  => installed,
-            require => Package["tomcat6"],
-        }
-}
+    package { "tomcat6-admin":
+        ensure  => installed,
+        require => Package["tomcat6"],
+    }
 
-class tomcat6::service {
-        service { "tomcat6":
-            ensure     => running,
-            enable     => true,
-            hasstatus  => true,
-            hasrestart => true,
-        }
+    service { "tomcat6":
+        ensure     => running,
+        enable     => true,
+        hasstatus  => true,
+        hasrestart => true,
+    }
+
 }
