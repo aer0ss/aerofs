@@ -26,12 +26,22 @@ class OSXUpdater extends Updater
     {
         Util.l(this).info("update to version " + newVersion);
 
-        String appRoot = _factFile.create(AppRoot.abs()).getAbsolutePath();
+        InjectableFile appRoot = _factFile.create(AppRoot.abs());
+
+        // Go 3 levels up app root to get the package root (ie: /Applications/AeroFS.app)
+        InjectableFile packageRoot;
+        assert appRoot.getName().equals("Java");
+        packageRoot = appRoot.getParentFile();
+        assert packageRoot.getName().equals("Resources");
+        packageRoot = packageRoot.getParentFile();
+        assert packageRoot.getName().equals("Contents");
+        packageRoot = packageRoot.getParentFile();
+
         try {
             InjectableFile upFile = _factFile.createTempFile(L.get().productUnixName() +
                                                      "update" + newVersion, "$$$");
 
-            _factFile.create(Util.join(appRoot, "updater.sh")).copy(upFile, false, false);
+            _factFile.create(appRoot, "updater.sh").copy(upFile, false, false);
 
             /*
             * On OSX, when you first copy AeroFS.app into /Applications,
@@ -45,16 +55,16 @@ class OSXUpdater extends Updater
             */
 
             if (hasPermissions) {
-                Util.execBackground("/bin/bash", upFile.getAbsolutePath(), appRoot,
-                        Util.join(Cfg.absRTRoot(), "update", installerFilename), newVersion,
-                        System.getenv("USER"));
+                Util.execBackground("/bin/bash", upFile.getAbsolutePath(),
+                        packageRoot.getAbsolutePath(), Util.join(Cfg.absRTRoot(), "update",
+                        installerFilename), newVersion, System.getenv("USER"));
 
                 System.exit(0);
             } else {
                 //the update must be executed as the user who originally copied AeroFS into
                 // the /Applications folder
                 OutArg<String> username = new OutArg<String>();
-                Util.execForeground(username, "stat", "-f", "%Su", appRoot);
+                Util.execForeground(username, "stat", "-f", "%Su", packageRoot.getAbsolutePath());
 
                 UI.get().show(MessageType.WARN, S.PRODUCT +
                                                 " updates can only be applied from the account which" +
