@@ -36,6 +36,6 @@ $SSH_COMMAND ${PUPPET_MASTER} -C "echo '*' > /etc/puppet/autosign.conf"
 echo "restarting puppetmaster service"
 $SSH_COMMAND ${PUPPET_MASTER} -C "service puppetmaster restart"
 echo "populating plugins"
-$SSH_COMMAND ${PUPPET_MASTER} -C "puppet agent -t --pluginsync --server puppet --noop > /dev/null"
+$SSH_COMMAND ${PUPPET_MASTER} -C 'puppet agent -t --pluginsync --server `hostname` --noop > /dev/null'
 
 echo "Done!"
