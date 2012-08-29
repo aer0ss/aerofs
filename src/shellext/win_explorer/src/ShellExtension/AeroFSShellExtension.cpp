@@ -100,7 +100,8 @@ bool AeroFSShellExtension::isUnderRootAnchor(const std::wstring& path)
 	}
 
 	// Check that path starts with root anchor
-	return str_starts_with(lowercase(path), m_rootAnchor);
+	return str_starts_with(lowercase(path), m_rootAnchor) &&
+		(path.length() == m_rootAnchor.length() || path.at(m_rootAnchor.length()) == '\\');
 }
 
 /**
@@ -119,7 +120,7 @@ bool AeroFSShellExtension::shouldEnableTestingFeatures() const
 int AeroFSShellExtension::pathFlags(const std::wstring& path) const
 {
 	int flags = 0;
-	if (path == m_rootAnchor) {
+	if (lowercase(path) == m_rootAnchor) {
 		flags |= RootAnchor;
 	}
 	if (PathIsDirectory(path.c_str())) {
