@@ -5,11 +5,14 @@ import com.aerofs.gui.AeroFSMessageBox;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
+import com.aerofs.gui.history.HistoryModel.IDecisionMaker;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -24,12 +27,14 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -252,6 +257,39 @@ public class DlgHistory extends AeroFSDialog
                 refreshVersionTable((TreeItem) event.item);
             }
         });
+
+        // Add context menu
+        _revTree.addListener(SWT.MenuDetect, new Listener()
+        {
+            @Override
+            public void handleEvent(Event event)
+            {
+                TreeItem item = _revTree.getItem(_revTree.toControl(event.x, event.y));
+                if (item == null) return;
+
+                final ModelIndex index = index(item);
+                if (!(index.isDir && index.isDeleted)) return;
+
+                Menu menu = new Menu(_revTree.getShell(), SWT.POP_UP);
+                addMenuItem(menu, "Restore", new Listener()
+                {
+                    @Override
+                    public void handleEvent(Event ev)
+                    {
+                        recursivelyRestore(index);
+                    }
+                });
+
+                menu.setLocation(event.x, event.y);
+                menu.setVisible(true);
+                while (!menu.isDisposed() && menu.isVisible()) {
+                    if (!menu.getDisplay().readAndDispatch()) {
+                        menu.getDisplay().sleep();
+                    }
+                }
+                menu.dispose();
+            }
+        });
     }
 
     private void refreshVersionTable(TreeItem item)
@@ -435,5 +473,62 @@ public class DlgHistory extends AeroFSDialog
         mi.setText(text);
         if (listener != null) mi.addListener(SWT.Selection, listener);
         return mi;
+    }
+
+    private String fmt(ModelIndex index)
+    {
+        return (index.isDir ? "Folder " : "File ") + _model.getPath(index);
+    }
+
+
+    private void recursivelyRestore(ModelIndex index)
+    {
+        DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
+        dDlg.setFilterPath(
+                Util.join(Cfg.absRootAnchor(),
+                          Util.join(_model.getPath(index).removeLast().elements())));
+        String path = dDlg.open();
+        if (path == null) return;
+
+        try {
+            _model.restore(index, path, new IDecisionMaker()
+            {
+                @Override
+                public Answer retry(ModelIndex a)
+                {
+                    MessageBox mb = new MessageBox(getShell(),
+                            SWT.ICON_ERROR | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
+                    mb.setText("Failed to restore");
+                    mb.setMessage("Failed to restore " + _model.getPath(a));
+                    int ret = mb.open();
+                    switch (ret) {
+                    case SWT.ABORT:  return Answer.Abort;
+                    case SWT.RETRY:  return Answer.Retry;
+                    case SWT.IGNORE: return Answer.Retry;
+                    default: throw new IllegalArgumentException();
+                    }
+                }
+
+                @Override
+                public ModelIndex resolve(ModelIndex a, ModelIndex b)
+                {
+                    // TODO(huguesb): improve this...
+                    MessageBox mb = new MessageBox(getShell(),
+                            SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
+                    mb.setText("Name conflict");
+                    mb.setMessage(fmt(a) + "\nconflicts with\n" +
+                            fmt(b) + "\n\nRestore the first one?");
+                    int ret = mb.open();
+                    switch (ret) {
+                    case SWT.YES:    return a;
+                    case SWT.NO:     return b;
+                    case SWT.CANCEL: return null;
+                    default: throw new IllegalArgumentException();
+                    }
+                }
+            });
+        } catch (Exception e) {
+            UI.get().show(MessageType.ERROR, e.getLocalizedMessage());
+        }
     }
 }

@@ -4,9 +4,12 @@
 
 package com.aerofs.gui.history;
 
+import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -24,6 +27,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -244,5 +248,83 @@ public class HistoryModel
         if (version.tmpFile != null) return;
         ExportRevisionReply reply = _ritual.exportRevision(version.path.toPB(), version.index);
         version.tmpFile = reply.getDest();
+    }
+
+    public static interface IDecisionMaker
+    {
+        enum Answer {
+            Abort,
+            Retry,
+            Ignore
+        };
+        Answer retry(ModelIndex a);
+        ModelIndex resolve(ModelIndex a, ModelIndex b);
+    }
+
+    /**
+     * Recursively restore a deleted directory
+     *
+     * The most recent version of every file is restored.
+     *
+     * @param base root of directory tree to restore
+     * @param absPath absolute path under which to restore the deleted directory tree
+     * @param delegate an interface through which decisions are delegated
+     * @return whether the operation was aborted by the decision maker
+     *
+     * asserts if :
+     *  - {@code index.isDeleted} is false
+     *  - {@code absPath} is not a valid directory
+     *
+     * @throws com.aerofs.lib.ex.ExBadArgs if
+     *  - {@code index.name} conflicts with an existing file/folder in {@code absPath}
+     */
+    boolean restore(ModelIndex base, String absPath, IDecisionMaker delegate) throws Exception
+    {
+        assert base.isDeleted;
+
+        File parent = new File(absPath);
+        assert parent.exists() && parent.isDirectory();
+
+        File dst = new File(Util.join(absPath, base.name));
+        if (base.isDir) {
+            if (dst.exists()) {
+                throw new ExBadArgs("Unable to restore : "  + dst.getAbsolutePath() +
+                        " already exists");
+            }
+
+            dst.mkdir();
+
+            int n = rowCount(base);
+            HashMap<String, ModelIndex> resolved = Maps.newHashMap();
+            for (int i = 0; i < n; ++i) {
+                ModelIndex child = index(base, i);
+                ModelIndex prev = resolved.get(child.name);
+                ModelIndex reslv = prev == null ? child : delegate.resolve(prev, child);
+                if (reslv == null) return true;
+                resolved.put(child.name, reslv);
+            }
+
+            for (ModelIndex child : resolved.values()) {
+                if (restore(child, dst.getAbsolutePath(), delegate)) {
+                    return true;
+                }
+            }
+
+        } else {
+            List<Version> v = versions(base);
+            while (v == null || v.isEmpty()) {
+                Answer a = delegate.retry(base);
+                if (a == Answer.Abort) return true;
+                if (a == Answer.Ignore) return false;
+                // TODO(huguesb): Do we need to create a new client?
+                v = versions(base);
+            }
+
+            Version version = v.get(v.size() - 1);
+            export(version);
+
+            FileUtil.moveInOrAcrossFileSystem(new File(version.tmpFile), dst);
+        }
+        return false;
     }
 }
