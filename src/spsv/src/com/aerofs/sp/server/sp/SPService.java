@@ -42,7 +42,6 @@ import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.proto.Sp.SignUpCall;
-import com.aerofs.sp.server.email.EmailUtil;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
