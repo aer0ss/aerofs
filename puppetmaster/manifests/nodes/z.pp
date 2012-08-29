@@ -6,8 +6,8 @@ node "z.arrowfs.org" inherits default {
     token => bbae0c9263d4a3e0f614c7058eac6d,
   }
 
-  hipchat::periodic{"STANDUP TIME":
-    from => "An annoying duck",
+  hipchat::periodic{"@all STANDUP TIME":
+    from => "Annoying duck",
     hour => "12",
     minute => "45",
     color => "purple"
@@ -61,9 +61,6 @@ node "z.arrowfs.org" inherits default {
     # Staging
     "port sp.aerofs.com 443",
     "port sp.aerofs.com 80",
-    "url https://sss-staging.aerofs.com/syncstat",
-    # Meta (not used right now)
-    #"ping z.arrowfs.org"
   ]:
     hour => "*",
     minute => "*/10",

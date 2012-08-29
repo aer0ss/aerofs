@@ -54,6 +54,17 @@ include motd
         logoutput => "on_failure",
     }
 
+    # common log area
+    file {"/var/log":
+        ensure => directory
+    }
+
+    file {"/var/log/aerofs":
+        ensure => directory,
+        require => File["/var/log"],
+        mode    => 666,
+    }
+
     logrotate::log{"standard_aerofs_logs":
         filename => "/var/log/aerofs/*.log",
         quantity => 7,
@@ -61,8 +72,9 @@ include motd
         compress => true,
     }
 
+    # include cacert
     file{"/etc/ssl/certs/AeroFS_CA.pem":
-        source  => "puppet:///aerofs_ssl/cacert.pem",
+        source  => "puppet:///aerofs_cacert/cacert.pem",
         ensure  => present
     }
 
