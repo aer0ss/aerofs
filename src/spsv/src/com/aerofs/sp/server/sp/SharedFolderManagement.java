@@ -9,6 +9,7 @@ import com.aerofs.lib.Role;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.SID;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.servletlib.sp.ISharedFolderDatabase;
@@ -44,7 +45,7 @@ public class SharedFolderManagement
         _invitationEmailer = invitationEmailer;
     }
 
-    private void updateSharedFolderName(byte[] sid, String folderName, String userID)
+    private void updateSharedFolderName(SID sid, String folderName, String userID)
             throws SQLException
     {
         // Update the folder name only when an owner changes it
@@ -53,7 +54,7 @@ public class SharedFolderManagement
         }
     }
 
-    public void shareFolder(String folderName, byte[] sid, String userID,
+    public void shareFolder(String folderName, SID sid, String userID,
             List<String> emailAddresses, @Nullable String note)
             throws Exception
     {
@@ -76,7 +77,7 @@ public class SharedFolderManagement
     }
 
     private void shareFolderWithOne(User sharer, String shareeEmail, String folderName,
-            byte[] sid, @Nullable String note)
+            SID sid, @Nullable String note)
             throws Exception
     {
         Organization sharerOrg = _organizationManagement.getOrganization(sharer._orgId);
@@ -108,7 +109,7 @@ public class SharedFolderManagement
      *                  sharing (and they are not the same organization)
      */
     private String createFolderInvitation(String sharerId, String shareeId,
-            Organization sharerOrg, Organization shareeOrg, byte[] sid, String folderName)
+            Organization sharerOrg, Organization shareeOrg, SID sid, String folderName)
             throws ExNoPerm, SQLException, ExNotFound
     {
         if (!sharerOrg.equals(shareeOrg)) {

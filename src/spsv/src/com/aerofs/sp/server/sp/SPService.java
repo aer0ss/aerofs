@@ -456,7 +456,7 @@ class SPService implements ISPService
             List<String> emailAddresses, String note)
             throws Exception
     {
-        _sharedFolderManagement.shareFolder(folderName, shareId.toByteArray(),
+        _sharedFolderManagement.shareFolder(folderName, new SID(shareId),
                 _sessionUser.getUser(), emailAddresses, note);
 
         return createVoidReply();
@@ -478,7 +478,7 @@ class SPService implements ISPService
             }
 
             ResolveSharedFolderCodeReply reply = ResolveSharedFolderCodeReply.newBuilder()
-                    .setShareId(ByteString.copyFrom(invitation.getSid()))
+                    .setShareId(invitation.getSid().toPB())
                     .setFolderName(invitation.getFolderName())
                     .build();
 
@@ -646,8 +646,8 @@ class SPService implements ISPService
 
                 // make the db call and publish the result via verkehr
 
-                // initialize the db entry for the shared folder if it isn't yet initialized
-                spdb.initializeSharedFolder(sid.getBytes());
+                // add a db entry for the shared folder if it isn't yet initialized
+                spdb.addSharedFolder(sid);
 
                 Map<String, Long> updatedEpochs = spdb.setACL(user, sid, pairs);
                 publish_(updatedEpochs);
