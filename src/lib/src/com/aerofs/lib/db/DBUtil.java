@@ -41,6 +41,33 @@ public class DBUtil
         return sb;
     }
 
+    public static String createUniqueIndex(String table, int indexNum, String ... columns)
+    {
+        return createIndexImpl(true, table, indexNum, columns);
+    }
+
+    public static String createIndex(String table, int indexNumber, String ... columns)
+    {
+        return createIndexImpl(false, table, indexNumber, columns);
+    }
+
+    private static String createIndexImpl(boolean isUniqueIndex, String table, int indexNumber,
+            String ... columns)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("create ");
+        if (isUniqueIndex) sb.append("unique ");
+        sb.append("index " + table + indexNumber + " on " + table + "(");
+        boolean first = true;
+        for (String column : columns) {
+            if (first) first = false;
+            else sb.append(',');
+            sb.append(column);
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
     public static void close(Statement s)
     {
         try {

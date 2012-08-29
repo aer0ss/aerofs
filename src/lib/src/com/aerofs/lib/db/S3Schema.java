@@ -12,6 +12,9 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
+import static com.aerofs.lib.db.DBUtil.createIndex;
+import static com.aerofs.lib.db.DBUtil.createUniqueIndex;
+
 public class S3Schema
 {
     static final Logger l = Util.l(S3Schema.class);
@@ -111,34 +114,6 @@ public class S3Schema
         _dbcw = dbcw;
     }
 
-    private void createIndex(Statement s, String table, int num, String... columns) throws SQLException
-    {
-        createIndex(s, false, table, num, columns);
-    }
-
-    private void createUniqueIndex(Statement s, String table, int num, String... columns) throws SQLException
-    {
-        createIndex(s, true, table, num, columns);
-    }
-
-    private void createIndex(Statement s, boolean unique, String table, int num, String... columns) throws SQLException
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("create ");
-        if (unique) sb.append("unique ");
-        sb.append("index " + table + num + " on " + table + "(");
-        boolean first = true;
-        for (String column : columns) {
-            if (first) first = false;
-            else sb.append(',');
-            sb.append(column);
-        }
-        sb.append(')');
-        String sql = sb.toString();
-//        l.debug(sql);
-        s.executeUpdate(sql);
-    }
-
     public void create_() throws SQLException
     {
         Connection c = _dbcw.getConnection();
@@ -150,11 +125,12 @@ public class S3Schema
             String chunkListType = " blob ";
 
             s.execute("create table if not exists " + T_FileInfo + "( " +
-                    C_FileInfo_Index + _dbcw.longType() + " not null primary key " + _dbcw.autoIncrement() + ", " +
+                    C_FileInfo_Index + _dbcw.longType() + " not null primary key " +
+                    _dbcw.autoIncrement() + ", " +
                     C_FileInfo_Store + _dbcw.longType() + " not null, " +
                     C_FileInfo_InternalName +  _dbcw.nameType() + " unique not null ) " +
                     _dbcw.charSet());
-            createIndex(s, T_FileInfo, 0, C_FileInfo_Store, C_FileInfo_InternalName);
+            s.executeUpdate(createIndex(T_FileInfo, 0, C_FileInfo_Store, C_FileInfo_InternalName));
 
             s.execute("create table if not exists " + T_FileCurr + "( " +
                     C_FileCurr_Index + _dbcw.longType() + " not null primary key, " +
@@ -166,7 +142,8 @@ public class S3Schema
                     C_FileCurr_Date + _dbcw.longType() + " not null, " +
                     C_FileCurr_Chunks + chunkListType + " not null ) " +
                     _dbcw.charSet());
-            createUniqueIndex(s, T_FileCurr, 0, C_FileCurr_Parent, C_FileCurr_RealName);
+            s.executeUpdate(createUniqueIndex(T_FileCurr, 0, C_FileCurr_Parent,
+                    C_FileCurr_RealName));
 
             s.execute("create table if not exists " + T_FileHist + "( " +
                     C_FileHist_Index + _dbcw.longType() + " not null, " +
@@ -179,22 +156,24 @@ public class S3Schema
                     C_FileHist_Chunks + chunkListType + " not null, " +
                     "primary key ( " + C_FileHist_Index + ',' + C_FileHist_Ver + ") ) " +
                     _dbcw.charSet());
-            createIndex(s, T_FileHist, 0, C_FileHist_Parent, C_FileHist_RealName);
+            s.executeUpdate(createIndex(T_FileHist, 0, C_FileHist_Parent, C_FileHist_RealName));
 
             s.execute("create table if not exists " + T_DirCurr + "( " +
-                    C_DirCurr_Index + _dbcw.longType() + " not null primary key " + _dbcw.autoIncrement() + ", " +
+                    C_DirCurr_Index + _dbcw.longType() + " not null primary key " +
+                    _dbcw.autoIncrement() + ", " +
                     C_DirCurr_HistIndex + _dbcw.longType() + " not null unique, " +
                     C_DirCurr_Parent + _dbcw.longType() + " not null, " +
                     C_DirCurr_Name + _dbcw.nameType() + " not null ) " +
                     _dbcw.charSet());
-            createUniqueIndex(s, T_DirCurr, 0, C_DirCurr_Parent, C_DirCurr_Name);
+            s.executeUpdate(createUniqueIndex(T_DirCurr, 0, C_DirCurr_Parent, C_DirCurr_Name));
 
             s.execute("create table if not exists " + T_DirHist + "( " +
-                    C_DirHist_Index + _dbcw.longType() + " not null primary key " + _dbcw.autoIncrement() + ", " +
+                    C_DirHist_Index + _dbcw.longType() + " not null primary key " +
+                    _dbcw.autoIncrement() + ", " +
                     C_DirHist_Parent + _dbcw.longType() + " not null, " +
                     C_DirHist_Name + _dbcw.nameType() + " not null ) " +
                     _dbcw.charSet());
-            createUniqueIndex(s, T_DirHist, 0, C_DirHist_Parent, C_DirHist_Name);
+            s.executeUpdate(createUniqueIndex(T_DirHist, 0, C_DirHist_Parent, C_DirHist_Name));
 
             s.execute("create table if not exists " + T_ChunkCount + "( " +
                     C_ChunkCount_Hash + chunkType + " not null primary key," +
@@ -207,7 +186,7 @@ public class S3Schema
                     C_ChunkCache_Hash + chunkType + " not null primary key," +
                     C_ChunkCache_Time + _dbcw.longType() + " not null )" +
                     _dbcw.charSet());
-            createIndex(s, T_ChunkCache, 0, C_ChunkCache_Time);
+            s.executeUpdate(createIndex(T_ChunkCache, 0, C_ChunkCache_Time));
         } finally {
             s.close();
         }

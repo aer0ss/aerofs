@@ -31,8 +31,8 @@ public class VersionUpdater
 {
     private static final Logger l = Util.l(VersionUpdater.class);
 
-    // this set remembers all the branches that has been updated since the last NEW_UPDATE message
-    // as sent.
+    // This set remembers all the branches that have been updated since the last NEW_UPDATE message
+    // was sent.
     private final Set<SOCKID> _updated = Sets.newTreeSet();
 
     private DelayedScheduler _dsNewUpdateMessage;
@@ -58,7 +58,7 @@ public class VersionUpdater
                         assert !_updated.isEmpty();
 
                         try {
-                            // send a NEW_UPDATE message for all the branches that has been updated
+                            // send a NEW_UPDATE message for all the branches that have been updated
                             // since the last NEW_UPDATE.
                             _nu.send_(_updated);
                         } catch (Exception e) {
