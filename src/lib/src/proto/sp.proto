@@ -648,9 +648,10 @@ enum PBAuthorizationLevel {
 message AddOrganizationCall {
     required string org_id = 1;
     required string org_name = 2;
-    required bool allow_open_sharing = 3;
-
+    required bool org_allow_open_sharing = 3;
     optional string org_allowed_domain = 4;
+
+    optional SignUpCall new_admin_account = 5;
 }
 
 message SendPasswordResetEmailCall {

@@ -40,6 +40,7 @@ import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
+import com.aerofs.proto.Sp.SignUpCall;
 import com.aerofs.sp.server.email.EmailUtil;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
@@ -289,18 +290,50 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> addOrganization(String orgId,
-            String orgName, Boolean shareExternal, @Nullable String allowedDomain)
+    public ListenableFuture<Void> addOrganization(final String orgId, final String orgName,
+            final Boolean shareExternal, final @Nullable String allowedDomain,
+            final @Nullable SignUpCall newAdminAccount)
             throws Exception
     {
-        String callerUser = _sessionUser.getUser();
+        AbstractDatabaseTransaction<ListenableFuture<Void>> trans =
+                new AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
+            {
+                @Override
+                protected ListenableFuture<Void> impl_(AbstractDatabase db,
+                        AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
+                        throws Exception
+                {
+                    // TODO: verify the calling user is allowed to create an organization
+                    // (check with the payment system)
 
-        // TODO: verify callerUser is allowed to create an organization (check with payment system)
+                    // FIXME: this only works because of the way transactions are currently
+                    // implemented. Because UserManagement and OrganizationManagement both
+                    // reference the same instance of SPDatabase used here (_db), the transaction
+                    // works, but this will likely not stay this way in the future when the way
+                    // we implement transactions is changed.
+                    _organizationManagement.addOrganization(orgId, orgName, shareExternal,
+                            allowedDomain);
 
-        _organizationManagement.addOrganization(orgId, orgName, shareExternal, allowedDomain,
-                callerUser);
+                    if (newAdminAccount != null && newAdminAccount.isInitialized()) {
+                        ListenableFuture<Void> result = signUp(newAdminAccount.getUserId(),
+                                newAdminAccount.getCredentials(), newAdminAccount.getFirstName(),
+                                newAdminAccount.getLastName(), newAdminAccount.getOrganizationId());
+                        result.get(); // Wait until user account is made before continuing
+                        _userManagement.setAuthorizationLevel(newAdminAccount.getUserId(),
+                                AuthorizationLevel.ADMIN);
+                    } else {
+                        String callerUser = _sessionUser.getUser();
+                        _organizationManagement.moveUserToOrganization(callerUser, orgId);
+                        _userManagement.setAuthorizationLevel(callerUser, AuthorizationLevel.ADMIN);
+                    }
 
-        return createVoidReply();
+                    trans.commit_();
+
+                    return createVoidReply();
+                }
+            };
+
+        return trans.run_();
     }
 
     @Override
