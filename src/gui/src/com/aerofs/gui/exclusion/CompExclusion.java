@@ -1,7 +1,9 @@
 package com.aerofs.gui.exclusion;
 
+import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
+import org.apache.log4j.Logger;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -22,7 +24,7 @@ import org.eclipse.swt.widgets.Label;
 
 public class CompExclusion extends Composite
 {
-
+    private final static Logger l = Util.l(CompExclusion.class);
     private final Button _btnCancel;
     private final Button _btnAdvancedView;
     private final Composite _composite;
@@ -92,6 +94,7 @@ public class CompExclusion extends Composite
                     getShell().close();
 
                 } catch (Exception e) {
+                    l.warn("exclude folders: " + Util.e(e));
                     GUI.get().show(getShell(), MessageType.ERROR, "Couldn't complete the request " +
                             UIUtil.e2msg(e));
                 } finally {
