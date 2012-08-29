@@ -158,7 +158,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     if (path.length == 0 || rootAnchor.length == 0) {
         return NO;
     }
-    return [path hasPrefix:rootAnchor];
+    return [path hasPrefix:rootAnchor] && (path.length == rootAnchor.length || [path characterAtIndex:rootAnchor.length] == '/');
 }
 
 /**
