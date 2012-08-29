@@ -4,18 +4,20 @@
 
 package com.aerofs.sp.server.sp.organization;
 
+import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
-import com.aerofs.sp.server.sp.user.UserManagement;
 import com.aerofs.servletlib.sp.organization.IOrganizationDatabase;
 import com.aerofs.servletlib.sp.organization.Organization;
-import com.aerofs.servletlib.sp.user.AuthorizationLevel;
+import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.sp.server.sp.user.UserManagement;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -64,7 +66,7 @@ public class OrganizationManagement
      * TODO: Make this method transactional
      */
     public void addOrganization(String orgId, String orgName, Boolean shareExternal,
-            @Nullable String allowedDomain, String orgAdminId)
+            @Nullable String allowedDomain)
             throws SQLException, ExAlreadyExist, ExBadArgs, ExNotFound
     {
         if (allowedDomain == null || allowedDomain.isEmpty()) {
@@ -77,30 +79,13 @@ public class OrganizationManagement
             throw new ExBadArgs("Organization ID '" + orgId + "' is not a valid domain name.");
         }
 
-        // TODO: the check below is redundant, but currently necessary because this method is not
-        // transactional. Once there is a _db.deleteOrganization(), replace the block at the end
-        // of the method with:
-        // try {
-        //     _db.addOrganization(newOrg);
-        //     moveUserToOrganization(orgAdminId, orgId);
-        // } catch (ExBadArgs e) {
-        //     l.info("bad user args");
-        //     _db.removeOrganization(newOrg);
-        //     throw e;
-        // }
-        Organization newOrg = new Organization(orgId, orgName, allowedDomain, shareExternal);
-        if (!newOrg.domainMatches(orgAdminId)) {
-            throw new ExBadArgs("User id of user creating organization (" + orgAdminId + ") does " +
-                    "not match allowed domain of new organization.");
-        }
-
         l.info("Creating organization '" + orgId + "' with name '" + orgName + "', " +
                 "external sharing " + (shareExternal ? "on": "off") + ", and allowedDomain '" +
                 allowedDomain + "'.");
 
+        Organization newOrg = new Organization(orgId, orgName, allowedDomain, shareExternal);
+
         _db.addOrganization(newOrg);
-        moveUserToOrganization(orgAdminId, orgId);
-        _userManagement.setAuthorizationLevel(orgAdminId, AuthorizationLevel.ADMIN);
     }
 
     public Organization getOrganization(String orgId)
@@ -138,12 +123,11 @@ public class OrganizationManagement
     }
 
     public void moveUserToOrganization(String user, String orgId)
-            throws SQLException, ExNotFound, ExBadArgs
+            throws SQLException, IOException, ExNotFound, ExBadArgs
     {
-        Organization org = getOrganization(orgId);
-        if (!org.domainMatches(user)) {
-            throw new ExBadArgs("User id " + user + " does not match allowed domain of organization '"
-                    + org._name + "'.");
+        User newUser = _userManagement.getUser(user);
+        if (!newUser._orgId.equals(C.DEFAULT_ORGANIZATION)) {
+            throw new ExBadArgs("User " + user + " already belongs to an organization.");
         }
         _db.moveUserToOrganization(user, orgId);
     }

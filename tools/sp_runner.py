@@ -3,10 +3,14 @@ import sys
 import argparse
 import os
 import code
+import ConfigParser
 
 file_root = os.path.dirname(__file__)
 python_aerofs_lib = os.path.join(file_root,"../src/python-lib")
 sys.path.append(python_aerofs_lib)
+
+config = ConfigParser.ConfigParser()
+config.readfp(open('../src/web/development.ini'))
 
 from aerofs.scrypt import scrypt
 from aerofs import connection
@@ -24,12 +28,16 @@ class Credentials:
         return scrypt(password,klass.user_id)
 
 parser = argparse.ArgumentParser(description='A Command Line REPL for the SP RPC service')
-parser.add_argument('server', help="The complete url of the server to connect to")
+parser.add_argument('sp_url', nargs='?', help="The complete url of the server to connect to")
+parser.add_argument('sp_version', type=int, nargs='?',
+        help="The version number to use when connecting")
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    url = args.server
-    conn = connection.SyncConnectionService(url,8)
+    url = args.sp_url or config.get('app:main', 'sp.url')
+    version = args.sp_version or config.get('app:main', 'sp.version')
+    conn = connection.SyncConnectionService(url, version)
+
     sp = sp_pb2.SPServiceRpcStub(conn)
     class Command:
         def __init__(self,fn):

@@ -101,8 +101,9 @@ public class C
     public static final int FSI_MAGIC                   = 0xABCD8422;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
-    // Update development.ini and production.ini in java/web when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 9;
+    // Make sure to update development.ini and production.ini in src/web and tools/sp_runner.py
+    // when incrementing SP_PROTOCOL_VERSION
+    public static final int SP_PROTOCOL_VERSION         = 10;
     public static final int SS_PROTOCOL_VERSION         = 1;
 
     public static final byte[] ROOT_SID_SALT       = new byte[]
