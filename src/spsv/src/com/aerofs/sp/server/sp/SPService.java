@@ -648,6 +648,9 @@ class SPService implements ISPService
 
                 // make the db call and publish the result via verkehr
 
+                // initialize the db entry for the shared folder if it isn't yet initialized
+                spdb.initializeSharedFolder(sid.getBytes());
+
                 Map<String, Long> updatedEpochs = spdb.setACL(user, sid, pairs);
                 publish_(updatedEpochs);
                 l.info(user + " completed set acl for s:" + sid);

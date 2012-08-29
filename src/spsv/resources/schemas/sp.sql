@@ -1,12 +1,3 @@
-CREATE TABLE `sp_acl` (
-  `a_sid` BINARY(16) NOT NULL,
-  `a_id` VARCHAR(320) NOT NULL,
-  `a_role` TINYINT NOT NULL,
-  PRIMARY KEY (`a_sid`,`a_id`),
-  KEY `a_sid` (`a_sid`),
-  KEY `a_id` (`a_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1; -- latin1 because a_id is email address
-
 CREATE TABLE `sp_organization` (
   `o_id` VARCHAR(80) NOT NULL, -- we use the organization's domain name as an id
   `o_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- organization friendly name, displayed to the user. May include spaces and all.
@@ -16,9 +7,27 @@ CREATE TABLE `sp_organization` (
   PRIMARY KEY (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- Currently, there is no API to add organizations, so add them manually here
+-- Add the consumer AeroFS organization
 INSERT INTO `sp_organization` (`o_id`, `o_name`, `o_allowed_domain`, `o_open_sharing`)
   VALUES ("consumer.aerofs.com", "Consumer AeroFS", "*", TRUE);
+
+CREATE TABLE `sp_shared_folder` (
+  `sf_id` BINARY(16) NOT NULL,
+  `sf_name` VARCHAR(255) CHARSET utf8 DEFAULT NULL,
+  -- todo: When sp.SetACL is moved into sp.ShareFolder, make sf_name NOT NULL
+  INDEX sf_name_idx (`sf_name`),
+  PRIMARY KEY (`sf_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `sp_acl` (
+  `a_sid` BINARY(16) NOT NULL,
+  `a_id` VARCHAR(320) NOT NULL,
+  `a_role` TINYINT NOT NULL,
+  PRIMARY KEY (`a_sid`,`a_id`),
+  KEY `a_sid` (`a_sid`),
+  KEY `a_id` (`a_id`),
+  CONSTRAINT `a_sid_foreign` FOREIGN KEY (`a_sid`) REFERENCES `sp_shared_folder` (`sf_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1; -- latin1 because a_id is email address
 
 CREATE TABLE `sp_user` (
   -- TODO rename u_id to u_email and most other 'ids' to 'email'
@@ -80,13 +89,6 @@ CREATE TABLE `sp_batch_signup_code` (
   PRIMARY KEY (`b_idx`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE `sp_shared_folder` (
-  `sf_id` BINARY(16) NOT NULL,
-  `sf_name` VARCHAR(255) CHARSET utf8 NOT NULL,
-  INDEX sf_name_idx (`sf_name`),
-  PRIMARY KEY (`sf_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE `sp_shared_folder_code` (
   `f_code` CHAR(8) NOT NULL,
   `f_from` VARCHAR(320) NOT NULL, -- used to be null if the invites was sent by aerofs
@@ -95,7 +97,8 @@ CREATE TABLE `sp_shared_folder_code` (
   `f_folder_name` VARCHAR(255) CHARSET utf8 NOT NULL, -- important UTF8
   `f_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX folder_to_idx (`f_to`),
-  PRIMARY KEY (`f_code`)
+  PRIMARY KEY (`f_code`),
+  CONSTRAINT `f_sid_foreign` FOREIGN KEY (`f_share_id`) REFERENCES `sp_shared_folder` (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 DELIMITER //
