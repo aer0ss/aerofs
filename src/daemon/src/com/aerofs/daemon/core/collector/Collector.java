@@ -51,7 +51,7 @@ public class Collector implements IDumpStatMisc
     private final CollectorFilters _cfs;
     private final IIteratorFactory _iterFactory;
     private int _startSeq;
-    private OCIDAndCS _occs;    // null iff the collection is not started
+    private @Nullable OCIDAndCS _occs;    // null iff the collection is not started
     private int _downloads;     // # current downloads initiated by the collector
     private long _backoffInterval;
     private boolean _backoffScheduled;
@@ -127,7 +127,7 @@ public class Collector implements IDumpStatMisc
     /**
      * @param t may be null, but only if there is not pending transaction
      */
-    public void online_(final DID did, Trans t)
+    public void online_(final DID did, @Nullable Trans t)
     {
         _f._er.retry("online", new Callable<Void>()
         {
@@ -161,10 +161,8 @@ public class Collector implements IDumpStatMisc
     /**
      * start an iteration immediately. the caller must guarantee that started_()
      * returns false.
-     *
-     * @param t may be null
      */
-    private void start_(final Trans t)
+    private void start_(@Nullable final Trans t)
     {
         assert !started_();
         final int startSeq = ++_startSeq;
@@ -222,8 +220,6 @@ public class Collector implements IDumpStatMisc
 
     /**
      * this method can only be called by start() or collectOne()
-     *
-     * @param t may be null
      */
     private void collect_(@Nullable Trans t) throws Exception
     {

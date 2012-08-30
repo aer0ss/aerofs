@@ -11,6 +11,8 @@ import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.lib.cfg.Cfg;
 
+import javax.annotation.Nullable;
+
 public class IteratorFactoryPartialReplica implements IIteratorFactory
 {
     private final ICollectorSequenceDatabase _csdb;
@@ -29,7 +31,7 @@ public class IteratorFactoryPartialReplica implements IIteratorFactory
     }
 
     @Override
-    public IIterator newIterator_(CollectorSeq cs) throws SQLException
+    public IIterator newIterator_(@Nullable CollectorSeq cs) throws SQLException
     {
         return new IteratorPartialReplica(_csdb, _nvc, _ds, _s, cs);
     }
