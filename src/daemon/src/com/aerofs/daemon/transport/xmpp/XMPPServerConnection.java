@@ -89,18 +89,6 @@ public class XMPPServerConnection implements IDumpStatMisc
         }
     }
 
-    private void createAccount() throws XMPPException
-    {
-        XMPPConnection c = newConnection();
-        c.connect();
-        try {
-            AccountManager am = c.getAccountManager();
-            am.createAccount(_user, shaedXMPP());
-        } finally {
-            c.disconnect();
-        }
-    }
-
     private XMPPConnection newConnection()
     {
         ConnectionConfiguration cc = new ConnectionConfiguration(
@@ -183,31 +171,7 @@ public class XMPPServerConnection implements IDumpStatMisc
 
         l.info("connected. logging in");
 
-        try {
-            c.login(_user, shaedXMPP(), _resource);
-        } catch (Exception e) {
-            l.info("failed logging in. try to create: " + e);
-            // a new connection is needed in case the old one becomes unavailable
-            // after login failure
-            c.disconnect();
-            createAccount();
-
-            l.info("try to log in again");
-            c = newConnection();
-            c.connect();
-            try {
-                c.login(_user, shaedXMPP(), _resource);
-            } finally {
-                c.disconnect();
-            }
-
-            // this is because shortly after the first login we noticed an error
-            // from the xmpp library
-            l.info("log in once more");
-            c = newConnection();
-            c.connect();
-            c.login(_user, shaedXMPP(), _resource);
-        }
+        c.login(_user, shaedXMPP(), _resource);
 
         l.info("logged in");
         _conn = c; // this is the point at which changes are visible
