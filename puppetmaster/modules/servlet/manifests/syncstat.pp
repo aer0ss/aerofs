@@ -1,9 +1,9 @@
 class servlet::syncstat(
     $mysql_sp_password,
-    $mysql_sp_username,
     $mysql_syncstat_password,
-    $mysql_syncstat_username,
-    $mysql_endpoint = undef
+    $mysql_endpoint,
+    $verkehr_host,
+    $cacert_location
 ) {
     include servlet
 
@@ -27,14 +27,17 @@ class servlet::syncstat(
         notify  => Service["tomcat6"]
     }
 
-    $log_filename = "/var/log/aerofs/syncstat_prod.log"
+    $log_filename = "/var/log/aerofs/syncstat.log"
     file {"/usr/share/aerofs-syncstat/syncstat/WEB-INF/classes/log4j.properties":
         ensure  => present,
         owner   => "tomcat6",
         group   => "tomcat6",
         mode    => "644",
         content => template("servlet/log4j.properties.erb"),
-        require => Package["aerofs-syncstat"],
+        require => [
+            Package["aerofs-syncstat"],
+            File["/var/log/aerofs"]
+        ],
         notify  => Service["tomcat6"]
     }
 }

@@ -9,8 +9,7 @@
 #
 # === Examples
 #
-#  class { cmd:
-#  }
+#   include cmd
 #
 # === Authors
 #
@@ -22,12 +21,18 @@
 #
 class cmd {
 
+    apt::key { "dotdeb":
+        ensure => present,
+        key_source => "http://www.dotdeb.org/dotdeb.gpg"
+    }
+
     apt::source { "dotdeb":
-        location    => "https://packages.dotdeb.org",
+        location    => "http://packages.dotdeb.org",
+        release     => "squeeze",
         repos       => "all",
         include_src => "false",
-        key         => "89DF5277",
-        key_server  => "keys.gnupg.net",
+        notify      => Exec["apt-get update"],
+        require     => Apt::Key["dotdeb"]
     }
 
     package{[
@@ -67,5 +72,13 @@ class cmd {
         file => "/etc/sysctl.conf",
         line => "vm.overcommit_memory = 1",
         require => Package["redis-server"]
+    }
+
+    include nginx
+
+    nginx::resource::vhost {"cmd-vhost":
+        listen_port          => '80',
+        proxy                => 'http://127.0.0.1:9080',
+        ensure               => present,
     }
 }

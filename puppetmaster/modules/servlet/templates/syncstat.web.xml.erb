@@ -7,11 +7,11 @@
   <!-- SP Database -->
   <context-param>
     <param-name>mysql_sp_endpoint</param-name>
-    <param-value><%= @mysql_endpoint || "sp.mysql.aws.aerofs.com" %></param-value>
+    <param-value><%= @mysql_endpoint %></param-value>
   </context-param>
   <context-param>
     <param-name>mysql_sp_user</param-name>
-    <param-value><%= @mysql_sp_user || "aerofs_spsv" %></param-value>
+    <param-value>aerofs_spsv</param-value>
   </context-param>
   <context-param>
     <param-name>mysql_sp_password</param-name>
@@ -25,11 +25,11 @@
   <!-- SS Database -->
   <context-param>
     <param-name>mysql_syncstat_endpoint</param-name>
-    <param-value><%= @mysql_endpoint || "sp.mysql.aws.aerofs.com" %></param-value>
+    <param-value><%= @mysql_endpoint %></param-value>
   </context-param>
   <context-param>
     <param-name>mysql_syncstat_user</param-name>
-    <param-value><%= @mysql_syncstat_user || "aerofs_syncstat" %></param-value>
+    <param-value>aerofs_syncstat</param-value>
   </context-param>
   <context-param>
     <param-name>mysql_syncstat_password</param-name>
@@ -43,7 +43,7 @@
   <!-- Verkehr -->
   <context-param>
     <param-name>verkehr_host</param-name>
-    <param-value>verkehr.aerofs.com</param-value>
+    <param-value><%= @verkehr_host %></param-value>
   </context-param>
   <context-param>
     <param-name>verkehr_port</param-name>
@@ -51,7 +51,7 @@
   </context-param>
   <context-param>
     <param-name>verkehr_cacert</param-name>
-    <param-value><%= @cacert_location || "/etc/ssl/certs/AeroFS_CA.pem" %></param-value>
+    <param-value><%= @cacert_location %></param-value>
   </context-param>
 
   <!-- initialization listener -->

@@ -4,18 +4,17 @@ node "sss.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    class {"servlet::mount":
-        partition => "/dev/xvdf"
-    }
-
+    # Fetch variables from hiera
     $mysql_syncstat = hiera("mysql_syncstat")
     $mysql_sp = hiera("mysql_sp")
-    $mysql_endpoint = hiera("mysql_endpoint",undef)
+    $mysql_endpoint = hiera("mysql_endpoint")
+
+    # install syncstat servlet
     class{"servlet::syncstat":
-        mysql_sp_username => $mysql_sp["username"],
-        mysql_sp_password => $mysql_sp["password"],
-        mysql_syncstat_username => $mysql_syncstat["username"],
+        mysql_sp_password       => $mysql_sp["password"],
         mysql_syncstat_password => $mysql_syncstat["password"],
-        mysql_endpoint    => $mysql_endpoint,
+        mysql_endpoint          => $mysql_endpoint,
+        verkehr_host            => "verkehr.aerofs.com",
+        cacert_location         => "/etc/ssl/certs/AeroFS_CA.pem"
     }
 }

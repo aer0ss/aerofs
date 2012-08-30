@@ -1,11 +1,6 @@
-#
-#  mounts $partition at /data
-#  binds /data/var/log/aerofs to /var/log/aerofs
-#
-class servlet::mount (
+class common::log_mount(
     $partition
 ) {
-    include servlet
 
     mkfs::create{$partition:
         type        => "ext4",
@@ -32,18 +27,6 @@ class servlet::mount (
         ],
     }
 
-    file {"/var/log":
-        ensure => directory
-    }
-
-    file {"/var/log/aerofs":
-        ensure => directory,
-        require => File["/var/log"],
-        owner   => "tomcat6",
-        group   => "adm",
-        mode    => "0750",
-    }
-
     file {"/data/var":
         ensure => directory,
         owner   => root,
@@ -60,9 +43,7 @@ class servlet::mount (
 
     file {"/data/var/log/aerofs":
         ensure => directory,
-        owner   => "tomcat6",
-        group   => "adm",
-        mode    => "0750",
+        mode    => 666,
         require => [
             File["/data/var/log"],
             Package["tomcat6"]
@@ -76,6 +57,5 @@ class servlet::mount (
         fstype  => "none",
         options => "bind",
         require => File["/data/var/log/aerofs","/var/log/aerofs"],
-        notify => Service["tomcat6"]
     }
 }
