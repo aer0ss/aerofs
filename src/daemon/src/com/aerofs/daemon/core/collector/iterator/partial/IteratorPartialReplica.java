@@ -17,6 +17,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOCID;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 class IteratorPartialReplica implements IIterator
 {
     private final static Logger l = Util.l(IteratorPartialReplica.class);
@@ -36,18 +39,18 @@ class IteratorPartialReplica implements IIterator
         return new CollectorSeq(l);
     }
 
-    static private CollectorSeq MetaCS2DB(CollectorSeq cs)
+    static private CollectorSeq MetaCS2DB(@Nonnull CollectorSeq cs)
     {
         return new CollectorSeq(cs.getLong() - Long.MIN_VALUE);
     }
 
-    static private boolean isMetaCS(CollectorSeq cs)
+    static private boolean isMetaCS(@Nonnull CollectorSeq cs)
     {
         return cs.getLong() < 0;
     }
 
     IteratorPartialReplica(ICollectorSequenceDatabase csdb, NativeVersionControl nvc,
-            DirectoryService ds, Store s, CollectorSeq cs)
+            DirectoryService ds, Store s, @Nullable CollectorSeq cs)
             throws SQLException
     {
         _ds = ds;

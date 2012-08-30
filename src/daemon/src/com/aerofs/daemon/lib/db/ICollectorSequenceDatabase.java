@@ -7,6 +7,7 @@ import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 public interface ICollectorSequenceDatabase
@@ -37,14 +38,16 @@ public interface ICollectorSequenceDatabase
     }
 
     /**
-     * @param csStart may be null
      * @return all the kml components with cs strictly greater than csStart,
      * if csStart != null; otherwise return all the kml components. The
      * components are ordered by cs
      */
-    IDBIterator<OCIDAndCS> getAllCS_(SIndex sidx, CollectorSeq csStart) throws SQLException;
+    IDBIterator<OCIDAndCS> getAllCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+            throws SQLException;
 
-    IDBIterator<OCIDAndCS> getAllMetaCS_(SIndex sidx, CollectorSeq csStart) throws SQLException;
+    IDBIterator<OCIDAndCS> getAllMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+            throws SQLException;
 
-    IDBIterator<OCIDAndCS> getAllNonMetaCS_(SIndex sidx, CollectorSeq csStart) throws SQLException;
+    IDBIterator<OCIDAndCS> getAllNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
+            throws SQLException;
 }

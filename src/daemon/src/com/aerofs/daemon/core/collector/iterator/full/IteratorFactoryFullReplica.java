@@ -11,6 +11,8 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SIndex;
 
+import javax.annotation.Nullable;
+
 public class IteratorFactoryFullReplica implements IIteratorFactory
 {
     private final ICollectorSequenceDatabase _csdb;
@@ -31,7 +33,7 @@ public class IteratorFactoryFullReplica implements IIteratorFactory
     }
 
     @Override
-    public IIterator newIterator_(CollectorSeq cs) throws SQLException
+    public IIterator newIterator_(@Nullable CollectorSeq cs) throws SQLException
     {
         return new IteratorFullReplica(_csdb, _nvc, _ds, _csdb.getAllCS_(_sidx, cs), _sidx);
     }

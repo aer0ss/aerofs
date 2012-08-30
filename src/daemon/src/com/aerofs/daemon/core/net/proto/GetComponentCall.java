@@ -109,49 +109,7 @@ public class GetComponentCall
             // 2) all of its KMLs must be alias ticks
             Version vAllLocal = _nvc.getAllLocalVersions_(socid);
             assert vAllLocal.withoutAliasTicks_().isZero_() : socid + " " + vAllLocal;
-
-            Version vKMLNonAlias = vKML.withoutAliasTicks_();
-            if (!vKMLNonAlias.isZero_()) {
-                // Temporarily migrate the alias non-tick KMLs if they are
-                // present in the target object's versions.
-                // TODO (MJ) remove this migration and replace with assert (vKMLNonAlias.isZero())
-                SOCID socidTarget = new SOCID(socid.sidx(), target, socid.cid());
-
-                String msg =  "(alias " + socid + ")->(" + socidTarget + " target) "
-                     + "vkmlnonalias " + vKMLNonAlias + " vLocal " + vLocal;
-
-                Trans t = _tm.begin_();
-                try {
-                    if (vKMLNonAlias.isEntirelyShadowedBy_(_nvc.getAllVersions_(socidTarget))) {
-                        // Delete the non-alias versions from the alias, *if* those versions have
-                        // already been migrated to the target
-                        _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
-                        msg = "by delete. " + msg;
-                    } else {
-                        // Migrate the non-alias versions from the alias object to its target
-                        _almv.moveKMLVersion_(socid, socidTarget, vAllLocal,
-                                _nvc.getAllLocalVersions_(socidTarget), t);
-                        msg = "by migration. " + msg;
-                    }
-                    t.commit_();
-                } catch (Exception e) {
-                    l.warn(Util.e(e));
-                } finally {
-                    t.end_();
-                }
-
-                Version vAllTarget = _nvc.getAllVersions_(socidTarget);
-                msg = msg + " vAllTarget " + vAllTarget;
-
-                assert _nvc.getKMLVersion_(socid).withoutAliasTicks_().isZero_() : msg;
-                assert vKMLNonAlias.isEntirelyShadowedBy_(vAllTarget) : msg;
-
-                // Report this event to SV, then abort the current request.
-                ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this log once. "
-                        + msg);
-                SVClient.logSendDefectAsync(true, "abort gcc", e);
-                throw e;
-            }
+            assertRequestedAliasKMLsHaveOnlyAliasTicks(vKML, socid, target, vLocal, vAllLocal);
         }
 
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()
@@ -168,6 +126,59 @@ public class GetComponentCall
             .setGetComCall(bd).build();
 
         return _rpc.do_(src, socid.sidx(), call, tk, "gcc " + socid + " " + src);
+    }
+
+    /**
+     * @param socid is assumed to be aliased to {@code target}
+     */
+    private void assertRequestedAliasKMLsHaveOnlyAliasTicks(Version vKML, SOCID socid, OID target,
+            Version vLocal, Version vAllLocal)
+            throws Exception
+    {
+        Version vKMLNonAlias = vKML.withoutAliasTicks_();
+        if (!vKMLNonAlias.isZero_()) {
+            // Temporarily migrate the alias non-tick KMLs if they are
+            // present in the target object's versions.
+            // TODO (MJ) remove this migration and replace with assert (vKMLNonAlias.isZero())
+            SOCID socidTarget = new SOCID(socid.sidx(), target, socid.cid());
+
+            String msg =  "(alias " + socid + ")->(" + socidTarget + " target) "
+                    + "vkmlnonalias " + vKMLNonAlias + " vLocal " + vLocal;
+
+            Trans t = _tm.begin_();
+            try {
+                if (vKMLNonAlias.isEntirelyShadowedBy_(_nvc.getAllVersions_(socidTarget))) {
+                    // Delete the non-alias versions from the alias, *if* those versions have
+                    // already been migrated to the target
+                    _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
+                    msg = "by delete. " + msg;
+                } else {
+                    // Migrate the non-alias versions from the alias object to its target
+                    _almv.moveKMLVersion_(socid, socidTarget, vAllLocal,
+                            _nvc.getAllLocalVersions_(socidTarget), t);
+                    msg = "by migration. " + msg;
+                }
+                t.commit_();
+            } catch (Exception e) {
+                l.warn(Util.e(e));
+                SVClient.logSendDefectAsync(true, "gcc failed repair", e);
+                throw e;
+            } finally {
+                t.end_();
+            }
+
+            Version vAllTarget = _nvc.getAllVersions_(socidTarget);
+            msg = msg + " vAllTarget " + vAllTarget;
+
+            assert _nvc.getKMLVersion_(socid).withoutAliasTicks_().isZero_() : msg;
+            assert vKMLNonAlias.isEntirelyShadowedBy_(vAllTarget) : msg;
+
+            // Report this event to SV, then abort the current request.
+            ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this log once. "
+                    + msg);
+            SVClient.logSendDefectAsync(true, "abort gcc", e);
+            throw e;
+        }
     }
 
     private void setIncrementalDownloadInfo_(SOCID socid, Builder bd)
@@ -321,6 +332,7 @@ public class GetComponentCall
         assert _ds.isPresent_(k) || _ds.hasAliasedOA_(k.soid());
 
         OA oa = _ds.getAliasedOANullable_(k.soid());
+        assert oa != null : k;
 
         PBMeta.Builder bdMeta = PBMeta.newBuilder()
             .setType(toPB(oa.type()))

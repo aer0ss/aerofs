@@ -1,16 +1,17 @@
 package com.aerofs.daemon.core.collector;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
@@ -21,6 +22,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class CollectorFilters
@@ -37,12 +39,12 @@ public class CollectorFilters
         private final DID _did;
 
         // it acts as a write-through cache for the db
-        private BFOID _dbFilter;
+        private @Nullable BFOID _dbFilter;
 
         private boolean _dirty;
 
         // the content must be consistent with _c2d2f
-        final Set<CollectorSeq> _css = new TreeSet<CollectorSeq>();
+        final Set<CollectorSeq> _css = Sets.newTreeSet();
 
         DevEntry(DID did)
         {
@@ -50,26 +52,25 @@ public class CollectorFilters
         }
 
         /**
-         * @param filter may be null. finalized after the method call
+         * @param filter finalized after the method call
          */
-        void setDBFilter_(BFOID filter)
+        void setDBFilter_(@Nullable BFOID filter)
         {
             if (filter != null) filter.finalize_();
             _dbFilter = filter;
         }
 
-        BFOID getDBFilter_()
+        @Nullable BFOID getDBFilter_()
         {
             return _dbFilter;
         }
     }
 
     // it contains all the loaded devices. even though they may have no filters
-    private final Map<DID, DevEntry> _did2dev = new TreeMap<DID, DevEntry>();
+    private final Map<DID, DevEntry> _did2dev = Maps.newTreeMap();
 
     // all the devices included in this map must have been loaded.
-    private final SortedMap<CollectorSeq, Map<DID, BFOID>> _c2d2f =
-            new TreeMap<CollectorSeq, Map<DID, BFOID>>();
+    private final SortedMap<CollectorSeq, Map<DID, BFOID>> _c2d2f = Maps.newTreeMap();
 
     CollectorFilters(ICollectorFilterDatabase csdb, TransManager tm, SIndex sidx)
     {
@@ -82,7 +83,6 @@ public class CollectorFilters
      * the method can be called regardless of if the device is loaded or unloaded
      *
      * @param filter finalized after the method call
-     * @param cs may be null if the collector is not started
      * @return true if the device has been loaded
      */
     boolean addDBFilter_(final DID did, BFOID filter, Trans t) throws SQLException
@@ -152,7 +152,7 @@ public class CollectorFilters
         // them being reused by the next collection iteration)
         assert _c2d2f.isEmpty();
 
-        ArrayList<DevEntry> devs = new ArrayList<DevEntry>();
+        List<DevEntry> devs = Lists.newArrayList();
         for (DevEntry dev : _did2dev.values()) {
             assert dev._css.isEmpty();
             // skip devices whose filter is already reset
@@ -212,27 +212,25 @@ public class CollectorFilters
     /**
      * @return null if the filter is not found
      */
-    private BFOID getCSFilter_(DID did, CollectorSeq cs)
+    private @Nullable BFOID getCSFilter_(DID did, CollectorSeq cs)
     {
         Map<DID, BFOID> d2f = _c2d2f.get(cs);
         return d2f == null ? null : d2f.get(did);
     }
 
     /**
-     * @param finalized after the method call
      * @return the old filter, or null
      */
-    private BFOID setCSFilter_(DevEntry dev, CollectorSeq cs, BFOID filter)
+    private @Nullable BFOID setCSFilter_(DevEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
     {
         l.info("set cs filter for " + _sidx + " " + dev._did + " cs " + cs);
-        assert filter != null;
         filter.finalize_();
 
         dev._css.add(cs);
 
         Map<DID, BFOID> d2f = _c2d2f.get(cs);
         if (d2f == null) {
-            d2f = new TreeMap<DID, BFOID>();
+            d2f = Maps.newTreeMap();
             _c2d2f.put(cs, d2f);
         }
         return d2f.put(dev._did, filter);
@@ -247,12 +245,8 @@ public class CollectorFilters
         addCSFilter_(_did2dev.get(did), cs, filter);
     }
 
-    /**
-     * @param finalized after the method call
-     */
-    private void addCSFilter_(DevEntry dev, CollectorSeq cs, BFOID filter)
+    private void addCSFilter_(DevEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
     {
-        assert filter != null;
         filter.finalize_();
 
         BFOID filterOld = getCSFilter_(dev._did, cs);
@@ -276,7 +270,7 @@ public class CollectorFilters
     {
         DevEntry dev = _did2dev.get(did);
         BFOID db = dev.getDBFilter_();
-        assert db != null;
+        assert db != null : did + " " + cs;
         Util.verify(setCSFilter_(dev, cs, db) == null);
     }
 
@@ -305,11 +299,11 @@ public class CollectorFilters
      * remove all the filters in the range of [csStart, csEnd],
      * (-infinity, csEnd], or [csStart, +infinity), depending on if csStart
      * or csEnd is null. They can't be both null at the same time.
-     * @csStart must be less than csEnd. may be null
-     * @csEnd must be greater than csStart. may be null
+     * @param csStart must be less than csEnd.
+     * @param csEnd must be greater than csStart.
      * @return false if there is no more cs filters left
      */
-    boolean deleteCSFilters_(CollectorSeq csStart, CollectorSeq csEnd)
+    boolean deleteCSFilters_(@Nullable CollectorSeq csStart, @Nullable CollectorSeq csEnd)
     {
         assert csStart != null || csEnd != null;
 
@@ -336,11 +330,6 @@ public class CollectorFilters
         return !_c2d2f.isEmpty();
     }
 
-    boolean hasCSFilters_()
-    {
-        return !_c2d2f.isEmpty();
-    }
-
     void deleteAllCSFilters_()
     {
         _c2d2f.clear();
@@ -364,7 +353,7 @@ public class CollectorFilters
     Set<DID> test_(OCID ocid)
     {
         int[] indics = BFOID.HASH.hash(ocid.oid());
-        Set<DID> ret = new TreeSet<DID>();
+        Set<DID> ret = Sets.newTreeSet();
         for (Map<DID, BFOID> d2f : _c2d2f.values()) {
             for (Entry<DID, BFOID> en : d2f.entrySet()) {
                 DID did = en.getKey();

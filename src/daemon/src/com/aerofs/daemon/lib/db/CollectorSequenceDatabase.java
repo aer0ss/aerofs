@@ -18,6 +18,8 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
+
 public class CollectorSequenceDatabase extends AbstractDatabase
         implements ICollectorSequenceDatabase
 {
@@ -47,7 +49,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
         private PreparedStatement _ps;
     }
 
-    private IDBIterator<OCIDAndCS> getFromCSImpl_(SIndex sidx, CollectorSeq csStart,
+    private IDBIterator<OCIDAndCS> getFromCSImpl_(SIndex sidx, @Nullable CollectorSeq csStart,
             PreparedStatementWrapper psw, String sql)
             throws SQLException
     {
@@ -76,7 +78,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
 
     private final PreparedStatementWrapper _pswGCS = new PreparedStatementWrapper();
     @Override
-    public IDBIterator<OCIDAndCS> getAllCS_(SIndex sidx, CollectorSeq csStart)
+    public IDBIterator<OCIDAndCS> getAllCS_(SIndex sidx, @Nullable CollectorSeq csStart)
         throws SQLException
     {
         // To avoid requiring a temporary b-tree for the "order by CS_CS,"
@@ -95,7 +97,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
 
     private final PreparedStatementWrapper _pswGMCS = new PreparedStatementWrapper();
     @Override
-    public IDBIterator<OCIDAndCS> getAllMetaCS_(SIndex sidx, CollectorSeq csStart)
+    public IDBIterator<OCIDAndCS> getAllMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
         throws SQLException
     {
         return getFromCSImpl_(sidx, csStart, _pswGMCS, getAllMetaCSQuery());
@@ -112,7 +114,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
 
     private final PreparedStatementWrapper _pswGNMCS = new PreparedStatementWrapper();
     @Override
-    public IDBIterator<OCIDAndCS> getAllNonMetaCS_(SIndex sidx, CollectorSeq csStart)
+    public IDBIterator<OCIDAndCS> getAllNonMetaCS_(SIndex sidx, @Nullable CollectorSeq csStart)
         throws SQLException
     {
         return getFromCSImpl_(sidx, csStart, _pswGNMCS, getAllNonMetaCSQuery());
