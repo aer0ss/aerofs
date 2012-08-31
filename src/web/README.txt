@@ -16,6 +16,9 @@ $ cd ~/repos/aerofs/java/web
 $ ~/env/bin/python setup.py develop
 $ ~/env/bin/pserve development.ini
 
+To run test cases:
+$ cd ~/repos/aerofs/java/web
+$ ~/env/bin/python setup.py test -q
 
 Creating new modules for AeroFS website
 ================================================
