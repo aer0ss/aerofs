@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.proto.Sp.PBUser;
-import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
+import com.aerofs.servletlib.db.SPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
@@ -25,6 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+
 public class TestListUser extends AbstractTest
 {
     private final int NUMBER_OF_USERS = 10;
@@ -36,11 +37,10 @@ public class TestListUser extends AbstractTest
     // We do not expect any of these users to be returned in the queries below.
     private final String nonQueriedOrgId = "dummy.com";
 
-    private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
+    private final SPDatabaseParams _dbParams = new SPDatabaseParams();
     @Spy private final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    @Spy private SPDatabase _spdb = new SPDatabase(_transaction);
-
+    @Spy private final SPDatabase _spdb = new SPDatabase(_transaction);
     @InjectMocks UserManagement userManagement;
 
     @Before

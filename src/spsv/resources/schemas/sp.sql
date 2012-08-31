@@ -104,3 +104,40 @@ CREATE TABLE `sp_shared_folder_code` (
   CONSTRAINT `f_from_foreign` FOREIGN KEY (`f_from`) REFERENCES `sp_user` (`u_id`),
   CONSTRAINT `f_sid_foreign` FOREIGN KEY (`f_share_id`) REFERENCES `sp_shared_folder` (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `sp_email_subscriptions` (
+    `es_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `es_email` VARCHAR(254) NOT NULL,
+    `es_subscription` INT NOT NULL,
+    PRIMARY KEY(`es_id`),
+    INDEX es_email_idx(`es_email`),
+    INDEX es_subscription_idx(`es_subscription`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `sp_email_reminders` (
+    `er_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `er_email` VARCHAR(254) NOT NULL,
+    `er_category` VARCHAR(64) NOT NULL,
+    `er_first_email_sent` TIMESTAMP NOT NULL,
+    `er_last_email_sent` TIMESTAMP NOT NULL,
+    `er_remind` BOOLEAN NOT NULL,
+    PRIMARY KEY(`er_id`),
+    KEY(`er_email`,`er_category`),
+    INDEX er_first_email_idx(`er_first_email_sent`),
+    INDEX er_last_email_idx(`er_last_email_sent`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELIMITER //
+CREATE PROCEDURE accountreset(userid varchar(320))
+DETERMINISTIC MODIFIES SQL DATA
+ BEGIN
+    DECLARE EXIT HANDLER FOR SQLSTATE '42000'
+      SELECT 'Invalid account name.';
+
+    IF ((SELECT COUNT(*) FROM SP_USER where u_id=userid) != 1) THEN CALL raise_error;
+    end if;
+
+    DELETE FROM sp_user WHERE u_id = userid;
+ END //
+
+DELIMITER ;

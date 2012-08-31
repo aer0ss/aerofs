@@ -5,19 +5,37 @@
 package com.aerofs.sp.server.sv;
 
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+import com.aerofs.lib.spsv.sendgrid.Event;
 
 import java.sql.SQLException;
 
 public class TestSVEmailAddEvent extends AbstractSVReactorTest
 {
+    private static final String EMAIL = "test@test.com";
+    private static final Event EVENT = Event.UNSUBSCRIBE;
+    private static final String DESC = "description";
+    private static final String CATEGORY = "test_category";
+    private static final Long TIMESTAMP = Long.valueOf(0);
+
     @Test
     public void shouldAddEventToDatabase()
             throws SQLException
     {
-        // TODO This test only verifies that no exceptions are thrown, not that the data is actually
-        // properly inputted
+        EmailEvent event = new EmailEvent(EMAIL,
+                EVENT,
+                DESC,
+                CATEGORY,
+                TIMESTAMP);
+
         _transaction.begin();
-        db.addEmailEvent("test@test.com", "subscribe", null, "test_category", Long.valueOf(0));
+
+        int id = db.addEmailEvent(event);
+        EmailEvent ee = db.getEmailEvent(id);
+
         _transaction.commit();
+
+        assertEquals(ee, event);
     }
 }

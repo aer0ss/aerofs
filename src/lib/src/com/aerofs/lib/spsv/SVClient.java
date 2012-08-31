@@ -25,6 +25,7 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import com.aerofs.proto.Sv.PBSVEmail;
 import org.apache.log4j.Logger;
 
@@ -41,7 +42,6 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVAnalytics;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
@@ -441,7 +441,7 @@ public class SVClient
 
     public static void sendEmail(String from, String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            boolean usingSendGrid, @Nullable Sendgrid.Category category)
+            boolean usingSendGrid, @Nullable EmailCategory category)
             throws IOException
     {
         assert !usingSendGrid || category != null;

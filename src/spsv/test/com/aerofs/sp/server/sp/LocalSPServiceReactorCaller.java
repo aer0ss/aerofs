@@ -12,7 +12,7 @@ import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.aerofs.servletlib.MockSessionUserID;
-import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
+import com.aerofs.servletlib.db.SPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
@@ -31,6 +31,7 @@ import java.sql.SQLException;
 
 import static org.mockito.Mockito.mock;
 
+
 /**
  * A mock/test implementation of SPServiceStubCallbacks.
  *
@@ -41,11 +42,10 @@ import static org.mockito.Mockito.mock;
  */
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
-    private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
+    private final SPDatabaseParams _dbParams = new SPDatabaseParams();
     private final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    private SPDatabase _db = new SPDatabase(_transaction);
-
+    private final SPDatabase _db = new SPDatabase(_transaction);
     private final SPServiceReactor _reactor;
 
     // On initialization, a single admin is added to the sp database to enable authenticated calls

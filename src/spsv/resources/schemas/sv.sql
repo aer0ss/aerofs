@@ -48,11 +48,3 @@ CREATE TABLE `email_event` (
   INDEX ee_category_idx (`ee_category`),
   INDEX ee_email_idx (`ee_email`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `email_subscriptions` (
-    `es_id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-    `es_email` varchar(254) unique not null,
-    `es_subscriptions` int not null,
-    PRIMARY KEY(`es_id`),
-    INDEX es_email_idx(`es_email`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

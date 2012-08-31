@@ -1,9 +1,7 @@
 package com.aerofs.lib.db;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.EnumSet;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -136,6 +134,28 @@ public class DBUtil
         return sb;
     }
 
+
+    public static String deleteWhere(String table, String... fields)
+    {
+        return deleteImpl(table, fields).toString();
+    }
+
+    /**
+     * @return "delete from <table> where <field>=?, <field>=?,...
+     */
+    private static StringBuilder deleteImpl(String table, String... fields)
+    {
+        StringBuilder sb = new StringBuilder("delete from ").append(table).append(" where ");
+
+        boolean first = true;
+        for (String field : fields) {
+            if (!first) sb.append(" and ");
+            else first = false;
+            sb.append(field).append("=?");
+        }
+        return sb;
+    }
+
     public static String createUniqueIndex(String table, int indexNum, String ... columns)
     {
         return createIndexImpl(true, table, indexNum, columns);
@@ -180,47 +200,6 @@ public class DBUtil
         } else {
             return new SQLiteDBCW(params.url(), params.autoCommit(),
                     params.sqliteExclusiveLocking(), params.sqliteWALMode());
-        }
-    }
-
-
-    /*
-     * Helper code to encode and decode enum sets into database int fields
-     * see: http://stackoverflow.com/questions/2199399/storing-enumset-in-a-database
-     */
-    public static <E extends Enum<E>> int encodeEnumSet(EnumSet<E> set)
-    {
-        int ret = 0;
-
-        for (E val : set) {
-            ret |= 1 << val.ordinal();
-        }
-
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <E extends Enum<E>> EnumSet<E> decodeEnumSet(int code, Class<E> enumType)
-    {
-        try {
-            E[] values = (E[]) enumType.getMethod("values").invoke(null);
-            EnumSet<E> result = EnumSet.noneOf(enumType);
-            while (code != 0) {
-                int ordinal = Integer.numberOfTrailingZeros(code);
-                code ^= Integer.lowestOneBit(code);
-                result.add(values[ordinal]);
-            }
-            return result;
-        } catch (IllegalAccessException ex) {
-            // Shouldn't happen
-            throw new RuntimeException(ex);
-        } catch (InvocationTargetException ex) {
-            // Probably a NullPointerException, caused by calling this method
-            // from within E's initializer.
-            throw (RuntimeException) ex.getCause();
-        } catch (NoSuchMethodException ex) {
-            // Shouldn't happen
-            throw new RuntimeException(ex);
         }
     }
 }

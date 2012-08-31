@@ -15,5 +15,6 @@
 	<classpathentry kind="lib" path="approot/lib/commons-httpclient-3.0.1.jar"/>
 	<classpathentry kind="lib" path="approot/lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="approot/lib/commons-codec-1.6.jar"/>
+	<classpathentry kind="lib" path="approot/lib/netty-3.5.7.jar"/>
 	<classpathentry kind="output" path="approot/bin"/>
 </classpath>

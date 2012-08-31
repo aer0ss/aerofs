@@ -6,7 +6,7 @@ package com.aerofs.sp.server.sv;
 
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
+import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
@@ -53,7 +53,7 @@ class EmailSender
 
     public static void sendEmail(String from, @Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
-            boolean usingSendGrid, @Nullable Category category)
+            boolean usingSendGrid, @Nullable EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
     {
         assert !usingSendGrid || category != null;

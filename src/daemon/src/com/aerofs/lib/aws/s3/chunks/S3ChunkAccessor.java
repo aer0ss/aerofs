@@ -38,7 +38,6 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
 import com.google.inject.Inject;
-
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.ContentHash;

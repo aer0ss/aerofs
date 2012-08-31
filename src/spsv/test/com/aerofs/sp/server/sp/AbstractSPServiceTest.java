@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.servletlib.MockSessionUserID;
-import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
+import com.aerofs.servletlib.db.SPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
@@ -16,7 +16,6 @@ import org.mockito.Spy;
 
 import java.io.IOException;
 import java.sql.SQLException;
-
 /**
  * A base class for all tests using the SPService as the "seam"
  */
@@ -38,7 +37,7 @@ public abstract class AbstractSPServiceTest extends AbstractTest
     @InjectMocks protected SPService service;
 
     // Inject a real (spy) local test SP database into the SPService of AbstractSPServiceTest.
-    protected final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
+   protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
     @Spy protected final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
     @Spy protected SPDatabase db = new SPDatabase(_transaction);

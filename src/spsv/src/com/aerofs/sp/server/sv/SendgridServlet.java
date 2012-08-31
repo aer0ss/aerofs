@@ -14,15 +14,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
-import com.aerofs.lib.spsv.sendgrid.Sendgrid.Events;
 import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
 import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.sv.SVDatabase;
 import com.aerofs.sp.server.AeroServlet;
+
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
+import com.aerofs.lib.spsv.sendgrid.Event;
 
 import static com.aerofs.servletlib.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
 
@@ -108,32 +108,33 @@ public class SendgridServlet extends AeroServlet {
         assert obj.containsKey("category");
         String category = (String)obj.get("category");
         String email = (String)obj.get("email");
-        String event = (String)obj.get("event");
+        String eventStr = (String)obj.get("event");
         Long timestamp = (Long)obj.get("timestamp");
 
-        l.info("EVENT(" + event + ")" +
+        l.info("EVENT(" + eventStr + ")" +
                 "FROM EMAIL(" + email + ") " +
                 (category == null ? "" : (" Category(" + category + ")")));
 
         String reason = null;
-        switch (Events.valueOf(event.toUpperCase())) {
+        Event event = Event.valueOf(eventStr.toUpperCase());
+
+        switch (event) {
         case DROPPED:
-            dropDesc(obj);
+            reason = dropDesc(obj);
             break;
         case DEFERRED:
-            deferredDesc(obj);
+            reason = deferredDesc(obj);
             break;
         case DELIVERED:
-            deliveredDesc(obj);
+            reason = deliveredDesc(obj);
             break;
         case BOUNCE:
-            bounceDesc(obj);
+            reason = bounceDesc(obj);
             break;
         case CLICK:
-            clickDesc(obj);
+            reason = clickDesc(obj);
             break;
         case UNSUBSCRIBE:
-            unsubscribe(email, Category.valueOf(category));
             break;
         case PROCESSED:
             break;
@@ -147,7 +148,7 @@ public class SendgridServlet extends AeroServlet {
 
         }
 
-        _db.addEmailEvent(email, event, reason, category, timestamp);
+        _db.addEmailEvent(new EmailEvent(email, event, reason, category, timestamp));
 
         _transaction.commit();
     }
@@ -188,9 +189,4 @@ public class SendgridServlet extends AeroServlet {
         return (String) obj.get("reason");
     }
 
-    private void unsubscribe(String email, Category category)
-            throws SQLException
-    {
-        _db.modifyEmailSubscription(email, category, false);
-    }
 }

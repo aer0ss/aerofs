@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.sv;
 
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,12 +19,8 @@ import java.util.regex.Pattern;
 import javax.mail.MessagingException;
 
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVEmail;
-import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.servletlib.db.IThreadLocalTransaction;
-import com.aerofs.servletlib.sv.SVDatabase;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -37,6 +34,7 @@ import com.aerofs.lib.raven.RavenClient;
 import com.aerofs.lib.raven.RavenTrace;
 import com.aerofs.lib.raven.RavenTraceElement;
 import com.aerofs.lib.raven.RavenUtils;
+import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import com.aerofs.proto.Sv.PBSVAnalytics;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVDefect;
@@ -48,6 +46,7 @@ import com.google.common.collect.Maps;
 
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_RECEIVER;
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_SENDER;
+
 
 public class SVReactor
 {
@@ -128,11 +127,6 @@ public class SVReactor
 
         _transaction.begin();
         _db.addEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
-
-        if (ev.getType() == Type.SIGN_UP) {
-            _db.subscribeAllEmails(header.getUser());
-        }
-
         _transaction.commit();
     }
 
@@ -148,7 +142,8 @@ public class SVReactor
                 emailContents.getSubject(), emailContents.getTextBody(),
                 emailContents.hasHtmlBody() ? emailContents.getHtmlBody() : null,
                 emailContents.getUsingSendgrid(),
-                emailContents.hasCategory() ? Category.valueOf(emailContents.getCategory()) : null);
+                emailContents.hasCategory() ? EmailCategory.valueOf(emailContents.getCategory()) :
+                                              null);
 
 
     }
@@ -265,7 +260,7 @@ public class SVReactor
                                   msg,
                                   null,
                                   true,
-                                  Sendgrid.Category.SUPPORT);
+                                  EmailCategory.SUPPORT);
         }
 
         // create defect file directory

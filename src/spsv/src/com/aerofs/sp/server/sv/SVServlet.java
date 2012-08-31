@@ -1,5 +1,7 @@
 package com.aerofs.sp.server.sv;
 
+import static com.aerofs.servletlib.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletRequest;
@@ -9,8 +11,7 @@ import javax.servlet.ServletException;
 
 import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
 import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.sv.SVDatabase;
-import static com.aerofs.servletlib.sv.SVParam.*;
+
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
