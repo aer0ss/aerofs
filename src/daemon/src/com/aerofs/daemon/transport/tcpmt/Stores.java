@@ -195,7 +195,7 @@ public class Stores
                 arpentry == null ? FILTER_SEQ_INVALID : arpentry._filterSeq, prefixes, sidsOnline,
                 multicast, System.currentTimeMillis());
 
-        resetOnlinePresense(did, arpentry, sidsOnline);
+        updatePresence(did, arpentry, sidsOnline);
     }
 
     /**
@@ -211,19 +211,13 @@ public class Stores
 
         BFSID filter;
         ImmutableSet<SID> sidsOnline;
-        boolean recompute;
+        boolean updatePresence;
 
-        // XXX IMPORTANT: if you add a field in one block add it in the other block
-        ARPEntry arpentry = _arp.get(did);
-        if (arpentry == null || (arpentry._filterSeq != fs.getSequence())) {
-            recompute = true;
+        ARPEntry arpEntry = _arp.get(did);
+        if (arpEntry == null || arpEntry._filterSeq != fs.getSequence()) {
+            updatePresence = true;
             filter = new BFSID(fs.getFilter());
             filter.finalize_();
-
-            if (l.isInfoEnabled()) {
-                l.info("filter changed " + did + " " + filter + " " + fs.getSequence() + " old " +
-                        (arpentry == null ? null : arpentry._filterSeq));
-            }
 
             Builder<SID> builder = ImmutableSet.builder();
             synchronized (this) {
@@ -235,20 +229,26 @@ public class Stores
             }
             sidsOnline = builder.build();
 
+            if (l.isInfoEnabled()) {
+                l.info("filter changed " + did + " " + filter + " " + fs.getSequence() + " old " +
+                        (arpEntry == null ? null : arpEntry._filterSeq) + " " + sidsOnline);
+            }
+
         } else {
-            recompute = false;
-            filter = arpentry._filter;
-            sidsOnline = arpentry._sidsOnline;
+            updatePresence = false;
+            filter = arpEntry._filter;
+            sidsOnline = arpEntry._sidsOnline;
         }
 
-        _arp.put(did, ep, filter, fs.getSequence(), arpentry == null ? null : arpentry._prefixes,
+        _arp.put(did, ep, filter, fs.getSequence(), arpEntry == null ? null : arpEntry._prefixes,
                 sidsOnline, multicast, System.currentTimeMillis());
 
-        if (arpentry == null) _hm.online(did); // really don't have to do check - can always set online
-        if (recompute) resetOnlinePresense(did, arpentry, sidsOnline);
+        // really don't have to do check - can always set online
+        if (arpEntry == null) _hm.online(did);
+        if (updatePresence) updatePresence(did, arpEntry, sidsOnline);
     }
 
-    void resetOnlinePresense(DID did, ARPEntry arp, Set<SID> sids)
+    private void updatePresence(DID did, ARPEntry arp, Set<SID> sids)
     {
         Set<SID> added;
         if (arp == null) {

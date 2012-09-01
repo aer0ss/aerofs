@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.IMaxcastListener;
@@ -95,7 +95,7 @@ final class XMPPMulticast
 
     static XMPPMulticast getInstance_(ISingleThreadedPrioritizedExecutor executor,
             XMPPServerConnectionService xmppServerConnectionService,
-            INetworkLinkStateService networkLinkStateService,
+            ILinkStateService networkLinkStateService,
             ReceivedMaxcastFilter receivedMaxcastFilter, FrequentDefectSender frequentDefectSender,
             DID localdid)
     {

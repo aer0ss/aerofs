@@ -258,18 +258,16 @@ public class TCPProactorMT
                 if (preamble != null) syncSend(s, out, preamble);
             }
 
-            long recvbeg = 0, recvfin = 0;
             while (true) {
-                recvbeg = System.nanoTime();
-
                 // receive the message
                 byte[] bs = Util.readMessage(in, _magic, _maxRecvMsgSize);
                 int wirelen = bs.length + Integer.SIZE * 2;
                 _bytesrx.addAndGet(wirelen);
                 p._bytesrx += wirelen;
 
-                recvfin = System.nanoTime();
-                l.info("recv fin:" + getTransferString_(s, true) + " b:" + wirelen + " t:" + printmicros(recvbeg, recvfin));
+                if (l.isInfoEnabled()) {
+                    l.info("recv fin:" + getTransferString_(s, true) + " b:" + wirelen);
+                }
 
                 // process_ the message
                 byte[][] bss = rtr.react_(bs, wirelen);
@@ -348,18 +346,18 @@ public class TCPProactorMT
     private long syncSend(Socket s, DataOutputStream out, byte[][] bss)
         throws Exception
     {
-        long sendbeg = 0, sendfin = 0, sentbytes = 0;
-
-        sendbeg = System.nanoTime();
+        int bytesSent;
+        long sendBegin = System.currentTimeMillis();
         synchronized (s) {
-            sentbytes = Util.writeMessage(out, _magic, bss);
-            _bytestx.addAndGet(sentbytes);
+            bytesSent = Util.writeMessage(out, _magic, bss);
+            _bytestx.addAndGet(bytesSent);
         }
-        sendfin = System.nanoTime();
+        if (l.isInfoEnabled()) {
+            l.info("send fin:" + getTransferString_(s, false) + " b:" + bytesSent + " t:" +
+                    (System.currentTimeMillis() - sendBegin));
+        }
 
-        l.info("send fin:" + getTransferString_(s, false) + " b:" + sentbytes + " t:" + printmicros(sendbeg, sendfin));
-
-        return sentbytes;
+        return bytesSent;
     }
 
     private void thdSend(Peer p, InetSocketAddress remaddr, Object cookie)
@@ -421,13 +419,11 @@ public class TCPProactorMT
             }
 
             OutArg<Prio> outPrio = new OutArg<Prio>();
-            long evwtbeg = 0, evwtfin = 0;
             while (true) {
                 l.info("wait evsend");
-                evwtbeg = System.nanoTime();
+                long evwtbeg = System.currentTimeMillis();
                 EvSend ev = (EvSend) p._sendq.dequeue(outPrio);
-                evwtfin = System.nanoTime();
-                l.info("ev wt t:" + printmicros(evwtbeg, evwtfin));
+                l.info("ev wt t:" + (System.currentTimeMillis() - evwtbeg));
 
                 if (ev == EV_CLOSE) break;
 
@@ -443,7 +439,8 @@ public class TCPProactorMT
                 }
             }
         } catch (Exception e) {
-            l.warn("error sending to " + p._key + ". close the socket: " + e + " intr:" + Thread.interrupted());
+            l.warn("error sending to " + p._key + ". close the socket: " + e + " intr:" +
+                    Thread.interrupted());
             l.warn(Util.stackTrace2string(e));
             discard(p, e);
         } finally {
@@ -599,18 +596,6 @@ public class TCPProactorMT
         }
 
         return csbld.toString();
-    }
-
-    /**
-     * Print nanoseconds as microseconds
-     *
-     * @param beg begin time
-     * @param fin end time
-     * @return string representation of the elapsed time in us
-     */
-    private static String printmicros(long beg, long fin)
-    {
-        return Long.toString(((beg < fin) ? (fin - beg) : (beg - fin)) / 1000);
     }
 
     //

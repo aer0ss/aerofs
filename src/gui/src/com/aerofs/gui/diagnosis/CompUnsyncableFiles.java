@@ -439,9 +439,9 @@ public class CompUnsyncableFiles extends Composite {
             IListSpecialFileCallback cb)
     {
         int ret = Driver.getFid(null, path, null);
-        if (ret == DriverConstants.GETFID_IS_SYMLINK) {
+        if (ret == DriverConstants.GETFID_SYMLINK) {
             return cb.add(path, Type.SYMLINK);
-        } else if (ret == DriverConstants.GETFID_IS_SPECIAL) {
+        } else if (ret == DriverConstants.GETFID_SPECIAL) {
             return cb.add(path, Type.SPECIAL);
         } else if (!OSUtil.isWindows() &&
                 !OSUtilWindows.isValidFileName(new File(path).getName())) {

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
 import com.aerofs.daemon.tng.ITransport;
@@ -28,13 +28,13 @@ public final class XMPPBasedTransportFactory
     private final Proxy _proxy;
     private final IEventLoop _eventLoop;
     private final IPeerDiagnoser _peerDiagnoser;
-    private final INetworkLinkStateService _networkLinkStateService;
+    private final ILinkStateService _networkLinkStateService;
     private final IPresenceService _presenceService;
     private final IMaxcastService _maxcastService;
     private final ISignallingService _signallingService;
 
     public XMPPBasedTransportFactory(DID localdid, Proxy proxy, IEventLoop eventLoop,
-            IPeerDiagnoser peerDiagnoser, INetworkLinkStateService networkLinkStateService,
+            IPeerDiagnoser peerDiagnoser, ILinkStateService networkLinkStateService,
             ReceivedMaxcastFilter receivedMaxcastFilter)
     {
         this._localdid = localdid;

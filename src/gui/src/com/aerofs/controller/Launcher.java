@@ -144,6 +144,10 @@ class Launcher
     void launch(final boolean isFirstTime) throws Exception
     {
         try {
+            // verify checksums *before* launching the daemon to avoid reporting daemon launching
+            // failures due to binary issues.
+            if (PostUpdate.updated()) verifyChecksums();
+
             // RootAnchorWatch should be executed before the daemon starts so that the users know
             // that they moved or deleted the root anchor prior to the daemon failing because
             // that folder is missing
@@ -166,8 +170,6 @@ class Launcher
             }));
 
             if (PostUpdate.updated()) {
-                verifyChecksums();
-
                 // Re-install the shell extension if it was updated
                 String checksum = OSUtil.get().getShellExtensionChecksum();
                 if (!checksum.equals(Cfg.db().get(Key.SHELLEXT_CHECKSUM))) {
@@ -210,8 +212,8 @@ class Launcher
                 " -> " + Cfg.ver() + ", " + System.getProperty("os.name"));
 
         // After an update, verify that all checksums match
-        String file = PostUpdate.verifyChecksum();
-        if (file != null) {
+        String failedFile = PostUpdate.verifyChecksum();
+        if (failedFile != null) {
             String url = SV.DOWNLOAD_LINK;
             UIUtil.logShowSendDefect(true,
                     S.PRODUCT + " couldn't launch because some program files are corrupted." +
@@ -220,8 +222,8 @@ class Launcher
                             " to " +
                             "download and install " + S.PRODUCT +
                             " again. All your data will be intact during re-installation.",
-                    new Exception(file + " chksum failed. length " +
-                            new File(file).length()));
+                    new Exception(failedFile + " chksum failed" +
+                            new File(failedFile).length()));
             if (UI.isGUI()) Program.launch(url);
 
             throw new ExAborted();

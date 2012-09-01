@@ -351,7 +351,7 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         // Disconnect from remote peers.
         if (becameLinkDown) {
             // We don't have to disconnect or pause accept if the the links are physically down.
-            // But in case of a logical mark-down (LinkStateMonitor#markLinksDown_()), we need
+            // But in case of a logical mark-down (LinkStateService#markLinksDown_()), we need
             // manual disconnection.
             ucast().pauseAccept();
             removeAll();

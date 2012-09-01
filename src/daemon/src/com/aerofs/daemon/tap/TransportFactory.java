@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tap;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.daemon.tng.ITransport;
 import com.aerofs.daemon.tng.ITransportListener;
@@ -30,7 +30,7 @@ public class TransportFactory
     @Inject private EventQueueBasedEventLoop _eventLoop;
     @Inject private ReceivedMaxcastFilter _maxcastFilter;
     @Inject private PeerDiagnoser _peerDiagnoser;
-    @Inject private INetworkLinkStateService _networkLinkStateService;
+    @Inject private ILinkStateService _networkLinkStateService;
     @Inject private Proxy _proxy;
     @Inject @LocalDID private DID _localDID;
     @Inject @ZephyrAddress private InetSocketAddress _zephyrAddress;
@@ -52,7 +52,7 @@ public class TransportFactory
         return null;
     }
 
-    public INetworkLinkStateService getLinkStateService()
+    public ILinkStateService getLinkStateService()
     {
         return _networkLinkStateService;
     }

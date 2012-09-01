@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
 import com.aerofs.daemon.tng.ITransportListener;
@@ -37,7 +37,7 @@ final class Jingle extends AbstractTransport
     public static Jingle getInstance_(IEventLoop eventLoop, String id, Preference pref,
             DID localdid, Proxy proxy, IPipelineFactory pipelineFactory,
             ITransportListener listener, IPeerDiagnoser peerDiagnoser,
-            INetworkLinkStateService networkLinkStateService, IPresenceService presenceService,
+            ILinkStateService networkLinkStateService, IPresenceService presenceService,
             IMaxcastService maxcastService)
     {
         return null; // FIXME: wait until Adam is done

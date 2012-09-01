@@ -7,7 +7,9 @@
 #include "../logger.h"
 #include "strsafe.h"
 #include <shlobj.h>
-#include <Shlwapi.h>
+#include <shlwapi.h>
+#include <iphlpapi.h>
+
 using namespace std;
 
 namespace Driver {
@@ -71,7 +73,7 @@ int getFidLength()
 int getFid(JNIEnv * j, jstring jpath, void * buffer)
 {
     tstring path;
-    if (!AeroFS::jstr2tstr(&path, j, jpath)) return GETFID_ERROR;
+    if (!AeroFS::jstr2tstr(&path, j, jpath)) return DRIVER_FAILURE;
 
     HANDLE h = CreateFile(path.c_str(),
         0,
@@ -82,7 +84,7 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         0);
     if (h == INVALID_HANDLE_VALUE) {
         FWARN("1: " << GetLastError());
-        return GETFID_ERROR;
+        return DRIVER_FAILURE;
     }
 
     BY_HANDLE_FILE_INFORMATION info;
@@ -91,7 +93,7 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
 
     if (!ret) {
         FWARN("2: " << GetLastError());
-        return GETFID_ERROR;
+        return DRIVER_FAILURE;
     }
 
     if (buffer) {
@@ -233,6 +235,17 @@ void setFolderIcon(JNIEnv* env, jstring folderPath, jstring iconName)
 
     // Tell the shell to refresh the icon
     SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, path.c_str(), NULL);
+}
+
+int waitForNetworkInterfaceChange()
+{
+    DWORD ret = NotifyAddrChange(NULL, NULL);
+    if (ret == NO_ERROR) {
+        return DRIVER_SUCCESS;
+    } else {
+        FWARN("NAC failed " << ret << " " << GetLastError());
+        return DRIVER_FAILURE;
+    }
 }
 
 }  // namespace Driver

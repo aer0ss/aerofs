@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.acl.ACLNotificationSubscriber;
 import com.aerofs.daemon.core.linker.ILinker;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.core.net.link.LinkStateMonitor;
+import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.Stores;
@@ -20,9 +20,7 @@ import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
-import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.l.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -37,7 +35,7 @@ public class Core implements IModule
     private final ImmigrantVersionControl _ivc;
     private final IPhysicalStorage _ps;
     private final Stores _ss;
-    private final LinkStateMonitor _lsm;
+    private final LinkStateService _lss;
     private final Transports _tps;
     private final CoreScheduler _sched;
     private final CoreQueue _q;
@@ -56,7 +54,7 @@ public class Core implements IModule
             CoreQueue q,
             Stores ss,
             Transports tps,
-            LinkStateMonitor lsm,
+            LinkStateService lss,
             CoreScheduler sched,
             IPhysicalStorage ps,
             NativeVersionControl nvc,
@@ -73,7 +71,7 @@ public class Core implements IModule
         _tc = tc;
         _q = q;
         _ss = ss;
-        _lsm = lsm;
+        _lss = lss;
         _tps = tps;
         _sched = sched;
         _ps = ps;
@@ -135,7 +133,7 @@ public class Core implements IModule
             throws Exception
     {
         _tps.start_();
-        _lsm.start_();
+        _lss.start_();
 
         // because events handling is kicked off once tc starts, and replying
         // to heart beats requires that everything is ready, tc should start last.
@@ -166,11 +164,12 @@ public class Core implements IModule
 
         } else {
             // configure SP's transport. TODO move it to TCP?
-            for (ITransport tp : _tps.getAll_()) {
-                tp.q().enqueueThrows(
-                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), L.get().spDID()),
-                        _tc.prio());
-            }
+// Reconfigure SP endpoint disabled until cloud sync is implemented
+//            for (ITransport tp : _tps.getAll_()) {
+//                tp.q().enqueueThrows(
+//                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), L.get().spDID()),
+//                        _tc.prio());
+//            }
 
             // schedule analytics
 //              sched().schedule(new AbstractEBSelfHandling() {

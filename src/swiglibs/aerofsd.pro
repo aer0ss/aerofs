@@ -26,6 +26,7 @@ contains(QMAKE_HOST.arch, i686):{
 macx {
     # Those flags set what version of the OS X SDK we want to build against
     SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/
+    # TODO (WW) since we are using 10.6 SDK anyway (see above), should we set -mmacosx-version-min to 10.6?
     QMAKE_CXXFLAGS += -mmacosx-version-min=10.5 -arch x86_64
 
     # Linker settings
@@ -51,7 +52,7 @@ win32 {
 
     # Linker settings
     LIBS += -L"$$PWD/3rd_party/lib/win32/"
-    LIBS += -lssleay32MD -llibeay32MD -lpsapi -lws2_32 -luser32 -lgdi32 -ladvapi32 -lShlwapi -lShell32
+    LIBS += -lssleay32MD -llibeay32MD -lpsapi -lws2_32 -luser32 -lgdi32 -ladvapi32 -lshlwapi -lshell32 -liphlpapi
 }
 
 SOURCES += \

@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.net.To;
-import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateMonitor;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
+import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.net.proto.GetVersCall;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
@@ -30,7 +30,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
     private final SIndex _sidx;
     private final int _seq;
 
-    private final INetworkLinkStateListener _l = new INetworkLinkStateListener()
+    private final ILinkStateListener _l = new ILinkStateListener()
     {
         @Override
         public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
@@ -45,18 +45,18 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
     public static class Factory
     {
         private final CoreScheduler _sched;
-        private final LinkStateMonitor _lsm;
+        private final LinkStateService _lss;
         private final GetVersCall _pgvc;
         private final To.Factory _factTo;
         private final MapSIndex2Store _sidx2s;
         private final TokenManager _tokenManager;
 
         @Inject
-        public Factory(GetVersCall pgvc, LinkStateMonitor lsm, MapSIndex2Store sidx2s,
+        public Factory(GetVersCall pgvc, LinkStateService lss, MapSIndex2Store sidx2s,
                 CoreScheduler sched, To.Factory factTo, TokenManager tokenManager)
         {
             _pgvc = pgvc;
-            _lsm = lsm;
+            _lss = lss;
             _sched = sched;
             _factTo = factTo;
             _sidx2s = sidx2s;
@@ -76,7 +76,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         _seq = seq;
 
         // IMPORTANT: we know that in our implementation, listeners are called on the core thread
-        _f._lsm.addListener_(_l, sameThreadExecutor());
+        _f._lss.addListener_(_l, sameThreadExecutor());
     }
 
     @Override
@@ -91,7 +91,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
     private boolean performAntiEntropy_()
     {
         boolean ret = performAntiEntropyImpl_();
-        if (!ret) _f._lsm.removeListener_(_l);
+        if (!ret) _f._lss.removeListener_(_l);
         return ret;
     }
 
@@ -111,7 +111,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
             l.info(s + ": no online devs. return");
             return false;
 
-        } else if (!_f._lsm.isUp_()) {
+        } else if (!_f._lss.isUp_()) {
             l.info(s + ": link is down. skip");
 
         } else {

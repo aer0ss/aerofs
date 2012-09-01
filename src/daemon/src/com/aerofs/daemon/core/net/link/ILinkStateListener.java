@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableSet;
 
 import java.net.NetworkInterface;
 
-public interface INetworkLinkStateListener
+public interface ILinkStateListener
 {
     void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
             ImmutableSet<NetworkInterface> removed, ImmutableSet<NetworkInterface> current,

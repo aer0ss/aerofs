@@ -16,21 +16,16 @@ bool killProcess(int pid);
 
 int getFidLength();
 
-// we use constants instead of enums for performance. getFid is called pretty
-// frequently.
-#define GETFID_OK           0
+#define DRIVER_FAILURE          -1
+#define DRIVER_SUCCESS          0
+
 #define GETFID_FILE         1
 #define GETFID_DIR          2
-#define GETFID_ERROR        4
-#define GETFID_IS_SYMLINK   8
-#define GETFID_IS_SPECIAL   0x10
+#define GETFID_SYMLINK      3
+#define GETFID_SPECIAL      4
 
-#define DRIVER_FAILURE     -1
-#define FS_LOCAL            0
-#define FS_REMOTE           1
-
-// never returned by getFid(). used by the caller to test return values
-#define GETFID_FILE_OR_DIR  (GETFID_FILE | GETFID_DIR)
+#define FS_LOCAL            1
+#define FS_REMOTE           2
 
 /**
  * @param buffer null to test file type only; otherwise its length must be equal
@@ -40,7 +35,7 @@ int getFidLength();
 int getFid(JNIEnv * j, jstring path, void * buffer);
 
 /**
- * Returns the size of a mount-unique identifier, in bytes.
+ * Return the size of a mount-unique identifier, in bytes.
  * Only used on OSX and Linux.
  *
  * @return The size of dev_t, in bytes
@@ -48,7 +43,15 @@ int getFid(JNIEnv * j, jstring path, void * buffer);
 int getMountIdLength();
 
 /**
- * Fills buffer with the mount-unique identifier associated with the file
+ * Block until the network interfaces have changed.
+ *
+ * @return DRIVER_FAILURE if registering for interface change notifcations fails or is not supported.
+ * @return DRIVER_SUCCESS if network interface change has happened.
+ */
+int waitForNetworkInterfaceChange();
+
+/**
+ * Fill buffer with the mount-unique identifier associated with the file
  * referred to in path.
  * Only used on OSX and Linux.
  *
@@ -58,7 +61,7 @@ int getMountIdLength();
 int getMountIdForPath(JNIEnv * j, jstring path, void * buffer);
 
 /**
- * Places a string in the provided buffer which represents the name of the
+ * Place a string in the provided buffer which represents the name of the
  * filesystem backing the named given file (e.g. "ext4", "btrfs", "ntfs")
  *
  * @param path file for which the caller wants to know the underlying filesystem
@@ -69,7 +72,7 @@ int getMountIdForPath(JNIEnv * j, jstring path, void * buffer);
 int getFileSystemType(JNIEnv * j, jstring path, void * buffer, int bufLen);
 
 /**
- * Sets or remove a custom icon on a folder
+ * Set or remove a custom icon on a folder
  * @param folderPath: absolute path to a folder.
  * @param iconName: platform-specific string identifying the icon
  *

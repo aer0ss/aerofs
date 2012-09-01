@@ -125,7 +125,7 @@ public class DaemonParam
 
     public static final int FIND_NEXT_PARTITION_INTERVAL        = 5;
 
-    public static final long LINK_STATE_MONITOR_INTERVAL        = 10 * C.SEC;
+    public static final long LINK_STATE_POLLING_INTERVAL        = 10 * C.SEC;
 
     public static final int TC_RECLAIM_HI_WATERMARK     = 3;
     public static final int TC_RECLAIM_LO_WATERMARK     = 1;

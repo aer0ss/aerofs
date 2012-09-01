@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
 import com.aerofs.daemon.tng.ITransport;
@@ -40,7 +40,7 @@ final class Zephyr extends AbstractTransport
     public static ITransport getInstance_(IEventLoop eventLoop, String id, Preference pref,
             DID localdid, Proxy proxy, IPipelineFactory pipelineFactory,
             InetSocketAddress zephyrAddress, ITransportListener transportListener,
-            IPeerDiagnoser peerDiagnoser, INetworkLinkStateService networkLinkStateService,
+            IPeerDiagnoser peerDiagnoser, ILinkStateService networkLinkStateService,
             IPresenceService presenceService, IMaxcastService maxcastService,
             ISignallingService signallingService)
     {

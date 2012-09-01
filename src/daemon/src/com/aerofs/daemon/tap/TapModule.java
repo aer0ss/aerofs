@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tap;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -54,7 +54,7 @@ public class TapModule extends AbstractModule
         bind(Proxy.class).toInstance(proxy);
 
         // These are not singletons, aka, new objects on each request
-        bind(INetworkLinkStateService.class).to(EventLoopBasedNetworkLinkStateService.class);
+        bind(ILinkStateService.class).to(EventLoopBasedLinkStateService.class);
 
         if (currentStage() == Stage.PRODUCTION) {
             bind(ITapService.class).to(TapServiceImpl.class);

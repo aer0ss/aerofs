@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
@@ -36,7 +36,7 @@ public final class UnicastService
     private final Map<DID, Peer> _peers = new HashMap<DID, Peer>();
 
     public static UnicastService getInstance_(ISingleThreadedPrioritizedExecutor executor,
-            INetworkLinkStateService networkLinkStateService, IPresenceService presenceService,
+            ILinkStateService networkLinkStateService, IPresenceService presenceService,
             IUnicastConnectionService unicastConnectionService, IPipelineFactory pipelineFactory)
     {
         // FIXME: don't create PeerFactory inline

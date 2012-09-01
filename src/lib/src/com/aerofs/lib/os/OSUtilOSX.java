@@ -134,7 +134,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     private boolean isSymlink(String path) throws IOException
     {
         int ret = Driver.getFid(null, path, null);
-        return (ret == DriverConstants.GETFID_IS_SYMLINK);
+        return (ret == DriverConstants.GETFID_SYMLINK);
     }
 
     /**

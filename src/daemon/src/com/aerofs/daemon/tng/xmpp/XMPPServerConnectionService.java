@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
@@ -19,7 +19,6 @@ import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableSet;
 import org.apache.log4j.Logger;
-import org.jivesoftware.smack.AccountManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.ConnectionListener;
@@ -44,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
-final class XMPPServerConnectionService implements INetworkLinkStateListener, IStartable, IDebug
+final class XMPPServerConnectionService implements ILinkStateListener, IStartable, IDebug
 {
     private static final Logger l = Util.l(XMPPServerConnectionService.class);
 
@@ -66,7 +65,7 @@ final class XMPPServerConnectionService implements INetworkLinkStateListener, IS
     }
 
     static XMPPServerConnectionService getInstance_(
-            INetworkLinkStateService networkLinkStateService, DID did, Proxy proxy)
+            ILinkStateService networkLinkStateService, DID did, Proxy proxy)
     {
         XMPPServerConnectionService xmppconn = new XMPPServerConnectionService(ID.did2user(did),
                 ID.resource(false), proxy);

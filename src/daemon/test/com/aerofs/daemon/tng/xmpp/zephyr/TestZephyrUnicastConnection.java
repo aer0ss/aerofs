@@ -1,6 +1,6 @@
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.ImmediateInlineExecutor;
@@ -60,7 +60,7 @@ public class TestZephyrUnicastConnection extends AbstractTest
 
     @Mock DID localDID;
     @Mock DID remoteDID;
-    @Mock INetworkLinkStateService networkLinkStateService;
+    @Mock ILinkStateService networkLinkStateService;
     @Mock ISignallingService signallingService;
 
     @Captor ArgumentCaptor<DID> didCaptor;

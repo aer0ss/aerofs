@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IIncomingUnicastConnectionListener;
 import com.aerofs.daemon.tng.base.IIncomingUnicastConnectionListener.Visitor;
@@ -50,7 +50,7 @@ public class ZephyrUnicastConnectionService implements IUnicastConnectionService
     private final DID _localDID;
     private final InetSocketAddress _zephyrAddress;
     private final Proxy _proxy;
-    private final INetworkLinkStateService _networkLinkStateService;
+    private final ILinkStateService _networkLinkStateService;
     private final ISignallingService _signallingService;
     private final ChannelFactory _channelFactory;
     private final NetworkStatsMonitor _networkMonitor;
@@ -60,7 +60,7 @@ public class ZephyrUnicastConnectionService implements IUnicastConnectionService
     public static ZephyrUnicastConnectionService getInstance_(
             ISingleThreadedPrioritizedExecutor executor, DID localDID,
             InetSocketAddress zephyrAddress, Proxy proxy,
-            INetworkLinkStateService networkLinkStateService, ISignallingService signallingService,
+            ILinkStateService networkLinkStateService, ISignallingService signallingService,
             ChannelFactory channelFactory, INetworkStats stats)
     {
         ZephyrUnicastConnectionService unicastConnectionService = new ZephyrUnicastConnectionService(
@@ -77,7 +77,7 @@ public class ZephyrUnicastConnectionService implements IUnicastConnectionService
 
     private ZephyrUnicastConnectionService(ISingleThreadedPrioritizedExecutor executor,
             DID localDID, InetSocketAddress zephyrAddress, Proxy proxy,
-            INetworkLinkStateService networkLinkStateService, ISignallingService signallingService,
+            ILinkStateService networkLinkStateService, ISignallingService signallingService,
             ChannelFactory channelFactory, INetworkStats stats)
     {
         _executor = executor;

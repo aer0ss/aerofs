@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IUnicastConnection;
@@ -51,7 +51,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ZephyrUnicastConnection
-        implements IUnicastConnection, ISignallingClient, INetworkLinkStateListener,
+        implements IUnicastConnection, ISignallingClient, ILinkStateListener,
         IZephyrUnicastEventSink
 {
     private static final Logger l = Util.l(ZephyrUnicastConnection.class);
@@ -80,7 +80,7 @@ public class ZephyrUnicastConnection
     public static ZephyrUnicastConnection getInstance_(ISingleThreadedPrioritizedExecutor executor,
             DID localDID, DID remoteDID, InetSocketAddress zephyrAddress,
             ChannelFactory channelFactory, ChannelPipeline pipeline,
-            final INetworkLinkStateService networkLinkStateService, ISignallingService service)
+            final ILinkStateService networkLinkStateService, ISignallingService service)
     {
         final ZephyrUnicastConnection connection = new ZephyrUnicastConnection(executor, localDID,
                 remoteDID, zephyrAddress, channelFactory, pipeline, service);

@@ -227,7 +227,6 @@ public class DlgHistory extends AeroFSDialog
         // incremental tree population
         _revTree.addListener(SWT.SetData, new Listener()
         {
-            @SuppressWarnings("unchecked")
             @Override
             public void handleEvent(Event event)
             {

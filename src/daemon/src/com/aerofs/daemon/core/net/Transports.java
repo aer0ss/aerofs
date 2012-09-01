@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateMonitor;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
+import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
@@ -62,14 +62,14 @@ public class Transports implements IDumpStatMisc, IDumpStat
 
     private final CoreQueue _q;
     private final TC _tc;
-    private final LinkStateMonitor _lsm;
+    private final LinkStateService _lss;
 
     @Inject
-    public Transports(CoreQueue q, TC tc, LinkStateMonitor lsm)
+    public Transports(CoreQueue q, TC tc, LinkStateService lss)
     {
         _q = q;
         _tc = tc;
-        _lsm = lsm;
+        _lss = lss;
 
         int count = 0;
         if (Cfg.useTCP()) count++;
@@ -111,7 +111,7 @@ public class Transports implements IDumpStatMisc, IDumpStat
 
     private void addLinkStateListener_(final ITransport tp, final IIMCExecutor imce)
     {
-        _lsm.addListener_(new INetworkLinkStateListener()
+        _lss.addListener_(new ILinkStateListener()
         {
             @Override
             public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
@@ -130,7 +130,7 @@ public class Transports implements IDumpStatMisc, IDumpStat
             }
 
         // IMPORTANT: I can use sameThreadExecutor because I know that the link-state-changed
-        // callback happens on a core thread. See LinkStateMonitor
+        // callback happens on a core thread. See LinkStateService
         }, sameThreadExecutor());
     }
 

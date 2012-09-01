@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="resources.servlet/protobuf-format-java-1.1.jar"/>
 	<classpathentry kind="lib" path="resources.servlet/servlet-api-2.5.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/servletlib"/>
+	<classpathentry kind="lib" path="approot/lib/json_simple-1.1.jar"/>
 	<classpathentry kind="output" path="approot/bin"/>
 </classpath>

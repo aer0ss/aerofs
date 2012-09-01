@@ -59,22 +59,28 @@ int getFidLength()
     return sizeof(ino_t);
 }
 
+/**
+ * Return either DRIVER_FAILURE or one of GETFID_* constant
+ */
 int getFid(JNIEnv * j, jstring jpath, void * buffer)
 {
     tstring path;
-    if (!AeroFS::jstr2tstr(&path, j, jpath)) return GETFID_ERROR;
+    if (!AeroFS::jstr2tstr(&path, j, jpath)) return DRIVER_FAILURE;
 
     // don't follow symlinks
     struct stat st;
     if (lstat(path.c_str(), &st)) {
-        FERROR(": " << errno);
-        return GETFID_ERROR;
+        // save errno before piping it into "<<", since that operator may
+        // change the value as a side-effect.
+        int errsv = errno;
+        FERROR(": " << errsv);
+        return DRIVER_FAILURE;
     }
 
     mode_t type = st.st_mode & S_IFMT;
-    if (type == S_IFLNK) return GETFID_IS_SYMLINK;
+    if (type == S_IFLNK) return GETFID_SYMLINK;
     else if (type != S_IFREG && type != S_IFDIR) {
-        return GETFID_IS_SPECIAL;
+        return GETFID_SPECIAL;
     }
 
     if (buffer) {
@@ -85,16 +91,16 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
     return type == S_IFREG ? GETFID_FILE : GETFID_DIR;
 }
 
-/*
- * Returns the size (in bytes) of a unique mount identifier (dev_t).
+/**
+ * Return the size (in bytes) of a unique mount identifier (dev_t).
  */
 int getMountIdLength()
 {
     return sizeof(dev_t);
 }
 
-/*
- * Places the mount id (dev_t) for the file associated with the given path in
+/**
+ * Place the mount id (dev_t) for the file associated with the given path in
  * buffer.
  *
  * Returns <0 on failure, 0 on success.
@@ -115,6 +121,14 @@ int getMountIdForPath(JNIEnv * j, jstring jpath, void* buffer)
     // return
     memcpy(buffer, &st.st_dev, sizeof(st.st_dev));
     return 0;
+}
+
+int waitForNetworkInterfaceChange()
+{
+    return DRIVER_FAILURE;
+
+    // to implement on OSX: http://stackoverflow.com/questions/2910121/network-connection-nsnotification-for-osx
+    // to implement on Linux: http://stackoverflow.com/questions/2261759/get-notified-about-network-interface-change-on-linux
 }
 
 }//namespace Driver

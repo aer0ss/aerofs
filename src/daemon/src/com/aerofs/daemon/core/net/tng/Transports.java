@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.CoreQueueBasedTransportListener;
 import com.aerofs.daemon.core.net.PeerStreamMap;
 import com.aerofs.daemon.core.net.PeerStreamMap.IncomingStreamMap;
-import com.aerofs.daemon.core.net.link.LinkStateMonitor;
+import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -69,7 +69,7 @@ public class Transports implements IDebug
     @Inject
     public Transports(TC tc,
             CoreQueue coreQueue,
-            LinkStateMonitor networkLinkStateService,
+            LinkStateService networkLinkStateService,
             @IncomingStreamMap PeerStreamMap<IIncomingStream> streamMap)
     {
         _tc = tc;

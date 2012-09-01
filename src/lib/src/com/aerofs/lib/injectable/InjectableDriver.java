@@ -5,7 +5,6 @@ import java.io.IOException;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
-import com.aerofs.swig.driver.LogLevel;
 import static com.aerofs.swig.driver.DriverConstants.*;
 
 /**
@@ -21,11 +20,6 @@ public class InjectableDriver
 
         // cache the result to avoid unecessary JNI calls
         _lenFID = Driver.getFidLength();
-    }
-
-    public void initLogger_(String rtRoot, String name, LogLevel loglevel)
-    {
-        Driver.initLogger_(rtRoot, name, loglevel);
     }
 
     public int getPID()
@@ -62,8 +56,8 @@ public class InjectableDriver
     {
         byte[] bs = new byte[getFIDLength()];
         int ret = Driver.getFid(null, path, bs);
-        if (ret == GETFID_ERROR) throwIOException(path);
-        if ((ret & GETFID_FILE_OR_DIR) == 0) return null;
+        if (ret == DRIVER_FAILURE) throwIOException(path);
+        if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FIDAndType(new FID(bs), ret == GETFID_DIR);
     }
 
@@ -75,8 +69,8 @@ public class InjectableDriver
     {
         byte[] bs = new byte[getFIDLength()];
         int ret = Driver.getFid(null, path, bs);
-        if (ret == GETFID_ERROR) throwIOException(path);
-        if ((ret & GETFID_FILE_OR_DIR) == 0) return null;
+        if (ret == DRIVER_FAILURE) throwIOException(path);
+        if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FID(bs);
     }
 

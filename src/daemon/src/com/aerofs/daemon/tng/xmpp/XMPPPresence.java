@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.IPresenceListener;
 import com.aerofs.daemon.tng.base.IPeerPresenceListener;
@@ -51,7 +51,7 @@ final class XMPPPresence implements IPresenceService, IXMPPServerConnectionListe
 
     static XMPPPresence getInstance_(ISingleThreadedPrioritizedExecutor executor,
             XMPPServerConnectionService xmppServerConnectionService,
-            INetworkLinkStateService networkLinkStateService)
+            ILinkStateService networkLinkStateService)
     {
         XMPPPresence presenceService = new XMPPPresence(executor);
 

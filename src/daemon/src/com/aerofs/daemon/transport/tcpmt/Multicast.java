@@ -99,10 +99,7 @@ class Multicast implements IMaxcast
     {
         for (NetworkInterface iface : added) {
             try {
-                if (!iface.supportsMulticast()) {
-                    l.info("linkStateChanged->mc:" + iface.getDisplayName() + ":mc:0");
-                    continue;
-                }
+                if (!iface.supportsMulticast()) continue;
 
                 // bind to *:TCP_MCAST_PORT
                 final MulticastSocket s = new MulticastSocket(L.get().mcastPort());
@@ -113,8 +110,7 @@ class Multicast implements IMaxcast
                 MulticastSocket old = _iface2sock.put(iface, s);
                 if (old != null) close(old);
 
-                l.info("linkStateChanged->mc:add:");
-                l.info(iface);
+                l.info("linkStateChanged->mc:add:" + iface.getName());
 
                 new Thread(new Runnable() {
                     @Override
@@ -142,7 +138,7 @@ class Multicast implements IMaxcast
 
         if (becameLinkDown) {
             // We don't have to send offline messages if the the links are physically down. But in
-            // case of a logical mark-down (LinkStateMonitor#markLinksDown_()), we need manual
+            // case of a logical mark-down (LinkStateService#markLinksDown_()), we need manual
             // disconnection. N.B. this needs to be done *before* closing the sockets.
 
             try {

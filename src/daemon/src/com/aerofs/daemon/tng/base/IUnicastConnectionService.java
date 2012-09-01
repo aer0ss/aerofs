@@ -4,14 +4,14 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.lib.id.DID;
 
 import java.util.concurrent.Executor;
 
-public interface IUnicastConnectionService extends INetworkLinkStateListener, IStartable, IDebug
+public interface IUnicastConnectionService extends ILinkStateListener, IStartable, IDebug
 {
     /**
      * Only one listener can be set

@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.device.DevicePresence;
-import com.aerofs.daemon.core.net.link.INetworkLinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateMonitor;
+import com.aerofs.daemon.core.net.link.ILinkStateListener;
+import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -50,12 +50,12 @@ public class RPC
     private final Map<Integer, MapEntry> _waiters = Maps.newTreeMap();
 
     @Inject
-    public RPC(DevicePresence dp, NSL nsl, LinkStateMonitor lsm)
+    public RPC(DevicePresence dp, NSL nsl, LinkStateService lss)
     {
         _dp = dp;
         _nsl = nsl;
 
-        lsm.addListener_(new INetworkLinkStateListener() {
+        lss.addListener_(new ILinkStateListener() {
             @Override
             public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
                     ImmutableSet<NetworkInterface> removed,

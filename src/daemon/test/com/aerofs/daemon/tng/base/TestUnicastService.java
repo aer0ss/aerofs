@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.daemon.core.net.link.INetworkLinkStateService;
+import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
@@ -37,7 +37,7 @@ public class TestUnicastService extends AbstractTest
     UnicastService unicastService;
     ISingleThreadedPrioritizedExecutor executor;
 
-    @Mock INetworkLinkStateService networkLinkStateService;
+    @Mock ILinkStateService networkLinkStateService;
     @Mock IPresenceService presenceService;
     @Mock IUnicastConnectionService unicastConnectionService;
     @Mock IUnicastListener unicastListener;
