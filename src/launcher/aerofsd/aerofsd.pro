@@ -5,7 +5,7 @@ TEMPLATE = app
 CONFIG += console
 CONFIG -= app_bundle
 DESTDIR = $$PWD/../bin/$$OS
-TARGET = aerofs
+TARGET = aerofsd
 
 macx {
     LIBS += -framework JavaVM
@@ -22,6 +22,7 @@ linux-g++-64 {
     LIBS += -L "$$(JAVA_HOME)/jre/lib/amd64"
 }
 win32 {
+    DEFINES += _UNICODE UNICODE
     LIBS += -ladvapi32
 }
 
@@ -33,4 +34,4 @@ win32: PRE_TARGETDEPS += $$PWD/../lib/launcher.lib
 
 # source files
 SOURCES += \
-    launcher.cpp
+    main.cpp

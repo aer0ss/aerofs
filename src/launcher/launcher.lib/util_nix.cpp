@@ -1,6 +1,11 @@
 #include "util.h"
 
 #include <unistd.h>
+#include <dirent.h>
+#include <assert.h>
+static const _TCHAR* const JAR_EXTENSION = _T(".jar");
+
+extern char g_errmsg[256];
 
 using namespace std;
 
@@ -9,6 +14,15 @@ using namespace std;
   that are common to both Mac OS X and Linux.
 */
 
+bool file_exists(const std::string& file)
+{
+    // TODO: We could probably use stat() instead
+    if (FILE* f = fopen(file.c_str(), "r")) {
+        fclose(f);
+        return true;
+    }
+    return false;
+}
 
 jint create_jvm(JavaVM **pvm, void **penv, void *args)
 {
@@ -16,16 +30,29 @@ jint create_jvm(JavaVM **pvm, void **penv, void *args)
 }
 
 /**
-  Spawns a new process
-  If successful, returns the pid of the process.
-  Otherwise, returns -1 and errno is set to the appropriate error code
+  Return a string with the path of all *.jar files at `jars_path` concatenated
+  Important:
+    - jars_path must include a trailing slash
  */
-int spawn(const string& program, char* argv[])
+tstring list_jars(const tstring& jars_path)
 {
-    int pid = fork();
-    if (pid == 0) {
-        return execv(program.c_str(), argv);
+    assert(jars_path[jars_path.length() - 1] == DIRECTORY_SEPARATOR);
+    tstring result;
+
+    DIR* dir = opendir(jars_path.c_str());
+    if (dir) {
+        struct dirent* entry;
+        while ((entry = readdir(dir))) {
+            tstring jar(entry->d_name);
+            if (!ends_with(jar, JAR_EXTENSION)) {
+                continue;
+            }
+            result += PATH_SEPARATOR + jars_path + jar;
+        }
+        closedir(dir);
     } else {
-        return pid;
+        SET_ERROR("Warning: could not open directory: %s\n", jars_path.c_str());
     }
+
+    return result;
 }

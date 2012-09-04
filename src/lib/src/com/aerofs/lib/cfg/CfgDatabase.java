@@ -48,9 +48,6 @@ public class CfgDatabase
         // bind address for the Ritual socket. Use "*" to bind to all local addresses.
         RITUAL_BIND_ADDR("ritual_bind_addr", "127.0.0.1"),
 
-        // VMArgs used to launch the daemon. See DaemonMonitor.java for the default args.
-        DAEMON_VMARGS("daemon_vmargs", null),
-
         // The default value must be consistent with the value set by
         // sp_user.u_storeless_invites_quota in sp.sql
         FOLDERLESS_INVITES("folderless_invites", 2),
