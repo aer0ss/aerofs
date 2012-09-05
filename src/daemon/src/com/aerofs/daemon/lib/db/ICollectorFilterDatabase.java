@@ -5,6 +5,7 @@ import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 
 public interface ICollectorFilterDatabase
@@ -16,5 +17,5 @@ public interface ICollectorFilterDatabase
     /**
      * @return null if not found
      */
-    BFOID getCollectorFilter_(SIndex sidx, DID did) throws SQLException;
+    @Nullable BFOID getCollectorFilter_(SIndex sidx, DID did) throws SQLException;
 }
