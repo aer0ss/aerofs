@@ -50,10 +50,10 @@ CREATE TABLE `sp_device` (
   `d_id` CHAR(32) NOT NULL,
   -- todo (mj) why is d_id a CHAR(32) but sf_id (store id) is a BINARY(16)?
   `d_owner_id` VARCHAR(320) NOT NULL, -- this is the email address (u_id) in sp_user table
-  -- todo CONSTRAINT `d_owner_foreign` FOREIGN KEY (`d_owner_id`) REFERENCES `sp_user` (`u_id`),
   `d_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `d_name` VARCHAR(320) NOT NULL,
-  PRIMARY KEY (`d_id`)
+  PRIMARY KEY (`d_id`),
+  CONSTRAINT `d_owner_foreign` FOREIGN KEY (`d_owner_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `sp_cert` (
@@ -77,9 +77,9 @@ CREATE TABLE `sp_signup_code` (
 CREATE TABLE `sp_password_reset_token` (
   `r_token` CHAR(44),
   `r_user_id` VARCHAR(320) NOT NULL,
-  -- todo CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`),
   `r_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`r_token`)
+  PRIMARY KEY (`r_token`),
+  CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `sp_batch_signup_code` (
@@ -101,7 +101,7 @@ CREATE TABLE `sp_shared_folder_code` (
   `f_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX folder_to_idx (`f_to`),
   PRIMARY KEY (`f_code`),
-  -- todo CONSTRAINT `f_from_foreign` FOREIGN KEY (`f_from`) REFERENCES `sp_user` (`u_id`),
+  CONSTRAINT `f_from_foreign` FOREIGN KEY (`f_from`) REFERENCES `sp_user` (`u_id`),
   CONSTRAINT `f_sid_foreign` FOREIGN KEY (`f_share_id`) REFERENCES `sp_shared_folder` (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
