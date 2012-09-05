@@ -65,6 +65,14 @@ kssh -p $SVR_PORT $SVR_LOGIN \
      echo Deploying to S3/CloudFront; \
      s3cmd -P --cf-invalidate sync /data/${LOWERCASE_MODE}-downloads/* $DOWNLOAD_BUCKET > /dev/null" # publishes _all_ platform installers to s3
 
+##########
+# Note: to rollback a release for any reason:
+# log into release-prod@b.arrowfs.org
+# go to /data/prod-downloads
+# change current.ver
+# s3cmd -P sync --cf-invalidate /data/prod-downloads/current.ver s3://nocache.client.aerofs.com
+#
+
 rm -rf Release
 
 if [ "$MODE" == "PROD" ]; then
