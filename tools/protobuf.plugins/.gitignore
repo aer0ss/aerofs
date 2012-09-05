@@ -3,3 +3,5 @@ xcuserdata
 *.user
 rpc_plugins-build*
 *.tpl.h
+*.o
+Makefile

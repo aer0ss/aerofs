@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <iostream>
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/printer.h>
@@ -317,7 +318,20 @@ string methodEnumName(const MethodDescriptor* method)
  */
 string serviceInterfaceName(const ServiceDescriptor* service, bool fullyQualified)
 {
-    string name = "I" + service->full_name();
-    return (fullyQualified) ? ToJavaName(name, service->file())
-                            : name;
+    string name = "I" + service->name();
+    if (fullyQualified) {
+        const FileDescriptor* file = service->file();
+        string result;
+        if (file->options().java_multiple_files()) {
+            result = FileJavaPackage(file);
+        } else {
+            result = ClassName(file);
+        }
+        if (!result.empty()) {
+            result += '.';
+        }
+        result += name;
+        name = result;
+    }
+    return name;
 }
