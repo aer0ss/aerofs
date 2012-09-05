@@ -34,7 +34,7 @@ public class CollectorFilters
 
     private final SIndex _sidx;
 
-    private static class DevEntry
+    private static class DeviceEntry
     {
         private final DID _did;
 
@@ -46,7 +46,7 @@ public class CollectorFilters
         // the content must be consistent with _c2d2f
         final Set<CollectorSeq> _css = Sets.newTreeSet();
 
-        DevEntry(DID did)
+        DeviceEntry(DID did)
         {
             _did = did;
         }
@@ -67,7 +67,7 @@ public class CollectorFilters
     }
 
     // it contains all the loaded devices. even though they may have no filters
-    private final Map<DID, DevEntry> _did2dev = Maps.newTreeMap();
+    private final Map<DID, DeviceEntry> _did2dev = Maps.newTreeMap();
 
     // all the devices included in this map must have been loaded.
     private final SortedMap<CollectorSeq, Map<DID, BFOID>> _c2d2f = Maps.newTreeMap();
@@ -90,7 +90,7 @@ public class CollectorFilters
         assert !filter.isEmpty_();
         filter.finalize_();
 
-        final DevEntry dev = _did2dev.get(did);
+        final DeviceEntry dev = _did2dev.get(did);
 
         BFOID filterOld;
         BFOID filterNew;
@@ -152,8 +152,8 @@ public class CollectorFilters
         // them being reused by the next collection iteration)
         assert _c2d2f.isEmpty();
 
-        List<DevEntry> devs = Lists.newArrayList();
-        for (DevEntry dev : _did2dev.values()) {
+        List<DeviceEntry> devs = Lists.newArrayList();
+        for (DeviceEntry dev : _did2dev.values()) {
             assert dev._css.isEmpty();
             // skip devices whose filter is already reset
             if (dev.getDBFilter_() != null && !dev._dirty) {
@@ -165,7 +165,7 @@ public class CollectorFilters
         if (!devs.isEmpty()) {
             Trans t2 = t == null ? _tm.begin_() : t;
             try {
-                for (DevEntry dev : devs) {
+                for (DeviceEntry dev : devs) {
                     dev.setDBFilter_(null);
                     // N.B. if the transaction is rolled back, the in-memory db
                     // filter becomes inconsistent with the db, which is fine
@@ -186,7 +186,7 @@ public class CollectorFilters
     boolean loadDBFilter_(DID did) throws SQLException
     {
         BFOID filterDB = _cfdb.getCollectorFilter_(_sidx, did);
-        DevEntry dev = new DevEntry(did);
+        DeviceEntry dev = new DeviceEntry(did);
         Util.verify(_did2dev.put(did, dev) == null);
         dev.setDBFilter_(filterDB);
         return filterDB != null;
@@ -197,7 +197,7 @@ public class CollectorFilters
      */
     void unloadAllFilters_(DID did)
     {
-        DevEntry en = _did2dev.remove(did);
+        DeviceEntry en = _did2dev.remove(did);
         assert en != null;
         for (CollectorSeq cs : en._css) {
             Map<DID, BFOID> d2f = _c2d2f.get(cs);
@@ -221,7 +221,7 @@ public class CollectorFilters
     /**
      * @return the old filter, or null
      */
-    private @Nullable BFOID setCSFilter_(DevEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
+    private @Nullable BFOID setCSFilter_(DeviceEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
     {
         l.info("set cs filter for " + _sidx + " " + dev._did + " cs " + cs);
         filter.finalize_();
@@ -245,7 +245,7 @@ public class CollectorFilters
         addCSFilter_(_did2dev.get(did), cs, filter);
     }
 
-    private void addCSFilter_(DevEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
+    private void addCSFilter_(DeviceEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
     {
         filter.finalize_();
 
@@ -268,7 +268,7 @@ public class CollectorFilters
      */
     void setCSFilterFromDB_(DID did, CollectorSeq cs)
     {
-        DevEntry dev = _did2dev.get(did);
+        DeviceEntry dev = _did2dev.get(did);
         BFOID db = dev.getDBFilter_();
         assert db != null : did + " " + cs;
         Util.verify(setCSFilter_(dev, cs, db) == null);
@@ -281,7 +281,7 @@ public class CollectorFilters
      */
     void setAllCSFiltersFromDB_(CollectorSeq cs)
     {
-        for (DevEntry dev : _did2dev.values()) {
+        for (DeviceEntry dev : _did2dev.values()) {
             BFOID db = dev.getDBFilter_();
             if (db != null) Util.verify(setCSFilter_(dev, cs, db) == null);
         }
@@ -289,7 +289,7 @@ public class CollectorFilters
 
     void addAllCSFiltersFromDB_(CollectorSeq cs)
     {
-        for (DevEntry dev : _did2dev.values()) {
+        for (DeviceEntry dev : _did2dev.values()) {
             BFOID db = dev.getDBFilter_();
             if (db != null) addCSFilter_(dev, cs, db);
         }
@@ -320,7 +320,7 @@ public class CollectorFilters
         for (Entry<CollectorSeq, Map<DID, BFOID>> en : sub.entrySet()) {
             for (DID did : en.getValue().keySet()) {
                 l.info("disposing " + _sidx + " " + en.getKey() + " " + did);
-                DevEntry dev = _did2dev.get(did);
+                DeviceEntry dev = _did2dev.get(did);
                 Util.verify(dev._css.remove(en.getKey()));
             }
         }
@@ -333,24 +333,22 @@ public class CollectorFilters
     void deleteAllCSFilters_()
     {
         _c2d2f.clear();
-        for (DevEntry dev : _did2dev.values()) dev._css.clear();
+        for (DeviceEntry dev : _did2dev.values()) dev._css.clear();
     }
 
     /**
-     * can be called regardless of whether the devices is loaded or not
-     *
+     * can be called regardless of whether the device is loaded or not
      */
     void setDirtyBit_(DID did)
     {
-        DevEntry dev = _did2dev.get(did);
+        DeviceEntry dev = _did2dev.get(did);
         if (dev != null) dev._dirty = true;
     }
 
     /**
-     * test if any filter contains the component
      * @return the set of devices whose filters contain the component
      */
-    Set<DID> test_(OCID ocid)
+    Set<DID> getDevicesHavingComponent_(OCID ocid)
     {
         int[] indics = BFOID.HASH.hash(ocid.oid());
         Set<DID> ret = Sets.newTreeSet();

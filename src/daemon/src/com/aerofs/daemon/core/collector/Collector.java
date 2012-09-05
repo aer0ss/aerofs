@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.concurrent.Callable;
 import java.util.Set;
 
+import com.aerofs.lib.ex.ExNotFound;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.CoreExponentialRetry;
@@ -116,8 +117,7 @@ public class Collector implements IDumpStatMisc
     public void add_(DID did, BFOID filter, Trans t) throws SQLException
     {
         if (_cfs.addDBFilter_(did, filter, t)) {
-            l.info("adding filter to " + did + " triggers collector 4 " +
-                    _s.sidx());
+            l.info("adding filter to " + did + " triggers collector 4 " + _s.sidx());
             resetBackoffInterval_();
             if (started_()) _cfs.addCSFilter_(did, _occs._cs, filter);
             else start_(t);
@@ -234,7 +234,7 @@ public class Collector implements IDumpStatMisc
         }
 
         l.info("collect " + _s.sidx() + " returns. occs = " + _occs);
-        testStop_(t);
+        attemptToStopAndFinalizeCollection_(t);
     }
 
     private void collectLoop_(Trans t, InOutArg<IIterator> ioaIter) throws SQLException
@@ -328,23 +328,24 @@ public class Collector implements IDumpStatMisc
     }
 
     /**
-     * Stop and finalized collection if the following conditions are met:
+     * Stop and finalize collection if the following conditions are met:
      * 1) the collection iteration is done, and 2) all the downloads initiated by the iteration have
-     * finished. Note that before the last download finishes, there may be one or more other
+     * finished.
+     * Note that before the last download finishes, there may be one or more other
      * collection iterations have started and then stopped, or still on going, which is okay.
      */
-    private void testStop_(@Nullable Trans t)
+    private void attemptToStopAndFinalizeCollection_(@Nullable Trans t)
     {
         assert _downloads >= 0;
 
         if (!started_() && _downloads == 0) {
-            l.info("testStop " + _s.sidx() + " does stop");
+            l.info("stop clct on " + _s.sidx());
             try {
                 _cfs.cleanUpDBFilters_(t);
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 // filters may be failed to be removed from the db which is not
                 // a big deal
-                l.info("testStop 4 " + _s.sidx() + ", ignored: " + Util.e(e));
+                l.info("stop clct 4 " + _s.sidx() + ", ignored: " + Util.e(e));
             }
         }
     }
@@ -356,14 +357,14 @@ public class Collector implements IDumpStatMisc
     {
         assert started_();
 
-        SOCID k = new SOCID(_s.sidx(), occs._ocid.oid(), occs._ocid.cid());
-        final Set<DID> dids = _cfs.test_(occs._ocid);
+        SOCID socid = new SOCID(_s.sidx(), occs._ocid.oid(), occs._ocid.cid());
+        final Set<DID> dids = _cfs.getDevicesHavingComponent_(occs._ocid);
         if (dids.isEmpty()) return true;
 
         l.info("clct " + _s.sidx() + occs + " " + dids);
 
         final Token tk;
-        if (_f._dls.isOngoing_(k)) {
+        if (_f._dls.isOngoing_(socid)) {
             // no token is needed for ongoing downloads
             tk = null;
         } else {
@@ -400,7 +401,7 @@ public class Collector implements IDumpStatMisc
         try {
             // download the component even if it's already being downloaded, so
             // that the new destination devices can be added if they are not there
-            Util.verify(_f._dls.downloadAsync_(k, _f._factTo.create_(dids),
+            Util.verify(_f._dls.downloadAsync_(socid, _f._factTo.create_(dids),
                     new IDownloadCompletionListener()
                     {
                         @Override
@@ -408,7 +409,7 @@ public class Collector implements IDumpStatMisc
                         {
                             if (tk != null) tk.reclaim_();
                             Util.verify(_downloads-- >= 0);
-                            testStop_(null);
+                            attemptToStopAndFinalizeCollection_(null);
                             _s.downloaded_(socid);
                         }
 
@@ -417,11 +418,16 @@ public class Collector implements IDumpStatMisc
                         {
                             l.info("cdl " + socid + ": " + Util.e(e));
                             if (tk != null) tk.reclaim_();
-                            // TODO handle permanent errors
-                            for (DID did : dids) _cfs.setDirtyBit_(did);
+
+                            if (!isPermanentError(e)) {
+                                // For non-permanent errors, we want to re-run this collector.
+                                // Indicate the BFs are dirty for all devices of interest so
+                                // that they are re-introduced into the next collector iteration.
+                                for (DID did : dids) _cfs.setDirtyBit_(did);
+                                scheduleBackoff_();
+                            }
                             Util.verify(_downloads-- >= 0);
-                            testStop_(null);
-                            scheduleBackoff_();
+                            attemptToStopAndFinalizeCollection_(null);
                         }
                     }, tk));
 
@@ -431,6 +437,17 @@ public class Collector implements IDumpStatMisc
         } finally {
             if (tk != null && !enqueued) tk.reclaim_();
         }
+    }
+
+    /**
+     * @param e the exception received from the remote peer when trying to download an object
+     * @return whether the remote exception is a "permanent" error. For a permanent error,
+     * the Collector should not try to download the object again from that device, until the
+     * state of that device changes (e.g. its filter contains the object again).
+     */
+    private static boolean isPermanentError(Exception e)
+    {
+        return e instanceof ExNotFound;
     }
 
     @Override

@@ -31,11 +31,7 @@ public class Common
             // out as many expelled files as possible before entering them
             // to the download subsystem.
             OA oa = ds.getOANullable_(socid.soid());
-            if (oa != null && oa.isExpelled()) {
-                return true;
-            } else {
-                return false;
-            }
+            return (oa != null && oa.isExpelled());
         }
     }
 }

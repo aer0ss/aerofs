@@ -12,6 +12,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
+
 public class CollectorFilterDatabase extends AbstractDatabase implements ICollectorFilterDatabase
 {
     @Inject
@@ -46,7 +48,7 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
 
     private PreparedStatement _psGCF;
     @Override
-    public BFOID getCollectorFilter_(SIndex sidx, DID did) throws SQLException
+    public @Nullable BFOID getCollectorFilter_(SIndex sidx, DID did) throws SQLException
     {
         try {
             if (_psGCF == null) _psGCF = c()
