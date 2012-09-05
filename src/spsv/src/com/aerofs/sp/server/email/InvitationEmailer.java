@@ -41,7 +41,7 @@ public class InvitationEmailer
                 "" + SP.WEB_BASE + ".";
 
             String body;
-            final Email email = new Email(subject);
+            final Email email = new Email(subject, false, null);
 
             if (from != null) {
                 String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
@@ -107,7 +107,8 @@ public class InvitationEmailer
         {
             final String subject = "Join my " + S.PRODUCT + " folder";
 
-            final Email email = new Email(subject);
+            final Email email = new Email(subject, false, null);
+
             String url = SPParam.getWebDownloadLink(shareFolderCode, false);
 
             String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";

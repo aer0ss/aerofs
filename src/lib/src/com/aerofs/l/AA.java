@@ -91,9 +91,9 @@ public class AA implements ILabeling
     }
 
     @Override
-    public String spHost()
+    public String spUrl()
     {
-        return "sp.aerofs.com";
+        return "https://" + (Cfg.staging() ? "staging.aerofs.com/sp" : "sp.aerofs.com");
     }
 
     @Override

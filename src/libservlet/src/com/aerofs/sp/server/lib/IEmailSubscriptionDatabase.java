@@ -2,6 +2,7 @@ package com.aerofs.sp.server.lib;
 
 import java.util.Set;
 
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
 
 import java.sql.SQLException;
@@ -16,13 +17,12 @@ public interface IEmailSubscriptionDatabase
 
     /**
      * subscribe a user to a particular category
+     *
+     * @return the tokenID generated for this [email, sc] tuple
      */
-    void addEmailSubscription(String email, SubscriptionCategory sc) throws SQLException;
-
-    /**
-     * subscribe a user to a few categories
-     */
-    void subscribeToCategories(String email, Set<SubscriptionCategory> s) throws SQLException;
+    String addEmailSubscription(String email, SubscriptionCategory sc, long time)
+            throws SQLException;
+    String addEmailSubscription(String email, SubscriptionCategory sc) throws SQLException;
 
     /**
      * unsubscribe a user from a category
@@ -30,18 +30,33 @@ public interface IEmailSubscriptionDatabase
     void removeEmailSubscription(String email, SubscriptionCategory sc) throws SQLException;
 
     /**
+     * unsubscribe a user from a category based on their token id
+     */
+    void removeEmailSubscription(String tokenId) throws SQLException;
+
+    /**
+     * get token id associated with email and category
+     */
+    String getTokenId(String email, SubscriptionCategory sc) throws SQLException;
+
+
+    /**
+     * get the email associated with the subscription token id
+     */
+    String getEmail(String tokenId)
+            throws SQLException, ExNotFound;
+    /**
      * check if a user is subscribed to a category
      * @return true if the subscription category matches a subscription for the user,
      *         false otherwise
      */
     boolean isSubscribed(String email, SubscriptionCategory sc) throws SQLException;
 
-    /**
-     * add a row to the database indicating a user needs to be reminded of some event
-     */
-    void addNewEmailReminder(String email, SubscriptionCategory category, long firstEmailTime)
-            throws SQLException;
+    void setLastEmailTime(String email, SubscriptionCategory category,
+            long lastEmailTime) throws SQLException;
 
-    void updateEmailReminder(String email, SubscriptionCategory category, long lastEmailTime)
+    Set<String> getUsersNotSignedUpAfterXDays(final int days) throws SQLException;
+
+    int getDaysFromLastEmail(final String email, final SubscriptionCategory category)
             throws SQLException;
 }

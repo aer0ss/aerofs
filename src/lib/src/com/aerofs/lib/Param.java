@@ -112,7 +112,9 @@ public class Param
         static {
             URL url;
             try {
-                url = new URL("https://" + (Cfg.staging() ? "staging.aerofs.com/sp" : L.get().spHost()) + "/sp");
+                // in staging, the SP war is deployed under /sp by defualt
+                // allowing users to deploy their own sp war's (e.g. /yuriSP/sp, /weihanSP/sp, etc.)
+                url = new URL(L.get().spUrl() + "/sp");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
                 url = null;

@@ -71,6 +71,7 @@ CREATE TABLE `sp_signup_code` (
   `t_org_id` VARCHAR(80) NOT NULL,
   `t_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`t_code`),
+  INDEX `t_ts_idx` (`t_ts`),
   CONSTRAINT `t_org_foreign` FOREIGN KEY (`t_org_id`) REFERENCES `sp_organization` (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -106,25 +107,15 @@ CREATE TABLE `sp_shared_folder_code` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `sp_email_subscriptions` (
-    `es_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `es_email` VARCHAR(254) NOT NULL,
+    `es_token_id` CHAR(12) PRIMARY KEY NOT NULL,
+    `es_email` VARCHAR(254) NOT NULL,   -- the actual max email length supported by RFC is 254 bytes
+                                        -- we use 254 bytes here because the maximum key length size for
+                                        -- mysql is 767 bytes, and 254*3 = 762 (for UTF8 strings)
     `es_subscription` INT NOT NULL,
-    PRIMARY KEY(`es_id`),
+    `es_last_emailed` TIMESTAMP NOT NULL,
+    UNIQUE KEY(`es_email`,`es_subscription`),
     INDEX es_email_idx(`es_email`),
     INDEX es_subscription_idx(`es_subscription`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `sp_email_reminders` (
-    `er_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-    `er_email` VARCHAR(254) NOT NULL,
-    `er_category` VARCHAR(64) NOT NULL,
-    `er_first_email_sent` TIMESTAMP NOT NULL,
-    `er_last_email_sent` TIMESTAMP NOT NULL,
-    `er_remind` BOOLEAN NOT NULL,
-    PRIMARY KEY(`er_id`),
-    KEY(`er_email`,`er_category`),
-    INDEX er_first_email_idx(`er_first_email_sent`),
-    INDEX er_last_email_idx(`er_last_email_sent`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DELIMITER //

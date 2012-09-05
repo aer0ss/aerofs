@@ -32,6 +32,7 @@ def main(global_config, **settings):
         authorization_policy=authz_policy,
         root_factory=RootFactory,
         session_factory=admin_session_factory,
+        autocommit=True,
         default_permission='admin' # By default, all views require the admin permission
     )
 

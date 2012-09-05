@@ -16,6 +16,7 @@ public enum SubscriptionCategory
     NEWSLETTER(1);
 
     private final int _categoryId;
+
     SubscriptionCategory(final int categoryId)
     {
         _categoryId = categoryId;

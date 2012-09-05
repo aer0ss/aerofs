@@ -32,7 +32,7 @@ public interface ILabeling
 
     String webHost();
 
-    String spHost();
+    String spUrl();
 
     short spPort();
 

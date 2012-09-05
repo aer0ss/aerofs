@@ -17,6 +17,7 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
@@ -29,6 +30,7 @@ import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
 import com.aerofs.proto.Sp.GetPreferencesReply;
+import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
@@ -40,6 +42,7 @@ import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
+import com.aerofs.proto.Sp.SetUnsubscribeEmailCall;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.proto.Sp.SignUpCall;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
@@ -378,6 +381,24 @@ class SPService implements ISPService
         _transaction.commit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetUnsubscribeEmailReply> unsubscribeEmail(String unsubscribeToken)
+            throws Exception
+    {
+        _transaction.begin();
+        String email = _db.getEmail(unsubscribeToken);
+        _db.removeEmailSubscription(unsubscribeToken);
+        _transaction.commit();
+
+        GetUnsubscribeEmailReply unsubscribeEmail = GetUnsubscribeEmailReply.newBuilder()
+                .setEmailId(email)
+                .build();
+
+        return createReply(unsubscribeEmail);
+
+
     }
 
     @Override
@@ -859,6 +880,9 @@ class SPService implements ISPService
         // TODO write a test to verify that after one successful signup,
         // other codes fail/do not exist
         _db.addUser(user);
+
+        //unsubscribe user from the aerofs invitation reminder mailing list
+        _db.removeEmailSubscription(userId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
     }
 
     @Override

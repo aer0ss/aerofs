@@ -6,14 +6,18 @@ import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
+import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
+import com.aerofs.sp.server.email.InvitationReminderEmailer;
+import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
 import com.aerofs.sp.server.organization.OrganizationManagement;
+import com.aerofs.sp.server.sp.EmailReminder;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -75,7 +79,21 @@ public class SPServlet extends AeroServlet
         _certificateGenerator.setCAURL_(getServletContext().getInitParameter("ca_url"));
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
 
-        _conProvider.init_(getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER));
+        String dbResourceName =
+                getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
+
+        _conProvider.init_(dbResourceName);
+
+        //initialize Email Reminder code
+        PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
+        erConProvider.init_(dbResourceName);
+
+        SQLThreadLocalTransaction erTrans = new SQLThreadLocalTransaction(erConProvider);
+        SPDatabase erDB = new SPDatabase(erTrans);
+        InvitationReminderEmailer.Factory emailReminderFactory = new Factory();
+
+        EmailReminder er = new EmailReminder(erDB, erTrans, emailReminderFactory);
+        er.start();
     }
 
     private VerkehrAdmin getVerkehrAdmin()
@@ -204,6 +222,8 @@ public class SPServlet extends AeroServlet
 
         _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null, code)
                 .send();
+
+        _db.addEmailSubscription(to, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>

@@ -2,6 +2,10 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.S;
+import com.aerofs.lib.spsv.sendgrid.SubscriptionParams;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
 
 public class HTMLEmail implements IEmail {
 
@@ -24,8 +28,38 @@ public class HTMLEmail implements IEmail {
         "           <table cellpadding=\"0\" cellspacing=\"0\">";
 
 
-    private final String _footer =
-        "           </table>" +
+
+    private final String _footer;
+
+    public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:" + L.get().htmlEmailHeaderColor() + ";";
+    public static final String H2STYLE = "margin:0;font-size:14px;color:#" + L.get().htmlEmailHeaderColor() + ";";
+    public static final String PSTYLE  = "margin:0;";
+
+    private final  StringBuilder _sb = new StringBuilder();
+    private final String _title;
+    private int _sectionCount = 0;
+    private boolean _finalized = false;
+
+    public HTMLEmail(final String subject, final boolean unsubscribe, @Nullable final String unsubscribeId)
+    {
+        final String unsubscribeText = unsubscribe ? "<a style=\"color:#999999;\" href=\"" +
+                                        SubscriptionParams.UNSUBSCRIPTION_URL +
+                                        unsubscribeId + "\">Unsubscribe</a>" :
+                                    "<p style\"color:#999999;\">This is a one time email</p>";
+        _title = subject;
+        String head =
+            "<!doctype html>" +
+            "<html>" +
+            "<head>" +
+            "<title>" + _title + "</title>" +
+            "</head>";
+
+
+        _sb.append(head);
+        _sb.append(_header);
+
+        _footer =
+                " </table>" +
         "       </td>" +
         "   </tr>" +
         "   <tr> "+
@@ -48,48 +82,25 @@ public class HTMLEmail implements IEmail {
         "                        <td width=\"10\"/>" +
         "                        <td><a style=\"color:#999999;\" href=\"http://support.aerofs.com/\">Support</a></td>" +
         "                        <td width=\"10\"/>" +
-        "                        <td><p style=\"color:#666666;\">This is a one time email</a></td>" +
+        "                        <td>" + unsubscribeText + "</td>" +
         "                    </tr>" +
         "                </table>" +
         "            </td>" +
         "        </tr>" +
         "   </table>" +
         "</td>" +
-    "</tr>" +
-"</table>" +
-"</body>" +
-"</html>";
-
-    public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:" + L.get().htmlEmailHeaderColor() + ";";
-    public static final String H2STYLE = "margin:0;font-size:14px;color:#" + L.get().htmlEmailHeaderColor() + ";";
-    public static final String PSTYLE  = "margin:0;";
-
-    private final  StringBuilder _sb = new StringBuilder();
-    private final String _title;
-    private int _sectionCount = 0;
-    private boolean _finalized = false;
-
-    public HTMLEmail(final String subject)
-    {
-
-        _title = subject;
-        String head =
-            "<!doctype html>" +
-            "<html>" +
-            "<head>" +
-            "<title>" + _title + "</title>" +
-            "</head>";
-
-        _sb.append(head);
-        _sb.append(_header);
+        "</tr>" +
+        "</table>" +
+        "</body>" +
+        "</html>";
     }
 
-    /* (non-Javadoc)
-         * @see com.aerofs.sp.server.IEmail#addSection(java.lang.String, com.aerofs.sp.server.HTMLEmail.HEADER_SIZE, java.lang.String)
-         */
     @Override
-        public void addSection(final String header, final HEADER_SIZE size, final String body)
+    public void addSection(final String header, final HEADER_SIZE size, final String body)
+            throws IOException
     {
+        if (_finalized) throw new IOException("cannot add section to a finalized email");
+
         String b = body.replace("\n", "<br/>");
         if (_sectionCount > 0) {
             //spacing
@@ -116,11 +127,12 @@ public class HTMLEmail implements IEmail {
         _sectionCount++;
     }
 
-    /* (non-Javadoc)
-         * @see com.aerofs.sp.server.IEmail#addSignature(java.lang.String, java.lang.String, java.lang.String)
-         */
     @Override
-        public void addSignature(final String valediction, final String name, final String ps) {
+    public void addSignature(final String valediction, final String name, final String ps)
+            throws IOException
+    {
+
+        if (_finalized) throw new IOException("cannot add signature to a finalized email");
 
         final String signature =
             "               <tr>" +
@@ -145,7 +157,7 @@ public class HTMLEmail implements IEmail {
         _sb.append(signature);
     }
 
-        public String getEmail()
+    public String getEmail()
     {
 
         if (!_finalized) {

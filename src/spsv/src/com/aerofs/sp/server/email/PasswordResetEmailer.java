@@ -23,7 +23,7 @@ public class PasswordResetEmailer
     {
         String subject = S.PRODUCT + " password request";
 
-        Email email = new Email(subject);
+        Email email = new Email(subject, false ,null);
 
         String url = S.PASSWORD_RESET_URL + "?" +
                 "user_id=" + Util.urlEncode(to) +
@@ -49,7 +49,7 @@ public class PasswordResetEmailer
     {
         String subject = S.PRODUCT + " password request confirmation";
 
-        Email email = new Email(subject);
+        Email email = new Email(subject, false, null);
 
         String body = "\nCongrats! You've successfully created a new password " +
                 "for your " + S.PRODUCT + " account!\n" +

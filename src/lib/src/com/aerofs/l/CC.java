@@ -88,7 +88,7 @@ public class CC implements ILabeling
     }
 
     @Override
-    public String spHost()
+    public String spUrl()
     {
         return "sp-comcast.aerofs.com";
     }

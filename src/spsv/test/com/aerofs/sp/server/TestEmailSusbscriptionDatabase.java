@@ -8,6 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.aerofs.lib.ex.ExNotFound;
 import org.junit.After;
 
 import org.junit.Before;
@@ -59,8 +60,7 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
 
     @Test
     public void shouldUnsubscribeUserFromOneCategory()
-        throws SQLException
-   {
+            throws SQLException, ExNotFound {
         SubscriptionCategory sc1 = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
         SubscriptionCategory sc2 = SubscriptionCategory.NEWSLETTER;
 
@@ -68,6 +68,12 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
         db.addEmailSubscription(TEST_USER2,sc2);
 
         Set<SubscriptionCategory> subscriptions = db.getEmailSubscriptions(TEST_USER2);
+
+        //sanity check token management
+        String subscriptionToken = db.getTokenId(TEST_USER2, sc1);
+        String emailFromToken = db.getEmail(subscriptionToken);
+        assertEquals(emailFromToken, TEST_USER2);
+
         assertEquals(EnumSet.of(sc1,sc2), subscriptions);
 
         db.removeEmailSubscription(TEST_USER2, sc2);

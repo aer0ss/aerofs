@@ -3,8 +3,10 @@ package com.aerofs.sp.server.lib;
 import java.util.Arrays;
 import java.util.EnumSet;
 
+import java.util.HashSet;
 import java.util.TimeZone;
 
+import com.aerofs.lib.spsv.Base62CodeGenerator;
 import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
 
 import java.util.Calendar;
@@ -22,6 +24,7 @@ import com.aerofs.lib.Base64;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.spsv.sendgrid.SubscriptionParams;
 import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
@@ -68,6 +71,8 @@ public class SPDatabase
 {
     private final static Logger l = Util.l(SPDatabase.class);
 
+    private static final Calendar _calendar =  Calendar.getInstance(TimeZone.getTimeZone("UTC")); // set time in UTC
+
     public SPDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);
@@ -113,7 +118,6 @@ public class SPDatabase
                 + "," + SPSchema.C_USER_LAST_NAME + "," + SPSchema.C_USER_CREDS + "," + SPSchema.C_FINALIZED + ","
                 + SPSchema.C_USER_VERIFIED + "," + SPSchema.C_USER_ORG_ID + "," + SPSchema.C_USER_AUTHORIZATION_LEVEL
                 + " from " + SPSchema.T_USER + " where " + SPSchema.C_USER_ID + "=?");
-
         psGU.setString(1, id);
         ResultSet rs = psGU.executeQuery();
         try {
@@ -978,19 +982,26 @@ public class SPDatabase
         Util.verify(psUpMinBatch.executeUpdate() == 1);
     }
 
-    public void addTargetedSignupCode(String code, String from, String to, String orgId)
+    public void addTargetedSignupCode(String code, String from, String to,
+            String orgId, long time)
         throws SQLException
     {
-        PreparedStatement psAddTI = getConnection().prepareStatement("insert into " + SPSchema.T_TI +
-                " (" + SPSchema.C_TI_TIC + "," + SPSchema.C_TI_FROM + "," + SPSchema.C_TI_TO + "," + SPSchema.C_TI_ORG_ID + ") "
-                + "values (?,?,?,?)");
+       PreparedStatement psAddTI = getConnection().prepareStatement(
+                DBUtil.insert(SPSchema.T_TI, SPSchema.C_TI_TIC, SPSchema.C_TI_FROM,
+                        SPSchema.C_TI_TO, SPSchema.C_TI_ORG_ID, SPSchema.C_TI_TS));
 
         psAddTI.setString(1, code);
         psAddTI.setString(2, from);
         psAddTI.setString(3, to);
         psAddTI.setString(4, orgId);
-
+        psAddTI.setTimestamp(5, new Timestamp(time), _calendar);
         psAddTI.executeUpdate();
+    }
+
+    public synchronized void addTargetedSignupCode(String code, String from, String to, String orgId)
+            throws SQLException
+    {
+        addTargetedSignupCode(code, from, to, orgId, System.currentTimeMillis());
     }
 
     /**
@@ -1208,11 +1219,32 @@ public class SPDatabase
     }
 
     /**
+     * Used to retrieve a folder invitation code to use in the email reminders
+     * We don't care which code it is, so long as it can be used to sign up
+     */
+    public String getOnePendingFolderInvitationCode(String to)
+            throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(
+                        DBUtil.selectFromWhere(SPSchema.T_TI, SPSchema.C_TI_TO + "=?",
+                                SPSchema.C_TI_TIC));
+
+        ps.setString(1, to);
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (rs.next()) return rs.getString(1);
+            else return null;
+        } finally {
+            rs.close();
+        }
+    }
+
+    /**
      * Add the given sid to the shared folder table with a null name. Necessary to satisfy foreign
      * key constraints in createACL.
      */
     private void addSharedFolder(SID sid)
-            throws SQLException
+           throws SQLException
     {
         PreparedStatement psAddSharedFolder = getConnection().prepareStatement("insert into "
                 + SPSchema.T_SF + " (" + SPSchema.C_SF_ID + ") values (?) on duplicate key update " + SPSchema.C_SF_ID  + "="
@@ -1321,7 +1353,6 @@ public class SPDatabase
             PreparedStatement psAddDev = getConnection().prepareStatement("insert into " + SPSchema.T_DEVICE
                     + "(" + SPSchema.C_DEVICE_ID + "," + SPSchema.C_DEVICE_NAME + "," + SPSchema.C_DEVICE_OWNER_ID + ")" +
                     " values (?,?,?)");
-
             psAddDev.setString(1, dr._did.toStringFormal());
             psAddDev.setString(2, dr._name);
             psAddDev.setString(3, dr._ownerID);
@@ -2084,32 +2115,32 @@ public class SPDatabase
     }
 
     @Override
-    public void addEmailSubscription(String email, SubscriptionCategory sc)
+    public String addEmailSubscription(String email, SubscriptionCategory sc, long time)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.insert(SPSchema.T_ES, SPSchema.C_ES_EMAIL, SPSchema.C_ES_SUBSCRIPTION));
+                       DBUtil.insertOnDuplicateUpdate(SPSchema.T_ES,
+                               SPSchema.C_ES_LAST_EMAILED + "=?", SPSchema.C_ES_EMAIL,
+                               SPSchema.C_ES_TOKEN_ID, SPSchema.C_ES_SUBSCRIPTION,
+                               SPSchema.C_ES_LAST_EMAILED));
 
+        String token = Base62CodeGenerator.newRandomBase62String(SubscriptionParams.TOKEN_ID_LENGTH);
         ps.setString(1, email);
-        ps.setInt(2, sc.getCategoryID());
+        ps.setString(2, token);
+        ps.setInt(3, sc.getCategoryID());
+        ps.setTimestamp(4, new Timestamp(time), _calendar);
+        ps.setTimestamp(5,new Timestamp(time), _calendar);
 
         Util.verify(ps.executeUpdate() == 1);
+
+        return token;
     }
 
     @Override
-    public void subscribeToCategories(String email, Set<SubscriptionCategory> set)
+    public String addEmailSubscription(String email, SubscriptionCategory sc)
             throws SQLException
     {
-
-        PreparedStatement ps = getConnection().prepareStatement(
-                    DBUtil.insert(SPSchema.T_ES,  SPSchema.C_ES_EMAIL, SPSchema.C_ES_SUBSCRIPTION));
-
-        ps.setString(1, email);
-
-        for (SubscriptionCategory sc : set) {
-            ps.setInt(2, sc.getCategoryID());
-            Util.verify(ps.executeUpdate() == 1);
-        }
+        return addEmailSubscription(email, sc, System.currentTimeMillis());
     }
 
     @Override
@@ -2117,8 +2148,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.deleteWhere(
-                                SPSchema.T_ES, SPSchema.C_ES_EMAIL, SPSchema.C_ES_SUBSCRIPTION));
+                       DBUtil.deleteWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL,
+                               SPSchema.C_ES_SUBSCRIPTION));
 
         ps.setString(1, email);
         ps.setInt(2, sc.getCategoryID());
@@ -2126,7 +2157,53 @@ public class SPDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
+    @Override
+    public void removeEmailSubscription(final String tokenId) throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(
+               DBUtil.deleteWhere(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID));
 
+        ps.setString(1, tokenId);
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    @Override
+    public String getTokenId(final String email, final SubscriptionCategory sc) throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(
+                DBUtil.selectFromWhere(SPSchema.T_ES,
+                        SPSchema.C_ES_EMAIL +"=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
+                        SPSchema.C_ES_TOKEN_ID));
+
+        ps.setString(1, email);
+        ps.setInt(2, sc.getCategoryID());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (rs.next()) return rs.getString(1);
+            else return null;
+        } finally {
+            rs.close();
+        }
+    }
+
+    @Override
+    public String getEmail(final String tokenId)
+            throws SQLException, ExNotFound {
+        PreparedStatement ps = getConnection().prepareStatement(
+                DBUtil.selectFromWhere(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID +"=?",
+                        SPSchema.C_ES_EMAIL)
+        );
+
+        ps.setString(1, tokenId);
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (rs.next()) return rs.getString(1);
+            else throw new ExNotFound();
+        } finally {
+            rs.close();
+        }
+    }
     @Override
     public boolean isSubscribed(String email, SubscriptionCategory sc)
             throws SQLException
@@ -2142,51 +2219,71 @@ public class SPDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            if (rs.next()) return true;
-            else return false;
+            return rs.next(); //true if an entry was found, false otherwise
         } finally {
             rs.close();
         }
     }
 
-    private static final Calendar _calendar =  Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     @Override
-    public void addNewEmailReminder(String email, SubscriptionCategory category,
-            long firstEmailTime)
+    public synchronized void setLastEmailTime(String email, SubscriptionCategory category,
+            long lastEmailTime)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                    DBUtil.insert(SPSchema.T_ER,
-                            SPSchema.C_ER_EMAIL,
-                            SPSchema.C_ER_CATEGORY,
-                            SPSchema.C_ER_FIRST_EMAIL,
-                            SPSchema.C_ER_LAST_EMAIL
-                    ));
-
-        ps.setString(1, email);
-        ps.setInt(2, category.getCategoryID());
-
-        // set the first time = last time for new email reminder
-        Timestamp t = new Timestamp(firstEmailTime);
-        ps.setTimestamp(3, t, _calendar);
-        ps.setTimestamp(4, t, _calendar);
-
-        Util.verify(ps.executeUpdate() == 1);
-    }
-
-    @Override
-    public void updateEmailReminder(String email, SubscriptionCategory category, long lastEmailTime)
-            throws SQLException
-    {
-        PreparedStatement ps = getConnection().prepareStatement(
-                    DBUtil.updateWhere(
-                            SPSchema.T_ER, SPSchema.C_ER_EMAIL + "=? and " + SPSchema.C_ER_CATEGORY + "=?",
-                            SPSchema.C_ER_LAST_EMAIL));
+                       DBUtil.updateWhere(SPSchema.T_ES,
+                               SPSchema.C_ES_EMAIL + "=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
+                               SPSchema.C_ES_LAST_EMAILED));
 
         ps.setTimestamp(1, new Timestamp(lastEmailTime), _calendar);
         ps.setString(2, email);
         ps.setInt(3, category.getCategoryID());
-
         Util.verify(ps.executeUpdate() == 1);
+    }
+
+    @Override
+    public Set<String> getUsersNotSignedUpAfterXDays(final int days)
+            throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(
+                        "select " + SPSchema.C_TI_TO +
+                        " from " + SPSchema.T_TI +
+                        " left join " + SPSchema.T_USER + " on " + SPSchema.C_USER_ID + "=" +
+                                SPSchema.C_TI_TO +
+                        " where " + SPSchema.C_USER_ID + " is null " +
+                            "and DATEDIFF(CURRENT_DATE(),DATE(" + SPSchema.C_TI_TS +")) =?");
+
+        ps.setInt(1, days);
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            HashSet<String> users = new HashSet<String>();
+            while (rs.next()) users.add(rs.getString(1));
+            return users;
+        } finally {
+            rs.close();
+        }
+    }
+
+    @Override
+    public synchronized int getDaysFromLastEmail(final String email,
+            final SubscriptionCategory category)
+            throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(
+                       DBUtil.selectFromWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=? and " +
+                               SPSchema.C_ES_SUBSCRIPTION + "=?",
+                                "DATEDIFF(CURRENT_DATE()," + SPSchema.C_ES_LAST_EMAILED + ")"));
+
+        ps.setString(1, email);
+        ps.setInt(2, category.getCategoryID());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (rs.next()) return rs.getInt(1);
+            else return -1;
+        } finally {
+            rs.close();
+        }
     }
 }

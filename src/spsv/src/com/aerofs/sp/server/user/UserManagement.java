@@ -8,6 +8,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.spsv.Base62CodeGenerator;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
+import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.IUserSearchDatabase;
@@ -113,6 +114,8 @@ public class UserManagement
         final String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
 
         _db.addTargetedSignupCode(code, inviter._id, normalizedId, inviteeOrg._id);
+
+        _db.addEmailSubscription(inviteeId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         return _emailerFactory.createUserInvitation(inviter._id, normalizedId, inviter._firstName,
                         folderName, note, code);

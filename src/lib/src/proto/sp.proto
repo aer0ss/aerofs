@@ -409,6 +409,16 @@ service SPService {
      *   ExNoPerm       if the user calling this does not have admin privileges
      */
     rpc SetOrgPreferences(SetOrgPreferencesCall) returns (Void);
+
+    /**
+     * Unsubscribe a user from email reminders based on the unsubscribe token id
+     *
+     * Required Auth Level: none
+     *
+     *
+     */
+    rpc UnsubscribeEmail(SetUnsubscribeEmailCall) returns (GetUnsubscribeEmailReply);
+
 }
 
 message SignUpCall {
@@ -732,4 +742,12 @@ message SetOrgPreferencesCall {
     optional string org_name = 1;
     optional bool org_allow_open_sharing = 2;
     optional string org_allowed_domain = 3;
+}
+
+message SetUnsubscribeEmailCall {
+    required string unsubscribe_token = 1;
+}
+
+message GetUnsubscribeEmailReply {
+    required string email_id = 1;
 }
