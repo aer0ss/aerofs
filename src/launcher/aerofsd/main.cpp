@@ -46,13 +46,8 @@ int main(int argc, char* argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
     if (argc != 2) {
-        printf("Usage: %s <AeroFS config folder>\n"
-               " On Windows, the config folder is usually"
-               " \"%%AppData%%\\AeroFS\"\n"
-               " On OSX, the config folder is usually"
-               " \"$HOME/Library/Application Support/AeroFS\"\n"
-               " On Linux, the config folder is usually \"$HOME/.aerofs\"\n", argv[0]);
-        return EXIT_FAILURE ;
+        printf("Usage: %s <RTROOT>\n", argv[0]);
+        return EXIT_FAILURE;
     }
 
     JavaVM* jvm;
