@@ -2,6 +2,7 @@ package com.aerofs.sp.server.sp.user;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.spsv.Base62CodeGenerator;
@@ -9,6 +10,7 @@ import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.servletlib.sp.organization.Organization;
+import com.aerofs.servletlib.sp.user.IUserSearchDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.servletlib.sp.SPDatabase;
@@ -30,20 +32,21 @@ import java.util.List;
  */
 public class UserManagement
 {
-    private static final int DEFAULT_MAX_RESULTS = 100;
     // To avoid DoS attacks, do not permit listUsers queries to exceed 1000 returned results
     private static final int ABSOLUTE_MAX_RESULTS = 1000;
 
     private final SPDatabase _db;
+    private final IUserSearchDatabase _usdb;
     private final InvitationEmailer _invitationEmailer;
     private final PasswordResetEmailer _passwordResetEmailer;
 
     private static final Logger l = Util.l(UserManagement.class);
 
-    public UserManagement(SPDatabase db, InvitationEmailer invitationEmailer,
+    public UserManagement(SPDatabase db, IUserSearchDatabase usdb, InvitationEmailer invitationEmailer,
             PasswordResetEmailer passwordResetEmailer)
     {
         _db = db;
+        _usdb = usdb;
         _invitationEmailer = invitationEmailer;
         _passwordResetEmailer = passwordResetEmailer;
     }
@@ -123,72 +126,67 @@ public class UserManagement
         _db.setAuthorizationLevel(userId, auth);
     }
 
-    public List<PBUser> listAllUsers(Integer maxResults, Integer offset, String orgId)
-            throws SQLException
-    {
-        if (offset == null) offset = 0;
-        assert offset >= 0;
-        maxResults = sanitizeMaxResults(maxResults);
-
-        return _db.listUsers(orgId, offset, maxResults, null);
-    }
-
     public int totalUserCount(String orgId) throws SQLException
     {
-        return _db.countUsers(orgId, null);
+        return _usdb.listUsersCount(orgId);
     }
 
-    public UserListAndQueryCount listUsers(String search, Integer maxResults, Integer offset,
-            String orgId)
+    public int totalUserCount(AuthorizationLevel authLevel, String orgId)
             throws SQLException
     {
-        if (offset == null) offset = 0;
-        maxResults = sanitizeMaxResults(maxResults);
-
-        assert offset >= 0;
-        assert search != null && !search.isEmpty();
-
-        List<PBUser> list =  _db.listUsers(orgId, offset, maxResults, search);
-        int userCount = _db.countUsers(orgId, search);
-
-        return new UserListAndQueryCount(list, userCount);
+        return _usdb.listUsersWithAuthorizationCount(authLevel, orgId);
     }
 
-    public List<PBUser> listUsersAuth(String search, AuthorizationLevel authLevel,
-            Integer maxResults, Integer offset, String orgId) throws SQLException
+    public UserListAndQueryCount listUsers(@Nullable String search, int maxResults,
+            int offset, String orgId)
+            throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-
-        if (!authLevel.equals(AuthorizationLevel.ADMIN)
-                && !authLevel.equals(AuthorizationLevel.USER)) authLevel = AuthorizationLevel.USER;
-
-        if (offset == null) offset = 0;
-
-        maxResults = sanitizeMaxResults(maxResults);
+        checkOffset(offset);
+        checkMaxResults(maxResults);
 
         assert offset >= 0;
 
-        return _db.listUsers(search, authLevel.ordinal(), maxResults, offset, orgId);
+        List<PBUser> users;
+        int count;
+        if (search.isEmpty()) {
+            users = _usdb.listUsers(orgId, offset, maxResults);
+            count = _usdb.listUsersCount(orgId);
+        } else {
+            assert !search.isEmpty();
+            users = _usdb.searchUsers(orgId, offset, maxResults, search);
+            count = _usdb.searchUsersCount(orgId, search);
+        }
+        return new UserListAndQueryCount(users, count);
     }
 
-    public int getUsersAuthCount(AuthorizationLevel authLevel, String orgId)
-            throws SQLException
-    {
-        if (!authLevel.equals(AuthorizationLevel.ADMIN)
-                && !authLevel.equals(AuthorizationLevel.USER)) authLevel = AuthorizationLevel.USER;
-
-        return _db.getUsersAuthCount(null, authLevel.ordinal(), orgId);
-    }
-
-    public int getUsersAuthCount(String search, AuthorizationLevel authLevel, String orgId)
-            throws SQLException
+    /**
+     * @param search Null or empty string when we want to find all the users.
+     */
+    public UserListAndQueryCount listUsersAuth(@Nullable String search,
+            AuthorizationLevel authLevel, int maxResults,
+            int offset, String orgId)
+            throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
+        checkOffset(offset);
+        checkMaxResults(maxResults);
 
-        if (!authLevel.equals(AuthorizationLevel.ADMIN)
-                && !authLevel.equals(AuthorizationLevel.USER)) authLevel = AuthorizationLevel.USER;
+        assert offset >= 0;
 
-        return _db.getUsersAuthCount(search, authLevel.ordinal(), orgId);
+        List<PBUser> users;
+        int count;
+        if (search.isEmpty()) {
+            users = _usdb.listUsersWithAuthorization(orgId, offset, maxResults, authLevel);
+            count = _usdb.listUsersWithAuthorizationCount(authLevel, orgId);
+        }
+        else {
+            assert !search.isEmpty();
+            users = _usdb.searchUsersWithAuthorization(
+                        orgId, offset, maxResults, authLevel, search);
+            count = _usdb.searchUsersWithAuthorizationCount(authLevel, orgId, search);
+        }
+        return new UserListAndQueryCount(users, count);
     }
 
     public void sendPasswordResetEmail(String user_email)
@@ -231,12 +229,16 @@ public class UserManagement
         l.info(userId + "'s Password was successfully changed");
     }
 
-    private static Integer sanitizeMaxResults(Integer maxResults)
+    private static void checkOffset(int offset)
+            throws ExBadArgs
     {
-        if (maxResults == null) return DEFAULT_MAX_RESULTS;
-        else if (maxResults > ABSOLUTE_MAX_RESULTS) return ABSOLUTE_MAX_RESULTS;
-        else if (maxResults < 0) return 0;
+        if (offset < 0) throw new ExBadArgs("offset is negative");
+    }
 
-        else return maxResults;
+    private static void checkMaxResults(int maxResults)
+            throws ExBadArgs
+    {
+        if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
+        else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
     }
 }

@@ -33,11 +33,9 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
-import com.aerofs.proto.Sp.ListUsersAuthReply;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
-import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
@@ -179,31 +177,21 @@ class SPService implements ISPService
         User user = _userManagement.getUser(_sessionUser.getUser());
         user.verifyIsAdmin();
 
-        ListUsersReply reply;
         String orgId = user._orgId;
-        if (search == null || search.equals("")) {
-            // Return a subset of all users
-            int totalCount = _userManagement.totalUserCount(orgId);
-            reply = ListUsersReply.newBuilder()
-                    .addAllUsers(_userManagement.listAllUsers(maxResults, offset, orgId))
-                    .setTotalCount(totalCount)
-                    .setFilteredCount(totalCount)
-                    .build();
-        } else {
-            // Filter using the search parameter, and return a subset
-            UserListAndQueryCount listAndCount =
-                    _userManagement.listUsers(search, maxResults, offset, orgId);
-            reply = ListUsersReply.newBuilder()
-                    .addAllUsers(listAndCount.users)
-                    .setFilteredCount(listAndCount.count)
-                    .setTotalCount(_userManagement.totalUserCount(orgId))
-                    .build();
-        }
+
+        UserListAndQueryCount listAndCount =
+                _userManagement.listUsers(search, maxResults, offset, orgId);
+
+        ListUsersReply reply = ListUsersReply.newBuilder()
+                .addAllUsers(listAndCount.users)
+                .setFilteredCount(listAndCount.count)
+                .setTotalCount(_userManagement.totalUserCount(orgId))
+                .build();
         return createReply(reply);
     }
 
     @Override
-    public ListenableFuture<ListUsersAuthReply> listUsersAuth(String search,
+    public ListenableFuture<ListUsersReply> listUsersAuth(String search,
             PBAuthorizationLevel authLevel, Integer maxResults, Integer offset)
         throws Exception
     {
@@ -212,16 +200,15 @@ class SPService implements ISPService
 
         String orgId = user._orgId;
         AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
-        List<PBUser> pbUsers =
-                _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
-        int totalCount = _userManagement.getUsersAuthCount(level, orgId);
-        int filteredCount = _userManagement.getUsersAuthCount(search, level, orgId);
 
-        ListUsersAuthReply reply;
-        reply = ListUsersAuthReply.newBuilder()
-                .addAllUsers(pbUsers)
-                .setTotalCount(totalCount)
-                .setFilteredCount(filteredCount)
+
+        UserListAndQueryCount listAndCount =
+                _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
+
+        ListUsersReply reply = ListUsersReply.newBuilder()
+                .addAllUsers(listAndCount.users)
+                .setFilteredCount(listAndCount.count)
+                .setTotalCount(_userManagement.totalUserCount(level, orgId))
                 .build();
         return createReply(reply);
     }

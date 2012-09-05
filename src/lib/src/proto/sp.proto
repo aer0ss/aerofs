@@ -254,7 +254,7 @@ service SPService {
      * Throws:
      *   ExNoPerm if the user does not have admin privileges
      */
-    rpc ListUsersAuth(ListUsersAuthCall) returns(ListUsersAuthReply);
+    rpc ListUsersAuth(ListUsersAuthCall) returns(ListUsersReply);
 
     /**
      * Sends an email to a user with instructions to reset his password. The user
@@ -585,10 +585,10 @@ message ListUsersCall {
 
     // Maximum number of users returned on one page.
     // The SP server should enforce a reasonable upper bound for this parameter (like 1000)
-    optional int32 max_results = 2 [default = 100];
+    required int32 max_results = 2;
 
     // Offset to start retrieving the results
-    optional int32 offset = 3;
+    required int32 offset = 3;
 }
 
 message ListUsersReply {
@@ -610,21 +610,10 @@ message ListUsersAuthCall {
     required PBAuthorizationLevel auth_level = 2;
 
     // Maximum number of admins returned on one page
-    optional int32 max_results = 3 [default = 100];
+    required int32 max_results = 3;
 
     // Offet to start retrieving the results
-    optional int32 offset = 4;
-}
-
-message ListUsersAuthReply {
-    // A subset of the admins. There will be at most 'max_results' users.
-    repeated PBUser users = 1;
-
-    // Total number of users in the database with the desired auth_level.
-    required int32 total_count = 2;
-
-    // Total number of users in the database that match the 'search' parameter.
-    required int32 filtered_count = 3;
+    required int32 offset = 4;
 }
 
 message PBUser {

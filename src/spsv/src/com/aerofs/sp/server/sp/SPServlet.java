@@ -50,7 +50,7 @@ public class SPServlet extends AeroServlet
     private final InvitationEmailer _emailer = new InvitationEmailer();
 
     private final UserManagement _userManagement =
-            new UserManagement(_db, _emailer, new PasswordResetEmailer());
+            new UserManagement(_db, _db, _emailer, new PasswordResetEmailer());
     private final OrganizationManagement _organizationManagement =
             new OrganizationManagement(_db, _userManagement);
 

@@ -61,7 +61,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         assert emailer != null;
 
         UserManagement userManagement =
-                new UserManagement(_db, emailer, mock(PasswordResetEmailer.class));
+                new UserManagement(_db, _db, emailer, mock(PasswordResetEmailer.class));
         OrganizationManagement organizationManagement = mock(OrganizationManagement.class);
 
         SPService service = new SPService(_db, new MockSessionUserID(),
