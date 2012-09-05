@@ -4,8 +4,6 @@
 
 package com.aerofs.sp.server.sp;
 
-import java.util.List;
-
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.servletlib.db.JUnitDatabaseConnectionFactory;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
@@ -93,12 +91,10 @@ public class TestListUser extends AbstractTest
     public void shouldListAllUsersForListUsers()
             throws Exception
     {
-
-        List<PBUser> users = userManagement.listAllUsers(TOTAL_USERS, 0, validOrgId);
-        assertEquals(TOTAL_USERS, users.size());
-
-        int count = userManagement.totalUserCount(validOrgId);
-        assertEquals(TOTAL_USERS, count);
+        // search term null means search for all
+        UserListAndQueryCount pair = userManagement.listUsers(null, TOTAL_USERS, 0, validOrgId);
+        assertEquals(TOTAL_USERS, pair.users.size());
+        assertEquals(TOTAL_USERS, pair.count);
     }
 
     @Test
@@ -107,14 +103,16 @@ public class TestListUser extends AbstractTest
     {
         final int offset = 4;
         final int maxResults = 6;
-        List<PBUser> subsetUsers = userManagement.listAllUsers(maxResults, offset, validOrgId);
-        List<PBUser> allUsers = userManagement.listAllUsers(TOTAL_USERS, 0, validOrgId);
-        assertEquals(maxResults, subsetUsers.size());
-        assertEquals(TOTAL_USERS, allUsers.size());
+        UserListAndQueryCount subsetPair = userManagement.listUsers(null, maxResults,
+                offset, validOrgId);
+        UserListAndQueryCount allPair = userManagement.listUsers(null, TOTAL_USERS,
+                0, validOrgId);
+        assertEquals(maxResults, subsetPair.users.size());
+        assertEquals(TOTAL_USERS, allPair.users.size());
 
         for (int index = 0; index < maxResults; index++) {
-            PBUser subsetUser = subsetUsers.get(index);
-            PBUser allUser = allUsers.get(index + offset);
+            PBUser subsetUser = subsetPair.users.get(index);
+            PBUser allUser = allPair.users.get(index + offset);
             assertEquals(allUser.getUserEmail(), subsetUser.getUserEmail());
         }
     }
@@ -123,8 +121,8 @@ public class TestListUser extends AbstractTest
     public void shouldFindNoUsersWhenOrgIdIsNotInDB()
             throws Exception
     {
-        List<PBUser> users = userManagement.listAllUsers(10, 0, invalidOrgId);
-        assertTrue(users.isEmpty());
+        UserListAndQueryCount pair = userManagement.listUsers(null, 10, 0, invalidOrgId);
+        assertTrue(pair.users.isEmpty());
     }
 
     // ================================
@@ -154,16 +152,14 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         // search term is null if we want to find all the users.
-        List<PBUser> users = userManagement.listUsersAuth(null, AuthorizationLevel.USER,
+        UserListAndQueryCount pair = userManagement.listUsersAuth(null, AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
-        assertEquals(NUMBER_OF_USERS, users.size());
-        for (PBUser user : users) {
+        assertEquals(NUMBER_OF_USERS, pair.users.size());
+        for (PBUser user : pair.users) {
             assertTrue(user.getUserEmail().contains("user"));
             assertFalse(user.getUserEmail().contains("admin"));
         }
-
-        int count = userManagement.getUsersAuthCount(null, AuthorizationLevel.USER, validOrgId);
-        assertEquals(NUMBER_OF_USERS, count);
+        assertEquals(NUMBER_OF_USERS, pair.count);
     }
 
     // ======================================
@@ -174,33 +170,31 @@ public class TestListUser extends AbstractTest
     public void shouldListUser1ForSearchUsersWithAuthorization()
             throws Exception
     {
-        List<PBUser> users = userManagement.listUsersAuth("user1@", AuthorizationLevel.USER,
+        UserListAndQueryCount pair = userManagement.listUsersAuth("user1@", AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
 
-        assertEquals(1, users.size());
-        assertEquals("user1@test.com", users.get(0).getUserEmail());
-
-        int count = userManagement.getUsersAuthCount("user1@", AuthorizationLevel.USER, validOrgId);
-        assertEquals(1, count);
+        assertEquals(1, pair.users.size());
+        assertEquals("user1@test.com", pair.users.get(0).getUserEmail());
+        assertEquals(1, pair.count);
     }
 
     @Test
     public void shouldFindUsersWithPercentageSignForSearchUsersWithAuthorization()
             throws Exception
     {
-        List<PBUser> users = userManagement.listUsersAuth("user%", AuthorizationLevel.USER,
+        UserListAndQueryCount pair = userManagement.listUsersAuth("user%", AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
 
-        assertEquals(NUMBER_OF_USERS, users.size());
+        assertEquals(NUMBER_OF_USERS, pair.users.size());
     }
 
     @Test
     public void shouldNotFindUserWhenSearchCouldMatchButAuthLevelDiffers()
             throws Exception
     {
-        List<PBUser> users = userManagement.listUsersAuth("user1", AuthorizationLevel.ADMIN,
-                TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = userManagement.listUsersAuth("user1",
+                AuthorizationLevel.ADMIN, TOTAL_USERS, 0, validOrgId);
 
-        assertTrue(users.isEmpty());
+        assertTrue(pair.users.isEmpty());
     }
 }
