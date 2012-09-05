@@ -80,6 +80,10 @@ rm -rf /Volumes/AeroFS\ Installer/AeroFS.app
 
 if [ "$MODE" == "PROD" ]; then
   echo signing AeroFS.app...
+  # see http://developer.apple.com/library/mac/technotes/tn2206/_index.html#//apple_ref/doc/uid/DTS40007919-CH1-SUBSECTION9
+  # for information on signing frameworks
+  codesign -f -s "Air Computing, Inc." Release/AeroFS.app/Contents/Resources/Java/Growl.framework/Versions/A
+  codesign -f -s "Air Computing, Inc." Release/AeroFS.app/Contents/Resources/Java/AeroFSFinderExtension.osax
   codesign -f -s "Air Computing, Inc." Release/AeroFS.app
 fi
 
