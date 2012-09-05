@@ -69,7 +69,7 @@ public class Param
         static {
             URL url;
             try {
-                url = new URL("https://" + (Cfg.staging() ? "sp.aerofs.com" : L.get().spHost()) + "/sp");
+                url = new URL("https://" + (Cfg.staging() ? "sp.aerofs.com/staging" : L.get().spHost()) + "/sp");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
                 url = null;
