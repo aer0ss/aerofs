@@ -139,6 +139,8 @@ public class CLISetup
                     " account already?");
             if (returning) {
                 userID = getUser(cli);
+                cli.show(MessageType.INFO, "If you forgot your password, go to " +
+                        S.PASSWORD_RESET_REQUEST_URL + " to reset it.");
                 passwd = cli.askPasswd(S.SETUP_PASSWD);
 
             } else {
