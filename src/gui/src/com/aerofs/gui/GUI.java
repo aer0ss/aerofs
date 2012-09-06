@@ -507,15 +507,11 @@ public class GUI implements IUI {
     public void notify(final MessageType mt, final String title, final String msg,
             final Runnable onClick)
     {
-        Util.l().warn("notify GUI " + title);
-
         asyncExec(new Runnable()
         {
             @Override
             public void run()
             {
-                Util.l().warn("notify GUI st " + _st);
-
                 if (_st != null) _st.getBalloons().add(mt, title, msg, onClick);
             }
         });

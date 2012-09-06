@@ -292,7 +292,7 @@ public class CompActivityLog extends Composite
 
                 if (hasUnresolvedFinal) {
                     _compSpin.warning();
-                    String msg = S.FAILED_FOR_ACCURACY + ".";
+                    String msg = S.FAILED_FOR_ACCURACY;
                     _lblStatus.setText(msg);
                     if (_lblStatus.getBounds().width < GUIUtil.getExtent(getShell(), msg).x) {
                         getParent().pack();

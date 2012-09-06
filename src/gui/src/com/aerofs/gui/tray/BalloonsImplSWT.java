@@ -24,8 +24,6 @@ public class BalloonsImplSWT implements IBalloonsImpl {
     @Override
     public void add(MessageType mt, String title, String msg, final Runnable onClick)
     {
-        l.warn("add BLN " + title);
-
         l.info("add balloon \"" + title + ": " + msg + "\"");
 
         int icon;
@@ -77,8 +75,6 @@ public class BalloonsImplSWT implements IBalloonsImpl {
     private void open(ToolTip tip)
     {
         if (!_ti.isDisposed()) {
-            Util.l().warn("open BLN " + _ti);
-
             _ti.setToolTip(tip);
             tip.setVisible(true);
         }

@@ -29,20 +29,10 @@ public class Balloons {
      *
      * @param msg
      *            the text to be shown in the balloon
-     * @param icon
-     *            can be one of SWT.ICON_ERROR, SWT.ICON_INFORMATION,
-     *            and SWT.ICON_WARNING
      */
     public void add(MessageType mt, String title, String msg, Runnable onClick)
     {
-        Util.l().warn("add BBLL " + _impl);
-
         if (_impl != null) _impl.add(mt, title, msg, onClick);
-    }
-
-    public boolean isAvailable()
-    {
-        return _impl != null;
     }
 
     public boolean hasVisibleBalloon()

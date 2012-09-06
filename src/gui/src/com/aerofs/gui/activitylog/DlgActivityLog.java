@@ -11,9 +11,6 @@ public class DlgActivityLog extends AeroFSDialog
 {
     private final Integer _initialSelection;
 
-    /**
-     * @param path the path to the folder to be shared, relative to the root anchor path.
-     */
     public DlgActivityLog(Shell parent, Integer initialSelection)
     {
         super(parent, "Recent Activities", false, true);

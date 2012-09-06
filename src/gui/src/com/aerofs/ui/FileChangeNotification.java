@@ -65,18 +65,13 @@ public class FileChangeNotification
 
         if (ev.getPath().getElemCount() == 0) return;
 
-        Util.l().warn("received FCN " + new OID(ev.getSocid().getOid()));
-
         UI.get().asyncExec(new Runnable() {
             @Override
             public void run()
             {
                 _recents.add(_recents.size(), ev.getPath());
 
-                Util.l().warn("run FCN " + _recents.size());
-
                 if (_recents.size() == 1) {
-                    Util.l().warn("FCN recents.size == 1 " + UI.get().hasVisibleNotifications());
                     if (!UI.get().hasVisibleNotifications()) {
                         show();
                     } else {
@@ -101,8 +96,6 @@ public class FileChangeNotification
     private void show()
     {
         assert UI.get().isUIThread();
-
-        Util.l().warn("show FCN " + _recents.size());
 
         String title;
         int size = _recents.size();
