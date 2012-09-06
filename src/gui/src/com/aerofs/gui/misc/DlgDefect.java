@@ -103,8 +103,8 @@ public class DlgDefect extends AeroFSJFaceDialog {
             {
                 boolean cpuIssue = message.toLowerCase().contains("cpu");
 
-                Object prog = UI.get().addProgress(cpuIssue ? "Sampling and submitting " +
-                        S.PRODUCT + " CPU usage" : "Submitting", true);
+                Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + S.PRODUCT +
+                        " CPU usage" : "Submitting", true);
                 try {
                     if (cpuIssue) {
                         for (int i = 0; i < 20; i++) {
