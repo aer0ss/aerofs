@@ -15,6 +15,7 @@ requires = [
     'requests',
     'pyramid_beaker',
     'Babel',
+    'mock',
     ]
 
 msg_extractors = {}
