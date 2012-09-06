@@ -163,6 +163,7 @@ public class DBUtil
         return sb.toString();
     }
 
+    // TODO (WW) use PreparedStatementWrapper instead
     public static void close(Statement s)
     {
         try {

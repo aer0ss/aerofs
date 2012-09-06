@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -53,7 +54,7 @@ public class S3CacheDatabase extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -74,7 +75,7 @@ public class S3CacheDatabase extends AbstractDatabase
             ps.setLong(2, timestamp);
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -93,7 +94,7 @@ public class S3CacheDatabase extends AbstractDatabase
             ps.setBytes(1, hash.getBytes());
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -124,7 +125,7 @@ public class S3CacheDatabase extends AbstractDatabase
             }
             return new DBIterSortedAccessesRow(ps.executeQuery());
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
@@ -26,6 +27,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor;
 import com.aerofs.lib.db.AbstractDBIterator;
+import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.S3Schema.ChunkState;
 import com.aerofs.lib.db.dbcw.IDBCW;
@@ -91,7 +93,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetChildDir = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -122,7 +124,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetChildHistDir = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -155,7 +157,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psCreateChildHistDir = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -216,9 +218,8 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _dbcw.throwOnConstraintViolation(e);
-            close(_psCreateChildDir);
+            DBUtil.close(_psCreateChildDir);
             _psCreateChildDir = null;
-            handleSQLException(e);
             throw e;
         }
     }
@@ -236,7 +237,7 @@ public class S3Database extends AbstractDatabase
             ps.setLong(1, dirId);
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
         }
     }
 
@@ -262,7 +263,7 @@ public class S3Database extends AbstractDatabase
             ps.executeUpdate();
         } catch (SQLException e) {
             _psSetDirInfo = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -306,7 +307,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetDirInfo = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -354,7 +355,7 @@ public class S3Database extends AbstractDatabase
 
         } catch (SQLException e) {
             _psCreateFileEntry = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -385,7 +386,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetFileIndex = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -415,7 +416,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetChildFile = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -508,7 +509,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetFileInfo = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -543,7 +544,7 @@ public class S3Database extends AbstractDatabase
             ps.setBytes(8, info._chunks.getBytes());
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -589,7 +590,7 @@ public class S3Database extends AbstractDatabase
             ps.setLong(1, id);
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -623,7 +624,7 @@ public class S3Database extends AbstractDatabase
                 throw new SQLException("Updated " + rowsUpdated + " rows, expected 1");
             }
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -649,7 +650,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetHistDirChildFolders = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -675,7 +676,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetHistDirChildFiles = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -737,7 +738,7 @@ public class S3Database extends AbstractDatabase
             return revisions;
         } catch (SQLException e) {
             _psGetHistFileRevisions = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -788,7 +789,7 @@ public class S3Database extends AbstractDatabase
             }
         } catch (SQLException e) {
             _psGetHistFileInfo = null;
-            handleSQLException(e, ps);
+            DBUtil.close(ps);
             throw e;
         }
     }
@@ -820,8 +821,7 @@ public class S3Database extends AbstractDatabase
 
             return new DBIterChunks(_psGetAllChunks.executeQuery());
         } catch (SQLException e) {
-            l.warn(Util.e(e));
-            close(_psGetAllChunks);
+            DBUtil.close(_psGetAllChunks);
             _psGetAllChunks = null;
             throw e;
         }
@@ -848,7 +848,7 @@ public class S3Database extends AbstractDatabase
             ps.setInt(3, ChunkState.UPLOADING.sqlValue());
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -873,7 +873,7 @@ public class S3Database extends AbstractDatabase
             ps.setInt(3, ChunkState.UPLOADING.sqlValue());
             ps.executeUpdate();
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -898,7 +898,7 @@ public class S3Database extends AbstractDatabase
             int rows = ps.executeUpdate();
             assert rows == 1;
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -936,7 +936,7 @@ public class S3Database extends AbstractDatabase
             }
 
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -964,7 +964,7 @@ public class S3Database extends AbstractDatabase
             }
 
         } catch (SQLException e) {
-            handleSQLException(e, psw);
+            psw.close();
             throw e;
         }
     }
@@ -982,7 +982,7 @@ public class S3Database extends AbstractDatabase
             _psDeleteChunk.execute();
         } catch (SQLException e) {
             l.warn(Util.e(e));
-            close(_psDeleteChunk);
+            DBUtil.close(_psDeleteChunk);
             _psDeleteChunk=null;
             throw e;
         }
@@ -1017,7 +1017,7 @@ public class S3Database extends AbstractDatabase
 
         } catch (SQLException e) {
             l.warn(Util.e(e));
-            close(_psGetDeadChunks);
+            DBUtil.close(_psGetDeadChunks);
             _psGetDeadChunks = null;
             throw e;
         }

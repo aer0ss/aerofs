@@ -3,8 +3,8 @@ package com.aerofs.daemon.lib.db;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 
+import com.aerofs.lib.db.DBUtil;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
@@ -33,54 +33,9 @@ public abstract class AbstractDatabase
             return true;
         } catch (SQLException e) {
             l.warn(Util.e(e));
-            close(ps);
+            DBUtil.close(ps);
             return false;
         }
     }
 
-    protected void handleSQLException(SQLException e)
-    {
-        l.warn(Util.e(e));
-    }
-
-    protected void handleSQLException(SQLException e, Statement stmt)
-    {
-        close(stmt);
-        handleSQLException(e);
-    }
-
-    protected void handleSQLException(SQLException e, PreparedStatementWrapper psw)
-    {
-        close(psw.get());
-        psw.set(null);
-        handleSQLException(e);
-    }
-
-    protected static void close(Statement stmt)
-    {
-        try {
-            if (stmt != null) stmt.close();
-        } catch (SQLException e) {
-            l.warn("cannot close stmt: " + e);
-        }
-    }
-
-    protected class PreparedStatementWrapper
-    {
-        private PreparedStatement _ps;
-
-        public PreparedStatementWrapper()
-        {
-        }
-
-        public PreparedStatement get()
-        {
-            return _ps;
-        }
-
-        public PreparedStatement set(PreparedStatement ps)
-        {
-            return _ps = ps;
-        }
-    }
 }
