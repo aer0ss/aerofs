@@ -130,7 +130,8 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         if (!OSUtil.isWindows()) {
             long duration = System.currentTimeMillis() - start;
             if (duration > 50) {
-                SVClient.logSendDefectAsync(true, "getActiveInterfaces too long: " + duration);
+                Exception e = new Exception("getActiveInterfaces too long: " + duration);
+                SVClient.logSendDefectAsync(true, "getActiveInterfaces too long", e);
             }
         }
 
