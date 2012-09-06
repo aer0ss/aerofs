@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo "usage: $0 <hostname> <ttl>"
+    echo "example: $0 z.arrowfs.org 5"
+    exit 2
+fi
+
+TTL=$2
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_NAME="$( basename "${BASH_SOURCE[0]}" )"
+
+OUTPUT="$(puppet kick $1 2>&1)"
+
+# If the kick failed
+if [ $? -ne 0 ]
+then
+    logger "Puppet kick failed for $1, trying $TTL more times"
+    # If we still have TTL to burn
+    if [ $TTL -gt 0 ]
+    then
+        let TTL-=1
+        # run this script again in one minute
+        COMMAND="${SCRIPT_DIR}/${SCRIPT_NAME} $1 $TTL"
+        echo "$COMMAND" | at now + 1 minute 2> /dev/null
+    else
+        # if we are out of attempts, send an email
+        echo $OUTPUT | mail peter@aerofs.com -s "Puppet kick failed for ${1}"
+    fi
+fi

@@ -6,4 +6,6 @@
 <%    node = YAML.load_file(File.join(directory.path, file)) -%>
 <%    node.name -%>
 <% end -%>
-puppet kick <%= nodes.join(" ") %>
+<% nodes.compact.each do |node| %>
+kick <%= node %> 10
+<% end %>

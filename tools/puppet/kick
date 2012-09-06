@@ -2,21 +2,29 @@
 
 set -e -u
 
-if [ $# -ne 1 ]; then
+if [ $# -lt 2 ]; then
     echo "usage: $0 [puppetmaster] [puppet agent]"
     echo "[puppetmaster]: the address of the puppetmaster server"
     echo "[puppet agent]: the hostname of the puppet agent"
+    echo "[retry attempts]: the number of times to retry (in the event the machine is already being kicked)"
     echo
     echo "example: $0 puppet.arrowfs.org z.arrowfs.org"
     exit 2
 fi
 
 PUPPET_MASTER=${1:-}
+PUPPET_AGENT=${2:-}
+TTL=${3:-}
+
 if [ x"$PUPPET_MASTER" == x ]; then
     echo "puppetmaster server address is required"
     exit 3
 fi
 
-ssh ${PUPPET_MASTER} -C "kick"
+if [ x"$TTL" == x ]; then
+    TTL=10
+fi
+
+ssh ${PUPPET_MASTER} -C "kick ${PUPPET_AGENT} ${TTL}"
 
 exit 0

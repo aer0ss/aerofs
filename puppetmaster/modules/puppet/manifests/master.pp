@@ -11,8 +11,17 @@ class puppet::master inherits puppet {
     subscribe => Class["puppet::config"]
   }
 
+  file { "/usr/local/bin/kickall":
+    mode => 755,
+    content => template("puppet/kickall.erb"),
+  }
+
   file { "/usr/local/bin/kick":
     mode => 755,
-    content => template("puppet/kick.erb"),
+    source => "puppet:///modules/puppet/kick"
+  }
+
+  package { "bsd-mailx":
+    ensure => present
   }
 }
