@@ -46,7 +46,6 @@ implements IUserAndDeviceNameDatabase
 
             _psSDN.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSDN);
             _psSDN = null;
             throw e;
@@ -70,7 +69,6 @@ implements IUserAndDeviceNameDatabase
 
             _psSUN.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSUN);
             _psSUN = null;
             throw e;
@@ -100,7 +98,6 @@ implements IUserAndDeviceNameDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGDN);
             _psGDN = null;
             throw e;
@@ -130,7 +127,6 @@ implements IUserAndDeviceNameDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGUN);
             _psGUN = null;
             throw e;

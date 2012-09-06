@@ -9,8 +9,6 @@ import com.aerofs.lib.id.UniqueID;
 
 public class MySQLDBCW extends AbstractDBCW implements IDBCW
 {
-    private final Class<?> _clsCommEx;
-    private final Class<?> _clsNonTransientConnectionEx;
     private final Class<?> _clsConstraintViolationEx;
 
     public MySQLDBCW(String url, boolean autoCommit)
@@ -20,8 +18,6 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
         try {
             Class.forName("com.mysql.jdbc.Driver").asSubclass(Driver.class);
             String ns = "com.mysql.jdbc.exceptions.jdbc4.";
-            _clsCommEx = Class.forName(ns + "CommunicationsException");
-            _clsNonTransientConnectionEx = Class.forName(ns + "MySQLNonTransientConnectionException");
             _clsConstraintViolationEx = Class.forName(ns + "MySQLIntegrityConstraintViolationException");
         } catch (ClassNotFoundException e) {
             Util.fatal(e);
@@ -38,20 +34,6 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
     protected boolean isConstraintViolation(SQLException e)
     {
         return _clsConstraintViolationEx.isInstance(e);
-    }
-
-    @Override
-    public boolean checkDeadConnection(SQLException e)
-    {
-        boolean dead = _clsCommEx.isInstance(e) || _clsNonTransientConnectionEx.isInstance(e);
-        if (dead) {
-            try {
-                init_();
-            } catch (SQLException se) {
-                Util.fatal(se);
-            }
-        }
-        return dead;
     }
 
     @Override

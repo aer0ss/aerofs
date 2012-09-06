@@ -41,7 +41,6 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
 
             _psAdd.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAdd);
             _psAdd = null;
             throw e;
@@ -62,7 +61,6 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
             _psDel.setBytes(2, soid.oid().getBytes());
             Util.verify(_psDel.executeUpdate() == 1);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDel);
             _psDel = null;
             throw e;
@@ -82,7 +80,6 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
             _psDelStore.setInt(1, sidx.getInt());
             _psDelStore.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDelStore);
             _psDelStore = null;
             throw e;
@@ -118,7 +115,6 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
             return new DBIterExpelled(_psGet.executeQuery());
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGet);
             _psGet = null;
             throw e;

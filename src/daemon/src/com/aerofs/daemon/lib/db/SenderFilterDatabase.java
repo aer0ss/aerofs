@@ -40,7 +40,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
             _psSSF.setBytes(3, filter.getBytes());
             _psSSF.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSSF);
             _psSSF = null;
             throw e;
@@ -60,7 +59,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
             _psDSF.setLong(2, sfidx.getLong());
             _psDSF.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDSF);
             _psDSF = null;
             throw e;
@@ -92,7 +90,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSF);
             _psGSF = null;
             throw e;
@@ -129,7 +126,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
             _psGSFS.setLong(3, to.getLong());
             return new DBIterSenderFilter(_psGSFS.executeQuery());
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSFS);
             _psGSFS = null;
             throw e;
@@ -156,7 +152,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSFPI);
             _psGSFPI = null;
             throw e;
@@ -185,7 +180,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSFGI);
             _psGSFGI = null;
             throw e;
@@ -216,7 +210,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSDI);
             _psGSDI = null;
             throw e;
@@ -243,7 +236,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSDIC);
             _psGSDIC = null;
             throw e;
@@ -266,7 +258,6 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
             _psSSDI.setLong(3, sfidx.getLong());
             _psSSDI.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSSDI);
             _psSSDI = null;
             throw e;

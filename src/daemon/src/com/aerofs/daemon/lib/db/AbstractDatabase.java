@@ -41,7 +41,6 @@ public abstract class AbstractDatabase
     protected void handleSQLException(SQLException e)
     {
         l.warn(Util.e(e));
-        _dbcw.checkDeadConnection(e);
     }
 
     protected void handleSQLException(SQLException e, Statement stmt)

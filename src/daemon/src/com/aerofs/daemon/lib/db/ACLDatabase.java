@@ -60,7 +60,6 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             return new DBIterSubjectRole(_psGet.executeQuery());
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGet);
             _psGet = null;
             throw e;
@@ -87,7 +86,6 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             _psSet.executeBatch();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSet);
             _psSet = null;
             throw e;
@@ -113,7 +111,6 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             _psDel.executeBatch();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDel);
             _psDel = null;
             throw e;
@@ -131,7 +128,6 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             _psClear.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psClear);
             _psClear = null;
             throw e;
@@ -161,7 +157,6 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             return localEpoch;
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetEpoch);
             _psGetEpoch = null;
             throw e;
@@ -184,7 +179,6 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             assert affectedRows == 1 : ("acl epoch not updated"); // only one row should be updated
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psUpdateEpoch);
             _psUpdateEpoch = null;
             throw e;

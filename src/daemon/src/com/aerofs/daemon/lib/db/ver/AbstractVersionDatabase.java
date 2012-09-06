@@ -127,7 +127,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             throw e;
         } finally {
             DBUtil.close(s);
@@ -147,7 +146,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             _psSGT.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSGT);
             _psSGT = null;
             throw e;
@@ -177,7 +175,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGK);
             _psGK = null;
             throw e;
@@ -201,7 +198,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             _psAddKwlg.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAddKwlg);
             _psAddKwlg = null;
             throw e;
@@ -235,7 +231,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGAVD);
             _psGAVD = null;
             throw e;
@@ -272,7 +267,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psISK);
             _psISK = null;
             throw e;
@@ -297,7 +291,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             _psAddBkupTicks.executeBatch();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAddBkupTicks);
             _psAddBkupTicks = null;
             throw e;
@@ -309,9 +302,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
     public void deleteBackupTicksFromStore_(SIndex sidx, Trans t)
             throws SQLException
     {
-        Statement stmt = null;
         try {
-
             if (_psDelBackupTicks == null) {
                 _psDelBackupTicks = c().prepareStatement("delete from "
                     + _t_bkupt + " where "
@@ -321,10 +312,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
             _psDelBackupTicks.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             throw e;
-        } finally {
-            DBUtil.close(stmt);
         }
     }
 }

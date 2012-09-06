@@ -41,7 +41,6 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
 
             _psSetAliasSOID.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSetAliasSOID);
             _psSetAliasSOID = null;
             throw e;
@@ -68,7 +67,6 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psTargetOID);
             _psTargetOID = null;
             throw e;
@@ -93,7 +91,6 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
 
             _psResolveAliasChaining.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psResolveAliasChaining);
             _psResolveAliasChaining = null;
             throw e;

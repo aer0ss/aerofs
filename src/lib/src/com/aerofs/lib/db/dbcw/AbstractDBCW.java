@@ -32,7 +32,7 @@ abstract class AbstractDBCW implements IDBCW
     public void init_() throws SQLException
     {
         // do not call fini_() here since otherwise all the prepared statements associated with the
-        // database connection would become invalid. See {@link IDBCW#fini_()}
+        // database connection would become invalid.
 
         if (_c != null) return;
 
@@ -72,7 +72,7 @@ abstract class AbstractDBCW implements IDBCW
         try {
             _c.rollback();
         } catch (SQLException e) {
-            if (!checkDeadConnection(e)) Util.fatal(e);
+            Util.fatal(e);
         }
     }
 

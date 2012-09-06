@@ -49,7 +49,6 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psPDContains);
             _psPDContains = null;
             throw e;
@@ -71,7 +70,6 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
             _psAddToPD.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAddToPD);
             _psAddToPD = null;
             throw e;
@@ -85,9 +83,6 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
         try {
             stmt.executeUpdate("delete from " + T_PD + " where " + C_PD_SIDX +
                     "=" + sidx.getInt());
-        } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
-            throw e;
         } finally {
             DBUtil.close(stmt);
         }

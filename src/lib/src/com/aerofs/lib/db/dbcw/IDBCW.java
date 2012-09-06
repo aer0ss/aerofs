@@ -37,11 +37,6 @@ public interface IDBCW
      */
     public void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist;
 
-    /**
-     * @return true if the database connection is dead
-     */
-    public boolean checkDeadConnection(SQLException e);
-
     public String insertOrIgnore();
 
     public String notNull();

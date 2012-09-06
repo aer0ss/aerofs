@@ -100,7 +100,6 @@ public class ImmigrantVersionDatabase
 
             return new DBIterImmigrantTickRow(_psGetImmTicks.executeQuery());
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetImmTicks);
             _psGetImmTicks = null;
 
@@ -111,14 +110,9 @@ public class ImmigrantVersionDatabase
     @Override
     public void deleteTicksFromStore_(SIndex sidx, Trans t) throws SQLException
     {
-        Statement stmt = null;
+        Statement stmt = c().createStatement();
         try {
-            stmt = c().createStatement();
-            stmt.executeUpdate("delete from " + T_IV + " where "
-                                + C_IV_SIDX + "=" + sidx.getInt());
-        } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
-            throw e;
+            stmt.executeUpdate("delete from " + T_IV + " where " + C_IV_SIDX + "=" + sidx.getInt());
         } finally {
             DBUtil.close(stmt);
         }
@@ -147,7 +141,6 @@ public class ImmigrantVersionDatabase
             _psAddIMMVer.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAddIMMVer);
             _psAddIMMVer = null;
             throw e;
@@ -196,10 +189,8 @@ public class ImmigrantVersionDatabase
 
             return new DBIterImmigrantTickRow(_psGetBackupTicks.executeQuery());
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetBackupTicks);
             _psGetBackupTicks = null;
-
             throw e;
         }
     }
@@ -224,7 +215,6 @@ public class ImmigrantVersionDatabase
             _psDelImmTick.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDelImmTick);
             _psDelImmTick = null;
             throw e;

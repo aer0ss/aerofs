@@ -821,7 +821,6 @@ public class S3Database extends AbstractDatabase
             return new DBIterChunks(_psGetAllChunks.executeQuery());
         } catch (SQLException e) {
             l.warn(Util.e(e));
-            _dbcw.checkDeadConnection(e);
             close(_psGetAllChunks);
             _psGetAllChunks = null;
             throw e;
@@ -983,7 +982,6 @@ public class S3Database extends AbstractDatabase
             _psDeleteChunk.execute();
         } catch (SQLException e) {
             l.warn(Util.e(e));
-            _dbcw.checkDeadConnection(e);
             close(_psDeleteChunk);
             _psDeleteChunk=null;
             throw e;
@@ -1019,7 +1017,6 @@ public class S3Database extends AbstractDatabase
 
         } catch (SQLException e) {
             l.warn(Util.e(e));
-            _dbcw.checkDeadConnection(e);
             close(_psGetDeadChunks);
             _psGetDeadChunks = null;
             throw e;

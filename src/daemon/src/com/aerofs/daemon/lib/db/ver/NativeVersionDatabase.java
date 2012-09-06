@@ -83,7 +83,6 @@ public class NativeVersionDatabase
 
             return new DBIterNativeTickRow(_psGetTicks.executeQuery());
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetTicks);
             _psGetTicks = null;
 
@@ -94,16 +93,10 @@ public class NativeVersionDatabase
     @Override
     public void deleteTicksFromStore_(SIndex sidx, Trans t) throws SQLException
     {
-        Statement stmt = null;
+        Statement stmt = c().createStatement();
         try {
-            stmt = c().createStatement();
-            stmt.executeUpdate("delete from " + T_VER + " where "
-                                + C_VER_SIDX + "=" + sidx.getInt());
-            stmt.executeUpdate("delete from " + T_MAXTICK + " where "
-                                + C_MAXTICK_SIDX + "=" + sidx.getInt());
-        } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
-            throw e;
+            stmt.executeUpdate("delete from " + T_VER + " where " + C_VER_SIDX + "=" + sidx.getInt());
+            stmt.executeUpdate("delete from " + T_MAXTICK + " where " + C_MAXTICK_SIDX + "=" + sidx.getInt());
         } finally {
             DBUtil.close(stmt);
         }
@@ -149,7 +142,6 @@ public class NativeVersionDatabase
             _psAddV.executeBatch();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAddV);
             _psAddV = null;
             throw e;
@@ -202,7 +194,6 @@ public class NativeVersionDatabase
             for (int ret : rets) assert ret == 1;
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDelVer);
             _psDelVer = null;
             throw e;
@@ -236,7 +227,6 @@ public class NativeVersionDatabase
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGLT);
             _psGLT = null;
             throw e;
@@ -284,7 +274,6 @@ public class NativeVersionDatabase
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetV);
             _psGetV = null;
             throw e;
@@ -320,7 +309,6 @@ public class NativeVersionDatabase
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetALV);
             _psGetALV = null;
             throw e;
@@ -353,7 +341,6 @@ public class NativeVersionDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetMaxTick);
             _psGetMaxTick = null;
             throw e;
@@ -410,8 +397,6 @@ public class NativeVersionDatabase
             }
             _psAddMaxTick.executeBatch();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
-
             // terminate the resources for the first ps
             DBUtil.close(_psGetMaxTick);
             _psGetMaxTick = null;
@@ -440,7 +425,6 @@ public class NativeVersionDatabase
             _psDelMaxTick.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDelMaxTick);
             _psDelMaxTick = null;
             throw e;
@@ -466,10 +450,8 @@ public class NativeVersionDatabase
 
             return new DBIterNativeTickRow(_psGetBackupTicks.executeQuery());
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetBackupTicks);
             _psGetBackupTicks = null;
-
             throw e;
         }
     }
@@ -485,10 +467,10 @@ public class NativeVersionDatabase
         public NativeTickRow get_() throws SQLException
         {
             NativeTickRow tr = new NativeTickRow(
-                                  new OID(_rs.getBytes(1)),
-                                  new CID(_rs.getInt(2)),
-                                  new Tick(_rs.getLong(3))
-                              );
+                    new OID(_rs.getBytes(1)),
+                    new CID(_rs.getInt(2)),
+                    new Tick(_rs.getLong(3))
+            );
             return tr;
         }
     }

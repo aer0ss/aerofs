@@ -71,7 +71,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetChild);
             _psGetChild = null;
             throw e;
@@ -109,7 +108,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psInsOA = null;
             // must be called *after* closing the statement
             _dbcw.throwOnConstraintViolation(e);
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }
@@ -130,7 +128,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psInsCA.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psInsCA);
             _psInsCA = null;
             throw e;
@@ -153,7 +150,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             Util.verify(_psDelCA.executeUpdate() == 1);
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDelCA);
             _psDelCA = null;
             throw e;
@@ -211,7 +207,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psSOAPNC = null;
             // must be called *after* closing the statement
             _dbcw.throwOnConstraintViolation(e);
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }
@@ -226,7 +221,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psSOAF = setOAInt_(soid, C_OA_FLAGS, flags, t,
                     _psSOAF);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSOAF);
             _psSOAF = null;
             throw e;
@@ -253,7 +247,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psSCALM.setInt(6, kidx.getInt());
             Util.verify(_psSCALM.executeUpdate() == 1);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSCALM);
             _psSCALM = null;
             throw e;
@@ -281,7 +274,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
             Util.verify(_psSCAH.executeUpdate() == 1);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSCAH);
             _psSCAH = null;
             throw e;
@@ -296,7 +288,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         try {
             _psSFID = setOABlob_(soid, C_OA_FID, fid == null ? null : fid.getBytes(), t, _psSFID);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSFID);
             _psSFID = null;
             throw e;
@@ -327,7 +318,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetCA);
             _psGetCA = null;
             throw e;
@@ -362,7 +352,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGCAH);
             _psGCAH = null;
             throw e;
@@ -394,7 +383,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psGSIX.setBytes(2, oid.getBytes());
             return queryGetSIndexes_(_psGSIX);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSIX);
             _psGSIX = null;
             throw e;
@@ -436,7 +424,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetOA);
             _psGetOA = null;
             throw e;
@@ -470,7 +457,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psFID2SOID);
             _psFID2SOID = null;
             throw e;
@@ -498,7 +484,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetUsedSp);
             _psGetUsedSp = null;
             throw e;
@@ -539,7 +524,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             return new DBIterNonMasterBranches(rs);
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(ps);
             throw e;
         }
@@ -573,7 +557,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetChildren);
             _psGetChildren = null;
             throw e;
@@ -596,7 +579,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psDeleteOA.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDeleteOA);
             _psDeleteOA = null;
             throw e;
@@ -630,7 +612,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             }
             return bv;
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGet);
             _psGet = null;
             throw e;
@@ -655,7 +636,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             // NOTE: Silently ignore missing SOID (should we use a boolean return flag instead?)
             assert affectedRows <= 1;
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSet);
             _psSet = null;
             throw e;

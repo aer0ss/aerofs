@@ -61,7 +61,6 @@ public class CollectorSequenceDatabase extends AbstractDatabase
             return new DBIterComWithKML(psw._ps.executeQuery());
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(psw._ps);
             psw._ps = null;
             throw e;
@@ -133,7 +132,6 @@ public class CollectorSequenceDatabase extends AbstractDatabase
             _psDCS.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDCS);
             _psDCS = null;
             throw e;
@@ -156,7 +154,6 @@ public class CollectorSequenceDatabase extends AbstractDatabase
             _psACS.setInt(3, socid.cid().getInt());
             _psACS.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psACS);
             _psACS = null;
             throw e;

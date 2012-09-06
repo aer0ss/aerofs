@@ -69,12 +69,6 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
-    public boolean checkDeadConnection(SQLException e)
-    {
-        return false;
-    }
-
-    @Override
     public String insertOrIgnore()
     {
         return "insert or ignore ";

@@ -54,8 +54,6 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetSIndex);
             _psGetSIndex = null;
-            // must be called *after* closing the statement
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }
@@ -84,8 +82,6 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGetSID);
             _psGetSID = null;
-            // must be called *after* closing the statement
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }
@@ -114,8 +110,6 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAdd);
             _psAdd = null;
-            // must be called *after* closing the statement
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }

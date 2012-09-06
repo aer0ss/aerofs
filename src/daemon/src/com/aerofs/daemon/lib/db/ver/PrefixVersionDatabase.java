@@ -57,7 +57,6 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
             }
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetPV);
             _psGetPV = null;
             throw e;
@@ -89,7 +88,6 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
             _psAddPV.executeBatch();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAddPV);
             _psAddPV = null;
             throw e;
@@ -113,7 +111,6 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
             _psDelPV.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDelPV);
             _psDelPV = null;
             throw e;

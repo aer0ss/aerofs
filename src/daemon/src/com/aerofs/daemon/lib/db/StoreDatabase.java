@@ -34,9 +34,8 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         ArrayList<StoreRow> srs = Lists.newArrayList();
 
         // we don't prepare the statement as the method is called infrequently
-        Statement stmt = null;
+        Statement stmt = c().createStatement();
         try {
-            stmt = c().createStatement();
             ResultSet rs = stmt.executeQuery("select " + C_STORE_SIDX + "," + C_STORE_PARENT +
                     " from " + T_STORE);
             try {
@@ -50,9 +49,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             } finally {
                 rs.close();
             }
-        } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
-            throw e;
         } finally {
             DBUtil.close(stmt);
         }
@@ -74,8 +70,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psAdd);
             _psAdd = null;
-            // must be called *after* closing the statement
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }
@@ -96,8 +90,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         } catch (SQLException e) {
             DBUtil.close(_psSP);
             _psSP = null;
-            // must be called *after* closing the statement
-            _dbcw.checkDeadConnection(e);
             throw e;
         }
     }
@@ -106,9 +98,8 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
     public void delete_(SIndex sidx, Trans t) throws SQLException
     {
         // TODO move deletion code for a table to the *Database class responsible for that table.
-        Statement stmt = null;
+        Statement stmt = c().createStatement();
         try {
-            stmt = c().createStatement();
             Util.verify(deleteTableForStore_(stmt, T_STORE, C_STORE_SIDX, sidx) == 1);
             deleteTableForStore_(stmt, T_OA, C_OA_SIDX, sidx);
             deleteTableForStore_(stmt, T_CA, C_CA_SIDX, sidx);
@@ -118,9 +109,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             deleteTableForStore_(stmt, T_SD, C_SD_SIDX, sidx);
             deleteTableForStore_(stmt, T_CS, C_CS_SIDX, sidx);
             deleteTableForStore_(stmt, T_SSBS, C_SSBS_SIDX, sidx);
-        } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
-            throw e;
         } finally {
             DBUtil.close(stmt);
         }
@@ -140,8 +128,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         try {
             if (_psGetDeviceList == null) {
                 _psGetDeviceList = c().prepareStatement(
-                        "select " + C_STORE_DIDS +
-                                " from " + T_STORE + " where " + C_STORE_SIDX + "=?");
+                        "select " + C_STORE_DIDS + " from " + T_STORE + " where " + C_STORE_SIDX + "=?");
             }
             _psGetDeviceList.setInt(1, sidx.getInt());
             ResultSet rs = _psGetDeviceList.executeQuery();
@@ -155,7 +142,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGetDeviceList);
             _psGetDeviceList = null;
             throw e;
@@ -178,7 +164,6 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             int affectedRows = _psSetDeviceList.executeUpdate();
             assert affectedRows == 1 : ("Duplicate SIndex");
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSetDeviceList);
             _psSetDeviceList = null;
             throw e;

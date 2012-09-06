@@ -78,7 +78,6 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
             _psAA.setLong(7, System.currentTimeMillis());
             _psAA.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAA);
             _psAA = null;
             throw e;
@@ -129,7 +128,6 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
             return new DBIterActivityRow(rs);
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGA);
             _psGA = null;
             throw e;
@@ -169,7 +167,6 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
             ResultSet rs = _psGSA.executeQuery();
             return new DBIterModifiedObject(rs);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGSA);
             _psGSA = null;
             throw e;

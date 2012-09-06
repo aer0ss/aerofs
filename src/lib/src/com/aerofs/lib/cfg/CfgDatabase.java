@@ -343,7 +343,6 @@ public class CfgDatabase
             for (Key key : map.keySet()) notifyValueChanged_(key);
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSet);
             DBUtil.close(_psRemove);
             _psSet = null;

@@ -27,9 +27,8 @@ import com.google.inject.Inject;
  * NOTE: Whenever possible, use {@link com.aerofs.daemon.core.syncstatus.LocalSyncStatus} instead of
  * this class.
  */
-public class SyncStatusDatabase extends AbstractDatabase implements
-        ISyncStatusDatabase {
-
+public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusDatabase
+{
     @Inject
     public SyncStatusDatabase(CoreDBCW dbcw)
     {
@@ -53,7 +52,6 @@ public class SyncStatusDatabase extends AbstractDatabase implements
             }
             return localEpoch;
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(psw.get());
             psw.set(null);
             throw e;
@@ -70,7 +68,6 @@ public class SyncStatusDatabase extends AbstractDatabase implements
             int affectedRows = psw.get().executeUpdate();
             assert affectedRows == 1 : ("sync status epoch not updated");
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(psw.get());
             psw.set(null);
             throw e;
@@ -131,7 +128,6 @@ public class SyncStatusDatabase extends AbstractDatabase implements
             ResultSet rs = _psGBO.executeQuery();
             return new DBIterSOID(rs);
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGBO);
             _psGBO = null;
             throw e;
@@ -151,7 +147,6 @@ public class SyncStatusDatabase extends AbstractDatabase implements
             _psRBO.setBytes(2, soid.oid().getBytes());
             _psRBO.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGBO);
             _psGBO = null;
             throw e;

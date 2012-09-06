@@ -39,7 +39,6 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
             _psSCF.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psSCF);
             _psSCF = null;
             throw e;
@@ -68,7 +67,6 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGCF);
             _psGCF = null;
             throw e;
@@ -91,7 +89,6 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
             _psDCF.executeUpdate();
 
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psDCF);
             _psDCF = null;
             throw e;

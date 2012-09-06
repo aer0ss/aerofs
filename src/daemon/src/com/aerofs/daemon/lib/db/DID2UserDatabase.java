@@ -43,7 +43,6 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
 
             _psAdd.executeUpdate();
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psAdd);
             _psAdd = null;
             throw e;
@@ -72,7 +71,6 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDeadConnection(e);
             DBUtil.close(_psGet);
             _psGet = null;
             throw e;
