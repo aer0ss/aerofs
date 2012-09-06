@@ -28,6 +28,12 @@ Creating new modules for AeroFS website
 - If the module has templates, make sure to put them in a directory named
   "templates" inside the module folder
 
+Dependencies:
+================================================
+When adding new dependencies to the pyramid package (things that would be
+installed via pip or easy_install) make sure you add them to setup.py!
+Otherwise the web package will break for everyone else who uses it.
+
 Localization:
 ================================================
 To make our application localizable, all user facing strings must be run
