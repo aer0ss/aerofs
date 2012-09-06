@@ -8,6 +8,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.servletlib.sp.user.User;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import org.junit.Before;
@@ -54,6 +55,10 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
     {
         Log.info("Setting up SP database.");
         db.init_();
+
+        Log.info("Add test users to sp_user to satisfy foreign key constraints for d_owner_id");
+        db.addUser(User.createMockForID(TEST_1_USER), true);
+        db.addUser(User.createMockForID(TEST_2_USER), true);
 
         // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
         when(certificateGenerator.createCertificate(anyString(), any(DID.class),
