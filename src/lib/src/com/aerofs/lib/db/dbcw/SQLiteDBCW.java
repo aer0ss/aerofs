@@ -7,7 +7,6 @@ import java.sql.Statement;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExAlreadyExist;
 
 public class SQLiteDBCW extends AbstractDBCW implements IDBCW
 {
@@ -64,15 +63,9 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
-    public boolean isConstraintViolation(SQLException e)
+    protected boolean isConstraintViolation(SQLException e)
     {
         return e.getMessage().startsWith("[SQLITE_CONSTRAINT]");
-    }
-
-    @Override
-    public void checkDuplicateKey(SQLException e) throws ExAlreadyExist
-    {
-        if (isConstraintViolation(e)) throw new ExAlreadyExist(e);
     }
 
     @Override

@@ -207,7 +207,7 @@ public abstract class Updater
      * <strong>IMPORTANT:</strong> will restart AeroFS to apply the patch if its necessary (and
      * possible) to do so
      */
-    public void onStartupFailed(final Exception ex)
+    public void onStartupFailed()
     {
         CheckAndDownloadResult cdr = checkAndDownload();
         if (cdr != null) applyUpdate(cdr._downloadedVersion, hasPermissions());

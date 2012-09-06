@@ -194,7 +194,7 @@ class Launcher
         } catch (Exception ex) {
             SVClient.logSendDefectAsync(true, "launch failed", ex);
             if (UI.updater() != null) {
-                UI.updater().onStartupFailed(ex);
+                UI.updater().onStartupFailed();
             }
             throw ex;
         }

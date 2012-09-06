@@ -215,7 +215,7 @@ public class S3Database extends AbstractDatabase
                 rs.close();
             }
         } catch (SQLException e) {
-            _dbcw.checkDuplicateKey(e);
+            _dbcw.throwOnConstraintViolation(e);
             close(_psCreateChildDir);
             _psCreateChildDir = null;
             handleSQLException(e);

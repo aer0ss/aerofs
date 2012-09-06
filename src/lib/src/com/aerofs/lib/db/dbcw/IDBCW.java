@@ -32,12 +32,10 @@ public interface IDBCW
 
     public boolean isMySQL();
 
-    public boolean isConstraintViolation(SQLException e);
-
     /**
-     * @throws ExAlreadyExist if e is a duplicate key exception. otherwise do nothing
+     * @throws ExAlreadyExist if e is a constraint violation (e.g. duplicate key) exception
      */
-    public void checkDuplicateKey(SQLException e) throws ExAlreadyExist;
+    public void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist;
 
     /**
      * @return true if the database connection is dead

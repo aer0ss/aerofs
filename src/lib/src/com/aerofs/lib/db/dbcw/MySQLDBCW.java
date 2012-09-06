@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.UniqueID;
 
 public class MySQLDBCW extends AbstractDBCW implements IDBCW
@@ -36,17 +35,9 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
-    public boolean isConstraintViolation(SQLException e)
+    protected boolean isConstraintViolation(SQLException e)
     {
         return _clsConstraintViolationEx.isInstance(e);
-    }
-
-    @Override
-    public void checkDuplicateKey(SQLException e) throws ExAlreadyExist
-    {
-        if (isConstraintViolation(e)) {
-            throw new ExAlreadyExist(e);
-        }
     }
 
     @Override
@@ -158,7 +149,8 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
     }
 
     @Override
-    public boolean columnExists(String table, String column) throws SQLException {
+    public boolean columnExists(String table, String column) throws SQLException
+    {
         assert false : ("Method not implemented");
         return false;
     }

@@ -108,7 +108,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             DBUtil.close(_psInsOA);
             _psInsOA = null;
             // must be called *after* closing the statement
-            _dbcw.checkDuplicateKey(e);
+            _dbcw.throwOnConstraintViolation(e);
             _dbcw.checkDeadConnection(e);
             throw e;
         }
@@ -210,7 +210,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             DBUtil.close(_psSOAPNC);
             _psSOAPNC = null;
             // must be called *after* closing the statement
-            _dbcw.checkDuplicateKey(e);
+            _dbcw.throwOnConstraintViolation(e);
             _dbcw.checkDeadConnection(e);
             throw e;
         }

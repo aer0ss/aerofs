@@ -268,6 +268,7 @@ public abstract class Util
 
     public static Thread startDaemonThread(String name, Runnable run)
     {
+        if (l.isInfoEnabled()) l.info("startDaemonThread: " + name);
         Thread thd = new Thread(run);
         thd.setName(name);
         thd.setDaemon(true);

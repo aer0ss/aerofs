@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.aerofs.lib.ex.ExAlreadyExist;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
@@ -19,6 +20,8 @@ abstract class AbstractDBCW implements IDBCW
 
     abstract void initImpl_(Statement stmt) throws SQLException;
 
+    protected abstract boolean isConstraintViolation(SQLException e);
+
     protected AbstractDBCW(String url, boolean autoCommit)
     {
         _url = url;
@@ -32,13 +35,6 @@ abstract class AbstractDBCW implements IDBCW
         // database connection would become invalid. See {@link IDBCW#fini_()}
 
         if (_c != null) return;
-
-//        try {
-//            Class.forName("nz.jdbcwrapper.WrapperDriver");
-//        } catch (ClassNotFoundException e) {
-//            throw new SQLException(e);
-//        }
-//        params = "jdbc:wrapper:trace=4;url=" + _url;
 
         Connection c = DriverManager.getConnection(_url);
 
@@ -71,7 +67,7 @@ abstract class AbstractDBCW implements IDBCW
      * of the database is changed out from under an active query.
      */
     @Override
-    public void abort_()
+    public final void abort_()
     {
         try {
             _c.rollback();
@@ -82,13 +78,13 @@ abstract class AbstractDBCW implements IDBCW
 
 
     @Override
-    public void commit_() throws SQLException
+    public final void commit_() throws SQLException
     {
         _c.commit();
     }
 
     @Override
-    public Connection getConnection()
+    public final Connection getConnection()
     {
         assert _c != null;
         return _c;
@@ -99,4 +95,14 @@ abstract class AbstractDBCW implements IDBCW
     {
         return " blob ";
     }
+
+    @Override
+    public final void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist
+    {
+        // Do not use e as the cause of the exception by calling new ExAlreadyExist(e), since the
+        // stack trace of the new exception provides sufficient information, and it is unnecessary
+        // to expose underlying implementation of the exception that wraps the implementation.
+        if (isConstraintViolation(e)) throw new ExAlreadyExist();
+    }
+
 }
