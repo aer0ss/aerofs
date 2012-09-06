@@ -281,7 +281,12 @@ class ScanSession
             for (OID oid : _f._ds.getChildren_(soidParent)) {
                 SOID soid = new SOID(soidParent.sidx(), oid);
                 OA oa = _f._ds.getOA_(soid);
-                if (!MightDelete.shouldNotDelete(oa)) _holder.hold_(soid);
+                if (!MightDelete.shouldNotDelete(oa)) {
+                    if (l.isInfoEnabled()) {
+                        l.info("hold_ on " + soid);
+                    }
+                    _holder.hold_(soid);
+                }
             }
         }
     }
