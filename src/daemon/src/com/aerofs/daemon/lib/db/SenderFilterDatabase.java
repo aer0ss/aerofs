@@ -15,6 +15,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
+
 public class SenderFilterDatabase extends AbstractDatabase implements ISenderFilterDatabase
 {
     @Inject
@@ -67,7 +69,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
 
     private PreparedStatement _psGSF;
     @Override
-    public BFOID getSenderFilter_(SIndex sidx, SenderFilterIndex sfidx)
+    public @Nullable BFOID getSenderFilter_(SIndex sidx, SenderFilterIndex sfidx)
             throws SQLException
     {
         try {

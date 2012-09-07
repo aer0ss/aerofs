@@ -239,7 +239,7 @@ public class Expulsion
      */
     void fileAdmitted_(SOID soid, Trans t) throws SQLException
     {
-        assert _ds.getOANullable_(soid).isFile();
+        assert _ds.getOA_(soid).isFile();
 
         SOCID socid = new SOCID(soid, CID.CONTENT);
 

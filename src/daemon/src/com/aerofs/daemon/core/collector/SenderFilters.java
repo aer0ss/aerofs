@@ -58,8 +58,9 @@ public class SenderFilters
         _sidx = sidx;
         _updateSeq = Util.rand().nextLong();
         _sfidxLast = _sfdb.getSenderFilterGreatestIndex_(_sidx);
-        _filterLast = _sfdb.getSenderFilter_(_sidx, _sfidxLast);
-        assert _filterLast != null;
+        BFOID filterLast = _sfdb.getSenderFilter_(_sidx, _sfidxLast);
+        assert filterLast != null : _sidx + " " + _sfidxLast;
+        _filterLast = filterLast;
     }
 
     /**
