@@ -12,6 +12,7 @@
 #endif
 
 #ifdef __APPLE__
+#include <sys/param.h>   /* For PATH_MAX */
 #include <mach-o/dyld.h> /* For _NSGetExecutablePath() */
 #endif
 
@@ -150,12 +151,18 @@ static tstring get_executable_path() {
         printf("_NSGetExecutablePath: %d\n", errsv);
         exit(EXIT_FAILURE);
     }
-    // Canonicalize absolute path.
-    char* executable_canonical_path = realpath(path_buf, NULL);
+    // Canonicalize absolute path.  We can't pass NULL as the second argument to realpath()
+    // to let it allocate the output buffer because that convenience didn't exist until OSX 10.6,
+    // and we currently support OSX 10.5.
+    char* canonical_path_buf = (char*)malloc(PATH_MAX * sizeof(char));
+    char* executable_canonical_path = realpath(path_buf, canonical_path_buf);
     if (executable_canonical_path) {
         // All's well.  Replace path_buf with the canonical path.
         free(path_buf);
         path_buf = executable_canonical_path;
+    } else {
+        // Something went wrong.  Clean up canonical_path_buf, and return the uncanonicalized path.
+        free(canonical_path_buf);
     }
     tstring retval(path_buf);
     free(path_buf);
