@@ -206,14 +206,12 @@ public class TrayMenu
                 }
             });
 
-            if (Cfg.user().endsWith("@aerofs.com")) {
-                addMenuItem(_menu, "Version History...", new AbstractListener(null) {
-                    @Override
-                    protected void handleEventImpl(Event event) {
-                       new DlgHistory(GUI.get().sh()).openDialog();
-                    }
-                });
-            }
+            addMenuItem(_menu, "Version History...", new AbstractListener(null) {
+                @Override
+                protected void handleEventImpl(Event event) {
+                   new DlgHistory(GUI.get().sh()).openDialog();
+                }
+            });
 
             new MenuItem(_menu, SWT.SEPARATOR);
 

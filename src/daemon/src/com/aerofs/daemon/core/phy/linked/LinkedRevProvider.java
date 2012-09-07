@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.DateFormat;
@@ -14,8 +15,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Provider;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -54,15 +53,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     private static final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
 
-    private static final Provider<Date> DATE_PROVIDER = new Provider<Date>() {
-        @Override
-        public Date get()
-        {
-            return new Date();
-        }
-    };
-
-
     class LinkedRevFile
     {
         private final InjectableFile _fRev, _fOrg;
@@ -92,7 +82,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     private final InjectableFile.Factory _factFile;
     private String _pathBase;
-    Provider<Date> _dateProvider = DATE_PROVIDER;  // overridden for testing
     boolean _startCleanerScheduler = true;
     CleanerScheduler _cleanerScheduler;
     long _spaceDelta;
@@ -119,13 +108,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     // called from LocalStorage
     LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx)
     {
-        String date = new SimpleDateFormat(DATE_FORMAT).format(_dateProvider.get());
+        long mtime = new File(absPath).lastModified();
+        String date = new SimpleDateFormat(DATE_FORMAT).format(new Date(mtime));
 
         String pathRev = Util.join(_pathBase, Util.join(path.elements()));
         pathRev += "-" + kidx + "_" + date;
         // BUG: this may fail, e.g. if the file name is too long
-        return new LinkedRevFile(_factFile.create(pathRev),
-                _factFile.create(absPath));
+        return new LinkedRevFile(_factFile.create(pathRev), _factFile.create(absPath));
     }
 
     @Override
@@ -180,7 +169,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     continue;
                 }
                 if (path.last().equals(info.baseName())) {
-                    revisions.add(new Revision(info.index().getBytes(REV_INDEX_TEXT_ENCODING),
+                    revisions.add(new Revision(Util.string2utf(info.index()),
                                                info._date.getTime(),
                                                info._length));
                 }
@@ -197,7 +186,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     {
         String auxPath = Util.join(_pathBase,
                                    Util.join(path.elements()))
-                         + "-" + new String(index, REV_INDEX_TEXT_ENCODING);
+                         + "-" + Util.utf2string(index);
         InjectableFile file = _factFile.create(auxPath);
         if (!file.exists() || file.isDirectory())
             throw new ExNotFound("Invalid revision index");
@@ -336,7 +325,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             long _totalSize;
             long _fileCount;
             long _dirCount;
-            Date _startTime = _dateProvider.get();
+            Date _startTime = new Date();
             Date _maxTime = new Date(_startTime.getTime() - _ageLimitMillis);
             int _delayCount;
 

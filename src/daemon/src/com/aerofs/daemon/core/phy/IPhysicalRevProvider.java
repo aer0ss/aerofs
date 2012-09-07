@@ -48,8 +48,6 @@ public interface IPhysicalRevProvider
         }
     }
 
-    public static final String REV_INDEX_TEXT_ENCODING = "UTF-8";
-
     public static class Revision implements Comparable<Revision>
     {
         public final byte[] _index; // index is a cookie uniquely identifying the

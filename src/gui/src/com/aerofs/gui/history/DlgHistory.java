@@ -2,17 +2,21 @@ package com.aerofs.gui.history;
 
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.AeroFSMessageBox;
+import com.aerofs.gui.AeroFSMessageBox.IconType;
+import com.aerofs.gui.CompSpin;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
+import com.aerofs.lib.os.OSUtil;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -22,8 +26,10 @@ import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Composite;
@@ -62,6 +68,12 @@ public class DlgHistory extends AeroFSDialog
     private Tree _revTree;
     private Label _statusLabel;
     private Table _revTable;
+    private Composite _revTableWrap;
+
+    private Composite _actionButtons;
+    private Button _restoreBtn;
+    private Button _openBtn;
+    private Button _saveBtn;
 
     private final Path _basePath;
     private final HistoryModel _model;
@@ -103,6 +115,7 @@ public class DlgHistory extends AeroFSDialog
         sashData.widthHint = 600;
         sashData.heightHint = 350;
         sashForm.setLayoutData(sashData);
+        sashForm.setSashWidth(7);
 
         createVersionTree(sashForm);
 
@@ -113,53 +126,93 @@ public class DlgHistory extends AeroFSDialog
         group.setLayout(groupLayout);
         group.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
-        _statusLabel = new Label(group, SWT.NONE);
+        _statusLabel = new Label(group, SWT.WRAP);
         _statusLabel.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         createVersionTable(group);
 
+        _actionButtons = newButtonContainer(group);
+        _actionButtons.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+
+        _restoreBtn = new Button(_actionButtons, SWT.NONE);
+        _restoreBtn.setText("Restore Deleted Files...");
+        _restoreBtn.setToolTipText("Recursively restore deleted files and folders to their most "
+                + "recent version");
+        _restoreBtn.setLayoutData(new RowData());
+        _restoreBtn.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent)
+            {
+                TreeItem[] items = _revTree.getSelection();
+                assert items.length == 1;
+
+                ModelIndex index = index(items[0]);
+
+                recursivelyRestore(index);
+            }
+        });
+
+        _openBtn = new Button(_actionButtons, SWT.NONE);
+        _openBtn.setText("Open");
+        _openBtn.setToolTipText("Open a read-only copy of the selected version");
+        _openBtn.setLayoutData(new RowData());
+        _openBtn.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent)
+            {
+                TableItem[] items = _revTable.getSelection();
+                assert items.length == 1;
+
+                HistoryModel.Version version = (HistoryModel.Version) items[0].getData();
+                openVersion(version);
+            }
+        });
+
+        _saveBtn = new Button(_actionButtons, SWT.NONE);
+        _saveBtn.setText("Save as...");
+        _saveBtn.setToolTipText("Save a copy of the selected version in a different location");
+        _saveBtn.setLayoutData(new RowData());
+        _saveBtn.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent)
+            {
+                TableItem[] items = _revTable.getSelection();
+                assert items.length == 1;
+
+                HistoryModel.Version version = (HistoryModel.Version) items[0].getData();
+                saveVersionAs(version);
+            }
+        });
+
         // the version table will only be shown when a file is selected
-        hideVersionTable();
+        refreshVersionTable(null);
 
         // set default proportion between version tree and version table
         // NOTE: must be done AFTER children have been added to the SashForm
         sashForm.setWeights(new int[] {1, 2});
 
         // Create a composite that will hold the buttons row
-        Composite buttons = new Composite(shell, SWT.NONE);
-        buttons.setLayoutData(new GridData(SWT.END, SWT.BOTTOM, true, false, 2, 1));
-        RowLayout buttonLayout = new RowLayout();
-        buttonLayout.pack = false;
-        buttonLayout.center = true;
-        buttons.setLayout(buttonLayout);
+        Composite buttons = newButtonContainer(shell);
+        buttons.setLayoutData(new GridData(SWT.END, SWT.CENTER, true, false, 2, 1));
 
         Button refreshBtn = new Button(buttons, SWT.NONE);
         refreshBtn.setText("Refresh");
+        refreshBtn.setToolTipText("Refresh the content of the version tree to reflect the latest " +
+                "state of the file system");
         refreshBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent selectionEvent)
             {
-                Path path = null;
-                TreeItem[] items = _revTree.getSelection();
-                if (items != null && items.length == 1) {
-                    path = _model.getPath(index(items[0]));
-                }
-
-                // clear the tree and the underlying model
-                _revTree.setItemCount(0);
-                _model.clear();
-
-                // populate first level of tree
-                _revTree.setItemCount(_model.rowCount(null));
-
-                // reselect previously selected item, if possible
-                if (path != null) selectPath(path);
+                refreshVersionTree();
             }
         });
 
         Button doneBtn = new Button(buttons, SWT.NONE);
-        doneBtn.setText("Done");
+        doneBtn.setText("Close");
         doneBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -216,10 +269,13 @@ public class DlgHistory extends AeroFSDialog
 
     private void createVersionTree(Composite parent)
     {
-        _revTree = new Tree(parent, SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
-        //GridData treeLayout = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
-        //treeLayout.widthHint = 150;
-        //_revTree.setLayoutData(treeLayout);
+        Composite alignmentWorkaroundOSX = new Composite(parent, SWT.NONE);
+        FillLayout layoutAlignmentWorkaroundOSX = new FillLayout();
+        layoutAlignmentWorkaroundOSX.marginWidth = 0;
+        layoutAlignmentWorkaroundOSX.marginHeight = OSUtil.isOSX() ? 3 : 0;
+        alignmentWorkaroundOSX.setLayout(layoutAlignmentWorkaroundOSX);
+
+        _revTree = new Tree(alignmentWorkaroundOSX, SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 
         // populate first level of version tree
         _revTree.setItemCount(_model.rowCount(null));
@@ -267,17 +323,16 @@ public class DlgHistory extends AeroFSDialog
                 if (item == null) return;
 
                 final ModelIndex index = index(item);
-                if (!(index.isDir && index.isDeleted)) return;
 
                 Menu menu = new Menu(_revTree.getShell(), SWT.POP_UP);
-                addMenuItem(menu, "Restore", new Listener()
-                {
+                addMenuItem(menu, "Restore Deleted File" + (index.isDir ? "s" : "") + "...",
+                            new Listener() {
                     @Override
                     public void handleEvent(Event ev)
                     {
                         recursivelyRestore(index);
                     }
-                });
+                }).setEnabled(index.isDir || index.isDeleted);
 
                 menu.setLocation(event.x, event.y);
                 menu.setVisible(true);
@@ -291,42 +346,100 @@ public class DlgHistory extends AeroFSDialog
         });
     }
 
+    private void refreshVersionTree()
+    {
+        Path path = null;
+        TreeItem[] items = _revTree.getSelection();
+        if (items != null && items.length == 1) {
+            path = _model.getPath(index(items[0]));
+        }
+
+        // clear the tree and the underlying model
+        _revTree.setItemCount(0);
+        _model.clear();
+
+        // populate first level of tree
+        _revTree.setItemCount(_model.rowCount(null));
+
+        // reselect previously selected item, if possible
+        if (path != null) selectPath(path);
+    }
+
+    /**
+     * Helper functions to work around stupid SWT layouts...
+     */
+    private void setButtonVisible(Button b, boolean visible)
+    {
+        b.setVisible(visible);
+        ((RowData)b.getLayoutData()).exclude = !visible;
+    }
+
+    private void setCompositeVisible(Composite c, boolean visible)
+    {
+        c.setVisible(visible);
+        ((GridData)c.getLayoutData()).exclude = !visible;
+    }
+
     private void refreshVersionTable(TreeItem item)
     {
         ModelIndex index = index(item);
         if (index != null && !index.isDir) {
-            _revTable.setVisible(true);
-            fillVersionTable(_revTable, index, _statusLabel);
+            boolean ok = fillVersionTable(_revTable, index, _statusLabel);
+            _actionButtons.setVisible(ok);
+            _restoreBtn.setText("Restore...");
+            setButtonVisible(_restoreBtn, index.isDeleted);
+            setButtonVisible(_openBtn, ok);
+            setButtonVisible(_saveBtn, ok);
+            ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.RIGHT;
+            _actionButtons.layout();
+            setCompositeVisible(_revTableWrap, true);
+            _statusLabel.getParent().layout();
         } else {
-            hideVersionTable();
+            _restoreBtn.setText("Restore Deleted Files...");
+            if (index == null) {
+                _statusLabel.setText(
+                        "AeroFS keeps old versions of a file when receiving new updates from " +
+                                "remote devices.\n\nSelect a file in the left column to view all " +
+                                "the versions stored on this device.");
+                _actionButtons.setVisible(false);
+            } else {
+                _statusLabel.setText(
+                        "You can restore files and folders that have been deleted under a " +
+                                "given folder. Only their latest version will be restored.\n\n" +
+                                "Click the button below to restore the selected folder. It may " +
+                                "take a few moments.\n");
+                _actionButtons.setVisible(true);
+                _restoreBtn.setVisible(true);
+                setButtonVisible(_restoreBtn, true);
+                setButtonVisible(_openBtn, false);
+                setButtonVisible(_saveBtn, false);
+                ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.LEFT;
+                _actionButtons.layout();
+            }
+            _revTable.removeAll();
+            setCompositeVisible(_revTableWrap, false);
+            _statusLabel.getParent().layout();
         }
-    }
-
-    private void hideVersionTable()
-    {
-        _revTable.removeAll();
-        _statusLabel.setText("Select a file to view all locally known versions.");
-        _revTable.setVisible(false);
     }
 
     /**
      * Creates the revision table (ie: the table on the right side of the dialog)
-     * @param parent
      */
     private void createVersionTable(Composite parent)
     {
-        Composite revTableWrap = new Composite(parent, SWT.NONE);
-        revTableWrap.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-        _revTable = new Table(revTableWrap, SWT.BORDER);
+        _revTableWrap = new Composite(parent, SWT.NONE);
+        _revTableWrap.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+        _revTable = new Table(_revTableWrap, SWT.BORDER);
         _revTable.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1));
         _revTable.setLinesVisible(true);
         _revTable.setHeaderVisible(true);
 
         final TableColumn revDateCol = new TableColumn(_revTable, SWT.NONE);
-        revDateCol.setText("Date");
+        revDateCol.setText("Last Modified");
         revDateCol.setResizable(true);
         final TableColumn revSizeCol = new TableColumn(_revTable, SWT.NONE);
         revSizeCol.setText("Size");
+        revSizeCol.setAlignment(SWT.RIGHT);
         revSizeCol.setResizable(true);
 
         TableColumnLayout revTableLayout = new TableColumnLayout();
@@ -334,7 +447,7 @@ public class DlgHistory extends AeroFSDialog
                 new ColumnWeightData(6, ColumnWeightData.MINIMUM_WIDTH));
         revTableLayout.setColumnData(revSizeCol,
                 new ColumnWeightData(3, ColumnWeightData.MINIMUM_WIDTH));
-        revTableWrap.setLayout(revTableLayout);
+        _revTableWrap.setLayout(revTableLayout);
 
         // Add context menu
         _revTable.addListener(SWT.MenuDetect, new Listener()
@@ -363,7 +476,7 @@ public class DlgHistory extends AeroFSDialog
                     @Override
                     public void handleEvent(Event ev)
                     {
-                        saveRevisionAs(version);
+                        saveVersionAs(version);
                     }
                 });
 
@@ -393,14 +506,14 @@ public class DlgHistory extends AeroFSDialog
         });
     }
 
-    private void fillVersionTable(Table revTable, ModelIndex index, Label status)
+    private boolean fillVersionTable(Table revTable, ModelIndex index, Label status)
     {
         Path path = _model.getPath(index);
-        status.setText("Previous versions of \"" + path.last() + "\":");
+        status.setText("Version history of \"" + path.last() + "\":");
 
         List<HistoryModel.Version> versions = _model.versions(index);
         revTable.removeAll();
-        if (versions == null) return;
+        if (versions == null) return false;
         revTable.setItemCount(versions.size());
 
         for (int i = 0; i < versions.size(); ++i) {
@@ -413,6 +526,9 @@ public class DlgHistory extends AeroFSDialog
             item.setText(1, Util.formatSize(version.size));
             item.setData(version);
         }
+
+        revTable.select(0);
+        return true;
     }
 
     private void openVersion(HistoryModel.Version version)
@@ -423,7 +539,7 @@ public class DlgHistory extends AeroFSDialog
         Program.launch(version.tmpFile);
     }
 
-    private void saveRevisionAs(HistoryModel.Version version)
+    private void saveVersionAs(HistoryModel.Version version)
     {
         // Display a "Save As" dialog box
         FileDialog fDlg = new FileDialog(this.getShell(), SWT.SHEET | SWT.SAVE);
@@ -447,6 +563,16 @@ public class DlgHistory extends AeroFSDialog
             new AeroFSMessageBox(this.getShell(), false, e.getLocalizedMessage(),
                     AeroFSMessageBox.IconType.ERROR)
                     .open();
+        }
+
+        // refresh the version tree if we saved under the root anchor
+        // don't do it otherwise because :
+        //   * it might be time consuming
+        //   * it can be terribly annoying because it discards to expansion state of tree items
+        //   outside of the selected path
+        if (Path.isUnder(Cfg.absRootAnchor(), dst)) {
+            // TODO: optimize refresh when restoring a file to a previous version of itself
+            refreshVersionTree();
         }
     }
 
@@ -474,60 +600,170 @@ public class DlgHistory extends AeroFSDialog
         return mi;
     }
 
-    private String fmt(ModelIndex index)
+    /**
+     * Simple sheet dialog controlling a restore operation
+     */
+    private class RestoreFeedbackDialog extends AeroFSDialog implements ISWTWorker
     {
-        return (index.isDir ? "Folder " : "File ") + _model.getPath(index);
-    }
+        private final ModelIndex _base;
+        private final String _dest;
+        private final boolean _inPlace;
 
+        private CompSpin _compSpin;
 
-    private void recursivelyRestore(ModelIndex index)
-    {
-        DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
-        dDlg.setFilterPath(
-                Util.join(Cfg.absRootAnchor(),
-                          Util.join(_model.getPath(index).removeLast().elements())));
-        String path = dDlg.open();
-        if (path == null) return;
+        RestoreFeedbackDialog(Shell parent, ModelIndex index, String path)
+        {
+            super(parent, "Restoring...", true, false);
+            _base = index;
+            _dest = path;
+            _inPlace = Util.join(path, index.name).equals(
+                    _model.getPath(index).toAbsoluteString(Cfg.absRootAnchor()));
+        }
 
-        try {
-            _model.restore(index, path, new IDecisionMaker()
+        @Override
+        protected void open(Shell shell)
+        {
+            if (GUIUtil.isWindowBuilderPro()) // $hide$
+                shell = new Shell(getParent(), getStyle());
+
+            GridLayout glShell = new GridLayout(2, false);
+            glShell.marginHeight = GUIParam.MARGIN;
+            glShell.marginWidth = GUIParam.MARGIN;
+            glShell.verticalSpacing = GUIParam.MAJOR_SPACING;
+            shell.setLayout(glShell);
+
+            _compSpin = new CompSpin(shell, SWT.NONE);
+
+            Label label = new Label(shell, SWT.WRAP);
+            label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+            label.setText("Restoring " + _model.getPath(_base) + (_inPlace ? "" : "\nto " + _dest));
+
+            shell.addListener(SWT.Show, new Listener()
+            {
+                @Override
+                public void handleEvent(Event arg0)
+                {
+                    _compSpin.start();
+
+                    GUI.get().work(RestoreFeedbackDialog.this);
+                }
+            });
+
+            shell.addListener(SWT.Traverse, new Listener() {
+                public void handleEvent(Event e) {
+                    if (e.detail == SWT.TRAVERSE_ESCAPE) {
+                        e.doit = false;
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void run() throws Exception
+        {
+            _model.restore(_base, _dest, new IDecisionMaker()
             {
                 @Override
                 public Answer retry(ModelIndex a)
                 {
-                    MessageBox mb = new MessageBox(getShell(),
-                            SWT.ICON_ERROR | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
-                    mb.setText("Failed to restore");
-                    mb.setMessage("Failed to restore " + _model.getPath(a));
-                    int ret = mb.open();
-                    switch (ret) {
-                    case SWT.ABORT:  return Answer.Abort;
-                    case SWT.RETRY:  return Answer.Retry;
-                    case SWT.IGNORE: return Answer.Retry;
-                    default: throw new IllegalArgumentException();
-                    }
-                }
-
-                @Override
-                public ModelIndex resolve(ModelIndex a, ModelIndex b)
-                {
-                    // TODO(huguesb): improve this...
-                    MessageBox mb = new MessageBox(getShell(),
-                            SWT.ICON_QUESTION | SWT.YES | SWT.NO | SWT.CANCEL);
-                    mb.setText("Name conflict");
-                    mb.setMessage(fmt(a) + "\nconflicts with\n" +
-                            fmt(b) + "\n\nRestore the first one?");
-                    int ret = mb.open();
-                    switch (ret) {
-                    case SWT.YES:    return a;
-                    case SWT.NO:     return b;
-                    case SWT.CANCEL: return null;
-                    default: throw new IllegalArgumentException();
-                    }
+                    final ModelIndex idx = a;
+                    final OutArg<Answer> reply = new OutArg<Answer>();
+                    GUI.get().exec(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            _compSpin.stop(Images.get(Images.ICON_ERROR));
+                            MessageBox mb = new MessageBox(getShell(),
+                                    SWT.ICON_ERROR | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
+                            mb.setText("Failed to restore");
+                            mb.setMessage("Failed to restore " + _model.getPath(idx));
+                            int ret = mb.open();
+                            switch (ret) {
+                            case SWT.ABORT:  reply.set(Answer.Abort); break;
+                            case SWT.RETRY:  reply.set(Answer.Retry); break;
+                            case SWT.IGNORE: reply.set(Answer.Retry); break;
+                            default: break;
+                            }
+                            _compSpin.start();
+                        }
+                    });
+                    if (reply.get() == null) throw new IllegalArgumentException();
+                    return reply.get();
                 }
             });
-        } catch (Exception e) {
-            UI.get().show(MessageType.ERROR, e.getLocalizedMessage());
         }
+
+        @Override
+        public void okay()
+        {
+            _compSpin.stop();
+
+            refreshVersionTree();
+
+            closeDialog(true);
+        }
+
+        @Override
+        public void error(Exception e)
+        {
+            _compSpin.stop();
+
+            new AeroFSMessageBox(getShell(), true, e.getLocalizedMessage(), IconType.ERROR)
+                    .open();
+
+            // refresh in case of partial restore
+            refreshVersionTree();
+
+            closeDialog(false);
+        }
+    }
+
+    private void recursivelyRestore(ModelIndex index)
+    {
+        DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
+        dDlg.setMessage("Select destination folder in which deleted files from the source folder " +
+                "will be restored.");
+        dDlg.setFilterPath(Util.join(Cfg.absRootAnchor(),
+                Util.join(_model.getPath(index).removeLast().elements())));
+        String path = dDlg.open();
+        if (path == null) return;
+
+        File root = new File(path);
+        if (!root.isDirectory()) {
+            // NOTE: DirectoryDialog allows you to pick a file from a directory dialog if the filter
+            // path points to a file...
+            new AeroFSMessageBox(getShell(), true, "Please select a folder, not a file.",
+                    IconType.ERROR).open();
+        } else {
+            // the actual restore operation is started in a separate thread by the feedback dialog
+            new RestoreFeedbackDialog(getShell(), index, path).openDialog();
+        }
+    }
+
+    private Composite newButtonContainer(Composite parent)
+    {
+        Composite buttons = new Composite(parent, SWT.NONE);
+        buttons.setLayoutData(new GridData(SWT.END, SWT.BOTTOM, true, false, 2, 1));
+        RowLayout buttonLayout = new RowLayout();
+        buttonLayout.pack = false;
+        buttonLayout.wrap = false;
+        buttonLayout.fill = true;
+        buttonLayout.center = true;
+        buttonLayout.marginBottom = 0;
+        buttonLayout.marginTop = 0;
+        buttonLayout.marginHeight = 0;
+        buttonLayout.marginLeft = 0;
+        buttonLayout.marginRight = 0;
+        buttonLayout.marginWidth = 0;
+        if (OSUtil.isOSX()) {
+            // workaround broken margins on OSX
+            buttonLayout.marginLeft = -4;
+            buttonLayout.marginRight = -4;
+            buttonLayout.marginTop = 4;
+            buttonLayout.marginBottom = -6;
+        }
+        buttons.setLayout(buttonLayout);
+        return buttons;
     }
 }

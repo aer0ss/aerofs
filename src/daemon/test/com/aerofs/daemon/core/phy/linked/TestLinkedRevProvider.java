@@ -7,8 +7,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Provider;
-
 import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Assert;
@@ -37,7 +35,6 @@ public class TestLinkedRevProvider extends AbstractTest
     private InjectableFile _revDir;
     private PrintWriter _out;
     private LinkedRevProvider _localRevProvider;
-    private Date _currentDate = new Date();
 
     @Before
     public void before() throws Exception
@@ -55,13 +52,6 @@ public class TestLinkedRevProvider extends AbstractTest
 
         _localRevProvider = new LinkedRevProvider(_factFile);
         _localRevProvider._startCleanerScheduler = false;
-        _localRevProvider._dateProvider = new Provider<Date>() {
-            @Override
-            public Date get()
-            {
-                return (Date)_currentDate.clone();
-            }
-        };
         _localRevProvider.init_(_auxDir.getPath());
     }
 
@@ -136,9 +126,9 @@ public class TestLinkedRevProvider extends AbstractTest
 
         Date now = new Date();
         Date backThen = new Date(now.getTime() - age);
-        _currentDate = backThen;
         InjectableFile test1 = _factFile.create(_dataDir, "test1");
         writeFile(test1, "test1");
+        test1.setLastModified(backThen.getTime());
 
         test1.setLastModified(backThen.getTime());
         LinkedRevFile localRevFile = _localRevProvider.newLocalRevFile_(
@@ -151,7 +141,6 @@ public class TestLinkedRevProvider extends AbstractTest
         Assert.assertTrue(!test1.isFile());
         Assert.assertEquals(0, _dataDir.list().length);
         Assert.assertEquals(1, _revDir.list().length);
-        _currentDate = now;
         cleaner.run();
         Assert.assertEquals(1, deletedFiles.size());
         Assert.assertTrue(!test1.isFile());
@@ -191,7 +180,6 @@ public class TestLinkedRevProvider extends AbstractTest
 
         Date now = new Date();
         Date backThen = new Date(now.getTime() - age);
-        _currentDate = backThen;
 
         int numDirs = 5;
         int numFiles = 10;
@@ -212,7 +200,6 @@ public class TestLinkedRevProvider extends AbstractTest
             }
         }
 
-        _currentDate = now;
         LinkedRevProvider.Cleaner.RunData runData = cleaner.new RunData();
         runData._sorter.setMaxSize(10);
         runData.run();
