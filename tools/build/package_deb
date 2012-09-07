@@ -5,15 +5,16 @@ set -e
 #################################
 # arguments
 
-if [[ x"$1" == x || x"$2" == x || x"$3" == x ]]; then
-    echo usage "$0 [build mode] [remote release dir] [output deb filename]"
+if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
+    echo usage "$0 [build mode] [version number] [remote release dir] [output deb filename]"
     echo "[build mode]: STAGING or PROD"
+    echo "[version number]: major.minor.release (e.g. 0.4.65)"
     echo "[remote release dir]: directory in which the release files are on the build server"
     echo "[output deb filename]: name of the deb file this script creates"
     echo
     echo "IMPORTANT: this script is meant to be run on a remote server!!!!"
     echo
-    echo "example: $0 STAGING ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
+    echo "example: $0 STAGING 0.4.65 ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
     exit
 fi
 
@@ -37,18 +38,18 @@ fi
 #################################
 # set parameters
 
-SERVER_RELEASE_DIR=$2
-OUTPUT_DEB_NAME=$3
+VERSION=$2
+SERVER_RELEASE_DIR=$3
+OUTPUT_DEB_NAME=$4
 
 # debian control-file parameters
 PACKAGE_NAME='aerofs-installer'
-VERSION=0.2.0
 echo "aerofs-installer version = $VERSION"
 SECTION='utility'
 PRIORITY='optional'
 
 #sharutils is used by uudecode
-DEPENDS='openjdk-6-jre(>= 6b18-1.8.2-4ubuntu1~8.04.1), sharutils, procps'
+DEPENDS='default-jre(>= 1.6), sharutils, procps'
 MAINTAINER='AeroFS Team <support@aerofs.com>'
 DESCRIPTION='AeroFS: File syncing without servers.'
 

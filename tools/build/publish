@@ -109,7 +109,7 @@ kssh $SVR_LOGIN \
     "set -e; \
     cd ~; \
     chmod a+x $SVR_TEMP/package_deb; \
-    $SVR_TEMP/package_deb ${MODE} ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb; \
+    $SVR_TEMP/package_deb ${MODE} ${VER} ~/$DEFLATED $DOWNLOADS/aerofs-installer.deb; \
 "
 
 #################################
