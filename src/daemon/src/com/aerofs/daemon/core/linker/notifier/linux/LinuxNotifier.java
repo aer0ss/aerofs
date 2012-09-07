@@ -22,6 +22,8 @@ import com.aerofs.lib.injectable.InjectableJNotify;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.linux.JNotify_linux;
 import net.contentobjects.jnotify.linux.INotifyListener;
+
+import static com.aerofs.lib.PathObfuscator.obfuscate;
 import static net.contentobjects.jnotify.linux.JNotify_linux.*;
 
 public class LinuxNotifier implements INotifier, INotifyListener
@@ -447,13 +449,13 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
     private void mightCreate(String path)
     {
-        if (l.isInfoEnabled()) l.info("mightCreate(" + path + ")");
+        if (l.isInfoEnabled()) l.info("mightCreate(" + obfuscate(path) + ")");
         _cq.enqueueBlocking(new EIMightCreateNotification(path), Linker.PRIO);
     }
 
     private void mightDelete(String path)
     {
-        if (l.isInfoEnabled()) l.info("mightDelete(" + path + ")");
+        if (l.isInfoEnabled()) l.info("mightDelete(" + obfuscate(path) + ")");
         _cq.enqueueBlocking(new EIMightDeleteNotification(path), Linker.PRIO);
     }
 

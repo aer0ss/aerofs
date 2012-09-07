@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.mock.physical;
 
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -42,7 +43,7 @@ public abstract class AbstractMockPhysicalObject
      * @param dr a mock Driver object. If non-null, a randomly generated FID will be assigned to the
      * OS object.
      */
-    public void mock(Factory fact, @Nullable InjectableDriver dr) throws IOException
+    public void mock(Factory fact, @Nullable InjectableDriver dr) throws IOException, ExNotFound
     {
         // mock the factory's default behavior.
         when(fact.create(any(String.class))).then(Mockito.RETURNS_MOCKS);
@@ -52,7 +53,7 @@ public abstract class AbstractMockPhysicalObject
     }
 
     private InjectableFile mockRecursively(Factory fact, @Nullable InjectableDriver dr, @Nullable InjectableFile parent)
-            throws IOException
+            throws IOException, ExNotFound
     {
         InjectableFile f = Mockito.mock(InjectableFile.class);
         when(f.getName()).thenReturn(_name);

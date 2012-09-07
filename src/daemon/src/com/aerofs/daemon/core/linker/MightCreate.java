@@ -5,6 +5,7 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import static com.aerofs.lib.PathObfuscator.*;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.VersionUpdater;
@@ -83,11 +84,11 @@ public class MightCreate
 
     /**
      * N.B. This method must throw on _any_ error instead of ignoring them and proceeding. See
-     * Comment (A) in HdScan.
+     * Comment (A) in ScanSession.
      *
      * @param pcPhysical the path of the physical file
-     * @throws com.aerofs.lib.ex.ExNotFound if the logical parent of an object
-     * is not found when creating or moving the object.
+     * @throws ExNotFound if either the physical object or the parent of the logical object is not
+     * found when creating or moving the object.
      */
     public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, Trans t)
             throws Exception
@@ -253,8 +254,7 @@ public class MightCreate
             }
 
             // move the logical object
-            l.info("move " + soid + ":" + PathCombo.toLogString(pLogical) + "->" +
-                    PathCombo.toLogString(pPhysical));
+            l.info("move " + soid + ":" + obfuscate(pLogical) + "->" + obfuscate(pPhysical));
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
@@ -269,7 +269,7 @@ public class MightCreate
     private void replaceFID_(SOID soid, PathCombo pc, boolean dir, FID fid, Trans t)
             throws Exception
     {
-        l.info("replace " + soid + ":" + PathCombo.toLogString(pc._path));
+        l.info("replace " + soid + ":" + pc);
 
         // update the FID of that object
         _ds.setFID_(soid, fid, t);
@@ -289,7 +289,7 @@ public class MightCreate
             throws Exception
     {
         if (l.isInfoEnabled()) {
-            l.info("rename conflict " + oa.soid() + ":" + PathCombo.toLogString(pc._path));
+            l.info("rename conflict " + oa.soid() + ":" + pc);
         }
 
         // can't rename the root
@@ -311,8 +311,7 @@ public class MightCreate
         }
 
         if (l.isInfoEnabled()) {
-            l.info("move for confict " + oa.soid() + ":" + PathCombo.toLogString(pc._path) + "->" +
-                    PathCombo.toLogString(name));
+            l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscate(name));
         }
 
         // rename the logical object
@@ -325,7 +324,7 @@ public class MightCreate
     private boolean createLogicalObject_(PathCombo pcPhysical, boolean dir, Trans t)
             throws Exception
     {
-        l.info("create " + PathCombo.toLogString(pcPhysical._path));
+        l.info("create " + pcPhysical);
 
         // create the object
         SOID soidParent = _ds.resolveThrows_(pcPhysical._path.removeLast());
@@ -344,7 +343,7 @@ public class MightCreate
     }
 
     private void detectAndApplyModification_(SOID soid, String absPath, Trans t)
-            throws IOException, ExNotFound, SQLException
+            throws IOException, SQLException
     {
         OA oa = _ds.getOA_(soid);
         assert oa.isFile();

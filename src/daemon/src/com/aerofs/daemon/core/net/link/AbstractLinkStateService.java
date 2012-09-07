@@ -120,19 +120,22 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         return ifaceBuilder.build();
     }
 
+    boolean _hasTooLongDefectSent = OSUtil.isWindows();
+
     private final void checkLinkState_() throws SocketException
     {
         // getActiveInterfaces_ shouldn't take too long on OSX and Linux. Otherwise, we'd better
         // implement Driver.waitForNetworkInterfaceChange for these OSes sooner.
         // TODO (WW) remove this debugging facility
-        long start = OSUtil.isWindows() ? 0 : System.currentTimeMillis();
+        long start = _hasTooLongDefectSent ? 0 : System.currentTimeMillis();
         final ImmutableSet<NetworkInterface> current = getActiveInterfaces_();
-        if (!OSUtil.isWindows()) {
+        if (!_hasTooLongDefectSent) {
             long duration = System.currentTimeMillis() - start;
             if (duration > 50) {
                 Exception e = new Exception("getActiveInterfaces too long: " + duration);
                 SVClient.logSendDefectAsync(true, "getActiveInterfaces too long", e);
             }
+            _hasTooLongDefectSent = true;
         }
 
         final ImmutableSet<NetworkInterface> previous = _ifaces;

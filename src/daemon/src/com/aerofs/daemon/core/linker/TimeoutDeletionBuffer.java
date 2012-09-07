@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.PathObfuscator;
 import com.aerofs.daemon.lib.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -284,7 +285,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                         l.info("aliased " + soid);
                         assert _ds.hasAliasedOA_(soid);
                     } else {
-                        l.warn("delete " + soid + " " + PathCombo.toLogString(
+                        l.warn("delete " + soid + " " + PathObfuscator.obfuscate(
                                 _ds.getOA_(soid).name()));
                         _od.delete_(soid, PhysicalOp.MAP, null, t);
                         deletedSOIDs.add(soid);

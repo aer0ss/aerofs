@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.linker.MightDelete;
 import com.aerofs.daemon.core.linker.PathCombo;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
+import com.aerofs.lib.PathObfuscator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
@@ -126,7 +127,7 @@ class ScanSession
         // Initialization
 
         if (_stack == null) {
-            if (l.isInfoEnabled()) l.info(PathCombo.toLogString(_absPaths) + " " + _recursive);
+            if (l.isInfoEnabled()) l.info(PathObfuscator.obfuscate(_absPaths) + " " + _recursive);
             _stack = Lists.newLinkedList();
             initializeStack_();
         } else {
@@ -204,9 +205,9 @@ class ScanSession
                  * folder A is moved to under folder P while A is being scanned, and P has been
                  * scanned before, ignoring errors caused by the missing A would lead to
                  * deletion of the logical object corresponding to A. This is because the
-                 * logical object has been in the deletion buffer when scanning A.
+                 * logical object is already in the deletion buffer when A is being scanned.
                  */
-                l.warn("root " + PathCombo.toLogString(pcRoot._absPath) + " no longer a dir. skip");
+                l.warn("root " + PathObfuscator.obfuscate(pcRoot._absPath) + " no longer a dir. skip");
             }
         }
     }
@@ -232,9 +233,7 @@ class ScanSession
             pcParent = new PathCombo(_f._cfgAbsRootAnchor, pcParent._path.removeLast());
         }
 
-        if (l.isInfoEnabled()) {
-            l.info("on " + soidParent + ":" + PathCombo.toLogString(pcParent._path));
-        }
+        if (l.isInfoEnabled()) l.info("on " + soidParent + ":" + pcParent);
 
         addLogicalChildrenToDeletionBuffer_(soidParent);
 

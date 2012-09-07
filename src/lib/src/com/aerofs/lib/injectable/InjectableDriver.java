@@ -1,10 +1,14 @@
 package com.aerofs.lib.injectable;
 
+import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
+
+import static com.aerofs.lib.PathObfuscator.obfuscate;
 import static com.aerofs.swig.driver.DriverConstants.*;
 
 /**
@@ -50,20 +54,19 @@ public class InjectableDriver
 
     /**
      * @return null on OS-specific files
-     * @throws IOException if getting FID failed
      */
-    public FIDAndType getFIDAndType(String path) throws IOException
+    public FIDAndType getFIDAndType(String path)
+            throws IOException, ExNotFound
     {
         byte[] bs = new byte[getFIDLength()];
         int ret = Driver.getFid(null, path, bs);
-        if (ret == DRIVER_FAILURE) throwIOException(path);
+        if (ret == DRIVER_FAILURE) throwNotFoundOrIOException(path);
         if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FIDAndType(new FID(bs), ret == GETFID_DIR);
     }
 
     /**
      * @return null on OS-specific files
-     * @throws IOException if getting FID failed
      */
     public FID getFID(String path) throws IOException
     {
@@ -74,9 +77,20 @@ public class InjectableDriver
         return new FID(bs);
     }
 
+    /**
+     * @throws ExNotFound if the object is not present
+     * @throws IOException if getFID failed for other reasons
+     */
+    private static void throwNotFoundOrIOException(String path)
+            throws IOException, ExNotFound
+    {
+        if (new File(path).exists()) throwIOException(path);
+        else throw new ExNotFound(obfuscate(path));
+    }
+
     private static void throwIOException(String path) throws IOException
     {
-        throw new IOException("getFid: " + path);
+        throw new IOException("getFid: " + obfuscate(path));
     }
 
     public void setFolderIcon(String folderPath, String iconName)

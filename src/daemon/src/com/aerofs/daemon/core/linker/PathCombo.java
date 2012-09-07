@@ -1,14 +1,10 @@
 package com.aerofs.daemon.core.linker;
 
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.google.common.collect.Lists;
 
-import java.io.File;
-import java.util.LinkedList;
-import java.util.Set;
+import static com.aerofs.lib.PathObfuscator.obfuscate;
 
 /**
  * This class combines Path and its corresponding string-type path. The former
@@ -40,8 +36,7 @@ public class PathCombo
     }
 
     /**
-     * @return a new {@link PathCombo} that has the name appended to the path
-     * as the last element
+     * @return a new {@link PathCombo} that has the name appended to the path as the last element
      */
     public PathCombo append(String name)
     {
@@ -54,63 +49,13 @@ public class PathCombo
         _path = path;
     }
 
+    /**
+     * @return obfuscated path string
+     */
     @Override
     public String toString()
     {
-        return _path.toString();
+        return obfuscate(_path);
     }
 
-    public static String toLogString(Path path)
-    {
-        return toLogString(path.elements());
-    }
-
-    public static String toLogString(String path)
-    {
-        LinkedList<String> names = Lists.newLinkedList();
-        File f = new File(path);
-
-        // Root directory has an empty filename
-        while (f != null && !f.getName().isEmpty()) {
-            names.addFirst(f.getName());
-            f = f.getParentFile();
-        }
-
-        String[] elements = new String[names.size()];
-        names.toArray(elements);
-
-        return toLogString(elements);
-    }
-
-    public static String toLogString(Set<String> paths)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("[");
-        String separator = "";
-        for (String path : paths) {
-            sb.append(separator);
-            separator = ", ";
-            sb.append(toLogString(path));
-        }
-        sb.append("]");
-
-        return sb.toString();
-    }
-
-    public static String toLogString(String[] elements)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        if (elements.length == 0) {
-            sb.append("/");
-        }
-
-        for (String name : elements) {
-            sb.append('/');
-            sb.append(Cfg.staging() ? name : Util.crc32(name));
-        }
-
-        return sb.toString();
-    }
 }

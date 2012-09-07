@@ -1,11 +1,11 @@
 package com.aerofs.daemon.core.linker.scanner;
 
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.linker.PathCombo;
 import com.aerofs.daemon.core.linker.scanner.ScanSession.Factory;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.PathObfuscator;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableSystem;
@@ -82,7 +82,7 @@ public class ScanSessionQueue implements IDumpStatMisc
         @Override
         public String toString()
         {
-            return PathCombo.toLogString(_absPaths) + ":" + _recursive;
+            return PathObfuscator.obfuscate(_absPaths) + ":" + _recursive;
         }
     }
 

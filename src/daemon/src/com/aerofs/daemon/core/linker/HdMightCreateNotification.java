@@ -9,6 +9,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.ex.ExNotFound;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -47,6 +48,13 @@ class HdMightCreateNotification implements IEventHandler<EIMightCreateNotificati
                  res = _mc.mightCreate_(new PathCombo(_cfgAbsRootAnchor, ev._absPath),
                          _globalBuffer, t);
                  t.commit_();
+            } catch (ExNotFound e) {
+                // We may get a not found exception if a file was created and deleted or moved very
+                // soon thereafter, and we didn't get around to checking it out until it was already
+                // gone. We simply ignore the error in this situation to avoid frequent rescans
+                // and thus cpu hogging when editors create and delete/move temporary files.
+                l.warn("ignored by MCN: " + Util.e(e, ExNotFound.class));
+                return;
             } finally {
                 t.end_();
             }

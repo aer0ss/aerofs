@@ -14,7 +14,6 @@ import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.DelayedScheduler;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.Util;
@@ -75,7 +74,7 @@ public class VersionUpdater
      * Use this method to increment non-alias versions.
      */
     public void update_(SOCKID k, Trans t)
-        throws ExNotFound, SQLException, IOException
+        throws SQLException, IOException
     {
         updateImpl_(k, false, t);
     }
@@ -84,13 +83,13 @@ public class VersionUpdater
      * Use this method to increment alias versions.
      */
     public void updateAliased_(SOCKID k, Trans t)
-        throws ExNotFound, SQLException, IOException
+        throws SQLException, IOException
     {
         updateImpl_(k, true, t);
     }
 
     private void updateImpl_(SOCKID k, boolean alias, Trans t)
-        throws ExNotFound, SQLException, IOException
+        throws SQLException, IOException
     {
         if (l.isInfoEnabled()) l.info("update " + k);
         assert t != null;
