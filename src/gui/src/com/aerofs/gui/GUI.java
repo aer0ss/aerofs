@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.HashSet;
 
@@ -187,9 +188,9 @@ public class GUI implements IUI {
     }
 
     /**
-     * @param shell non-null to use sheet style
+     * @param sh non-null to use sheet style
      */
-    public void show(Shell sh, MessageType mt, String msg)
+    public void show(@Nullable Shell sh, MessageType mt, String msg)
     {
         boolean sheet;
         if (sh == null) {
@@ -424,11 +425,12 @@ public class GUI implements IUI {
     }
 
     @Override
-    public void setup_(String rtRoot) throws Exception
+    public SetupType setup_(String rtRoot) throws Exception
     {
         DlgSetup dlg = new DlgSetup(_sh);
         dlg.open();
         if (dlg.isCancelled()) throw new ExAborted("user canceled setup");
+        return dlg.isExistingUser() ? SetupType.EXISTING_USER : SetupType.NEW_USER;
     }
 
     public void enterMainLoop_()

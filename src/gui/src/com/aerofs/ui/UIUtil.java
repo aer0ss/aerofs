@@ -27,6 +27,7 @@ import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.IUI.SetupType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
@@ -272,7 +273,7 @@ public class UIUtil
                 }
 
                 UI.get().preSetupUpdateCheck_();
-                UI.get().setup_(rtRoot);
+                SetupType st = UI.get().setup_(rtRoot);
                 if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
                 UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", new Runnable() {
                     @Override
@@ -282,7 +283,7 @@ public class UIUtil
                     }
                 });
 
-                if (UI.isGUI()) {
+                if (st == SetupType.NEW_USER && UI.isGUI()) {
                     // Check if there are any shared folder invitations to accept
                     new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
                     // TODO (GS): Needs a similar class for CLI, too

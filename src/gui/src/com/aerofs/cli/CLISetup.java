@@ -48,13 +48,15 @@ public class CLISetup
      */
 
     private static final String
-    PROP_USERID = "userid",
-    PROP_PASSWORD = "password",
-    PROP_DEVICE = "device",
-    PROP_ROOT = "root",
-    PROP_INVITE = "invite",
-    PROP_FIRST_NAME = "first_name",
-    PROP_LAST_NAME = "last_name";
+            PROP_USERID = "userid",
+            PROP_PASSWORD = "password",
+            PROP_DEVICE = "device",
+            PROP_ROOT = "root",
+            PROP_INVITE = "invite",
+            PROP_FIRST_NAME = "first_name",
+            PROP_LAST_NAME = "last_name";
+
+    private boolean _isExistingUser;
 
     private String getUser(CLI cli) throws ExNoConsole
     {
@@ -71,8 +73,6 @@ public class CLISetup
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
-        boolean returning;
-
         String userID = null;
         char[] passwd = null;
 
@@ -112,8 +112,8 @@ public class CLISetup
             anchorRoot = props.getProperty(PROP_ROOT, anchorRoot);
             deviceName = props.getProperty(PROP_DEVICE, deviceName);
 
-            returning = (signUpCode == null);
-            if (!returning) {
+            _isExistingUser = (signUpCode == null);
+            if (!_isExistingUser) {
                 FullName defaultName = UIUtil.getDefaultFullName();
                 firstName = props.getProperty(PROP_FIRST_NAME, defaultName._first);
                 lastName = props.getProperty(PROP_LAST_NAME, defaultName._last);
@@ -135,9 +135,9 @@ public class CLISetup
                         " up on the next automatic update.");
             }
 
-            returning = cli.ask(MessageType.INFO, "Welcome! Do you have an " + S.PRODUCT +
+            _isExistingUser = cli.ask(MessageType.INFO, "Welcome! Do you have an " + S.PRODUCT +
                     " account already?");
-            if (returning) {
+            if (_isExistingUser) {
                 userID = getUser(cli);
                 cli.show(MessageType.INFO, "If you forgot your password, go to " +
                         S.PASSWORD_RESET_REQUEST_URL + " to reset it.");
@@ -204,7 +204,7 @@ public class CLISetup
                 anchorRoot = root;
             }
 
-            if (!returning) {
+            if (!_isExistingUser) {
                 // tos
                 if (!cli.ask(MessageType.INFO, S.SETUP_I_AGREE_TO_THE + " " + S.TERMS_OF_SERVICE +
                         " (" + S.TOS_URL + ")")) {
@@ -232,7 +232,7 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
-        if (returning) {
+        if (_isExistingUser) {
             UI.controller().setupExistingUser(userID, new String(passwd), anchorRoot,
                     deviceName, s3config);
         } else {
@@ -251,6 +251,11 @@ public class CLISetup
                 "| You can now access " + S.PRODUCT + " functions through the |\n" +
                 "| " + Util.q("aerofs-sh") + " command while aerofs-cli is running |\n" +
                 "+-------------------------------------------------+");
+    }
+
+    public boolean isExistingUser()
+    {
+         return _isExistingUser;
     }
 
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole

@@ -122,7 +122,8 @@ class Setup
             PBS3Config s3config)
             throws Exception
     {
-        run(userId, password, rootAnchorPath, deviceName, false, signUpCode, firstName, lastName, s3config);
+        run(userId, password, rootAnchorPath, deviceName, false, signUpCode, firstName, lastName,
+                s3config);
     }
 
     /**

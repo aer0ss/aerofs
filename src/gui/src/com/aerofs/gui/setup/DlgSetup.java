@@ -57,7 +57,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
     private String _invitedUser;
     private boolean _isTargetedInvite;
 
-    private Button _btnReturning;
+    private Button _btnIsExistingUser;
     private Text _txtUserID;
     private Text _txtPasswd;
     private Text _txtPasswd2;
@@ -88,6 +88,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
     private Label _lblError;
     private CompSpin _compSpinIC;
     private Label _lblStatus;
+    private boolean _isExistingUser;
 
     public DlgSetup(Shell parentShell)
             throws Exception
@@ -122,13 +123,14 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         container.setLayoutData(new GridData(GridData.FILL_BOTH));
         new Label(container, SWT.NONE);
 
-        _btnReturning = new Button(container, SWT.CHECK);
-        _btnReturning.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false,
+        _btnIsExistingUser = new Button(container, SWT.CHECK);
+        _btnIsExistingUser.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false,
                 false, 1, 1));
-        _btnReturning.addSelectionListener(new SelectionAdapter() {
+        _btnIsExistingUser.addSelectionListener(new SelectionAdapter()
+        {
             public void widgetSelected(final SelectionEvent ev)
             {
-                boolean r = _btnReturning.getSelection();
+                boolean r = _btnIsExistingUser.getSelection();
                 _txtPasswd2.setVisible(!r);
                 _lblPasswd2.setVisible(!r);
                 _txtFirstName.setVisible(!r);
@@ -166,7 +168,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             }
         });
 
-        _btnReturning.setText("I already have an " + S.PRODUCT + " account");
+        _btnIsExistingUser.setText("I already have an " + S.PRODUCT + " account");
 
         if (_forceInvite && !_isTargetedInvite) {
             new Label(container, SWT.NONE);
@@ -359,7 +361,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         else if (_txtUserID.getText().isEmpty()) _txtUserID.setFocus();
         else _txtPasswd.setFocus();
 
-        container.setTabList(new Control[] { _btnReturning, _txtIC, _txtUserID, _txtPasswd,
+        container.setTabList(new Control[] {_btnIsExistingUser, _txtIC, _txtUserID, _txtPasswd,
                 _txtPasswd2, _txtFirstName, _txtLastName });
 
         _txtFirstName.addModifyListener(new ModifyListener() {
@@ -488,7 +490,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         String passwd2 = _txtPasswd2.getText();
         String firstName = _txtFirstName.getText();
         String lastName = _txtLastName.getText();
-        boolean returning = _btnReturning.getSelection();
+        boolean isExistingUser = _btnIsExistingUser.getSelection();
 
         email = email.trim();
 
@@ -501,7 +503,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             ready = false;
         } else if (passwd.isEmpty()) {
             ready = false;
-        } else if (!returning) {
+        } else if (!isExistingUser) {
             if (passwd.length() < Param.MIN_PASSWD_LENGTH) {
                 ready = false;
                 err = S.SETUP_PASSWD_TOO_SHORT;
@@ -560,7 +562,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         final String firstName = _txtFirstName.getText().trim();
         final String lastName = _txtLastName.getText().trim();
         final String ic = _txtIC.getText().trim();
-        final boolean returning = _btnReturning.getSelection();
+        _isExistingUser = _btnIsExistingUser.getSelection();
 
         setDlgElementsState(false);
 
@@ -581,7 +583,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             @Override
             public void run() throws Exception
             {
-                if (returning) {
+                if (_isExistingUser) {
                     UI.controller().setupExistingUser(userID, new String(passwd), _absRootAnchor,
                             _deviceName, null);
                 } else {
@@ -662,13 +664,18 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         getButton(IDialogConstants.DETAILS_ID).setEnabled(b);
         _txtFirstName.setEnabled(b);
         _txtLastName.setEnabled(b);
-        if (_btnReturning.getSelection() || (!_forceInvite && !_isTargetedInvite)) {
+        if (_btnIsExistingUser.getSelection() || (!_forceInvite && !_isTargetedInvite)) {
             _txtUserID.setEnabled(b);
         }
         _txtPasswd.setEnabled(b);
         _txtPasswd2.setEnabled(b);
-        _btnReturning.setEnabled(b);
+        _btnIsExistingUser.setEnabled(b);
         if (_txtIC != null) _txtIC.setEnabled(b);
+    }
+
+    public boolean isExistingUser()
+    {
+        return _isExistingUser;
     }
 
     @Override
