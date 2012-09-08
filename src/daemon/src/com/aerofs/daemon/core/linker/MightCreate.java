@@ -97,6 +97,10 @@ public class MightCreate
 
         FIDAndType fnt = _dr.getFIDAndType(pcPhysical._absPath);
 
+        if (l.isInfoEnabled()) {
+            l.info(pcPhysical + ":" + fnt._fid);
+        }
+
         // OS-specific files should be ignored
         if (fnt == null) return Result.IGNORED;
 
@@ -172,18 +176,12 @@ public class MightCreate
         case SAME_FID_SAME_TYPE:
             // Update the logical object to reflect changes on the physical one, if any
             updateLogicalObject_(soid, pcPhysical, fnt._dir, t);
-            if (l.isInfoEnabled()) {
-                l.info("remove_ on " + soid + " 0");
-            }
             delBuffer.remove_(soid);
             createdOrReplaced = false;
             break;
         case SAME_PATH_SAME_TYPE_ADMITTED:
             // Link the physical object to the logical object by replacing the FID.
             replaceFID_(oaSamePath.soid(), pcPhysical, fnt._dir, fnt._fid, t);
-            if (l.isInfoEnabled()) {
-                l.info("remove_ on " + soid + " 1");
-            }
             delBuffer.remove_(oaSamePath.soid());
             createdOrReplaced = true;
             break;
