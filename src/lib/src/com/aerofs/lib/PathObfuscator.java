@@ -50,15 +50,15 @@ public class PathObfuscator
         return sb.toString();
     }
 
-    public static String obfuscate(String[] elements)
+    public static String obfuscate(String[] pathElements)
     {
         StringBuilder sb = new StringBuilder();
 
-        if (elements.length == 0) {
+        if (pathElements.length == 0) {
             sb.append("/");
         }
 
-        for (String name : elements) {
+        for (String name : pathElements) {
             sb.append('/');
             sb.append(Cfg.staging() ? name : Util.crc32(name));
         }

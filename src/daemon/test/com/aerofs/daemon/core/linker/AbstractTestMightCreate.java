@@ -18,7 +18,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
@@ -116,12 +115,6 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         OA oa = ds.getOANullable_(soid);
         when(ds.getSOID_(fid)).thenReturn(soid);
         when(oa.fid()).thenReturn(fid);
-    }
-
-    protected void mockGetFIDThrowingNotFoundException(String physicalObj)
-            throws IOException, ExNotFound
-    {
-        when(dr.getFIDAndType(Util.join(pRoot, physicalObj))).thenThrow(new ExNotFound());
     }
 
     /**
