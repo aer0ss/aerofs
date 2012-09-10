@@ -41,14 +41,22 @@ public class Downloads
         private TCB _tcb;
         private DID _from;
 
-        SyncDownloadImpl(DependencyEdge dependency, To to, Token tk)
-                throws Exception
+        private final DependencyEdge _dependency;
+        private final To _to;
+
+        private SyncDownloadImpl(DependencyEdge dependency, To to)
+        {
+            _dependency = dependency;
+            _to = to;
+        }
+
+        public void invoke(Token tk) throws Exception
         {
             Token tkWait = _tc.acquireThrows_(Cat.UNLIMITED, "syncDL");
             try {
-                downloadAsyncThrows_(dependency.dst, to, this, tk);
+                downloadAsyncThrows_(_dependency.dst, _to, this, tk);
                 _tcb = TC.tcb();
-                tkWait.pause_("syncDL " + dependency.dst);
+                tkWait.pause_("syncDL " + _dependency.dst);
             } catch (ExAborted e) {
                 throw (Exception) e.getCause();
             } finally {
@@ -128,7 +136,8 @@ public class Downloads
             // Edges are added to the dependency graph here instead of in Download.java because
             // there are callers of downloadSync_, in addition to Download.java
             _dlOngoingDependencies.addEdge_(dependency);
-            SyncDownloadImpl sdi = new SyncDownloadImpl(dependency, to, tk);
+            SyncDownloadImpl sdi = new SyncDownloadImpl(dependency, to);
+            sdi.invoke(tk);
             return sdi._from;
         } catch (ExDownloadDeadlock edldl) {
             // Try to resolve the deadlock, or else crash the app in this method
@@ -168,7 +177,7 @@ public class Downloads
      * TODO merge tk with the existing one to adjust priorities
      */
     public @Nullable Download downloadAsync_(final SOCID socid, @Nullable To to,
-            @Nullable IDownloadCompletionListener listener, @Nullable final Token tk)
+            IDownloadCompletionListener listener, @Nullable final Token tk)
     {
         try {
             // assert that the object is not expelled if the branch being downloaded is not metadata
