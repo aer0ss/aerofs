@@ -645,6 +645,11 @@ public abstract class Util
         return sw.toString();
     }
 
+    public static void checkRuntimeException(Throwable e)
+    {
+        if (RuntimeException.class.isInstance(e)) throw (RuntimeException) e;
+    }
+
     public static byte[] toByteArray(long l)
     {
         return ByteBuffer.allocate(8).putLong(l).array();
