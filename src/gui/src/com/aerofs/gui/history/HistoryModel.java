@@ -8,8 +8,8 @@ import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.Util.FileName;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -258,7 +257,28 @@ public class HistoryModel
             Ignore
         };
         Answer retry(ModelIndex a);
-        ModelIndex resolve(ModelIndex a, ModelIndex b);
+    }
+
+    /**
+     * Ideally we should treat files and folders differently to avoid cases such as :
+     * "2012.01.01" -> "2012.01 - restored.01"
+     * However, because OSX is retarded and allows folders to have extensions (e.g. ".app") this
+     * cannot be done consistently on all platforms so we always treat folders as files (until
+     * some users start complaining about this behavior).
+     *
+     * @return a suitable name for a restored file/folder in case of conflict
+     */
+    private File getRestoredFile(String absPath, String name)
+    {
+        FileName fn = Util.splitFileName(name);
+        String restoredName = fn.base + " - restored" + fn.extension;
+
+        File dst = new File(Util.join(absPath, restoredName));
+        while (dst.exists()) {
+            restoredName = Util.newNextFileName(restoredName);
+            dst = new File(Util.join(absPath, restoredName));
+        }
+        return dst;
     }
 
     /**
@@ -272,45 +292,41 @@ public class HistoryModel
      * @return whether the operation was aborted by the decision maker
      *
      * asserts if :
-     *  - {@code index.isDeleted} is false
      *  - {@code absPath} is not a valid directory
      *
-     * @throws com.aerofs.lib.ex.ExBadArgs if
-     *  - {@code index.name} conflicts with an existing file/folder in {@code absPath}
+     *  - {@code index.name} cannot be created under {@code absPath}
      */
     boolean restore(ModelIndex base, String absPath, IDecisionMaker delegate) throws Exception
     {
-        assert base.isDeleted;
-
         File parent = new File(absPath);
-        assert parent.exists() && parent.isDirectory();
+        assert parent.exists() && parent.isDirectory() : absPath;
 
         File dst = new File(Util.join(absPath, base.name));
         if (base.isDir) {
             if (dst.exists()) {
-                throw new ExBadArgs("Unable to restore : "  + dst.getAbsolutePath() +
-                        " already exists");
+                if (!dst.isDirectory()) {
+                    // TODO: finer conflict resolution through delegate if users request it
+                    dst = getRestoredFile(absPath, base.name);
+                }
             }
 
-            dst.mkdir();
+            if (!dst.exists()) {
+                FileUtil.mkdir(dst);
+            }
 
             int n = rowCount(base);
-            HashMap<String, ModelIndex> resolved = Maps.newHashMap();
             for (int i = 0; i < n; ++i) {
                 ModelIndex child = index(base, i);
-                ModelIndex prev = resolved.get(child.name);
-                ModelIndex reslv = prev == null ? child : delegate.resolve(prev, child);
-                if (reslv == null) return true;
-                resolved.put(child.name, reslv);
-            }
-
-            for (ModelIndex child : resolved.values()) {
                 if (restore(child, dst.getAbsolutePath(), delegate)) {
                     return true;
                 }
             }
+        } else if (base.isDeleted) {
+            if (dst.exists()) {
+                // TODO: finer conflict resolution through delegate if users request it
+                dst = getRestoredFile(absPath, base.name);
+            }
 
-        } else {
             List<Version> v = versions(base);
             while (v == null || v.isEmpty()) {
                 Answer a = delegate.retry(base);

@@ -2,7 +2,6 @@ package com.aerofs.lib.aws.s3.db;
 
 import static com.aerofs.lib.db.S3Schema.*;
 
-import java.io.UnsupportedEncodingException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,7 +15,6 @@ import java.util.Set;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
@@ -689,23 +687,11 @@ public class S3Database extends AbstractDatabase
     }
 
     private byte[] encodeVersion(long version) {
-        try {
-            return String.valueOf(version)
-                         .getBytes(IPhysicalRevProvider.REV_INDEX_TEXT_ENCODING);
-        } catch (UnsupportedEncodingException e) {
-            // No way UTF-8 is unsupported...
-            return null;
-        }
+        return Util.string2utf(String.valueOf(version));
     }
 
     private long decodeVersion(byte[] index) {
-        try {
-            return Long.valueOf(new String(index,
-                                           IPhysicalRevProvider.REV_INDEX_TEXT_ENCODING));
-        } catch (UnsupportedEncodingException e) {
-            // No way UTF-8 is unsupported...
-            return 0;
-        }
+        return Long.valueOf(Util.utf2string(index));
     }
 
     private PreparedStatement _psGetHistFileRevisions;
