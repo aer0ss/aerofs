@@ -233,10 +233,10 @@ public class DlgHistory extends AeroFSDialog
         });
 
         // select base path, if any
-        if (_basePath != null) selectPath(_basePath);
+        if (_basePath != null) selectPath(_basePath, true);
     }
 
-    private void selectPath(Path path)
+    private void selectPath(Path path, boolean expanded)
     {
         TreeItem item = null, parent = null;
         for (String e : path.elements()) {
@@ -257,6 +257,9 @@ public class DlgHistory extends AeroFSDialog
             parent = item;
         }
         if (item != null) {
+            if (_model.getPath(index(item)).equals(path)) {
+                item.setExpanded(expanded);
+            }
             _revTree.select(item);
             refreshVersionTable(item);
         }
@@ -350,9 +353,12 @@ public class DlgHistory extends AeroFSDialog
     {
         Path path = null;
         TreeItem[] items = _revTree.getSelection();
+        boolean expanded = false;
         if (items != null && items.length == 1) {
             path = _model.getPath(index(items[0]));
+            expanded = items[0].getExpanded();
         }
+
 
         // clear the tree and the underlying model
         _revTree.setItemCount(0);
@@ -362,7 +368,7 @@ public class DlgHistory extends AeroFSDialog
         _revTree.setItemCount(_model.rowCount(null));
 
         // reselect previously selected item, if possible
-        if (path != null) selectPath(path);
+        if (path != null) selectPath(path, expanded);
     }
 
     /**
@@ -636,7 +642,8 @@ public class DlgHistory extends AeroFSDialog
 
             Label label = new Label(shell, SWT.WRAP);
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-            label.setText("Restoring " + _model.getPath(_base) + (_inPlace ? "" : "\nto " + _dest));
+            label.setText("Restoring " + _model.getPath(_base).toStringFormal()
+                    + (_inPlace ? "" : "\nto " + _dest));
 
             shell.addListener(SWT.Show, new Listener()
             {
