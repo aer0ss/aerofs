@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.sp;
 
+import com.aerofs.servletlib.MockSessionUserID;
 import com.aerofs.servletlib.db.JUnitDatabaseConnectionFactory;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
