@@ -647,7 +647,7 @@ public abstract class Util
 
     public static void checkRuntimeException(Throwable e)
     {
-        if (RuntimeException.class.isInstance(e)) throw (RuntimeException) e;
+        if (e instanceof RuntimeException) throw (RuntimeException) e;
     }
 
     public static byte[] toByteArray(long l)
