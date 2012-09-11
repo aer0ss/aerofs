@@ -75,7 +75,7 @@ class IteratorPartialReplica implements IIterator
      * non-metadata if the store is over quota
      */
     @Override
-    public OCIDAndCS next_(Trans t) throws SQLException
+    public @Nullable OCIDAndCS next_(Trans t) throws SQLException
     {
         while (true) {
             if (!_dbiter.next_()) {

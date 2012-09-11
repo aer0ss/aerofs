@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.collector;
 import java.sql.SQLException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -97,7 +98,7 @@ public class SenderFilters
      * union of BASE filter onward if fromBase so the remote can collect content
      * again. Return null if the filter is empty.
      */
-    public SenderFilterAndIndex get_(DID did, boolean fromBase) throws SQLException
+    public @Nullable SenderFilterAndIndex get_(DID did, boolean fromBase) throws SQLException
     {
         // The SenderFilterIndex associated with the given DID
         SenderFilterIndex sfidxForDID = _sfdb.getSenderDeviceIndex_(_sidx, did);

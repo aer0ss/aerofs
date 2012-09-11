@@ -8,7 +8,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreDeleter;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -22,6 +21,8 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
+
 public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 {
     private final DirectoryService _ds;
@@ -34,7 +35,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     @Inject
     public AdmittedToExpelledAdjuster(StoreDeleter sd, Expulsion expulsion,
             IPhysicalStorage ps, NativeVersionControl nvc, DirectoryService ds,
-            IMetaDatabase mdb, IMapSID2SIndex sid2sidx)
+            IMapSID2SIndex sid2sidx)
     {
         _sd = sd;
         _expulsion = expulsion;
@@ -50,7 +51,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
     {
         _ds.walk_(soidRoot, pOld, new IObjectWalker<Path>() {
             @Override
-            public Path prefixWalk_(Path pOldParent, OA oa) throws Exception
+            public @Nullable Path prefixWalk_(Path pOldParent, OA oa) throws Exception
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
                 boolean oldExpelled = oa.isExpelled();

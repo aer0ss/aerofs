@@ -13,10 +13,13 @@ import java.util.TreeMap;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import javax.annotation.Nullable;
 
 /**
  * State transition:
@@ -223,7 +226,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      *
      * @return null if the device is offline
      */
-    public ITransport getPreferedTransport_()
+    public @Nullable ITransport getPreferedTransport_()
     {
         for (Entry<ITransport, TPEntry> en : _map.entrySet()) {
             if (!en.getValue()._pulsing) {
@@ -235,7 +238,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
         // this method shouldn't get called if the device is offline on all the
         // transport. this may not be a valid assumption because the daemon
         // might contact an offline peer, but so far so good
-        assert false;
+        Util.fatal("see comment");
         return null;
     }
 

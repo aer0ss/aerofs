@@ -94,7 +94,7 @@ public class NSL
      * send to the device's preferred transport if the device is online; send to
      * all transports otherwise.
      */
-    private Endpoint sendUnicast_(DID did, String type, int rpcid, SIndex sidx, byte[] bs)
+    private @Nullable Endpoint sendUnicast_(DID did, String type, int rpcid, SIndex sidx, byte[] bs)
             throws Exception
     {
         Device dev = _dp.getOPMDevice_(did);
@@ -168,7 +168,7 @@ public class NSL
         }
     }
 
-    private Endpoint send_(To to, String type, int rpcid, SIndex sidx, byte[] bs) throws Exception
+    private @Nullable Endpoint send_(To to, String type, int rpcid, SIndex sidx, byte[] bs) throws Exception
     {
         // save the string of to, as it may change on pick_()
         String strTo = to.toString();
@@ -196,7 +196,7 @@ public class NSL
                 Util.writeDelimited(pb).toByteArray());
     }
 
-    public Endpoint sendUnicast_(DID did, SIndex sidx, PBCore pb)
+    public @Nullable Endpoint sendUnicast_(DID did, SIndex sidx, PBCore pb)
             throws Exception
     {
         return sendUnicast_(did, CoreUtil.typeString(pb), pb.getRpcid(), sidx,

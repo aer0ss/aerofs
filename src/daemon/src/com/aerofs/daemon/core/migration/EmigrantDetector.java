@@ -81,7 +81,7 @@ public class EmigrantDetector
         if (EmigrantCreator.isEmigrantName(oa.name()) && oa.parent().equals(OID.TRASH)) return;
 
         SID sidTo = EmigrantCreator.getEmigrantTargetSID(nameTo);
-        assert sidTo != null;
+        assert sidTo != null : nameTo;
         l.info("emigration detected " + oa.type() + " " + soid + "->" + sidTo);
 
         // download the store (i.e. their anchors) and its ancestors as necessary

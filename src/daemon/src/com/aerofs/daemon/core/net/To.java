@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class To
 {
@@ -199,7 +200,7 @@ public class To
      * pick the next preferred device
      * @return null for maxcast
      */
-    public DID pick_() throws ExNoAvailDevice
+    public @Nullable DID pick_() throws ExNoAvailDevice
     {
         DevEntry min = null;
         for (DID did : _dids) {
@@ -228,7 +229,7 @@ public class To
     /**
      * @return null for maxcast
      */
-    private DID pickStoreBased_() throws ExNoAvailDevice
+    private @Nullable DID pickStoreBased_() throws ExNoAvailDevice
     {
         if (_cast == 0) throw new ExNoAvailDevice();
 
@@ -283,7 +284,7 @@ public class To
         }
     }
 
-    public SIndex sidx()
+    public @Nonnull SIndex sidx()
     {
         assert _sidx != null;
         return _sidx;

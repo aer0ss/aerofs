@@ -4,6 +4,8 @@ import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.lib.id.DID;
 
+import javax.annotation.Nullable;
+
 /**
  * see IEOTransportPing. Additionally, the event can also throw not found
  * if the transport on which the peer is online has changed.
@@ -17,7 +19,7 @@ public class EITransportPing extends AbstractEBIMC
     private final int _seqPrev, _seqNext;
     private final boolean _forceNext;
     private final boolean _ignoreOffline;
-    private Long _rtt;
+    private @Nullable Long _rtt;
 
     public EITransportPing(DID did, int seqPrev, int seqNext,
             boolean forceNext, boolean ignoreOffline)
@@ -50,12 +52,12 @@ public class EITransportPing extends AbstractEBIMC
         return _forceNext;
     }
 
-    public void setResult_(Long rtt)
+    public void setResult_(@Nullable Long rtt)
     {
         _rtt = rtt;
     }
 
-    public Long rtt()
+    public @Nullable Long rtt()
     {
         return _rtt;
     }

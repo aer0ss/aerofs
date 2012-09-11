@@ -12,6 +12,7 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -92,13 +93,13 @@ public class OA
     /**
      * @return the attribute of the master branch, null if not present
      */
-    public CA caMaster()
+    public @Nullable CA caMaster()
     {
         assert isFile();
         return ca(KIndex.MASTER);
     }
 
-    public CA caMasterThrows() throws ExNotFound
+    public @Nonnull CA caMasterThrows() throws ExNotFound
     {
         CA ca = caMaster();
         if (ca == null) throw new ExNotFound(_soid + " master branch");
@@ -106,15 +107,15 @@ public class OA
     }
 
     /**
-     * @return the attribute of the master branch, null if not present
+     * @return the attribute of the branch, null if not present
      */
-    public CA ca(KIndex kidx)
+    public @Nullable CA ca(KIndex kidx)
     {
         assert isFile();
         return _cas.get(kidx);
     }
 
-    public CA caThrows(KIndex kidx) throws ExNotFound
+    public @Nonnull CA caThrows(KIndex kidx) throws ExNotFound
     {
         CA ca = ca(kidx);
         if (ca == null) throw new ExNotFound(_soid + " branch " + kidx);

@@ -33,6 +33,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 
+import javax.annotation.Nullable;
+
 public class DevicePresence implements IDumpStatMisc
 {
     private static final Logger l = Util.l(DevicePresence.class);
@@ -221,16 +223,13 @@ public class DevicePresence implements IDumpStatMisc
      * OPM = online potential member
      * @return null if the device is not online
      */
-    public Device getOPMDevice_(DID did)
+    public @Nullable Device getOPMDevice_(DID did)
     {
         Device dev = _did2dev.get(did);
         return dev != null && dev.isOnline_() ? dev : null;
     }
 
-    /**
-     * @return may be null
-     */
-    public OPMStore getOPMStore_(SIndex sidx)
+    public @Nullable OPMStore getOPMStore_(SIndex sidx)
     {
         return _sidx2opms.get(sidx);
     }

@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.net;
 
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -9,6 +8,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -34,7 +34,7 @@ public class DID2User
 {
     private static final Logger l = Util.l(DID2User.class);
 
-    private final Map<DID, Set<TCB>> _d2waiters = new HashMap<DID, Set<TCB>>();
+    private final Map<DID, Set<TCB>> _d2waiters = Maps.newHashMap();
     private final NSL _nsl;
     private final TC _tc;
     private final IDID2UserDatabase _db;
@@ -63,7 +63,7 @@ public class DID2User
             throws SQLException
     {
         String user = getFromLocalNullable_(did);
-        assert user != null;
+        assert user != null : did;
         return user;
     }
 

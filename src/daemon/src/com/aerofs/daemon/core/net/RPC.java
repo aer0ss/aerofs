@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.util.Map;
 
@@ -70,10 +71,9 @@ public class RPC
     /**
      * The device that replies the rpc is added (back) to To in case the To
      * will be later reused
-     * @param to the id of the replying device will be added (back) to this
-     * parameter. it can be null
+     * @param to the id of the replying device will be added (back) to this parameter
      */
-    private DigestedMessage recvReply_(int rpcid, To to, Token tk, String reason)
+    private DigestedMessage recvReply_(int rpcid, @Nullable To to, Token tk, String reason)
         throws ExTimeout, ExAborted, ExNoResource
     {
         assert !_waiters.containsKey(rpcid);

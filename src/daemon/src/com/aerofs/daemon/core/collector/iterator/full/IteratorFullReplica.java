@@ -13,6 +13,8 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
+import javax.annotation.Nullable;
+
 class IteratorFullReplica implements IIterator
 {
     private final ICollectorSequenceDatabase _csdb;
@@ -33,7 +35,7 @@ class IteratorFullReplica implements IIterator
     }
 
     @Override
-    public OCIDAndCS next_(Trans t) throws SQLException
+    public @Nullable OCIDAndCS next_(Trans t) throws SQLException
     {
         while (true) {
             if (!_dbiter.next_()) return null;

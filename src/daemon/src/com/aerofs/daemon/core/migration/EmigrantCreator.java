@@ -74,7 +74,7 @@ public class EmigrantCreator
     /**
      * @return null if the name doesn't indicates an emigrated object
      */
-    static SID getEmigrantTargetSID(String name)
+    static @Nullable SID getEmigrantTargetSID(String name)
     {
         if (!isEmigrantName(name)) return null;
 

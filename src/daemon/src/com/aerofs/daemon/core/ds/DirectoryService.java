@@ -439,7 +439,7 @@ public class DirectoryService implements IDumpStatMisc
          * cookieFromParent}. Set to null to avoid traversing the children if the current node is a
          * directory or anchor.
          */
-        T prefixWalk_(T cookieFromParent, OA oa) throws Exception;
+        @Nullable T prefixWalk_(T cookieFromParent, OA oa) throws Exception;
 
         /**
          * This method is called on each object that is traversed. If the object is a directory or
@@ -469,7 +469,7 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * Traverse in DFS the directory tree rooted at {@code soid}.
      */
-    public <T> void walk_(SOID soid, T cookieFromParent, IObjectWalker<T> w)
+    public <T> void walk_(SOID soid, @Nullable T cookieFromParent, IObjectWalker<T> w)
         throws Exception
     {
         OA oa = getOAThrows_(soid);

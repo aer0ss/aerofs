@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -19,6 +20,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.spsv.SVClient;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
@@ -55,6 +57,8 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import com.google.protobuf.AbstractMessageLite;
 
+import javax.annotation.Nullable;
+
 public class GetVersCall
 {
     private static final Logger l = Util.l(GetVersCall.class);
@@ -62,7 +66,7 @@ public class GetVersCall
     private static class TickPair {
         Tick _native;
         Tick _imm;
-    };
+    }
 
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
@@ -108,7 +112,7 @@ public class GetVersCall
         Version vKwlgLocalES = _nvc.getKnowledgeExcludeSelf_(sidx);
         Version vImmKwlgLocalES = _ivc.getKnowledgeExcludeSelf_(sidx);
 
-        HashMap<DID, TickPair> map = new HashMap<DID, TickPair>();
+        HashMap<DID, TickPair> map = Maps.newHashMap();
         for (Entry<DID, Tick> en : vImmKwlgLocalES.getAll_().entrySet()) {
             TickPair tp = new TickPair();
             tp._imm = en.getValue();
@@ -179,7 +183,7 @@ public class GetVersCall
         didsExcludeRequester.addAll(immVerDids);
         didsExcludeRequester.remove(msg.did());
 
-        ArrayList<DeviceEntry> desExcludeRequester =
+        List<DeviceEntry> desExcludeRequester =
                 new ArrayList<DeviceEntry>(didsExcludeRequester.size());
         for (DID did : didsExcludeRequester) {
             DeviceEntry de = new DeviceEntry();
@@ -236,7 +240,7 @@ public class GetVersCall
      * @return a different stream than os if the old stream is full, and thus a
      * call to flush_() is required.
      */
-    private ByteArrayOutputStream write_(ByteArrayOutputStream os,
+    private ByteArrayOutputStream write_(@Nullable ByteArrayOutputStream os,
             AbstractMessageLite msg) throws IOException
     {
         int len = msg.getSerializedSize();
@@ -286,7 +290,7 @@ public class GetVersCall
          * @param iter the method may close the iter if necessary. a null iter
          * indicates that there is no active iter
          */
-        void writeBlock_(PBGetVersReplyBlock block, IDBIterator<?> iter)
+        void writeBlock_(PBGetVersReplyBlock block, @Nullable IDBIterator<?> iter)
                 throws Exception
         {
             ByteArrayOutputStream os2 = write_(_os, block);

@@ -31,6 +31,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -171,7 +172,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     /**
      * oldParent has the File.separator affixed to the end of the path
      */
-    private String _prefixWalk(String oldParent, OA oa) throws Exception
+    private @Nullable String _prefixWalk(String oldParent, OA oa) throws Exception
     {
         if (oa.isExpelled()) {
             assert oa.fid() == null;
@@ -220,6 +221,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                     // newFID can be null if it is removed by filesystem during relocation
                     if (newFID == null) {
                         newFID = oa.fid();
+                        assert newFID != null : oa;
                     }
 
                     byte[] bytesFID = Arrays.copyOf(newFID.getBytes(), _dr.getFIDLength() + 1);
