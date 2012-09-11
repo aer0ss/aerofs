@@ -645,7 +645,7 @@ public abstract class Util
         return sw.toString();
     }
 
-    public static void checkRuntimeException(Throwable e)
+    public static void throwIfRuntimeException(Throwable e)
     {
         if (e instanceof RuntimeException) throw (RuntimeException) e;
     }
