@@ -23,7 +23,24 @@ if [ $OS == osx ]; then
     VMARGS="$VMARGS -XstartOnFirstThread"
     export DYLD_LIBRARY_PATH=$PPWD:$DYLD_LIBRARY_PATH
 elif [ x`echo $OS | grep linux` != x ]; then
-    export LD_LIBRARY_PATH=$PPWD:$LD_LIBRARY_PATH
+    # We need to set the LD_LIBRARY_PATH to include the JRE directories so that
+    # aerofsd will successfully launch
+    if [ x"`file /bin/ls | grep 64`" != x ]; then
+        ARCH=64
+        JRE_LIB_ARCH=amd64
+    else
+        ARCH=32
+        JRE_LIB_ARCH=i386
+    fi
+    JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
+    # Oracle ships two "java" executables in the JDK package - one in the
+    # jre/bin/ folder, and the other just in the bin/ folder.  This finds the
+    # jre even if the JDK java binary is the first one on the user's PATH.
+    if [ -d "$JRE_BASE/jre" ]; then
+        JRE_BASE="$JRE_BASE/jre"
+    fi
+    JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
+    export LD_LIBRARY_PATH=$PPWD:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH
 fi
 
 CP="$PPWD/bin"
