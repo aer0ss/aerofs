@@ -97,12 +97,12 @@ public class MightCreate
 
         FIDAndType fnt = _dr.getFIDAndType(pcPhysical._absPath);
 
+        // OS-specific files should be ignored
+        if (fnt == null) return Result.IGNORED;
+
         if (l.isInfoEnabled()) {
             l.info(pcPhysical + ":" + fnt._fid);
         }
-
-        // OS-specific files should be ignored
-        if (fnt == null) return Result.IGNORED;
 
         // TODO acl checking
 

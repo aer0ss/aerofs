@@ -8,6 +8,8 @@ import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
 
+import javax.annotation.Nullable;
+
 import static com.aerofs.lib.PathObfuscator.obfuscate;
 import static com.aerofs.swig.driver.DriverConstants.*;
 
@@ -55,7 +57,7 @@ public class InjectableDriver
     /**
      * @return null on OS-specific files
      */
-    public FIDAndType getFIDAndType(String path)
+    public @Nullable FIDAndType getFIDAndType(String path)
             throws IOException, ExNotFound
     {
         byte[] bs = new byte[getFIDLength()];
@@ -68,7 +70,7 @@ public class InjectableDriver
     /**
      * @return null on OS-specific files
      */
-    public FID getFID(String path) throws IOException
+    public @Nullable FID getFID(String path) throws IOException
     {
         byte[] bs = new byte[getFIDLength()];
         int ret = Driver.getFid(null, path, bs);
