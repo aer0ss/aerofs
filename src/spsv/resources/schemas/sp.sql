@@ -104,18 +104,3 @@ CREATE TABLE `sp_shared_folder_code` (
   CONSTRAINT `f_from_foreign` FOREIGN KEY (`f_from`) REFERENCES `sp_user` (`u_id`),
   CONSTRAINT `f_sid_foreign` FOREIGN KEY (`f_share_id`) REFERENCES `sp_shared_folder` (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-DELIMITER //
-CREATE PROCEDURE accountreset(userid varchar(320))
-DETERMINISTIC MODIFIES SQL DATA
- BEGIN
-    DECLARE EXIT HANDLER FOR SQLSTATE '42000'
-      SELECT 'Invalid account name.';
-
-    IF ((SELECT COUNT(*) FROM SP_USER where u_id=userid) != 1) THEN CALL raise_error;
-    end if;
-
-    DELETE FROM sp_user WHERE u_id = userid;
- END //
-
-DELIMITER ;

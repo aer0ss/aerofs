@@ -60,8 +60,8 @@ public class RitualServer
 
         // Bind and start to accept incoming connections.
 
-        InetSocketAddress address = host.equals("*") ? new InetSocketAddress(port)
-                                                     : new InetSocketAddress(host, port);
+        InetSocketAddress address = host.equals("*") ?
+                new InetSocketAddress(port) : new InetSocketAddress(host, port);
         bootstrap.bind(address);
 
         l.info("The ritual has begun on " + address.getHostName() + ":" + address.getPort());
@@ -111,7 +111,7 @@ public class RitualServer
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         {
             // Close the connection when an exception is raised.
-            l.warn("Unexpected exception from ritual client. " + Util.e(e.getCause()));
+            l.warn("ritual server exception: " + Util.e(e.getCause()));
             e.getChannel().close();
         }
     }
