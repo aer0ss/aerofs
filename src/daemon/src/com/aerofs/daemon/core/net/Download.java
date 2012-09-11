@@ -90,22 +90,21 @@ public class Download
         }
     }
 
-    private Download(Factory f, SOCID socid, To src, @Nullable IDownloadCompletionListener l,
-            Token tk)
+    private Download(Factory f, SOCID socid, To src, IDownloadCompletionListener l, Token tk)
     {
         _f = f;
         _socid = socid;
         _tk = tk;
         _src = src;
         _prio = _f._tc.prio();
-        if (l != null) _ls.addListener_(l);
+        _ls.addListener_(l);
     }
 
-    public void include_(To src, @Nullable IDownloadCompletionListener listener)
+    public void include_(To src, IDownloadCompletionListener listener)
     {
         _src.addAll_(src);
         _prio = Prio.higher(_prio, _f._tc.prio());
-        if (listener != null) _ls.addListener_(listener);
+        _ls.addListener_(listener);
 
         if (_f._tc.prio() != _prio) {
             l.info("prio changed. take effect in the next round");
@@ -199,21 +198,10 @@ public class Download
                 replier = msg.did();
                 _f._pgcc.rpc2_(_socid, msg, _requested, _tk);
 
-                // TODO (MJ) Weihan says we can remove the following code (up to the catch)
-                // - if there are more KMLs, the Collector algorithm will ensure a new Download
-                //   object is created to resolve the KMLs
-                // - see if any DownloadState code can be simplified.
-                if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
-
-                l.info("kml > 0 for " + _socid + ". dl again");
-                // TODO (MJ) maybe uncomment this line. We'll have to devise a test to see
-                // The idea is that if you get to this point, you're re-running the Download having
-                // successfully resolved some KML last time. We should therefore clear out the
-                // memory of existing dependencies.
-                //_requested.clear();
-                _src.avoid_(replier);
-
-                reenqueue(started);
+                // If there are more KMLs for _socid, the Collector algorithm will ensure a new
+                // Download object is created to resolve the KMLs
+                // TODO (MJ) see if any DownloadState code can be simplified.
+                return replier;
 
             } catch (ExAborted e) {
                 throw e;
@@ -320,8 +308,6 @@ public class Download
     {
         if (e instanceof RuntimeException) Util.fatal(e);
 
-        //String eStr = mayPrintStack ? Util.e(e) : e.toString();
-        // ignore the stack for now for less log output
         // RTN: retry now
         l.warn(_socid + ": " + Util.e(e) + " " + replier + " RTN");
         if (replier != null) _src.avoid_(replier);

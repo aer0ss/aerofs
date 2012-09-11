@@ -7,6 +7,9 @@ import java.util.Set;
 
 import com.aerofs.lib.Util;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * A utility class for listener registration and notification. Support copy-on-write on the
  * listeners list. It iterates the listeners in the same order as the order in which listeners
@@ -31,7 +34,7 @@ public class Listeners<T>
     /**
      * this doesn't affect any ongoing iteration over the listeners
      */
-    public void addListener_(T l)
+    public void addListener_(@Nonnull T l)
     {
         copyOnWrite(false);
         if (_ls.isEmpty()) beforeAddFirstListener_();
@@ -41,7 +44,7 @@ public class Listeners<T>
     /**
      * this doesn't affect any ongoing iteration over the listeners
      */
-    public void removeListener_(T l)
+    public void removeListener_(@Nonnull T l)
     {
         copyOnWrite(false);
         _ls.remove(l);
@@ -51,7 +54,7 @@ public class Listeners<T>
     /**
      * @return null if there's no listener
      */
-    public T removeFirstListener_()
+    public @Nullable T removeFirstListener_()
     {
         copyOnWrite(false);
         Iterator<T> iter = _ls.iterator();
