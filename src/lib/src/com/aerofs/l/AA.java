@@ -106,7 +106,7 @@ public class AA implements ILabeling
     @Override
     public String svHost()
     {
-        return "sp.aerofs.com";
+        return "sv.aerofs.com";
     }
 
     @Override
