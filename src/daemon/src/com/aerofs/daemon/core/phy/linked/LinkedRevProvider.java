@@ -389,10 +389,9 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 checkInterrupted();
                 if (file.isFile()) {
                     ++_fileCount;
-                    long length = file.length();
-                    _totalSize += length;
                     RevInfo revInfo = parse(parent, file);
                     if (revInfo != null) {
+                        _totalSize += revInfo._length;
                         if (_startTime.compareTo(revInfo._date) > 0) {
                             l.info("Old file: " + revInfo);
                             _sorter.add(revInfo);
@@ -469,6 +468,17 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             return _path.substring(indexSeparator() + 1);
         }
 
+        /**
+         * Extract revision information from an existing revision file.
+         *
+         * The date and the index are derived from the file name.
+         * The length is queried from the file system.
+         *
+         * NOTE: the file MUST exist until the end of the method and its name MUST match the format
+         * produced by {@link LinkedRevProvider#newLocalRevFile_}
+         *
+         * @return an initialized RevInfo object or null for non-existing / invalid files
+         */
         public static RevInfo fromFile(InjectableFile file) {
             String name = file.getName();
             if (name.length() < 3 + DATE_FORMAT.length()) return null;
@@ -489,8 +499,10 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             revInfo._baseNameIdx = revInfo._path.length() - name.length();
             revInfo._kidx = kidx;
             revInfo._date = date;
-            revInfo._length = file.length();
-            return revInfo;
+            // avoid FileUtil.assertIsFile in case of concurrent deletion (support-143)
+            revInfo._length = file.lengthNoAssertIsFile();
+            // Check for file disappearance while we where building the RevInfo (support-143)
+            return (file.exists() && file.isFile()) ? revInfo : null;
         }
     }
 }

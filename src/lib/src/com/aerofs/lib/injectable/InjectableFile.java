@@ -121,6 +121,11 @@ public class InjectableFile
         return _f.length();
     }
 
+    public long lengthNoAssertIsFile()
+    {
+        return _f.length();
+    }
+
     public boolean wasModifiedSince(long mtime, long len) throws IOException
     {
         return FileUtil.wasModifiedSince(_f, mtime, len);
