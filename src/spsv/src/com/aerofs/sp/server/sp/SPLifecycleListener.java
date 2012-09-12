@@ -10,6 +10,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import java.io.File;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -48,8 +49,7 @@ public class SPLifecycleListener implements ServletContextListener
         short publishPort = parseShort(ctx.getInitParameter(VERKEHR_PUBLISH_PORT_INIT_PARAMETER));
         short commandPort = parseShort(ctx.getInitParameter(VERKEHR_COMMAND_PORT_INIT_PARAMETER));
 
-        String cacert = join(ctx.getRealPath("/"), "WEB-INF",
-                ctx.getInitParameter(VERKEHR_CACERT_INIT_PARAMETER));
+        String cacert =  getCacertPath(ctx);
 
         Executor boss = Executors.newCachedThreadPool();
         Executor workers = Executors.newCachedThreadPool();
@@ -103,6 +103,14 @@ public class SPLifecycleListener implements ServletContextListener
                         listener, listenerExecutor);
 
         return publisherFactory.create();
+    }
+
+    private String getCacertPath(ServletContext ctx)
+    {
+        String cacertParameterValue = ctx.getInitParameter(VERKEHR_CACERT_INIT_PARAMETER);
+        boolean isAbsolutePath = new File(cacertParameterValue).isAbsolute();
+        if (isAbsolutePath) return cacertParameterValue;
+        else return join(ctx.getRealPath("/"), "WEB-INF", cacertParameterValue);
     }
 
     @Override
