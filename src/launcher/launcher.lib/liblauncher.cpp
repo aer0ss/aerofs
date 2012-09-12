@@ -69,34 +69,40 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
     options.push_back(classpath);
 
 #ifdef _WIN32
-    vector<char*> utf8_strings_to_delete;
+    vector<char*> ansi_strings_to_delete;
 #endif
     JavaVMOption* vmopt = new JavaVMOption[options.size()];
     for (size_t i = 0; i < options.size(); i++) {
 #ifdef _WIN32
-        // Windows needs options converted from UTF16 to UTF8.
-        // Query required buffer size
-        int size = WideCharToMultiByte(CP_UTF8, // Codepage
+        // Windows needs options converted from UTF16 to <whatever the default codepage is>.
+        // I wish this was UTF8, but it turns out it varies by system and I haven't figured out
+        // a way to make java use UTF8 as the default codepage.
+        // So for now, we use the native ANSI codepage, and assume that the user's username will
+        // be something that can be properly represented by characters in that codepage.
+        // (And if it isn't, then the NSIS installer won't work either, so it's a non-issue.)
+
+        // Get the size of the output buffer needed to perform the conversion
+        int size = WideCharToMultiByte(CP_ACP,  // Codepage (default ANSI codepage)
                     0,                          // Flags
                     options.at(i).c_str(),      // UTF16 string data
                     -1,                         // # of characters, or -1 if null-terminated
-                    NULL,                       // outarg UTF8 data
-                    0,                          // bytes available at UTF8 data pointer
+                    NULL,                       // outarg multibyte data
+                    0,                          // bytes available at data pointer
                     NULL,                       // default char (must be NULL)
                     NULL);                      // default char used (must be NULL)
         if (size == 0) {
             SET_ERROR("WideCharToMultiByte: %d\n", GetLastError());
             return false;
         }
-        // Allocate buffer
+        // Allocate an appropriately-sized buffer
         char* buffer = new char[size];
         // Perform conversion
-        size = WideCharToMultiByte(CP_UTF8, // Codepage
+        size = WideCharToMultiByte(CP_ACP,  // Codepage (default ANSI codepage)
                     0,                      // Flags
                     options.at(i).c_str(),  // UTF16 string data
                     -1,                     // # of UTF16 characters (-1 for null-terminated)
-                    buffer,                 // outarg UTF8 data
-                    size,                   // bytes available at UTF8 data pointer
+                    buffer,                 // outarg multibyte data
+                    size,                   // bytes available at data pointer
                     NULL,                   // default char (must be NULL)
                     NULL);                  // default char used (must be NULL)
         if (size == 0) {
@@ -104,7 +110,7 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
             return false;
         }
         // Save buffer pointer to be deleted later
-        utf8_strings_to_delete.push_back(buffer);
+        ansi_strings_to_delete.push_back(buffer);
         // Set option string
         vmopt[i].optionString = buffer;
 #else
@@ -122,10 +128,10 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
 
     delete vmopt;
 #ifdef _WIN32
-    for (size_t i = 0; i < utf8_strings_to_delete.size() ; i++) {
-        delete [] utf8_strings_to_delete.at(i);
+    for (size_t i = 0; i < ansi_strings_to_delete.size() ; i++) {
+        delete [] ansi_strings_to_delete.at(i);
     }
-    utf8_strings_to_delete.clear();
+    ansi_strings_to_delete.clear();
 #endif
 
     if (result < 0) {
