@@ -16,8 +16,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
@@ -29,6 +27,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 /**
@@ -70,13 +70,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             // into the directory
             if (!fParent.exists()) fParent.mkdirs();
             _fOrg.moveInSameFileSystem(_fRev);
-            changeSpace(_fRev.length());
+            changeSpace(_fRev.getLength());
         }
 
         void rollback_() throws IOException
         {
             _fRev.moveInSameFileSystem(_fOrg);
-            changeSpace(-_fRev.length());
+            changeSpace(-_fOrg.getLength());
         }
     }
 
@@ -190,7 +190,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         InjectableFile file = _factFile.create(auxPath);
         if (!file.exists() || file.isDirectory())
             throw new ExNotFound("Invalid revision index");
-        return new RevInputStream(file.newInputStream(), file.length());
+        return new RevInputStream(file.newInputStream(), file.getLength());
     }
 
     private synchronized void changeSpace(long delta)
@@ -421,7 +421,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 }
             }
 
-            private RevInfo parse(InjectableFile parent, InjectableFile file) {
+            private RevInfo parse(InjectableFile parent, InjectableFile file)
+            {
                 return RevInfo.fromFile(file);
             }
         }
@@ -479,7 +480,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
          *
          * @return an initialized RevInfo object or null for non-existing / invalid files
          */
-        public static RevInfo fromFile(InjectableFile file) {
+        public static RevInfo fromFile(InjectableFile file)
+        {
             String name = file.getName();
             if (name.length() < 3 + DATE_FORMAT.length()) return null;
             int pos2 = name.length() - DATE_FORMAT.length() - 1;
@@ -491,6 +493,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             try {
                 date = _dateFormat.parse(name.substring(name.length() - DATE_FORMAT.length()));
             } catch (ParseException e) {
+                l.warn("date parsing: " + Util.e(e, ParseException.class));
                 return null;
             }
 
@@ -499,10 +502,9 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             revInfo._baseNameIdx = revInfo._path.length() - name.length();
             revInfo._kidx = kidx;
             revInfo._date = date;
-            // avoid FileUtil.assertIsFile in case of concurrent deletion (support-143)
-            revInfo._length = file.lengthNoAssertIsFile();
+            revInfo._length = file.getLengthOrZeroIfNotFile();
             // Check for file disappearance while we where building the RevInfo (support-143)
-            return (file.exists() && file.isFile()) ? revInfo : null;
+            return file.isFile() ? revInfo : null;
         }
     }
 }

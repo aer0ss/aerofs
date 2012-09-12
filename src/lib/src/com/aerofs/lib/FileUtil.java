@@ -161,44 +161,53 @@ public class FileUtil
         return dir;
     }
 
-    public static String relativeTo(File file, File base) {
-        if (file.getPath().length() > base.getPath().length() &&
-                file.getPath().startsWith(base.getPath()) &&
-                file.getPath().charAt(base.getPath().length()) == File.separatorChar) {
-            String relative = file.getPath().substring(base.getPath().length() + 1);
-            assert file.equals(new File(base, relative));
-        }
-        return file.getPath();
-    }
-
-    public static void assertIsFile(File f)
+    /**
+     * @throws IOException if {@code f} is not a file or doesn't exist.
+     */
+    private static void throwIfNotFile(File f) throws IOException
     {
-        assert f.isFile() || !f.exists();
+        if (!f.isFile()) throw new IOException(f + " is not a file");
     }
 
     /**
-     * @return the mtime of a file. the file must not be a folder.
+     * @throws IOException if {@code f} is not a file or doesn't exist.
+     */
+    public static long getLength(File f) throws IOException
+    {
+        throwIfNotFile(f);
+        return f.length();
+    }
+
+    /**
+     * @return zero if {@code f} is not a file or doesn't exist.
+     */
+    public static long getLengthOrZeroIfNotFile(File f)
+    {
+        // We could return f.length() without checking. However, its behavior is unspecified if the f designates
+        // a folder.
+        return f.isFile() ? f.length() : 0;
+    }
+
+    /**
+     * @return the mtime of a file
+     * @throw IOException if {@code f} is not a file or doesn't exist.
      */
     public static long lastModified(File f) throws IOException
     {
-        // we check mtime first to avoid an extra filesystem call, f.exists(),
-        // if possible. however we still need to resort to it if mtime == 0,
-        // in case the file's time stamp was set to 0, which is rare but can happen
-        assertIsFile(f);
-        long mtime = f.lastModified();
-        if (mtime == 0 && !f.exists()) throw new IOException(f + " not exist");
-        return mtime;
+        throwIfNotFile(f);
+        return f.lastModified();
     }
 
     /**
-     * @return whether the modification time and file length is different from
-     * the given values
+     * @return whether the modification time and file length is different from the given values
+     * @throw IOException if {@code f} is not a file or doesn't exist.
      */
     public static boolean wasModifiedSince(File f, long mtime, long len)
             throws IOException
     {
+        throwIfNotFile(f);
         long lenNow = f.length();
-        long mtimeNow = lastModified(f);
+        long mtimeNow = f.lastModified();
         return mtimeNow != mtime || lenNow != len;
     }
 
@@ -241,7 +250,7 @@ public class FileUtil
 
     public static void setLastModified(File f, long mtime) throws IOException
     {
-        assertIsFile(f);
+        throwIfNotFile(f);
         if (!f.setLastModified(mtime)) {
             throw new IOException("can't set mtime for " + f);
         }

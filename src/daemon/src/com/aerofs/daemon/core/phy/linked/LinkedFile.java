@@ -127,7 +127,7 @@ public class LinkedFile implements IPhysicalFile
     @Override
     public long getLength_()
     {
-        return _f.length();
+        return _f.getLengthOrZeroIfNotFile();
     }
 
     @Override
