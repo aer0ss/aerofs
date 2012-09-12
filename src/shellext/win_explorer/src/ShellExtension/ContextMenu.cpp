@@ -115,9 +115,10 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 	if (m_instance->shouldEnableTestingFeatures()) {
 		AppendMenu(submenu, MF_STRING, idCmdFirst + SyncStatusMenuId, L"Sync Status...");
 		++entryCount;
-		AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Version History...");
-		++entryCount;
 	}
+	AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Version History...");
+	++entryCount;
+
 	int pflags = m_instance->pathFlags(m_path);
 	if ((pflags & Directory) && !(pflags & RootAnchor)) {
 		AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share Folder...");

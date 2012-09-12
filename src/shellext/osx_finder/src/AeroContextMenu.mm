@@ -61,15 +61,14 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
                 [syncstat setTarget: [AeroFinderExt instance]];
                 [syncstat setRepresentedObject:path];
                 ++idx;
-
-                NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Version History...", @"Context menu")
-                                                             action:@selector(showVersionHistoryDialog:)
-                                                      keyEquivalent:@""
-                                                            atIndex:idx];
-                [history setTarget: [AeroFinderExt instance]];
-                [history setRepresentedObject:path];
-                ++idx;
             }
+            NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Version History...", @"Context menu")
+                                                         action:@selector(showVersionHistoryDialog:)
+                                                  keyEquivalent:@""
+                                                        atIndex:idx];
+            [history setTarget: [AeroFinderExt instance]];
+            [history setRepresentedObject:path];
+            ++idx;
 
             if ((flags & Directory) && !(flags & RootAnchor)) {
                 NSMenuItem* share = [submenu insertItemWithTitle:NSLocalizedString(@"Share Folder...", @"Context menu")
