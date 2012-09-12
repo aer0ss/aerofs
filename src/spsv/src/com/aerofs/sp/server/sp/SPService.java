@@ -1022,7 +1022,7 @@ class SPService implements ISPService
     public ListenableFuture<GetDeviceInfoReply> getDeviceInfo(List<ByteString> dids) throws Exception
     {
         String user = User.normalizeUserId(_sessionUser.getUser());
-        HashSet<String> sharedUsers = _db.getSharedUsersSet(user);
+        Set<String> sharedUsers = _db.getSharedUsersSet(user);
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {
