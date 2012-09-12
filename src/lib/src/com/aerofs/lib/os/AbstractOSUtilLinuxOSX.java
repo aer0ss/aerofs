@@ -89,7 +89,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         } else if (rc == Driver.FS_REMOTE) {
             remote.set(true);
         } else {
-            throw new IOException("Couldn't get filesystem type: " + path);
+            throw new IOException("Couldn't get filesystem type: " + path + ". Error code: " + rc);
         }
         return Util.cstring2string(buffer, false);
     }
