@@ -4,9 +4,6 @@
 
 package com.aerofs.lib.injectable;
 
-import com.aerofs.lib.FileUtil;
-
-import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,6 +12,10 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import javax.annotation.Nullable;
+
+import com.aerofs.lib.FileUtil;
 
 /**
  * A wrapper class of java.io.File for common file operations. This class also
@@ -115,15 +116,14 @@ public class InjectableFile
         return _f.exists();
     }
 
-    public long length()
+    public long getLength() throws IOException
     {
-        FileUtil.assertIsFile(_f);
-        return _f.length();
+        return FileUtil.getLength(_f);
     }
 
-    public long lengthNoAssertIsFile()
+    public long getLengthOrZeroIfNotFile()
     {
-        return _f.length();
+        return FileUtil.getLengthOrZeroIfNotFile(_f);
     }
 
     public boolean wasModifiedSince(long mtime, long len) throws IOException

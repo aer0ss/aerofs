@@ -387,7 +387,7 @@ public class S3Storage implements IPhysicalStorage
         @Override
         public long getLength_()
         {
-            return getFile().length();
+            return getFile().getLengthOrZeroIfNotFile();
         }
 
         @Override

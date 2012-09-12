@@ -28,7 +28,7 @@ public class LinkedPrefix implements IPhysicalPrefix
     @Override
     public long getLength_()
     {
-        return _f.length();
+        return _f.getLengthOrZeroIfNotFile();
     }
 
     @Override
