@@ -21,7 +21,7 @@ public class MightDelete
     }
 
     /**
-     * N.B. According to {@linke IDeletionBuffer#add_(SOID)}, IDeletionBuffer.remove_() must be
+     * N.B. According to {@link IDeletionBuffer#add_(SOID)}, IDeletionBuffer.remove_() must be
      * called on exceptions. But the caller doesn't know the soid to remove after this method
      * returns. Therefore, callers must not throw exceptions after this method.
      */
