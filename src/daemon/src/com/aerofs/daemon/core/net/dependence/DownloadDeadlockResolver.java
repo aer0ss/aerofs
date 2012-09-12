@@ -57,19 +57,14 @@ public class DownloadDeadlockResolver
         // Cycles that are currently unsupported, those with:
         // * length less than two (a cycle of 1 is impossible)
         // * any UNSPECIFIED dependency type
-        // * more than two NAME_CONFLICTs
         assert cycle.size() > 1;
-        int countNameConflicts = 0;
         for (DependencyEdge dependency : cycle) {
             DependencyType type = dependency.type();
-            if (type.equals(DependencyType.NAME_CONFLICT)) countNameConflicts++;
-
             assert !type.equals(DependencyType.UNSPECIFIED) : cycle;
         }
-        assert countNameConflicts <= 2 : cycle;
 
-        // Case 1: cycle of 2 elements, both are NAME_CONFLICTS
-        NameConflictDependencyEdge ncDependency = detectBidirectionalNameConflict(cycle);
+        // Case 1: cycle of elements, all of which are NAME_CONFLICTS
+        NameConflictDependencyEdge ncDependency = detectAllNameConflictCycle(cycle);
         if (ncDependency != null) {
             // resolve by renaming the local conflict OID
             breakDependencyByRenaming_(ncDependency);
@@ -89,21 +84,21 @@ public class DownloadDeadlockResolver
     }
 
     /**
-     * Deadlock case. Two devices A, B. Two OIDs o1, o2. Two names n1, n2. Observe:
+     * Deadlock case. Two devices A, B. N OIDs o1, o2, ..., oN. N names n1, n2, ..., nN. Observe:
      *       A      B
-     *      n1o1   n2o1
+     *      n1o1   nNo1
      *      n2o2   n1o2
-     * @return the NameConflictDependencyEdge to resolve by renaming the local OID
+     *      n3o3   n2o3
+     *         ....
+     *      nNoN   n(N-1)oN
+     * or some other shift of the names
+     * @return the NameConflictDependencyEdge to resolve by renaming one of the participant OIDs
      */
-    private static @Nullable
-    NameConflictDependencyEdge detectBidirectionalNameConflict(
+    private static @Nullable NameConflictDependencyEdge detectAllNameConflictCycle(
             final ImmutableList<DependencyEdge> cycle)
     {
         // Check the applicability of this case:
-        // 1) only bidirectional deadlock (for now)
-        // 2) both dependencies must be NAME_CONFLICT
-
-        if (cycle.size() != 2) return null;
+        // 1) all dependencies must be NAME_CONFLICT
         for (DependencyEdge dep : cycle) {
             if (!dep.type().equals(DependencyType.NAME_CONFLICT)) return null;
         }
@@ -123,8 +118,7 @@ public class DownloadDeadlockResolver
      * 2) determine if the local oid is a descendent (child/grandchild) of the remote oid
      * @return the NameConflictDependencyEdge to resolve by renaming the local OID
      */
-    private static @Nullable
-    NameConflictDependencyEdge detectAncestralNameConflict(
+    private static @Nullable NameConflictDependencyEdge detectAncestralNameConflict(
             final ImmutableList<DependencyEdge> cycle)
     {
         NameConflictDependencyEdge ncRet = null;
@@ -212,6 +206,7 @@ public class DownloadDeadlockResolver
         Path pParent = _ds.resolve_(new SOID(socidLocal.sidx(), dependency._parent));
         int metaDiff = _mdiff.computeMetaDiff_(socidRemote.soid(), dependency._meta,
                 dependency._parent);
+        assert Util.test(metaDiff, MetaDiff.NAME) : dependency + " " + dependency._meta;
 
         SOCKID sockidRemote = new SOCKID(socidRemote);
         boolean wasPresent = _ds.isPresent_(sockidRemote);
