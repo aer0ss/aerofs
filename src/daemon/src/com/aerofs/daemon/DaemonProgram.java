@@ -1,9 +1,5 @@
 package com.aerofs.daemon;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import org.apache.log4j.Level;
 
 import com.aerofs.daemon.core.CoreModule;
@@ -28,7 +24,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.s3.S3Module;
-import com.aerofs.swig.driver.Driver;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -44,19 +39,6 @@ public class DaemonProgram implements IProgram {
     {
         // "dc" stands for daemon native library in C
         Util.initDriver("dc");
-
-        // create pid file
-        File fPid = new File(rtRoot, C.PID);
-        PrintWriter pw = new PrintWriter(fPid);
-        try {
-            pw.print(Driver.getPid());
-        } finally {
-            pw.close();
-        }
-        if (pw.checkError()) throw new IOException(fPid.toString());
-
-        // delete the pid file on exit so whoever started us (cli/gui) knows we have stopped.
-        fPid.deleteOnExit();
 
         initLogLevels_();
 

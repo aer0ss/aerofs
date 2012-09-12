@@ -6,18 +6,8 @@
 
 namespace Driver {
 
-void initLogger_(jstring rtRoot, jstring name, LogLevel loglevel);
-
-int getPid();
-
-// block until it knows for sure the process has quit
-// return false if killing failed
-bool killProcess(int pid);
-
-int getFidLength();
-
-#define DRIVER_FAILURE          -1
-#define DRIVER_SUCCESS          0
+#define DRIVER_FAILURE      -1
+#define DRIVER_SUCCESS      0
 
 #define GETFID_FILE         1
 #define GETFID_DIR          2
@@ -26,6 +16,34 @@ int getFidLength();
 
 #define FS_LOCAL            1
 #define FS_REMOTE           2
+
+#define DAEMON_PROC_NAME    "aerofsd"
+
+/**
+ * Initializes the C++ logger.
+ *
+ * @param rtRoot The user's AeroFS runtime root
+ * @param name The name of the module
+ * @param loglevel The level at which to log
+ */
+void initLogger_(jstring rtRoot, jstring name, LogLevel loglevel);
+
+/**
+ * Kills any daemon processes active on the system. If
+ * the kill is successful, this call blocks until the
+ * process has completely exitted.
+ *
+ * @return DRIVER_FAILURE if the call failed to kill a daemon process, otherwise
+ *         returns the number of daemon processes killed.
+ */
+int killDaemon();
+
+/**
+ * Returns the length of the system file identifier in bytes.
+ *
+ * @return length of FID in bytes
+ */
+int getFidLength();
 
 /**
  * @param buffer null to test file type only; otherwise its length must be equal
@@ -84,6 +102,7 @@ int getFileSystemType(JNIEnv * j, jstring path, void * buffer, int bufLen);
  * Set iconName to an empty string to reset the icon to the default system icon.
  */
 void setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName);
+
 }
 
 #endif //AEROFS_DRIVER_H_

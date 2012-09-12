@@ -21,7 +21,6 @@ public class C
     public static final String NOAUTOUPDATE            = "noautoupdate";
     public static final String LOL                     = "lol";
     public static final String VERSION                 = "version";
-    public static final String PID                     = "pid";
     public static final String DEFAULT_RTROOT          = "DEFAULT";
     public static final String STAGING                 = "stg";
     public static final String DEVICE_CERT             = "cert";

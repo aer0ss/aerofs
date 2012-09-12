@@ -13,12 +13,8 @@ public class Driver implements DriverConstants {
     DriverJNI.initLogger_(rtRoot, name, loglevel.swigValue());
   }
 
-  public static int getPid() {
-    return DriverJNI.getPid();
-  }
-
-  public static boolean killProcess(int pid) {
-    return DriverJNI.killProcess(pid);
+  public static int killDaemon() {
+    return DriverJNI.killDaemon();
   }
 
   public static int getFidLength() {

@@ -28,16 +28,6 @@ public class InjectableDriver
         _lenFID = Driver.getFidLength();
     }
 
-    public int getPID()
-    {
-        return Driver.getPid();
-    }
-
-    public boolean killProcess(int pid)
-    {
-        return Driver.killProcess(pid);
-    }
-
     public int getFIDLength()
     {
         return _lenFID;
@@ -98,5 +88,10 @@ public class InjectableDriver
     public void setFolderIcon(String folderPath, String iconName)
     {
         Driver.setFolderIcon(null, folderPath, iconName);
+    }
+
+    public int killDaemon()
+    {
+        return Driver.killDaemon();
     }
 }

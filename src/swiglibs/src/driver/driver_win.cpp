@@ -14,57 +14,6 @@ using namespace std;
 
 namespace Driver {
 
-int getPid()
-{
-    FINFO("");
-
-    assert(sizeof(int) == sizeof(DWORD));
-    return GetCurrentProcessId();
-}
-
-bool killProcess(int pid)
-{
-    FINFO("");
-
-    assert(sizeof(int) == sizeof(DWORD));
-    HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ |
-            PROCESS_TERMINATE | SYNCHRONIZE, false, pid);
-    if (!hProc) {
-        FWARN("OP "<< pid << " warn " << GetLastError());
-        // we should have returned false. but the error might be that
-        // the daemon already quit.
-        return true;
-    }
-
-    TCHAR buf[MAX_PATH];
-    if (!GetProcessImageFileName(hProc, buf, MAX_PATH)) {
-        FWARN("GPIFN error " << GetLastError());
-        return false;
-    }
-
-    if (_tcscmp(buf + _tcslen(buf) - 8, _T("java.exe"))) {
-        FWARN(" not us: " << buf);
-        // ignore the request. hopefully the daemon already quit
-        return true;
-    }
-
-    if (!TerminateProcess(hProc, 0)) {
-        FWARN("TP error " << GetLastError());
-        CloseHandle(hProc);
-        return false;
-    }
-
-    DWORD ret = WaitForSingleObject(hProc, INFINITE);
-    if (ret != WAIT_OBJECT_0) {
-        FWARN("WFSO ret " << ret << " error " << GetLastError());
-        CloseHandle(hProc);
-        return false;
-    }
-
-    CloseHandle(hProc);
-    return true;
-}
-
 int getFidLength()
 {
     return sizeof(DWORD) * 2;
@@ -246,6 +195,105 @@ int waitForNetworkInterfaceChange()
         FWARN("NAC failed " << ret << " " << GetLastError());
         return DRIVER_FAILURE;
     }
+}
+
+/**
+ * If the process specified by pid is the daemon process, it is killed.
+ *
+ * @param pid The PID of the process in question
+ * @return -1 if the process was not the daemon process, 0 if the process
+ *         is the daemon process and was killed successfully and 1 if the
+ *         process is the daemon process and failed to exit.
+ */
+static int killProcessIfDaemon(DWORD pid)
+{
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ |
+            PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pid);
+    if (!hProcess) {
+        return -1;
+    }
+
+    HMODULE hMod;
+    DWORD bytesNeeded;
+    if (!EnumProcessModules(hProcess, &hMod, sizeof(hMod), &bytesNeeded)) {
+        CloseHandle(hProcess);
+        return -1;
+    }
+
+    TCHAR processName[MAX_PATH];
+    if (!GetModuleBaseName(hProcess, hMod, processName, sizeof(processName) / sizeof(TCHAR))) {
+        CloseHandle(hProcess);
+        return -1;
+    }
+
+    if (_tcscmp(processName, _T(DAEMON_PROC_NAME) _T(".exe"))) {
+        CloseHandle(hProcess);
+        return -1;
+    }
+
+    if (!TerminateProcess(hProcess, 0)) {
+        FWARN("TP error " << GetLastError());
+        CloseHandle(hProcess);
+        return 1;
+    }
+
+    DWORD ret = WaitForSingleObject(hProcess, INFINITE);
+    if (ret != WAIT_OBJECT_0) {
+        FWARN("WFSO ret " << ret << " error " << GetLastError());
+        CloseHandle(hProcess);
+        return 1;
+    }
+
+    CloseHandle(hProcess);
+    return 0;
+}
+
+int killDaemon()
+{
+    DWORD *processes;
+    DWORD bytesNeeded, numProcesses;
+    size_t maxBufferSize = 512;
+
+    while (true) {
+        // Allocate some memory
+        processes = new DWORD[maxBufferSize];
+
+        // Enumerate the processes
+        if (!EnumProcesses(processes, maxBufferSize * sizeof(DWORD), &bytesNeeded)) {
+            FERROR(" failed to enumerate processes: "<< GetLastError());
+            exit(1);
+        }
+
+        numProcesses = bytesNeeded / sizeof(DWORD);
+
+        // MSDN specifies that EnumProcesses doesn't report a lack of memory when returning
+        // processes. If the number of processes is exactly the same as the size of the
+        // given buffer, chances are it is truncated and more memory should be used.
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/ms682629(v=vs.85).aspx
+        if (numProcesses < maxBufferSize) {
+            break;
+        }
+
+        delete[] processes;
+        maxBufferSize *= 2;
+    }
+
+    int numDaemonsKilled = 0;
+    bool error = false;
+    for (DWORD i = 0; i < numProcesses; i++) {
+        if (processes[i] != 0) {
+            int result = killProcessIfDaemon(processes[i]);
+            if (result == 1) {
+                error = true;
+            } else if (result == 0) {
+                numDaemonsKilled++;
+            }
+        }
+    }
+
+    delete[] processes;
+
+    return error ? DRIVER_FAILURE : numDaemonsKilled;
 }
 
 }  // namespace Driver

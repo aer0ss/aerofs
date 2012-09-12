@@ -53,7 +53,7 @@ static inline JavaVM * jvm()
 static inline JNIEnv * jni()
 {
     JNIEnv * jni;
-    verify(jvm()->AttachCurrentThread((void **)&jni, 0));
+    verify(jvm()->AttachCurrentThread((void **)&jni, 0) == 0);
     return jni;
 }
 

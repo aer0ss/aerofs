@@ -27,15 +27,16 @@ using namespace std;
 
 namespace Driver {
 
-int getPid()
+/**
+ * Kills the process with the given PID. Blocks until either
+ * the process was successfully killed or there was an error
+ * killing the process.
+ *
+ * @param pid The PID of the process to kill
+ * @return true if the process was killed, false otherwise
+ */
+bool killProcess(pid_t pid)
 {
-    assert(sizeof(int) == sizeof(pid_t));
-    return getpid();
-}
-
-bool killProcess(int pid)
-{
-    assert(sizeof(int) == sizeof(pid_t));
     kill(pid, SIGKILL);
 
     while (true) {
