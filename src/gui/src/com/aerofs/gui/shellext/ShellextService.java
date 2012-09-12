@@ -161,10 +161,7 @@ public class ShellextService
             return;
         }
 
-        // TODO(huguesb): remove this check when sync stat ready for all users
-        if (Cfg.user().endsWith("@aerofs.com")) {
-            UIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
-        }
+        UIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
     }
 
     private void versionHistory(final String absPath)
@@ -175,9 +172,6 @@ public class ShellextService
             return;
         }
 
-        // TODO(huguesb): remove this check when version history ready for all users
-        if (Cfg.user().endsWith("@aerofs.com")) {
-            UIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
-        }
+        UIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
     }
 }
