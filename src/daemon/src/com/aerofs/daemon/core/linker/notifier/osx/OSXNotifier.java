@@ -1,15 +1,17 @@
 package com.aerofs.daemon.core.linker.notifier.osx;
 
 import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.linker.Linker;
 import com.aerofs.daemon.core.linker.notifier.INotifier;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.injectable.InjectableJNotify;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import net.contentobjects.jnotify.JNotifyException;
@@ -74,7 +76,7 @@ public class OSXNotifier implements INotifier, FSEventListener
         assert _batch != null;
         assert !_batch.isEmpty();
 
-        final Set<String> batch = _batch;
+        final LinkedHashSet<String> batch = pruneBatch(_batch);
         final boolean recurse = _recurse;
         _cq.enqueueBlocking(new AbstractEBSelfHandling() {
             @Override
@@ -86,5 +88,46 @@ public class OSXNotifier implements INotifier, FSEventListener
 
         // for debugging only
         _batch = null;
+    }
+
+    /**
+     * Removes all the paths under {@code batch} that are children of other paths to avoid
+     * rescanning the same folder multiple times.
+     *
+     * For example: if batch is [/abc/ade/efg, /abc/cde, /bcd/afg/epg, /bcd, /bcd/abc] then
+     * prunedBatch is [/abc/ade/efg, /abc/cde, /bcd].
+     *
+     * Runtime: O(n^2) respectively n(n+1)/2, however expected to perform better due to the break.
+     * Memory: O(n)
+     */
+    private LinkedHashSet<String> pruneBatch(LinkedHashSet<String> batch)
+    {
+        LinkedHashSet<String> prunedPaths = Sets.newLinkedHashSet();
+
+        for (String batchPath : batch) {
+            boolean isCovered = false; // is the batch path under pruned path
+            boolean isParent = false; // is the batch path a parent of pruned path
+            List<String> longerPaths = Lists.newArrayList();
+
+            for (String prunedPath : prunedPaths) {
+                if (Path.isUnder(prunedPath, batchPath)) {
+                    isCovered = true;
+                    break;
+                }
+                if (Path.isUnder(batchPath, prunedPath)) {
+                    isParent = true;
+                    longerPaths.add(prunedPath);
+                }
+            }
+
+            if (!isCovered && !isParent) {
+                prunedPaths.add(batchPath);
+            } else if (isParent) {
+                prunedPaths.removeAll(longerPaths);
+                prunedPaths.add(batchPath);
+            }
+        }
+
+        return prunedPaths;
     }
 }
