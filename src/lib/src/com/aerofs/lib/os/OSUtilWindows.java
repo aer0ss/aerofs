@@ -166,13 +166,12 @@ public class OSUtilWindows implements IOSUtil
     {
         OSUtil.get().loadLibrary("aerofsd");
 
-        // we naively assume a leading '\' denotes a network path
-        // This will break with mapped drives
-        remote.set(new File(path).getCanonicalPath().charAt(0) == '\\');
-
         byte[] buf = new byte[256];
-        if (Driver.getFileSystemType(null, path, buf, buf.length) < 0) {
-            throw new IOException("can't get fs type");
+        int res = Driver.getFileSystemType(null, path, buf, buf.length);
+        if (res < 0) {
+            throw new IOException("can't get fs type: " + path);
+        } else {
+            remote.set(res == Driver.FS_REMOTE);
         }
         return Util.cstring2string(buf, true);
     }
