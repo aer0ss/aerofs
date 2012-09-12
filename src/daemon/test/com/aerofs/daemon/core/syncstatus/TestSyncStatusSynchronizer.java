@@ -155,7 +155,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
     private void assertSyncStatusEquals(BitVector expected, SOID... soids) throws Exception
     {
-        for (SOID soid : soids) Assert.assertEquals(new BitVector(), mdb.getSyncStatus_(soid));
+        for (SOID soid : soids) Assert.assertEquals(expected, mdb.getSyncStatus_(soid));
     }
 
     @Before

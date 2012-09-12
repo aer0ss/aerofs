@@ -56,6 +56,19 @@ public class SyncStatusNotificationSubscriber
         }
 
         @Override
+        public void onSubscribed()
+        {
+            runInCoreThread_(new AbstractEBSelfHandling()
+            {
+                @Override
+                public void handle_()
+                {
+                    _sync.schedulePull_();
+                }
+            });
+        }
+
+        @Override
         public void onNotificationReceived(final String topic, @Nullable final byte[] payload)
         {
             assert topic.equals(_topic);
@@ -77,6 +90,13 @@ public class SyncStatusNotificationSubscriber
                     });
                 }
             });
+        }
+
+        @Override
+        public void onDisconnected()
+        {
+            l.warn("disconnected from vk");
+            // TODO: sync status is not accurate anymore: make that known to HdGetSyncStatus
         }
     }
 }

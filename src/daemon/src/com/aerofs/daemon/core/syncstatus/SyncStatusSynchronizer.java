@@ -2,10 +2,10 @@ package com.aerofs.daemon.core.syncstatus;
 
 import java.security.MessageDigest;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
 
@@ -14,6 +14,7 @@ import com.aerofs.daemon.core.ActivityLog.IActivityLogListener;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -32,6 +33,7 @@ import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -276,17 +278,22 @@ public class SyncStatusSynchronizer
     /**
      * Schedule a pull from the sync status server with exponential retry
      */
-    private void schedulePull_()
+    private long _pullSeq = 0;
+    void schedulePull_()
     {
         schedule_(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
+                // avoid a pile-up of failing pulls in exponential retry
+                final long seq = ++_pullSeq;
+
                 // exp retry (w/ forced server reconnect) in case of failure
                 _er.retry("SyncStatPull", new Callable<Void>()
                 {
                     @Override
                     public Void call() throws Exception
                     {
+                        if (seq != _pullSeq) return null;
                         try {
                             pullSyncStatus_();
                         } catch (Exception e) {
@@ -409,6 +416,12 @@ public class SyncStatusSynchronizer
             }
 
             SOID soid = new SOID(sidx, new OID(ostat.getOid()));
+
+            // ignore missing and expelled SOIDs
+            // TODO(huguesb): keep store-level count of new out_sync objects?
+            OA oa = _ds.getOANullable_(soid);
+            if (oa == null || oa.isExpelled()) continue;
+
             DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
 
             l.info("new status for : " + soid.toString());
@@ -446,19 +459,22 @@ public class SyncStatusSynchronizer
      * Read a batch of bootstrap SOIDS from the DB
      * @throws SQLException
      */
-    private List<ModifiedObject> getModifiedObjectBatch_(long pushEpoch) throws SQLException
+    private long getModifiedObjectBatch_(long pushEpoch, Set<SOID> soids) throws SQLException
     {
         final int MODIFIED_OBJECT_BATCH_MAX_SIZE = 100;
-        List<ModifiedObject> batch = new ArrayList<ModifiedObject>();
+        long lastEpoch = pushEpoch;
+        soids.clear();
         IDBIterator<ModifiedObject> it = _aldb.getModifiedObjects_(pushEpoch);
         try {
-            while (it.next_() && batch.size() < MODIFIED_OBJECT_BATCH_MAX_SIZE) {
-                batch.add(it.get_());
+            while (it.next_() && soids.size() < MODIFIED_OBJECT_BATCH_MAX_SIZE) {
+                ModifiedObject mo = it.get_();
+                soids.add(mo._soid);
+                lastEpoch = Math.max(lastEpoch, mo._idx);
             }
         } finally {
             it.close_();
         }
-        return batch;
+        return lastEpoch;
     }
 
     /**
@@ -515,21 +531,20 @@ public class SyncStatusSynchronizer
         try {
             // batch DB reads
             long lastIndex = _lsync.getPushEpoch_();
-            List<ModifiedObject> batch = getModifiedObjectBatch_(lastIndex);
-            while (!batch.isEmpty()) {
+            Set<SOID> soids = Sets.newHashSet();
+            long nextIndex = getModifiedObjectBatch_(lastIndex, soids);
+            while (!soids.isEmpty()) {
                 // RPC calls
-                for (ModifiedObject mo : batch) {
-                    l.info("activity push : " + mo._soid.toString());
-                    pushVersionHash_(mo._soid);
-                    assert lastIndex < mo._idx;
-                    lastIndex = mo._idx;
+                for (SOID soid : soids) {
+                    l.info("activity push : " + soid.toString());
+                    pushVersionHash_(soid);
                 }
 
                 // update push epoch
-                setPushEpoch_(lastIndex);
+                setPushEpoch_(nextIndex);
 
                 // batch DB reads
-                batch = getModifiedObjectBatch_(lastIndex);
+                nextIndex = getModifiedObjectBatch_(nextIndex, soids);
             }
         } finally {
             _scanInProgress = false;
