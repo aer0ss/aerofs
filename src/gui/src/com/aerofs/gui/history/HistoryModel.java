@@ -291,16 +291,13 @@ public class HistoryModel
      * @param delegate an interface through which decisions are delegated
      * @return whether the operation was aborted by the decision maker
      *
-     * asserts if :
-     *  - {@code absPath} is not a valid directory
-     *
+     * @throws java.io.IOException
+     *  - {@code absPath} does not fully exist and missing folders cannot be created
      *  - {@code index.name} cannot be created under {@code absPath}
      */
     boolean restore(ModelIndex base, String absPath, IDecisionMaker delegate) throws Exception
     {
         File parent = new File(absPath);
-        assert parent.exists() && parent.isDirectory() : absPath;
-
         File dst = new File(Util.join(absPath, base.name));
         if (base.isDir) {
             if (dst.exists()) {
@@ -308,10 +305,6 @@ public class HistoryModel
                     // TODO: finer conflict resolution through delegate if users request it
                     dst = getRestoredFile(absPath, base.name);
                 }
-            }
-
-            if (!dst.exists()) {
-                FileUtil.mkdir(dst);
             }
 
             int n = rowCount(base);
@@ -322,6 +315,11 @@ public class HistoryModel
                 }
             }
         } else if (base.isDeleted) {
+            // delayed parent creation to avoid creating folder hierarchy when no files are restored
+            if (!parent.exists()) {
+                FileUtil.mkdirs(parent);
+            }
+
             if (dst.exists()) {
                 // TODO: finer conflict resolution through delegate if users request it
                 dst = getRestoredFile(absPath, base.name);

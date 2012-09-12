@@ -27,7 +27,6 @@ import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -273,13 +272,22 @@ public class DlgHistory extends AeroFSDialog
 
     private void createVersionTree(Composite parent)
     {
-        Composite alignmentWorkaroundOSX = new Composite(parent, SWT.NONE);
-        FillLayout layoutAlignmentWorkaroundOSX = new FillLayout();
-        layoutAlignmentWorkaroundOSX.marginWidth = 0;
-        layoutAlignmentWorkaroundOSX.marginHeight = OSUtil.isOSX() ? 3 : 0;
-        alignmentWorkaroundOSX.setLayout(layoutAlignmentWorkaroundOSX);
+        Composite alignmentWorkaround = new Composite(parent, SWT.FILL);
+        GridLayout layoutAlignmentWorkaround = new GridLayout();
+        layoutAlignmentWorkaround.marginWidth = 0;
+        if (OSUtil.isOSX()) {
+            layoutAlignmentWorkaround.marginHeight = 3;
+        } else if (OSUtil.isWindows()) {
+            layoutAlignmentWorkaround.marginHeight = 0;
+            layoutAlignmentWorkaround.marginTop = 7;
+            layoutAlignmentWorkaround.marginBottom = 2;
+        } else {
+            layoutAlignmentWorkaround.marginHeight = 0;
+        }
+        alignmentWorkaround.setLayout(layoutAlignmentWorkaround);
 
-        _revTree = new Tree(alignmentWorkaroundOSX, SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+        _revTree = new Tree(alignmentWorkaround, SWT.SINGLE | SWT.VIRTUAL | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+        _revTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
         // populate first level of version tree
         _revTree.setItemCount(_model.rowCount(null));
