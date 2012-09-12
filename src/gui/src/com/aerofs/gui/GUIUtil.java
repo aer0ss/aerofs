@@ -4,9 +4,6 @@ import javax.annotation.Nullable;
 
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
@@ -17,7 +14,6 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -27,8 +23,6 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Sv;
@@ -66,13 +60,6 @@ public class GUIUtil
 
         protected abstract void handleEventImpl(Event event);
     };
-
-    public static void copyToClipboard(String text)
-    {
-        Clipboard cb = new Clipboard(GUI.get().disp());
-        TextTransfer textTransfer = TextTransfer.getInstance();
-        cb.setContents(new Object[] { text }, new Transfer[] { textTransfer });
-    }
 
     public static void setShellIcon(Shell shell)
     {
@@ -113,15 +100,6 @@ public class GUIUtil
         shell.forceActive();
         shell.setFocus();
         //shell.setVisible(visible);
-    }
-
-    public static String getPresenceIconName(DID did, boolean online)
-    {
-        if (did.equals(Cfg.did())) {
-            return Images.ICON_LED_GREEN;
-        } else {
-                return online ? Images.ICON_LED_GREEN : Images.ICON_LED_GREY;
-        }
     }
 
     public static String shortenText(GC gc, String str, TableColumn tc,
@@ -231,11 +209,6 @@ public class GUIUtil
         }
     }
 
-    public static int getGroupBkgndCompStyle()
-    {
-        return OSUtil.isOSX() ? SWT.NO_BACKGROUND : SWT.NONE;
-    }
-
     public static int getInterButtonHorizontalSpace(GridLayout gl)
     {
         return OSUtil.isOSX() ? 0 : gl.horizontalSpacing;
@@ -252,25 +225,6 @@ public class GUIUtil
         FontData fd = org.getFontData()[0];
         return SWTResourceManager.getFont(fd.getName(), (int)
                 (fd.getHeight() * 0.9f), fd.getStyle());
-    }
-
-    public static Point getDropdownMenuLocation(Button button)
-    {
-        Rectangle rect = button.getBounds();
-        Point pt = new Point(rect.x, rect.y + rect.height);
-        pt = button.getParent().toDisplay(pt);
-
-        switch (OSUtil.get().getOSFamily()) {
-        case OSX:
-            pt.x += 16;
-            pt.y -= 6;
-            break;
-        default:
-            pt.y -= 4;
-            break;
-        }
-
-        return pt;
     }
 
     public static boolean isWindowBuilderPro()
