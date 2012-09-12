@@ -14,6 +14,7 @@ import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
@@ -404,16 +405,18 @@ public class DlgHistory extends AeroFSDialog
             _restoreBtn.setText("Restore Deleted Files...");
             if (index == null) {
                 _statusLabel.setText(
-                        "AeroFS keeps old versions of a file when receiving new updates from " +
-                                "remote devices.\n\nSelect a file in the left column to view all " +
-                                "the versions stored on this device.");
+                        S.PRODUCT + " keeps previous versions of a file when receiving new" +
+                        " updates from remote devices. When disk space runs low, old versions may" +
+                        " be deleted to save space.\n\n" +
+                        "Select a file in the left column to view all the versions stored on this" +
+                        " computer.");
                 _actionButtons.setVisible(false);
             } else {
                 _statusLabel.setText(
-                        "You can restore files and folders that have been deleted under a " +
-                                "given folder. Only their latest version will be restored.\n\n" +
-                                "Click the button below to restore the selected folder. It may " +
-                                "take a few moments.\n");
+                        "You can restore files and folders that have been deleted under the" +
+                        " selected folder. Only their latest versions will be restored." +
+                        // have an extra space so Windows will not ignore the trailing line breaks.
+                        " Restoring a large folder may take a few moments.\n\n ");
                 _actionButtons.setVisible(true);
                 _restoreBtn.setVisible(true);
                 setButtonVisible(_restoreBtn, true);
@@ -515,7 +518,7 @@ public class DlgHistory extends AeroFSDialog
     private boolean fillVersionTable(Table revTable, ModelIndex index, Label status)
     {
         Path path = _model.getPath(index);
-        status.setText("Version history of \"" + path.last() + "\":");
+        status.setText("Version history of " + Util.q(path.last()));
 
         List<HistoryModel.Version> versions = _model.versions(index);
         revTable.removeAll();
@@ -642,8 +645,8 @@ public class DlgHistory extends AeroFSDialog
 
             Label label = new Label(shell, SWT.WRAP);
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-            label.setText("Restoring " + _model.getPath(_base).toStringFormal()
-                    + (_inPlace ? "" : "\nto " + _dest));
+            label.setText("Restoring " + Util.q(_model.getPath(_base).last()) +
+                    (_inPlace ? "" : "\nto " + Util.q(_dest)));
 
             shell.addListener(SWT.Show, new Listener()
             {
@@ -763,6 +766,7 @@ public class DlgHistory extends AeroFSDialog
         buttonLayout.marginLeft = 0;
         buttonLayout.marginRight = 0;
         buttonLayout.marginWidth = 0;
+        buttonLayout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         if (OSUtil.isOSX()) {
             // workaround broken margins on OSX
             buttonLayout.marginLeft = -4;

@@ -83,7 +83,7 @@ public class DlgSetupAdvanced extends AeroFSJFaceDialog {
             public void widgetSelected(SelectionEvent e)
             {
                 DirectoryDialog dd = new DirectoryDialog(getShell(), SWT.SHEET);
-                dd.setMessage(S.SELECT_ROOT_LOCATION);
+                dd.setMessage("Select " + S.SETUP_ANCHOR_ROOT);
                 String root = dd.open();
                 if (root != null) {
                     _absRootAnchor = RootAnchorUtil.adjustRootAnchor(root);

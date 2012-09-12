@@ -25,7 +25,7 @@ public class S
     public static final String SETUP_FIRST_NAME         = "First name";
     public static final String SETUP_LAST_NAME          = "Last name";
     public static final String SETUP_DEV_ALIAS          = "Computer name";
-    public static final String SETUP_ANCHOR_ROOT        = PRODUCT + " location";
+    public static final String SETUP_ANCHOR_ROOT        = PRODUCT + " folder to sync";
     public static final String SETUP_IC                 = "Invitation code";
     public static final String SETUP_CANT_VERIFY_IIC    = "Couldn't verify invitation code ";
     public static final String SETUP_INVALID_USER_ID    = "Email address is not valid.";
@@ -73,7 +73,6 @@ public class S
     public static final String BTN_ADVANCED = "Advanced...";
     public static final String BTN_CHANGE = "Change...";
     public static final String ENTER_INVITATION_CODE = "Enter Invitation Code...";
-    public static final String SELECT_ROOT_LOCATION = "Select " + S.PRODUCT + " Location";
     public static final String UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from the " +
         S.PRODUCT + " account and quit the program?" +
         " Files in the " + S.PRODUCT + " folder will not be deleted.";

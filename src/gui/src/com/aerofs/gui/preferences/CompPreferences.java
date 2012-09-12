@@ -499,7 +499,7 @@ public class CompPreferences extends Composite
             public void run()
             {
                 DirectoryDialog dd = new DirectoryDialog(getShell(), SWT.SHEET);
-                dd.setMessage(S.SELECT_ROOT_LOCATION);
+                dd.setMessage("Select " + S.SETUP_ANCHOR_ROOT);
                 String root = dd.open();
                 if (root != null && moveAnchorRoot(root)) selectAndMoveRootAnchor_();
             }
