@@ -29,10 +29,8 @@ public class ToolsProgram implements IProgram
         throws Exception
     {
         if (args.length == 0) {
-            System.out.println("Note: tools are available only in staging");
-            for (String name : map.keySet()) {
-                System.out.println(name);
-            }
+            for (String name : map.keySet()) System.out.println(name);
+            return;
         }
 
         ITool tool = map.get(args[0]);
