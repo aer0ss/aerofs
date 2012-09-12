@@ -76,11 +76,50 @@ public class Multicast implements IMaxcast
 
             if (create) {
                 String name = ID.sid2muc(sid);
-                muc = new MultiUserChat(x.cw().conn(), name);
+                // This has to be called to ensure that the connection is initialized (and thus the
+                // smack static initializers have run) before using MultiUserChat, since
+                // otherwise the MultiUserChat static initializer might deadlock with the
+                // SmackConfiguration's static initializers.
+
+                /*
+                "expo.retry.xsct" daemon prio=5 tid=7fe824277000 nid=0x116644000 in Object.wait() [116642000]
+                   java.lang.Thread.State: RUNNABLE
+                    at java.lang.Class.forName0(Native Method)
+                    at java.lang.Class.forName(Class.java:169)
+                    at org.jivesoftware.smack.SmackConfiguration.parseClassToLoad(SmackConfiguration.java:306)
+                    at org.jivesoftware.smack.SmackConfiguration.<clinit>(SmackConfiguration.java:86)
+                    at org.jivesoftware.smack.Connection.<clinit>(Connection.java:118)
+                    at org.jivesoftware.smack.ConnectionConfiguration.<init>(ConnectionConfiguration.java:71)
+                    at com.aerofs.daemon.transport.xmpp.XMPPServerConnection.newConnection(XMPPServerConnection.java:102)
+                    at com.aerofs.daemon.transport.xmpp.XMPPServerConnection.connectImpl_(XMPPServerConnection.java:178)
+                    at com.aerofs.daemon.transport.xmpp.XMPPServerConnection.connect_(XMPPServerConnection.java:164)
+                    at com.aerofs.daemon.transport.xmpp.XMPPServerConnection.access$2(XMPPServerConnection.java:161)
+                    at com.aerofs.daemon.transport.xmpp.XMPPServerConnection$1.call(XMPPServerConnection.java:137)
+                    - locked <7f8443f18> (a com.aerofs.daemon.transport.xmpp.XMPPServerConnection)
+                    at com.aerofs.daemon.transport.xmpp.XMPPServerConnection$1.call(XMPPServerConnection.java:1)
+                    at com.aerofs.lib.Util.exponentialRetry(Util.java:1201)
+                    at com.aerofs.lib.Util$4.run(Util.java:1188)
+                    at java.lang.Thread.run(Thread.java:680)
+
+                "x" daemon prio=5 tid=7fe8242c2800 nid=0x116135000 in Object.wait() [116134000]
+                   java.lang.Thread.State: RUNNABLE
+                    at org.jivesoftware.smackx.muc.MultiUserChat.<clinit>(MultiUserChat.java:109)
+                    at com.aerofs.daemon.transport.xmpp.Multicast.getMUC(Multicast.java:79)
+                    at com.aerofs.daemon.transport.xmpp.Multicast.updateStores_(Multicast.java:241)
+                    at com.aerofs.daemon.transport.xmpp.XMPP.updateStores_(XMPP.java:321)
+                    at com.aerofs.daemon.transport.lib.HdUpdateStores.handle_(HdUpdateStores.java:19)
+                    at com.aerofs.daemon.transport.lib.HdUpdateStores.handle_(HdUpdateStores.java:1)
+                    at com.aerofs.daemon.event.lib.EventDispatcher.dispatch_(EventDispatcher.java:39)
+                    at com.aerofs.daemon.transport.xmpp.XMPP$1.run(XMPP.java:187)
+                    at java.lang.Thread.run(Thread.java:680)
+                 */
+
+                XMPPConnection conn = x.cw().conn();
+                muc = new MultiUserChat(conn, name);
 
                 try {
                     l.info("gri:" + name);
-                    MultiUserChat.getRoomInfo(x.cw().conn(), name);
+                    MultiUserChat.getRoomInfo(conn, name);
                 } catch (XMPPException e) {
                     if (e.getXMPPError() != null
                             && e.getXMPPError().getCode() == 404) {
