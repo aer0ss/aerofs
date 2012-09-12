@@ -424,7 +424,7 @@ public class DlgHistory extends AeroFSDialog
                         "You can restore files and folders that have been deleted under the" +
                         " selected folder. Only their latest versions will be restored." +
                         // have an extra space so Windows will not ignore the trailing line breaks.
-                        " Restoring a large folder may take a few moments.\n\n ");
+                        " Restoring a large folder may take a few moments.\n ");
                 _actionButtons.setVisible(true);
                 _restoreBtn.setVisible(true);
                 setButtonVisible(_restoreBtn, true);
@@ -668,7 +668,8 @@ public class DlgHistory extends AeroFSDialog
             });
 
             shell.addListener(SWT.Traverse, new Listener() {
-                public void handleEvent(Event e) {
+                @Override
+				public void handleEvent(Event e) {
                     if (e.detail == SWT.TRAVERSE_ESCAPE) {
                         e.doit = false;
                     }

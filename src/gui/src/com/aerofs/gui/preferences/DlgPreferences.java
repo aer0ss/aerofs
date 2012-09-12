@@ -13,9 +13,6 @@ public class DlgPreferences extends AeroFSDialog
 {
     private final boolean _showTransfers;
 
-    /**
-     * @param path the path to the folder to be shared, relative to the root anchor path.
-     */
     public DlgPreferences(Shell parent, boolean showTransfers)
     {
         super(parent, S.PREFERENCES, false, false);
