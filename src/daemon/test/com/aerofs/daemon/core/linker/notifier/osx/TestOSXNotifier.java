@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.injectable.InjectableJNotify;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.ImmutableSet;
 import net.contentobjects.jnotify.JNotifyException;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,6 +126,34 @@ public class TestOSXNotifier extends AbstractTest
 
         verify(ssq).scanImmediately_(capPaths.capture(), eq(true));
         assertEquals(capPaths.getValue().size(), 3);
+    }
+
+
+    @Test
+    public void shouldNotPruneBatch()
+    {
+        Set<String> paths = ImmutableSet.of("/abc/ade/efg", "/abc/cde", "/bcd/gte", "/bcd/abc");
+        notifier.batchStart(id);
+        for (String path : paths) {
+            // root is only used in an assert in notifyChange
+            notifier.notifyChange(id, "/", path, false);
+        }
+        notifier.batchEnd(id);
+        verify(ssq).scanImmediately_(paths, false);
+    }
+
+    @Test
+    public void shouldPruneChildPathsFromBatch()
+    {
+        Set<String> prunedPaths = ImmutableSet.of("/abc", "/bcd");
+        Set<String> paths = ImmutableSet.of("/abc/ade/efg", "/abc", "/abc/cde", "/bcd/abc", "/bcd");
+        notifier.batchStart(id);
+        for (String path : paths) {
+            // root is only used in an assert in notifyChange
+            notifier.notifyChange(id, "/", path, false);
+        }
+        notifier.batchEnd(id);
+        verify(ssq).scanImmediately_(prunedPaths, false);
     }
 
     private void notifyAChange(int id, boolean recurse)
