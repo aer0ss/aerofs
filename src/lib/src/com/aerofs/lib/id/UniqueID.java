@@ -76,7 +76,7 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
             StringBuilder sb = new StringBuilder();
 
             sb.append('<');
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 3; i++) {
                 sb.append(String.format("%1$02x", _bs[i]));
             }
             sb.append('>');
