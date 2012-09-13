@@ -170,7 +170,7 @@ public class ReceiveAndApplyUpdate
     /**
      * @return null if not to apply the update
      */
-    public CausalityResult computeCausalityForMeta_(SOID soid, Version vRemote,
+    public @Nullable CausalityResult computeCausalityForMeta_(SOID soid, Version vRemote,
         int metaDiff) throws SQLException
     {
         SOCKID k = new SOCKID(soid, CID.META, KIndex.MASTER);
@@ -212,8 +212,7 @@ public class ReceiveAndApplyUpdate
                 return null;
             } else {
                 l.info("true meta conflict. l < r. merge");
-                return new CausalityResult(KIndex.MASTER, vR_L, null, true, null,
-                    vLocal);
+                return new CausalityResult(KIndex.MASTER, vR_L, null, true, null, vLocal);
             }
         }
     }
