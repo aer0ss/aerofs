@@ -67,6 +67,11 @@ public class TestDownloadDeadlockResolver extends AbstractTest
 
         when(_ru.computeCausalityForMeta_(any(SOID.class), any(Version.class), anyInt()))
                 .thenReturn(mock(CausalityResult.class));
+
+        // Because it is uninteresting to use a real MetaDiff object in these tests, and to use a
+        // real PBMeta object, we ensure that the metadiff returned has a NAME difference
+        when(_mdiff.computeMetaDiff_(eq(_socidRemAncestor.soid()), any(PBMeta.class),
+                eq(_oidCommonParent))).thenReturn(MetaDiff.NAME);
     }
 
     @Test

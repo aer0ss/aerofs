@@ -3,6 +3,8 @@ package com.aerofs.daemon.core.store;
 import java.sql.SQLException;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import com.aerofs.lib.Util;
@@ -29,7 +31,7 @@ public class MapSIndex2Store
     /**
      * @return the store object corresponding to the sidx, null if not found
      */
-    public Store getNullable_(SIndex sidx)
+    public @Nullable Store getNullable_(SIndex sidx)
     {
         return _sidx2s.get(sidx);
     }
@@ -37,10 +39,10 @@ public class MapSIndex2Store
     /**
      * @return the store object corresponding to the sidx. Assertion failure if not found.
      */
-    public Store get_(SIndex sidx)
+    public @Nonnull Store get_(SIndex sidx)
     {
         Store s = getNullable_(sidx);
-        assert s != null;
+        assert s != null : sidx;
         return s;
     }
 
@@ -48,7 +50,7 @@ public class MapSIndex2Store
      * @return always a valid store object corresponding to the sidx
      * @throws ExNotFound if there is no corresponding store
      */
-    public Store getThrows_(SIndex sidx) throws ExNotFound
+    public @Nonnull Store getThrows_(SIndex sidx) throws ExNotFound
     {
         Store s = getNullable_(sidx);
         if (s == null) throw new ExNotFound("store " + sidx);
