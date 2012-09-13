@@ -258,7 +258,8 @@ class SPService implements ISPService
                             " cannot change authorization of " + subjectUser);
 
                 if (callerUser._id.equals(subjectUser._id)) {
-                    throw new ExNoPerm(callerUser + " cannot change itself");
+                    throw new ExNoPerm(callerUser +
+                            " : cannot change authorization level for yourself");
                 }
 
                 AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
