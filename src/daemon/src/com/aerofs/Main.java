@@ -83,7 +83,12 @@ public class Main {
 
     private static void mainImpl(String rtRoot, String prog, String ... appArgs)
     {
-        if (rtRoot.equals(C.DEFAULT_RTROOT)) rtRoot = OSUtil.get().getDefaultRTRoot();
+        if (rtRoot.equals(C.DEFAULT_RTROOT)) {
+            rtRoot = OSUtil.get().getDefaultRTRoot();
+        }
+
+        // Create rtroot folder with the right permissions
+        createRtRootIfNotExists(rtRoot);
 
         // init log4j
         try {
@@ -128,7 +133,7 @@ public class Main {
         }
     }
 
-    public static void launchProgram(String rtRoot, String prog, String ... progArgs)
+    private static void launchProgram(String rtRoot, String prog, String ... progArgs)
             throws Exception
     {
         boolean ui = prog.equals(C.GUI_NAME) || prog.equals(C.CLI_NAME);
@@ -147,8 +152,6 @@ public class Main {
 
         // load config
         if (!Cfg.inited()) {
-            if (ui) new File(rtRoot).mkdirs();
-
             try {
                 Cfg.init_(rtRoot, ui || controller || prog.equals(DAEMON_NAME));
                 l.info("id " + Cfg.did().toStringFormal() + (Cfg.isSP() ? " SP mode" : ""));
@@ -176,6 +179,23 @@ public class Main {
                 throw new ExProgramNotFound(prog);
             }
             ((IProgram) cls.newInstance()).launch_(rtRoot, prog, progArgs);
+        }
+    }
+
+    private static void createRtRootIfNotExists(String rtRoot)
+    {
+        File rtRootFile = new File(rtRoot);
+        if (rtRootFile.mkdirs()) {
+            // Set permissions on the rtroot to 700, to prevent other users from trying to read
+            // our logs or steal our cert/key.  The java permissions API is terrible.
+            // Note: this doesn't actually exclude other users via ACLs on Windows, but it does
+            // improve the situation on Unixes.
+            rtRootFile.setReadable(false, false);   // chmod a-r
+            rtRootFile.setWritable(false, false);   // chmod a-w
+            rtRootFile.setExecutable(false, false); // chmod a-x
+            rtRootFile.setReadable(true, true);     // chmod o+r
+            rtRootFile.setWritable(true, true);     // chmod o+w
+            rtRootFile.setExecutable(true, true);   // chmod o+x
         }
     }
 }
