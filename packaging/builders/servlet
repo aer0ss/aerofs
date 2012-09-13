@@ -45,4 +45,13 @@ done
 
 # package-data files
 cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"_"$MODE"/exploded/* "$INSTALL"/
-cp -R "$RESOURCES"/context.xml "$CONTEXT"/ROOT.xml
+
+CONTEXT_FILENAME="ROOT.xml"
+# Since we can't deploy sv to root (due to alpha and staging systems), we deploy
+# it at sv_beta
+if [ $SERVLET_NAME == "sv" ]
+then
+    CONTEXT_FILENAME="sv_beta.xml"
+fi
+
+cp -R "$RESOURCES"/context.xml "$CONTEXT"/"$CONTEXT_FILENAME"
