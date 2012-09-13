@@ -1,10 +1,8 @@
 import os
 from setuptools import setup, find_packages
 
-here = os.path.abspath(os.path.dirname(__file__))
-
 setup(name='certauth',
-      version='0.0',
+      version='1.0',
       description='certauth',
       long_description='certauth',
       classifiers=[

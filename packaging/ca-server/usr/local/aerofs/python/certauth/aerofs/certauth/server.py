@@ -21,32 +21,14 @@ class ApplicationObject(object):
 
     def __call__(self, environ, response):
 
-        # Parse the query string.
-        #
-        # Acceptable commands:
-        #   newcert=<certname>       (generate a new certificate)
-        #
-        # Other commands can be added in the future if needed...
-
-        query_string = environ['QUERY_STRING']
-        query_string_partition = query_string.partition("=")
-        command = query_string_partition[0]
-        certname = query_string_partition[2]
-
+        certname = environ['QUERY_STRING']
         try:
-            if command == "newcert":
-                # Only the newcert command requires POST body, which contains
-                # the CSR.
-                try:
-                    request_body_size = int(environ['CONTENT_LENGTH'])
-                    csr = environ['wsgi.input'].read(request_body_size)
-                except ValueError:
-                    raise aerofs.certauth.openssl.ExBadRequest("No POST body");
-                ret =  self._openssl.newcert(certname, csr)
-
-            else:
-                raise aerofs.certauth.openssl.ExBadRequest("No such command");
-                return ""
+            try:
+                request_body_size = int(environ['CONTENT_LENGTH'])
+                csr = environ['wsgi.input'].read(request_body_size)
+            except ValueError:
+                raise aerofs.certauth.openssl.ExBadRequest("No POST body");
+            ret =  self._openssl.newcert(certname, csr)
 
         # Catch certain exceptions for debugging purposes. Don't catch
         # everything (like file read errors etc.) - that would be a bit overkill

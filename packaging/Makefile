@@ -2,7 +2,7 @@
 .PHONY: all debs upload clean test
 
 # default the mode to staging unless the user specifies otherwise
-MODE?=STAGING
+MODE=STAGING
 
 PACKAGES= \
 	common \
