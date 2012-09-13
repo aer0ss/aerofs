@@ -69,7 +69,8 @@ public class SyncStatusNotificationSubscriber
         }
 
         @Override
-        public void onNotificationReceived(final String topic, @Nullable final byte[] payload)
+        public void onNotificationReceivedFromVerkehr(final String topic,
+                @Nullable final byte[] payload)
         {
             assert topic.equals(_topic);
             l.info("notification received");

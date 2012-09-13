@@ -113,11 +113,12 @@ public class VerkehrNotificationSubscriber
         }
 
         @Override
-        public void onNotificationReceived(final String topic, @Nullable final byte[] payload)
+        public void onNotificationReceivedFromVerkehr(final String topic,
+                @Nullable final byte[] payload)
         {
             IVerkehrListener listener = _subs.get(topic);
             assert listener != null;
-            listener.onNotificationReceived(topic, payload);
+            listener.onNotificationReceivedFromVerkehr(topic, payload);
         }
 
         @Override

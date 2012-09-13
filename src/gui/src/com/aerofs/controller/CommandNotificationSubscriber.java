@@ -69,7 +69,7 @@ public final class CommandNotificationSubscriber
         }
 
         @Override
-        public void onNotificationReceived(String topic, @Nullable final byte[] payload)
+        public void onNotificationReceivedFromVerkehr(String topic, @Nullable final byte[] payload)
         {
             l.info("cmd notification received");
 

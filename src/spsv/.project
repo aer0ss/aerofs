@@ -33,9 +33,9 @@
 			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/approot</locationURI>
 		</link>
 		<link>
-			<name>resources.servlet</name>
+			<name>resources.servers</name>
 			<type>2</type>
-			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/resources.servlet</locationURI>
+			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/resources.servers</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

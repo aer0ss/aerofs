@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.Util;
+import com.aerofs.servletlib.NoopConnectionListener;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -16,7 +17,6 @@ import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Util.join;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ACK_TIMEOUT;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ACK_TIMEOUT_TIMEUNIT;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMAND_PORT_INIT_PARAMETER;
@@ -24,8 +24,6 @@ import static com.aerofs.servletlib.sp.SPParam.VERKEHR_HOST_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_RECONNECT_DELAY;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_RECONNECT_DELAY_TIMEUNIT;
-import static com.aerofs.verkehr.client.lib.IConnectionListener.NOOP_CONNECTION_LISTENER;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.lang.Short.parseShort;
 
@@ -59,12 +57,12 @@ public class SPLifecycleListener implements ServletContextListener
         // FIXME (AG): really we should simply store the factories
 
         VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer,
-                NOOP_CONNECTION_LISTENER, sameThreadExecutor());
+                new NoopConnectionListener(), sameThreadExecutor());
         publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
         VerkehrCommander commander = getCommander(host, commandPort, cacert, boss, workers, timer,
-                NOOP_CONNECTION_LISTENER, sameThreadExecutor());
+                new NoopConnectionListener(), sameThreadExecutor());
         commander.start();
         ctx.setAttribute(VERKEHR_COMMANDER_ATTRIBUTE, commander);
     }
@@ -79,8 +77,8 @@ public class SPLifecycleListener implements ServletContextListener
                 new com.aerofs.verkehr.client.lib.commander.ClientFactory(host, commandPort,
                         bossExecutor, ioWorkerExecutor,
                         cacert,
-                        VERKEHR_RECONNECT_DELAY, VERKEHR_RECONNECT_DELAY_TIMEUNIT,
-                        VERKEHR_ACK_TIMEOUT, VERKEHR_ACK_TIMEOUT_TIMEUNIT,
+                        VERKEHR_RECONNECT_DELAY,
+                        VERKEHR_ACK_TIMEOUT,
                         timer,
                         listener, listenerExecutor);
 
@@ -97,8 +95,8 @@ public class SPLifecycleListener implements ServletContextListener
                 new com.aerofs.verkehr.client.lib.publisher.ClientFactory(host, publishPort,
                         bossExecutor, ioWorkerExecutor,
                         cacert,
-                        VERKEHR_RECONNECT_DELAY, VERKEHR_RECONNECT_DELAY_TIMEUNIT,
-                        VERKEHR_ACK_TIMEOUT, VERKEHR_ACK_TIMEOUT_TIMEUNIT,
+                        VERKEHR_RECONNECT_DELAY,
+                        VERKEHR_ACK_TIMEOUT,
                         timer,
                         listener, listenerExecutor);
 

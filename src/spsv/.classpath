@@ -7,10 +7,10 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/lib"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/verkehr"/>
 	<classpathentry kind="lib" path="approot/lib.test/junit-4.10.jar"/>
-	<classpathentry kind="lib" path="resources.servlet/javamail-1.4.2.jar"/>
-	<classpathentry kind="lib" path="resources.servlet/mysql-connector-java-5.1.20-bin.jar"/>
-	<classpathentry kind="lib" path="resources.servlet/protobuf-format-java-1.1.jar"/>
-	<classpathentry kind="lib" path="resources.servlet/servlet-api-2.5.jar"/>
+	<classpathentry kind="lib" path="resources.servers/javamail-1.4.2.jar"/>
+	<classpathentry kind="lib" path="resources.servers/mysql-connector-java-5.1.20-bin.jar"/>
+	<classpathentry kind="lib" path="resources.servers/protobuf-format-java-1.1.jar"/>
+	<classpathentry kind="lib" path="resources.servers/servlet-api-2.5.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/servletlib"/>
 	<classpathentry kind="lib" path="approot/lib/json_simple-1.1.jar"/>
 	<classpathentry kind="output" path="approot/bin"/>
