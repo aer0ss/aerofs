@@ -26,6 +26,10 @@ div.input_container a.btn {
 div.input_container.submit {
   margin-top: 25px;
 }
+div#admin_table_container {
+  margin-top: 35px;
+  margin-bottom: 35px;
+}
 div#folders_table_container {
   margin-bottom: 30px;
 }
