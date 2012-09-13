@@ -34,6 +34,23 @@ When adding new dependencies to the pyramid package (things that would be
 installed via pip or easy_install) make sure you add them to setup.py!
 Otherwise the web package will break for everyone else who uses it.
 
+Updating Cloudfront:
+================================================
+We use Cloudfront for our static assets, so when our local copies are changed
+they need to be updated in cloudfront too when we want to serve them in production.
+Anything stored in aerofs_web/layout/static is served from Cloudfront.
+
+To get setup to update Cloudfront, get credentials to the aerofs.admin_panel bucket
+on S3 then run the following commands to configure your S3 environment:
+# remove the devel tag once v1.1.0 or higher of s3cmd is released
+$ brew install --devel s3cmd
+$ s3cmd --configure
+[enter your credentials, skip entering an encryption password or a gpg binary]
+
+And now, to actually update the files stored in S3:
+$ cd src/web
+$ ./update_cloudfront
+
 Localization:
 ================================================
 To make our application localizable, all user facing strings must be run

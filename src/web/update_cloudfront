@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+s3cmd sync --cf-invalidate --delete-removed ./aerofs_web/layout/static/ s3://aerofs.admin_panel/
