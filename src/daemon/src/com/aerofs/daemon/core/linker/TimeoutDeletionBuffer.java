@@ -175,8 +175,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
     public void remove_(SOID soid)
     {
         assert soid != null;
-        TimeAndHolders old = _soid2th.remove(soid);
-        if (old == null) l.info("remove " + soid + " which was not in the buffer");
+        _soid2th.remove(soid);
     }
 
     @Override

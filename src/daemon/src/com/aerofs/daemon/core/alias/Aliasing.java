@@ -123,7 +123,7 @@ public class Aliasing
      * the alias object.
      */
     private void performAliasingOnLocallyAvailableObjects_(SOID alias, Version vAliasMeta,
-            SOID target, Version vTargetMeta, boolean isDir, Trans t) throws Exception
+            SOID target, Version vTargetMeta, boolean isAliasADir, Trans t) throws Exception
     {
         l.info("Aliasing soids, alias:" + alias + " target: " + target);
 
@@ -145,19 +145,18 @@ public class Aliasing
         // to target.
         vAliasMeta = vAliasMeta.withoutAliasTicks_();
 
-        // KML version should be updated before merging local version
-        // to avoid assertion failures in VersionControl.java.
-        Version vMergedMeta = vTargetMeta.add_(vAliasMeta);
+        // KML version should be updated before merging local version to avoid assertion failures in
+        // VersionControl.java.
         _almv.moveKMLVersion_(aliasMeta, targetMeta, vAliasMeta, vTargetMeta, t);
 
         // Move the meta-data versions.
-        Util.verify(_almv.moveLocalMetaVersion_(aliasMeta, targetMeta, vAliasMeta,
-            vTargetMeta, t).equals(vMergedMeta));
+        _almv.moveMetadataLocalVersion_(aliasMeta, targetMeta, vAliasMeta, vTargetMeta, t);
 
-        // Move files and dirs under alias dir to target dir.
-        if (isDir) {
+        if (isAliasADir) {
             _almv.moveChildrenFromAliasToTargetDir_(sidx, alias, target, t);
-            _ds.getOA_(alias).physicalFolder().delete_(PhysicalOp.APPLY, t);
+            OA aliasOA = _ds.getOA_(alias);
+            assert aliasOA.isDir();
+            if (!aliasOA.isExpelled()) aliasOA.physicalFolder().delete_(PhysicalOp.APPLY, t);
         } else {
             _almv.moveContent_(aliasContent, targetContent, t);
         }

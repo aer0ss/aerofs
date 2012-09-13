@@ -9,6 +9,7 @@ import com.aerofs.proto.Common.PBVer;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class Version
 {
@@ -176,5 +177,17 @@ public class Version
         }
 
         return ret;
+    }
+
+    /**
+     * @return null if this Version is empty
+     */
+    public @Nullable DID findLargestDID()
+    {
+        DID didMax = null;
+        for (DID did : getAll_().keySet()) {
+            if (didMax == null || didMax.compareTo(did) < 0) didMax = did;
+        }
+        return didMax;
     }
 }

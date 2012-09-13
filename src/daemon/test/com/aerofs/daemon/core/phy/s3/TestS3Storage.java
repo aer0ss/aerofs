@@ -74,11 +74,11 @@ public class TestS3Storage extends AbstractTest
     private final SIndex _sidx = new SIndex(2);
 //    private SID _sid = new SID(randomId_());
 
-    private TCTestSetup _tcTestSetup = new TCTestSetup();
+    private final TCTestSetup _tcTestSetup = new TCTestSetup();
 
-    private TransManager _tm = _tcTestSetup._transManager;
-    private TokenManager _tokenManager = _tcTestSetup._tokenManager;
-    private TC _tc = _tcTestSetup._tc;
+    private final TransManager _tm = _tcTestSetup._transManager;
+    private final TokenManager _tokenManager = _tcTestSetup._tokenManager;
+    private final TC _tc = _tcTestSetup._tc;
 
     private AmazonS3 _s3Client;
     private S3Database _s3db;
@@ -121,7 +121,6 @@ public class TestS3Storage extends AbstractTest
 
         _s3Storage = new S3Storage(
                 _tcTestSetup._transManager,
-                _tcTestSetup._sched,
                 _fileFactory,
                 _s3db,
                 _s3DirConfig,

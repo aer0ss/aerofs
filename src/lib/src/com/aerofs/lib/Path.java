@@ -18,8 +18,7 @@ public class Path implements Comparable<Path>
     private PBPath _pb;
 
     /**
-     * N.B we do NOT save a local copy of the array. DO NOT modify the array!
-     * @param elems
+     * N.B we do NOT save a local copy of the {@code elems} array. DO NOT modify the array!
      */
     public Path(String... elems)
     {

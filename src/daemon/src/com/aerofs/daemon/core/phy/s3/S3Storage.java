@@ -23,7 +23,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalObject;
@@ -39,10 +38,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.C.AuxFolder;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.aws.s3.S3InitException;
 import com.aerofs.lib.aws.s3.chunks.S3Cache;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor.FileUpload;
@@ -73,9 +70,6 @@ public class S3Storage implements IPhysicalStorage
 
     static final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
 
-    static final long FILE_CHUNK_SIZE = Param.FILE_CHUNK_SIZE;
-
-
     private final S3Database _s3db;
     private final S3ChunkAccessor _s3ChunkAccessor;
     private final S3Cache _s3Cache;
@@ -92,7 +86,6 @@ public class S3Storage implements IPhysicalStorage
     @Inject
     public S3Storage(
             TransManager transManager,
-            CoreScheduler coreScheduler,
             InjectableFile.Factory fileFactory,
             S3Database s3db,
             S3DirConfig s3DirConfig,
@@ -114,7 +107,7 @@ public class S3Storage implements IPhysicalStorage
     }
 
     @Override
-    public void init_() throws IOException, S3InitException
+    public void init_() throws IOException
     {
         prepareDir(_prefixDir);
         prepareDir(_tempDir);

@@ -127,11 +127,6 @@ public class AliasingMover
         // so that corresponding branch of alias object is moved to MASTER branch of target object
         // when hashes match. Hence iterate over ordered set of KIndices.
 
-        // TODO (WW) For debugging only. to be removed
-        if (_ds.getOA_(alias.soid()).isExpelled()) {
-            l.warn("alias expelled on " + alias + "->" + target);
-        }
-
         if (!_ds.getOA_(target.soid()).isExpelled()) {
             moveBranches_(alias, target, kidxsAlias, kidxsTarget, t);
 
@@ -270,37 +265,34 @@ public class AliasingMover
         Path targetPath = _ds.resolveNullable_(target);
         assert targetPath != null;
 
-        // Immediate files/dirs under target will retain their names, whereas immediate files/dirs
-        // under alias dir will be renamed avoiding name conflict.
+        // Files/dirs directly under the target dir will retain their names, whereas files/dirs
+        // directly under the alias dir are renamed to avoid name conflict
         for (OID oid : _ds.getChildren_(alias)) {
-            SOID aliasChild = new SOID(sidx, oid);
-            String aliasChildNameOrig = _ds.getOA_(aliasChild).name();
-            String aliasChildNameNew = aliasChildNameOrig;
-            boolean updateVersion = false;
+            SOID child = new SOID(sidx, oid);
+            String childName = _ds.getOA_(child).name();
 
             // We don't currently gracefully handle moving when the OIDs are equal
-            assert !aliasChild.equals(target) : "aliasChild " + aliasChild + " target " + target;
+            assert !child.equals(target) : sidx + " " + alias + " " + target + " " + child;
 
-            // Look for name conflict before moving file/dir from alias dir to the target dir.
-            if (_ds.resolveNullable_(targetPath.append(aliasChildNameOrig)) != null) {
-                aliasChildNameNew = _ds.generateNameConflictFileName_(targetPath,
-                        aliasChildNameOrig);
+            // Look for a name conflict before moving the child. Update its version only if renaming
+            // is required due to name conflict.
+            boolean updateVersion = false;
+            if (_ds.resolveNullable_(targetPath.append(childName)) != null) {
+                childName = _ds.generateNameConflictFileName_(targetPath, childName);
                 updateVersion = true;
             }
 
-            _om.moveInSameStore_(aliasChild, target.oid(), aliasChildNameNew, PhysicalOp.APPLY,
-                    false, updateVersion, t);
+            _om.moveInSameStore_(child, target.oid(), childName, PhysicalOp.APPLY, false,
+                    updateVersion, t);
         }
     }
 
     /**
      * Merges the meta-data local versions according to the following formula:
      * vMerged = vAlias U vTarget
-     *
-     * @return Merged local meta-data version of the target
      */
-    public Version moveLocalMetaVersion_(SOCID alias, SOCID target, Version vAlias, Version vTarget,
-            Trans t) throws SQLException
+    public void moveMetadataLocalVersion_(SOCID alias, SOCID target, Version vAlias,
+            Version vTarget, Trans t) throws SQLException
     {
         assert alias.cid().isMeta();
         assert target.cid().isMeta();
@@ -317,7 +309,6 @@ public class AliasingMover
         deleteAliasVersion_(alias, vAlias, t);
 
         assert vMerged.equals(_nvc.getLocalVersion_(new SOCKID(target)));
-        return vMerged;
     }
 
     /**

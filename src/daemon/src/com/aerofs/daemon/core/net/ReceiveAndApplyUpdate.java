@@ -141,31 +141,21 @@ public class ReceiveAndApplyUpdate
         }
     }
 
-    // deterministically compare two conflicting versions using the differences
-    // of the two versions. the larger one wins
-    // we used meta data change time before but it's not reliable because it may
-    // change when the meta is transferred from one peer to another
-    // FIXME Strictly speaking, this method doesn't _compare_ versions.
-    //       It simply break ties with the help of a unique property of
-    //       versions. It can be called something like "breakTieUsingVersions"
-    private int compareVersion(Version vR_L, Version vL_R)
+    /**
+     * Deterministically compare two conflicting versions using the difference of the two versions.
+     * The larger one wins. We used to use meta data change time before but it's not reliable
+     * because it may change when the meta is transferred from one peer to another.
+      */
+    private static int compareLargestDIDsInVersions(Version v1, Version v2)
     {
-        // find the largest did
-        DID did1, did2;
-        did1 = did2 = null;
-        for (DID did : vR_L.getAll_().keySet()) {
-            assert !vL_R.getAll_().keySet().contains(did);
-            if (did1 == null || did1.compareTo(did) < 0) did1 = did;
-        }
-        for (DID did : vL_R.getAll_().keySet()) {
-            assert !vR_L.getAll_().keySet().contains(did);
-            if (did2 == null || did2.compareTo(did) < 0) did2 = did;
-        }
-
-        // compare the largest dids in the two branch
+        assert !v1.isZero_();
+        assert !v2.isZero_();
+        DID did1 = v1.findLargestDID();
+        DID did2 = v2.findLargestDID();
+        assert did1 != null;
+        assert did2 != null;
         return did1.compareTo(did2);
     }
-
 
     /**
      * @return null if not to apply the update
@@ -205,7 +195,7 @@ public class ReceiveAndApplyUpdate
         } else {
             // TODO forbidden meta should always win
 
-            int comp = compareVersion(vR_L, vL_R);
+            int comp = compareLargestDIDsInVersions(vR_L, vL_R);
             assert comp != 0;
             if (comp > 0) {
                 l.info("true meta conflict. l > r. don't apply");
