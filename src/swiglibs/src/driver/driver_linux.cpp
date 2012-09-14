@@ -179,7 +179,7 @@ int killDaemon()
     DIR* procDir = opendir(PROC_PATH);
     if (procDir == NULL) {
         FERROR(" no /proc on filesystem");
-        return -1;
+        return DRIVER_FAILURE;
     }
 
     // This vector will contain the pids of any daemon processes
