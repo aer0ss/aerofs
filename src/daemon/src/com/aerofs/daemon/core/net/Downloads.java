@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph;
 import com.aerofs.daemon.core.net.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
 import com.aerofs.daemon.core.net.dependence.DownloadDeadlockResolver;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -68,9 +69,19 @@ public class Downloads
         }
 
         @Override
-        public void error_(SOCID socid, Exception e)
+        public void onGeneralError_(SOCID socid, Exception e)
         {
-            if (_tcb != null) _tcb.abort_(e);
+            abortWithReason(e);
+        }
+
+        @Override
+        public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> remoteExceptions)
+        {
+            assert remoteExceptions.keySet().containsAll(_to.dids_())
+                    : _to.dids_() + " " + remoteExceptions;
+
+            // Technically this method is only caused by an ExNoAvailDevice
+            abortWithReason(new ExNoAvailDevice());
         }
 
         @Override
@@ -78,6 +89,11 @@ public class Downloads
         {
             _from = from;
             if (_tcb != null) _tcb.resume_();
+        }
+
+        private void abortWithReason(Exception e)
+        {
+            if (_tcb != null) _tcb.abort_(e);
         }
     }
 

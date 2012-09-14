@@ -29,6 +29,8 @@ import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.SVClient;
 
+import javax.annotation.Nullable;
+
 /** Thread Control */
 public class TC implements IDumpStatMisc
 {
@@ -50,7 +52,7 @@ public class TC implements IDumpStatMisc
         // valid only if !_running
         private Token _tk;
 
-        private Throwable _abortCause;
+        private @Nullable Throwable _abortCause;
 
         // for dumping only
         private final Thread _thd = Thread.currentThread();
@@ -74,7 +76,7 @@ public class TC implements IDumpStatMisc
         /**
          * @return false if the thread is already resumed or aborted
          */
-        public boolean abort_(Throwable cause)
+        public boolean abort_(@Nullable Throwable cause)
         {
             l.info("abort " + _thd.getName() + ": " + cause);
 
