@@ -2,6 +2,9 @@ include mkfs
 
 node default {
 include motd
+include common::firewall
+include puppet
+include common::logs
     Exec {
         path => [
             '/usr/local/bin',
@@ -13,15 +16,11 @@ include motd
         logoutput => true,
     }
 
-    package { "default-jdk":
-        ensure => latest,
-    }
-
-    package { "htop":
-        ensure => latest,
-    }
-
-    package { "dstat":
+    package { [
+        "default-jdk",
+        "htop",
+        "dstat",
+        ]:
         ensure => latest,
     }
 
@@ -47,29 +46,9 @@ include motd
         ensure => absent
     }
 
-    include puppet
-
     # run apt-get update every time.
     exec{"apt-get update":
         logoutput => "on_failure",
-    }
-
-    # common log area
-    file {"/var/log":
-        ensure => directory
-    }
-
-    file {"/var/log/aerofs":
-        ensure => directory,
-        require => File["/var/log"],
-        mode    => 666,
-    }
-
-    logrotate::log{"standard_aerofs_logs":
-        filename => "/var/log/aerofs/*.log",
-        quantity => 7,
-        frequency => "daily",
-        compress => true,
     }
 
     # include cacert
@@ -78,6 +57,11 @@ include motd
         ensure  => present
     }
 
+    # These defaults ensure that the persistence command (in common::firewall) is
+    # executed after every change to the firewall
+    Firewall {
+      notify  => Exec['persist-firewall'],
+    }
 }
 
 import "nodes/*.pp"
