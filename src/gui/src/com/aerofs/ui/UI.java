@@ -36,7 +36,7 @@ public class UI
 
     private static final Updater s_updater = Updater.getInstance_();
     private static final UINotifier s_notifier = new UINotifier();
-    private static final DaemonMonitor s_dm = new DaemonMonitor();
+    private static final IDaemonMonitor s_dm = IDaemonMonitor.Factory.create();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
     private static final RootAnchorWatch s_raw = new RootAnchorWatch(new InjectableFile.Factory(),
             new InjectableJNotify());
@@ -47,7 +47,7 @@ public class UI
     public static Updater updater() { return s_updater; }
 
     // TODO (GS): Move to ControllerService
-    public static DaemonMonitor dm() { return s_dm; }
+    public static IDaemonMonitor dm() { return s_dm; }
 
     // TODO (GS): Move to ControllerService
     public static RitualNotificationClient rnc() { return s_rnc; }

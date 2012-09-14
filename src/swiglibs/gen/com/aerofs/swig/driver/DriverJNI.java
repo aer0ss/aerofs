@@ -9,10 +9,6 @@
 package com.aerofs.swig.driver;
 
 public class DriverJNI {
-  public final static native void initLogger_(String jarg1, String jarg2, int jarg3);
-  public final static native int getPid();
-  public final static native boolean killProcess(int jarg1);
-  public final static native int getFidLength();
   public final static native int DRIVER_FAILURE_get();
   public final static native int DRIVER_SUCCESS_get();
   public final static native int GETFID_FILE_get();
@@ -21,6 +17,10 @@ public class DriverJNI {
   public final static native int GETFID_SPECIAL_get();
   public final static native int FS_LOCAL_get();
   public final static native int FS_REMOTE_get();
+  public final static native String DAEMON_PROC_NAME_get();
+  public final static native void initLogger_(String jarg1, String jarg2, int jarg3);
+  public final static native int killDaemon();
+  public final static native int getFidLength();
   public final static native int getFid(Object jarg1, String jarg2, byte[] jarg3);
   public final static native int getMountIdLength();
   public final static native int waitForNetworkInterfaceChange();

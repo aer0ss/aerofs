@@ -154,7 +154,7 @@ class Launcher
             UI.raw().start();
 
             if (!isFirstTime) {
-                UI.dm().start_();
+                UI.dm().start();
                 SVClient.sendEventAsync(PBSVEvent.Type.SIGN_IN);
             }
 

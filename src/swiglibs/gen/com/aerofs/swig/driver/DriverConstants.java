@@ -17,4 +17,5 @@ public interface DriverConstants {
   public final static int GETFID_SPECIAL = DriverJNI.GETFID_SPECIAL_get();
   public final static int FS_LOCAL = DriverJNI.FS_LOCAL_get();
   public final static int FS_REMOTE = DriverJNI.FS_REMOTE_get();
+  public final static String DAEMON_PROC_NAME = DriverJNI.DAEMON_PROC_NAME_get();
 }

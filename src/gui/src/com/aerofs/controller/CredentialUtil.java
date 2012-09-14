@@ -79,7 +79,7 @@ public class CredentialUtil
 
         //restart the daemon to reload the new password.
         UI.dm().stop();
-        UI.dm().start_();
+        UI.dm().start();
     }
 
     static DID generateDeviceKeys(String user, byte[] scrypted, SPBlockingClient sp)
