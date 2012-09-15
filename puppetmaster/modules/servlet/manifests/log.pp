@@ -1,0 +1,14 @@
+define servlet::log(
+    $config_filename
+) {
+    $log_filename = $title
+    file {$config_filename:
+        ensure  => present,
+        owner   => "tomcat6",
+        group   => "tomcat6",
+        mode    => "644",
+        content => template("servlet/log4j.properties.erb"),
+        require => File["/var/log/aerofs"],
+        notify  => Service["tomcat6"]
+    }
+}

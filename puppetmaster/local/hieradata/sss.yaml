@@ -2,15 +2,13 @@
 
 # also gibberish
 tomcat6_manager:
-    password: "55555555555555555555555555"
+    password: "55555"
     roles: "manager"
 
 mysql_syncstat:
-    username: "aerofs_syncstat"
     password: "testpw1"
 
 mysql_sp:
-    username: "aerofs_spsv"
     password: "testpw1"
 
-mysql_endpoint: "ci-sp.crqse4vtvc9b.us-east-1.rds.amazonaws.com"
+mysql_endpoint: "ci-sp.mysql.aws.aerofs.com"

@@ -14,30 +14,14 @@ class servlet::syncstat(
         ]
     }
 
-    file {"/usr/share/aerofs-syncstat/syncstat/WEB-INF/web.xml":
-        ensure  => present,
-        owner   => "root",
-        group   => "tomcat6",
-        mode    => "644",
+    servlet::config{"/usr/share/aerofs-syncstat/syncstat/WEB-INF/web.xml":
         content => template("servlet/syncstat.web.xml.erb"),
-        require => [
-            Package["aerofs-syncstat"],
-            File["/etc/ssl/certs/AeroFS_CA.pem"]
-        ],
-        notify  => Service["tomcat6"]
+        require => Package["aerofs-syncstat"]
     }
 
-    $log_filename = "/var/log/aerofs/syncstat.log"
-    file {"/usr/share/aerofs-syncstat/syncstat/WEB-INF/classes/log4j.properties":
-        ensure  => present,
-        owner   => "tomcat6",
-        group   => "tomcat6",
-        mode    => "644",
-        content => template("servlet/log4j.properties.erb"),
-        require => [
-            Package["aerofs-syncstat"],
-            File["/var/log/aerofs"]
-        ],
-        notify  => Service["tomcat6"]
+    $config_filename = "/usr/share/aerofs-syncstat/syncstat/WEB-INF/classes/log4j.properties"
+    servlet::log{"/var/log/aerofs/syncstat.log":
+        config_filename => $config_filename,
+        require => Package["aerofs-syncstat"],
     }
 }

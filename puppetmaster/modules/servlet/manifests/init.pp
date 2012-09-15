@@ -52,6 +52,7 @@ class servlet {
         mode    => "0400",
         source  => "puppet:///aerofs_ssl/ssl.key",
         require => File["/etc/nginx/certs"],
+        notify  => Service["nginx"]
     }
 
     file {"/etc/nginx/certs/ssl.cert":
@@ -61,6 +62,7 @@ class servlet {
         mode    => "0400",
         source  => "puppet:///aerofs_ssl/ssl.cert",
         require => File["/etc/nginx/certs"],
+        notify  => Service["nginx"]
     }
 
     nginx::resource::vhost {"${fqdn}":
