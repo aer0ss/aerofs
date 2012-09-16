@@ -669,7 +669,7 @@ public class DlgHistory extends AeroFSDialog
 
             shell.addListener(SWT.Traverse, new Listener() {
                 @Override
-				public void handleEvent(Event e) {
+                public void handleEvent(Event e) {
                     if (e.detail == SWT.TRAVERSE_ESCAPE) {
                         e.doit = false;
                     }
