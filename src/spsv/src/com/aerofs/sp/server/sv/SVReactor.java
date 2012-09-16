@@ -21,6 +21,7 @@ import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.servletlib.sv.SVDatabase;
 import org.apache.log4j.Logger;
 
@@ -55,6 +56,7 @@ public class SVReactor
     private static final String DEFECT_LOG_PREFIX = "log.defect-";
     private static final int FILE_BUF_SIZE = 1 * C.MB;
     private final SVDatabase _db;
+    private final ThreadLocalTransaction _transaction;
 
     private String _pathDefect;
     private String _pathArchive;
@@ -63,9 +65,10 @@ public class SVReactor
 
     private static final RavenClient ravenClient = new RavenClient("https://79e419090a9049ba98e30674544cfc13:7de75d799f774a6ea8e8f75e9f7eb7ad@sentry.aerofs.com/3");
 
-    SVReactor(SVDatabase db)
+    SVReactor(SVDatabase db, ThreadLocalTransaction transaction)
     {
         _db = db;
+        _transaction = transaction;
     }
 
     void init_()
@@ -121,11 +124,13 @@ public class SVReactor
 
         PBSVEvent ev = call.getEvent();
         PBSVHeader header = call.getHeader();
+        _transaction.begin();
         _db.addEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
 
         if (ev.getType() == Type.SIGN_UP) {
             _db.subscribeAllEmails(header.getUser());
         }
+        _transaction.commit();
     }
 
     private void email(PBSVCall call)
@@ -241,7 +246,9 @@ public class SVReactor
 
         // save to db
         String dc = defect.hasCfgDb() ? defect.getCfgDb() : "(unknown)";
+        _transaction.begin();
         int id = _db.addDefect(header, client, defect.getAutomatic(), desc, dc, javaEnv.toString());
+        _transaction.commit();
 
         // send email to the customer support system
         int eom = desc.indexOf(C.END_OF_DEFECT_MESSAGE);

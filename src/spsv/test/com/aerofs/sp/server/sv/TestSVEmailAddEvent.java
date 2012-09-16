@@ -18,6 +18,8 @@ public class TestSVEmailAddEvent extends AbstractSVReactorTest
     {
         //TODO: This test only verifies that no exceptions are thrown, not that the data is actually
         // properly inputted
+        _transaction.begin();
         db.addEmailEvent("test@test.com", "subscribe", null, "test_category", Long.valueOf(0));
+        _transaction.commit();
     }
 }

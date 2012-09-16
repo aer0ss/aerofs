@@ -46,6 +46,8 @@ public class TestSPGetDeviceInfo extends AbstractSPUserBasedTest
         // Before we proceed make sure verkehr is set up to publish successfully (for ACLs).
         setupMockVerkehrToSuccessfullyPublish();
 
+        _transaction.begin();
+
         // User 1
         db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A01", TEST_USER_1_NAME));
         db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A02", TEST_USER_1_NAME));
@@ -60,6 +62,8 @@ public class TestSPGetDeviceInfo extends AbstractSPUserBasedTest
         _deviceC01 = new DID(UniqueID.generate());
         db.addDevice(new DeviceRow(_deviceC01, "Device C01", TEST_USER_3_NAME));
         db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device C02", TEST_USER_3_NAME));
+
+        _transaction.commit();
 
         // User 1 shares with User 2, but not with User 3
         ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();

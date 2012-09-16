@@ -40,13 +40,12 @@ import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.proto.Sp.SignUpCall;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.user.UserManagement;
 import com.aerofs.sp.server.sp.user.UserManagement.UserListAndQueryCount;
-import com.aerofs.servletlib.db.AbstractDatabase;
-import com.aerofs.servletlib.db.AbstractDatabaseTransaction;
 import com.aerofs.servletlib.sp.ACLReturn;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.servletlib.sp.SPDatabase.DeviceRow;
@@ -87,6 +86,8 @@ class SPService implements ISPService
     private static final String UNKNOWN_NAME = "(unknown)";
 
     private final SPDatabase _db;
+    private final ThreadLocalTransaction _transaction;
+
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrCommander _verkehrCommander;
 
@@ -102,14 +103,15 @@ class SPService implements ISPService
     private final SharedFolderManagement _sharedFolderManagement;
     private final ICertificateGenerator _certificateGenerator;
 
-    SPService(SPDatabase db, ISessionUserID sessionUser, UserManagement userManagement,
-            OrganizationManagement organizationManagement,
+    SPService(SPDatabase db, ThreadLocalTransaction transaction, ISessionUserID sessionUser,
+            UserManagement userManagement, OrganizationManagement organizationManagement,
             SharedFolderManagement sharedFolderManagement,
             ICertificateGenerator certificateGenerator)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
         _db = db;
+        _transaction = transaction;
         _sessionUser = sessionUser;
         _userManagement = userManagement;
         _organizationManagement = organizationManagement;
@@ -129,7 +131,10 @@ class SPService implements ISPService
     @Override
     public PBException encodeError(Throwable e)
     {
+        // Report error in logs and notify SPTransaction that an exception occurred
         l.warn("user: " + _sessionUser + ": " + Util.e(e));
+        _transaction.handleException();
+
         // don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
     }
@@ -138,10 +143,14 @@ class SPService implements ISPService
     public ListenableFuture<GetPreferencesReply> getPreferences(ByteString deviceId)
             throws Exception
     {
+        _transaction.begin();
+
         User ur = _db.getUser(_sessionUser.getUser());
         if (ur == null) throw new ExNotFound();
 
         DeviceRow dr = _db.getDevice(new DID(deviceId));
+
+        _transaction.commit();
 
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
                 .setFirstName(ur._firstName)
@@ -157,6 +166,8 @@ class SPService implements ISPService
             ByteString deviceId, String deviceName)
             throws Exception
     {
+        _transaction.begin();
+
         if (userFirstName != null || userLastName != null) {
             if (userFirstName == null || userLastName == null)
                 throw new ExBadArgs("First and last name must both be non-null or both null");
@@ -166,6 +177,8 @@ class SPService implements ISPService
             _db.setDeviceName(_sessionUser.getUser(), new DID(deviceId), deviceName);
         }
 
+        _transaction.commit();
+
         return createVoidReply();
     }
 
@@ -174,6 +187,8 @@ class SPService implements ISPService
             Integer offset)
             throws Exception
     {
+        _transaction.begin();
+
         User user = _userManagement.getUser(_sessionUser.getUser());
         user.verifyIsAdmin();
 
@@ -187,6 +202,9 @@ class SPService implements ISPService
                 .setFilteredCount(listAndCount.count)
                 .setTotalCount(_userManagement.totalUserCount(orgId))
                 .build();
+
+        _transaction.commit();
+
         return createReply(reply);
     }
 
@@ -195,6 +213,8 @@ class SPService implements ISPService
             PBAuthorizationLevel authLevel, Integer maxResults, Integer offset)
         throws Exception
     {
+        _transaction.begin();
+
         User user = _userManagement.getUser(_sessionUser.getUser());
         user.verifyIsAdmin();
 
@@ -205,11 +225,14 @@ class SPService implements ISPService
         UserListAndQueryCount listAndCount =
                 _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
 
+        _transaction.commit();
+
         ListUsersReply reply = ListUsersReply.newBuilder()
                 .addAllUsers(listAndCount.users)
                 .setFilteredCount(listAndCount.count)
                 .setTotalCount(_userManagement.totalUserCount(level, orgId))
                 .build();
+
         return createReply(reply);
     }
 
@@ -218,6 +241,8 @@ class SPService implements ISPService
             Integer offset)
             throws Exception
     {
+        _transaction.begin();
+
         User user = _userManagement.getUser(_sessionUser.getUser());
         user.verifyIsAdmin();
 
@@ -225,10 +250,13 @@ class SPService implements ISPService
         List<PBSharedFolder> sharedFolderList =
                 _organizationManagement.listSharedFolders(user._orgId, maxResults, offset);
 
+        _transaction.commit();
+
         ListSharedFoldersResponse response = ListSharedFoldersResponse.newBuilder()
                 .addAllSharedFolders(sharedFolderList)
                 .setTotalCount(sharedFolderCount)
                 .build();
+
         return createReply(response);
     }
 
@@ -237,43 +265,35 @@ class SPService implements ISPService
             final PBAuthorizationLevel authLevel)
             throws Exception
     {
-        AbstractDatabaseTransaction<ListenableFuture<Void>> trans =
-                new AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
-        {
-            @Override
-            protected ListenableFuture<Void> impl_(AbstractDatabase db,
-                    AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
-                    throws Exception
-            {
-                User callerUser = _userManagement.getUser(_sessionUser.getUser());
-                User subjectUser = _userManagement.getUser(userEmail);
+        _transaction.begin();
 
-                // Verify caller and subject's organization match
-                if (!callerUser._orgId.equals(subjectUser._orgId))
-                    throw new ExNoPerm("Organization mismatch.");
+        User callerUser = _userManagement.getUser(_sessionUser.getUser());
+        User subjectUser = _userManagement.getUser(userEmail);
 
-                // Verify caller's authorization level dominates the subject's
-                if (callerUser._level != AuthorizationLevel.ADMIN)
-                    throw new ExNoPerm(callerUser +
-                            " cannot change authorization of " + subjectUser);
+        // Verify caller and subject's organization match
+        if (!callerUser._orgId.equals(subjectUser._orgId))
+            throw new ExNoPerm("Organization mismatch.");
 
-                if (callerUser._id.equals(subjectUser._id)) {
-                    throw new ExNoPerm(callerUser +
-                            " : cannot change authorization level for yourself");
-                }
+        // Verify caller's authorization level dominates the subject's
+        if (callerUser._level != AuthorizationLevel.ADMIN) throw new ExNoPerm(callerUser +
+                " cannot change authorization of " + subjectUser);
 
-                AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
+        if (callerUser._id.equals(subjectUser._id)) {
+            throw new ExNoPerm(callerUser +
+                    " : cannot change authorization level for yourself");
+        }
 
-                // Verify caller's authorization level dominates or matches the new level
-                if (!callerUser._level.covers(newAuth))
-                    throw new ExNoPerm(callerUser + " cannot change authorization to " + authLevel);
+        AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
-                _userManagement.setAuthorizationLevel(subjectUser._id, newAuth);
-                trans.commit_();
-                return createVoidReply();
-            }
-        };
-        return trans.run_();
+        // Verify caller's authorization level dominates or matches the new level
+        if (!callerUser._level.covers(newAuth))
+            throw new ExNoPerm(callerUser + " cannot change authorization to " + authLevel);
+
+        _userManagement.setAuthorizationLevel(subjectUser._id, newAuth);
+
+        _transaction.commit();
+
+        return createVoidReply();
     }
 
     @Override
@@ -282,51 +302,37 @@ class SPService implements ISPService
             final @Nullable SignUpCall newAdminAccount)
             throws Exception
     {
-        AbstractDatabaseTransaction<ListenableFuture<Void>> trans =
-                new AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
-            {
-                @Override
-                protected ListenableFuture<Void> impl_(AbstractDatabase db,
-                        AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
-                        throws Exception
-                {
-                    // TODO: verify the calling user is allowed to create an organization
-                    // (check with the payment system)
+        _transaction.begin();
 
-                    // FIXME: this only works because of the way transactions are currently
-                    // implemented. Because UserManagement and OrganizationManagement both
-                    // reference the same instance of SPDatabase used here (_db), the transaction
-                    // works, but this will likely not stay this way in the future when the way
-                    // we implement transactions is changed.
-                    _organizationManagement.addOrganization(orgId, orgName, shareExternal,
-                            allowedDomain);
+        // TODO: verify the calling user is allowed to create an organization
+        // (check with the payment system)
 
-                    if (newAdminAccount != null && newAdminAccount.isInitialized()) {
-                        ListenableFuture<Void> result = signUp(newAdminAccount.getUserId(),
-                                newAdminAccount.getCredentials(), newAdminAccount.getFirstName(),
-                                newAdminAccount.getLastName(), newAdminAccount.getOrganizationId());
-                        result.get(); // Wait until user account is made before continuing
-                        _userManagement.setAuthorizationLevel(newAdminAccount.getUserId(),
-                                AuthorizationLevel.ADMIN);
-                    } else {
-                        String callerUser = _sessionUser.getUser();
-                        _organizationManagement.moveUserToOrganization(callerUser, orgId);
-                        _userManagement.setAuthorizationLevel(callerUser, AuthorizationLevel.ADMIN);
-                    }
+        _organizationManagement.addOrganization(orgId, orgName, shareExternal, allowedDomain);
 
-                    trans.commit_();
+        if (newAdminAccount != null && newAdminAccount.isInitialized()) {
+            ListenableFuture<Void> result = signUp(newAdminAccount.getUserId(),
+                    newAdminAccount.getCredentials(), newAdminAccount.getFirstName(),
+                    newAdminAccount.getLastName(), newAdminAccount.getOrganizationId());
+            result.get(); // Wait until user account is made before continuing
+            _userManagement.setAuthorizationLevel(newAdminAccount.getUserId(),
+                    AuthorizationLevel.ADMIN);
+        } else {
+            String callerUser = _sessionUser.getUser();
+            _organizationManagement.moveUserToOrganization(callerUser, orgId);
+            _userManagement.setAuthorizationLevel(callerUser, AuthorizationLevel.ADMIN);
+        }
 
-                    return createVoidReply();
-                }
-            };
+        _transaction.commit();
 
-        return trans.run_();
+        return createVoidReply();
     }
 
     @Override
     public ListenableFuture<GetOrgPreferencesReply> getOrgPreferences()
         throws Exception
     {
+        _transaction.begin();
+
         User user = _userManagement.getUser(_sessionUser.getUser());
         user.verifyIsAdmin();
 
@@ -339,6 +345,8 @@ class SPService implements ISPService
                 .setOrgName(org._name)
                 .build();
 
+        _transaction.commit();
+
         return createReply(orgPreferences);
     }
 
@@ -347,11 +355,15 @@ class SPService implements ISPService
             @Nullable Boolean orgAllowOpenSharing, @Nullable String orgAllowedDomain)
             throws Exception
     {
+        _transaction.begin();
+
         User user = _userManagement.getUser(_sessionUser.getUser());
         user.verifyIsAdmin();
 
         _organizationManagement.setOrganizationPreferences(user._orgId, orgName, orgAllowedDomain,
                 orgAllowOpenSharing);
+
+        _transaction.commit();
 
         return createVoidReply();
     }
@@ -360,8 +372,12 @@ class SPService implements ISPService
     public ListenableFuture<Void> emailUser(String subject, String body)
             throws Exception
     {
+        _transaction.begin();
+
         SVClient.sendEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME, _sessionUser.getUser(), null, subject,
                 body, null, true,null);
+
+        _transaction.commit();
 
         return createVoidReply();
     }
@@ -370,9 +386,13 @@ class SPService implements ISPService
     public ListenableFuture<GetHeartInvitesQuotaReply> getHeartInvitesQuota()
             throws Exception
     {
+        _transaction.begin();
+
         GetHeartInvitesQuotaReply reply = GetHeartInvitesQuotaReply.newBuilder()
                 .setCount(_db.getFolderlessInvitesQuota(_sessionUser.getUser()))
                 .build();
+
+        _transaction.commit();
 
         return createReply(reply);
     }
@@ -382,61 +402,48 @@ class SPService implements ISPService
             final ByteString csrBytes, final Boolean recertify)
             throws Exception
     {
-        AbstractDatabaseTransaction<ListenableFuture<CertifyDeviceReply>> trans = new
-                AbstractDatabaseTransaction<ListenableFuture<CertifyDeviceReply>>(_db)
-        {
-            @Override
-            protected ListenableFuture<CertifyDeviceReply> impl_(AbstractDatabase db,
-                    AbstractDatabaseTransaction<ListenableFuture<CertifyDeviceReply>> trans)
-                    throws Exception
-            {
-                SPDatabase spdb = (SPDatabase) db;
+        _transaction.begin();
 
-                // FIXME: make the session user get() method normalize the result by default.
-                String user = User.normalizeUserId(_sessionUser.getUser());
-                DID did = new DID(deviceId);
+        // FIXME: make the session user get() method normalize the result by default.
+        String user = User.normalizeUserId(_sessionUser.getUser());
+        DID did = new DID(deviceId);
 
-                // Test the device id's availability/validity
-                if (recertify) {
-                    DeviceRow dr = spdb.getDevice(did);
-                    if (dr == null) {
-                        throw new ExNotFound("Recertify a non-existing device: " + did);
-                    } else if (!dr.getOwnerID().equals(user)) {
-                        throw new ExNoPerm("Recertify a device by a different owner: " +
-                                user + " != " + dr.getOwnerID());
-                    }
-                } else {
-                    spdb.addDevice(new DeviceRow(did, UNKNOWN_NAME, user));
-                }
-
-                // Verify the device ID and user ID matches what is specified in CSR.
-                PKCS10 csr = new PKCS10(csrBytes.toByteArray());
-                String cname = csr.getSubjectName().getCommonName();
-
-                if (!cname.equals(SecUtil.getCertificateCName(user, did))) {
-                    throw new ExBadArgs("cname doesn't match: hash(" + user +
-                            " + " + did.toStringFormal() + ") != " + cname);
-                }
-
-                Certificate cert = _certificateGenerator.createCertificate(user, did, csr);
-                CertifyDeviceReply reply = CertifyDeviceReply.newBuilder()
-                        .setCert(cert.toString())
-                        .build();
-
-                // Create the required entry in the certificate table. If this operation fails then
-                // the CA will still have a record of the certificate, but we will not return it.
-                // This is okay, since the DRL (device revocation list) is maintained by the SP and
-                // not the CA anyway.
-                spdb.addCertificate(cert.getSerial(), did, cert.getExpireTs());
-                l.info("created certificate for " + did.toStringFormal() + " with serial " +
-                        cert.getSerial() + " (expires on " + cert.getExpireTs().toString() + ")");
-
-                trans.commit_();
-                return createReply(reply);
+        // Test the device id's availability/validity
+        if (recertify) {
+            DeviceRow dr = _db.getDevice(did);
+            if (dr == null) {
+                throw new ExNotFound("Recertify a non-existing device: " + did);
+            } else if (!dr.getOwnerID().equals(user)) {
+                throw new ExNoPerm("Recertify a device by a different owner: " +
+                        user + " != " + dr.getOwnerID());
             }
-        };
+        } else {
+            _db.addDevice(new DeviceRow(did, UNKNOWN_NAME, user));
+        }
 
-        return trans.run_();
+        // Verify the device ID and user ID matches what is specified in CSR.
+        PKCS10 csr = new PKCS10(csrBytes.toByteArray());
+        String cname = csr.getSubjectName().getCommonName();
+
+        if (!cname.equals(SecUtil.getCertificateCName(user, did))) {
+            throw new ExBadArgs("cname doesn't match: hash(" + user +
+                    " + " + did.toStringFormal() + ") != " + cname);
+        }
+
+        Certificate cert = _certificateGenerator.createCertificate(user, did, csr);
+        CertifyDeviceReply reply = CertifyDeviceReply.newBuilder().setCert(cert.toString()).build();
+
+        // Create the required entry in the certificate table. If this operation fails then
+        // the CA will still have a record of the certificate, but we will not return it.
+        // This is okay, since the DRL (device revocation list) is maintained by the SP and
+        // not the CA anyway.
+        _db.addCertificate(cert.getSerial(), did, cert.getExpireTs());
+        l.info("created certificate for " + did.toStringFormal() + " with serial " +
+                cert.getSerial() + " (expires on " + cert.getExpireTs().toString() + ")");
+
+        _transaction.commit();
+
+        return createReply(reply);
     }
 
     @Override
@@ -444,8 +451,12 @@ class SPService implements ISPService
             List<String> emailAddresses, String note)
             throws Exception
     {
+        _transaction.begin();
+
         _sharedFolderManagement.shareFolder(folderName, new SID(shareId),
                 _sessionUser.getUser(), emailAddresses, note);
+
+        _transaction.commit();
 
         return createVoidReply();
     }
@@ -454,6 +465,8 @@ class SPService implements ISPService
     public ListenableFuture<ResolveSharedFolderCodeReply> resolveSharedFolderCode(String code)
             throws Exception
     {
+        _transaction.begin();
+
         l.info("shared folder code: " + code);
         User u = _userManagement.getUser(_sessionUser.getUser());
 
@@ -473,6 +486,8 @@ class SPService implements ISPService
             // Because the folder code is valid and was received by email, the user is verified.
             _db.markUserVerified(u._id);
 
+            _transaction.commit();
+
             return createReply(reply);
         } else {
             throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
@@ -483,6 +498,8 @@ class SPService implements ISPService
     public ListenableFuture<ListPendingFolderInvitationsReply> listPendingFolderInvitations()
             throws Exception
     {
+        _transaction.begin();
+
         User u = _userManagement.getUser(_sessionUser.getUser());
 
         List<PBFolderInvitation> invitations = _db.listPendingFolderInvitations(u._id);
@@ -491,6 +508,8 @@ class SPService implements ISPService
         if (!invitations.isEmpty() && !u._isVerified) {
             throw new ExNoPerm("email address not verified");
         }
+
+        _transaction.commit();
 
         return createReply(ListPendingFolderInvitationsReply.newBuilder()
                 .addAllInvitations(invitations)
@@ -501,9 +520,14 @@ class SPService implements ISPService
     public ListenableFuture<Void> verifyBatchSignUpCode(String bsc)
             throws Exception
     {
+        _transaction.begin();
+
         if (!_db.isValidBatchSignUp(bsc)) {
             throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
         }
+
+        _transaction.commit();
+
         return createVoidReply();
     }
 
@@ -526,7 +550,11 @@ class SPService implements ISPService
             resolveTargetedSignUpCode(String tsc) throws Exception
     {
         l.info("tsc: " + tsc);
+
+        _transaction.begin();
         ResolveTargetedSignUpCodeReply reply = _db.getTargetedSignUp(tsc);
+        _transaction.commit();
+
         if (reply != null) {
             return createReply(reply);
         } else {
@@ -539,6 +567,8 @@ class SPService implements ISPService
             Boolean inviteToDefaultOrg)
             throws Exception
     {
+        _transaction.begin();
+
         User user = _userManagement.getUser(_sessionUser.getUser());
 
         // check and set storeless invite quota
@@ -557,6 +587,8 @@ class SPService implements ISPService
             _userManagement.inviteOneUser(user, invitee, org, null, null);
         }
 
+        _transaction.commit();
+
         return createVoidReply();
     }
 
@@ -564,7 +596,9 @@ class SPService implements ISPService
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
             throws Exception
     {
+        _transaction.begin();
         ACLReturn result = _db.getACL(epoch, _sessionUser.getUser());
+        _transaction.commit(); // commit right away to avoid holding read locks
 
         // this means that no acl changes have occurred
         if (result.getEpoch() == epoch) {
@@ -605,48 +639,38 @@ class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
         //
 
-        AbstractDatabaseTransaction<ListenableFuture<Void>> trans =
-                new AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
-        {
-            @Override
-            protected ListenableFuture<Void> impl_(AbstractDatabase db,
-                    AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
-                    throws Exception
-            {
-                SPDatabase spdb = (SPDatabase) db;
-                String user = _sessionUser.getUser();
+        _transaction.begin();
 
-                l.info("user:" + user + " attempt set acl for subjects:" + subjectRoleList.size());
+        String user = _sessionUser.getUser();
 
-                assert subjectRoleList.size() > 0;
+        l.info("user:" + user + " attempt set acl for subjects:" + subjectRoleList.size());
 
-                // convert the pb message into the appropriate format to make the db call
+        assert subjectRoleList.size() > 0;
 
-                SID sid = new SID(storeId);
-                List<SubjectRolePair> pairs = Lists.newArrayListWithCapacity(
-                        subjectRoleList.size());
-                for (PBSubjectRolePair pbPair : subjectRoleList) {
-                    SubjectRolePair pair = new SubjectRolePair(pbPair);
-                    pairs.add(pair);
+        // convert the pb message into the appropriate format to make the db call
 
-                    l.info("add role for s:" + sid + " j:" + pair._subject + " r:" + pair._role);
-                }
+        SID sid = new SID(storeId);
+        List<SubjectRolePair> pairs = Lists.newArrayListWithCapacity(subjectRoleList.size());
+        for (PBSubjectRolePair pbPair : subjectRoleList) {
+            SubjectRolePair pair = new SubjectRolePair(pbPair);
+            pairs.add(pair);
 
-                // make the db call and publish the result via verkehr
+            l.info("add role for s:" + sid + " j:" + pair._subject + " r:" + pair._role);
+        }
 
-                // add a db entry for the shared folder if it isn't yet initialized
-                spdb.addSharedFolder(sid);
+        // make the db call and publish the result via verkehr
 
-                Map<String, Long> updatedEpochs = spdb.setACL(user, sid, pairs);
-                publish_(updatedEpochs);
-                l.info(user + " completed set acl for s:" + sid);
-                trans.commit_(); // after publishing, committing is considered done
+        // add a db entry for the shared folder if it isn't yet initialized
+        _db.addSharedFolder(sid);
 
-                return createVoidReply();
-            }
-        };
+        Map<String, Long> updatedEpochs = _db.setACL(user, sid, pairs);
+        publish_(updatedEpochs);
+        l.info(user + " completed set acl for s:" + sid);
 
-        return trans.run_();
+        // after publishing, committing is considered done
+        _transaction.commit();
+
+        return createVoidReply();
     }
 
     @Override
@@ -660,43 +684,34 @@ class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
         //
 
-        AbstractDatabaseTransaction<ListenableFuture<Void>> trans =
-                new AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
-        {
-            @Override
-            protected ListenableFuture<Void> impl_(AbstractDatabase db,
-                    AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
-                    throws Exception
-            {
-                SPDatabase spdb = (SPDatabase) db;
-                String user = _sessionUser.getUser();
-                l.info("user:" + user + " attempt set acl for subjects:" + subjectList.size());
+        _transaction.begin();
 
-                assert subjectList.size() > 0;
+        String user = _sessionUser.getUser();
+        l.info("user:" + user + " attempt set acl for subjects:" + subjectList.size());
 
-                // convert the pb message into the appropriate format to make the db call
+        assert subjectList.size() > 0;
 
-                SID sid = new SID(storeId.toByteArray());
-                Set<String> subjects = new HashSet<String>(subjectList.size());
-                for (String subject : subjectList) {
-                    boolean added = subjects.add(subject);
-                    assert added;
+        // convert the pb message into the appropriate format to make the db call
 
-                    l.info("delete role for s:" + sid + " j:" + subject);
-                }
+        SID sid = new SID(storeId.toByteArray());
+        Set<String> subjects = new HashSet<String>(subjectList.size());
+        for (String subject : subjectList) {
+            boolean added = subjects.add(subject);
+            assert added;
 
-                // make the db call and publish the result via verkehr
+            l.info("delete role for s:" + sid + " j:" + subject);
+        }
 
-                Map<String, Long> updatedEpochs = spdb.deleteACL(user, sid, subjects);
-                publish_(updatedEpochs);
-                l.info(user + " completed delete acl for s:" + sid);
-                trans.commit_(); // once publishing succeeds we consider ourselves done
+        // make the db call and publish the result via verkehr
 
-                return createVoidReply();
-            }
-        };
+        Map<String, Long> updatedEpochs = _db.deleteACL(user, sid, subjects);
+        publish_(updatedEpochs);
+        l.info(user + " completed delete acl for s:" + sid);
 
-        return trans.run_();
+        // once publishing succeeds we consider ourselves done
+        _transaction.commit();
+
+        return createVoidReply();
     }
 
     /**
@@ -758,6 +773,8 @@ class SPService implements ISPService
     public ListenableFuture<SignInReply> signIn(String userId, ByteString credentials)
             throws IOException, SQLException, ExBadCredential
     {
+        _transaction.begin();
+
         User user;
         try {
             user = _userManagement.getUser(userId);
@@ -780,6 +797,8 @@ class SPService implements ISPService
             throw new ExBadCredential(S.BAD_CREDENTIAL);
         }
 
+        _transaction.commit();
+
         SignInReply reply = SignInReply.newBuilder()
                 .setAuthLevel(user._level.toPB())
                 .build();
@@ -796,6 +815,9 @@ class SPService implements ISPService
         }
     }
 
+    /**
+     * Only call this within the context of another transaction!!
+     */
     private void signUpCommon(String userId, ByteString credentials, String firstName,
             String lastName, String orgId)
             throws ExAlreadyExist, SQLException, IOException
@@ -822,7 +844,7 @@ class SPService implements ISPService
         // the signup_code table
         // TODO write a test to verify that after one successful signup,
         // other codes fail/do not exist
-        _db.addUser(user, true);
+        _db.addUser(user);
     }
 
     @Override
@@ -830,7 +852,7 @@ class SPService implements ISPService
             String lastName, String orgId)
             throws ExNotFound, SQLException, ExNoPerm, ExAlreadyExist, IOException
     {
-        // FIXME: ideally, all of this has to be in the same DB transaction
+        _transaction.begin();
 
         Organization org = _db.getOrganization(orgId);
         if (!org.domainMatches(userId)) {
@@ -838,6 +860,8 @@ class SPService implements ISPService
         }
 
         signUpCommon(userId, credentials, firstName, lastName, orgId);
+
+        _transaction.commit();
 
         return createVoidReply();
     }
@@ -847,7 +871,7 @@ class SPService implements ISPService
             ByteString credentials, String firstName, String lastName)
             throws SQLException, ExNotFound, ExAlreadyExist, IOException
     {
-        // FIXME: ideally, all of this has to be in the same DB transaction
+        _transaction.begin();
 
         String orgId = _db.checkBatchSignUpAndGetOrg(batchSignUpCode);
         if (orgId == null) {
@@ -856,6 +880,8 @@ class SPService implements ISPService
 
         signUpCommon(userId, credentials, firstName, lastName, orgId);
 
+        _transaction.commit();
+
         return createVoidReply();
     }
 
@@ -863,7 +889,10 @@ class SPService implements ISPService
     public ListenableFuture<Void> sendPasswordResetEmail(String user_email)
             throws Exception
     {
+        _transaction.begin();
         _userManagement.sendPasswordResetEmail(user_email);
+        _transaction.commit();
+
         return createVoidReply();
     }
 
@@ -872,7 +901,10 @@ class SPService implements ISPService
             ByteString new_credentials)
         throws Exception
     {
+        _transaction.begin();
         _userManagement.resetPassword(password_reset_token,new_credentials);
+        _transaction.commit();
+
         return createVoidReply();
     }
 
@@ -881,7 +913,10 @@ class SPService implements ISPService
             ByteString new_credentials)
             throws Exception
     {
+        _transaction.begin();
         _userManagement.changePassword(_sessionUser.getUser(),old_credentials,new_credentials);
+        _transaction.commit();
+
         return createVoidReply();
     }
     @Override
@@ -889,8 +924,9 @@ class SPService implements ISPService
             String firstName, String lastName)
             throws SQLException, ExAlreadyExist, IOException, ExNotFound
     {
-        // FIXME: ideally, all of this has to be in the same DB transaction
         l.info("targeted sign-up: " + targetedInvite);
+
+        _transaction.begin();
 
         // Verify the sign up code is legitimate (i.e. found in the DB)
         ResolveTargetedSignUpCodeReply invitation = _db.getTargetedSignUp(targetedInvite);
@@ -906,6 +942,8 @@ class SPService implements ISPService
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified
         _db.markUserVerified(userId);
+
+        _transaction.commit();
 
         return createVoidReply();
     }
@@ -929,7 +967,10 @@ class SPService implements ISPService
         throws Exception
     {
         ImmutableList<Long> crl;
+
+        _transaction.begin();
         crl = _db.getCRL();
+        _transaction.commit();
 
         GetCRLReply reply = GetCRLReply.newBuilder()
                 .addAllSerial(crl)
@@ -942,71 +983,50 @@ class SPService implements ISPService
     public ListenableFuture<Void> revokeDeviceCertificate(final ByteString deviceId)
         throws Exception
     {
-        AbstractDatabaseTransaction<ListenableFuture<Void>> trans = new
-                AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
-        {
-            // FIXME: remove the trans parameter and have it commit by itself.
-            @Override
-            protected ListenableFuture<Void> impl_(AbstractDatabase db,
-                    AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
-                    throws Exception
-            {
-                SPDatabase spdb = (SPDatabase) db;
-                String user = User.normalizeUserId(_sessionUser.getUser());
-                DID did = new DID(deviceId);
+        _transaction.begin();
 
-                DeviceRow dr = spdb.getDevice(did);
-                if (dr == null) {
-                    throw new ExNotFound("Cannot revoke cert for non-existing device: " + did);
-                } else if (!dr.getOwnerID().equals(user)) {
-                    throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
-                            user + " != " + dr.getOwnerID());
-                }
+        String user = User.normalizeUserId(_sessionUser.getUser());
+        DID did = new DID(deviceId);
 
-                ImmutableList<Long> serials = spdb.revokeDeviceCertificate(did);
+        DeviceRow dr = _db.getDevice(did);
+        if (dr == null) {
+            throw new ExNotFound("Cannot revoke cert for non-existing device: " + did);
+        } else if (!dr.getOwnerID().equals(user)) {
+            throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
+                    user + " != " + dr.getOwnerID());
+        }
 
-                // Push revoked serials to verkehr.
-                updateCRL_(serials);
+        ImmutableList<Long> serials = _db.revokeDeviceCertificate(did);
 
-                // TODO (MP) update security epochs using serial list.
-                // TODO (MP) publish updated epochs to verkehr.
+        // Push revoked serials to verkehr.
+        updateCRL_(serials);
 
-                trans.commit_();
-                return createVoidReply();
-            }
-        };
+        // TODO (MP) update security epochs using serial list.
+        // TODO (MP) publish updated epochs to verkehr.
 
-        return trans.run_();
+        _transaction.commit();
+
+        return createVoidReply();
     }
 
     @Override
     public ListenableFuture<Void> revokeUserCertificates()
         throws Exception
     {
-        AbstractDatabaseTransaction<ListenableFuture<Void>> trans = new
-                AbstractDatabaseTransaction<ListenableFuture<Void>>(_db)
-        {
-            @Override
-            protected ListenableFuture<Void> impl_(AbstractDatabase db,
-                    AbstractDatabaseTransaction<ListenableFuture<Void>> trans)
-                    throws Exception
-            {
-                SPDatabase spdb = (SPDatabase) db;
-                String user = User.normalizeUserId(_sessionUser.getUser());
-                ImmutableList<Long> serials = spdb.revokeUserCertificates(user);
+        _transaction.begin();
 
-                // Push revoked serials to verkehr.
-                updateCRL_(serials);
+        String user = User.normalizeUserId(_sessionUser.getUser());
+        ImmutableList<Long> serials = _db.revokeUserCertificates(user);
 
-                // TODO (MP) update security epochs using serial list.
-                // TODO (MP) publish updated epochs to verkehr.
+        // Push revoked serials to verkehr.
+        updateCRL_(serials);
 
-                trans.commit_();
-                return createVoidReply();
-            }
-        };
+        // TODO (MP) update security epochs using serial list.
+        // TODO (MP) publish updated epochs to verkehr.
 
-        return trans.run_();
+        _transaction.commit();
+
+        return createVoidReply();
     }
 
     private static PBDeviceInfo _emptyDeviceInfo = PBDeviceInfo.newBuilder().build();
@@ -1021,6 +1041,8 @@ class SPService implements ISPService
     @Override
     public ListenableFuture<GetDeviceInfoReply> getDeviceInfo(List<ByteString> dids) throws Exception
     {
+        _transaction.begin();
+
         String user = User.normalizeUserId(_sessionUser.getUser());
         Set<String> sharedUsers = _db.getSharedUsersSet(user);
 
@@ -1036,6 +1058,8 @@ class SPService implements ISPService
                 builder.addDeviceInfo(_emptyDeviceInfo);
             }
         }
+
+        _transaction.commit();
 
         return createReply(builder.build());
     }

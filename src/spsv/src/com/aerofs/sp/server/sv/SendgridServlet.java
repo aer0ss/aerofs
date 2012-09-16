@@ -16,23 +16,22 @@ import javax.servlet.http.HttpServletResponse;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Events;
-import com.aerofs.servletlib.db.DatabaseConnectionFactory;
+import com.aerofs.servletlib.db.PooledConnectionFactory;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.servletlib.sv.SVDatabase;
 import com.aerofs.sp.server.AeroServlet;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import static com.aerofs.servletlib.sv.SVParam.MYSQL_ENDPOINT_INIT_PARAMETER;
-import static com.aerofs.servletlib.sv.SVParam.MYSQL_PASSWORD_INIT_PARAMETER;
-import static com.aerofs.servletlib.sv.SVParam.MYSQL_SV_SCHEMA_INIT_PARAMETER;
-import static com.aerofs.servletlib.sv.SVParam.MYSQL_USER_INIT_PARAMETER;
+import static com.aerofs.servletlib.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
 
 public class SendgridServlet extends AeroServlet {
 
     private static final Logger l = Util.l(SendgridServlet.class);
-    private final DatabaseConnectionFactory _dbFactory = new DatabaseConnectionFactory();
-    private final SVDatabase _db = new SVDatabase(_dbFactory);
+    private final PooledConnectionFactory _dbFactory = new PooledConnectionFactory();
+    private final ThreadLocalTransaction _transaction = new ThreadLocalTransaction(_dbFactory);
+    private final SVDatabase _db = new SVDatabase(_transaction);
     private static final long serialVersionUID = 1L;
 
     @Override
@@ -52,14 +51,9 @@ public class SendgridServlet extends AeroServlet {
     private void initdb_()
             throws SQLException, ClassNotFoundException
     {
-        String dbEndpoint = getServletContext().getInitParameter(MYSQL_ENDPOINT_INIT_PARAMETER);
-        String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
-        String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
-        String dbSchema = getServletContext().getInitParameter(MYSQL_SV_SCHEMA_INIT_PARAMETER);
+        String context = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);
 
-        // Be sure to initialize the factory before the database is initialized.
-        _dbFactory.init_(dbEndpoint, dbSchema, dbUser, dbPass);
-        _db.init_();
+        _dbFactory.init_(context);
     }
 
     /**
@@ -95,6 +89,7 @@ public class SendgridServlet extends AeroServlet {
 
             resp.setStatus(200);
         } catch (Exception e) {
+            _transaction.handleException();
             l.error("doPost: ", e);
             throw new IOException(e);
         } finally {
@@ -105,6 +100,8 @@ public class SendgridServlet extends AeroServlet {
     private void handleEvent(JSONObject obj)
             throws SQLException
     {
+        _transaction.begin();
+
         assert obj.containsKey("category");
         String category = (String)obj.get("category");
         String email = (String)obj.get("email");
@@ -148,6 +145,8 @@ public class SendgridServlet extends AeroServlet {
         }
 
         _db.addEmailEvent(email, event, reason, category, timestamp);
+
+        _transaction.commit();
     }
 
     private String deferredDesc(JSONObject obj)

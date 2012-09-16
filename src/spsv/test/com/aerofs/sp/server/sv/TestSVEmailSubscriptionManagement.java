@@ -20,15 +20,21 @@ public class TestSVEmailSubscriptionManagement extends AbstractSVReactorTest
 
     @Test
     public void shouldSubscribeUserToAllCategories()
-            throws SQLException {
-        db.subscribeAllEmails(TEST_USER1);
+            throws SQLException
+    {
+        _transaction.begin();
 
+        db.subscribeAllEmails(TEST_USER1);
         assertTrue(db.getEmailSubscriptions(TEST_USER1).equals(EnumSet.allOf(Category.class)));
+
+        _transaction.commit();
     }
 
     @Test
     public void shouldUnsubscribeUserFromOneCategory()
-        throws SQLException {
+        throws SQLException
+    {
+        _transaction.begin();
 
         db.subscribeAllEmails(TEST_USER2);
 
@@ -39,5 +45,7 @@ public class TestSVEmailSubscriptionManagement extends AbstractSVReactorTest
 
         assertTrue(db.getEmailSubscriptions(TEST_USER2).
                         equals(expected));
+
+        _transaction.commit();
     }
 }

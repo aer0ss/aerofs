@@ -43,9 +43,14 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     public void shouldNotCreateCertificateWhenCNameDoesNotMatch()
             throws Exception
     {
-        // Provide the incorrect user.
-        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, "garbage", _did).getEncoded();
-        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
+        // Provide the incorrect user, and clean up after the uncommitted transaction.
+        try {
+            byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, "garbage", _did).getEncoded();
+            service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
+        } catch (Exception e) {
+            _transaction.handleException();
+            throw e;
+        }
     }
 
     /**
@@ -56,8 +61,13 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     public void shouldNotCreateCertificateWhenRecertifyNonExistingDevice()
         throws Exception
     {
-        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
-        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
+        try {
+            byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
+            service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
+        } catch (Exception e) {
+            _transaction.handleException();
+            throw e;
+        }
     }
 
     /**
@@ -89,7 +99,12 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
         assertTrue(cert.equals(RETURNED_CERT));
 
         // Try to recertify using the wrong session user.
-        sessionUser.setUser(TEST_2_USER);
-        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
+        try {
+            sessionUser.setUser(TEST_2_USER);
+            service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
+        } catch (Exception e) {
+            _transaction.handleException();
+            throw e;
+        }
     }
 }

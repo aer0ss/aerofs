@@ -5,9 +5,9 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.proto.Sp.PBUser;
-import com.aerofs.servletlib.db.JUnitDatabaseConnectionFactory;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.servletlib.sp.organization.Organization;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
@@ -15,6 +15,7 @@ import com.aerofs.servletlib.sp.user.User;
 import com.aerofs.sp.server.sp.user.UserManagement;
 import com.aerofs.sp.server.sp.user.UserManagement.UserListAndQueryCount;
 import com.aerofs.testlib.AbstractTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -31,13 +32,14 @@ public class TestListUser extends AbstractTest
     private final int TOTAL_USERS = NUMBER_OF_USERS + NUMBER_OF_ADMINS;
     private final String validOrgId = "test.com";
     private final String invalidOrgId = "notfound.com";
-    // Organization containig users, but will not be queried.
+    // Organization containing users, but will not be queried.
     // We do not expect any of these users to be returned in the queries below.
     private final String nonQueriedOrgId = "dummy.com";
 
     private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
-    @Spy private SPDatabase _spdb
-            = new SPDatabase(new JUnitDatabaseConnectionFactory(_dbParams));
+    @Spy private final ThreadLocalTransaction _transaction =
+            new ThreadLocalTransaction(_dbParams.getProvider());
+    @Spy private SPDatabase _spdb = new SPDatabase(_transaction);
 
     @InjectMocks UserManagement userManagement;
 
@@ -45,8 +47,11 @@ public class TestListUser extends AbstractTest
     public void setup()
         throws Exception
     {
-        new LocalTestDatabaseConfigurator(_dbParams).configure_();
-        _spdb.init_();
+        LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
+
+        // we can manage the transaction at this level because none of the tests are expected to
+        // throw exceptions
+        _transaction.begin();
 
         Organization[] orgs = new Organization[] {
                 new Organization(validOrgId, "test", "", false),
@@ -58,6 +63,13 @@ public class TestListUser extends AbstractTest
         setupUsers();
     }
 
+    @After
+    public void tearDown()
+        throws Exception
+    {
+        _transaction.commit();
+    }
+
     private void setupUsers()
             throws Exception
     {
@@ -65,20 +77,20 @@ public class TestListUser extends AbstractTest
             User user = new User("user"+i+"@test.com", "", "", "".getBytes(),
                     true, false, validOrgId, AuthorizationLevel.USER);
 
-            _spdb.addUser(user, true);
+            _spdb.addUser(user);
         }
 
         for (int i=0; i < NUMBER_OF_ADMINS; i++) {
             User admin = new User("admin"+i+"@test.com", "", "", "".getBytes(),
                     true, false, validOrgId, AuthorizationLevel.ADMIN);
 
-            _spdb.addUser(admin, true);
+            _spdb.addUser(admin);
         }
 
         for (int i=0; i < NUMBER_OF_USERS; i++) {
             User user = new User("user"+i+"@dummy.com", "", "", "".getBytes(),
                     true, false, nonQueriedOrgId, AuthorizationLevel.USER);
-            _spdb.addUser(user, true);
+            _spdb.addUser(user);
         }
     }
 

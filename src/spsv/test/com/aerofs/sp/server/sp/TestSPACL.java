@@ -234,9 +234,14 @@ public class TestSPACL extends AbstractSPUserBasedTest
         service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_2_NAME, Role.EDITOR)).get();
 
         // get the editor to try and make some role changes
-
-        sessionUser.setUser(TEST_USER_2_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_4_NAME, Role.EDITOR)).get();
+        try {
+            sessionUser.setUser(TEST_USER_2_NAME);
+            service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_4_NAME, Role.EDITOR)).get();
+        } catch (Exception e) {
+            // make sure we clean up after uncommitted transaction(s)
+            _transaction.handleException();
+            throw e;
+        }
     }
 
     @Test
@@ -351,9 +356,13 @@ public class TestSPACL extends AbstractSPUserBasedTest
         service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_2_NAME, Role.EDITOR)).get();
 
         // get the editor to try to delete the owner
-
-        sessionUser.setUser(TEST_USER_2_NAME);
-        service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1_NAME)).get();
+        try {
+            sessionUser.setUser(TEST_USER_2_NAME);
+            service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1_NAME)).get();
+        } catch (Exception e) {
+            _transaction.handleException();
+            throw e;
+        }
     }
 
     @Test

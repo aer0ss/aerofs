@@ -7,7 +7,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 
-import com.aerofs.servletlib.db.DatabaseConnectionFactory;
+import com.aerofs.servletlib.db.PooledConnectionFactory;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.servletlib.sv.SVDatabase;
 import static com.aerofs.servletlib.sv.SVParam.*;
 import org.apache.log4j.Logger;
@@ -23,9 +24,10 @@ public class SVServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final DatabaseConnectionFactory _dbFactory = new DatabaseConnectionFactory();
-    private final SVDatabase _db = new SVDatabase(_dbFactory);
-    private final SVReactor _reactor = new SVReactor(_db);
+    private final PooledConnectionFactory _dbFactory = new PooledConnectionFactory();
+    private final ThreadLocalTransaction _transaction = new ThreadLocalTransaction(_dbFactory);
+    private final SVDatabase _db = new SVDatabase(_transaction);
+    private final SVReactor _reactor = new SVReactor(_db, _transaction);
 
     @Override
     public void init(ServletConfig config) throws ServletException
@@ -45,14 +47,9 @@ public class SVServlet extends AeroServlet
     private void initdb_()
             throws SQLException, ClassNotFoundException
     {
-        String dbEndpoint = getServletContext().getInitParameter(MYSQL_ENDPOINT_INIT_PARAMETER);
-        String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
-        String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
-        String dbSchema = getServletContext().getInitParameter(MYSQL_SV_SCHEMA_INIT_PARAMETER);
+        String svdbRef = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);
 
-        // Be sure to initialize the factory before the database is initialized.
-        _dbFactory.init_(dbEndpoint, dbSchema, dbUser, dbPass);
-        _db.init_();
+        _dbFactory.init_(svdbRef);
     }
 
     @Override
@@ -71,11 +68,14 @@ public class SVServlet extends AeroServlet
             resp.setContentLength(bs.length);
             resp.getOutputStream().write(bs);
 
+            _transaction.cleanUp();
         } catch (IOException e) {
             l.error("doPost: ", e);
+            _transaction.handleException();
             throw e;
         } catch (Throwable e) {
             l.error("doPost: ", e);
+            _transaction.handleException();
             throw new IOException(e);
         }
     }

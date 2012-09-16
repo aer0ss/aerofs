@@ -6,7 +6,8 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.SPServiceReactor;
-import com.aerofs.servletlib.db.DatabaseConnectionFactory;
+import com.aerofs.servletlib.db.PooledConnectionFactory;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.sp.server.AeroServlet;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
@@ -22,18 +23,15 @@ import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import javax.mail.MessagingException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
+
+import static com.aerofs.servletlib.sp.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
-import static com.aerofs.servletlib.sp.SPParam.MYSQL_ENDPOINT_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.MYSQL_PASSWORD_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.MYSQL_SP_SCHEMA_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.MYSQL_USER_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 
@@ -43,8 +41,10 @@ public class SPServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final DatabaseConnectionFactory _dbFactory = new DatabaseConnectionFactory();
-    private final SPDatabase _db = new SPDatabase(_dbFactory);
+    private final PooledConnectionFactory _conFactory = new PooledConnectionFactory();
+    private final ThreadLocalTransaction _spTrans = new ThreadLocalTransaction(_conFactory);
+    private final SPDatabase _db = new SPDatabase(_spTrans);
+
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
 
     private final InvitationEmailer _emailer = new InvitationEmailer();
@@ -59,7 +59,7 @@ public class SPServlet extends AeroServlet
 
     private final CertificateGenerator _certificateGenerator = new CertificateGenerator();
 
-    private final SPService _service = new SPService(_db, _sessionUser, _userManagement,
+    private final SPService _service = new SPService(_db, _spTrans, _sessionUser, _userManagement,
             _organizationManagement, _sharedFolderManagement, _certificateGenerator);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
@@ -75,25 +75,7 @@ public class SPServlet extends AeroServlet
         _certificateGenerator.setCAURL_(getServletContext().getInitParameter("ca_url"));
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrCommander());
 
-        try {
-            initdb_();
-        } catch (Exception e) {
-            l.error("init db:", e);
-            throw new ServletException(e);
-        }
-    }
-
-    private void initdb_()
-            throws SQLException, ClassNotFoundException
-    {
-        String dbEndpoint = getServletContext().getInitParameter(MYSQL_ENDPOINT_INIT_PARAMETER);
-        String dbUser = getServletContext().getInitParameter(MYSQL_USER_INIT_PARAMETER);
-        String dbPass = getServletContext().getInitParameter(MYSQL_PASSWORD_INIT_PARAMETER);
-        String dbSchema = getServletContext().getInitParameter(MYSQL_SP_SCHEMA_INIT_PARAMETER);
-
-        // Be sure to initialize the factory before the database is initialized.
-        _dbFactory.init_(dbEndpoint, dbSchema, dbUser, dbPass);
-        _db.init_();
+        _conFactory.init_(getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER));
     }
 
     private VerkehrCommander getVerkehrCommander()
@@ -127,6 +109,7 @@ public class SPServlet extends AeroServlet
         byte [] bytes;
         try {
             bytes = _reactor.react(decodedMessage).get();
+            _spTrans.cleanUp();
         } catch (Exception e) {
             l.warn("exception in reactor: " + Util.e(e));
             throw new IOException(e.getCause());
@@ -205,7 +188,7 @@ public class SPServlet extends AeroServlet
      * @param fromPerson inviter's name
      */
     private void inviteFromScript(@Nonnull String fromPerson, @Nonnull String to)
-            throws ExAlreadyExist, SQLException, IOException, MessagingException, Exception
+            throws Exception
     {
         to = to.toLowerCase();
         String orgId = C.DEFAULT_ORGANIZATION;
@@ -228,11 +211,21 @@ public class SPServlet extends AeroServlet
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
         throws IOException
     {
-        if ("love".equals(req.getParameter("aerofs"))) {
-            handleTargetedInvite(req, rsp);
-        } else if ("lotsoflove".equals(req.getParameter("aerofs"))) {
-            // not just love - LOTSOFLOVE!
-            handleBatchInvite(req, rsp);
+        try {
+            _spTrans.begin();
+            if ("love".equals(req.getParameter("aerofs"))) {
+                handleTargetedInvite(req, rsp);
+            } else if ("lotsoflove".equals(req.getParameter("aerofs"))) {
+                // not just love - LOTSOFLOVE!
+                handleBatchInvite(req, rsp);
+            }
+            _spTrans.commit();
+        } catch (SQLException e) {
+            _spTrans.handleException();
+            throw new IOException(e);
+        } catch (IOException e) {
+            _spTrans.handleException();
+            throw e;
         }
     }
 }

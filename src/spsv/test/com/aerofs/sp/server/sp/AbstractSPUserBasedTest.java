@@ -40,8 +40,6 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
     public void setupAbstractSPUserBasedTest()
             throws Exception
     {
-        Log.info("Setting up sp database");
-        db.init_();
         Log.info("Add a few users to the database");
 
         final boolean finalized = true;
@@ -50,11 +48,13 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
         AuthorizationLevel level = AuthorizationLevel.USER;
 
         // Add all the users to the db.
+        _transaction.begin();
         db.addUser(new User(TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_CRED,
-                finalized, verified, orgId, level), true);
+                finalized, verified, orgId, level));
         db.addUser(new User(TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_CRED,
-                finalized, verified, orgId, level), true);
+                finalized, verified, orgId, level));
         db.addUser(new User(TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_CRED,
-                finalized, verified, orgId, level), true);
+                finalized, verified, orgId, level));
+        _transaction.commit();
     }
 }

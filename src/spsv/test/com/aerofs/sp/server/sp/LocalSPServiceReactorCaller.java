@@ -12,9 +12,9 @@ import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.aerofs.servletlib.MockSessionUserID;
-import com.aerofs.servletlib.db.JUnitDatabaseConnectionFactory;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.sp.cert.CertificateGenerator;
@@ -42,7 +42,9 @@ import static org.mockito.Mockito.mock;
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
     private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
-    private SPDatabase _db = new SPDatabase(new JUnitDatabaseConnectionFactory(_dbParams));
+    private final ThreadLocalTransaction _transaction =
+            new ThreadLocalTransaction(_dbParams.getProvider());
+    private SPDatabase _db = new SPDatabase(_transaction);
 
     private final SPServiceReactor _reactor;
 
@@ -54,6 +56,8 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
     {
         // Instantiate with a
         // - local mysql db
+        // - local JUnitSPDatabaseParams
+        // - local ThreadLocalTransaction
         // - mock SessionUserID (does not use thread-local variables; tests should be single-threaded)
         // - real UserManagement class (using a local database).
         // - mock OrganizationManagement class
@@ -65,7 +69,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 new UserManagement(_db, _db, emailer, mock(PasswordResetEmailer.class));
         OrganizationManagement organizationManagement = mock(OrganizationManagement.class);
 
-        SPService service = new SPService(_db, new MockSessionUserID(),
+        SPService service = new SPService(_db, _transaction, new MockSessionUserID(),
                 userManagement, organizationManagement,
                 new SharedFolderManagement(_db, userManagement, organizationManagement, emailer),
                 new CertificateGenerator());
@@ -81,13 +85,14 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
             ExAlreadyExist
     {
         // Database setup.
-        new LocalTestDatabaseConfigurator(_dbParams).configure_();
-        _db.init_();
+        LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService
+        _transaction.begin();
         _db.addUser(new User(ADMIN_ID, "first", "last", ByteString.copyFrom(ADMIN_CRED), true,
-                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.ADMIN), true);
+                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.ADMIN));
         _db.markUserVerified(ADMIN_ID);
+        _transaction.commit();
     }
 
     @Override

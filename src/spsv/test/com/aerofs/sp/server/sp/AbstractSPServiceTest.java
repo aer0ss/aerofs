@@ -1,13 +1,14 @@
 package com.aerofs.sp.server.sp;
 
 import com.aerofs.servletlib.MockSessionUserID;
-import com.aerofs.servletlib.db.JUnitDatabaseConnectionFactory;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servletlib.db.ThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import org.junit.After;
 import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -37,18 +38,26 @@ public abstract class AbstractSPServiceTest extends AbstractTest
     @InjectMocks protected SPService service;
 
     // Inject a real (spy) local test SP database into the SPService of AbstractSPServiceTest.
-    private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
-    @Spy protected SPDatabase db = new SPDatabase(new JUnitDatabaseConnectionFactory(_dbParams));
+    protected final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
+    @Spy protected final ThreadLocalTransaction _transaction =
+            new ThreadLocalTransaction(_dbParams.getProvider());
+    @Spy protected SPDatabase db = new SPDatabase(_transaction);
 
     @Before
     public void setupAbstractSPServiceTest()
             throws SQLException, ClassNotFoundException, IOException, InterruptedException
     {
         // Database setup.
-        new LocalTestDatabaseConfigurator(_dbParams).configure_();
-        db.init_();
+        LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
 
         // Verkehr setup.
         service.setVerkehrClients_(verkehrPublisher, verkehrCommander);
+    }
+
+    @After
+    public void tearDownAbstractSPServiceTest()
+            throws SQLException
+    {
+        _transaction.cleanUp();
     }
 }
