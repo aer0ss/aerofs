@@ -33,7 +33,7 @@ public class InvitationEmailer
                 ? "Join my " + S.PRODUCT + " folder"
                 : "Invitation to " + S.PRODUCT + " (beta)";
 
-        String intro = S.PRODUCT + " is a file syncing, sharing and collaboration tool that " +
+        String intro = S.PRODUCT + " is a file syncing, sharing, and collaboration tool that " +
                 "lets you sync files without using cloud servers. You can learn more about it at " +
                 "" + SP.WEB_BASE + ".";
 
@@ -87,16 +87,16 @@ public class InvitationEmailer
     }
 
 
-    public void sendFolderInvitationEmail(@Nullable String from, String to, String fromPerson,
+    public void sendFolderInvitationEmail(String from, String to, String fromPerson,
             @Nullable String folderName, @Nullable String note, String shareFolderCode)
             throws Exception
     {
+        assert from != null;
+
         String subject = "Join my " + S.PRODUCT + " folder";
 
         Email email = new Email(subject);
         String url = SPParam.getWebDownloadLink(shareFolderCode, false);
-
-        assert from != null;
 
         String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
         String body = "\n" + nameAndEmail + " has invited you to a shared " + S.PRODUCT + " folder"
