@@ -310,10 +310,9 @@ class SPService implements ISPService
         _organizationManagement.addOrganization(orgId, orgName, shareExternal, allowedDomain);
 
         if (newAdminAccount != null && newAdminAccount.isInitialized()) {
-            ListenableFuture<Void> result = signUp(newAdminAccount.getUserId(),
-                    newAdminAccount.getCredentials(), newAdminAccount.getFirstName(),
-                    newAdminAccount.getLastName(), newAdminAccount.getOrganizationId());
-            result.get(); // Wait until user account is made before continuing
+            signUpCommon(newAdminAccount.getUserId(), newAdminAccount.getCredentials(),
+                    newAdminAccount.getFirstName(), newAdminAccount.getLastName(),
+                    newAdminAccount.getOrganizationId());
             _userManagement.setAuthorizationLevel(newAdminAccount.getUserId(),
                     AuthorizationLevel.ADMIN);
         } else {
