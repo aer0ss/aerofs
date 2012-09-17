@@ -9,17 +9,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.log4j.Logger;
 
@@ -61,9 +54,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 
-@Singleton
 public class S3Storage implements IPhysicalStorage
 {
     static final Logger l = Util.l(S3Storage.class);
@@ -178,8 +169,6 @@ public class S3Storage implements IPhysicalStorage
         return prefix.apply_(to, wasPresent, mtime, t);
     }
 
-
-
     private long getOrCreateFileId_(SOKID sokid, Trans t) throws SQLException
     {
         return _s3db.getOrCreateFileIndex_(sokid.sidx(), makeFileName(sokid), t);
@@ -195,7 +184,8 @@ public class S3Storage implements IPhysicalStorage
         return _s3db.getFileInfo_(id);
     }
 
-    private S3FileInfo getFileInfo_(SOKID id) throws SQLException {
+    private S3FileInfo getFileInfo_(SOKID id) throws SQLException
+    {
         long fileId = getFileId_(id);
         if (l.isTraceEnabled()) l.trace(id + " -> " + fileId);
         if (fileId == S3Database.FILE_ID_NOT_FOUND) return null;
@@ -245,34 +235,6 @@ public class S3Storage implements IPhysicalStorage
         return parentId;
     }
 
-
-    @SuppressWarnings("unused")
-    private long getOrCreateDir_(Path path, Trans t) throws SQLException, ExAlreadyExist
-    {
-        long dirId = S3Database.DIR_ID_ROOT;
-        boolean found = true;
-        for (String name : path.elements()) {
-            long child = S3Database.DIR_ID_NOT_FOUND;
-            if (found) {
-                child = _s3db.getChildDir_(dirId, name);
-                if (child == S3Database.DIR_ID_NOT_FOUND) found = false;
-            }
-            if (child == S3Database.DIR_ID_NOT_FOUND) {
-                child = _s3db.createChildDir_(dirId, name, t);
-            }
-            dirId = child;
-        }
-        return dirId;
-    }
-
-    @SuppressWarnings("unused")
-    private long getFileIdByPath_(Path path) throws SQLException, PathNotFoundException
-    {
-        long parentId = getExistingParent_(path);
-        long fileId = _s3db.getChildFile_(parentId, path.last());
-        return fileId;
-    }
-
     private Path getFilePath_(S3FileInfo info) throws SQLException, IOException
     {
         List<String> names = Lists.newArrayList();
@@ -301,8 +263,6 @@ public class S3Storage implements IPhysicalStorage
                     "Expected " + id + " had path " + expected + ", found " + actual);
         }
     }
-
-
 
     private void writeFileInfo(S3FileInfo info, Trans t) throws SQLException
     {
@@ -490,7 +450,6 @@ public class S3Storage implements IPhysicalStorage
             }
         }
     }
-
 
     class S3File implements IPhysicalFile
     {
@@ -907,153 +866,5 @@ public class S3Storage implements IPhysicalStorage
             _tcb = null;
             tcb.pseudoResumed_();
         }
-
-    }
-
-    class PrefixChunker extends FileUpload
-    {
-        /*
-         * I can't believe I'm doing this. All the work of
-         * compressing, encrypting, hashing, and uploading is
-         * done in other threads, but those threads need to
-         * access the database to update chunk status rows. The
-         * worker threads forward operations to the core thread
-         * by enqueueing Runnable objects; the core thread loops
-         * waiting for tasks from workers until all the workers
-         * are done.
-         */
-
-        private final Token _tk;
-        private final BlockingQueue<Runnable> _queue =
-                new LinkedBlockingQueue<Runnable>();
-        private int _remainingChunks;
-        private TCB _tcb;
-
-        public PrefixChunker(File file, Token tk)
-        {
-            // TODO: send executor
-            super(_s3ChunkAccessor, null, S3Storage.this._tempDir.getImplementation(), file);
-            _tk = tk;
-        }
-
-        @Override
-        public ContentHash uploadChunks() throws IOException
-        {
-            try {
-                try {
-                    pseudoPause_();
-                    return super.uploadChunks();
-                } finally {
-                    pseudoResumed_();
-                }
-            } catch (ExAborted e) {
-                throw new IOException(e);
-            }
-        }
-
-        @Override
-        protected List<Future<ChunkUpload>> invokeAll(List<Callable<ChunkUpload>> callables)
-                throws InterruptedException
-        {
-            _remainingChunks = callables.size();
-            List<Future<ChunkUpload>> futures =
-                    new ArrayList<Future<ChunkUpload>>(callables.size());
-            for (Callable<ChunkUpload> c : callables) {
-                FutureTask<ChunkUpload> f = new FutureTask<ChunkUpload>(c) {
-                    @Override
-                    protected void done()
-                    {
-                        _queue.add(new Runnable() {
-                            @Override
-                            public void run()
-                            {
-                                --_remainingChunks;
-                            }
-                        });
-                    }
-                };
-                futures.add(f);
-                _executor.execute(f);
-            }
-            while (_remainingChunks > 0) {
-                Runnable r = _queue.take();
-                r.run();
-            }
-
-            return futures;
-        }
-
-        @Override
-        protected void uploadChunk(final ChunkUpload chunk, final File file)
-                throws IOException
-        {
-            ChunkState cs = runTask(new Callable<ChunkState>() {
-                @Override
-                public ChunkState call() throws SQLException, ExAborted
-                {
-                    try {
-                        pseudoResumed_();
-                        Trans t = _transManager.begin_();
-                        try {
-                            ChunkState cs = _s3db.getChunkState_(chunk.getHash());
-                            if (cs != ChunkState.UPLOADED && cs != ChunkState.REFERENCED) {
-                                _s3db.startChunkUpload_(chunk.getHash(), chunk.getEncodedLength(), t);
-                                cs = ChunkState.UPLOADING;
-                            }
-                            t.commit_();
-                            return cs;
-                        } finally {
-                            t.end_();
-                        }
-                    } finally {
-                        pseudoPause_();
-                    }
-                }
-            });
-            if (cs == ChunkState.UPLOADING) {
-                // XXX: used to only upload if state was uploading, but always doing it is
-                // safer now that the upload code checks for duplicates itself
-            }
-            super.uploadChunk(chunk, file);
-        }
-
-        private void pseudoPause_() throws ExAborted
-        {
-            assert _tcb == null;
-            _tcb = _tk.pseudoPause_("still uploading to S3");
-        }
-
-        private void pseudoResumed_() throws ExAborted
-        {
-            TCB tcb = _tcb;
-            _tcb = null;
-            tcb.pseudoResumed_();
-        }
-
-        private <T> T runTask(Callable<T> callable) throws IOException
-        {
-            FutureTask<T> task = new FutureTask<T>(callable);
-            _queue.add(task);
-            T result;
-            try {
-                result = task.get();
-            } catch (InterruptedException e) {
-                throw new IOException(e);
-            } catch (ExecutionException e) {
-                throw new IOException(e);
-            }
-            return result;
-        }
-
-    }
-}
-
-class PathNotFoundException extends FileNotFoundException
-{
-    private static final long serialVersionUID = 1L;
-
-    PathNotFoundException(Path path)
-    {
-        super("Path not found: " + path);
     }
 }

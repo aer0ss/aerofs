@@ -37,8 +37,6 @@ public class S3Database extends AbstractDatabase
 {
     private static final Logger l = Util.l(S3Database.class);
 
-    public static final long NO_VERSION = -1;
-
     public static final long FILE_ID_NOT_FOUND = -1;
 
     public static final long DIR_ID_NOT_FOUND = -1;
@@ -65,9 +63,7 @@ public class S3Database extends AbstractDatabase
     {
     }
 
-
     private PreparedStatement _psGetChildDir;
-
     public long getChildDir_(long parent, String name) throws SQLException
     {
         PreparedStatement ps = _psGetChildDir;
@@ -96,9 +92,7 @@ public class S3Database extends AbstractDatabase
         }
     }
 
-
     private PreparedStatement _psGetChildHistDir;
-
     public long getChildHistDir_(long parent, String name) throws SQLException
     {
         PreparedStatement ps = _psGetChildHistDir;
@@ -127,9 +121,7 @@ public class S3Database extends AbstractDatabase
         }
     }
 
-
     private PreparedStatement _psCreateChildHistDir;
-
     private long createChildHistDir_(long parent, String name, Trans t) throws SQLException
     {
         PreparedStatement ps = _psCreateChildHistDir;
@@ -160,7 +152,6 @@ public class S3Database extends AbstractDatabase
         }
     }
 
-
     private long getOrCreateChildHistDir_(long parent, String name, Trans t) throws SQLException
     {
         long child = getChildHistDir_(parent, name);
@@ -169,7 +160,6 @@ public class S3Database extends AbstractDatabase
         }
         return child;
     }
-
 
     private long getDirHistIndex_(long dirId) throws SQLException
     {
@@ -183,9 +173,7 @@ public class S3Database extends AbstractDatabase
         return histId;
     }
 
-
     private PreparedStatement _psCreateChildDir;
-
     public long createChildDir_(long parent, String name, Trans t) throws SQLException, ExAlreadyExist
     {
         long histParent = getDirHistIndex_(parent);
@@ -240,7 +228,6 @@ public class S3Database extends AbstractDatabase
     }
 
     private PreparedStatement _psSetDirInfo;
-
     public void setDirParentAndName_(long dirId, long parent, String name, Trans t) throws SQLException
     {
         long histParent = getDirHistIndex_(parent);
@@ -274,9 +261,7 @@ public class S3Database extends AbstractDatabase
         public String _name;
     }
 
-
     private PreparedStatement _psGetDirInfo;
-
     public S3DirInfo getDirInfo_(long dirId) throws SQLException
     {
         PreparedStatement ps = _psGetDirInfo;
@@ -309,7 +294,6 @@ public class S3Database extends AbstractDatabase
             throw e;
         }
     }
-
 
     public long getOrCreateFileIndex_(SIndex sidx, String iname, Trans t)
             throws SQLException
@@ -389,7 +373,6 @@ public class S3Database extends AbstractDatabase
         }
     }
 
-
     private PreparedStatement _psGetChildFile;
     public long getChildFile_(long dirId, String name) throws SQLException
     {
@@ -419,7 +402,6 @@ public class S3Database extends AbstractDatabase
         }
     }
 
-
     public static class S3FileInfo
     {
         public final long _id;
@@ -428,7 +410,6 @@ public class S3Database extends AbstractDatabase
         public String _name;
         public long _length;
         public Date _date;
-//        public String _chunks;
         public ContentHash _chunks;
 
         public boolean exists()
@@ -461,8 +442,6 @@ public class S3Database extends AbstractDatabase
             return info;
         }
     }
-
-
 
     private PreparedStatement _psGetFileInfo;
     public S3FileInfo getFileInfo_(long fileId) throws SQLException
@@ -795,6 +774,7 @@ public class S3Database extends AbstractDatabase
             return new ContentHash(_rs.getBytes(1));
         }
     }
+
     private PreparedStatement _psGetAllChunks;
     public IDBIterator<ContentHash> getAllChunks() throws SQLException
     {
@@ -986,8 +966,8 @@ public class S3Database extends AbstractDatabase
         public ContentHash get_() throws SQLException {
             return new ContentHash(_rs.getBytes(1));
         }
-
     }
+
     private PreparedStatement _psGetDeadChunks;
     public IDBIterator<ContentHash> getDeadChunks() throws SQLException
     {
@@ -1008,6 +988,4 @@ public class S3Database extends AbstractDatabase
             throw e;
         }
     }
-
-
 }
