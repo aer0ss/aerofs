@@ -14,7 +14,7 @@
 	<classpathentry exported="true" kind="lib" path="approot/lib/aerofsjn.jar"/>
 	<classpathentry exported="true" kind="lib" path="approot/lib/javax.inject.jar"/>
 	<classpathentry exported="true" kind="lib" path="approot/lib.test/junit-4.10.jar" sourcepath="/as-is/src/junit-4.10-src.jar"/>
-	<classpathentry exported="true" kind="lib" path="approot/lib.test/mockito-all-1.9.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="approot/lib.test/mockito-all-1.9.5-rc1.jar"/>
 	<classpathentry kind="lib" path="approot/lib/commons-codec-1.6.jar"/>
 	<classpathentry kind="lib" path="approot/lib/commons-lang-2.6.jar"/>
 	<classpathentry kind="lib" path="approot/lib/json_simple-1.1.jar"/>
