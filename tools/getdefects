@@ -18,35 +18,43 @@ BASE=`dirname $0`
 BASE=`abspath "$BASE"`
 MAP_FILE="$BASE"/"aerofs-$VER-prod.map"
 
-$BASE/getmap $VER $BASE
+retrace()
+{
+    FOLDER=$1
+    PROGRAM=$2
 
-SED_SCRIPT_1='s/^	/	at /g'
-SED_SCRIPT_2='s/at at/at/g'
+    sed -i '' 's/^  /   at /g' "$FOLDER/$PROGRAM.log"
+    sed -i '' 's/at at/at/g' "$FOLDER/$PROGRAM.log"
+    mv "$FOLDER/$PROGRAM.log" "$FOLDER/obfuscated.$PROGRAM.log"
+    ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$FOLDER/obfuscated.$PROGRAM.log" > "$FOLDER/$PROGRAM.log"
+}
 
-for DEFECT in $DEFECTS; do
-    TARGET_FOLDER="defect-$DEFECT" # puts this into the pwd
-    if [[ -e "$TARGET_FOLDER" ]]; then
-        echo "$TARGET_FOLDER already exists"
-        continue
-    fi
-    ZIP_FILE="log.defect-$DEFECT.zip"
-    kscp sp.aerofs.com:/var/svlogs_prod/defect/"$ZIP_FILE" .
-    mkdir "$TARGET_FOLDER"
-    unzip -o "$ZIP_FILE" -d "$TARGET_FOLDER"
-    rm "$ZIP_FILE"
+main()
+{
+    $BASE/getmap $VER $BASE
 
-    echo "Unobfuscating logs for $DEFECT"
+    for DEFECT in $DEFECTS; do
+        TARGET_FOLDER="defect-$DEFECT" # puts this into the pwd
+        if [[ -e "$TARGET_FOLDER" ]]; then
+            echo "$TARGET_FOLDER already exists"
+            continue
+        fi
+        ZIP_FILE="log.defect-$DEFECT.zip"
+        kscp sp.aerofs.com:/var/svlogs_prod/defect/"$ZIP_FILE" .
+        mkdir "$TARGET_FOLDER"
+        unzip -o "$ZIP_FILE" -d "$TARGET_FOLDER"
+        rm "$ZIP_FILE"
 
-    sed -i "" "$SED_SCRIPT_1" "$TARGET_FOLDER/daemon.log"
-    sed -i "" "$SED_SCRIPT_2" "$TARGET_FOLDER/daemon.log"
-    sed -i "" "$SED_SCRIPT_1" "$TARGET_FOLDER/gui.log"
-    sed -i "" "$SED_SCRIPT_2" "$TARGET_FOLDER/gui.log"
+        echo "Retracing logs for $DEFECT"
 
-    mv "$TARGET_FOLDER/daemon.log" "$TARGET_FOLDER/obfuscated.daemon.log"
-    mv "$TARGET_FOLDER/gui.log" "$TARGET_FOLDER/obfuscated.gui.log"
+        for i in daemon cli gui; do
+            if [ -f "$TARGET_FOLDER/$i.log" ]; then
+                retrace "$TARGET_FOLDER" $i
+            fi
+        done
+    done
 
-    ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$TARGET_FOLDER/obfuscated.daemon.log" > "$TARGET_FOLDER/daemon.log"
-    ${BASE}/proguard/bin/retrace.sh "$MAP_FILE" "$TARGET_FOLDER/obfuscated.gui.log" > "$TARGET_FOLDER/gui.log"
-done
+    echo "Done"
+}
 
-echo "Done"
+main
