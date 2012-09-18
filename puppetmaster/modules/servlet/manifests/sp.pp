@@ -11,13 +11,8 @@ class servlet::sp(
         ]
     }
 
-    servlet::config{"/usr/share/aerofs-sp/sp/WEB-INF/web.xml":
-        content => template("servlet/sp.web.xml.erb"),
-        require => Package["aerofs-sp"]
-    }
-
-    servlet::log{"/var/log/aerofs/sp.log":
-        config_filename => "/usr/share/aerofs-sp/sp/WEB-INF/classes/log4j.properties",
-        require         => Package["aerofs-sp"],
+    class{"servlet::config::sp":
+        mysql_password => $mysql_password,
+        mysql_endpoint => $mysql_endpoint
     }
 }

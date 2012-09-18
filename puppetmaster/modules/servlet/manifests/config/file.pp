@@ -1,4 +1,4 @@
-define servlet::config(
+define servlet::config::file(
     $content
 ) {
     file {$title:
