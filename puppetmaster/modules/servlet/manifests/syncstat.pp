@@ -14,14 +14,11 @@ class servlet::syncstat(
         ]
     }
 
-    servlet::config{"/usr/share/aerofs-syncstat/syncstat/WEB-INF/web.xml":
-        content => template("servlet/syncstat.web.xml.erb"),
-        require => Package["aerofs-syncstat"]
-    }
-
-    $config_filename = "/usr/share/aerofs-syncstat/syncstat/WEB-INF/classes/log4j.properties"
-    servlet::log{"/var/log/aerofs/syncstat.log":
-        config_filename => $config_filename,
-        require => Package["aerofs-syncstat"],
+    class{"servlet::config::syncstat":
+        mysql_sp_password       => $mysql_sp_password,
+        mysql_syncstat_password => $mysql_syncstat_password,
+        mysql_endpoint          => $mysql_endpoint,
+        mysql_endpoint          => $verkehr_host,
+        cacert_location         => $cacert_location
     }
 }

@@ -46,11 +46,14 @@ class tomcat6 {
         require => Package["tomcat6"],
     }
 
+    package { "libmysql-java":
+        ensure => installed,
+    }
+
     service { "tomcat6":
         ensure     => running,
         enable     => true,
         hasstatus  => true,
         hasrestart => true,
     }
-
 }
