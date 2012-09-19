@@ -354,8 +354,8 @@ public class Download
     private void avoidDevice_(DID replier, Exception reason)
     {
         _src.avoid_(replier);
-        Exception e = _deviceFailures.put(replier, reason);
-        assert e == null : replier + " " + e + " " + reason;
+        _deviceFailures.put(replier, reason);
+        //assert e == null : replier + " " + e + " " + reason;
     }
 
     @Override
