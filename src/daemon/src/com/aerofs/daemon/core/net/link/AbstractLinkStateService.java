@@ -120,24 +120,9 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         return ifaceBuilder.build();
     }
 
-    boolean _hasTooLongDefectSent = OSUtil.isWindows();
-
     private final void checkLinkState_() throws SocketException
     {
-        // getActiveInterfaces_ shouldn't take too long on OSX and Linux. Otherwise, we'd better
-        // implement Driver.waitForNetworkInterfaceChange for these OSes sooner.
-        // TODO (WW) remove this debugging facility
-        long start = _hasTooLongDefectSent ? 0 : System.currentTimeMillis();
         final ImmutableSet<NetworkInterface> current = getActiveInterfaces_();
-        if (!_hasTooLongDefectSent) {
-            long duration = System.currentTimeMillis() - start;
-            if (duration > 50) {
-                Exception e = new Exception("getActiveInterfaces too long: " + duration);
-                SVClient.logSendDefectAsync(true, "getActiveInterfaces too long", e);
-            }
-            _hasTooLongDefectSent = true;
-        }
-
         final ImmutableSet<NetworkInterface> previous = _ifaces;
         if (current.equals(previous)) return;
 
@@ -189,8 +174,12 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                 // to use asynchronous callbacks. But calling back from C to Java is not straight-
                 // forward (see libjingle-binding implementation).
                 //
+                // We didn't implement Driver.waitForNetworkInterfaceChange for UNIX OSes, assuming
+                // getActiveInterfaces_ doesn't take too long or too much CPU on these OSes.
+                // Otherwise, we should implement this method.
+                //
                 while (true) {
-                    // TODO (WW) remove the following log line.
+                    // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
                     if (OSUtil.isWindows()) l.warn("check link state");
                     execute(runCheckLinkState);
                     if (Driver.waitForNetworkInterfaceChange() != DriverConstants.DRIVER_SUCCESS) {
