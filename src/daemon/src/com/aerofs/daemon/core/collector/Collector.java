@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.collector;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.Set;
 
@@ -440,7 +439,7 @@ public class Collector implements IDumpStatMisc
                             // Temporary code to address AE in 0.4.76
                             boolean hasNonPermanentError = false;
                             for (DID did : dids) {
-                                Exception e = did2e.get(did);
+                                Exception e = remoteExceptions.get(did);
                                 if (e == null || !isPermanentError(e)) {
                                     _cfs.setDirtyBit_(did);
                                     hasNonPermanentError = true;
