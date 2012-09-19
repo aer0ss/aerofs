@@ -6,7 +6,7 @@
 
 static const _TCHAR* const JAR_EXTENSION = _T(".jar");
 
-extern char g_errmsg[256];
+extern _TCHAR g_errmsg[256];
 
 #define JRE_KEY              _T("Software\\JavaSoft\\Java Runtime Environment")
 #define CURRENT_VERSION_KEY  _T("CurrentVersion")
@@ -18,7 +18,8 @@ tstring check_key(HKEY jrekey, _TCHAR* subKeyName);
 
 bool file_exists(const tstring& file)
 {
-    if (FILE* f = _wfopen(file.c_str(), L"r")) {
+    FILE* f;
+    if (_tfopen_s(&f, file.c_str(), _T("r")) == 0) {
         fclose(f);
         return true;
     }
@@ -129,7 +130,7 @@ tstring list_jars(const tstring& jars_path)
     tstring jars_path_pattern = jars_clean_path + _T("*");
     HANDLE handle = FindFirstFile(jars_path_pattern.c_str(), &findData);
     if (handle == INVALID_HANDLE_VALUE) {
-        SET_ERROR("Warning: could not open directory %S\n", jars_clean_path.c_str());
+        SET_ERROR(_T("Warning: could not open directory %s\n"), jars_clean_path.c_str());
         return result;
     }
     do {
@@ -140,7 +141,7 @@ tstring list_jars(const tstring& jars_path)
     } while (FindNextFile(handle, &findData) != 0);
     DWORD error = GetLastError();
     if (error != ERROR_NO_MORE_FILES) {
-        SET_ERROR("Warning: FindNextFile returned %d\n", error);
+        SET_ERROR(_T("Warning: FindNextFile returned %d\n"), error);
     }
     FindClose(handle);
     return result;

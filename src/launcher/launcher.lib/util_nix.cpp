@@ -5,7 +5,7 @@
 #include <assert.h>
 static const _TCHAR* const JAR_EXTENSION = _T(".jar");
 
-extern char g_errmsg[256];
+extern _TCHAR g_errmsg[256];
 
 using namespace std;
 
@@ -51,7 +51,7 @@ tstring list_jars(const tstring& jars_path)
         }
         closedir(dir);
     } else {
-        SET_ERROR("Warning: could not open directory: %s\n", jars_path.c_str());
+        SET_ERROR(_T("Warning: could not open directory: %s\n"), jars_path.c_str());
     }
 
     return result;

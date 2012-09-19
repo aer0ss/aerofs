@@ -47,13 +47,13 @@ int main(int argc, char* argv[])
     signal(SIGPIPE, SIG_IGN);
 #endif
     if (argc != 2) {
-        printf("Usage: %s <RTROOT>\n", argv[0]);
+        _tprintf(_T("Usage: %s <RTROOT>\n"), argv[0]);
         return EXIT_FAILURE;
     }
 
     JavaVM* jvm;
     JNIEnv* env;
-    char* errmsg;
+    _TCHAR* errmsg;
     _TCHAR* args[] = {argv[1], _T("daemon"), NULL};
     tstring approot = get_approot();
 
@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 #ifdef _WIN32
     BOOL successful = SetCurrentDirectory(approot.c_str());
     if (!successful) {
-        printf("Couldn't enter approot directory %ls : %d\n", approot.c_str(), GetLastError());
+        _tprintf(_T("Couldn't enter approot directory %ls : %d\n"), approot.c_str(), GetLastError());
         return EXIT_FAILURE;
     }
 #else
