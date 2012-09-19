@@ -44,7 +44,7 @@ fi
 # source dirs
 AEROFS_GIT_ROOT=$2
 BUILD_DIR=$3
-ASIS_DIR=$AEROFS_GIT_ROOT/as-is
+ASIS_DIR=$AEROFS_GIT_ROOT/resource/client
 #LAUNCHER=$AEROFS_GIT_ROOT/java/launcher
 PROGUARD_HOME=$AEROFS_GIT_ROOT/tools/proguard
 
@@ -107,7 +107,7 @@ if [ $MODE == "STAGING" ]; then
 fi
 
 ##################################
-# Copy "as-is" files
+# Copy "resource/client" files
 
 cp -R "$ASIS_DIR"/common/* "$AEROFS_DIR"/
 cp -R "$ASIS_DIR"/osx/* "$AEROFS_OSX_DIR"/

@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=AeroFS
+Comment=File sync without servers
+TryExec=aerofs
+Exec=aerofs %U
+StartupNotify=false
+Terminal=false
+Type=Application
+Icon=aerofs
+Categories=Application;Network;FileTransfer;
