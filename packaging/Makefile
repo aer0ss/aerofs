@@ -1,8 +1,8 @@
 
 .PHONY: all debs upload clean test
 
-# default the mode to staging unless the user specifies otherwise
-MODE=STAGING
+# default the mode to staging unless the user specifies otherwise. set this in the environment.
+MODE?=STAGING
 
 PACKAGES= \
 	common \
