@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.net;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -16,6 +17,7 @@ import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.*;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -55,6 +57,7 @@ public class Download
     // but that would require removing edges at the end of Download.do_, which is forbidden
     // (see Downloads.downloadSync_)
     private final Set<OCID> _requested = Sets.newTreeSet();
+    private final Map<DID, Exception> _deviceFailures = Maps.newTreeMap();
     private final Factory _f;
 
     public static class Factory
@@ -133,11 +136,12 @@ public class Download
     }
 
     /**
-     * @return null if the download is successful and there' no kml version left
+     * @return null if the download is successful and there are no kml versions left
      */
     @Nullable Exception do_()
     {
         Prio prioOrg = _f._tc.prio();
+        Exception returnValue = null;
         try {
             final DID from = doImpl_();
             notifyListeners_(new IDownloadCompletionListenerVisitor()
@@ -148,24 +152,42 @@ public class Download
                     l.okay_(_socid, from);
                 }
             });
-            _f._dlstate.ended_(_socid, true);
-            return null;
+            returnValue = null;
 
-        } catch (final Exception e) {
-            l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class, ExNoPerm.class));
+        } catch (final ExNoAvailDevice e) {
+            l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
+
+            // This download object tracked all reasons (Exceptions) for why each device was
+            // avoided. Thus if the To object indicated no devices were available, then inform
+            // the listener about all attempted devices, and why they failed to deliver the socid.
             notifyListeners_(new IDownloadCompletionListenerVisitor()
             {
                 @Override
                 public void notify_(IDownloadCompletionListener l)
                 {
-                    l.error_(_socid, e);
+                    l.onPerDeviceErrors_(_socid, _deviceFailures);
                 }
             });
-            _f._dlstate.ended_(_socid, false);
-            return e;
+            returnValue = e;
+
+        } catch (final Exception e) {
+            l.warn(_socid + ": " + Util.e(e, ExNoPerm.class));
+            notifyListeners_(new IDownloadCompletionListenerVisitor()
+            {
+                @Override
+                public void notify_(IDownloadCompletionListener l)
+                {
+                    l.onGeneralError_(_socid, e);
+                }
+            });
+            returnValue = e;
+
         } finally {
             _f._tc.setPrio(prioOrg);
         }
+
+        _f._dlstate.ended_(_socid, (returnValue == null));
+        return returnValue;
     }
 
     DID doImpl_() throws Exception
@@ -264,7 +286,7 @@ public class Download
                     return replier;
                 } else {
                     l.info("recv " + ExNoNewUpdate.class + " & kml != 0. retry");
-                    _src.avoid_(replier);
+                    avoidDevice_(replier, e);
                 }
 
             } catch (ExUpdateInProgress e) {
@@ -283,7 +305,7 @@ public class Download
             } catch (ExSenderHasNoPerm e) {
                 reenqueue(started);
                 l.error(_socid + ": sender has no perm");
-                _src.avoid_(replier);
+                avoidDevice_(replier, e);
 
             } catch (Exception e) {
                 reenqueue(started);
@@ -310,7 +332,7 @@ public class Download
 
         // RTN: retry now
         l.warn(_socid + ": " + Util.e(e) + " " + replier + " RTN");
-        if (replier != null) _src.avoid_(replier);
+        if (replier != null) avoidDevice_(replier, e);
     }
 
     private void onDependency_(DependencyEdge dependency, ExDependsOn e)
@@ -327,6 +349,13 @@ public class Download
         l.info("dependency " + dependency + " solved");
         assert dependency.dst.oid().equals(e._ocid.oid());
         _requested.add(e._ocid);
+    }
+
+    private void avoidDevice_(DID replier, Exception reason)
+    {
+        _src.avoid_(replier);
+        Exception e = _deviceFailures.put(replier, reason);
+        assert e == null : replier + " " + e + " " + reason;
     }
 
     @Override

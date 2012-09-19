@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.collector;
 
 import java.io.PrintStream;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.Set;
 
@@ -414,18 +416,43 @@ public class Collector implements IDumpStatMisc
                         }
 
                         @Override
-                        public void error_(SOCID socid, Exception e)
+                        public void onGeneralError_(SOCID socid, Exception e)
                         {
                             l.info("cdl " + socid + ": " + Util.e(e));
                             if (tk != null) tk.reclaim_();
 
-                            if (!isPermanentError(e)) {
-                                // For non-permanent errors, we want to re-run this collector.
-                                // Indicate the BFs are dirty for all devices of interest so
-                                // that they are re-introduced into the next collector iteration.
-                                for (DID did : dids) _cfs.setDirtyBit_(did);
-                                scheduleBackoff_();
+                            // For general errors, we want to re-run this collector.
+                            // Indicate the BFs are dirty for all devices of interest so
+                            // that they are re-introduced into the next collector iteration.
+                            for (DID did : dids) _cfs.setDirtyBit_(did);
+                            scheduleBackoff_();
+
+                            Util.verify(_downloads-- >= 0);
+                            attemptToStopAndFinalizeCollection_(null);
+                        }
+
+                        @Override
+                        public void onPerDeviceErrors_(SOCID socid,
+                                Map<DID, Exception> remoteExceptions)
+                        {
+                            if (tk != null) tk.reclaim_();
+
+                            // The set of DIDs passed in must be a superset of {@code dids}.
+                            assert remoteExceptions.keySet().containsAll(dids)
+                                    : remoteExceptions + " " + dids;
+
+                            // Rerun the collector for devices with non-permanent errors only:
+                            // 1) set the dirty bit for those devices
+                            // 2) schedule another collector run
+                            boolean hasNonPermanentError = false;
+                            for (Entry<DID, Exception> entry : remoteExceptions.entrySet()) {
+                                if (!isPermanentError(entry.getValue())) {
+                                    _cfs.setDirtyBit_(entry.getKey());
+                                    hasNonPermanentError = true;
+                                }
                             }
+                            if (hasNonPermanentError) scheduleBackoff_();
+
                             Util.verify(_downloads-- >= 0);
                             attemptToStopAndFinalizeCollection_(null);
                         }
