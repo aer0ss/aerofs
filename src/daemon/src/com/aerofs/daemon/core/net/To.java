@@ -16,7 +16,6 @@ import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
@@ -169,10 +168,6 @@ public class To
         return (cast & b) != 0;
     }
 
-    public Set<DID> dids_()
-    {
-        return Sets.union(_dids, _avoid);
-    }
     /**
      * add a device and remove it from the avoid list
      */

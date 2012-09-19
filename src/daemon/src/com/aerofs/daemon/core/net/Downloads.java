@@ -77,9 +77,6 @@ public class Downloads
         @Override
         public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> remoteExceptions)
         {
-            assert remoteExceptions.keySet().containsAll(_to.dids_())
-                    : _to.dids_() + " " + remoteExceptions;
-
             // Technically this method is only caused by an ExNoAvailDevice
             abortWithReason(new ExNoAvailDevice());
         }
