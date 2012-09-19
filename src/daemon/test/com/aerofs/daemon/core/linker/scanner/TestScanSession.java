@@ -20,6 +20,7 @@ import com.aerofs.testlib.AbstractTest;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
 
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -171,7 +172,7 @@ public class TestScanSession extends AbstractTest
     }
 
     @Test
-    public void shouldRecurseIntoNewFolderEvenIfResuriveFlagIsFalse() throws Exception
+    public void shouldRecurseIntoNewFolderEvenIfRecursiveFlagIsFalse() throws Exception
     {
         when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
             .then(new Answer<Result>()
@@ -195,6 +196,64 @@ public class TestScanSession extends AbstractTest
 
         InjectableFile f = factFile.create(Util.join(pRoot, "d2"));
         verify(f).list();
+    }
+
+    /**
+     * Tests if the paths "/" and "/d2" will not produce an AssertionError on hold_
+     * as we disable remove_. The ScanSession algorithm should detect that "/d2"
+     * is a child path and not scan the same path a second time.
+     */
+    @Test
+    public void shouldNotHoldNodesTwiceWithOverlappingPathsAndRecurseTrue()
+            throws Exception
+    {
+        // Act as if none of these folders are available in the database.
+        doNothing().when(delBuffer).remove_(any(SOID.class));
+
+        String p = Util.join(pRoot, "d2");
+        HashSet<String> paths = Sets.newHashSet();
+        paths.add(p);
+        paths.add(pRoot);
+
+        factSS.create_(paths, true).scan_();
+        verify(h, times(5)).hold_(any(SOID.class));
+    }
+
+    /**
+     * Tests the same as above but with recurse set to false however we should still
+     * recurse down to "/d2" because it's a NEW_OR_REPLACED_FOLDER.
+     */
+    @Test
+    public void shouldNotHoldNodesTwiceWithOverlappingPathsAndRecurseFalse()
+            throws Exception
+    {
+        // Act as if none of these folders are available in the database.
+        doNothing().when(delBuffer).remove_(any(SOID.class));
+
+        when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
+            .then(new Answer<Result>()
+            {
+                @Override
+                public Result answer(InvocationOnMock invocation)
+                        throws Throwable
+                {
+                    PathCombo pc = (PathCombo) invocation.getArguments()[0];
+
+                    if (pc._path.equals(new Path("d2"))) {
+                        return Result.NEW_OR_REPLACED_FOLDER;
+                    } else {
+                        InjectableFile f = factFile.create(pc._absPath);
+                        return f.isDirectory() ? Result.EXISTING_FOLDER : Result.FILE;
+                    }
+                }
+            });
+
+        HashSet<String> paths = Sets.newHashSet();
+        paths.add(pRoot);
+        paths.add(Util.join(pRoot, "d2"));
+
+        factSS.create_(paths, false).scan_();
+        verify(h, times(5)).hold_(any(SOID.class));
     }
 
     @Test

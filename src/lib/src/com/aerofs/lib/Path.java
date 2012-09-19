@@ -235,6 +235,8 @@ public class Path implements Comparable<Path>
      */
     public static boolean isUnder(String absRoot, String absPath)
     {
+        absRoot = Util.removeTailingSeparator(absRoot);
+        absPath = Util.removeTailingSeparator(absPath);
         if (OSUtil.isWindows()) {
             absRoot = lowercaseDriveLetter(absRoot);
             absPath = lowercaseDriveLetter(absPath);
