@@ -18,12 +18,17 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
+import java.util.Iterator;
 
 import javax.annotation.Nullable;
 
@@ -76,7 +81,10 @@ class ScanSession
     private final Factory _f;
 
     // set of absolute paths to the "root" folders of the scan session
-    private final Set<String> _absPaths;
+    private Set<String> _absPaths;
+
+    // list of path combos that represent all the paths in _absPaths
+    private LinkedHashSet<PathCombo> _sortedPCRoots;
 
     // true iff subfolders should be scanned recursively
     private final boolean _recursive;
@@ -106,6 +114,18 @@ class ScanSession
     {
         _f = f;
         _absPaths = absPaths;
+
+        List<PathCombo> sortedAbsPaths = Lists.newArrayList();
+        for (String absPath : absPaths) {
+            PathCombo pc = new PathCombo(_f._cfgAbsRootAnchor, absPath);
+            sortedAbsPaths.add(pc);
+        }
+
+        // Sort the paths such that parent paths will appear before the child paths
+        // helping us to not traverse the same path multiple times.
+        Collections.sort(sortedAbsPaths);
+        _sortedPCRoots = Sets.newLinkedHashSet(sortedAbsPaths);
+
         _recursive = recursive;
         _holder = f._delBuffer.newHolder();
     }
@@ -127,9 +147,11 @@ class ScanSession
         // Initialization
 
         if (_stack == null) {
-            if (l.isInfoEnabled()) l.info(PathObfuscator.obfuscate(_absPaths) + " " + _recursive);
+            if (l.isInfoEnabled()) {
+                l.info(PathObfuscator.obfuscate(_absPaths)+ " " + _recursive);
+            }
             _stack = Lists.newLinkedList();
-            initializeStack_();
+            addRootPathComboToStack_();
         } else {
             l.info("cont.");
         }
@@ -153,6 +175,10 @@ class ScanSession
                         l.info("exceed duration thres. " + potentialUpdates);
                         break;
                     }
+
+                    // If we have any remaining elements in absPaths that weren't touched
+                    // by the DFS add them into the stack.
+                    addRootPathComboToStack_();
                 }
                 t.commit_();
             } finally {
@@ -166,6 +192,7 @@ class ScanSession
             _done = true;
             throw e;
         }
+
 
         ////////
         // Finalization. No actual file operation is allowed beyond this point. All operations
@@ -187,26 +214,29 @@ class ScanSession
         }
     }
 
-    private void initializeStack_()
+    private void addRootPathComboToStack_()
     {
-        for (String absRoot : _absPaths) {
-            PathCombo pcRoot = new PathCombo(_f._cfgAbsRootAnchor, absRoot);
+        Iterator<PathCombo> iter = _sortedPCRoots.iterator();
+        while (iter.hasNext()) {
+            PathCombo pcRoot = iter.next();
             if (_f._factFile.create(pcRoot._absPath).isDirectory()) {
                 // The order of scan is the natural order of the list, as required by the
                 // constructor.
                 _stack.addFirst(pcRoot);
+                iter.remove();
+                break;
             } else {
                 /* Comment (A), referred to by the constructor, TestScanSession, MightCreate
-                 *
-                 * Skip a root folder if it's missing or no longer a directory. This is to
-                 * prevent infinite scans on such events. However, we throw and in turn retry
-                 * from scratch in the event of any error on any non-root objects. Silently
-                 * ignoring would cause false deletion of objects. For example, if physical
-                 * folder A is moved to under folder P while A is being scanned, and P has been
-                 * scanned before, ignoring errors caused by the missing A would lead to
-                 * deletion of the logical object corresponding to A. This is because the
-                 * logical object is already in the deletion buffer when A is being scanned.
-                 */
+                *
+                * Skip a root folder if it's missing or no longer a directory. This is to
+                * prevent infinite scans on such events. However, we throw and in turn retry
+                * from scratch in the event of any error on any non-root objects. Silently
+                * ignoring would cause false deletion of objects. For example, if physical
+                * folder A is moved to under folder P while A is being scanned, and P has been
+                * scanned before, ignoring errors caused by the missing A would lead to
+                * deletion of the logical object corresponding to A. This is because the
+                * logical object is already in the deletion buffer when A is being scanned.
+                */
                 l.warn("root " + PathObfuscator.obfuscate(pcRoot._absPath) + " no longer a dir. skip");
             }
         }
@@ -250,6 +280,11 @@ class ScanSession
                 // recurse down if it's a newly created folder, or it's an existing folder and the
                 // recursive bit is set
                 _stack.addLast(pcChild);
+
+                // remove the child node in the traversal from the list of _sortedPCRoots
+                // _sortedPCRoots will eventually contain all the paths that were modified but not
+                // touched by the DFS hence we will add those into the stack and continue the scan.
+                _sortedPCRoots.remove(pcChild);
             }
 
             // TODO count only objects that are actually updated.

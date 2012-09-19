@@ -4,6 +4,8 @@ import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 
+import javax.annotation.Nonnull;
+
 import static com.aerofs.lib.PathObfuscator.obfuscate;
 
 /**
@@ -12,10 +14,10 @@ import static com.aerofs.lib.PathObfuscator.obfuscate;
  * the filesystem. The class is intended for avoiding frequent conversion between
  * the two path formats.
  */
-public class PathCombo
+public class PathCombo implements Comparable<PathCombo>
 {
-    public final String _absPath;      // the absolute filesystem path
-    public final Path _path;           // the path relative to absAnchorRoot
+    public final @Nonnull String _absPath;      // the absolute filesystem path
+    public final @Nonnull Path _path;           // the path relative to absAnchorRoot
 
     /**
      *  @param absPath an absolute file system path. N.B. it is assumed to point to an object
@@ -58,4 +60,31 @@ public class PathCombo
         return obfuscate(_path);
     }
 
+    @Override
+    public int compareTo(PathCombo otherPC)
+    {
+        return _path.compareTo(otherPC._path);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PathCombo pathCombo = (PathCombo) o;
+
+        if (!_absPath.equals(pathCombo._absPath)) return false;
+        if (!_path.equals(pathCombo._path)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _absPath.hashCode();
+        result = 31 * result + _path.hashCode();
+        return result;
+    }
 }
