@@ -48,7 +48,6 @@ import com.aerofs.lib.spsv.SPClientFactory;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sv;
-import com.aerofs.ui.IDaemonMonitor;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
 import com.google.common.collect.Maps;
@@ -212,7 +211,7 @@ class Setup
             // clean up the running daemon if any. it is needed as the daemon
             // process may lock files in cache and aerofs.db
             try {
-                IDaemonMonitor.Factory.create().stop();
+                UI.dm().stop();
             } catch (IOException e) {
                 l.warn("cleaning up the old daemon failed: " + Util.e(e));
             }

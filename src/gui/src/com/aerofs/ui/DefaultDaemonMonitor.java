@@ -104,7 +104,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     public void start() throws Exception
     {
         // Cleanup any previous existing daemons
-        kill();
+        try {
+            kill();
+        } catch (IOException e) {
+            l.info("kill before start failed");
+            // Ignore the exception
+        }
 
         l.info("starting daemon");
 

@@ -1,6 +1,8 @@
 package com.aerofs.ui;
 
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
@@ -32,6 +34,9 @@ public interface IDaemonMonitor
      */
     public static abstract class Factory
     {
+        private static IDaemonMonitor _defaultMonitor = new DefaultDaemonMonitor();
+        private static IDaemonMonitor _noopMonitor = new NoopDaemonMonitor();
+
         /**
          * Creates and returns an implementation of IDaemonMonitor dependant on Cfg.useDM().
          * If Cfg.useDM() returns true, the default daemon monitor will be instantiated. Otherwise,
@@ -39,9 +44,9 @@ public interface IDaemonMonitor
          *
          * @return An implementation of IDaemonMonitor
          */
-        public static IDaemonMonitor create()
+        public static IDaemonMonitor get()
         {
-            return Cfg.useDM() ? new DefaultDaemonMonitor() : new NoopDaemonMonitor();
+            return Cfg.useDM() ? _defaultMonitor : _noopMonitor;
         }
 
         /**
@@ -49,19 +54,24 @@ public interface IDaemonMonitor
          */
         private static class NoopDaemonMonitor implements IDaemonMonitor
         {
+            private static final Logger l = Util.l(NoopDaemonMonitor.class);
+
             @Override
             public void start() throws Exception
             {
+                l.info("starting daemon has no effect");
             }
 
             @Override
             public void stopIgnoreException()
             {
+                stop();
             }
 
             @Override
-            public void stop() throws IOException
+            public void stop()
             {
+                l.info("stopping daemon has no effect");
             }
         }
     }
