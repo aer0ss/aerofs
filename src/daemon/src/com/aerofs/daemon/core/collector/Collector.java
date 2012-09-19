@@ -437,10 +437,21 @@ public class Collector implements IDumpStatMisc
                         {
                             if (tk != null) tk.reclaim_();
 
-                            // The set of DIDs passed in must be a superset of {@code dids}.
-                            assert remoteExceptions.keySet().containsAll(dids)
-                                    : remoteExceptions + " " + dids;
+                            // Temporary code to address AE in 0.4.76
+                            boolean hasNonPermanentError = false;
+                            for (DID did : dids) {
+                                Exception e = did2e.get(did);
+                                if (e == null || !isPermanentError(e)) {
+                                    _cfs.setDirtyBit_(did);
+                                    hasNonPermanentError = true;
+                                }
+                            }
+                            if (hasNonPermanentError) scheduleBackoff_();
 
+                            /**
+                             // The set of DIDs passed in must be a superset of {@code dids}.
+                             assert did2e.keySet().containsAll(dids)
+                             : did2e + " " + dids;
                             // Rerun the collector for devices with non-permanent errors only:
                             // 1) set the dirty bit for those devices
                             // 2) schedule another collector run
@@ -452,6 +463,7 @@ public class Collector implements IDumpStatMisc
                                 }
                             }
                             if (hasNonPermanentError) scheduleBackoff_();
+                            */
 
                             Util.verify(_downloads-- >= 0);
                             attemptToStopAndFinalizeCollection_(null);
