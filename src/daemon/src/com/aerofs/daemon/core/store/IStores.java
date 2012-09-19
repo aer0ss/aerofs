@@ -13,7 +13,7 @@ import java.util.Set;
 public interface IStores
 {
     /**
-     * @param sidxParent set to {@code sidx} for the root store. TODO use null instead?
+     * @param sidxParent set to {@code sidx} for the root store. See {@link IStores#getRoot_}.
      *
      * @pre the store is not present locally
      */

@@ -35,7 +35,6 @@ public class VersionUpdater
     private final Set<SOCKID> _updated = Sets.newTreeSet();
 
     private DelayedScheduler _dsNewUpdateMessage;
-    private CoreScheduler _sched;
     private NativeVersionControl _nvc;
     private NewUpdates _nu;
     private DirectoryService _ds;
@@ -47,9 +46,8 @@ public class VersionUpdater
         _nu = nu;
         _nvc = nvc;
         _ds = ds;
-        _sched = sched;
 
-        _dsNewUpdateMessage = new DelayedScheduler(_sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
+        _dsNewUpdateMessage = new DelayedScheduler(sched, DaemonParam.NEW_UPDATE_MESSAGE_DELAY,
                 new Runnable() {
                     @Override
                     public void run()
@@ -99,7 +97,7 @@ public class VersionUpdater
         if (!k.cid().isMeta()) {
             // Update length and mtime on the logical file to be consistent with the physical file.
             // The linker relies on these fields to detect file changes.
-            IPhysicalFile pf = _ds.getOA_(k.soid()).ca(k.kidx()).physicalFile();
+            IPhysicalFile pf = _ds.getOA_(k.soid()).caNullable(k.kidx()).physicalFile();
 
             long mtime = pf.getLastModificationOrCurrentTime_();
 

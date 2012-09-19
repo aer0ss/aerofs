@@ -64,9 +64,8 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
         Version vB_M = vBranch.sub_(vMaster);
         assert !vB_M.isZero_() && !vMaster.sub_(vBranch).isZero_();
 
-        CA caMaster = _ds.getOA_(soid).caMaster();
         // master branch must exist if conflict branches exist
-        assert caMaster != null;
+        CA caMaster = _ds.getOA_(soid).caMaster();
 
         Trans t = _tm.begin_();
         try {

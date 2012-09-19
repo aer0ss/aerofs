@@ -708,7 +708,7 @@ public class ReceiveAndApplyUpdate
             // may be expelled during pauses of the current thread.
             if (oa.isExpelled()) throw new ExAborted(k + " becomes offline");
 
-            CA ca = oa.ca(k.kidx());
+            CA ca = oa.caNullable(k.kidx());
             wasPresent = ca != null;
             if (wasPresent && pf.wasModifiedSince(ca.mtime(), ca.length())) {
                 // the linked file modified via the local filesystem

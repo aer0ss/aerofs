@@ -49,7 +49,7 @@ public class MightDelete
         if (oa.isExpelled()) return true;
 
         // don't delete files whose master branches are still being downloaded.
-        if (oa.isFile() && oa.caMaster() == null) return true;
+        if (oa.isFile() && oa.caMasterNullable() == null) return true;
 
         return false;
     }

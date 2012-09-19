@@ -345,7 +345,7 @@ public class MightCreate
     {
         OA oa = _ds.getOA_(soid);
         assert oa.isFile();
-        CA caMaster = oa.caMaster();
+        CA caMaster = oa.caMasterNullable();
 
         boolean modified;
         if (caMaster == null) {

@@ -93,23 +93,30 @@ public class OA
     /**
      * @return the attribute of the master branch, null if not present
      */
-    public @Nullable CA caMaster()
+    public @Nullable CA caMasterNullable()
     {
         assert isFile();
-        return ca(KIndex.MASTER);
+        return caNullable(KIndex.MASTER);
     }
 
     public @Nonnull CA caMasterThrows() throws ExNotFound
     {
-        CA ca = caMaster();
+        CA ca = caMasterNullable();
         if (ca == null) throw new ExNotFound(_soid + " master branch");
+        return ca;
+    }
+
+    public @Nonnull CA caMaster()
+    {
+        CA ca = caMasterNullable();
+        assert ca != null;
         return ca;
     }
 
     /**
      * @return the attribute of the branch, null if not present
      */
-    public @Nullable CA ca(KIndex kidx)
+    public @Nullable CA caNullable(KIndex kidx)
     {
         assert isFile();
         return _cas.get(kidx);
@@ -117,8 +124,15 @@ public class OA
 
     public @Nonnull CA caThrows(KIndex kidx) throws ExNotFound
     {
-        CA ca = ca(kidx);
+        CA ca = caNullable(kidx);
         if (ca == null) throw new ExNotFound(_soid + " branch " + kidx);
+        return ca;
+    }
+
+    public @Nonnull CA ca(KIndex kidx)
+    {
+        CA ca = caNullable(kidx);
+        assert ca != null;
         return ca;
     }
 
