@@ -3,14 +3,12 @@
 # This script creates the approot directory and populates it
 # with the files needed for a staging AeroFS
 
-# usage: $0 <approot> <as-is>
-#   where <approot> is the approot folder path which doesn't need to pre-exist,
-#   and <as-is> is the as-is folder path which must exist.
-
 set -e
 
 if [ x"$1" == x ]; then
-    echo "usage: $0 <approot> <as-is>"
+    echo "usage: $0 <approot> <resource/client>"
+    echo "    <approot>: the approot folder path which doesn't need to pre-exist,"
+    echo "    <resource/client> is the resource/client folder path which must exist."
     exit 1
 fi
 APPROOT="$1"

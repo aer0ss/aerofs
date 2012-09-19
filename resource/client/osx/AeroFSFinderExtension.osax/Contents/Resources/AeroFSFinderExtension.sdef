@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="AeroFS Finder Extension">
+<suite name="AeroFS Finder Extension" code="aero" description="Load AeroFS Finder Extension">
+<command name="Load AeroFS Finder Extension" code="aeroload" description="Load AeroFS Finder Extension into the Finder."/>
+</suite>
+</dictionary>

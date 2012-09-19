@@ -28,7 +28,7 @@ Making a release build
 	cd src/shellext/osx_finder/tools
 	./make-release
 
-This will create 'AeroFSFinderExtension.osax' in aerofs/as-is/osx
+This will create 'AeroFSFinderExtension.osax' in aerofs/resource/client/osx
 
 Making a debug build
 --------------------

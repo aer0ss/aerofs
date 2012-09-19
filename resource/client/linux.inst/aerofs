@@ -1,0 +1,106 @@
+#!/bin/bash
+
+PROG=`basename $0 | cut -c 8-`
+if [ x"$PROG" == x ]; then
+    PROG=gui
+fi
+
+if [ $PROG == gui ]; then
+    if [ x"$DISPLAY" == x ]; then
+        echo Please use aerofs-cli when running without a graphical environment.
+        exit 1
+    fi
+fi
+
+if [ x"`file /bin/ls | grep 64`" != x ]; then
+    ARCH=64
+else
+    ARCH=32
+fi
+
+DIST="$HOME/.aerofs-binDOT_STAGING__TO_BE_REPLACED_BY_SED"
+
+if [ ! -f "$DIST/aerofs.jar" ]; then
+    TMP_DIR=/tmp/aerofs-inst
+    rm -rf "$TMP_DIR"
+    mkdir -p "$TMP_DIR"
+
+    which ps > /dev/null
+    if [ $? != 0 ]; then
+        echo Please install the procps package first by typing:
+        echo sudo apt-get install procps
+        exit 1
+    fi
+    which uudecode > /dev/null
+    if [ $? != 0 ]; then
+        echo Please install the sharutils package first by typing:
+        echo sudo apt-get install sharutils
+        exit 1
+    fi
+    uudecode -o /dev/stdout $0 | tar xzf - -C $TMP_DIR 2>/dev/null
+
+    if [ $ARCH == 64 ]; then
+        URL=aerofs-x86_64.tgz
+    else
+        URL=aerofs-x86.tgz
+    fi
+    URL=https://cache.clientDOT_STAGING__TO_BE_REPLACED_BY_SED.aerofs.com/$URL
+
+    which java > /dev/null
+    if [ $? != 0 ]; then
+        echo Please install Java first by typing:
+        echo sudo apt-get install default-jre
+        exit 1
+    fi
+
+    if [ $PROG == gui ]; then
+        echo "Launching graphical interface... (use aerofs-cli for command-line interface)"
+    fi
+
+    TARGET="$TMP_DIR/target"
+    java -cp "$TMP_DIR/s$ARCH.jar":"$TMP_DIR" com.aerofs.downloader.Main $PROG $URL "$TARGET"
+    if [ $? != 0 ]; then
+        exit 1
+    fi
+
+    tar zxf "$TARGET" -C "$TMP_DIR" 2>/dev/null
+    if [ ! -d "$TMP_DIR/aerofs" ]; then
+      echo Failed during unpacking the AeroFS package.
+      exit 1
+    fi
+
+    rm -rf "$DIST"
+    mv "$TMP_DIR/aerofs" "$DIST"
+    rm -rf "$TMP_DIR"
+
+    # setup auto-start
+    mkdir -p "$HOME/.config/autostart/"
+    rm -f "$HOME/.config/autostart/aerofs.desktop"
+    ln -s "$DIST/aerofs.desktop" "$HOME/.config/autostart/"
+fi
+
+if [ $ARCH == 64 ]; then
+    JRE_LIB_ARCH=amd64
+else
+    JRE_LIB_ARCH=i386
+fi
+
+JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
+# Oracle ships two "java" executables in the JDK package - one in the jre/bin/
+# folder, and the other just in the bin/ folder.  This finds the jre even if
+# the JDK java binary is the first one on the user's PATH.
+if [ -d "$JRE_BASE/jre" ]; then
+    JRE_BASE="$JRE_BASE/jre"
+fi
+JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
+# for java to load our own native libraries and aerofsd to load jvm libraries
+export LD_LIBRARY_PATH="$DIST:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH"
+
+if [ $PROG == gui ]; then
+    echo "Launching graphical interface in the background... (use aerofs-cli for command-line interface)"
+    nohup java -Xmx64m -jar "$DIST/aerofs.jar" DEFAULT gui 2>/dev/null >/dev/null &
+else
+    java -Xmx64m -jar "$DIST/aerofs.jar" DEFAULT $PROG "$@"
+fi
+
+exit 0

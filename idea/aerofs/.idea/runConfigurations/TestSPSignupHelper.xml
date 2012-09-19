@@ -15,7 +15,7 @@
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea -Djunit.mysqlSpSchemaPath=../../src/spsv/resources/schemas" />
     <option name="PARAMETERS" value="" />
-    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../as-is/osx" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../resource/client/osx" />
     <option name="ENV_VARIABLES" />
     <option name="PASS_PARENT_ENVS" value="true" />
     <option name="TEST_SEARCH_SCOPE">

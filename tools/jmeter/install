@@ -25,7 +25,7 @@ fi
 # --------------------------------------------------------------------
 
 PLUGINJAR="jmeter-plugins-0.5.3.jar"
-PLUGINSRC="as-is/common/lib.test"
+PLUGINSRC="resource/client/common/lib.test"
 LIBEXT="/usr/local/Cellar/jmeter/2.7/libexec/lib/ext"
 
 if [ ! -f "$LIBEXT/$PLUGINJAR" ]

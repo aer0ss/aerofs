@@ -1,0 +1,30 @@
+==================
+Installing AeroFS
+==================
+
+Prior to running AeroFS, please make sure that you have the following
+packages installed:
+
+* default-jre
+* sharutils
+* procps
+
+=================
+Launching AeroFS
+=================
+
+Run "<path_to_aerofs>/aerofs" to launch the Graphical User Interface (GUI).
+
+Run "<path_to_aerofs>/aerofs-cli" to launch the Command-Line Interface (CLI).
+
+While AeroFS is running, use "<path_to_aerofs>/aerofs-sh" to access AeroFS 
+functions from the command line.
+
+
+==============
+Got problems? 
+==============
+
+Email us at support@aerofs.com, or search discussions and knowledge base at
+http://support.aerofs.com.
+
