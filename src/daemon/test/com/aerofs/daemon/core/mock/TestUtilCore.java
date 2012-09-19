@@ -98,6 +98,7 @@ public class TestUtilCore
         when(ca.length()).thenReturn(len);
         when(ca.mtime()).thenReturn(mtime);
         when(oa.ca(kidx)).thenReturn(ca);
+        when(oa.caNullable(kidx)).thenReturn(ca);
         when(oa.caThrows(kidx)).thenReturn(ca);
 
         return ca;

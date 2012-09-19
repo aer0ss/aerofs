@@ -46,9 +46,8 @@ public class BranchDeleter
         assert k.cid().equals(CID.CONTENT);
         assert !v.isZero_();
 
+        // The caller guarantees that the CA exists
         final CA ca = _ds.getOA_(k.soid()).ca(k.kidx());
-        // guaranteed by the caller
-        assert ca != null;
 
         if (deleteVersionPermanently) _nvc.deleteLocalVersionPermanently_(k, v, t);
         else _nvc.deleteLocalVersion_(k, v, t);

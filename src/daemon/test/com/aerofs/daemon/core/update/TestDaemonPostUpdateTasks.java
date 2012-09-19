@@ -2,8 +2,6 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.injectable.InjectableDriver;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +12,6 @@ import static org.mockito.Mockito.*;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.testlib.AbstractTest;
-import org.mockito.Spy;
 
 import java.sql.SQLException;
 

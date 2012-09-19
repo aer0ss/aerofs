@@ -59,9 +59,12 @@ public class MockFile extends AbstractMockLogicalObject
             when(ca.physicalFile()).thenReturn(mock(IPhysicalFile.class));
 
             when(oa.ca(kidx)).thenReturn(ca);
+            when(oa.caNullable(kidx)).thenReturn(ca);
+            when(oa.caThrows(kidx)).thenReturn(ca);
 
             if (i == kMaster) {
                 when(oa.caMaster()).thenReturn(ca);
+                when(oa.caMasterNullable()).thenReturn(ca);
                 when(oa.caMasterThrows()).thenReturn(ca);
             }
 

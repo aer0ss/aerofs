@@ -225,8 +225,8 @@ public class DirectoryService implements IDumpStatMisc
     }
 
     /**
-     * @param sidx must not refer to the root store
      * @return the SOID of the given store's anchor
+     * @pre {@code sidx} must not refer to the root store
      */
     private SOID getAnchor_(SIndex sidx) throws SQLException
     {
@@ -517,6 +517,9 @@ public class DirectoryService implements IDumpStatMisc
         _cacheOA.invalidate_(soid);
     }
 
+    /**
+     * @pre the CA must already exists
+     */
     public void setCA_(SOKID sokid, long len, long mtime, @Nullable ContentHash h, Trans t)
         throws SQLException
     {
@@ -585,10 +588,10 @@ public class DirectoryService implements IDumpStatMisc
             return true;
         } else {
             if (oa.isExpelled()) {
-                assert oa.ca(k.kidx()) == null;
+                assert oa.caNullable(k.kidx()) == null;
                 return false;
             } else {
-                return oa.ca(k.kidx()) != null;
+                return oa.caNullable(k.kidx()) != null;
             }
         }
     }
