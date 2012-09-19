@@ -71,14 +71,14 @@ public class Downloads
         @Override
         public void onGeneralError_(SOCID socid, Exception e)
         {
-            abortWithReason(e);
+            abortWithError(e);
         }
 
         @Override
-        public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> remoteExceptions)
+        public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e)
         {
             // Technically this method is only caused by an ExNoAvailDevice
-            abortWithReason(new ExNoAvailDevice());
+            abortWithError(new ExNoAvailDevice());
         }
 
         @Override
@@ -88,7 +88,7 @@ public class Downloads
             if (_tcb != null) _tcb.resume_();
         }
 
-        private void abortWithReason(Exception e)
+        private void abortWithError(Exception e)
         {
             if (_tcb != null) _tcb.abort_(e);
         }

@@ -405,13 +405,18 @@ public class Collector implements IDumpStatMisc
             Util.verify(_f._dls.downloadAsync_(socid, _f._factTo.create_(dids),
                     new IDownloadCompletionListener()
                     {
+                        private void postDownloadCompletionTask()
+                        {
+                            Util.verify(_downloads-- >= 0);
+                            attemptToStopAndFinalizeCollection_(null);
+                        }
+
                         @Override
                         public void okay_(SOCID socid, DID from)
                         {
                             if (tk != null) tk.reclaim_();
-                            Util.verify(_downloads-- >= 0);
-                            attemptToStopAndFinalizeCollection_(null);
                             _s.downloaded_(socid);
+                            postDownloadCompletionTask();
                         }
 
                         @Override
@@ -425,21 +430,19 @@ public class Collector implements IDumpStatMisc
                             // that they are re-introduced into the next collector iteration.
                             for (DID did : dids) _cfs.setDirtyBit_(did);
                             scheduleBackoff_();
-
-                            Util.verify(_downloads-- >= 0);
-                            attemptToStopAndFinalizeCollection_(null);
+                            postDownloadCompletionTask();
                         }
 
                         @Override
                         public void onPerDeviceErrors_(SOCID socid,
-                                Map<DID, Exception> remoteExceptions)
+                                Map<DID, Exception> did2e)
                         {
                             if (tk != null) tk.reclaim_();
 
                             // Temporary code to address AE in 0.4.76
                             boolean hasNonPermanentError = false;
                             for (DID did : dids) {
-                                Exception e = remoteExceptions.get(did);
+                                Exception e = did2e.get(did);
                                 if (e == null || !isPermanentError(e)) {
                                     _cfs.setDirtyBit_(did);
                                     hasNonPermanentError = true;
@@ -455,7 +458,7 @@ public class Collector implements IDumpStatMisc
                             // 1) set the dirty bit for those devices
                             // 2) schedule another collector run
                             boolean hasNonPermanentError = false;
-                            for (Entry<DID, Exception> entry : remoteExceptions.entrySet()) {
+                            for (Entry<DID, Exception> entry : did2e.entrySet()) {
                                 if (!isPermanentError(entry.getValue())) {
                                     _cfs.setDirtyBit_(entry.getKey());
                                     hasNonPermanentError = true;
@@ -464,8 +467,7 @@ public class Collector implements IDumpStatMisc
                             if (hasNonPermanentError) scheduleBackoff_();
                             */
 
-                            Util.verify(_downloads-- >= 0);
-                            attemptToStopAndFinalizeCollection_(null);
+                            postDownloadCompletionTask();
                         }
                     }, tk));
 
