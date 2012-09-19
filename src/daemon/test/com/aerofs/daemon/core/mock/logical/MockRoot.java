@@ -1,25 +1,11 @@
 package com.aerofs.daemon.core.mock.logical;
 
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSAnchor;
+import com.aerofs.daemon.core.mock.logical.MockDS.MockDSDir;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.MapSIndex2Store;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.mock.logical.AbstractMockLogicalObject.MockServices;
-import com.aerofs.daemon.lib.db.IMetaDatabase;
-import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.lib.ex.ExExpelled;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
 import javax.annotation.Nullable;
-
-import java.sql.SQLException;
 
 /**
  * This class and related classes mock logical objects and wires related services accordingly.
@@ -57,26 +43,46 @@ import java.sql.SQLException;
 public class MockRoot
 {
     private final AbstractMockLogicalObject[] _children;
-    private final SID _sid;
+
+    private MockDS mds;
 
     public MockRoot(AbstractMockLogicalObject ... children)
     {
         _children = children;
-        _sid = new SID(UniqueID.generate());
     }
 
     public void mock(DirectoryService ds, @Nullable IMapSID2SIndex sid2sidx,
-            @Nullable IMapSIndex2SID sidx2sid, @Nullable MapSIndex2Store sidx2s,
-            @Nullable IStoreDatabase sdb, @Nullable IMetaDatabase mdb)
-             throws ExNotFound, SQLException, ExNotDir, ExExpelled
+            @Nullable IMapSIndex2SID sidx2sid) throws Exception
     {
-        MockServices ms = new MockServices(ds, sid2sidx, sidx2sid, sidx2s, sdb, mdb);
+        mds = new MockDS(ds, sid2sidx, sidx2sid);
+        for (AbstractMockLogicalObject o : _children) {
+            mock(mds.root(), o);
+        }
+    }
 
-        Store s = MockAnchor.mockStore(_sid, new Path(), _children, ms);
-
-        SIndex sidx = s.sidx();
-
-        // AbstractMockLogicalObject doesn't mock path resolution for roots, so we do it manually.
-        AbstractMockLogicalObject.mockPathResolution(ds, new Path(), new SOID(sidx, OID.ROOT));
+    private void mock(MockDSDir d, AbstractMockLogicalObject o) throws Exception
+    {
+        switch (o._type) {
+        case FILE:
+            MockFile mfile = (MockFile)o;
+            o._oid = d.file(o._name, mfile._branches).soid().oid();
+            break;
+        case DIR:
+            MockDir mdir = (MockDir)o;
+            MockDSDir dir = d.dir(o._name);
+            o._oid = dir.soid().oid();
+            for (AbstractMockLogicalObject c : mdir._children) {
+                mock(dir, c);
+            }
+            break;
+        case ANCHOR:
+            MockAnchor manchor = (MockAnchor)o;
+            MockDSAnchor anchor = d.anchor(o._name, o._expelled);
+            o._oid = anchor.soid().oid();
+            for (AbstractMockLogicalObject c : manchor._children) {
+                mock(anchor._root, c);
+            }
+            break;
+        }
     }
 }

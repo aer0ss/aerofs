@@ -30,6 +30,20 @@ public class DeviceBitMap implements Iterable<DID>
     private Map<DID, Integer> _m;
 
     /**
+     * Only available for testing purposes, do NOT use in the daemon
+     */
+    public DeviceBitMap(DID... dids)
+    {
+        _l = Lists.newArrayList();
+        _m = Maps.newHashMap();
+
+        for (DID did : dids) {
+            _m.put(did, _l.size());
+            _l.add(did);
+        }
+    }
+
+    /**
      * Create and fill map from concatenated DIDs
      * NOTE: only MapSIndex2DeviceBitMap should use this ctor
      * @param dids byte array of concatenated DIDs
@@ -51,11 +65,14 @@ public class DeviceBitMap implements Iterable<DID>
 
     /**
      * Add DID to the map
-     * NOTE: only MapSIndex2DeviceBitMap should use this method
+     *
+     * NOTE: only MapSIndex2DeviceBitMap should use this method, it is only public for testing
+     * purposes
+     *
      * @pre the DID must not be present in the map
      * @return index of the DID in the map
      */
-    int addDevice_(DID did)
+    public int addDevice_(DID did)
     {
         assert get(did) == null;
         int idx = _l.size();
@@ -87,15 +104,18 @@ public class DeviceBitMap implements Iterable<DID>
     }
 
     /**
-     * @return bitvector index corresponding to a given DID
+     * @return bitvector index corresponding to a given DID, or null if the DID is not present in
+     * the mapping
      */
-    public Integer get(DID did)
+    public @Nullable Integer get(DID did)
     {
         return _m.get(did);
     }
 
     /**
+     * @pre index is present in the mapping
      * @return DID corresponding to a given bitvector index
+     * @throws IndexOutOfBoundsException if the index does not correspond to a valid DID
      */
     public DID get(int index)
     {

@@ -74,7 +74,7 @@ public class TestScanSession extends AbstractTest
     public void setup() throws Exception
     {
         phyRoot.mock(factFile, null);
-        logicRoot.mock(ds, null, null, null, null, null);
+        logicRoot.mock(ds, null, null);
 
         when(tm.begin_()).then(RETURNS_MOCKS);
         when(cfgAbsRootAnchor.get()).thenReturn(pRoot);
