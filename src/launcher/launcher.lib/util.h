@@ -8,7 +8,7 @@
 #if WIN32
 #define DIRECTORY_SEPARATOR _T('\\')
 #define PATH_SEPARATOR _T(';')
-#define snprintf sprintf_s
+#define snprintf _sntprintf_s
 #else
 #define DIRECTORY_SEPARATOR '/'
 #define PATH_SEPARATOR ':'

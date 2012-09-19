@@ -10,11 +10,12 @@
 #define _TCHAR char
 #define _T(X) X
 #define _tcscmp(X, Y) strcmp(X, Y)
+#define _tprintf(...) printf(__VA_ARGS__)
 #endif
 typedef std::basic_string<_TCHAR> tstring;
 
-bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JNIEnv** penv, char** perrmsg);
-int launcher_launch(JNIEnv* env, char** perrmsg);
+bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JNIEnv** penv, _TCHAR** perrmsg);
+int launcher_launch(JNIEnv* env, _TCHAR** perrmsg);
 void launcher_destroy_jvm(JavaVM* jvm);
 
 #endif // LAUNCHER_H

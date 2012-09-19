@@ -11,7 +11,7 @@
 
 using namespace std;
 
-char g_errmsg[512];
+_TCHAR g_errmsg[512];
 
 namespace {
 
@@ -47,7 +47,7 @@ bool parse_options(_TCHAR*** pargv, vector<tstring>* options);
 
    See also: launcher_destroy_jvm()
  */
-bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JNIEnv** penv, char** perrmsg)
+bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JNIEnv** penv, _TCHAR** perrmsg)
 {
     *perrmsg = g_errmsg;
     *pjvm = NULL;
@@ -91,7 +91,7 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
                     NULL,                       // default char (must be NULL)
                     NULL);                      // default char used (must be NULL)
         if (size == 0) {
-            SET_ERROR("WideCharToMultiByte: %d\n", GetLastError());
+            SET_ERROR(_T("WideCharToMultiByte: %d\n"), GetLastError());
             return false;
         }
         // Allocate an appropriately-sized buffer
@@ -106,7 +106,7 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
                     NULL,                   // default char (must be NULL)
                     NULL);                  // default char used (must be NULL)
         if (size == 0) {
-            SET_ERROR("WideCharToMultiByte: %d\n", GetLastError());
+            SET_ERROR(_T("WideCharToMultiByte: %d\n"), GetLastError());
             return false;
         }
         // Save buffer pointer to be deleted later
@@ -135,13 +135,13 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
 #endif
 
     if (result < 0) {
-        SET_ERROR("Call to JNI_CreateJavaVM failed");
+        SET_ERROR(_T("Call to JNI_CreateJavaVM failed"));
         return false;
     }
     return true;
 }
 
-int launcher_launch(JNIEnv* env, char** perrmsg)
+int launcher_launch(JNIEnv* env, _TCHAR** perrmsg)
 {
     *perrmsg = g_errmsg;
     return launch(env, AEROFS_MAIN_CLASS, g_args);
@@ -176,7 +176,7 @@ int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
 
     jclass cls = env->FindClass(class_name);
     if (!cls) {
-        SET_ERROR("Could not load class '%s'\n", class_name);
+        SET_ERROR(_T("Could not load class '%s'\n"), class_name);
         if (env->ExceptionOccurred()) {
             env->ExceptionDescribe();
         }
@@ -186,7 +186,7 @@ int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
     // Get a pointer to main()
     jmethodID mid = env->GetStaticMethodID(cls, "main", "([Ljava/lang/String;)V");
     if (mid == NULL) {
-        SET_ERROR("Could not find method 'static void main(String[] args)' in class '%s'\n",
+        SET_ERROR(_T("Could not find method 'static void main(String[] args)' in class '%s'\n"),
                   class_name);
         if (env->ExceptionOccurred()) {
             env->ExceptionDescribe();
@@ -210,7 +210,7 @@ int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
     env->CallStaticVoidMethod(cls, mid, args);
 
     if (env->ExceptionOccurred()) {
-        SET_ERROR("An exception occurred in main()");
+        SET_ERROR(_T("An exception occurred in main()"));
         env->ExceptionDescribe();
         return EXIT_FAILURE; // TODO: Return a different exit code
     }
