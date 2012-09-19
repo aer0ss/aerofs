@@ -14,9 +14,9 @@ public interface IDownloadCompletionListener
 
     /**
      * Called when the download failed with errors recorded for each attempted device
-     * @param remoteExceptions a map of attempted device to Exception describing the failure
+     * @param did2e a map of attempted device to Exception describing the failure
      */
-    void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> remoteExceptions);
+    void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e);
 
     /**
      * Called when the download failed with a more serious error

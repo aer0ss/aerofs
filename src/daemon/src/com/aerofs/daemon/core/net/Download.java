@@ -57,7 +57,10 @@ public class Download
     // but that would require removing edges at the end of Download.do_, which is forbidden
     // (see Downloads.downloadSync_)
     private final Set<OCID> _requested = Sets.newTreeSet();
-    private final Map<DID, Exception> _deviceFailures = Maps.newTreeMap();
+
+    // To track the reasons each device failed to download {@code _socid}, this map stores the
+    // <DID, Exception> pairs following download failures.
+    private final Map<DID, Exception> _did2e = Maps.newTreeMap();
     private final Factory _f;
 
     public static class Factory
@@ -165,7 +168,7 @@ public class Download
                 @Override
                 public void notify_(IDownloadCompletionListener l)
                 {
-                    l.onPerDeviceErrors_(_socid, _deviceFailures);
+                    l.onPerDeviceErrors_(_socid, _did2e);
                 }
             });
             returnValue = e;
@@ -351,11 +354,11 @@ public class Download
         _requested.add(e._ocid);
     }
 
-    private void avoidDevice_(DID replier, Exception reason)
+    private void avoidDevice_(DID replier, Exception e)
     {
         _src.avoid_(replier);
-        _deviceFailures.put(replier, reason);
-        //assert e == null : replier + " " + e + " " + reason;
+        // TODO (MJ) only replace existing exceptions if e is a Permanent error
+        _did2e.put(replier, e);
     }
 
     @Override
