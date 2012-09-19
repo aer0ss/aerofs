@@ -27,7 +27,6 @@ import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.spsv.SVClient;
 
 import javax.annotation.Nullable;
 
@@ -39,6 +38,7 @@ public class TC implements IDumpStatMisc
     static final long FOREVER = Long.MAX_VALUE;
 
     static {
+        //noinspection ConstantConditions
         assert DaemonParam.TC_RECLAIM_LO_WATERMARK >= 1;
     }
 
@@ -189,13 +189,8 @@ public class TC implements IDumpStatMisc
 
                             assert !_tm.hasOngoingTransaction_() : ev.getClass();
                         } catch (Throwable e) {
-                            try {
-                                SVClient.logSendDefectAsync(true, "caught by TC @ " +
-                                        Thread.currentThread().getName(), e);
-                            } finally {
-                                // better to fail fast
-                                Util.fatal(e);
-                            }
+                            // fail fast
+                            throw Util.fatal(e);
                         }
                     }
 
@@ -339,7 +334,7 @@ public class TC implements IDumpStatMisc
             try {
                 ret = tcb._cv.await(timeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                Util.fatal(e);
+                throw Util.fatal(e);
             }
         }
 
@@ -374,7 +369,7 @@ public class TC implements IDumpStatMisc
         if (!tcb._running) {
             tcb._running = true;
         } else if (tcb._abortCause != null) {
-            l.info("aborted due to " + tcb._abortCause.getClass().getName());
+            if (l.isInfoEnabled()) l.info("aborted due to " + tcb._abortCause);
             throw new ExAborted(tcb._abortCause);
         }
     }
@@ -417,28 +412,6 @@ public class TC implements IDumpStatMisc
         prePause_(tcb, tk, reason);
         _l.unlock();
         return tcb;
-    }
-
-    /**
-     * Note that yield may fail silently due to category full
-     */
-    void yield_(Token tk)
-    {
-        TCB tcb = tcb();
-        Prio old = tcb._prio;
-        tcb._prio = Prio.LO;
-        try {
-            Util.verify(tk.pseudoPause_("yield") == tcb);
-            try {
-                Thread.yield();
-            } finally {
-                tcb.pseudoResumed_();
-            }
-        } catch (Exception e) {
-            l.info("cannot yield: " + Util.e(e));
-        } finally {
-            tcb._prio = old;
-        }
     }
 
     void sleepImpl_(Token tk, long timeout, String reason) throws ExAborted

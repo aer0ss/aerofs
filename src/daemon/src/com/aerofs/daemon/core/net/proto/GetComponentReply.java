@@ -226,8 +226,7 @@ public class GetComponentReply
             cr = _ru.computeCausalityForContent_(socid.soid(), vRemote, msg, tk);
             break;
         default:
-            cr = null;
-            Util.unimplemented("support CID: " + socid.cid());
+            throw Util.fatal("not implemented");
         }
 
         if (cr == null) return;

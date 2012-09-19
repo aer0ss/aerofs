@@ -14,7 +14,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -63,7 +62,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
-import com.google.protobuf.GeneratedMessage;
 import com.google.protobuf.GeneratedMessageLite;
 
 public abstract class Util
@@ -86,28 +84,22 @@ public abstract class Util
         // private to enforce uninstantiability for this class
     }
 
-    private static class FatalError extends Error
+    /**
+     * Send a defect report and crash the daemon. Some callers need to throw the returned value
+     * only to suppress compiler warnings.
+     */
+    public static Error fatal(final Throwable e) throws Error
     {
-        private static final long serialVersionUID = 1L;
-
-        public FatalError(Throwable cause)
-        {
-            super(cause);
-            l.fatal("FATAL:", cause);
-            System.exit(C.EXIT_CODE_FATAL_ERROR);
-        }
-    }
-
-    public static FatalError fatal(final Throwable e)
-    {
-        l.fatal("FATAL:", e);
+        l.fatal("FATAL:" + Util.e(e));
         SVClient.logSendDefectNoLogsIgnoreErrors(true, "FATAL:", e);
-
         System.exit(C.EXIT_CODE_FATAL_ERROR);
-        return new FatalError(e);
+        throw new Error(e);
     }
 
-    public static FatalError fatal(String str)
+    /**
+     * See {@link Util#fatal(Throwable)}
+     */
+    public static Error fatal(String str) throws Error
     {
         return fatal(new Exception(str));
     }
@@ -238,14 +230,6 @@ public abstract class Util
         } catch (Exception e) {
             l.error(stackTrace2string(e));
         }
-    }
-
-    // unlike String.equals(), this method allow strings to be null
-    public static boolean equalsString(String s1, String s2)
-    {
-        if (s1 == s2) return true;
-        if (s1 == null) return false;
-        return s1.equals(s2);
     }
 
     public static String q(Object o)
@@ -419,13 +403,6 @@ public abstract class Util
     {
         Object ret = exp;
         assert ret != null;
-    }
-
-    // N.B. this function is very slow. use sparingly.
-    public static String func()
-    {
-        StackTraceElement stack[] = new Throwable().getStackTrace();
-        return stack[1].getMethodName() + "(): ";
     }
 
     public static void unimplemented(String what)
@@ -738,31 +715,13 @@ public abstract class Util
         return true;
     }
 
-    public static boolean isEmailAddress(String string)
-    {
-        return string.indexOf('@') != -1;
-    }
-
-    // the caller should throw ExInvalidCharacter if exception is needed
-    public static boolean isValidStoreAddress(String sname)
-    {
-        if (isValidEmailAddress(sname)) return true;
-
-        for (int i = 0; i < sname.length(); i++) {
-            char ch = sname.charAt(i);
-            if (!((ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z'))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public static int execForeground(String ...cmds) throws IOException
     {
         return execForeground(null, cmds);
     }
 
-    public static int execForegroundNoLogging(OutArg<String> output, String ... cmds) throws IOException
+    public static int execForegroundNoLogging(OutArg<String> output, String ... cmds)
+            throws IOException
     {
         return execForeground(false, output, cmds);
     }
@@ -775,7 +734,8 @@ public abstract class Util
     /**
      * @return the process's exit code
      */
-    private static int execForeground(boolean logging, OutArg<String> output, String ... cmds) throws IOException
+    private static int execForeground(boolean logging, OutArg<String> output, String ... cmds)
+            throws IOException
     {
         ProcessBuilder pb = new ProcessBuilder(cmds);
         if (logging) l.info("execForeground: " + pb.command());
@@ -1125,35 +1085,6 @@ public abstract class Util
         } catch (UnsupportedEncodingException e) {
             throw fatal(e);
         }
-    }
-
-    public static String Base64URLEncode(byte[] bs)
-    {
-        try {
-            // although it's URL-safe base64, it still add paddings '='
-            return urlEncode(Base64.encodeBytes(bs, Base64.URL_SAFE));
-        } catch (IOException e) {
-            fatal(e);
-            return null;
-        }
-    }
-
-    public static byte[] Base64URLDecode(String url) throws IOException
-    {
-        String decode = URLDecoder.decode(url, "UTF-8");
-        return Base64.decode(decode, Base64.URL_SAFE);
-    }
-
-    public static ByteArrayOutputStream writeDelimited(GeneratedMessage pb)
-    {
-        ByteArrayOutputStream os = new ByteArrayOutputStream(
-                pb.getSerializedSize() + Integer.SIZE / Byte.SIZE);
-        try {
-            pb.writeDelimitedTo(os);
-        } catch (IOException e) {
-            fatal(e);
-        }
-        return os;
     }
 
     public static ByteArrayOutputStream writeDelimited(GeneratedMessageLite pb)

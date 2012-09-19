@@ -2,8 +2,6 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.ds.CA;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -25,18 +23,16 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
 {
     private final LocalACL _lacl;
     private final NativeVersionControl _nvc;
-    private final DirectoryService _ds;
     private final TransManager _tm;
     private final VersionUpdater _vu;
     private final BranchDeleter _bd;
 
     @Inject
-    public HdDeleteBranch(VersionUpdater vu, TransManager tm, DirectoryService ds,
-            NativeVersionControl nvc, LocalACL lacl, BranchDeleter bd)
+    public HdDeleteBranch(VersionUpdater vu, TransManager tm, NativeVersionControl nvc,
+            LocalACL lacl, BranchDeleter bd)
     {
         _vu = vu;
         _tm = tm;
-        _ds = ds;
         _nvc = nvc;
         _lacl = lacl;
         _bd = bd;
@@ -63,9 +59,6 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
 
         Version vB_M = vBranch.sub_(vMaster);
         assert !vB_M.isZero_() && !vMaster.sub_(vBranch).isZero_();
-
-        // master branch must exist if conflict branches exist
-        CA caMaster = _ds.getOA_(soid).caMaster();
 
         Trans t = _tm.begin_();
         try {

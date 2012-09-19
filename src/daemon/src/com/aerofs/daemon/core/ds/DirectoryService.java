@@ -408,6 +408,7 @@ public class DirectoryService implements IDumpStatMisc
                         oaParent.soid(), pathFrom, pathTo, t);
             }
         } else {
+            //noinspection ConstantConditions
             assert fromTrash && toTrash;
         }
     }
