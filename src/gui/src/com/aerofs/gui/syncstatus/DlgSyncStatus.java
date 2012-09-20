@@ -9,6 +9,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -168,6 +169,13 @@ public class DlgSyncStatus extends AeroFSDialog
 
         Layout listLayout = new GridLayout(3, false);
         c.setLayout(listLayout);
+
+        // do not show sync status when servers are known to be down
+        if (!reply.getIsServerUp()) {
+            addLabelPreImage(S.SYNC_STATUS_DOWN, Images.get(Images.ICON_ERROR), c);
+            return;
+        }
+
         boolean myDev = false, otherUsers = false;
         for (PBSyncStatus pbs : reply.getStatusListList()) {
             if (pbs.hasDeviceName()) {

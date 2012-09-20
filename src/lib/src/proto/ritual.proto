@@ -307,7 +307,9 @@ message GetSyncStatusCall {
 }
 
 message GetSyncStatusReply {
-    repeated PBSyncStatus status_list = 1;
+    // no sync status should be shown to the user when the server is know to be down
+    required bool is_server_up = 1;
+    repeated PBSyncStatus status_list = 2;
 }
 
 message PBObjectAttributes {

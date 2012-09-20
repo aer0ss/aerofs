@@ -7,6 +7,8 @@ import java.util.Map.Entry;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
+import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.lib.Prio;
@@ -34,16 +36,18 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
     private final DirectoryService _ds;
     private final LocalSyncStatus _lsync;
     private final DevicePresence _dp;
+    private final ServerConnectionStatus _scs;
 
     // TODO(huguesb): cache results of recursive aggregation
 
     @Inject
     public HdGetSyncStatus(CfgLocalUser localUser, DirectoryService ds, DevicePresence dp,
-            UserAndDeviceNames didinfo, LocalSyncStatus lsync)
+            ServerConnectionStatus scs, UserAndDeviceNames didinfo, LocalSyncStatus lsync)
     {
         _localUser = localUser;
         _ds = ds;
         _dp = dp;
+        _scs = scs;
         _didinfo = didinfo;
         _lsync = lsync;
     }
@@ -110,6 +114,12 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
 
         SOID soid = _ds.resolveThrows_(ev.getPath());
 
+        // do not show sync status when any of the servers is known to be down
+        if (!_scs.isConnected(Server.SYNCSTAT, Server.VERKEHR)) {
+            ev.setResult_(false, result);
+            return;
+        }
+
         // map (DID -> sync status)
         Map<DID, PBSyncStatus.Status> syncStatus = aggregateSyncStatusRecursively_(soid);
 
@@ -145,7 +155,7 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
                     .build());
         }
 
-        ev.setResult_(result);
+        ev.setResult_(true, result);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.lib.S;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -37,6 +38,13 @@ public class CmdSyncStatus implements IShellCommand<ShProgram> {
         if (args.length != 1) throw new ExBadArgs();
         PBPath path = s.d().buildPath_(args[0]);
         GetSyncStatusReply reply = s.d().getRitualClient_().getSyncStatus(path);
+
+        // do not show sync status when servers are known to be down
+        if (!reply.getIsServerUp()) {
+            s.out().println(S.SYNC_STATUS_DOWN);
+            return;
+        }
+
         for (PBSyncStatus pbs : reply.getStatusListList()) {
             String usr = pbs.getUserName();
             String dev = pbs.hasDeviceName() ? pbs.getDeviceName() : "N/A";

@@ -103,4 +103,6 @@ public class S
             TRY_AGAIN_LATER;
     public static final String COULDNT_LIST_ACTIVITIES = "Couldn't list activities";
     public static final String MODIFIED = "updated";
+
+    public static final String SYNC_STATUS_DOWN = "Sync status is temporarily unavailable.";
 }

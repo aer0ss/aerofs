@@ -74,6 +74,18 @@ public class ServerConnectionStatus
     }
 
     /**
+     * @return connection status of a list of servers AND'ed together
+     */
+    public synchronized boolean isConnected(Server... servers)
+    {
+        boolean r = true;
+        for (Server server : servers) {
+            r &= isConnected(server);
+        }
+        return r;
+    }
+
+    /**
      * @return connection status of all servers AND'ed together
      */
     public synchronized boolean isConnected()

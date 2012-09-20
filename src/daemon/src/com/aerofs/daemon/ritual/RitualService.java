@@ -342,6 +342,7 @@ public class RitualService implements IRitualService
         EIGetSyncStatus ev = new EIGetSyncStatus(new Path(path), Core.imce());
         ev.execute(PRIO);
         GetSyncStatusReply.Builder bd = GetSyncStatusReply.newBuilder();
+        bd.setIsServerUp(ev._isServerUp);
         for (PBSyncStatus dss : ev._peers) bd.addStatusList(dss);
         return createReply(bd.build());
     }
