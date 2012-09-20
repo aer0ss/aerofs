@@ -20,7 +20,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Ritual.GetACLReply;
 import com.aerofs.ui.UIUtil;
-import com.aerofs.ui.ex.ExUIMessage;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.google.common.collect.Lists;
 
 import org.eclipse.swt.SWT;

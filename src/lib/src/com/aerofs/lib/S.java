@@ -40,8 +40,9 @@ public class S
     public static final String SETUP_S3_BUCKET_NAME     = "S3 bucket name";
     public static final String SETUP_S3_ACCESS_KEY      = "S3 access key";
     public static final String SETUP_S3_SECRET_KEY      = "S3 secret key";
+    public static final String S3_ENCRYPTION_PASSWORD   = "S3 data encryption password";
     public static final String SETUP_S3_ENCRYPTION_PASSWORD =
-            "Create an S3 encryption password (used to encrypt your data before sending to S3)";
+            "Create an " + S3_ENCRYPTION_PASSWORD + " (used to encrypt your data before sending to S3)";
 
     public static final String BTN_DONE                 = "Done";
 

@@ -7,10 +7,13 @@ package com.aerofs.ui;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -52,21 +55,26 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         while (true) {
             if (proc != null) {
                 try {
-                    // TODO (WW) merge the following code into onDaemonDeath?
                     int exitCode = proc.exitValue();
-                    if (exitCode == BAD_S3_CREDENTIALS.getNumber()) {
-                        throw new IOException(
+                    // TODO (WW) merge the following code into onDaemonDeath, and instead of
+                    // relying on the caller to show an error message, onDaemonDeath does it?
+                    if (exitCode == S3_BAD_CREDENTIALS.getNumber()) {
+                        throw new ExUIMessage(
                                 "The S3 credentials were incorrect. Please check that you have" +
                                 " the correct bucket name and AWS access and secret key.");
-                    } else if (exitCode == BAD_S3_DATA_ENCRYPTION_PASSWORD.getNumber()) {
-                        throw new IOException(
-                                "Unable to decrypt the S3 bucket data using the supplied S3" +
-                                " encryption password. Please check that you have the correct" +
-                                " password.");
+                    } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
+                        throw new ExUIMessage(
+                                S.PRODUCT + " cloudn't launch due to issues with your " +
+                                S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
+                                " is provided by Oracle with limited" +
+                                " crypto key strength, please download the Unlimited Strength" +
+                                " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
+                                S.PRODUCT + " requires full strength AES-256 for a better margin" +
+                                " of safety. Contact us at " + SV.SUPPORT_EMAIL_ADDRESS +
+                                " for more questions.");
+                    } else {
+                        throw new IOException(getMessage(exitCode));
                     }
-
-                    throw new IOException(getMessage(exitCode));
-
                 } catch (IllegalThreadStateException e) {
                     // the process is still running
                 }

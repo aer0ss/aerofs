@@ -35,7 +35,6 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.aws.s3.S3InitException;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor.AbstractChunkedInputStream;
 import com.aerofs.lib.aws.s3.db.S3CacheDatabase;
 import com.aerofs.lib.aws.s3.db.S3Database;
@@ -246,7 +245,7 @@ public class S3Cache
         };
     }
 
-    public void init_() throws IOException, S3InitException
+    public void init_() throws IOException
     {
         FileUtil.ensureDirExists(_cacheDir);
         if (_tempDir.exists()) FileUtil.deleteRecursively(_tempDir);

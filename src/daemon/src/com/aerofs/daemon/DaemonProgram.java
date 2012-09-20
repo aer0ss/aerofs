@@ -1,6 +1,5 @@
 package com.aerofs.daemon;
 
-import com.aerofs.lib.ExitCode;
 import org.apache.log4j.Level;
 
 import com.aerofs.daemon.core.CoreModule;
@@ -16,8 +15,6 @@ import com.aerofs.daemon.fsi.FSI;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.aws.s3.S3CredentialsException;
-import com.aerofs.lib.aws.s3.S3PasswordException;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -42,26 +39,20 @@ public class DaemonProgram implements IProgram {
 
         initLogLevels_();
 
-        try {
-            Daemon daemon = inject_();
+        Daemon daemon = inject_();
 
-            daemon.init_();
-            _fsi.init_();
+        daemon.init_();
+        _fsi.init_();
 
-            daemon.start_();
-            _fsi.start_();
+        daemon.start_();
+        _fsi.start_();
 
-            _ritual.start_();
+        _ritual.start_();
 
-            Util.l().error("daemon main thread halted");
+        Util.l().error("daemon main thread halted");
 
-            // I don't understand why mac needs this
-            if (OSUtil.get().getOSFamily() == OSFamily.OSX) Util.halt();
-        } catch (S3CredentialsException e) {
-            ExitCode.BAD_S3_CREDENTIALS.exit();
-        } catch (S3PasswordException e) {
-            ExitCode.BAD_S3_DATA_ENCRYPTION_PASSWORD.exit();
-        }
+        // I don't understand why mac needs this
+        if (OSUtil.get().getOSFamily() == OSFamily.OSX) Util.halt();
     }
 
     // TODO: remove this method

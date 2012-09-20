@@ -2,8 +2,10 @@ package com.aerofs.lib.aws.s3.chunks;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.util.Arrays;
 
+import com.aerofs.lib.ExitCode;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonServiceException;
@@ -15,9 +17,9 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.aws.s3.S3CredentialsException;
-import com.aerofs.lib.aws.s3.S3InitException;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor.FileUpload;
+
+import javax.annotation.Nullable;
 
 class S3MagicChunk
 {
@@ -30,17 +32,25 @@ class S3MagicChunk
         _s3ChunkAccessor = s3ChunkAccessor;
     }
 
-    public void init_() throws IOException, S3InitException
+    public void init_() throws IOException
     {
         try {
             checkMagicChunk();
         } catch (AmazonServiceException e) {
-            if (e.getStatusCode() == 403) {
-                if ("SignatureDoesNotMatch".equals(e.getErrorCode())) {
-                    throw new S3CredentialsException(e);
-                }
+            if (e.getStatusCode() == 403 && "SignatureDoesNotMatch".equals(e.getErrorCode())) {
+                ExitCode.S3_BAD_CREDENTIALS.exit();
+            } else {
+                throw new IOException(e);
             }
-            throw new IOException(e);
+        } catch (IOException e) {
+            if (getCauseOfClass(e, InvalidKeyException.class) != null) {
+                /** InvalidKeyException can be thrown from
+                 * {@link com.aerofs.lib.SecUtil.CipherFactory#newEncryptingCipher()}, if Java has
+                 * a restricted key length. See other call sites of the exit code for more info.
+                 * See support-182 for the full error stack.
+                 */
+                ExitCode.S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.exit();
+            }
         }
     }
 
@@ -80,7 +90,8 @@ class S3MagicChunk
         }
     }
 
-    private static <T extends Throwable> T getCauseOfClass(Throwable t, Class<T> cls) {
+    private static @Nullable <T extends Throwable> T getCauseOfClass(Throwable t, Class<T> cls)
+    {
         while (t != null) {
             if (cls.isInstance(t)) return cls.cast(t);
             t = t.getCause();

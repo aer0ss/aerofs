@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.DigestOutputStream;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -22,6 +23,7 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.crypto.SecretKey;
 
+import com.aerofs.lib.ExitCode;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
@@ -47,8 +49,6 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil.CipherFactory;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.aws.common.AWSRetry;
-import com.aerofs.lib.aws.s3.S3CredentialsException;
-import com.aerofs.lib.aws.s3.S3InitException;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.s3.S3Config.S3BucketIdConfig;
 import com.aerofs.s3.S3Config.S3CryptoConfig;
@@ -132,28 +132,22 @@ public class S3ChunkAccessor
         _s3CryptoConfig = s3CryptoConfig;
     }
 
-    public void init_() throws S3InitException
+    public void init_() throws IOException
     {
         try {
             _secretKey = _s3CryptoConfig.getSecretKey();
         } catch (NoSuchAlgorithmException e) {
-            throw new S3CredentialsException(e);
+            ExitCode.S3_BAD_CREDENTIALS.exit();
         } catch (InvalidKeySpecException e) {
-            throw new S3CredentialsException(e);
+            ExitCode.S3_BAD_CREDENTIALS.exit();
         }
 
-        try {
-            checkMagicChunk();
-        } catch (IOException e) {
-            throw new S3InitException(e);
-        }
+        checkMagicChunk();
     }
 
-
-    public void checkMagicChunk() throws IOException, S3InitException
+    public void checkMagicChunk() throws IOException
     {
-        S3MagicChunk s3MagicChunk = new S3MagicChunk(this);
-        s3MagicChunk.init_();
+        new S3MagicChunk(this).init_();
     }
 
     String getChunkKeyPrefix()

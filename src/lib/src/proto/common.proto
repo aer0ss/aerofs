@@ -40,7 +40,9 @@ message PBException {
     enum Type {
         INTERNAL_ERROR = 0;
 
-        // These type names strictly map to Java exception types. e.g. BAD_ARGS maps to ExBadArgs.
+        // All the following type names strictly map to Java exception types. e.g. BAD_ARGS maps to
+        // ExBadArgs.
+
         ABORTED = 2;
         ALREADY_EXIST = 3;
         BAD_ARGS = 4;
@@ -56,6 +58,9 @@ message PBException {
         NO_AVAIL_DEVICE = 15;
         CHILD_ALREADY_SHARED = 16;
         PARENT_ALREADY_SHARED = 17;
+
+        // This type requires the UI to display the error message as is, without adding extra text.
+        UI_MESSAGE = 18;
 
         ////////////////////////////////////////////////////
         // Core exception types

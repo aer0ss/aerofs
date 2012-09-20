@@ -2,7 +2,7 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.fsi.AeroFile;
-import com.aerofs.ui.ex.ExUIMessage;
+import com.aerofs.lib.ex.ExUIMessage;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 

@@ -234,6 +234,9 @@ public class UIUtil
         }
     }
 
+    private static String LAUNCH_ERROR_STRING = "Sorry, " + S.PRODUCT + " couldn't launch." +
+            " Please contact us at " + SV.SUPPORT_EMAIL_ADDRESS;
+
     /**
      * Helper method to perform launch for the Java UIs (ie: CLI and GUI)
      * The flow here is:
@@ -249,16 +252,13 @@ public class UIUtil
      */
     public static void launch(String rtRoot, final Runnable preLaunch, final Runnable postLaunch)
     {
-        final String sorry = "Sorry, " + S.PRODUCT + " couldn't launch. Please contact us at " +
-                SV.SUPPORT_EMAIL_ADDRESS;
-
         try {
             GetInitialStatusReply reply = UI.controller().getInitialStatus();
             switch (reply.getStatus()) {
 
             case NOT_LAUNCHABLE:
-                UI.get().show(MessageType.ERROR,
-                        reply.hasErrorMessage() ? reply.getErrorMessage() : sorry + ".");
+                UI.get().show(MessageType.ERROR, reply.hasErrorMessage() ? reply.getErrorMessage() :
+                        LAUNCH_ERROR_STRING + ".");
                 System.exit(0);
                 break; // suppress compiler fall-through warning just for this case
 
@@ -312,9 +312,7 @@ public class UIUtil
                     @Override
                     public void onFailure(Throwable e)
                     {
-                        l.warn(Util.e(e));
-                        UI.get().show(MessageType.ERROR, sorry + ": " +
-                                UIUtil.e2msgSentenceNoBracket(e));
+                        logAndShowLaunchError(e);
                         System.exit(0);
                     }
                 });
@@ -324,10 +322,16 @@ public class UIUtil
             // User clicked on cancel, exit without error messages
             System.exit(0);
         } catch (Exception e) {
-            l.warn(Util.e(e));
-            UI.get().show(MessageType.ERROR, sorry + ": " + UIUtil.e2msgSentenceNoBracket(e));
+            logAndShowLaunchError(e);
             System.exit(0);
         }
+    }
+
+    private static void logAndShowLaunchError(Throwable e)
+    {
+        l.warn(Util.e(e));
+        UI.get().show(MessageType.ERROR, e instanceof ExUIMessage ? e.getMessage() :
+                LAUNCH_ERROR_STRING + ": " + UIUtil.e2msgSentenceNoBracket(e));
     }
 
     private static void finishLaunch(Runnable postLaunch)

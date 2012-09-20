@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.lib;
 
 /**
@@ -24,11 +28,11 @@ public enum ExitCode
     RELOCATE_ROOT_ANCHOR(),
 
     // Incorrect S3 access key or secret key for accessing bucket.
-    BAD_S3_CREDENTIALS(),
+    S3_BAD_CREDENTIALS(),
 
-    // S3 encryption password doesn't match the password used to encrypt the data stored in the
-    // bucket.
-    BAD_S3_DATA_ENCRYPTION_PASSWORD();
+    // Java may have a limited encryption key length due to export restriction. See the users of
+    // this enum for more information.
+    S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED();
 
     // The number that all the codes should be based on
     static int BASE = 66;

@@ -73,6 +73,7 @@ public class Exceptions
         case NOT_SHARED:            return new ExNotShared(pb);
         case BAD_CREDENTIAL:        return new ExBadCredential(pb);
         case EXCLUDED:              return new ExExpelled(pb);
+        case UI_MESSAGE:            return new ExUIMessage(pb);
         default: assert false : "unsupported PBException type"; return null;
         }
     }
