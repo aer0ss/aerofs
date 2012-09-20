@@ -21,5 +21,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/lib"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/spsv"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/verkehr"/>
 	<classpathentry kind="output" path="approot/bin"/>
 </classpath>

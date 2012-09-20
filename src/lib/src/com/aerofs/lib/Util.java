@@ -74,6 +74,7 @@ public abstract class Util
 
     static
     {
+        //noinspection ConstantConditions
         assert INITIAL_ENUMERATION_ARRAY_SIZE > 0;
     }
 
@@ -93,7 +94,7 @@ public abstract class Util
     {
         l.fatal("FATAL:" + Util.e(e));
         SVClient.logSendDefectNoLogsIgnoreErrors(true, "FATAL:", e);
-        System.exit(C.EXIT_CODE_FATAL_ERROR);
+        ExitCode.FATAL_ERROR.exit();
         throw new Error(e);
     }
 

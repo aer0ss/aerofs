@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.C;
+import com.aerofs.lib.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -166,7 +167,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
          * database to an inconsistent state. This also allows Auxroot path to be reset (refer to
          * LinkedStorage.init_())
          */
-        System.exit(C.EXIT_CODE_RELOCATE_ROOT_ANCHOR);
+        ExitCode.RELOCATE_ROOT_ANCHOR.exit();
     }
 
     /**

@@ -108,44 +108,18 @@ public class C
     public static final byte[] ROOT_SID_SALT       = new byte[]
         { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };
 
-    public static final String SUBJECT_ANONYMOUS        = "*";
-
     public static final String TRANSPORT_ID_XMPP        = "x";
     public static final String TRANSPORT_ID_TCP         = "t";
     public static final String LOG_FILE_EXT             = ".log";
 
-    public static final int EXIT_CODE_EXCEPTION_IN_MAIN      = 22;
-    public static final int EXIT_CODE_CANNOT_INIT_LOG4J      = 33;
-    public static final int EXIT_CODE_BAD_ARGS               = 44;
-    public static final int EXIT_CODE_SHUTDOWN               = 55;
-    public static final int EXIT_CODE_FATAL_ERROR            = 66;
-    public static final int EXIT_CODE_OUT_OF_MEMORY          = 77;
-    public static final int EXIT_CODE_JINGLE_CALL_TOO_LONG   = 88;
-    public static final int EXIT_CODE_RELOCATE_ROOT_ANCHOR   = 99;
-    public static final int EXIT_CODE_JINGLE_TASK_FATAL_EXIT = 111;
-
-    /// Incorrect S3 access key or secret key for accessing bucket
-    public static final int EXIT_CODE_BAD_S3_CREDENTIALS     = 113;
-
-    /// S3 encryption password doesn't match the password used to encrypt the data stored in the bucket
-    public static final int EXIT_CODE_BAD_S3_PASSWORD        = 114;
-
-    public static final long STORE_QUOTA_UNLIMITED      = Long.MAX_VALUE;
     public static final long TRANSPORT_DIAGNOSIS_STATE_PENDING = -1;
 
     public static final int    S3_DELETED_FILE_LEN      = -1;
-    public static final String S3_DELETED_FILE_CHUNK_STR = "";
     public static final String GUI_NAME                 = "gui";
     public static final String CLI_NAME                 = "cli";
     public static final String SH_NAME                  = "sh";
     public static final String TOOLS_NAME               = "tools";
-    public static final String S3_UPLOADER_NAME         = "s3uploader";
-    public static final String S3_CACHE_NAME            = "s3cache";
-    public static final String S3_CLEANER_NAME          = "s3cleaner";
     public static final String S3_CACHE_DIR             = "cache";
-    public static final String S3_LOCK_DIR              = "lock";
-    public static final String S3_CHUNK_DIR             = "chunk";
-    public static final String S3_LOCK1_EXT             = ".l";
     public static final String END_OF_DEFECT_MESSAGE    = "---EOM---";
 
     public static final InetAddress LOCALHOST_ADDR;

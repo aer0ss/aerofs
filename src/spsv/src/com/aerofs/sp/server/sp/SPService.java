@@ -5,6 +5,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
@@ -75,7 +76,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
 import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_NAME;
 
 class SPService implements ISPService
@@ -373,8 +373,8 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        SVClient.sendEmail(SP_EMAIL_ADDRESS, SP_EMAIL_NAME, _sessionUser.getUser(), null, subject,
-                body, null, true,null);
+        SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME, _sessionUser.getUser(), null,
+                subject, body, null, true,null);
 
         _transaction.commit();
 

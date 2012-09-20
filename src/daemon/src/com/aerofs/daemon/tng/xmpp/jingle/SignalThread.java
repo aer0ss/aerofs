@@ -17,7 +17,7 @@ import com.aerofs.j.XmppMain;
 import com.aerofs.j.XmppSocket_CloseEventSlot;
 import com.aerofs.j.XmppSocket_ErrorSlot;
 import com.aerofs.l.L;
-import com.aerofs.lib.C;
+import com.aerofs.lib.ExitCode;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -293,10 +293,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
             //
             Util.waitUninterruptable(this, DaemonParam.Jingle.CALL_TIMEOUT);
 
-            if (!_wake) {
-                l.warn("call() too long");
-                System.exit(C.EXIT_CODE_JINGLE_CALL_TOO_LONG);
-            }
+            if (!_wake) ExitCode.JINGLE_CALL_TOO_LONG.exit();
         }
 
         @Override

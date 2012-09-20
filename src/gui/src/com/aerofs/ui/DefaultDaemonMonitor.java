@@ -20,6 +20,7 @@ import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.apache.log4j.Logger;
+import static com.aerofs.lib.ExitCode.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -51,20 +52,21 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         while (true) {
             if (proc != null) {
                 try {
-                    int exit = proc.exitValue();
-                    if (exit == C.EXIT_CODE_BAD_S3_CREDENTIALS) {
-                        l.error("The S3 credentials were incorrect. Please check that you have" +
+                    // TODO (WW) merge the following code into onDaemonDeath?
+                    int exitCode = proc.exitValue();
+                    if (exitCode == BAD_S3_CREDENTIALS.getNumber()) {
+                        throw new IOException(
+                                "The S3 credentials were incorrect. Please check that you have" +
                                 " the correct bucket name and AWS access and secret key.");
-                        throw new IOException("the S3 credentials were incorrect");
-                    } else if (exit == C.EXIT_CODE_BAD_S3_PASSWORD) {
-                        l.error("Unable to decrypt the S3 bucket data using the supplied S3" +
+                    } else if (exitCode == BAD_S3_DATA_ENCRYPTION_PASSWORD.getNumber()) {
+                        throw new IOException(
+                                "Unable to decrypt the S3 bucket data using the supplied S3" +
                                 " encryption password. Please check that you have the correct" +
                                 " password.");
-                        throw new IOException("the S3 encryption password did not match the" +
-                                " encrypted data");
                     }
 
-                    throw new IOException("daemon exited with code " + exit);
+                    throw new IOException(getMessage(exitCode));
+
                 } catch (IllegalThreadStateException e) {
                     // the process is still running
                 }
@@ -168,15 +170,20 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      *
      * @param exitCode null if unknown
      */
-    private void sendDefectDaemonDeath(final Integer exitCode)
+    private void onDaemonDeath(final Integer exitCode)
     {
         // Daemon is intentionally shut down to prevent inconsistencies after moving root anchor.
         // Daemon will restart in new Cfg state
-        if (exitCode == C.EXIT_CODE_RELOCATE_ROOT_ANCHOR) {
+        if (exitCode == RELOCATE_ROOT_ANCHOR.getNumber()) {
             return;
         }
 
-        Util.startDaemonThread("sendDefectDaemonDeath", new Runnable () {
+        if (exitCode == SHUTDOWN_REQEUSTED.getNumber()) {
+            l.warn("daemon receives shutdown request. shutdown UI now.");
+            SHUTDOWN_REQEUSTED.exit();
+        }
+
+        Util.startDaemonThread("onDaemonDeath", new Runnable () {
             @Override
             public void run()
             {
@@ -184,7 +191,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 // contain the lines logged right before the death.
                 Util.sleepUninterruptable(5 * C.SEC);
                 _fdsDeath.logSendAsync("daemon died" + (exitCode == null ? "" :
-                                                                " w/ code " + exitCode));
+                        ": " + getMessage(exitCode)));
             }
         });
     }
@@ -286,18 +293,17 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         }
 
         if (!_stopping) {
-            // Since we didn't cause the daemon to stop, find the error
-            // code and report it
+            // Since we didn't cause the daemon to stop, find the error code and report it
 
             if (proc != null) {
                 try {
                     int code = proc.waitFor();
-                    sendDefectDaemonDeath(code);
+                    onDaemonDeath(code);
                 } catch (InterruptedException e) {
                     Util.fatal(e);
                 }
             } else {
-                sendDefectDaemonDeath(null);
+                onDaemonDeath(null);
             }
         }
     }

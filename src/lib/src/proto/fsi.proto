@@ -63,14 +63,6 @@ message PBFSICall {
         GET_ATTR_EX = 16;
 
         /**
-         * Request the daemon to immediately shutdown
-         *
-         * Call field: no
-         * Reply field: no
-         */
-        SHUTDOWN = 18;
-
-        /**
          * Set the user's private key
          *
          * Call field: yes

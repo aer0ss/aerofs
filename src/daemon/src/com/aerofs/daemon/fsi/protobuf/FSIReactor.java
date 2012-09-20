@@ -8,7 +8,6 @@ import com.aerofs.daemon.event.admin.EIListConflicts.ConflictEntry;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.fsi.FSIFile;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
-import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -100,9 +99,6 @@ public class FSIReactor implements IReactor
                 break;
             case SET_ATTR:
                 setAttr(user, call);
-                break;
-            case SHUTDOWN:
-                shutdown();
                 break;
             case SET_PRIVATE_KEY:
                 setKey(call);
@@ -213,13 +209,6 @@ public class FSIReactor implements IReactor
         PrivateKey key = SecUtil.decodePrivateKey(
                 call.getSetPrivateKey().getKey().toByteArray());
         new EISetPrivateKey(key).execute(FSIFile.PRIO);
-    }
-
-    private void shutdown() throws Exception
-    {
-        l.warn("shutdown requested");
-
-        System.exit(C.EXIT_CODE_SHUTDOWN);
     }
 
     private void setAttr(String user, PBFSICall call)

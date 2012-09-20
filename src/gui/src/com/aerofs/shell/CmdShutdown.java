@@ -1,34 +1,29 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.S;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
-// templated because ShProgram cannot deal properly with commands with different templated types
-public class CmdExit<S> implements IShellCommand<S>
+public class CmdShutdown implements IShellCommand<ShProgram>
 {
     @Override
-    public void execute(ShellCommandRunner<S> s, CommandLine cl)
-            throws ExBadArgs
+    public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
+            throws Exception
     {
-        exitShell();
-    }
-
-    static void exitShell()
-    {
-        System.exit(0);
+        s.d().getRitualClient_().shutdown();
+        CmdExit.exitShell();
     }
 
     @Override
     public String getName()
     {
-        return "exit";
+        return "shutdown";
     }
 
     @Override
     public String getDescription()
     {
-        return "exit the process";
+        return "shutdown " + S.PRODUCT + " and exit the current process";
     }
 
     @Override

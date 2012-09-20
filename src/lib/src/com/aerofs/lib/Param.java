@@ -58,7 +58,8 @@ public class Param
         public static final String
             DOWNLOAD_LINK = "https://" + L.get().webHost() + "/download",
             DOWNLOAD_BASE = "https://cache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com",
-            NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com";
+            NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com",
+            SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
     }
 
     public static class SP

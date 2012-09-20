@@ -3,6 +3,7 @@ package com.aerofs;
 import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.lib.ExitCode;
 import org.apache.log4j.Logger;
 
 import com.google.inject.CreationException;
@@ -66,7 +67,7 @@ public class Main {
         final int MAIN_ARGS = 2;
         if (args.length < MAIN_ARGS) {
             System.err.println("insufficient arguments");
-            System.exit(C.EXIT_CODE_BAD_ARGS);
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
 
         // parse arguments
@@ -94,15 +95,16 @@ public class Main {
         try {
             Util.initLog4J(rtRoot, prog);
         } catch (IOException e) {
+            String msg = "error init log4j: " + Util.e(e);
             // I don't know how to output to system.log on mac/linux. so use
             // the command line as a quick/dirty approach
             try {
-                Util.execForeground("logger" , "error init log4j: " + e);
+                Util.execForeground("logger", msg);
             } catch (Exception e2) {
-                System.err.println("can't output to system logger. ignored");
+                // ignored
             }
-            System.err.println("error init log4j: " + e);
-            System.exit(C.EXIT_CODE_CANNOT_INIT_LOG4J);
+            System.err.println(msg);
+            ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
         }
 
         Util.setDefaultUncaughtExceptionHandler();
@@ -129,7 +131,8 @@ public class Main {
                 SVClient.logSendDefectSyncNoCfgIgnoreError(true, "failed in main()", e,
                         "unknown", rtRoot);
             }
-            System.exit(C.EXIT_CODE_EXCEPTION_IN_MAIN);
+
+            ExitCode.FAIL_TO_LAUNCH.exit();
         }
     }
 

@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import com.aerofs.lib.ExitCode;
 import com.aerofs.proto.Sv.PBSVEmail;
 import org.apache.log4j.Logger;
 
@@ -367,7 +368,7 @@ public class SVClient
     {
         try {
             logSendDefectSyncNoCfg(automatic, context, e, user, rtRoot);
-        } catch (Exception e2) {
+        } catch (Throwable e2) {
             l.error("can't send defect sync: ", e2);
         }
     }
@@ -377,7 +378,7 @@ public class SVClient
     {
         try {
             logSendDefectSync(automatic, context, e);
-        } catch (Exception e2) {
+        } catch (Throwable e2) {
             l.error("can't send defect sync: ", e2);
         }
     }
@@ -637,7 +638,7 @@ public class SVClient
 
         if (Cfg.inited()) archiveLogs();
 
-        if (e instanceof OutOfMemoryError) System.exit(C.EXIT_CODE_OUT_OF_MEMORY);
+        if (e instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
     }
 
     public static void sendAnalytics(File db) throws Exception

@@ -9,6 +9,7 @@ import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
+import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.*;
@@ -248,7 +249,8 @@ public class UIUtil
      */
     public static void launch(String rtRoot, final Runnable preLaunch, final Runnable postLaunch)
     {
-        final String sorry = "Sorry, " + S.PRODUCT + " couldn't launch";
+        final String sorry = "Sorry, " + S.PRODUCT + " couldn't launch. Please contact us at " +
+                SV.SUPPORT_EMAIL_ADDRESS;
 
         try {
             GetInitialStatusReply reply = UI.controller().getInitialStatus();
@@ -256,7 +258,7 @@ public class UIUtil
 
             case NOT_LAUNCHABLE:
                 UI.get().show(MessageType.ERROR,
-                        reply.hasErrorMessage() ? reply.getErrorMessage() : sorry);
+                        reply.hasErrorMessage() ? reply.getErrorMessage() : sorry + ".");
                 System.exit(0);
                 break; // suppress compiler fall-through warning just for this case
 
@@ -311,7 +313,8 @@ public class UIUtil
                     public void onFailure(Throwable e)
                     {
                         l.warn(Util.e(e));
-                        UI.get().show(MessageType.ERROR, sorry + " " + UIUtil.e2msg(e));
+                        UI.get().show(MessageType.ERROR, sorry + ": " +
+                                UIUtil.e2msgSentenceNoBracket(e));
                         System.exit(0);
                     }
                 });
@@ -322,7 +325,7 @@ public class UIUtil
             System.exit(0);
         } catch (Exception e) {
             l.warn(Util.e(e));
-            UI.get().show(MessageType.ERROR, sorry + " " + UIUtil.e2msg(e));
+            UI.get().show(MessageType.ERROR, sorry + ": " + UIUtil.e2msgSentenceNoBracket(e));
             System.exit(0);
         }
     }

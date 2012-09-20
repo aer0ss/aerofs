@@ -107,8 +107,8 @@ public class Linker implements ILinker
             // Notifier failed to start, either because the root anchor is missing or AeroFS
             // couldn't access it. In either case, hopefully RootAnchorWatch in UI would notify the
             // user about the issue. We don't want to throw it out because 1) start() methods are
-            // not supposed to throw, and 2) we'd like a better error message from RootAnchorWatch
-            // than "daemon exited with code XX".
+            // not supposed to throw, and 2) we'd like to warn the user and proceed instead of
+            // terminating the daemon process.
             Util.l(this).warn("ignored: " + Util.e(e));
         }
 

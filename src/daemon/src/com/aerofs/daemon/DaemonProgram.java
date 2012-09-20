@@ -1,5 +1,6 @@
 package com.aerofs.daemon;
 
+import com.aerofs.lib.ExitCode;
 import org.apache.log4j.Level;
 
 import com.aerofs.daemon.core.CoreModule;
@@ -13,7 +14,6 @@ import com.aerofs.daemon.core.net.throttling.PerDeviceLimiter;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.fsi.FSI;
 import com.aerofs.daemon.ritual.RitualServer;
-import com.aerofs.lib.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.aws.s3.S3CredentialsException;
@@ -58,9 +58,9 @@ public class DaemonProgram implements IProgram {
             // I don't understand why mac needs this
             if (OSUtil.get().getOSFamily() == OSFamily.OSX) Util.halt();
         } catch (S3CredentialsException e) {
-            System.exit(C.EXIT_CODE_BAD_S3_CREDENTIALS);
+            ExitCode.BAD_S3_CREDENTIALS.exit();
         } catch (S3PasswordException e) {
-            System.exit(C.EXIT_CODE_BAD_S3_PASSWORD);
+            ExitCode.BAD_S3_DATA_ENCRYPTION_PASSWORD.exit();
         }
     }
 

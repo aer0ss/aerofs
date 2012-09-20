@@ -33,7 +33,7 @@ import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
 import com.aerofs.daemon.fsi.FSIFile;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.C;
+import com.aerofs.lib.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Role;
 import com.aerofs.lib.Util;
@@ -225,7 +225,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> shutdown() throws Exception
     {
         Util.l(this).warn("shutdown requested");
-        System.exit(C.EXIT_CODE_SHUTDOWN);
+        ExitCode.SHUTDOWN_REQEUSTED.exit();
 
         return createVoidReply();
     }

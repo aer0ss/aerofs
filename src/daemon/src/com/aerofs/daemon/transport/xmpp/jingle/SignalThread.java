@@ -314,7 +314,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                     // I'm paranoid
                     l.fatal("call() too long. failed m_id:" + postMessageId + " t:" + task);
                     Util.logAllThreadStackTraces();
-                    System.exit(C.EXIT_CODE_JINGLE_CALL_TOO_LONG);
+                    ExitCode.JINGLE_CALL_TOO_LONG.exit();
                 }
             }
         }
@@ -378,7 +378,7 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
             } catch (Throwable t) {
                 l.fatal("jingle task crash and burn");
                 l.fatal(Util.stackTrace2string(t));
-                System.exit(C.EXIT_CODE_JINGLE_TASK_FATAL_EXIT);
+                ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
             }
 
             wake();

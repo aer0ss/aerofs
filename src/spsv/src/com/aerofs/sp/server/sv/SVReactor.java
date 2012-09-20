@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
@@ -43,7 +44,6 @@ import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.proto.Sv.PBSVReply;
-import com.aerofs.sp.server.SPSVParam;
 import com.google.common.collect.Maps;
 
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_RECEIVER;
@@ -256,7 +256,7 @@ public class SVReactor
             String msg = desc.substring(0, eom);
             EmailSender.sendEmail(header.getUser(),
                                   header.getUser(),
-                                  SPSVParam.SUPPORT_SYSTEM_EMAIL_SINK,
+                                  SV.SUPPORT_EMAIL_ADDRESS,
                                   null,
                                   S.PRODUCT + " Problem # " + id,
                                   msg,

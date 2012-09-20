@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.lib.Param.SP;
+import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.SVClient;
@@ -13,8 +14,6 @@ import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.servletlib.sp.SPParam;
 
 import javax.annotation.Nullable;
-
-import static com.aerofs.sp.server.SPSVParam.*;
 
 /**
  * Extendable (mockable) class that sends invitation emails
@@ -55,7 +54,7 @@ public class InvitationEmailer
                     HEADER_SIZE.H1, body);
 
             email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team",
-                    "Have questions or comments? Email us at " + SP_EMAIL_ADDRESS);
+                    "Have questions or comments? Email us at " + SV.SUPPORT_EMAIL_ADDRESS);
         } else {
             body = "\nHi,\n\n" +
                     "You've recently signed up to test " + S.PRODUCT + " - file syncing without " +
@@ -75,12 +74,12 @@ public class InvitationEmailer
                     body);
 
             email.addSignature("Happy Syncing :)", fromPerson,
-                    "p.s. Let us know what you think at " + SP_EMAIL_ADDRESS +
+                    "p.s. Let us know what you think at " + SV.SUPPORT_EMAIL_ADDRESS +
                             ". We'd love to hear your feedback!");
         }
 
-        SVClient.sendEmail(SP_EMAIL_ADDRESS, fromPerson, to, null, subject, email.getTextEmail(),
-                email.getHTMLEmail(), true, Category.FOLDERLESS_INVITE);
+        SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, fromPerson, to, null, subject,
+                email.getTextEmail(), email.getHTMLEmail(), true, Category.FOLDERLESS_INVITE);
 
         EmailUtil.emailSPNotification(from + " invited " + to + (folderName != null ? " to " + folderName : " folderless"),
                 "code " + signupCode);
@@ -113,7 +112,7 @@ public class InvitationEmailer
 
         email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team", Email.DEFAULT_PS);
 
-        SVClient.sendEmail(SP_EMAIL_ADDRESS,
+        SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,
                 fromPerson,
                 to,
                 null,

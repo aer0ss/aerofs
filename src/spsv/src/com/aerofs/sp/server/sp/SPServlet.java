@@ -2,6 +2,7 @@ package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
@@ -31,7 +32,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.aerofs.servletlib.sp.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
-import static com.aerofs.sp.server.SPSVParam.SP_EMAIL_ADDRESS;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 
@@ -200,9 +200,10 @@ public class SPServlet extends AeroServlet
         if (_db.isAlreadyInvited(to, orgId)) throw  new ExAlreadyExist("user already invited");
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _db.addTargetedSignupCode(code, SP_EMAIL_ADDRESS, to, orgId);
+        _db.addTargetedSignupCode(code, SV.SUPPORT_EMAIL_ADDRESS, to, orgId);
 
-        _emailer.sendUserInvitationEmail(SP_EMAIL_ADDRESS, to, fromPerson, null, null, code);
+        _emailer.sendUserInvitationEmail(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null,
+                code);
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>
