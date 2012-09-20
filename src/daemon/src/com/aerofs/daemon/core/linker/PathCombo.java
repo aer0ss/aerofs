@@ -69,22 +69,12 @@ public class PathCombo implements Comparable<PathCombo>
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        PathCombo pathCombo = (PathCombo) o;
-
-        if (!_absPath.equals(pathCombo._absPath)) return false;
-        if (!_path.equals(pathCombo._path)) return false;
-
-        return true;
+        return this == o || (o != null && _path.equals(((PathCombo) o)._path));
     }
 
     @Override
     public int hashCode()
     {
-        int result = _absPath.hashCode();
-        result = 31 * result + _path.hashCode();
-        return result;
+        return _path.hashCode();
     }
 }

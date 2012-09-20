@@ -128,21 +128,6 @@ public class CredentialUtil
     {
         char[] pbePass = Base64.encodeBytes(scrypted).toCharArray();
         byte[] bs = SecUtil.encryptPrivateKey(privKey, pbePass);
-        File rtRoot = new File(Cfg.absRTRoot());
-        // Create a new key file with a random name
-        File privateKeyTempFile = File.createTempFile("keyfile", null, rtRoot);
-        // Set permissions to 600
-        privateKeyTempFile.setReadable(false, false);   // chmod a-r
-        privateKeyTempFile.setWritable(false, false);   // chmod a-w
-        privateKeyTempFile.setExecutable(false, false); // chmod a-x
-        privateKeyTempFile.setReadable(true, true);     // chmod +r
-        privateKeyTempFile.setWritable(true, true);     // chmod +w
-        // Write the key out
-        Base64.encodeToFile(bs, privateKeyTempFile.getPath());
-        // Set permissions to 400
-        privateKeyTempFile.setWritable(false, false);     // chmod a-w
-        // Move keyfile into final resting place
-        File privateKeyFile = new File(rtRoot, C.DEVICE_KEY);
-        privateKeyTempFile.renameTo(privateKeyFile);
+        Base64.encodeToFile(bs, new File(Cfg.absRTRoot(), C.DEVICE_KEY).getPath());
     }
 }
