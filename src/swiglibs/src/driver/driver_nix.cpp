@@ -132,4 +132,11 @@ int waitForNetworkInterfaceChange()
     // to implement on Linux: http://stackoverflow.com/questions/2261759/get-notified-about-network-interface-change-on-linux
 }
 
+TrayPosition getTrayPosition()
+{
+    // Windows only - return nothing on *nix
+    TrayPosition result = {};
+    return result;
+}
+
 }//namespace Driver

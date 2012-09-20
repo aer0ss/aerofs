@@ -45,4 +45,8 @@ public class Driver implements DriverConstants {
     DriverJNI.setFolderIcon(j, folderPath, iconName);
   }
 
+  public static TrayPosition getTrayPosition() {
+    return new TrayPosition(DriverJNI.getTrayPosition(), true);
+  }
+
 }

@@ -296,4 +296,106 @@ int killDaemon()
     return error ? DRIVER_FAILURE : numDaemonsKilled;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// Functions related to finding the position of our tray icon
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+struct WindowToFind
+{
+    TCHAR* windowName;
+    HWND hWnd;
+};
+
+/**
+ * Callback function for EnumChildWindows
+ * Given a pointer to a struct WindowToFind in lParam, it will check that the window class name
+ * matches the one in the struct, and return the window handle in the struct
+ * Note: this returns the _last_ window that matches. This is needed because on Windows 7 there can
+ * be two ToolbarWindow32, the first for the regular system tray icons, the second for temporarily
+ * promoted icons (icons that stay there for 45 seconds and then disappear into the overflow area).
+ */
+BOOL CALLBACK enumChildWindowCallback(HWND hWnd, LPARAM lParam)
+{
+    WindowToFind* params = (WindowToFind*) lParam;
+    TCHAR szClassName[256];
+    GetClassName(hWnd, szClassName, sizeof(szClassName));
+    if (_tcscmp(szClassName, params->windowName) == 0) {
+        params->hWnd = hWnd;
+    }
+    return TRUE;
+}
+
+/**
+ * Returns the the handle to the tray window, or NULL if failed.
+ */
+HWND getTrayWindow()
+{
+    HWND trayWnd = FindWindow(_T("Shell_TrayWnd"), NULL);
+
+    if (trayWnd) {
+        WindowToFind trayNotify = {_T("TrayNotifyWnd"), NULL};
+        EnumChildWindows(trayWnd, enumChildWindowCallback, (LPARAM) &trayNotify);
+
+        if (trayNotify.hWnd && IsWindow(trayNotify.hWnd)) {
+            WindowToFind toolbarWnd = {_T("ToolbarWindow32"), NULL};
+            EnumChildWindows(trayNotify.hWnd, enumChildWindowCallback, (LPARAM) &toolbarWnd);
+            if (toolbarWnd.hWnd) {
+                return toolbarWnd.hWnd;
+            }
+        }
+    }
+    return NULL;
+}
+
+TrayPosition getTrayPosition()
+{
+    int iconWidth = GetSystemMetrics(SM_CXSMICON);
+
+    // Get the orientation of the task bar
+    APPBARDATA abd = {0};
+    abd.cbSize = sizeof(APPBARDATA);
+    abd.hWnd = FindWindow(_T("Shell_TrayWnd"), NULL);
+    if (!SHAppBarMessage(ABM_GETTASKBARPOS, &abd)) {
+        abd.uEdge = ABE_BOTTOM; // In case of failure, use bottom as default
+    }
+
+    // Get the rect that corresponds to the tray icon area
+    RECT rect = {0};
+    GetWindowRect(getTrayWindow(), &rect);
+
+    OSVERSIONINFO version = {0};
+    version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&version);
+
+    // Don't add any margin on Windows XP
+    const int HORIZONTAL_MARGIN = (version.dwMajorVersion > 5) ? 6 : 0;
+    const int VERTICAL_MARGIN   = (version.dwMajorVersion > 5) ? 3 : 0;
+
+    TrayPosition result;
+    switch (abd.uEdge) {
+    case ABE_TOP:
+        result.orientation = TrayPosition::Top;
+        result.x = rect.left + iconWidth / 2 + HORIZONTAL_MARGIN;
+        result.y = rect.bottom;
+        break;
+    case ABE_RIGHT:
+        result.orientation = TrayPosition::Right;
+        result.x = rect.left;
+        result.y = rect.top + iconWidth / 2 + VERTICAL_MARGIN;
+        break;
+    case ABE_BOTTOM:
+        result.orientation = TrayPosition::Bottom;
+        result.x = rect.left + iconWidth / 2 + HORIZONTAL_MARGIN;
+        result.y = rect.top;
+        break;
+    case ABE_LEFT:
+        result.orientation = TrayPosition::Left;
+        result.x = rect.right;
+        result.y = rect.top + iconWidth / 2 + VERTICAL_MARGIN;
+        break;
+    }
+
+    return result;
+}
+
 }  // namespace Driver
