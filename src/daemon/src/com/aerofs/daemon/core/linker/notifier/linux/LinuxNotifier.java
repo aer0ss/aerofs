@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.aerofs.swig.driver.Driver;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
@@ -183,16 +184,19 @@ public class LinuxNotifier implements INotifier, INotifyListener
         for (String childname : childrennames) {
             File child = new File(dir, childname);
             // We should only add watches on children that are actually directories.
-            // File.isDirectory() returns false for symlinks, for reference.
-            // Thus, we do not follow symlinks.
-            try {
-                if (child.isDirectory()) {
+            // Unfortunately, File.isDirectory() does not distinguish between folders and symlinks
+            // to folders, so we call into Driver (which distinguishes between the two).
+            // N.B. Driver.getFid requires null for the first parameter (swig oddity), and accepts a
+            // byte buffer as the third argument (in which it places the FID).  Since we don't
+            // actually care about the FID, we just pass null (which is correctly handled by Driver)
+            if (Driver.getFid(null, child.getPath(), null) == Driver.GETFID_DIR) {
+                try {
                     addWatchRecursively(childname, watch_id);
-                }
-            } catch (JNotifyException e) {
-                // See above.
-                if (e.getErrorCode() != JNotifyException.ERROR_NO_SUCH_FILE_OR_DIRECTORY) {
-                    throw e;
+                } catch (JNotifyException e) {
+                    // See above.
+                    if (e.getErrorCode() != JNotifyException.ERROR_NO_SUCH_FILE_OR_DIRECTORY) {
+                        throw e;
+                    }
                 }
             }
 
