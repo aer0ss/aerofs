@@ -27,4 +27,17 @@ public class DriverJNI {
   public final static native int getMountIdForPath(Object jarg1, String jarg2, byte[] jarg3);
   public final static native int getFileSystemType(Object jarg1, String jarg2, byte[] jarg3, int jarg4);
   public final static native void setFolderIcon(Object jarg1, String jarg2, String jarg3);
+  public final static native void TrayPosition_x_set(long jarg1, TrayPosition jarg1_, int jarg2);
+  public final static native int TrayPosition_x_get(long jarg1, TrayPosition jarg1_);
+  public final static native void TrayPosition_y_set(long jarg1, TrayPosition jarg1_, int jarg2);
+  public final static native int TrayPosition_y_get(long jarg1, TrayPosition jarg1_);
+  public final static native int TrayPosition_Top_get();
+  public final static native int TrayPosition_Right_get();
+  public final static native int TrayPosition_Bottom_get();
+  public final static native int TrayPosition_Left_get();
+  public final static native void TrayPosition_orientation_set(long jarg1, TrayPosition jarg1_, int jarg2);
+  public final static native int TrayPosition_orientation_get(long jarg1, TrayPosition jarg1_);
+  public final static native long new_TrayPosition();
+  public final static native void delete_TrayPosition(long jarg1);
+  public final static native long getTrayPosition();
 }

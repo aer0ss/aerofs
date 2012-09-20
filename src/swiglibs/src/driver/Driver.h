@@ -103,6 +103,14 @@ int getFileSystemType(JNIEnv * j, jstring path, void * buffer, int bufLen);
  */
 void setFolderIcon(JNIEnv * j, jstring folderPath, jstring iconName);
 
+struct TrayPosition {
+    int x;
+    int y;
+    enum {Top, Right, Bottom, Left} orientation;
+};
+
+TrayPosition getTrayPosition();
+
 }
 
 #endif //AEROFS_DRIVER_H_
