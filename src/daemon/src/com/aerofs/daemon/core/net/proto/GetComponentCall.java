@@ -16,7 +16,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExNoNewUpdate;
+import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.OCID;
@@ -229,8 +229,8 @@ public class GetComponentCall
             // aliased objects?
             if (!_ds.isPresent_(k) &&
                 !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
-                l.info(k + " not present. Throwing NOT_FOUND");
-                throw new ExNotFound();
+                l.info(k + " not present. Throwing");
+                throw new ExNoComponentWithSpecifiedVersion();
             }
 
             /* check permissions
@@ -272,7 +272,7 @@ public class GetComponentCall
                 if (l.isInfoEnabled()) {
                     l.info("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
                 }
-                throw new ExNoNewUpdate();
+                throw new ExNoComponentWithSpecifiedVersion();
             }
 
             // the kml_version field is used only as a hint for the receiver to

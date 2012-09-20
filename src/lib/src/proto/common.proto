@@ -67,7 +67,7 @@ message PBException {
         ////////////////////////////////////////////////////
 
         UPDATE_IN_PROGRESS = 100;
-        NO_NEW_UPDATE = 101;
+        NO_COMPONENT_WITH_SPECIFIED_VERSION = 101;
 
         ////////////////////////////////////////////////////
         // Ritual exception types

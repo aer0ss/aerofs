@@ -64,8 +64,6 @@ public class ComputeHashCall
                 .setComputeHashCall(bd).build();
 
         _rpc.do_(did, soid.sidx(), call, tk, "computeHashCall " + soid);
-
-        return;
     }
 
     public void sendReply_(DigestedMessage msg, SOCKID k) throws Exception

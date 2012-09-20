@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.*;
+import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -282,13 +283,13 @@ public class Download
                 l.info(_socid + ": " + Util.e(e));
                 _tk.sleep_(3 * C.SEC, "retry dl (no rsc)");
 
-            } catch (ExNoNewUpdate e) {
+            } catch (ExNoComponentWithSpecifiedVersion e) {
                 reenqueue(started);
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) {
-                    l.info("recv " + ExNoNewUpdate.class + " & kml = 0. done");
+                    l.info("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml = 0. done");
                     return replier;
                 } else {
-                    l.info("recv " + ExNoNewUpdate.class + " & kml != 0. retry");
+                    l.info("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml != 0. retry");
                     avoidDevice_(replier, e);
                 }
 
@@ -357,7 +358,6 @@ public class Download
     private void avoidDevice_(DID replier, Exception e)
     {
         _src.avoid_(replier);
-        // TODO (MJ) only replace existing exceptions if e is a Permanent error
         _did2e.put(replier, e);
     }
 

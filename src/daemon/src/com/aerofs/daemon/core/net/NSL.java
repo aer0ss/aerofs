@@ -223,9 +223,8 @@ public class NSL
      * @param pb protobuf message to be sent to the peer
      * @return {@link Endpoint} object if the message was unicast to a single device,
      * null if it was maxcast or sent via unicast to multiple devices
-     * @throws Exception
      */
-    public Endpoint send_(To to, SIndex sidx, PBCore pb) throws Exception
+    public @Nullable Endpoint send_(To to, SIndex sidx, PBCore pb) throws Exception
     {
         return send_(to, CoreUtil.typeString(pb), pb.getRpcid(), sidx,
                 Util.writeDelimited(pb).toByteArray());

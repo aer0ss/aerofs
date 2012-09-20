@@ -1,6 +1,7 @@
 package com.aerofs.lib.ex;
 
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
@@ -68,7 +69,8 @@ public class Exceptions
         case TIMEOUT:               return new ExTimeout(pb);
         case DEVICE_OFFLINE:        return new ExDeviceOffline(pb);
         case UPDATE_IN_PROGRESS:    return new ExUpdateInProgress(pb);
-        case NO_NEW_UPDATE:         return new ExNoNewUpdate(pb);
+        case NO_COMPONENT_WITH_SPECIFIED_VERSION:
+                                    return new ExNoComponentWithSpecifiedVersion(pb);
         case NO_AVAIL_DEVICE:       return new ExNoAvailDevice(pb);
         case NOT_SHARED:            return new ExNotShared(pb);
         case BAD_CREDENTIAL:        return new ExBadCredential(pb);

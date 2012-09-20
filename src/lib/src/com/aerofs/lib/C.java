@@ -96,7 +96,7 @@ public class C
     // This number increments every time the protocol is updated
     // - whenever changing this number, the major version number also needs to
     //   be incremented (on top of aerofs.daemon/tools/build)
-    public static final int CORE_MAGIC                  = 0x637265BC;
+    public static final int CORE_MAGIC                  = 0x637265BD;
     public static final int FSI_MAGIC                   = 0xABCD8422;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 

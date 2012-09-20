@@ -3,10 +3,12 @@ package com.aerofs.daemon.core.collector;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.Set;
 
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.ex.collector.AbstractExPermanentError;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.CoreExponentialRetry;
@@ -130,7 +132,8 @@ public class Collector implements IDumpStatMisc
         _f._er.retry("online", new Callable<Void>()
         {
             @Override
-            public Void call() throws Exception
+            public Void call()
+                    throws Exception
             {
                 if (_cfs.loadDBFilter_(did)) {
                     l.info(did + " online triggers collector 4 " + _s.sidx());
@@ -383,7 +386,6 @@ public class Collector implements IDumpStatMisc
                             {
                                 assert started_();
                                 collect_(null);
-
                                 return null;
                             }
                         });
@@ -399,74 +401,9 @@ public class Collector implements IDumpStatMisc
         try {
             // download the component even if it's already being downloaded, so
             // that the new destination devices can be added if they are not there
-            Util.verify(_f._dls.downloadAsync_(socid, _f._factTo.create_(dids),
-                    new IDownloadCompletionListener()
-                    {
-                        private void postDownloadCompletionTask()
-                        {
-                            Util.verify(_downloads-- >= 0);
-                            attemptToStopAndFinalizeCollection_(null);
-                        }
-
-                        @Override
-                        public void okay_(SOCID socid, DID from)
-                        {
-                            if (tk != null) tk.reclaim_();
-                            _s.downloaded_(socid);
-                            postDownloadCompletionTask();
-                        }
-
-                        @Override
-                        public void onGeneralError_(SOCID socid, Exception e)
-                        {
-                            l.info("cdl " + socid + ": " + Util.e(e));
-                            if (tk != null) tk.reclaim_();
-
-                            // For general errors, we want to re-run this collector.
-                            // Indicate the BFs are dirty for all devices of interest so
-                            // that they are re-introduced into the next collector iteration.
-                            for (DID did : dids) _cfs.setDirtyBit_(did);
-                            scheduleBackoff_();
-                            postDownloadCompletionTask();
-                        }
-
-                        @Override
-                        public void onPerDeviceErrors_(SOCID socid,
-                                Map<DID, Exception> did2e)
-                        {
-                            if (tk != null) tk.reclaim_();
-
-                            // Temporary code to address AE in 0.4.76
-                            boolean hasNonPermanentError = false;
-                            for (DID did : dids) {
-                                Exception e = did2e.get(did);
-                                if (e == null || !isPermanentError(e)) {
-                                    _cfs.setDirtyBit_(did);
-                                    hasNonPermanentError = true;
-                                }
-                            }
-                            if (hasNonPermanentError) scheduleBackoff_();
-
-                            /**
-                             // The set of DIDs passed in must be a superset of {@code dids}.
-                             assert did2e.keySet().containsAll(dids)
-                             : did2e + " " + dids;
-                            // Rerun the collector for devices with non-permanent errors only:
-                            // 1) set the dirty bit for those devices
-                            // 2) schedule another collector run
-                            boolean hasNonPermanentError = false;
-                            for (Entry<DID, Exception> entry : did2e.entrySet()) {
-                                if (!isPermanentError(entry.getValue())) {
-                                    _cfs.setDirtyBit_(entry.getKey());
-                                    hasNonPermanentError = true;
-                                }
-                            }
-                            if (hasNonPermanentError) scheduleBackoff_();
-                            */
-
-                            postDownloadCompletionTask();
-                        }
-                    }, tk));
+            Util.verify(_f._dls
+                    .downloadAsync_(socid, _f._factTo.create_(dids),
+                            new CollectorDownloadListener(dids, tk), tk));
 
             _downloads++;
             enqueued = true;
@@ -476,15 +413,101 @@ public class Collector implements IDumpStatMisc
         }
     }
 
+    private class CollectorDownloadListener implements IDownloadCompletionListener
+    {
+        private final Set<DID> _dids;
+        private final @Nullable Token _tk;
+
+        CollectorDownloadListener(Set<DID> dids, @Nullable Token tk)
+        {
+            _dids = dids;
+            _tk = tk;
+        }
+
+        private void postDownloadCompletionTask()
+        {
+            Util.verify(_downloads-- >= 0);
+            attemptToStopAndFinalizeCollection_(null);
+        }
+
+        @Override
+        public void okay_(SOCID socid, DID from)
+        {
+            if (_tk != null) _tk.reclaim_();
+            _s.downloaded_(socid);
+            postDownloadCompletionTask();
+        }
+
+        @Override
+        public void onGeneralError_(SOCID socid, Exception e)
+        {
+            l.info("cdl " + socid + ": " + Util.e(e));
+            if (_tk != null) _tk.reclaim_();
+
+            // For general errors, we want to re-run this collector.
+            // Indicate the BFs are dirty for all devices of interest so
+            // that they are re-introduced into the next collector iteration.
+            for (DID did : _dids) _cfs.setDirtyBit_(did);
+            assert !_dids.isEmpty() : socid + " " + Util.e(e);
+            scheduleBackoff_();
+            postDownloadCompletionTask();
+        }
+
+        @Override
+        public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e)
+        {
+            if (_tk != null) _tk.reclaim_();
+
+            // Gather the set of DIDs from which we received non-permanent errors
+            // 1) First determine those *with* permanent errors
+            Set<DID> didsWithPermanentErrors = Sets.newHashSetWithExpectedSize(did2e.size());
+            for (Entry<DID, Exception> entry : did2e.entrySet()) {
+                if (isPermanentError(entry.getValue())) didsWithPermanentErrors.add(entry.getKey());
+            }
+            // 2) Use set theory to complement that set correctly
+            // N.B. because the set of DIDs in the device-specific errors map is not necessarily a
+            // superset of {@code _dids}, we must take the union of the two sets, then remove any
+            // DIDs that have permanent errors. We don't know whether these additional devices from
+            // {@code _dids} failed due to a permanent or transient error.
+            Set<DID> didsWithoutPermanentErrors =
+                    Sets.difference(Sets.union(_dids, did2e.keySet()), didsWithPermanentErrors);
+
+            // Rerun the collector for devices with non-permanent errors only:
+            // 1) set the dirty bit for those devices
+            // 2) schedule another collector run
+            //
+            // Safety Proof: Weihan raised a valid concern about when a collector filter is received
+            // immediately after a permament error, from the same device, but I'll
+            // quickly reason about why the Collector algorithm handles this safely. If a permanent
+            // error is received from device A, then we do *not* set the dirty bit for its collector
+            // filter (below), therefore when the Collector stops, device A's existing filter will
+            // be deleted. Meanwhile, just after receipt of the permanent error, device A had an
+            // update, so it sent a new bloom filter. Weihan's concern was that this newly-received
+            // filter would get discarded prematurely because the dirty bit was not set. However,
+            // adding a filter to an already-started collection (such as in this story line) also
+            // adds that filter to the bottom of the collector sequence (see
+            // {@code Collector.add_}). So when device A's new filter was received, it prevented the
+            // collection from stopping until all objects were queried into that filter, and since
+            // filters can only be deleted when collection *stops*, this avoids the problem of not
+            // collecting objects using device A's new updated filter. QED (for this one case)
+            if (!didsWithoutPermanentErrors.isEmpty()) {
+                for (DID did : didsWithoutPermanentErrors) _cfs.setDirtyBit_(did);
+                scheduleBackoff_();
+            }
+
+            postDownloadCompletionTask();
+        }
+
+    }
+
     /**
      * @param e the exception received from the remote peer when trying to download an object
-     * @return whether the remote exception is a "permanent" error. For a permanent error,
-     * the Collector should not try to download the object again from that device, until the
-     * state of that device changes (e.g. its filter contains the object again).
+     * @return whether the remote exception is a "permanent" error.
+     * See {@code AbstractExPermanentError} for details
      */
     private static boolean isPermanentError(Exception e)
     {
-        return e instanceof ExNotFound;
+        return e instanceof AbstractExPermanentError;
     }
 
     @Override
