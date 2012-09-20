@@ -45,20 +45,16 @@ import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ModifiedObject;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Param.SyncStat;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.syncstat.SyncStatBlockingClient;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 
 /**
  * This class keeps local sync status information in sync with the central server.
@@ -91,7 +87,7 @@ public class SyncStatusSynchronizer
     private final CoreQueue _q;
     private final TransManager _tm;
     private final LocalSyncStatus _lsync;
-    private final SyncStatBlockingClient.Factory _ssf;
+    private final SyncStatusConnection _ssc;
     private final IActivityLogDatabase _aldb;
     private final NativeVersionControl _nvc;
     private final IMapSIndex2SID _sidx2sid;
@@ -102,21 +98,18 @@ public class SyncStatusSynchronizer
 
     private final boolean _enable;
 
-    private SyncStatBlockingClient _c;
-
     @Inject
     public SyncStatusSynchronizer(CoreQueue q, CoreScheduler sched, TC tc, TransManager tm,
-            LocalSyncStatus lsync, DirectoryService ds, SyncStatBlockingClient.Factory ssf,
+            LocalSyncStatus lsync, DirectoryService ds, SyncStatusConnection ssc,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, MapSIndex2DeviceBitMap sidx2dbm,
             ActivityLog al, IActivityLogDatabase aldb, NativeVersionControl nvc,
             CfgLocalUser localUser)
     {
-        _c = null;
         _q = q;
         _tc = tc;
         _tm = tm;
         _ds = ds;
-        _ssf = ssf;
+        _ssc = ssc;
         _lsync = lsync;
         _aldb = aldb;
         _nvc = nvc;
@@ -139,31 +132,6 @@ public class SyncStatusSynchronizer
         // 2) process items in the activity log left by a previous run
         // 3) make a first pull
         scheduleStartup();
-    }
-
-    /**
-     * Wrapper to access sync status client
-     */
-    private synchronized SyncStatBlockingClient c() throws Exception
-    {
-        if (_c == null) {
-            try {
-                _c = _ssf.create(SyncStat.URL, Cfg.user());
-                _c.signInRemote();
-            } catch (Exception e) {
-                l.warn("Connection to sync status server failed", e);
-                throw e;
-            }
-        }
-        return _c;
-    }
-
-    /**
-     * Force reconnection to sync stat server on next RPC call
-     */
-    private synchronized void closeClient()
-    {
-        _c = null;
     }
 
     /**
@@ -200,15 +168,9 @@ public class SyncStatusSynchronizer
             @Override
             public Void call() throws Exception
             {
-                try {
-                    bootstrap_();
-                    scanActivityLog_();
-                    pullSyncStatus_();
-                } catch (Exception e) {
-                    closeClient();
-                    // rethrow to let ExponentialRetry kick in
-                    throw e;
-                }
+                bootstrap_();
+                scanActivityLog_();
+                pullSyncStatus_();
                 return null;
             }
         };
@@ -294,13 +256,7 @@ public class SyncStatusSynchronizer
                     public Void call() throws Exception
                     {
                         if (seq != _pullSeq) return null;
-                        try {
-                            pullSyncStatus_();
-                        } catch (Exception e) {
-                            closeClient();
-                            // let ExponentialRetry kick in
-                            throw e;
-                        }
+                        pullSyncStatus_();
                         return null;
                     }
                 });
@@ -364,17 +320,8 @@ public class SyncStatusSynchronizer
             long localEpoch = _lsync.getPullEpoch_();
             l.info("pull " + localEpoch);
 
-            // release the core lock during the RPC call
-            GetSyncStatusReply reply = null;
-            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpull");
-            TCB tcb = null;
-            try {
-                tcb = tk.pseudoPause_("syncstatpull");
-                reply = c().getSyncStatus(localEpoch);
-            } finally {
-                if (tcb != null) tcb.pseudoResumed_();
-                tk.reclaim_();
-            }
+            // NOTE: release the core lock during the RPC call
+            GetSyncStatusReply reply = _ssc.getSyncStatus_(localEpoch);
 
             if (reply == null) return;
 
@@ -505,13 +452,7 @@ public class SyncStatusSynchronizer
                     public Void call() throws Exception
                     {
                         if (_scanSeq != _seq) return null;
-                        try {
-                            scanActivityLogInternal_();
-                        } catch (Exception e) {
-                            closeClient();
-                            // let ExponentialRetry kick in
-                            throw e;
-                        }
+                        scanActivityLogInternal_();
                         return null;
                     }
                 });
@@ -581,15 +522,7 @@ public class SyncStatusSynchronizer
 
         byte[] vh = getVersionHash_(soid);
         l.warn(soid.toString() + " : " + Util.hexEncode(vh));
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpush");
-        TCB tcb = null;
-        try {
-            tcb = tk.pseudoPause_("syncstatpush");
-            c().setVersionHash(soid.oid().toPB(), sid.toPB(), ByteString.copyFrom(vh));
-        } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
-        }
+        _ssc.setVersionHash_(soid.oid(), sid, vh);
     }
 
     /**

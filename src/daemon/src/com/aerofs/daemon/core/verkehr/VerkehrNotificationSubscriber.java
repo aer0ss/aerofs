@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.verkehr;
 
+import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
@@ -34,7 +35,7 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 /**
  * Single verkehr connection for all topics the daemon subscribes to
  */
-public class VerkehrNotificationSubscriber
+public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotifier
 {
     private static final Logger l = Util.l(VerkehrNotificationSubscriber.class);
 
@@ -91,6 +92,10 @@ public class VerkehrNotificationSubscriber
         @Override
         public void onConnected()
         {
+            // no need for explicit synchronization: the onConnected() and onDisconnected() callback
+            // cannot be called simultaneously
+            notifyConnected_();
+
             for (Entry<String, IVerkehrListener> sub : _subs.entrySet()) {
                 final String topic = sub.getKey();
                 final IVerkehrListener listener = sub.getValue();
@@ -124,6 +129,10 @@ public class VerkehrNotificationSubscriber
         @Override
         public void onDisconnected()
         {
+            // no need for explicit synchronization: the onConnected() and onDisconnected() callback
+            // cannot be called simultaneously
+            notifyDisconnected_();
+
             for (Entry<String, IVerkehrListener> sub : _subs.entrySet()) {
                 sub.getValue().onDisconnected();
             }
