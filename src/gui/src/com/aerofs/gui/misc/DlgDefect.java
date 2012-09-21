@@ -2,6 +2,7 @@ package com.aerofs.gui.misc;
 
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.shell.CmdDefect;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
@@ -9,15 +10,9 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.lib.C;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.fsi.FSIUtil;
-import com.aerofs.lib.spsv.SVClient;
-import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
-import com.aerofs.ui.IUI.MessageType;
 
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -32,8 +27,7 @@ import org.eclipse.swt.widgets.Link;
 public class DlgDefect extends AeroFSJFaceDialog {
 
     private Text _txt;
-    private Button _btnSubmitData;
-    private static String s_failedMessage;
+    private Button _sendDiagnosticData;
 
     public DlgDefect(Shell parentShell)
     {
@@ -65,10 +59,6 @@ public class DlgDefect extends AeroFSJFaceDialog {
         gd_text.heightHint = 87;
         gd_text.widthHint = 346;
         _txt.setLayoutData(gd_text);
-        if (s_failedMessage != null) {
-            _txt.setText(s_failedMessage);
-            s_failedMessage = null;
-        }
 
         Composite composite = new Composite(container, SWT.NONE);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
@@ -77,9 +67,9 @@ public class DlgDefect extends AeroFSJFaceDialog {
         gl_composite.marginWidth = 0;
         composite.setLayout(gl_composite);
 
-        _btnSubmitData = new Button(composite, SWT.CHECK);
-        _btnSubmitData.setSelection(true);
-        _btnSubmitData.setText("Send diagnostic data");
+        _sendDiagnosticData = new Button(composite, SWT.CHECK);
+        _sendDiagnosticData.setSelection(true);
+        _sendDiagnosticData.setText("Send diagnostic data");
 
         Link link = new Link(composite, SWT.NONE);
         link.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
@@ -95,58 +85,26 @@ public class DlgDefect extends AeroFSJFaceDialog {
         return container;
     }
 
-    void submit(final String message, final boolean verbose)
-    {
-        Thread thd = new Thread() {
-            @Override
-            public void run()
-            {
-                boolean cpuIssue = message.toLowerCase().contains("cpu");
-
-                Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + S.PRODUCT +
-                        " CPU usage" : "Submitting", true);
-                try {
-                    if (cpuIssue) {
-                        for (int i = 0; i < 20; i++) {
-                            Util.sleepUninterruptable(1 * C.SEC);
-
-                            Util.logAllThreadStackTraces();
-
-                            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-                            try {
-                                ritual.logThreads();
-                            } finally {
-                                ritual.close();
-                            }
-                        }
-                    }
-
-                    SVClient.logSendDefectSync(false, message +
-                            "\n" + C.END_OF_DEFECT_MESSAGE, null, verbose ?
-                        FSIUtil.dumpStatForDefectLogging() : null);
-                    UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
-
-                } catch (Exception e) {
-                    Util.l(DlgDefect.class).warn("submit defect: " + Util.e(e));
-                    UI.get().notify(MessageType.ERROR, "Failed to submit the " +
-                                "problem " + UIUtil.e2msg(e) + ". Please try again.");
-                    s_failedMessage = message;
-
-                } finally {
-                    UI.get().removeProgress(prog);
-                }
-            }
-        };
-
-        thd.setDaemon(true);
-        thd.start();
-    }
-
     @Override
     protected void buttonPressed(int buttonId)
     {
         if (buttonId == IDialogConstants.OK_ID) {
-            submit(_txt.getText(), _btnSubmitData.getSelection());
+            final String msg = _txt.getText();
+            final boolean dumpDaemonStatus = _sendDiagnosticData.getSelection();
+
+            Util.startDaemonThread("defect-sender", new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+                    try {
+                        CmdDefect.sendDefect(ritual, msg, dumpDaemonStatus);
+                    } finally {
+                        ritual.close();
+                    }
+                }
+            });
         }
 
         super.buttonPressed(buttonId);

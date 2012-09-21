@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.shell;
+
+import com.aerofs.cli.CLI;
+import com.aerofs.lib.C;
+import com.aerofs.lib.S;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.fsi.FSIUtil;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
+import com.aerofs.ui.UIUtil;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.log4j.Logger;
+
+public class CmdDefect implements IShellCommand<ShProgram>
+{
+    public static void sendDefect(RitualBlockingClient ritual, String message,
+            boolean dumpDaemonStatus)
+    {
+        Logger l = Util.l(CmdDefect.class);
+
+        boolean cpuIssue = message.toLowerCase().contains("cpu");
+
+        Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + S.PRODUCT +
+                " CPU usage" : "Submitting", true);
+
+        if (cpuIssue) logThreads(ritual, l);
+
+        String daemonStatus;
+        if (dumpDaemonStatus) {
+            try {
+                daemonStatus = FSIUtil.dumpFullDaemonStatus(ritual);
+            } catch (Exception e) {
+                daemonStatus = "(cannot dump daemon status: " + Util.e(e) + ")";
+            }
+        } else {
+            daemonStatus = null;
+        }
+
+        try {
+            SVClient.logSendDefectSync(false, message + "\n" + C.END_OF_DEFECT_MESSAGE, null,
+                    daemonStatus);
+            UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
+        } catch (Exception e) {
+            l.warn("submit defect: " + Util.e(e));
+            UI.get().notify(MessageType.ERROR, "Failed to submit the " +
+                        "problem " + UIUtil.e2msg(e) + ". Please try again.");
+        } finally {
+            UI.get().removeProgress(prog);
+        }
+    }
+
+    private static void logThreads(RitualBlockingClient ritual, Logger l)
+    {
+        for (int i = 0; i < 20; i++) {
+            Util.sleepUninterruptable(1 * C.SEC);
+            Util.logAllThreadStackTraces();
+            try {
+                ritual.logThreads();
+            } catch (Exception e) {
+                l.warn("log daemon threads: " + Util.e(e));
+            }
+        }
+    }
+
+    @Override
+    public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
+            throws Exception
+    {
+        StringBuilder sb = new StringBuilder("(via shell): ");
+        if (cl.getArgs().length == 0) {
+            throw new ExBadArgs("please provide a brief description of the problem");
+        }
+
+        for (String arg : cl.getArgs()) {
+            sb.append(arg);
+            sb.append(" ");
+        }
+
+        // set the UI so sendDefect can use it to show messages
+        UI.set(new CLI(Cfg.absRTRoot()));
+
+        sendDefect(s.d().getRitualClient_(), sb.toString(), true);
+    }
+
+    @Override
+    public String getName()
+    {
+        return "report";
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return "report an issue to the " + S.PRODUCT + " team";
+    }
+
+    @Override
+    public String getOptsSyntax()
+    {
+        return "DESCRIPTION";
+    }
+
+    @Override
+    public Options getOpts()
+    {
+        return ShellCommandRunner.EMPTY_OPTS;
+    }
+}

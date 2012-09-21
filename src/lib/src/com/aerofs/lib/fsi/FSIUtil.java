@@ -5,20 +5,19 @@ import java.security.PrivateKey;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import com.aerofs.lib.JsonFormat;
+import com.aerofs.proto.Files.PBDumpStat;
+import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Files.PBDumpStat;
-import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Fsi.PBFSICall;
 import com.aerofs.proto.Fsi.PBFSICall.Type;
 import com.aerofs.proto.Fsi.PBSetPrivateKeyCall;
@@ -226,38 +225,6 @@ public class FSIUtil
         fsi.rpc_(call);
     }
 
-    public static String dumpStatForDefectLogging()
-    {
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-        try {
-            return dumpStatForDefectLogging(ritual);
-        } finally {
-            ritual.close();
-        }
-    }
-
-    public static String dumpStatForDefectLogging(RitualBlockingClient ritual)
-    {
-        try {
-            PBDumpStat template = PBDumpStat.newBuilder()
-                    .setUpTime(0)
-                    .addTp(PBTransport.newBuilder()
-                            .setBytesIn(0)
-                            .setBytesOut(0)
-                            .addConnection("")
-                            .setName("")
-                            .setDiagnosis(""))
-                    .setMisc("")
-                    .build();
-
-            PBDumpStat reply = ritual.dumpStats(template).getStats();
-
-            return Util.realizeControlChars(JsonFormat.prettyPrint(reply));
-        } catch (Exception e) {
-            return "(cannot dumpstat: " + Util.e(e) + ")";
-        }
-    }
-
     public static interface IPingCallback {
         boolean toStop();
         boolean toSuspend();
@@ -273,7 +240,6 @@ public class FSIUtil
 
     /**
      * see IEOTransportPing
-     * @param transportID may be null
      */
     public static void ping(DID did, FSIClient fsi, boolean ignoreOffline,
             IPingCallback cb)
@@ -370,6 +336,24 @@ public class FSIUtil
         }
     }
 
+    public static String dumpFullDaemonStatus(RitualBlockingClient ritual)
+            throws Exception
+    {
+        PBDumpStat template = PBDumpStat.newBuilder()
+                .setUpTime(0)
+                .addTp(PBTransport.newBuilder()
+                        .setBytesIn(0)
+                        .setBytesOut(0)
+                        .addConnection("")
+                        .setName("")
+                        .setDiagnosis(""))
+                .setMisc("")
+                .build();
+
+        PBDumpStat reply = ritual.dumpStats(template).getStats();
+
+        return Util.realizeControlChars(JsonFormat.prettyPrint(reply));
+    }
 
     private static Long pingRPC(DID did, FSIClient fsi, int seqPrev,
             int seqNext, boolean forceNext, boolean ignoreOffline) throws Exception

@@ -22,6 +22,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 
     protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile)
     {
+        loadLibrary("aerofsd");
         _factFile = factFile;
     }
 
