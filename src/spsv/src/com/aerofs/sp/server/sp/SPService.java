@@ -225,13 +225,13 @@ class SPService implements ISPService
         UserListAndQueryCount listAndCount =
                 _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
 
-        _transaction.commit();
-
         ListUsersReply reply = ListUsersReply.newBuilder()
                 .addAllUsers(listAndCount.users)
                 .setFilteredCount(listAndCount.count)
                 .setTotalCount(_userManagement.totalUserCount(level, orgId))
                 .build();
+
+        _transaction.commit();
 
         return createReply(reply);
     }
