@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+
+import argparse
+import subprocess
+import re
+
+parser = argparse.ArgumentParser(description='command line tool to forcibly move a list of users to a given organization')
+parser.add_argument('organization_id',
+        help="The id of the organization to move users to")
+parser.add_argument('user_list_file',
+        help="the name of the file holding the list of users to add " +
+        "(file should be one email per line, see example_input)")
+
+def get_or_default(description, default):
+    val = raw_input(description + (" [%s]: " % default))
+    if not val:
+        print 'Using %s' % default
+        return default
+    return val
+
+def verify_valid_email(email):
+    if not re.match(r"[^@'\";]+@[^@'\";]+\.[^@'\";]+", email):
+        raise ValueError("'%s' is not a valid email address" % email)
+
+def run_command(cmd): # returns return_code, stdout, stderr
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    rc = process.wait()
+    output = process.stdout.read()
+    errorOut = process.stderr.read()
+    return rc, output, errorOut
+
+def check_and_print_errors(rc, output, errorOut, cmd):
+    if rc != 0 or errorOut:
+        print "Command \"%s\" exited with status code %d" % (cmd, rc)
+        if output:
+            print "Output: \"%s\"" % output
+        if errorOut:
+            print "Error output: \"%s\"" % errorOut
+        print
+        return True
+    return False
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    org_id = args.organization_id
+    user_file = args.user_list_file
+
+    # collect mysql db information (don't take these as arguments for security)
+    # use production database settings as the default
+    defaultHost = 'sp.mysql.aws.aerofs.com' # must be run from reloadedsp due to firewall settings
+    defaultDatabase = 'aerofs_sp'
+    defaultUser = 'aerofs_spsv'
+
+    mysqlHost = get_or_default('mysql host', defaultHost)
+    mysqlUser = get_or_default('mysql user', defaultUser)
+    mysqlPassword = raw_input('mysql password: ')
+    if not mysqlPassword:
+        raise ValueError("Must input a mysql password")
+    mysqlDatabase = get_or_default('mysql database', defaultDatabase)
+    print # new line to space input from output
+
+    users = open(user_file).read().split('\n')
+    cmdBase = "/usr/local/bin/mysql -u%s -h%s -p%s -e \"%s\" %s"
+    for user in users:
+        # validate username is valid and in the database, skip users that aren't
+        if not user or user[0] == '#': # blank or commented line in file, ignore it
+            continue
+        verify_valid_email(user)
+        verifySql = "select u_id,u_org_id from sp_user where u_id='%s';" % user
+        verifyCmd = cmdBase % (mysqlUser, mysqlHost, mysqlPassword, verifySql, mysqlDatabase)
+        rc, output, errorOut = run_command(verifyCmd)
+        if user not in output:
+            print "User '%s' not in database\n" % user
+            continue
+        if org_id in output:
+            print "User '%s' already part of organization '%s'\n" % (user, org_id)
+            continue
+        if check_and_print_errors(rc, output, errorOut, verifyCmd):
+            continue
+
+        # run the update
+        updateSql = "update sp_user set u_org_id='%s' where u_id='%s';" % (org_id, user)
+        updateSql += "select row_count();"
+        updateCmd = cmdBase % (mysqlUser, mysqlHost, mysqlPassword, updateSql, mysqlDatabase)
+        rc, output, errorOut = run_command(updateCmd)
+
+        if '0' in output: # returns rows affected, this is tripped if 0 are effected
+            print "Error executing command '%s' for user '%s', 0 rows affected\n" % (updateCmd, user)
+        check_and_print_errors(rc, output, errorOut, verifyCmd)
