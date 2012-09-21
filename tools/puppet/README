@@ -19,7 +19,7 @@ Prepare VMs:
     3)  install openssh-server
     4)  copy public key (in this directory) to VMs /root/.ssh/authorized_keys
     5)  set the hostname on the Agent (the machine being deployed) as though it
-        were in production.  (eg sss.aerofs.com)
+        were in production. (eg sss.aerofs.com)
 
 Set up Master (will update if already set up):
     ./deploy_vm_master <master ip>
