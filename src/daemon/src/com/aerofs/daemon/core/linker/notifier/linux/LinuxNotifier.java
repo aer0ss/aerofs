@@ -21,7 +21,6 @@ import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.injectable.InjectableJNotify;
 
 import net.contentobjects.jnotify.JNotifyException;
-import net.contentobjects.jnotify.linux.JNotify_linux;
 import net.contentobjects.jnotify.linux.INotifyListener;
 
 import static com.aerofs.lib.PathObfuscator.obfuscate;
@@ -72,7 +71,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
     public void start_() throws JNotifyException
     {
        // Watch the root anchor, and (recursively) all directories within
-        JNotify_linux.setNotifyListener(this);
+        _jn.linux_setNotifyListener(this);
         File anchor = new File(_cfgAbsRootAnchor.get());
         addWatchRecursively(anchor.getAbsolutePath(), WATCH_ID_ROOT);
     }
@@ -120,7 +119,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         synchronized (this) {
             try {
                 l.info("addWatchRecursively(" + dir + ")");
-                watch_id = JNotify_linux.addWatch(dir.getAbsolutePath(), MASK);
+                watch_id = _jn.linux_addWatch(dir.getAbsolutePath(), MASK);
                 assert(watch_id != WATCH_ID_ROOT);
                 if (l.isInfoEnabled()) {
                     l.info("watch id " + watch_id + ": " + dir.getAbsolutePath());
@@ -221,7 +220,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         }
         watch._children.clear();
         try {
-            JNotify_linux.removeWatch(watch._watchId);
+            _jn.linux_removeWatch(watch._watchId);
         } catch (JNotifyException e) {
             // It's possible (particularly with moves and deletions) that a directory on which we
             // would cancel a watch already had the watch removed by the kernel, and we're just

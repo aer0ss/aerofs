@@ -5,6 +5,8 @@ import com.aerofs.lib.os.OSUtil;
 import net.contentobjects.jnotify.JNotify;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.JNotifyListener;
+import net.contentobjects.jnotify.linux.INotifyListener;
+import net.contentobjects.jnotify.linux.JNotify_linux;
 import net.contentobjects.jnotify.macosx.FSEventListener;
 import net.contentobjects.jnotify.macosx.JNotify_macosx;
 
@@ -30,6 +32,21 @@ public class InjectableJNotify
     public int macosx_addWatch(String path) throws JNotifyException
     {
         return JNotify_macosx.addWatch(path);
+    }
+
+    public int linux_addWatch(String path, int mask) throws JNotifyException
+    {
+        return JNotify_linux.addWatch(path, mask);
+    }
+
+    public void linux_removeWatch(int watchID) throws JNotifyException
+    {
+        JNotify_linux.removeWatch(watchID);
+    }
+
+    public void linux_setNotifyListener(INotifyListener l)
+    {
+        JNotify_linux.setNotifyListener(l);
     }
 
     public int addWatch(String path, int mask, boolean watchSubtree, JNotifyListener listener)
