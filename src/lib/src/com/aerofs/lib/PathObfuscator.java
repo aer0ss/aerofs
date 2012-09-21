@@ -12,6 +12,13 @@ import java.util.Set;
  */
 public class PathObfuscator
 {
+    /**
+     * TODO (WW) move this method to Path.toString. This change would affect lots of code. In
+     * particular, if some code incorrectly use Path.toString() as an input to other methods
+     * (which is a common mistake), changing toString()'s behavior would break the system.
+     * Therefore, I'd like to defer it until it becomes necessary, and check it in after thorough
+     * tests.
+     */
     public static String obfuscate(Path path)
     {
         return obfuscate(path.elements());
