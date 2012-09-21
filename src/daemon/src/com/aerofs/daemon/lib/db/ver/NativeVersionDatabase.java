@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
@@ -191,7 +192,9 @@ public class NativeVersionDatabase
 
             // sanity check
             assert rets.length == v.getAll_().size();
-            for (int ret : rets) assert ret == 1 : ret + " " + socid + " " + kidx + " " + v;
+            for (int ret : rets) {
+                assert ret == 1 : Arrays.toString(rets) + " " + v + " " + socid + " " + kidx;
+            }
 
         } catch (SQLException e) {
             DBUtil.close(_psDelVer);
