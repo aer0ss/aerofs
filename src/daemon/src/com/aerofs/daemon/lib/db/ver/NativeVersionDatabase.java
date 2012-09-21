@@ -191,7 +191,7 @@ public class NativeVersionDatabase
 
             // sanity check
             assert rets.length == v.getAll_().size();
-            for (int ret : rets) assert ret == 1;
+            for (int ret : rets) assert ret == 1 : ret + " " + socid + " " + kidx + " " + v;
 
         } catch (SQLException e) {
             DBUtil.close(_psDelVer);
