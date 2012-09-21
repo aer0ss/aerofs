@@ -32,7 +32,7 @@ HOSTNAME=$($SSH_COMMAND $PUPPET_MASTER -C "hostname")
 echo "Configuring puppet agent vm: ${PUPPET_AGENT}"
 echo "Installing puppet"
 $SSH_COMMAND ${PUPPET_AGENT} -C "apt-get update"
-$SSH_COMMAND ${PUPPET_AGENT} -C "apt-get install puppet"
+$SSH_COMMAND ${PUPPET_AGENT} -C "apt-get install --yes puppet"
 echo "Adding entry in hosts file:  ${PUPPET_MASTER}     ${HOSTNAME}"
 $SSH_COMMAND ${PUPPET_AGENT} -C "echo ${PUPPET_MASTER}  ${HOSTNAME} >> /etc/hosts"
 
