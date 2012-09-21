@@ -125,10 +125,7 @@ public class Collector implements IDumpStatMisc
         }
     }
 
-    /**
-     * @param t may be null, but only if there is not pending transaction
-     */
-    public void online_(final DID did, @Nullable Trans t)
+    public void online_(final DID did)
     {
         _f._er.retry("online", new Callable<Void>()
         {

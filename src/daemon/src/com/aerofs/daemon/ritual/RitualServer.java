@@ -110,6 +110,8 @@ public class RitualServer
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
         {
+            Util.fatalOnUncheckedException(e.getCause());
+
             // Close the connection when an exception is raised.
             l.warn("ritual server exception: " + Util.e(e.getCause()));
             e.getChannel().close();

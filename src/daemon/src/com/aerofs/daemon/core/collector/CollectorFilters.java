@@ -43,7 +43,7 @@ public class CollectorFilters
 
         private boolean _dirty;
 
-        // the content must be consistent with _c2d2f
+        // the content must be consistent with _cs2did2bf
         final Set<CollectorSeq> _css = Sets.newTreeSet();
 
         DeviceEntry(DID did)
@@ -70,7 +70,7 @@ public class CollectorFilters
     private final Map<DID, DeviceEntry> _did2dev = Maps.newTreeMap();
 
     // all the devices included in this map must have been loaded.
-    private final SortedMap<CollectorSeq, Map<DID, BFOID>> _c2d2f = Maps.newTreeMap();
+    private final SortedMap<CollectorSeq, Map<DID, BFOID>> _cs2did2bf = Maps.newTreeMap();
 
     CollectorFilters(ICollectorFilterDatabase csdb, TransManager tm, SIndex sidx)
     {
@@ -116,8 +116,7 @@ public class CollectorFilters
         }
 
         if (changed) {
-            if (l.isInfoEnabled()) l.info("save db 4 " + _sidx + " " + did +
-                    " " + filterNew);
+            if (l.isInfoEnabled()) l.info("save db 4 " + _sidx + " " + did + " " + filterNew);
 
             _cfdb.setCollectorFilter_(_sidx, did, filterNew, t);
 
@@ -150,22 +149,22 @@ public class CollectorFilters
     {
         // before the collector stops it must clear all the filters (to avoid
         // them being reused by the next collection iteration)
-        assert _c2d2f.isEmpty();
+        assert _cs2did2bf.isEmpty();
 
-        List<DeviceEntry> devs = Lists.newArrayList();
+        List<DeviceEntry> toDelete = Lists.newArrayList();
         for (DeviceEntry dev : _did2dev.values()) {
             assert dev._css.isEmpty();
             // skip devices whose filter is already reset
             if (dev.getDBFilter_() != null && !dev._dirty) {
-                devs.add(dev);
+                toDelete.add(dev);
             }
             dev._dirty = false;
         }
 
-        if (!devs.isEmpty()) {
+        if (!toDelete.isEmpty()) {
             Trans t2 = t == null ? _tm.begin_() : t;
             try {
-                for (DeviceEntry dev : devs) {
+                for (DeviceEntry dev : toDelete) {
                     dev.setDBFilter_(null);
                     // N.B. if the transaction is rolled back, the in-memory db
                     // filter becomes inconsistent with the db, which is fine
@@ -200,13 +199,13 @@ public class CollectorFilters
         DeviceEntry en = _did2dev.remove(did);
         assert en != null;
         for (CollectorSeq cs : en._css) {
-            Map<DID, BFOID> d2f = _c2d2f.get(cs);
+            Map<DID, BFOID> d2f = _cs2did2bf.get(cs);
             assert d2f.containsKey(did); // although the value may be null
             d2f.remove(did);
-            if (d2f.isEmpty()) Util.verify(_c2d2f.remove(cs) == d2f);
+            if (d2f.isEmpty()) Util.verify(_cs2did2bf.remove(cs) == d2f);
         }
 
-        assert !_did2dev.isEmpty() || _c2d2f.isEmpty();
+        assert !_did2dev.isEmpty() || _cs2did2bf.isEmpty();
     }
 
     /**
@@ -214,7 +213,7 @@ public class CollectorFilters
      */
     private @Nullable BFOID getCSFilter_(DID did, CollectorSeq cs)
     {
-        Map<DID, BFOID> d2f = _c2d2f.get(cs);
+        Map<DID, BFOID> d2f = _cs2did2bf.get(cs);
         return d2f == null ? null : d2f.get(did);
     }
 
@@ -228,10 +227,10 @@ public class CollectorFilters
 
         dev._css.add(cs);
 
-        Map<DID, BFOID> d2f = _c2d2f.get(cs);
+        Map<DID, BFOID> d2f = _cs2did2bf.get(cs);
         if (d2f == null) {
             d2f = Maps.newTreeMap();
-            _c2d2f.put(cs, d2f);
+            _cs2did2bf.put(cs, d2f);
         }
         return d2f.put(dev._did, filter);
     }
@@ -309,12 +308,12 @@ public class CollectorFilters
 
         Map<CollectorSeq, Map<DID, BFOID>> sub;
         if (csStart == null) {
-            sub = _c2d2f.headMap(csEnd.plusOne());
+            sub = _cs2did2bf.headMap(csEnd.plusOne());
         } else if (csEnd == null) {
-            sub = _c2d2f.tailMap(csStart);
+            sub = _cs2did2bf.tailMap(csStart);
         } else {
             assert csStart.compareTo(csEnd) <= 0;
-            sub = _c2d2f.subMap(csStart, csEnd.plusOne());
+            sub = _cs2did2bf.subMap(csStart, csEnd.plusOne());
         }
 
         for (Entry<CollectorSeq, Map<DID, BFOID>> en : sub.entrySet()) {
@@ -327,12 +326,12 @@ public class CollectorFilters
 
         sub.clear();
 
-        return !_c2d2f.isEmpty();
+        return !_cs2did2bf.isEmpty();
     }
 
     void deleteAllCSFilters_()
     {
-        _c2d2f.clear();
+        _cs2did2bf.clear();
         for (DeviceEntry dev : _did2dev.values()) dev._css.clear();
     }
 
@@ -352,7 +351,7 @@ public class CollectorFilters
     {
         int[] indics = BFOID.HASH.hash(ocid.oid());
         Set<DID> ret = Sets.newTreeSet();
-        for (Map<DID, BFOID> d2f : _c2d2f.values()) {
+        for (Map<DID, BFOID> d2f : _cs2did2bf.values()) {
             for (Entry<DID, BFOID> en : d2f.entrySet()) {
                 DID did = en.getKey();
                 if (ret.contains(did)) continue;

@@ -277,7 +277,7 @@ public class ScanSessionQueue implements IDumpStatMisc
             }
 
         } catch (Exception e) {
-            Util.throwIfRuntimeException(e);
+            Util.fatalOnUncheckedException(e);
 
             // schedule an exponential retry and return
             long delay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);

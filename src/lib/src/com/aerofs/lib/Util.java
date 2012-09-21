@@ -86,7 +86,8 @@ public abstract class Util
 
     /**
      * Send a defect report and crash the daemon. Some callers need to throw the returned value
-     * only to suppress compiler warnings.
+     * only to suppress compiler warnings, whereas other callers require this method to declare
+     * "throws Error" for the same lame purpose.
      */
     public static Error fatal(final Throwable e) throws Error
     {
@@ -102,6 +103,19 @@ public abstract class Util
     public static Error fatal(String str) throws Error
     {
         return fatal(new Exception(str));
+    }
+
+    /**
+     * Call fatal() if {@code e} is an unchecked exception. Alternatively, we can throw the same
+     * {@code e} back to the caller. But unfortunately, some frameworks, noticeably netty, will not
+     * crash the process.
+     *
+     * NOTICE: you should call this method whenever you do "catch (Exception e)" or
+     * "catch (Throwable e)".
+     */
+    public static void fatalOnUncheckedException(Throwable e) throws Error
+    {
+        if (e instanceof RuntimeException || e instanceof Error) fatal(e);
     }
 
     public static <T> void addListener_(Set<T> ls, T l)
@@ -620,11 +634,6 @@ public abstract class Util
         }
 
         return sw.toString();
-    }
-
-    public static void throwIfRuntimeException(Throwable e)
-    {
-        if (e instanceof RuntimeException) throw (RuntimeException) e;
     }
 
     public static byte[] toByteArray(long l)

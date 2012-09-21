@@ -150,7 +150,7 @@ public class DevicePresence implements IDumpStatMisc
 
             if (s != null) {
                 // we map online devices in the collector as OPM devices of a member store
-                s.collector().online_(did, null);
+                s.collector().online_(did);
             }
         }
     }
@@ -194,7 +194,7 @@ public class DevicePresence implements IDumpStatMisc
             for (DID did : s.getOnlinePotentialMemberDevices_().keySet()) {
                 // we map online devices in the collector as OPM devices of
                 // a member store
-                s.collector().online_(did, null);
+                s.collector().online_(did);
             }
         }
     }
