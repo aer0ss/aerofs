@@ -1,8 +1,13 @@
 #!/bin/bash
 
-# usage: $0 <probe> <probe_specific_args>...
+# usage: $0 <service> <probe> <probe_specific_args>...
 
-SERVICE=servers
+### WARNING ###
+# New services must be added on pagerduty.com. Log into pagerduty.com and under Services
+# click Add New Service and use the defaults for everything except name.
+
+SERVICE=$1
+shift 1
 PROBE=$1
 shift 1
 

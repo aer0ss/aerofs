@@ -35,13 +35,17 @@ node "z.arrowfs.org" inherits default {
     ]
   }
 
+  ### WARNING ###
+  # New services must be added on pagerduty.com. Log into pagerduty.com and under Services
+  # click Add New Service and use the defaults for everything except name.
+
   #daily
   pagerduty::probe::base{[
-    "df90 pagerduty@sp.aerofs.com 22 /dev/xvda1",
-    "df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
-    "df90 pagerduty@x1.aerofs.com 22 /dev/sda1",
-    "df90 pagerduty@x1.aerofs.com 22 /dev/sdf1",
-    "df90 pagerduty@x.aerofs.com 22 /dev/xvda"
+    "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvda1",
+    "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
+    "alpha df90 pagerduty@x1.aerofs.com 22 /dev/sda1",
+    "alpha df90 pagerduty@x1.aerofs.com 22 /dev/sdf1",
+    "x df90 pagerduty@x.aerofs.com 22 /dev/xvda"
   ]:
     hour => "14",
     minute => "0",
@@ -51,16 +55,16 @@ node "z.arrowfs.org" inherits default {
   #hourly
   pagerduty::probe::base{[
     # Production
-    "url http://www.aerofs.com",
-    "url https://sv.aerofs.com/sv_beta/sv",
-    "url https://sss.aerofs.com/syncstat",
-    "url https://reloadedsp.aerofs.com/sp",
-    "port verkehr.aerofs.com 443",
-    "port zephyr.aerofs.com 443",
-    "port x.aerofs.com 443",
+    "web url http://www.aerofs.com",
+    "sv url https://sv.aerofs.com/sv_beta/sv",
+    "sss url https://sss.aerofs.com/syncstat",
+    "sp url https://reloadedsp.aerofs.com/sp",
+    "verkehr port verkehr.aerofs.com 443",
+    "zephyr port zephyr.aerofs.com 443",
+    "x port x.aerofs.com 443",
     # Staging
-    "port sp.aerofs.com 443",
-    "port sp.aerofs.com 80",
+    "staging port sp.aerofs.com 443",
+    "staging port sp.aerofs.com 80",
   ]:
     hour => "*",
     minute => "*/10",
