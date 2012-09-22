@@ -85,6 +85,8 @@ public class SendgridServlet extends AeroServlet {
                 JSONObject obj = (JSONObject)parser.parse(line);
 
                 handleEvent(obj);
+
+                _transaction.cleanUp();
             }
 
             resp.setStatus(200);
