@@ -299,13 +299,21 @@ class SPService implements ISPService
     @Override
     public ListenableFuture<Void> addOrganization(final String orgId, final String orgName,
             final Boolean shareExternal, final @Nullable String allowedDomain,
-            final @Nullable SignUpCall newAdminAccount)
+            final @Nullable SignUpCall newAdminAccount,
+            final @Nullable String existingUserToMakeAdmin)
             throws Exception
     {
         _transaction.begin();
 
         // TODO: verify the calling user is allowed to create an organization
         // (check with the payment system)
+
+        // currently only allow AeroFS employees who are also administrators of the AeroFS internal
+        // organization to call this
+        User caller = _userManagement.getUser(_sessionUser.getUser());
+        if ((!caller._orgId.equals("aerofs.com")) || caller._level != AuthorizationLevel.ADMIN) {
+            throw new ExNoPerm("API meant for internal use by AeroFS employees only");
+        }
 
         _organizationManagement.addOrganization(orgId, orgName, shareExternal, allowedDomain);
 
@@ -315,10 +323,12 @@ class SPService implements ISPService
                     newAdminAccount.getOrganizationId());
             _userManagement.setAuthorizationLevel(newAdminAccount.getUserId(),
                     AuthorizationLevel.ADMIN);
+        } else if (existingUserToMakeAdmin != null) {
+            _organizationManagement.moveUserToOrganization(existingUserToMakeAdmin, orgId);
+            _userManagement.setAuthorizationLevel(
+                    existingUserToMakeAdmin, AuthorizationLevel.ADMIN);
         } else {
-            String callerUser = _sessionUser.getUser();
-            _organizationManagement.moveUserToOrganization(callerUser, orgId);
-            _userManagement.setAuthorizationLevel(callerUser, AuthorizationLevel.ADMIN);
+            throw new ExBadArgs("Must set either newAdminAccount or existingUserToMakeAdmin");
         }
 
         _transaction.commit();

@@ -4,4 +4,4 @@ Priority: optional
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS pyramid website package
 Architecture: all
-Depends: nginx, python, python-dev, python-crypto, python-setuptools, python-pip, python-protobuf, gcc, uwsgi, uwsgi-plugin-python
+Depends: nginx, python, python-dev, python-crypto, python-setuptools, python-pip, python-protobuf, sendmail, gcc, uwsgi, uwsgi-plugin-python

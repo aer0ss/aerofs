@@ -310,20 +310,25 @@ service SPService {
     rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
 
     /**
-     * Create a new organization, move the authenticated user to it, and give the authenticated user
-     * authlevel ADMIN for the new organization.
+     * Create a new organization, create a new user account for the administrator or move the given
+     * existing user to the organization, and give the authenticated user authlevel ADMIN for the
+     * new organization.
      *
      * org_allowed_domain defaults to allow any domain, meaning that there is no required domain
      * name for members of this organization.
      *
-     * authlevel: USER
+     * authlevel: ADMIN, member of aerofs.com organization
      *
      * throws:
+     * - ExNoPerm       if the user calling is not a member of the AeroFS organization or is not
+     *                      an admin
      * - ExAlreadyExist if an organization with the same id already exists
      * - ExBadArg       if the organization id is not a valid domain name
      *                  if the allowed domain of the organization is not a valid domain name
      *                  if the user id of the caller does not match the allowed domain of the new
      *                      organization
+     *                  if neither a new account to create nor an existing account to move to the
+     *                      organization as the administrator are set
      */
     rpc AddOrganization(AddOrganizationCall) returns(Void);
 
@@ -641,6 +646,7 @@ message AddOrganizationCall {
     optional string org_allowed_domain = 4;
 
     optional SignUpCall new_admin_account = 5;
+    optional string existing_user_to_make_admin = 6;
 }
 
 message SendPasswordResetEmailCall {
