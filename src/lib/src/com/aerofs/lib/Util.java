@@ -1170,8 +1170,13 @@ public abstract class Util
 
     public static String crc32(String name)
     {
+        return crc32(name.getBytes());
+    }
+
+    public static String crc32(byte[] bytes)
+    {
         CRC32 crc = new CRC32();
-        crc.update(name.getBytes());
+        crc.update(bytes);
         return Long.toHexString(crc.getValue());
     }
 

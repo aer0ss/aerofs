@@ -5,7 +5,6 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
-import com.aerofs.daemon.transport.xmpp.XUtil;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEvent;
@@ -134,6 +133,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
             try {
                 ByteBuffer b = ctx._ctrlbuf;
+                b.limit(ZEPHYR_REG_MSG_LEN);
 
                 int bytesin = read_(ctx, ctx._ctrlbuf);
                 if (bytesin == 0) {
@@ -170,7 +170,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     // length - now I know how many bytes past the header in the
                     // buffer will be valid
 
-                    int len = b.getInt(ZEPHYR_MAGIC.length);
+                    int len = b.getInt();
                     if (len <= 0) {
                         assert false : (ctx + ": invalid len"); // FIXME: remove
 
@@ -182,7 +182,8 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     ctx._ctrlhdrrcvd = true;
 
                     // mark so that we know where the header ends
-                    b.position(ZEPHYR_SERVER_HDR_LEN);
+                    assert b.position() == ZEPHYR_SERVER_HDR_LEN :
+                            ("bad hdr exp:" + ZEPHYR_SERVER_HDR_LEN + " act:" + b.position());
                     b.mark();
 
                     // reset to where we were before we checked the header
@@ -450,11 +451,12 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
                 if (!ctx._rdhdrrcvd) {
                     int bytesin = read_(ctx, ctx._rdhdrbuf);
-                    if (bytesin == 0) {
-                        return park_(ctx, SelectionKey.OP_READ);
-                    }
 
-                    if(ctx._rdhdrbuf.remaining() > 0) {
+                    ZephyrClientContext.l.debug(ctx + ": hdr b:" + bytesin +
+                        " [" + ctx._rdhdrbuf.position() + "/" + ctx._rdhdrbuf.limit() + "]" +
+                        " <- " + ctx._remdid);
+
+                    if (ctx._rdhdrbuf.hasRemaining()) {
                         return park_(ctx, SelectionKey.OP_READ);
                     }
 
@@ -464,27 +466,24 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
                     int m = ctx._rdhdrbuf.getInt();
                     if (m != C.CORE_MAGIC) {
-                        assert false : (ctx + ": msg without magic"); // FIXME: remove
-
-                        throw new ExAbortState("msg without magic",
-                            new ExBadMessage("got zc msg without magic"));
+                        String merrstr = "bad magic exp:" + C.CORE_MAGIC + " act:" + m;
+                        assert false : (ctx + ": " + merrstr); // FIXME: remove
+                        throw new ExAbortState(merrstr, new ExBadMessage("bad frame:" + merrstr));
                     }
 
                     // payload length
 
                     int len = ctx._rdhdrbuf.getInt();
                     if (len <= 0) {
-                        assert false : (ctx + ": bad msg len"); // FIXME: remove
-
-                        throw new ExAbortState("bad msg len",
-                            new ExBadMessage("got zc msg with bad len"));
+                        String lerrstr = "bad len:" + len;
+                        assert false : (ctx + ": " + lerrstr); // FIXME: remove
+                        throw new ExAbortState(lerrstr, new ExBadMessage("bad frame:" + lerrstr));
                     }
 
                     ctx._rdbodylen = len;
                     ctx._rdhdrrcvd = true;
 
-                    assert ctx._rdbufs == null :
-                        (ctx + "rd buffers not cleaned up properly");
+                    assert ctx._rdbufs == null : (ctx + "rd buffers not cleaned up properly");
                     ctx._rdbufs = ZephyrClientUtil.setupBufferArray(ctx._boss, ctx._rdbodylen);
                 }
 
@@ -493,8 +492,13 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                 assert ctx._rdbufs != null : (ctx + ": null rd buffers");
 
                 int bytesin = read_(ctx, ctx._rdbufs);
+
+                // prints out the bytes received for this frame _including header_
+                // NOTE: bytesin, _rdbodybytes, _rdbodylen only refer to the payload
+                final int hdrlen = ctx._rdhdrbuf.limit();
                 ZephyrClientContext.l.debug(ctx + ": b:" + bytesin +
-                        " [" + ctx._rdbodybytes + "/" + ctx._rdbodylen + "]" +
+                        " [" + (hdrlen + ctx._rdbodybytes) + "/" + (hdrlen + ctx._rdbodylen) +
+                        " (pld:" + ctx._rdbodylen + ")]" +
                         " <- " + ctx._remdid);
 
                 if (bytesin == 0) {
@@ -524,7 +528,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     // calling the state-machine again. in certain circumstances
                     // this may result in OP_READ never being set
                     ZUtil.addInterest(ctx._k, SelectionKey.OP_READ);
-                    ctx._boss.deliver_(ctx._remdid, bais, bais.available() + XUtil.getHeaderLen());
+                    ctx._boss.deliver_(ctx._remdid, bais, bais.available() + hdrlen);
                 } catch (Exception e) {
                     throw new ExAbortState("err delivering packet to core", e);
                 }
@@ -580,7 +584,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                 // logRemaining(ctx._wrbufs, ctx + ": ", ZephyrClientContext.l);
 
                 SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
-                int written = 0;
+                int written;
                 try {
                     written = (int) sc.write(ctx._wrbufs);
                     ctx._wrbodybytes += written;

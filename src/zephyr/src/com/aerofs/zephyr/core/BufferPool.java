@@ -5,6 +5,9 @@
 package com.aerofs.zephyr.core;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+import static java.nio.ByteOrder.BIG_ENDIAN;
 
 /**
  * Implements a pool of {@link ByteBuffer} objects
@@ -39,6 +42,7 @@ public class BufferPool
 
         for (int i = 0; i < poolsize; ++i) {
             _buffers[i] = ByteBuffer.allocate(bufcapacity);
+            _buffers[i].order(BIG_ENDIAN);
         }
     }
 
@@ -50,9 +54,9 @@ public class BufferPool
      */
     public synchronized ByteBuffer getBuffer_()
     {
-        ByteBuffer b =
-            (_bufidx < 0 ? ByteBuffer.allocate(_bufsize) : _buffers[_bufidx--]);
+        ByteBuffer b = (_bufidx < 0 ? ByteBuffer.allocate(_bufsize) : _buffers[_bufidx--]);
         b.clear();
+        b.order(BIG_ENDIAN);
         return b;
     }
 

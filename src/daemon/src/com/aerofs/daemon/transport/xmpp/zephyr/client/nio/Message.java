@@ -28,7 +28,6 @@ public final class Message
             ("ByteBuffer has incorrect byte order");
 
         // write out the full message
-        int startpos = b.position();
         b.put(ZEPHYR_MAGIC);
         b.mark();
         b.putInt(0); // length placeholder
@@ -36,8 +35,8 @@ public final class Message
 
         // now write out the actual length
         int endpos = b.position();
-        int len = endpos - startpos;
         b.reset();
+        int len = endpos - b.position();
         b.putInt(len);
 
         // move back to where we were before

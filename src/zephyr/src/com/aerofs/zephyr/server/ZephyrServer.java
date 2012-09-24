@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
+import static com.aerofs.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.zephyr.core.ZUtil.addInterest;
 import static com.aerofs.zephyr.core.ZUtil.closeChannel;
 
@@ -48,9 +49,7 @@ public class ZephyrServer implements IIOEventHandler
         _d = d;
         _nextid = 0;
         _idToKey = new ConcurrentHashMap<Integer, SelectionKey>();
-        _bufpool = new BufferPool(
-            BufferPool.DEFAULT_BYTEBUFFER_SIZE,
-            BufferPool.DEFAULT_INITIAL_NUM_BYTEBUFFERS);
+        _bufpool = new BufferPool(32768, 1024);
         _ssc = null;
         _inited = false;
     }
@@ -92,7 +91,7 @@ public class ZephyrServer implements IIOEventHandler
 
         // do I have to assert that I am the channel for this key?
 
-        SocketChannel sc = null;
+        SocketChannel sc;
         try {
             sc = _ssc.accept();
         } catch (IOException e) {
@@ -163,7 +162,7 @@ public class ZephyrServer implements IIOEventHandler
             } catch (Exception e) {
                 l.warn("z: fail to terminate id:" + entry.getKey());
 
-                closeChannel(k.channel());
+                if (k != null) closeChannel(k.channel());
             }
         }
 
@@ -195,11 +194,6 @@ public class ZephyrServer implements IIOEventHandler
         } else {
             l.warn("z: id:" + id + ":null ch");
         }
-    }
-
-    public boolean hasChannel(int id)
-    {
-        return _idToKey.containsKey(id);
     }
 
     public SelectionKey getSelectionKey(int id)

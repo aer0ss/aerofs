@@ -86,6 +86,7 @@ public class ZephyrClientContext implements IStateContext
         _rdbodylen = 0;
         _rdbodybytes = 0;
         _rdhdrbuf = ByteBuffer.allocate(XUtil.getHeaderLen());
+        _rdhdrbuf.order(ZEPHYR_MSG_BYTE_ORDER);
         _rdbufs = null;
         _bytesrx = 0;
         _txq = new PrioQueue<Out>(QUEUE_LENGTH);
@@ -429,13 +430,14 @@ public class ZephyrClientContext implements IStateContext
             // serialize the header byte-array and check that it's ok
             byte[] hdr = baos.toByteArray();
             assert hdr.length == ZEPHYR_CLIENT_HDR_LEN :
-                (ZephyrClientContext.this.toString() + ": incorrect zephyr client header length");
+                (ZephyrClientContext.this.toString() +
+                         ": bad zephyr client header length exp:" + ZEPHYR_CLIENT_HDR_LEN + " act:" + hdr.length);
 
             // create a new bss array with space for the header byte-array
             _bss = new byte[bss.length + 1][];
 
             // copy the header
-            _bss[0] = baos.toByteArray();
+            _bss[0] = hdr;
 
             // copy the rest of the segments
             for (int inidx = 0, outidx = 1; inidx < bss.length; inidx++, outidx++) {
