@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="/sv_beta" docBase="/usr/share/aerofs-sv/sv">
+<Context>
     <!--
         Resource declaration for SPDatabase connection pool.
         See http://commons.apache.org/dbcp/configuration.html for more configuration options for
