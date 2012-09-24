@@ -94,7 +94,7 @@ class DTLSEntry
 
         } else if (DTLS_RETCODE.DTLS_OK == rc) {
             l.info("eng enc'ed msg " + outputLen[0]);
-            bsToSend[outputLen[0]] = (byte) footer.ordinal();
+            bsToSend[outputLen[0]] = footer.toByte();
             return Arrays.copyOf(bsToSend, outputLen[0] + Footer.SIZE);
 
         } else {
@@ -151,86 +151,6 @@ class DTLSEntry
               _engine.encrypt(input, output, input.length, outputLen) :
               _engine.decrypt(input, output, input.length, outputLen);
     }
-
-// parallel cryption disabled as it causes some unknown concurrency issues
-// in the OpenSSL library when the server load is high
-//
-//    private int _cryptingThreads;
-//    private int _seq;
-//    private final TreeMap<Integer, TCB> _waiters = new TreeMap<Integer, TCB>();
-//
-//    /**
-//     * during handshake decryption may take a fairly long time (>300 ms), so we
-//     * parallelize handshake decryption. because encryption shares the same
-//     * engine, it needs to be serialized, too. packats must be {en,de}crypted
-//     * in order, and therefore we use the waiter queue instead of a simple
-//     * synchronized block
-//     */
-//    private DTLS_RETCODE cryptImpl_(boolean encrypt, byte[] input, byte[] output,
-//            int[] outputLen) throws ExAborted
-//    {
-//        // calling isHshakeDone() is not strictly thread-safe here, considering
-//        // hs decryption may be called in another, concurrent thread. however,
-//        // because 1) the implementation of _engine.isHshakeDone allows
-//        // concurrent access without side-effects, and 2) _cryptingThreads is
-//        // greater than 0, which shortcuts the !hsDecrypt test below, if there
-//        // is any hs decryption thread.
-//        //
-//        boolean hsDecrypt = !encrypt && !isHshakeDone();
-//        if (_cryptingThreads == 0 && !hsDecrypt) {
-//            return encrypt ?
-//                    _engine.encrypt(input, output, input.length, outputLen) :
-//                    _engine.decrypt(input, output, input.length, outputLen);
-//        }
-//
-//        _cryptingThreads++;
-//        try {
-//            if (_cryptingThreads != 1) {
-//                Token tk = Cat.UNLIMITED.acquire_("wait for cryption");
-//                try {
-//                    int seq = _seq++;
-//                    TCB tcb = TC.tcb();
-//                    _waiters.put(seq, tcb);
-//                    try {
-//                        _layer.c().tc().pause_(tk, "wait for cryption");
-//                    } finally {
-//                        Util.verify(_waiters.remove(seq) == tcb);
-//                    }
-//                } finally {
-//                    tk.reclaim_();
-//                }
-//            }
-//
-//            if (hsDecrypt) {
-//                // run hand-shake decryption out of the core context
-//                Token tk = Cat.UNLIMITED.acquire_("hsDecrypt");
-//                try {
-//                    TCB tcb = _layer.c().tc().pseudoPause_(tk, "hsDecrypt");
-//                    try {
-//                        assert !encrypt;
-//                        return _engine.decrypt(input, output, input.length,
-//                                outputLen);
-//                    } finally {
-//                        tcb.pseudoResumed_();
-//                    }
-//                } finally {
-//                    tk.reclaim_();
-//                }
-//
-//            } else {
-//                    return encrypt ?
-//                        _engine.encrypt(input, output, input.length, outputLen) :
-//                        _engine.decrypt(input, output, input.length, outputLen);
-//            }
-//
-//        } finally {
-//            assert _cryptingThreads > 0;
-//            _cryptingThreads--;
-//
-//            Entry<Integer, TCB> en = _waiters.firstEntry();
-//            if (en != null) en.getValue().resume_();
-//        }
-//    }
 
     private boolean _draining;
 
