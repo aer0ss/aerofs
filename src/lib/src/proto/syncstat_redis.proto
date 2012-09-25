@@ -64,7 +64,7 @@ message SetVersionHashCall {
     repeated bytes vh = 3;
 
     // Stored server side and only used to handle unclean redis shutdowns and crashes.
-    required bytes client_epoch = 4;
+    required uint64 client_epoch = 4;
 }
 
 message AckServerEpochCall {
@@ -86,8 +86,8 @@ message GetSyncStatusReply {
     }
 
     message SyncStatus {
-        required bytes oid = 1;
-        required bytes sid = 2;
+        required bytes sid = 1;
+        required bytes oid = 2;
         repeated DeviceSyncStatus devices = 3;
     }
 
