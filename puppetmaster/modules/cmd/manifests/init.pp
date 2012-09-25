@@ -21,19 +21,7 @@
 #
 class cmd {
 
-    apt::key { "dotdeb":
-        ensure => present,
-        key_source => "http://www.dotdeb.org/dotdeb.gpg"
-    }
-
-    apt::source { "dotdeb":
-        location    => "http://packages.dotdeb.org",
-        release     => "squeeze",
-        repos       => "all",
-        include_src => "false",
-        notify      => Exec["apt-get update"],
-        require     => Apt::Key["dotdeb"]
-    }
+    include redis
 
     package{[
         "aerofs-cmd-server",
@@ -46,13 +34,7 @@ class cmd {
         ]
     }
 
-    package{"redis-server":
-        ensure => installed,
-        require => [
-            Apt::Source["dotdeb"]
-        ]
-    }
-
+    # Ensure redis is in journalling mode for the command server.
     line{ "redis.conf1":
         ensure => present,
         file => "/etc/redis/redis.conf",

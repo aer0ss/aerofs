@@ -4,6 +4,8 @@ node "sss.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
+    include redis
+
     # Fetch variables from hiera
     $mysql_syncstat = hiera("mysql_syncstat")
     $mysql_sp = hiera("mysql_sp")
