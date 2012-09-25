@@ -20,8 +20,10 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.UnsupportedEncodingException;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static com.aerofs.sp.server.SPSVParam.*;
 
@@ -51,7 +53,7 @@ class EmailSender
     }
 
 
-    public static void sendEmail(String from, @Nullable String fromName, String to,
+    public static Future<Void> sendEmail(String from, @Nullable String fromName, String to,
             @Nullable String replyTo, String subject, String textBody, @Nullable String htmlBody,
             boolean usingSendGrid, @Nullable EmailCategory category)
             throws MessagingException, UnsupportedEncodingException
@@ -69,7 +71,7 @@ class EmailSender
 
         if (category != null) msg.addHeaderLine("X-SMTPAPI: {\"category\": \"" + category.name() + "\"}");
 
-        sendEmail(msg, usingSendGrid);
+        return sendEmail(msg, usingSendGrid);
     }
 
     /*
@@ -123,15 +125,15 @@ class EmailSender
      * @param msg
      * @throws MessagingException
      */
-    private static void sendEmail(final Message msg, final boolean usingSendGrid)
+    private static Future<Void> sendEmail(final Message msg, final boolean usingSendGrid)
     {
-        executor.execute(new Runnable() {
+
+        Future<Void> f = executor.submit(new Callable<Void>() {
             @Override
-            public void run()
+            public Void call() throws Exception
             {
 
                 try {
-
                     Transport t = session.getTransport("smtp");
                     // we use SendGrid for any publically facing emails,
                     // and our own mail servers for internal emails.
@@ -146,18 +148,25 @@ class EmailSender
                     } finally {
                         t.close();
                     }
+                    return null;
                 } catch (MessagingException e) {
                     try {
                         String to = msg.getRecipients(Message.RecipientType.TO)[0].toString();
                         sendEmail(SV_NOTIFICATION_SENDER, SV_NOTIFICATION_SENDER,
-                                SV_NOTIFICATION_RECEIVER, null, "Messaging failed",  "Can't email " + to + ": " + e, null, false, null);
+                                SV_NOTIFICATION_RECEIVER, null, "Messaging failed",
+                                "Can't email " + to + ": " + e, null, false, null);
 
                         l.error("cannot send message to " + to + ": ", e);
+
                     } catch (Exception e1) {
-                        l.error("cannot report email exception: ", e);
+                        l.error("cannot report email exception: ", e1);
                     }
+
+                    throw e;
                 }
             }
         });
+
+        return f;
     }
 }
