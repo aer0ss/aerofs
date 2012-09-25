@@ -40,7 +40,7 @@ ${PACKAGES}: %: %.deb
 	@mkdir -p debs
 
 upload:
-	@./tools/deb-deploy.sh $(MODE)
+	@./tools/deb-upload.sh $(MODE)
 
 clean:
 	@rm -rf debs versions *.deb *.ver *.txt
