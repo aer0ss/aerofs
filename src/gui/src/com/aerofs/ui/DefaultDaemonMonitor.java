@@ -73,7 +73,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 " of safety. Contact us at " + SV.SUPPORT_EMAIL_ADDRESS +
                                 " for more questions.");
                     } else {
-                        throw new IOException(getMessage(exitCode));
+                        throw new Exception(getMessage(exitCode));
                     }
                 } catch (IllegalThreadStateException e) {
                     // the process is still running
