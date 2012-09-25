@@ -33,6 +33,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     private final CfgLocalUser _user;
     private final SyncStatBlockingClient.Factory _ssf;
 
+    private boolean _firstCall;
     private SyncStatBlockingClient _client;
 
     @Inject
@@ -55,11 +56,28 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
             try {
                 _client = _ssf.create(SyncStat.URL, _user.get());
                 _client.signInRemote();
-                notifyConnected_();
+                _firstCall = true;
             } catch (Exception e) {
                 _client = null;
                 throw e;
             }
+        }
+    }
+
+    /**
+     * Emit connection notification after first successful call
+     *
+     * This is needed because the syncstat server will sometimes accept imcoming connections but
+     * fail to service subsequent calls which will cause the connection to quickly jump back to
+     * a CONNECTED state after a disconnection even though it isn't making any actual progress.
+     *
+     * NOTE: should only be called with the object lock held (i.e synchronized method or similar)
+     */
+    private void notifyOnFirstSuccessfulCall_()
+    {
+        if (_firstCall) {
+            notifyConnected_();
+            _firstCall = false;
         }
     }
 
@@ -101,6 +119,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         ensureConnected_();
         try {
             _client.setVersionHash(oid.toPB(), sid.toPB(), ByteString.copyFrom(vh));
+            notifyOnFirstSuccessfulCall_();
         } catch (Exception e) {
             reset_();
             throw e;
@@ -132,7 +151,9 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     {
         ensureConnected_();
         try {
-            return _client.getSyncStatus(ssEpoch);
+            GetSyncStatusReply r = _client.getSyncStatus(ssEpoch);
+            notifyOnFirstSuccessfulCall_();
+            return r;
         } catch (Exception e) {
             reset_();
             throw e;
