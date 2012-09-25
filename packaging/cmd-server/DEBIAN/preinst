@@ -3,3 +3,6 @@
 # Stop the command server and nginx if they are running.
 service nginx stop || true
 service aerofs-cmd-server stop || true
+
+# Logging related setup.
+mkdir -p /var/log/aerofs
