@@ -5,7 +5,6 @@
 package com.aerofs.zephyr.core;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import static java.nio.ByteOrder.BIG_ENDIAN;
 
@@ -90,7 +89,7 @@ public class BufferPool
     private final int _bufsize;
 
     /** set of buffers available to be used */
-    private ByteBuffer[] _buffers;
+    private final ByteBuffer[] _buffers;
 
     /** index into the _buffers array from which to retrieve (or not) a {@link ByteBuffer} object */
     private int _bufidx;

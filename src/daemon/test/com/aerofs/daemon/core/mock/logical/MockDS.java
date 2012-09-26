@@ -554,7 +554,7 @@ public class MockDS
                 return c.cast(o);
             }
             try {
-                Class[] cl = new Class[3 + param.length];
+                Class<?>[] cl = new Class[3 + param.length];
                 cl[0] = MockDS.class;
                 cl[1] = String.class;
                 cl[2] = MockDSDir.class;

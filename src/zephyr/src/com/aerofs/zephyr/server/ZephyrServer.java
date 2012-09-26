@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.aerofs.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
-import static com.aerofs.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.zephyr.core.ZUtil.addInterest;
 import static com.aerofs.zephyr.core.ZUtil.closeChannel;
 
@@ -265,11 +264,11 @@ public class ZephyrServer implements IIOEventHandler
 
     private final String _host;
     private final short _port;
-    private Dispatcher _d;
+    private final Dispatcher _d;
     private int _nextid;
-    private Map<Integer, SelectionKey> _idToKey;
-    private BufferPool _bufpool;
+    private final Map<Integer, SelectionKey> _idToKey;
+    private final BufferPool _bufpool;
     private ServerSocketChannel _ssc;
     private boolean _inited;
-    private Logger l = Util.l(ZephyrServer.class);
+    private final Logger l = Util.l(ZephyrServer.class);
 }
