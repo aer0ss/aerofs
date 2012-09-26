@@ -17,6 +17,7 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SVClient;
@@ -49,7 +50,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      */
     private Process startDaemon() throws Exception
     {
-        Process proc = Util.execBackground(Util.join(AppRoot.abs(), "aerofsd"), Cfg.absRTRoot());
+        final String aerofsdExec = OSUtil.isWindows() ? "aerofsd.exe" : "aerofsd";
+        Process proc = Util.execBackground(Util.join(AppRoot.abs(), aerofsdExec), Cfg.absRTRoot());
 
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         while (true) {
