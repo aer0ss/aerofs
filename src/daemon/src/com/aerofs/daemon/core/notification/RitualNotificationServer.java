@@ -4,6 +4,8 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DownloadState;
 import com.aerofs.daemon.core.net.UploadState;
+import com.aerofs.daemon.core.status.PathStatus;
+import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.lib.TCPProactorMT;
@@ -39,16 +41,21 @@ public class RitualNotificationServer implements IConnectionManager
     private final CoreQueue _cq;
     private final DownloadState _dls;
     private final UploadState _uls;
+    private final PathStatus _so;
+    private final AggregateSyncStatus _agss;
     private final DirectoryService _ds;
     private final TC _tc;
 
     @Inject
     public RitualNotificationServer(CoreQueue cq, DownloadState dls, UploadState uls,
+            PathStatus so, AggregateSyncStatus agss,
             DirectoryService ds, TC tc)
     {
         _cq = cq;
         _dls = dls;
         _uls = uls;
+        _so = so;
+        _agss = agss;
         _ds = ds;
         _tc = tc;
     }
@@ -57,6 +64,13 @@ public class RitualNotificationServer implements IConnectionManager
     {
         _dls.addListener_(new DownloadStateListener(this, _ds, _tc));
         _uls.addListener_(new UploadStateListener(this, _ds, _tc));
+
+        // Merged status notifier listens on all input sources
+        PathStatusNotifier sn = new PathStatusNotifier(this, _so);
+        _dls.addListener_(sn);
+        _uls.addListener_(sn);
+        _agss.addListener_(sn);
+
         SPBlockingClient.setListener(new DaemonBadCredentialListener(this));
 
         _proactor = new TCPProactorMT("notifier", this,

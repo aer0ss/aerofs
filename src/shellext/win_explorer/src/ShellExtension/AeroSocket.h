@@ -1,4 +1,4 @@
-/**
+﻿/**
   AeroSocket
 
   This class manages an AsyncSocket for the AeroFSShellExtension class.

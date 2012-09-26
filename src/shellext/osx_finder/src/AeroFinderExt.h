@@ -4,7 +4,18 @@
 @class AeroOverlay;
 @class AeroContextMenu;
 @class ShellextNotification;
-@class FileStatusNotification;
+@class PathStatusNotification;
+
+typedef enum {
+    NONE,
+    OUT_SYNC,
+    PARTIAL_SYNC,
+    IN_SYNC,
+    DOWNLOADING,
+    UPLOADING,
+
+    OverlayCount
+} Overlay;
 
 // flags are bitwise OR'ed
 typedef enum {
@@ -19,6 +30,8 @@ typedef enum {
     AeroContextMenu* contextMenu;
     NSString* rootAnchor;
     NSString* userId;
+    BOOL syncStatCached;
+    NSCache* statusCache;
 }
 
 @property (readonly) AeroOverlay* overlay;
@@ -38,6 +51,8 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 - (void)showVersionHistoryDialog:(id)sender;
 - (void)sendGreeting;
 - (void)parseNotification:(ShellextNotification*)notification;
-- (void)onFileStatus:(FileStatusNotification*)notification;
+- (void)onStatus:(PathStatusNotification*)notification;
+- (Overlay)overlayForPath:(NSString*)path;
+- (void)clearCache;
 
 @end

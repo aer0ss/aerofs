@@ -1,6 +1,15 @@
 package com.aerofs.gui.shellext;
 
 import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.lib.ritual.RitualClient;
+import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.PathStatus.PBPathStatus;
+import com.aerofs.proto.Ritual.GetPathStatusReply;
+import com.aerofs.proto.Shellext.PathStatusNotification;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Path;
@@ -9,7 +18,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Shellext.RootAnchorNotification;
-import com.aerofs.proto.Shellext.FileStatusNotification;
 import com.aerofs.proto.Shellext.GreetingCall;
 import com.aerofs.proto.Shellext.ShellextCall;
 import com.aerofs.proto.Shellext.ShellextNotification;
@@ -17,18 +25,21 @@ import com.aerofs.proto.Shellext.ShellextNotification.Type;
 import com.aerofs.ui.UIUtil;
 import com.google.protobuf.InvalidProtocolBufferException;
 
+import java.util.List;
+
 public class ShellextService
 {
     private static final Logger l = Util.l(ShellextService.class);
 
     private final ShellextServer _server;
     private static ShellextService _instance = null;
+    private RitualClient _ritual;
 
     /**
      * Used to make sure we are communicating with the right version of the shell extension
      * Bump this number every time shellext.proto changes
      */
-    private final static int PROTOCOL_VERSION = 3;
+    private final static int PROTOCOL_VERSION = 4;
 
     public static ShellextService get()
     {
@@ -38,8 +49,9 @@ public class ShellextService
 
     private ShellextService()
     {
-        new TransferStateNotifier(this);
+        new PathStatusNotificationForwarder(this);
         _server = new ShellextServer(Cfg.port(Cfg.PortType.UI));
+        _ritual = RitualClientFactory.newClient();
     }
 
     public void start_()
@@ -68,33 +80,26 @@ public class ShellextService
         _server.send(notification.toByteArray());
     }
 
-    protected void notifyDownload(String path, boolean value)
+    protected void notifyPathStatus(String path, PBPathStatus status)
     {
-        notifyFileStatus(FileStatusNotification.newBuilder().setPath(path).setDownloading(value));
-    }
+        if (path.isEmpty()) return;
+        PathStatusNotification st = PathStatusNotification.newBuilder()
+                .setPath(path)
+                .setStatus(status)
+                .build();
 
-    protected void notifyUpload(String path, boolean value)
-    {
-        notifyFileStatus(FileStatusNotification.newBuilder().setPath(path).setUploading(value));
+        ShellextNotification reply = ShellextNotification.newBuilder()
+                .setType(Type.PATH_STATUS)
+                .setPathStatus(st)
+                .build();
+
+        _server.send(reply.toByteArray());
     }
 
     protected void notifyClearCache()
     {
         ShellextNotification reply = ShellextNotification.newBuilder()
                 .setType(Type.CLEAR_STATUS_CACHE)
-                .build();
-
-        _server.send(reply.toByteArray());
-    }
-
-    private void notifyFileStatus(FileStatusNotification.Builder statusBuilder)
-    {
-        FileStatusNotification st = statusBuilder.build();
-        if (st.getPath().isEmpty()) return;
-
-        ShellextNotification reply = ShellextNotification.newBuilder()
-                .setType(Type.FILE_STATUS)
-                .setFileStatus(st)
                 .build();
 
         _server.send(reply.toByteArray());
@@ -120,6 +125,10 @@ public class ShellextService
         case VERSION_HISTORY:
             assert (call.hasVersionHistory());
             versionHistory(call.getVersionHistory().getPath());
+            break;
+        case GET_PATH_STATUS:
+            assert (call.hasGetPathStatus());
+            getStatus(call.getGetPathStatus().getPath());
             break;
         default:
             throw new ExProtocolError(ShellextCall.Type.class);
@@ -175,5 +184,35 @@ public class ShellextService
         }
 
         UIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
+    }
+
+    private void getStatus(final String absPath)
+    {
+        String absRoot = Cfg.absRootAnchor();
+        if (!Path.isUnder(absRoot, absPath)) {
+            l.warn("shellext provided an external path " + absPath);
+            return;
+        }
+
+        final List<PBPath> pbPaths = Lists.newArrayList(
+                Path.fromAbsoluteString(absRoot, absPath).toPB());
+
+        // make asynchronous ritual call and send shellext notifications when reply received
+        Futures.addCallback(_ritual.getPathStatus(pbPaths),
+                new FutureCallback<GetPathStatusReply>()
+                {
+                    @Override
+                    public void onSuccess(GetPathStatusReply reply)
+                    {
+                        assert reply.getStatusCount() == 1 : reply.getStatusCount();
+                        notifyPathStatus(absPath, reply.getStatus(0));
+                    }
+
+                    @Override
+                    public void onFailure(Throwable throwable)
+                    {
+                        l.warn("sync status overview fetch (for shellext) failed ", throwable);
+                    }
+                });
     }
 }

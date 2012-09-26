@@ -20,7 +20,7 @@ ${GEN_ROOT}:
 gen_proto:
 	@echo \\nGenerating Objective-C protobuf classes...\\n;
 ifeq (${objc_plugin_found}, yes)
-	${PROTOC} -I=${LIB_PROTO} --objc_out=${GEN_ROOT} ${LIB_PROTO}/common.proto
+	${PROTOC} -I=${LIB_PROTO} --objc_out=${GEN_ROOT} ${LIB_PROTO}/path_status.proto
 	${PROTOC} -I=${LIB_PROTO} -I=${GUI_PROTO} --objc_out=${GEN_ROOT} ${GUI_PROTO}/shellext.proto
 	@echo \\nDone;
 else

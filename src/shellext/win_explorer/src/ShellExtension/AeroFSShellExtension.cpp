@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "AeroFSShellExtension.h"
 
 #include <string>
@@ -7,7 +7,7 @@
 #include <shlobj.h>
 
 #include "AeroSocket.h"
-#include "AeroNode.h"
+#include "OverlayCache.h"
 #include "logger.h"
 #include "string_helpers.h"
 #include "../../gen/shellext.pb.h"
@@ -15,16 +15,18 @@
 #define GUIPORT_DEFAULT 50195
 #define GUIPORT_OFFSET 2
 #define DELAY_BEFORE_CONNECTION_RETRY 2000 // milliseconds
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
+#define OVERLAY_CACHE_SIZE_LIMIT 10000 // max number of path for which overlay state is cached
 
 AeroFSShellExtension _instance;
 
 AeroFSShellExtension::AeroFSShellExtension()
 	: m_socket(new AeroSocket()),
+	m_cache(new OverlayCache(OVERLAY_CACHE_SIZE_LIMIT)),
 	m_rootAnchor(),
 	m_lastConnectionAttempt(0),
 	m_port(0),
-	m_rootNode(NULL)
+	m_syncStatCached(false)
 {
 	InitializeCriticalSection(&m_cs);
 }
@@ -41,8 +43,6 @@ We should not do heavy de-initilization in the destructor
 void AeroFSShellExtension::cleanup()
 {
 	m_socket->disconnect();
-	delete m_rootNode;
-	m_rootNode = NULL;
 }
 
 AeroFSShellExtension* AeroFSShellExtension::instance()
@@ -135,8 +135,8 @@ Called by AeroSocket to react on a message sent by the GUI
 void AeroFSShellExtension::parseNotification(const ShellextNotification& notification)
 {
 	switch (notification.type()) {
-		case ShellextNotification_Type_FILE_STATUS:
-			onFileStatusNotification(notification.file_status());
+		case ShellextNotification_Type_PATH_STATUS:
+			onPathStatusNotification(notification.path_status());
 			break;
 
 		case ShellextNotification_Type_ROOT_ANCHOR:
@@ -155,38 +155,89 @@ void AeroFSShellExtension::parseNotification(const ShellextNotification& notific
 	}
 }
 
+static int overlayForStatus(const PBPathStatus& status) {
+	if (status.flags() & PBPathStatus_Flag_DOWNLOADING)	return O_Downloading;
+	if (status.flags() & PBPathStatus_Flag_UPLOADING)	return O_Uploading;
+	switch (status.sync()) {
+		case PBPathStatus_Sync_OUT_SYNC:				return O_OutSync;
+		case PBPathStatus_Sync_PARTIAL_SYNC:			return O_PartialSync;
+		case PBPathStatus_Sync_IN_SYNC:					return O_InSync;
+		default: break;
+	}
+	return O_None;
+}
+
+/**
+ * Check the sync status cache and query the GUI on cache miss
+ *
+ * The caller is responsible for checking that \a path is under the root anchor
+ */
+Overlay AeroFSShellExtension::overlay(std::wstring& path)
+{
+	if (!isUnderRootAnchor(path)) return O_None;
+
+	// TODO: use RTROOT-relative path as cache key to save memory
+	const std::wstring key = lowercase(path);
+	int status = m_cache->value(key, -1);
+
+	if (status == -1) {
+		// put placeholder in cache to prevent repeated calls to GUI
+		m_cache->insert(key, O_None);
+
+		// query GUI for sync status
+		ShellextCall call;
+		call.set_type(ShellextCall_Type_GET_PATH_STATUS);
+		call.mutable_get_path_status()->set_path(to_string(path));
+
+		m_socket->sendMessage(call);
+
+		status = O_None;
+	}
+
+	if (!shouldEnableTestingFeatures()) {
+		if (status != O_Downloading && status != O_Uploading) return O_None;
+	}
+
+	return (Overlay)status;
+}
+
 /**
  * Process notifications from the GUI about file status changes
  */
-void AeroFSShellExtension::onFileStatusNotification(const FileStatusNotification& fstatus)
+void AeroFSShellExtension::onPathStatusNotification(const PathStatusNotification& fstatus)
 {
-	if(fstatus.path().empty()) {
-		ERROR_LOG("Received an empty file status notification");
-		return;
-	}
-	if (!m_rootNode) {
-		ERROR_LOG("Received a file status notification before anchor root was set");
+	if (fstatus.path().empty()) {
+		ERROR_LOG("Received an empty status notification");
 		return;
 	}
 
+	PBPathStatus status = fstatus.status();
 	const std::wstring path = lowercase(to_wstring(fstatus.path()));
-	AeroNode* node = m_rootNode->nodeAtPath(path, true);
 
-	if (!node) {
-		ERROR_LOG("Received notification for a file outside root: " << path);
+	if (!isUnderRootAnchor(path)) {
+		INFO_LOG("Received a status update for path outside root anchor");
 		return;
 	}
 
-	// Convert the status from the FileStatusNotification to a Status
+	INFO_LOG("Received status update for " << path << " "
+		<< status.sync() << ":" << status.flags());
 
-	AeroNode::Status st = node->status();
-	if (fstatus.has_downloading()) {
-		st = fstatus.downloading() ? st | AeroNode::Downloading : st & ~AeroNode::Downloading;
+	// clear cache if sync status is no longer reliable
+	if (status.sync() == PBPathStatus_Sync_UNKNOWN) {
+		if (m_syncStatCached) clearCache();
+	} else {
+		m_syncStatCached = true;
 	}
-	if (fstatus.has_uploading()) {
-		st = fstatus.uploading() ? st | AeroNode::Uploading : st & ~AeroNode::Uploading;
+
+	// TODO: use RTROOT-relative path as cache key to save memory
+	int oldOverlay = m_cache->value(path, -1);
+	int newOverlay = overlayForStatus(status);
+	if (oldOverlay != newOverlay) {
+		// update cache
+		m_cache->insert(path, newOverlay);
+		// mark overlay as dirty
+		SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, path.c_str(), NULL);
 	}
-	node->setStatus(st);
 }
 
 /**
@@ -220,13 +271,9 @@ Clear the file status cache - all icon overlays are reset.
 */
 void AeroFSShellExtension::clearCache()
 {
-	delete m_rootNode;
-
-	if (!m_rootAnchor.empty()) {
-		m_rootNode = new AeroNode(m_rootAnchor, NULL);
-	} else {
-		m_rootNode = NULL;
-	}
+	// clear cache
+	m_cache->clear();
+	m_syncStatCached = false;
 
 	// Tell the shell to refresh the icons
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
@@ -250,7 +297,6 @@ void AeroFSShellExtension::showVersionHistoryDialog(const std::wstring& path)
 	m_socket->sendMessage(call);
 }
 
-
 void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
 {
 	ShellextCall call;
@@ -267,14 +313,6 @@ void AeroFSShellExtension::sendGreeting()
 	call.mutable_greeting()->set_protocol_version(PROTOCOL_VERSION);
 
 	m_socket->sendMessage(call);
-}
-
-/**
-Returns the root node of the file status cache.
-*/
-AeroNode* AeroFSShellExtension::rootNode() const
-{
-	return m_rootNode;
 }
 
 /**

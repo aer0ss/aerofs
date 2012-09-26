@@ -239,9 +239,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\gen\common.pb.cc">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    <ClCompile Include="..\..\gen\path_status.pb.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -252,8 +252,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="AeroFSShellExtension.cpp" />
-    <ClCompile Include="AeroNode.cpp" />
     <ClCompile Include="AeroSocket.cpp" />
+    <ClCompile Include="OverlayCache.cpp" />
     <ClCompile Include="OverlayIcons.cpp" />
     <ClCompile Include="ContextMenu.cpp" />
     <ClCompile Include="AsyncSocket.cpp" />
@@ -269,11 +269,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\3rdparty\include\rgs_helper.h" />
-    <ClInclude Include="..\..\gen\common.pb.h" />
+    <ClInclude Include="..\..\gen\path_status.pb.h" />
     <ClInclude Include="..\..\gen\shellext.pb.h" />
     <ClInclude Include="AeroFSShellExtension.h" />
-    <ClInclude Include="AeroNode.h" />
     <ClInclude Include="AeroSocket.h" />
+    <ClInclude Include="OverlayCache.h" />
     <ClInclude Include="ISocketDelegate.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="OverlayIcons.h" />
@@ -291,11 +291,16 @@
   <ItemGroup>
     <None Include="AeroFS.ico" />
     <None Include="AeroFSShellExtension.def" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ConflictOverlay.ico" />
     <None Include="ContextMenuAdmin.rgs" />
     <None Include="DownloadOverlay.ico" />
+    <None Include="InSyncOverlay.ico" />
+    <None Include="OutSyncOverlay.ico" />
     <None Include="OverlayIcons.rgs" />
     <None Include="ContextMenu.rgs" />
     <None Include="OverlayIconsAdmin.rgs" />
+    <None Include="PartialSyncOverlay.ico" />
     <None Include="UploadOverlay.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

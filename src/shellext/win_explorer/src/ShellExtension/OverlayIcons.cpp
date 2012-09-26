@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "OverlayIcons.h"
 #include "logger.h"
 #include "AeroFSShellExtension.h"
@@ -39,42 +39,55 @@ HRESULT OverlayBase<T>::GetPriority(int* pPriority)
 }
 
 /**
-Called by the shell for any file whose icon is about to be drawn.
-Return S_OK if the overlay should be displayed, S_FALSE otherwise.
-*/
-template <class T>
-HRESULT OverlayBase<T>::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
+ * Called by the shell for any file whose icon is about to be drawn.
+ * Return S_OK if the overlay should be displayed, S_FALSE otherwise.
+ */
+template <class T> HRESULT OverlayBase<T>::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
 {
 	if (!m_instance || !m_instance->isConnectedToGUI()) {
 		return S_FALSE;
 	}
 
-	AeroNode* rootNode = m_instance->rootNode();
-	if (!rootNode) {
-		return S_FALSE;
-	}
-
-	AeroNode* node = rootNode->nodeAtPath(std::wstring(pwszPath), false);
-	if (node && node->status() == overlayForStatus()) {
+	std::wstring path(pwszPath);
+	Overlay status = m_instance->overlay(path);
+	if (status == overlayType()) {
+		INFO_LOG("overlay: " << path << " " << overlayType());
 		return S_OK;
 	}
 
 	return S_FALSE;
 }
 
-/// Download Overlay ///
+/// Conflict Overlay ///
 
-wchar_t * DownloadOverlay::name()
+wchar_t * ConflictOverlay::name()
 {
 	// Prepend the number at the begining of the name instead to the end to increase our chances of ending up
 	// in the restricted list of 15 overlay handlers that are available on the system.
 	// (TortoiseOverlay does the same - Dropbox does not :)
+	return L"0_AeroFSShellExtension";
+}
+
+Overlay ConflictOverlay::overlayType() const
+{
+	return O_Conflict;
+}
+
+int ConflictOverlay::overlayIcon() const
+{
+	return IDI_CONFLICT_OVERLAY;
+}
+
+/// Download Overlay ///
+
+wchar_t * DownloadOverlay::name()
+{
 	return L"1_AeroFSShellExtension";
 }
 
-AeroNode::Status DownloadOverlay::overlayForStatus() const
+Overlay DownloadOverlay::overlayType() const
 {
-	return AeroNode::Downloading;
+	return O_Downloading;
 }
 
 int DownloadOverlay::overlayIcon() const
@@ -89,12 +102,63 @@ wchar_t * UploadOverlay::name()
 	return L"2_AeroFSShellExtension";
 }
 
-AeroNode::Status UploadOverlay::overlayForStatus() const
+Overlay UploadOverlay::overlayType() const
 {
-	return AeroNode::Uploading;
+	return O_Uploading;
 }
 
 int UploadOverlay::overlayIcon() const
 {
 	return IDI_UPLOAD_OVERLAY;
+}
+
+/// In Sync Overlay ///
+
+wchar_t * InSyncOverlay::name()
+{
+	return L"3_AeroFSShellExtension";
+}
+
+Overlay InSyncOverlay::overlayType() const
+{
+	return O_InSync;
+}
+
+int InSyncOverlay::overlayIcon() const
+{
+	return IDI_IN_SYNC_OVERLAY;
+}
+
+/// Partial Sync Overlay ///
+
+wchar_t * PartialSyncOverlay::name()
+{
+	return L"4_AeroFSShellExtension";
+}
+
+Overlay PartialSyncOverlay::overlayType() const
+{
+	return O_PartialSync;
+}
+
+int PartialSyncOverlay::overlayIcon() const
+{
+	return IDI_PARTIAL_SYNC_OVERLAY;
+}
+
+/// Out Sync Overlay ///
+
+wchar_t * OutSyncOverlay::name()
+{
+	return L"5_AeroFSShellExtension";
+}
+
+Overlay OutSyncOverlay::overlayType() const
+{
+	return O_OutSync;
+}
+
+int OutSyncOverlay::overlayIcon() const
+{
+	return IDI_OUT_SYNC_OVERLAY;
 }

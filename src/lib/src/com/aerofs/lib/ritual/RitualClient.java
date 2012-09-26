@@ -27,4 +27,15 @@ public class RitualClient extends RitualServiceStub implements Closeable
     {
         _handler.disconnect();
     }
+
+    /**
+     * For DI
+     */
+    public static class Factory
+    {
+        public RitualClient create()
+        {
+            return RitualClientFactory.newClient();
+        }
+    }
 }

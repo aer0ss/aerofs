@@ -1,13 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "shlobj.h"
 #include "resource.h"
 #include "rgs_helper.h"
-#include "AeroNode.h"
+#include "AeroFSShellExtension.h"
 
 using namespace ATL;
-
-class AeroFSShellExtension;
 
 /**
 Since a shell overlay handler can only display one single icon overlay,
@@ -52,11 +50,21 @@ class __declspec(novtable) OverlayBase :
 	HRESULT STDMETHODCALLTYPE IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib);
 
 protected:
-	virtual AeroNode::Status overlayForStatus() const = 0;
+	virtual Overlay overlayType() const = 0;
 	virtual int overlayIcon() const = 0;
 
-private:
 	AeroFSShellExtension* m_instance;
+};
+
+class
+	__declspec(uuid("882108B0-26E6-4926-BC70-EA1D738D5DEB"))
+	__declspec(novtable)
+ConflictOverlay : public OverlayBase<ConflictOverlay>
+{
+public:
+	static wchar_t* name();
+	Overlay overlayType() const;
+	int overlayIcon() const;
 };
 
 class
@@ -66,7 +74,7 @@ DownloadOverlay : public OverlayBase<DownloadOverlay>
 {
 public:
 	static wchar_t* name();
-	AeroNode::Status overlayForStatus() const;
+	Overlay overlayType() const;
 	int overlayIcon() const;
 };
 
@@ -77,9 +85,45 @@ UploadOverlay : public OverlayBase<UploadOverlay>
 {
 public:
 	static wchar_t* name();
-	AeroNode::Status overlayForStatus() const;
+	Overlay overlayType() const;
+	int overlayIcon() const;
+};
+
+class
+	__declspec(uuid("882108B3-26E6-4926-BC70-EA1D738D5DEB"))
+	__declspec(novtable)
+InSyncOverlay : public OverlayBase<InSyncOverlay>
+{
+public:
+	static wchar_t* name();
+	Overlay overlayType() const;
+	int overlayIcon() const;
+};
+
+class
+	__declspec(uuid("882108B4-26E6-4926-BC70-EA1D738D5DEB"))
+	__declspec(novtable)
+PartialSyncOverlay : public OverlayBase<PartialSyncOverlay>
+{
+public:
+	static wchar_t* name();
+	Overlay overlayType() const;
+	int overlayIcon() const;
+};
+
+class
+	__declspec(uuid("882108B5-26E6-4926-BC70-EA1D738D5DEB"))
+	__declspec(novtable)
+OutSyncOverlay : public OverlayBase<OutSyncOverlay>
+{
+public:
+	static wchar_t* name();
+	Overlay overlayType() const;
 	int overlayIcon() const;
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(DownloadOverlay), DownloadOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(UploadOverlay), UploadOverlay)
+OBJECT_ENTRY_AUTO(__uuidof(InSyncOverlay), InSyncOverlay)
+OBJECT_ENTRY_AUTO(__uuidof(PartialSyncOverlay), PartialSyncOverlay)
+OBJECT_ENTRY_AUTO(__uuidof(OutSyncOverlay), OutSyncOverlay)

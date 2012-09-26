@@ -11,7 +11,6 @@
 		1600FB3D147BEE6D001C0A40 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B45E1455C4AD0049B1B6 /* Cocoa.framework */; };
 		1600FB47147BEE6D001C0A40 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1600FB45147BEE6D001C0A40 /* InfoPlist.strings */; };
 		1600FB4B147BEE6D001C0A40 /* FinderExtensionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1600FB4A147BEE6D001C0A40 /* FinderExtensionTests.m */; };
-		1600FB54147BF750001C0A40 /* AeroNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 1644252814648FE500DE4546 /* AeroNode.m */; };
 		16026EEF145849670078E542 /* AeroSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 16026EED145849670078E542 /* AeroSocket.m */; };
 		16088EE91451C42C00CDFCDC /* AeroUtils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16088EE51451C42C00CDFCDC /* AeroUtils.mm */; };
 		16088EEA1451C42C00CDFCDC /* AeroContextMenu.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16088EE61451C42C00CDFCDC /* AeroContextMenu.mm */; };
@@ -22,7 +21,6 @@
 		1640B45F1455C4AD0049B1B6 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B45E1455C4AD0049B1B6 /* Cocoa.framework */; };
 		1640B4611455C4C90049B1B6 /* ScriptingBridge.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */; };
 		1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252714648FE500DE4546 /* FinderTypes.mm */; };
-		1644252B14648FE500DE4546 /* AeroNode.m in Sources */ = {isa = PBXBuildFile; fileRef = 1644252814648FE500DE4546 /* AeroNode.m */; };
 		1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252C146AE85700DE4546 /* AeroIconPair.mm */; };
 		1658CC92145E9FD4005476FE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC91145E9FD3005476FE /* QuartzCore.framework */; };
 		1658CC97145F2D9C005476FE /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC96145F2D9C005476FE /* Quartz.framework */; };
@@ -34,7 +32,10 @@
 		16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16A99D5F145B296600C3EA3D /* AeroOverlay.mm */; };
 		16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F60E9C153F6F2B00A25339 /* Shellext.pb.m */; };
 		16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */; };
-		16F8E758144EFF9400F78CD3 /* Common.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E754144EFF9400F78CD3 /* Common.pb.m */; };
+		F341E7721612683D0055FC67 /* InSyncBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E76F1612683D0055FC67 /* InSyncBadge.icns */; };
+		F341E7731612683D0055FC67 /* OutSyncBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7701612683D0055FC67 /* OutSyncBadge.icns */; };
+		F341E7741612683D0055FC67 /* PartialSyncBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7711612683D0055FC67 /* PartialSyncBadge.icns */; };
+		F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6C /* Path_status.pb.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -93,8 +94,6 @@
 		1640B45E1455C4AD0049B1B6 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		1640B4601455C4C90049B1B6 /* ScriptingBridge.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ScriptingBridge.framework; path = System/Library/Frameworks/ScriptingBridge.framework; sourceTree = SDKROOT; };
 		1644252714648FE500DE4546 /* FinderTypes.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = FinderTypes.mm; path = src/FinderTypes.mm; sourceTree = SOURCE_ROOT; };
-		1644252814648FE500DE4546 /* AeroNode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroNode.m; path = src/AeroNode.m; sourceTree = SOURCE_ROOT; };
-		1644252914648FE500DE4546 /* AeroNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroNode.h; path = src/AeroNode.h; sourceTree = SOURCE_ROOT; };
 		1644252C146AE85700DE4546 /* AeroIconPair.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroIconPair.mm; path = src/AeroIconPair.mm; sourceTree = SOURCE_ROOT; };
 		1644252D146AE85700DE4546 /* AeroIconPair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroIconPair.h; path = src/AeroIconPair.h; sourceTree = SOURCE_ROOT; };
 		1658CC91145E9FD3005476FE /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
@@ -114,8 +113,11 @@
 		16F60E9D153F6F2B00A25339 /* Shellext.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Shellext.pb.h; path = gen/Shellext.pb.h; sourceTree = "<group>"; };
 		16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroFinderExt.m; path = src/AeroFinderExt.m; sourceTree = SOURCE_ROOT; };
 		16F8E74A144E47BD00F78CD3 /* AeroFinderExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroFinderExt.h; path = src/AeroFinderExt.h; sourceTree = SOURCE_ROOT; };
-		16F8E754144EFF9400F78CD3 /* Common.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Common.pb.m; path = gen/Common.pb.m; sourceTree = "<group>"; };
-		16F8E756144EFF9400F78CD3 /* Common.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Common.pb.h; path = gen/Common.pb.h; sourceTree = "<group>"; };
+		F341E76F1612683D0055FC67 /* InSyncBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = InSyncBadge.icns; path = images/InSyncBadge.icns; sourceTree = SOURCE_ROOT; };
+		F341E7701612683D0055FC67 /* OutSyncBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = OutSyncBadge.icns; path = images/OutSyncBadge.icns; sourceTree = SOURCE_ROOT; };
+		F341E7711612683D0055FC67 /* PartialSyncBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = PartialSyncBadge.icns; path = images/PartialSyncBadge.icns; sourceTree = SOURCE_ROOT; };
+		F341E7741612683D0055FC6B /* Path_status.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Path_status.pb.h; path = gen/Path_status.pb.h; sourceTree = "<group>"; };
+		F341E7741612683D0055FC6C /* Path_status.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Path_status.pb.m; path = gen/Path_status.pb.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -242,8 +244,6 @@
 				1644252D146AE85700DE4546 /* AeroIconPair.h */,
 				16088EE81451C42C00CDFCDC /* AeroUtils.h */,
 				16088EE51451C42C00CDFCDC /* AeroUtils.mm */,
-				1644252914648FE500DE4546 /* AeroNode.h */,
-				1644252814648FE500DE4546 /* AeroNode.m */,
 				16026EEE145849670078E542 /* AeroSocket.h */,
 				16026EED145849670078E542 /* AeroSocket.m */,
 				16692661150AD6350072DA1E /* AsyncSocket.h */,
@@ -256,6 +256,9 @@
 		16978F8C144E3B1B00F92021 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				F341E76F1612683D0055FC67 /* InSyncBadge.icns */,
+				F341E7701612683D0055FC67 /* OutSyncBadge.icns */,
+				F341E7711612683D0055FC67 /* PartialSyncBadge.icns */,
 				1670114414840DEC0022673C /* DownloadBadge.icns */,
 				1670114514840DEC0022673C /* UploadBadge.icns */,
 				163F2F0E14560D4300762616 /* AeroFSFinderExtension.sdef */,
@@ -279,10 +282,10 @@
 		16F8E753144EF66B00F78CD3 /* gen */ = {
 			isa = PBXGroup;
 			children = (
+				F341E7741612683D0055FC6C /* Path_status.pb.m */,
+				F341E7741612683D0055FC6B /* Path_status.pb.h */,
 				16F60E9C153F6F2B00A25339 /* Shellext.pb.m */,
 				16F60E9D153F6F2B00A25339 /* Shellext.pb.h */,
-				16F8E754144EFF9400F78CD3 /* Common.pb.m */,
-				16F8E756144EFF9400F78CD3 /* Common.pb.h */,
 			);
 			name = gen;
 			sourceTree = "<group>";
@@ -389,6 +392,9 @@
 				163F2F0F14560D4300762616 /* AeroFSFinderExtension.sdef in Resources */,
 				1670114614840DEC0022673C /* DownloadBadge.icns in Resources */,
 				1670114714840DEC0022673C /* UploadBadge.icns in Resources */,
+				F341E7721612683D0055FC67 /* InSyncBadge.icns in Resources */,
+				F341E7731612683D0055FC67 /* OutSyncBadge.icns in Resources */,
+				F341E7741612683D0055FC67 /* PartialSyncBadge.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -416,7 +422,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				1600FB4B147BEE6D001C0A40 /* FinderExtensionTests.m in Sources */,
-				1600FB54147BF750001C0A40 /* AeroNode.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,16 +438,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */,
-				16F8E758144EFF9400F78CD3 /* Common.pb.m in Sources */,
 				16088EE91451C42C00CDFCDC /* AeroUtils.mm in Sources */,
 				16088EEA1451C42C00CDFCDC /* AeroContextMenu.mm in Sources */,
 				16026EEF145849670078E542 /* AeroSocket.m in Sources */,
 				16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */,
 				1644252A14648FE500DE4546 /* FinderTypes.mm in Sources */,
-				1644252B14648FE500DE4546 /* AeroNode.m in Sources */,
 				1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */,
 				16692664150AD6450072DA1E /* AsyncSocket.m in Sources */,
 				16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */,
+				F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

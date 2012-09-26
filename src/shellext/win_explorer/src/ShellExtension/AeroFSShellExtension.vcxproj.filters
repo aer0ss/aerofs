@@ -43,16 +43,16 @@
     <ClCompile Include="SocketOperations.cpp">
       <Filter>AsyncSocket</Filter>
     </ClCompile>
-    <ClCompile Include="AeroNode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ContextMenu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\gen\common.pb.cc">
+    <ClCompile Include="..\..\gen\shellext.pb.cc">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\gen\shellext.pb.cc">
+    <ClCompile Include="OverlayCache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\gen\path_status.pb.cc">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -87,23 +87,23 @@
     <ClInclude Include="SocketOperations.h">
       <Filter>AsyncSocket</Filter>
     </ClInclude>
-    <ClInclude Include="AeroNode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ContextMenu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OverlayIcons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\gen\common.pb.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\gen\shellext.pb.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="string_helpers.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayCache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\gen\path_status.pb.h">
+      <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -134,6 +134,19 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="ContextMenuAdmin.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="InSyncOverlay.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="PartialSyncOverlay.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="OutSyncOverlay.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ConflictOverlay.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -94,6 +94,7 @@ public class UserAndDeviceNames
     {
         GetDeviceInfoReply reply;
         try {
+            // TODO(hugues): release core lock around RPC ?
             SPBlockingClient sp = _factSP.create_(SP.URL, _localUser.get());
             sp.signInRemote();
             List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
@@ -187,6 +188,21 @@ public class UserAndDeviceNames
         }
 
         return resolved;
+    }
+
+    /**
+     * @return userid of the owner of the given {@code did}
+     */
+    public @Nullable String getDeviceOwnerNullable_(DID did) throws Exception
+    {
+        String owner = _d2u.getFromLocalNullable_(did);
+
+        // SP call if local DB doesn't have the info
+        if (owner == null && updateLocalDeviceInfo(Lists.newArrayList(did))) {
+            owner = _d2u.getFromLocalNullable_(did);
+        }
+
+        return owner;
     }
 
     /**

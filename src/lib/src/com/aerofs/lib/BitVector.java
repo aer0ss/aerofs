@@ -1,11 +1,14 @@
 package com.aerofs.lib;
 
+import org.apache.commons.lang.NotImplementedException;
+
 import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * A simple bitvector implementation that grows as needed
  */
-public class BitVector
+public class BitVector implements Iterable<Boolean>
 {
     final int BITS_PER_BYTE = 8;
 
@@ -382,5 +385,35 @@ public class BitVector
         int n = Integer.numberOfLeadingZeros(b);
         assert n < Integer.SIZE : b + " " + n;
         return (Integer.SIZE - 1) - n;
+    }
+
+    /**
+     * @return an iterator on the contents of the bitvector
+     */
+    @Override
+    public Iterator<Boolean> iterator()
+    {
+        final BitVector bv = this;
+        return new Iterator<Boolean>() {
+            int idx = 0;
+
+            @Override
+            public boolean hasNext()
+            {
+                return idx < bv.size();
+            }
+
+            @Override
+            public Boolean next()
+            {
+                return bv.test(idx++);
+            }
+
+            @Override
+            public void remove()
+            {
+                throw new NotImplementedException();
+            }
+        };
     }
 }

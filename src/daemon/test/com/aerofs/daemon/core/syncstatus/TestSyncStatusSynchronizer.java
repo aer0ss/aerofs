@@ -476,7 +476,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
         // pull
         sync.notificationReceived_(PBSyncStatNotification.newBuilder().setSsEpoch(43).build());
-        verify(ssc, times(1)).getSyncStatus_(anyLong()); // extra pull
+        verify(ssc).getSyncStatus_(anyLong()); // pull
 
         // check value of epoch after pull
         Assert.assertEquals(43, lsync.getPullEpoch_());

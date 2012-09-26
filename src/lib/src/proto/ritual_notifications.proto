@@ -1,6 +1,7 @@
 package com.aerofs.proto;
 
 import "common.proto";
+import "path_status.proto";
 
 // remove reflection
 option optimize_for = LITE_RUNTIME;
@@ -11,12 +12,14 @@ message PBNotification {
         DOWNLOAD = 0;
         UPLOAD = 1;
         BAD_CREDENTIAL = 2;
+        PATH_STATUS = 3;
     }
 
     required Type type = 1;
 
     optional PBDownloadEvent download = 2;
     optional PBUploadEvent upload = 3;
+    optional PBPathStatusEvent path_status = 4;
 }
 
 // TODO change to PBUpload/DownloadNotification?
@@ -50,6 +53,11 @@ message PBDownloadEvent {
 
     // for ended state only
     optional bool okay = 7;
+}
+
+message PBPathStatusEvent {
+    repeated PBPath path = 1;
+    repeated PBPathStatus status = 2;
 }
 
 ////////

@@ -1,4 +1,4 @@
-/**
+﻿/**
   ContextMenu
 
   This is the COM class that handles the right-click menu.

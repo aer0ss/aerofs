@@ -42,6 +42,7 @@ import com.aerofs.daemon.core.net.rx.HdSessionEnded;
 import com.aerofs.daemon.core.net.rx.HdStreamAborted;
 import com.aerofs.daemon.core.net.rx.HdStreamBegun;
 import com.aerofs.daemon.core.net.rx.HdUnicastMessage;
+import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDumpStat;
@@ -84,6 +85,7 @@ import com.aerofs.daemon.event.net.rx.EISessionEnded;
 import com.aerofs.daemon.event.net.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
+import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
 
 public class CoreEventDispatcher extends EventDispatcher
@@ -129,6 +131,7 @@ public class CoreEventDispatcher extends EventDispatcher
             HdListRevHistory hdListRevHistory,
             HdExportRevision hdExportRevision,
             HdGetSyncStatus hdGetSyncStatus,
+            HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat,
             HdGetActivities hdGetActivities)
     {
@@ -175,6 +178,7 @@ public class CoreEventDispatcher extends EventDispatcher
 
             // status events
             .setHandler_(EIGetSyncStatus.class, hdGetSyncStatus)
+            .setHandler_(EIGetStatusOverview.class, hdGetStatusOverview)
 
             // net events
             .setHandler_(EIPresence.class, hdPresence)

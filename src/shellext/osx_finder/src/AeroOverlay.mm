@@ -3,19 +3,18 @@
 #import "AeroOverlay.h"
 #import "AeroFinderExt.h"
 #import "FinderTypes.h"
-#import "AeroNode.h"
 #import "AeroUtils.h"
 #import "AeroIconPair.h"
 
 @implementation AeroOverlay
 
-@synthesize rootNode;
-
 - (void) dealloc
 {
-    [rootNode release];
     [dlIcon release];
     [ulIcon release];
+    [isIcon release];
+    [psIcon release];
+    [osIcon release];
 
     [super dealloc];
 }
@@ -33,6 +32,10 @@
     dlIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"DownloadBadge" ofType:@"icns"]];
     ulIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"UploadBadge" ofType:@"icns"]];
 
+    isIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"InSyncBadge" ofType:@"icns"]];
+    psIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"PartialSyncBadge" ofType:@"icns"]];
+    osIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"OutSyncBadge" ofType:@"icns"]];
+
     // Swizzlle methods
     [AeroUtils swizzleInstanceMethod:@selector(layerForType:) fromClass:NSClassFromString(@"IKIconCell")
                           withMethod:@selector(aero_IKIconCell_layerForType:) fromClass:[AeroOverlaySwizzledMethods class]];
@@ -43,28 +46,22 @@
     return self;
 }
 
-- (void)clearCache:(NSString*)rootAnchor
-{
-    [rootNode release];
-    if (rootAnchor.length > 0) {
-        rootNode = [[AeroNode alloc] initWithName:rootAnchor andParent:nil];
-    } else {
-        rootNode = nil;
-    }
-}
-
 -(NSImage*) iconForPath:(NSString*)path flipped:(BOOL)flipped
 {
-    AeroNode* node = [rootNode getNodeAtPath:path createPath:NO];
-
-    if (node == nil) {
+    if (![[AeroFinderExt instance] isUnderRootAnchor:path]) {
         return nil;
     }
 
     AeroIconPair* result = nil;
-
-    if (node.status & Downloading) result = dlIcon;
-    if (node.status & Uploading) result = ulIcon;
+    Overlay status = [[AeroFinderExt instance] overlayForPath:path];
+    switch (status) {
+        case IN_SYNC:       result = isIcon; break;
+        case PARTIAL_SYNC:  result = psIcon; break;
+        case OUT_SYNC:      result = osIcon; break;
+        case DOWNLOADING:   result = dlIcon; break;
+        case UPLOADING:     result = ulIcon; break;
+        default: break;
+    }
 
     return flipped? [result flipped] : [result icon];
 }

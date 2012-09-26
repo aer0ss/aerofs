@@ -1,7 +1,7 @@
 option java_package = "com.aerofs.proto";
-
-import "common.proto";
 option optimize_for = LITE_RUNTIME;
+
+import "path_status.proto";
 
 /**
  * This file defines communication between the shell extension and the GUI process.
@@ -15,15 +15,22 @@ message ShellextCall {
 
     enum Type {
         GREETING = 0;
+
+        // Dialog display triggers
         SHARE_FOLDER = 1;
         SYNC_STATUS = 2;
         VERSION_HISTORY = 3;
+
+        // Data queries (answer comes through notifications)
+        GET_PATH_STATUS = 4;
     }
     required Type type = 1;
+
     optional GreetingCall greeting = 2;
     optional ShareFolderCall share_folder = 3;
     optional SyncStatusCall sync_status = 4;
     optional VersionHistoryCall version_history = 5;
+    optional GetPathStatusCall get_path_status = 6;
 }
 
 message GreetingCall {
@@ -45,6 +52,11 @@ message VersionHistoryCall {
     required string path = 1;
 }
 
+message GetPathStatusCall {
+    // absolute path for which status is needed
+    required string path = 1;
+}
+
 
 /**
  * Notifications sent from the GUI to the shell extension
@@ -55,9 +67,9 @@ message ShellextNotification {
         // Sent upon connection and when the root anchor moves
         ROOT_ANCHOR = 1;
 
-        // Sent when the status of a file changes, so that the
+        // Sent when the status of a file/folder changes, so that the
         // extension can display the appropriate overlay icon.
-        FILE_STATUS = 2;
+        PATH_STATUS = 2;
 
         // Sent when the daemon is restarted, to clear all cached
         // statuses.
@@ -65,7 +77,7 @@ message ShellextNotification {
     }
     required Type type = 1;
     optional RootAnchorNotification root_anchor = 2;
-    optional FileStatusNotification file_status = 3;
+    optional PathStatusNotification path_status = 3;
 }
 
 message RootAnchorNotification {
@@ -74,9 +86,8 @@ message RootAnchorNotification {
     optional string user = 2;
 }
 
-message FileStatusNotification {
+message PathStatusNotification {
     // Absolute path of the file that changed
     required string path = 1;
-    optional bool downloading = 2;
-    optional bool uploading = 3;
+    required PBPathStatus status = 2;
 }

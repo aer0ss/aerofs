@@ -3,12 +3,37 @@
 #import "AeroContextMenu.h"
 #import "AeroSocket.h"
 #import "AeroOverlay.h"
-#import "AeroNode.h"
 #import "AppleEventConstants.h"
 #import "../gen/Shellext.pb.h"
 
 #define GUIPORT_DEFAULT 50195
-#define PROTOCOL_VERSION 3
+#define PROTOCOL_VERSION 4
+
+// use static NSNumber instances to reduce memory usage
+static NSNumber** _cacheValues = nil;
+
+static void initCacheValues()
+{
+    if (_cacheValues == nil) {
+        _cacheValues = malloc(OverlayCount * sizeof(NSNumber*));
+        for (int i = 0; i < OverlayCount; ++i) {
+            _cacheValues[i] = [NSNumber numberWithInt:i];
+        }
+    }
+}
+
+static Overlay overlayForStatus(PBPathStatus* status)
+{
+    if (status.flags & PBPathStatus_FlagDownloading)   return DOWNLOADING;
+    if (status.flags & PBPathStatus_FlagUploading)     return UPLOADING;
+    switch (status.sync) {
+        case PBPathStatus_SyncInSync:               return IN_SYNC;
+        case PBPathStatus_SyncPartialSync:          return PARTIAL_SYNC;
+        case PBPathStatus_SyncOutSync:              return OUT_SYNC;
+        default: break;
+    }
+    return NONE;
+}
 
 @interface AeroFinderExt (Private)
 - (void)setRootAnchor:(NSString*) path;
@@ -26,6 +51,7 @@
     [socket release];
     [overlay release];
     [contextMenu release];
+    [statusCache release];
     [rootAnchor release];
     [userId release];
     [super dealloc];
@@ -84,6 +110,11 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     overlay = [[AeroOverlay alloc] init];
     contextMenu = [[AeroContextMenu alloc] init];
 
+    initCacheValues();
+    syncStatCached = NO;
+    statusCache = [[NSCache alloc] init];
+    [statusCache setCountLimit:100000];
+
     [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
                selector: @selector(onWakeFromSleep:)
                name: NSWorkspaceDidWakeNotification object: NULL];
@@ -94,7 +125,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 -(void) reconnect:(UInt16)port
 {
     NSLog(@"AeroFS: Trying to connect to the server on port %u...", port);
-    [overlay clearCache:rootAnchor];
+    [self clearCache];
     [socket connectToServerOnPort:port];
 }
 
@@ -153,6 +184,31 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     [socket sendMessage:call];
 }
 
+- (Overlay)overlayForPath:(NSString*)path
+{
+    Overlay status = NONE;
+    NSNumber* val = [statusCache objectForKey:path];
+    if (val == nil) {
+        // put placeholder in cache to avoid sending multiple requests to GUI
+        [statusCache setObject:_cacheValues[NONE] forKey:path];
+
+        // cache miss: fetch from GUI for next time...
+        ShellextCall* call = [[[[ShellextCall builder]
+                setType:ShellextCall_TypeGetPathStatus]
+                setGetPathStatus:[[[GetPathStatusCall builder] setPath:path] build]] build];
+
+        [socket sendMessage:call];
+        // TODO: direct communication to daemon to reduce latency?
+    } else {
+        // cache hit: convert integer to enum
+        status = (Overlay)[val intValue];
+    }
+    if (![self shouldEnableTestingFeatures]) {
+        if (status != UPLOADING && status != DOWNLOADING) return NONE;
+    }
+    return status;
+}
+
 - (BOOL)isUnderRootAnchor:(NSString*)path
 {
     if (path.length == 0 || rootAnchor.length == 0) {
@@ -190,7 +246,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 
     [rootAnchor autorelease];
     rootAnchor = [path copy];
-    [overlay clearCache:rootAnchor];
+    [self clearCache];
 }
 
 -(void) setUserId:(NSString*)user
@@ -223,8 +279,8 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 -(void) parseNotification:(ShellextNotification*)notification
 {
     switch ([notification type]) {
-        case ShellextNotification_TypeFileStatus:
-            [self onFileStatus:notification.fileStatus];
+        case ShellextNotification_TypePathStatus:
+            [self onStatus:notification.pathStatus];
             break;
 
         case ShellextNotification_TypeRootAnchor:
@@ -235,7 +291,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
             break;
 
         case ShellextNotification_TypeClearStatusCache:
-            [overlay clearCache:rootAnchor];
+            [statusCache removeAllObjects];
             break;
 
         default:
@@ -243,31 +299,48 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     }
 }
 
--(void) onFileStatus:(FileStatusNotification*)notification
+-(void) onStatus:(PathStatusNotification*)notification
 {
-    NSAssert(notification.path.length > 0, @"AeroFinderExt: received FileStatusReply with empty path");
+    NSAssert(notification.path.length > 0, @"AeroFinderExt: received notification with empty path");
 
-    AeroNode* node = [overlay.rootNode getNodeAtPath:notification.path createPath:YES];
-
-    if (!node) {
-        NSLog(@"AeroFS ERROR: Received notification for a file outside root: %@", notification.path);
+    if (![self isUnderRootAnchor:notification.path]) {
+        NSLog(@"Received status update for path outside root anchor: %@", notification.path);
+        return;
     }
 
-    // Converts the statuses from the PBFileStatusReply to a NodeStatus
+    PBPathStatus* status = notification.status;
 
-    NodeStatus st = node.status;
-    if (notification.hasDownloading) {
-        st = notification.downloading ? st | Downloading : st & ~Downloading;
+    if (status.sync == PBPathStatus_SyncUnknown) {
+        // sync status no longer reliable: need to clear cache
+        // use an extra boolean flag to avoid repeatedly clearing the cache when it does not contain
+        // sync status information
+        if (syncStatCached) {
+            [self clearCache];
+        }
+    } else {
+        syncStatCached = YES;
     }
-    if (notification.hasUploading) {
-        st = notification.uploading ? st | Uploading : st & ~Uploading;
+
+    Overlay o = overlayForStatus(status);
+    if (o != NONE) {
+        // To preserve locality, discard notifications for any path not yet requested by Finder
+        if ([statusCache objectForKey:notification.path] != nil) {
+            [statusCache setObject:_cacheValues[o] forKey:notification.path];
+        }
     }
-    node.status = st;
+
+    NSLog(@"Received status update %@ %d:%d %d", notification.path, status.sync, status.flags, o);
+}
+
+-(void)clearCache
+{
+    syncStatCached = NO;
+    [statusCache removeAllObjects];
 }
 
 - (void)onWakeFromSleep:(NSNotification*)notification
 {
-    [overlay clearCache:rootAnchor];
+    [self clearCache];
 }
 
 @end

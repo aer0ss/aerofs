@@ -3,6 +3,7 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "files.proto";
 import "common.proto";
+import "path_status.proto";
 
 service RitualService {
 
@@ -86,8 +87,11 @@ service RitualService {
     // fetching information from remote servers.
     rpc GetActivities(GetActivitiesCall) returns(GetActivitiesReply);
 
-    // Get per-file sync status
+    // Get detailed sync status for a file
     rpc GetSyncStatus(GetSyncStatusCall) returns(GetSyncStatusReply);
+
+    // Get status summary (shellext-ready) for a list of files
+    rpc GetPathStatus(GetPathStatusCall) returns(GetPathStatusReply);
 
     ////////
     // Revision History
@@ -310,6 +314,14 @@ message GetSyncStatusReply {
     // no sync status should be shown to the user when the server is know to be down
     required bool is_server_up = 1;
     repeated PBSyncStatus status_list = 2;
+}
+
+message GetPathStatusCall {
+    repeated PBPath path = 1;
+}
+
+message GetPathStatusReply {
+    repeated PBPathStatus status = 2;
 }
 
 message PBObjectAttributes {

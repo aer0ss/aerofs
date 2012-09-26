@@ -1,25 +1,20 @@
 #import <Cocoa/Cocoa.h>
 
-@class AeroNode;
 @class AeroIconPair;
 
 /**
- AeroOverlay manages the overlay icons
- Main tasks:
- - keeping track of statuses associated with file names
- - drawing the appropriate icons for the files
+ * AeroOverlay manages the overlay icons
  */
 @interface AeroOverlay : NSObject {
 @private
-    AeroNode* rootNode;
     AeroIconPair* dlIcon;
     AeroIconPair* ulIcon;
+    AeroIconPair* isIcon;
+    AeroIconPair* psIcon;
+    AeroIconPair* osIcon;
 }
 
-@property (readonly) AeroNode* rootNode;
-
 -(NSImage*) iconForPath:(NSString*)path flipped:(BOOL)flipped;
-- (void)clearCache:(NSString*)rootAnchor;
 
 @end
 

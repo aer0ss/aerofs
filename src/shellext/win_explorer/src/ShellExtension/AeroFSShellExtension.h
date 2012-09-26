@@ -1,4 +1,4 @@
-/**
+﻿/**
   AeroFSShellExtension
   This is the central class of our shell extension.
 
@@ -14,10 +14,20 @@
 #include <set>
 
 class AeroSocket;
-class AeroNode;
+class OverlayCache;
 
 class ShellextNotification;
-class FileStatusNotification;
+class PathStatusNotification;
+
+enum Overlay {
+	O_None,
+	O_InSync,
+	O_PartialSync,
+	O_OutSync,
+	O_Uploading,
+	O_Downloading,
+	O_Conflict
+};
 
 // flags are bitwise OR'ed
 enum PathFlag {
@@ -41,7 +51,7 @@ public:
 	void showVersionHistoryDialog(const std::wstring& path);
 	void showShareFolderDialog(const std::wstring& path);
 	void sendGreeting();
-	AeroNode* rootNode() const;
+	Overlay overlay(std::wstring& path);
 
 	static AeroFSShellExtension* instance();
 
@@ -50,15 +60,16 @@ private:
 	void reconnect();
 	void setRootAnchor(const std::string& path);
 	void setUserId(const std::string& user);
-	void onFileStatusNotification(const FileStatusNotification& fstatus);
+	void onPathStatusNotification(const PathStatusNotification& fstatus);
 	void clearCache();
 
 private:
 	CRITICAL_SECTION m_cs;
 	std::shared_ptr<AeroSocket> m_socket;
+	std::shared_ptr<OverlayCache> m_cache;
 	std::wstring m_rootAnchor;
 	std::wstring m_userId;
 	unsigned long m_lastConnectionAttempt;
 	unsigned short m_port;
-	AeroNode* m_rootNode;
+	bool m_syncStatCached;
 };

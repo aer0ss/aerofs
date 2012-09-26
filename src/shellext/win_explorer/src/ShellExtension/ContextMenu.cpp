@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "ContextMenu.h"
 #include "logger.h"
 #include "AeroFSShellExtension.h"
