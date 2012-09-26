@@ -22,8 +22,8 @@
 #define DIRECTORY_SEPARATOR '/'
 #endif
 
-static tstring get_approot();
-static tstring get_executable_path();
+static tstring get_approot(void);
+static tstring get_executable_path(void);
 // TODO (DF): reenable once we figure out how to deal with the obfuscated jar better
 // static bool set_approot_static_member(JNIEnv* env, tstring path);
 
@@ -54,14 +54,13 @@ int main(int argc, char* argv[])
     JavaVM* jvm;
     JNIEnv* env;
     _TCHAR* errmsg;
-    _TCHAR* args[] = {argv[1], _T("daemon"), NULL};
     tstring approot = get_approot();
 
     // Try to move into the approot.
 #ifdef _WIN32
     BOOL successful = SetCurrentDirectory(approot.c_str());
     if (!successful) {
-        _tprintf(_T("Couldn't enter approot directory %ls : %d\n"), approot.c_str(), GetLastError());
+        _tprintf(_T("Couldn't enter approot directory %s : %d\n"), approot.c_str(), GetLastError());
         return EXIT_FAILURE;
     }
 #else
@@ -73,10 +72,14 @@ int main(int argc, char* argv[])
     }
 #endif
 
+    // N.B. the GUI/CLI always pass us an absolute path, so we needn't worry about
+    // expanding argv[1] == "DEFAULT" to the platform's usual rtroot location.
+    tstring heap_dump_option_string = tstring(_T("-XX:HeapDumpPath=")) + tstring(argv[1]);
+    _TCHAR* args[] = {const_cast<_TCHAR*>(heap_dump_option_string.c_str()), argv[1], _T("daemon"), NULL};
     bool vm_created = launcher_create_jvm(approot.c_str(), args, &jvm, &env, &errmsg);
 
     if (!vm_created) {
-        printf("Error: %s\n", errmsg);
+        _tprintf(_T("Error: %s\n"), errmsg);
         return EXIT_FAILURE;
     }
 
@@ -92,7 +95,7 @@ int main(int argc, char* argv[])
 
     int exit_code = launcher_launch(env, &errmsg);
     if (exit_code != EXIT_SUCCESS) {
-        printf("Error: %s\n", errmsg);
+        _tprintf(_T("Error: %s\n"), errmsg);
     }
 
     launcher_destroy_jvm(jvm);
@@ -106,7 +109,7 @@ int main(int argc, char* argv[])
   Return the approot path, without trailing slashes.
   This is the folder that contains the path to the current executable binary.
 */
-static tstring get_approot()
+static tstring get_approot(void)
 {
     tstring retval = get_executable_path();
     // Truncate the path from the trailing folder separator onward
@@ -123,7 +126,7 @@ static tstring get_approot()
  *  On Linux: /proc/self/exe is a symlink to the actual executable
  * This may be useful in other programs.
  */
-static tstring get_executable_path() {
+static tstring get_executable_path(void) {
 #ifdef _WIN32
     _TCHAR buffer[MAX_PATH];
     GetModuleFileName(NULL, buffer, MAX_PATH);

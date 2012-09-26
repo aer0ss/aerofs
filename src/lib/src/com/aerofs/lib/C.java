@@ -111,6 +111,7 @@ public class C
     public static final String TRANSPORT_ID_XMPP        = "x";
     public static final String TRANSPORT_ID_TCP         = "t";
     public static final String LOG_FILE_EXT             = ".log";
+    public static final String HPROF_FILE_EXT           = ".hprof";
 
     public static final long TRANSPORT_DIAGNOSIS_STATE_PENDING = -1;
 
