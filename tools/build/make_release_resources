@@ -1,221 +1,248 @@
-#!/bin/bash -e
+#!/bin/bash -e -u
 
-if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x || x"$5" == x ]]; then
-    echo "usage: $0 [build mode] [release_version] [aerofs git root] [aerofs build dir] [aerofs release dir]"
-    echo "[build mode]: STAGING or PROD"
-    echo "[release_version]: release version"
-    echo "[aerofs git root]: root of the aerofs git tree (usually ~/repos/aerofs)"
-    echo "[aerofs build dir]: path into which all ant (or non-ide) build artifacts are placed (usually ~/repos/aerofs/out.ant)"
-    echo "[aerofs release dir]: path into which the final built jar and all platform-specific jars and libs are places (usually ~/repos/aerofs/out.ant/release)"
-    echo
-    echo "example: $0 STAGING 0.1.0 /Users/aerofsbuild/repos/aerofs /Users/aerofsbuild/repos/aerofs/out.ant /Users/aerofsbuild/repos/aerofs/out.ant/release"
-    exit 2
+###############################################################################
+#
+# This script moves platform specific libraries to the proper locations,
+# creates an obfuscated jar for AeroFS and prepares the code for packaging.
+# Everything here is done on the local system.
+#
+###############################################################################
+
+include include/common $1
+
+###############################################################################
+#
+# arguments and usage
+#
+###############################################################################
+if [[ $# -ne 2 ]]; then
+    echo "usage: $0 [build mode] [release version]" >&2
+    echo " " >&2
+    echo "[build mode]: STAGING or PROD" >&2
+    echo "[release version]: major.minor.build" >&2
+    echo " " >&2
+    echo "example: $0 STAGING 0.4.98" >&2
+    echo "example: $0 PROD 0.4.99" >&2
+    exit $ERRBADARGS
 fi
 
-set -u
+readonly RELEASE_VERSION="$2"
 
-#################################
-# build mode
+######################################################################
+#
+# Copies and creates the necessary resources in a local resource folder
+# for each platform. This includes moving platform specific libraries,
+# copying the correct certificates, and creating a version file.
+#
+######################################################################
+function copy_resources_to_local_release_directories() {
+    echo ">> copying resources to release directory"
 
-MODE=""
-if [ "$1" == "PROD" ]; then
-    MODE="PROD"
-elif [ "$1" == "STAGING" ]; then
-    MODE="STAGING"
-else
-    echo "Invalid build mode $1.  Expected STAGING or PROD."
-    exit 2
-fi
+    # Remove the old release directory
+    rm -rf "$LOCAL_RELEASE_DIR"
 
-#################################
-# set variables
+    # Create the required destination directories exists
+    mkdir -p "${AEROFS_RELEASE_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_WIN_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_OSX_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_LINUX_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_LINUX_DIR}/lib/"
+    mkdir -p "${AEROFS_RELEASE_LINUX32_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_LINUX64_DIR}/"
+    mkdir -p "${AEROFS_RELEASE_INST_DIR}/"
 
-VERSION=$2
+    # Copy "resource/client" files
+    cp -R "${CLIENT_RESOURCES_DIR}/common"/* "${AEROFS_RELEASE_DIR}/"
+    cp -R "${CLIENT_RESOURCES_DIR}/osx"/* "${AEROFS_RELEASE_OSX_DIR}/"
+    cp -R "${CLIENT_RESOURCES_DIR}/win"/* "${AEROFS_RELEASE_WIN_DIR}/"
+    cp -R "${CLIENT_RESOURCES_DIR}/linux"/* "${AEROFS_RELEASE_LINUX_DIR}/"
+    # N.B. We put the run scripts from the installer package in the actual aerofs
+    # package so we can restart the Linux client automatically, even if aerofs-cli
+    # (the launcher shell script) isn't on the user's PATH
+    cp -R "${CLIENT_RESOURCES_DIR}/linux.inst/aerofs"* "${AEROFS_RELEASE_LINUX_DIR}/"
+    cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/"
+    cp -R "${CLIENT_RESOURCES_DIR}/linux32"/* "${AEROFS_RELEASE_LINUX32_DIR}/"
+    cp -R "${CLIENT_RESOURCES_DIR}/linux64"/* "${AEROFS_RELEASE_LINUX64_DIR}/"
+    cp -R "${CLIENT_RESOURCES_DIR}/linux.inst"/* "${AEROFS_RELEASE_INST_DIR}/"
 
-# source dirs
-AEROFS_GIT_ROOT=$3
-BUILD_DIR=$4
-CLIENT_RESOURCES_DIR=$AEROFS_GIT_ROOT/resource/client
-#LAUNCHER=$AEROFS_GIT_ROOT/java/launcher
-PROGUARD_HOME=$AEROFS_GIT_ROOT/tools/proguard
+    # Remove all unit test dependencies
+    rm -rf "${AEROFS_RELEASE_DIR}/lib.test"
 
-# dest dirs
-RELEASE_DIR=$5
-AEROFS_DIR=$RELEASE_DIR/aerofs
-AEROFS_WIN_DIR=$RELEASE_DIR/aerofs.win
-AEROFS_OSX_DIR=$RELEASE_DIR/aerofs.osx
-AEROFS_LINUX_DIR=$RELEASE_DIR/aerofs.linux
-AEROFS_LINUX32_DIR=$RELEASE_DIR/aerofs.linux32
-AEROFS_LINUX64_DIR=$RELEASE_DIR/aerofs.linux64
-AEROFS_INST_DIR=$RELEASE_DIR/aerofs.linux.inst
+    # Adjust files for prod or staging
+    if [ "$MODE" == "PROD" ]; then
+        rm "${AEROFS_RELEASE_DIR}/cacert-staging.pem"
+        mv "${AEROFS_RELEASE_DIR}/cacert-prod.pem" "${AEROFS_RELEASE_DIR}/cacert.pem"
+    elif [ "$MODE" == "STAGING" ]; then
+        rm "${AEROFS_RELEASE_DIR}/cacert-prod.pem"
+        mv "${AEROFS_RELEASE_DIR}/cacert-staging.pem" "${AEROFS_RELEASE_DIR}/cacert.pem"
 
-rm -rf "$RELEASE_DIR"
+        # Create the stg file
+        touch "${AEROFS_RELEASE_DIR}/stg"
+    else
+        echo "error: invalid mode: $MODE" >&2
+        exit 1
+    fi
+}
 
-#################################
-# ensure dest dirs exists
+######################################################################
+#
+# Copies the java class files to the release bin directory and removes
+# some unneeded files.
+#
+######################################################################
+function copy_java_class_files() {
+    echo ">> copying java class files to release directory"
 
-mkdir -p "$AEROFS_DIR"/
-mkdir -p "$AEROFS_WIN_DIR"/
-mkdir -p "$AEROFS_OSX_DIR"/
-mkdir -p "$AEROFS_LINUX_DIR"/
-mkdir -p "$AEROFS_LINUX_DIR"/lib/
-mkdir -p "$AEROFS_LINUX32_DIR"/
-mkdir -p "$AEROFS_LINUX64_DIR"/
-mkdir -p "$AEROFS_INST_DIR"/
+    local local_BIN="${AEROFS_RELEASE_DIR}/bin"
 
-VERSION_FILE=version
+    mkdir -p $local_BIN
+    trap "rm -r $local_BIN" EXIT
 
-##################################
-# make ver and staging
+    cp -Rf "${BUILD_OUTPUT_DIR}/bin"/* "$local_BIN"
 
-echo $VERSION > $AEROFS_DIR/$VERSION_FILE
+    # remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
+    find "${local_BIN}/" -name .DS_Store | xargs rm -f
 
-if [ $MODE == "STAGING" ]; then
-  touch $AEROFS_DIR/stg
-fi
+    if [ "$MODE" == "PROD" ]; then
+        # TODO: (AG) move these as excludes into build.xml
+        rm -rf "${local_BIN}/com/aerofs/sak"
+    fi
 
-##################################
-# Copy "resource/client" files
+    # Remove Comcast labelling
+    rm -rf "${local_BIN}/com/aerofs/l/CC.class"
+}
 
-cp -R "$CLIENT_RESOURCES_DIR"/common/* "$AEROFS_DIR"/
-cp -R "$CLIENT_RESOURCES_DIR"/osx/* "$AEROFS_OSX_DIR"/
-cp -R "$CLIENT_RESOURCES_DIR"/win/* "$AEROFS_WIN_DIR"/
-cp -R "$CLIENT_RESOURCES_DIR"/linux/* "$AEROFS_LINUX_DIR"/
-# N.B. We put the run scripts from the installer package in the actual aerofs
-# package so we can restart the Linux client automatically, even if aerofs-cli
-# (the launcher shell script) isn't on the user's PATH
-cp -R "$CLIENT_RESOURCES_DIR"/linux.inst/aerofs* "$AEROFS_LINUX_DIR"/
-cp -R "$CLIENT_RESOURCES_DIR"/s3/lib/* "$AEROFS_LINUX_DIR"/lib/
-cp -R "$CLIENT_RESOURCES_DIR"/linux32/* "$AEROFS_LINUX32_DIR"/
-cp -R "$CLIENT_RESOURCES_DIR"/linux64/* "$AEROFS_LINUX64_DIR"/
-cp -R "$CLIENT_RESOURCES_DIR"/linux.inst/* "$AEROFS_INST_DIR"/
-#cp "$LAUNCHER"/bin/$OS/* "$BUILD_DIR"/
+######################################################################
+#
+# Creates the installer for linux
+#
+######################################################################
+function create_aerofs_installer() {
+    echo ">> creating linux installer"
 
-rm -rf "$AEROFS_DIR"/lib.test
+    if [ "$MODE" == "PROD" ]; then
+        DOT_STAGING=''
+    else
+        DOT_STAGING='.stg'
+    fi
 
-# Adjust files for prod or staging
-if [ $MODE == "PROD" ]; then
-    rm "$AEROFS_DIR"/cacert-staging.pem
-    mv "$AEROFS_DIR"/cacert-prod.pem "$AEROFS_DIR"/cacert.pem
-else
-    rm "$AEROFS_DIR"/cacert-prod.pem
-    mv "$AEROFS_DIR"/cacert-staging.pem "$AEROFS_DIR"/cacert.pem
-fi
+    sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "${CLIENT_RESOURCES_DIR}/linux.inst/aerofs" > "${AEROFS_RELEASE_INST_DIR}/aerofs"
+    sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "${CLIENT_RESOURCES_DIR}/linux.inst/aerofs" > "${AEROFS_RELEASE_LINUX_DIR}/aerofs"
 
-###################################
-# Labelling stuff - TO BE REMOVED
-#cp labeling/$LABELING/icons/* $AEROFS_DIR/icons
-#for i in labeling/$LABELING/os/*; do cp -R $i/ $AEROFS_DIR.`basename $i`; done
+    local local_DOWNLOADER_TEMP="$(mktemp -d -t aerofs-dlr_XXXXXX)"
+    trap "rm -rf $local_DOWNLOADER_TEMP || true" EXIT
 
-cd $AEROFS_DIR
+    local local_BIN="${AEROFS_RELEASE_DIR}/bin"
+    local local_AEROFS_DLR_PKG=com/aerofs/downloader
+    mkdir -p "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
+    mv "${AEROFS_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
+    cp "${CLIENT_RESOURCES_DIR}/linux32/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s32.jar"
+    cp "${CLIENT_RESOURCES_DIR}/linux64/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s64.jar"
+    tar zcf - -C "$local_DOWNLOADER_TEMP" . | uuencode bin >> "${AEROFS_RELEASE_INST_DIR}/aerofs"
+}
 
-TEMP_MANIFEST=m.tmp
-###################################
-#echo generate manifest
+######################################################################
+#
+# Creates the Java manifest file and creates the AeroFS jar
+#
+######################################################################
+function create_java_jar() {
+    echo ">> creating jar"
 
-echo "Main-Class: com.aerofs.Main" > "$TEMP_MANIFEST"
-echo "Class-Path: " >> "$TEMP_MANIFEST"
+    # Make a temporary file which will be the manifest
+    local local_TEMP_MANIFEST="$(mktemp -t manifest_XXXXXX.tmp)"
+    trap "rm -f $local_TEMP_MANIFEST || true" EXIT
 
-for i in lib/*.jar; do
-    echo " $i " >> "$TEMP_MANIFEST"
-done
+    echo "Main-Class: com.aerofs.Main" > "$local_TEMP_MANIFEST"
+    echo "Class-Path: " >> "$local_TEMP_MANIFEST"
 
-#echo N.B. platform-dependent jars must have identical names
-for i in `ls $AEROFS_WIN_DIR/lib/`; do
-    echo " lib/$i " >> "$TEMP_MANIFEST"
-done
+    for i in "$AEROFS_RELEASE_DIR"/lib/*.jar; do
+        echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
+    done
 
-# mac-specific jars
-echo " lib/growlbindings-1.3.1.jar " >> "$TEMP_MANIFEST"
+    #echo N.B. platform-dependent jars must have identical names
+    for i in "$AEROFS_RELEASE_WIN_DIR"/lib/*; do
+        echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
+    done
 
-# s3 jars
-for i in "$CLIENT_RESOURCES_DIR/s3/lib"/*.jar; do
-    echo " lib/$(basename "$i") " >> "$TEMP_MANIFEST"
-done
+    # mac-specific jars
+    echo " lib/growlbindings-1.3.1.jar " >> "$local_TEMP_MANIFEST"
 
-###################################
-#echo copy class files
+    # s3 jars
+    for i in "$CLIENT_RESOURCES_DIR"/s3/lib/*.jar; do
+        echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
+    done
 
-mkdir -p bin
-cp -Rf $BUILD_DIR/bin/* bin/
+    # Package a jar with the contents of bin and org subdirectories of the local release directory (all the class files)
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${AEROFS_RELEASE_DIR}/bin" com -C "${AEROFS_RELEASE_DIR}/bin" org
+}
 
-###################################
-# remove unnecessary files (bin/com/aerofs/downloader will be moved away later)
+######################################################################
+#
+# Runs ProGuard on the unobfuscated aerofs jar
+#
+######################################################################
+function obfuscate_java() {
+    echo ">> obfuscating jar"
 
-find bin/ -name .DS_Store | xargs rm -f
+    # Not sure why these paths are being pre-processed
+    local local_PG_AEROFS_DIR=`echo $AEROFS_RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+    local local_PG_RELEASE_DIR=`echo $LOCAL_RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+    local local_PG_HOME=`echo $PROGUARD_HOME | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
-if [ $MODE == "PROD" ]; then
-    # TODO: (AG) move these as excludes into build.xml
-    rm -rf bin/com/aerofs/sak
-fi
+    "${PROGUARD_HOME}/bin/proguard.sh" -injars "${local_PG_AEROFS_DIR}/aerofs.unobf.jar" -outjars "${local_PG_AEROFS_DIR}/aerofs.jar" \
+        -printmapping "${local_PG_RELEASE_DIR}/aerofs.map" \
+        -repackageclasses "com.aerofs" \
+        -dontwarn 'com.aerofs.sak.**' \
+        -dontnote 'com.aerofs.l.*' \
+        @"${local_PG_HOME}/aerofs.pro"
 
-# labeling - TO BE REMOVED
-#if [ $LABELING != aerofs ]; then
-#    rm -rf bin/com/aerofs/l/AA.class
-#fi
-#if [ $LABELING != comcast ]; then
-    rm -rf bin/com/aerofs/l/CC.class
-#fi
+    rm -rf "${local_PG_AEROFS_DIR}/aerofs.unobf.jar"
+}
 
-###################################
-#echo generate aerofs-installer
+######################################################################
+#
+# Writes the release version and checksums of the binaries to the version file.
+#
+######################################################################
+function write_version_and_checksums() {
+    echo ">> writing version and checksums"
 
-if [ $MODE == "PROD" ]; then
-    DOT_STAGING=''
-else
-    DOT_STAGING='.stg'
-fi
-sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$CLIENT_RESOURCES_DIR"/linux.inst/aerofs > "$AEROFS_INST_DIR"/aerofs
-sed -e "s=DOT_STAGING__TO_BE_REPLACED_BY_SED=$DOT_STAGING=" "$CLIENT_RESOURCES_DIR"/linux.inst/aerofs > "$AEROFS_LINUX_DIR"/aerofs
+    local local_VERSION_FILE="${AEROFS_RELEASE_DIR}/version"
 
-DLR_TMP=/tmp/aerofs-dlr
-AEROFS_DLR_PKG=com/aerofs/downloader
-rm -rf "$DLR_TMP"
-mkdir -p $DLR_TMP/$AEROFS_DLR_PKG
-mv bin/$AEROFS_DLR_PKG/* $DLR_TMP/$AEROFS_DLR_PKG
-cp $CLIENT_RESOURCES_DIR/linux32/lib/swt-*.jar $DLR_TMP/s32.jar
-cp $CLIENT_RESOURCES_DIR/linux64/lib/swt-*.jar $DLR_TMP/s64.jar
-tar zcf - -C $DLR_TMP . | uuencode bin >> $AEROFS_INST_DIR/aerofs
+    # Create a version file in the AeroFS release directory
+    echo $RELEASE_VERSION > "$local_VERSION_FILE"
 
-###################################
-echo creating jars
-jar cfm aerofs.unobf.jar "$TEMP_MANIFEST" -C bin com -C bin org
+    local local_CHKSUM_LIST="\
+        aerofs.jar:${AEROFS_RELEASE_DIR}/aerofs.jar \
+        aerofsd.dll:${AEROFS_RELEASE_WIN_DIR}/aerofsd.dll \
+        aerofsj.dll:${AEROFS_RELEASE_WIN_DIR}/aerofsj.dll \
+        libaerofsd.dylib:${AEROFS_RELEASE_OSX_DIR}/libaerofsd.dylib \
+        libaerofsj.dylib:${AEROFS_RELEASE_OSX_DIR}/libaerofsj.dylib \
+    "
 
-# echo remove unnecessary files
-rm -rf bin "$TEMP_MANIFEST"
+    for i in $local_CHKSUM_LIST; do
+        local local_FILE_PATH="$(echo $i | sed -e 's/.*://')"
+        local local_FILE_NAME="$(echo $i | sed -e 's/:.*//')"
+        local local_CHKSUM="$(shasum -a 256 $local_FILE_PATH | sed -e 's/ .*//')"
+        echo "$local_FILE_NAME=$local_CHKSUM" >> "$local_VERSION_FILE"
+    done
+}
 
-###################################
+#*******************************************************
+#*******************************************************
+#**
+#** Run the actual steps to create the release resources
+#**
+#*******************************************************
+#*******************************************************
+echo ">> make release resources"
 
-PG_AEROFS_DIR=`echo $AEROFS_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-PG_RELEASE_DIR=`echo $RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
-PG_HOME=`echo $PROGUARD_HOME | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
+copy_resources_to_local_release_directories
+copy_java_class_files
+create_aerofs_installer
+create_java_jar
+obfuscate_java
+write_version_and_checksums
 
-echo obfuscating jar
-cd $PROGUARD_HOME
-
-./bin/proguard.sh -injars $PG_AEROFS_DIR/aerofs.unobf.jar -outjars $PG_AEROFS_DIR/aerofs.jar \
--printmapping $PG_RELEASE_DIR/aerofs.map \
--repackageclasses "com.aerofs" \
--dontwarn 'com.aerofs.sak.**' \
--dontnote 'com.aerofs.l.*' \
-@$PG_HOME/aerofs.pro
-
-rm -rf "$PG_AEROFS_DIR/aerofs.unobf.jar"
-
-###################################
-# echo write checksums
-
-CHKSUM_LIST="\
-    aerofs.jar:$AEROFS_DIR/aerofs.jar \
-    aerofsd.dll:$AEROFS_WIN_DIR/aerofsd.dll \
-    aerofsj.dll:$AEROFS_WIN_DIR/aerofsj.dll \
-    libaerofsd.dylib:$AEROFS_OSX_DIR/libaerofsd.dylib \
-    libaerofsj.dylib:$AEROFS_OSX_DIR/libaerofsj.dylib \
-"
-
-for i in $CHKSUM_LIST; do
-    FILE_PATH=`echo $i | sed -e 's/.*://'`
-    FILE_NAME=`echo $i | sed -e 's/:.*//'`
-    CHKSUM=`shasum -a 256 $FILE_PATH | sed -e 's/ .*//'`
-    echo "$FILE_NAME=$CHKSUM" >> $AEROFS_DIR/$VERSION_FILE
-done
+exit 0

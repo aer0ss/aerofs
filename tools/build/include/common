@@ -1,0 +1,178 @@
+#!/bin/bash -e -u
+
+###############################################################################
+#
+# This include file contains all important constants for use with building
+# and uploading release files to the release server.
+#
+# This file should be included with the following syntax:
+#
+# include include/common $MODE
+#
+###############################################################################
+
+# Similar to an ifndef in the C preprocessor. Only includes the contents of this
+# file if they weren't imported before.
+if [ x"${__COMMON_INCLUDE__:-}" == x ] ; then readonly __COMMON_INCLUDE__=true
+
+###############################################################################
+#
+# Error codes
+#
+###############################################################################
+readonly ERRBADARGS=17
+readonly ERRBADMODE=18
+readonly ERRBADPASS=19
+readonly ERRS3=20
+
+###############################################################################
+#
+# Local path constants
+#
+###############################################################################
+GIT_ROOT="$(git rev-parse --show-cdup)"
+if [ -z "$GIT_ROOT" ]; then
+    GIT_ROOT="."
+fi
+readonly GIT_ROOT="$(cd "$GIT_ROOT" && pwd)"
+readonly TOOLS_ROOT="${GIT_ROOT}/tools"
+readonly BUILD_SCRIPT_DIR="${TOOLS_ROOT}/build"
+readonly PROGUARD_HOME="${TOOLS_ROOT}/proguard"
+readonly LOCAL_NSIS_DIR="${TOOLS_ROOT}/win_installer"
+
+# Local build directory (where ant will put stuff)
+readonly BUILD_OUTPUT_DIR="${GIT_ROOT}/out.ant"
+
+# Local resource directory (where prebuilt binaries exist)
+readonly CLIENT_RESOURCES_DIR="${GIT_ROOT}/resource/client"
+
+# Local release directory
+readonly LOCAL_RELEASE_DIR="${BUILD_OUTPUT_DIR}/release"
+
+# Local release directories for each platform
+readonly AEROFS_RELEASE_DIR="${LOCAL_RELEASE_DIR}/aerofs"
+readonly AEROFS_RELEASE_WIN_DIR="${LOCAL_RELEASE_DIR}/aerofs.win"
+readonly AEROFS_RELEASE_OSX_DIR="${LOCAL_RELEASE_DIR}/aerofs.osx"
+readonly AEROFS_RELEASE_LINUX_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux"
+readonly AEROFS_RELEASE_LINUX32_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux32"
+readonly AEROFS_RELEASE_LINUX64_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux64"
+readonly AEROFS_RELEASE_INST_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux.inst"
+
+# Some OSX specific constants
+readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"
+readonly OSX_TEMPLATE_APP_FILENAME="osx.app.template"
+readonly OSX_LOCAL_MAC_APP_DIR=Release/AeroFS.app/Contents/Resources/Java
+readonly OSX_AEROFS_INSTALLER_VOLUME_DIR="/Volumes/AeroFS Installer"
+
+###############################################################################
+#
+# Constants relating to the deploy mode (STAGING/PROD)
+#
+###############################################################################
+# First do a sanity check and make sure that we either specified PROD or STAGING
+if [[ "$1" != "PROD" && "$1" != "STAGING" ]]; then
+    echo "error: invalid build mode $1. Expected STAGING or PROD." >&2
+    exit $ERRBADMODE
+fi
+readonly MODE="$1"
+readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
+
+###############################################################################
+#
+# Release server login constants
+#
+###############################################################################
+readonly RELEASE_SERVER="b.arrowfs.org"
+readonly RELEASE_SERVER_LOGIN="release-${LOWERCASE_MODE}@${RELEASE_SERVER}"
+readonly RELEASE_SERVER_SHELL="bash -s -e -u"
+
+###############################################################################
+#
+# Release server paths
+#
+###############################################################################
+readonly RELEASE_FILES_DIR="/home/release-${LOWERCASE_MODE}"
+readonly RELEASE_UNPACK_DIR="${RELEASE_FILES_DIR}/unpack"
+readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
+readonly RELEASE_SERVER_VERSION_FILE="current.ver"
+
+readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
+readonly WINDOWS_PATCHER_DIR="${RELEASE_NSIS_DIR}/patcher"
+readonly WINDOWS_PACKAGER_DIR="${RELEASE_NSIS_DIR}/packager"
+
+###############################################################################
+#
+# Proguard maps server credentials and paths
+#
+###############################################################################
+readonly MAP_SERVER="sv.aerofs.com"
+readonly MAP_SERVER_LOGIN="maps@${MAP_SERVER}"
+readonly MAP_FILES_DIR="/maps"
+
+###############################################################################
+#
+# Cloudfront/S3 constants
+#
+###############################################################################
+if [ "$MODE" == "PROD" ]; then
+    readonly RELEASE_DOMAIN="nocache.client.aerofs.com"
+elif [ "$MODE" == "STAGING" ]; then
+    readonly RELEASE_DOMAIN="nocache.client.stg.aerofs.com"
+fi
+readonly INSTALLER_DOWNLOAD_BUCKET="s3://${RELEASE_DOMAIN}"
+readonly RELEASE_VERSION_URL="https://${RELEASE_DOMAIN}/${RELEASE_SERVER_VERSION_FILE}"
+readonly STAGING_PASSPHRASE=temp123
+
+###############################################################################
+#
+# Returns 0 if the deployment mode is PROD, 1 otherwise
+#
+###############################################################################
+function is_prod() {
+    if [ "$MODE" == "PROD" ]; then
+        return 0
+    fi
+    return 1
+}
+
+###############################################################################
+#
+# Gets the current active version on S3, like "0.4.98"
+#
+###############################################################################
+function current_release_version() {
+    local local_CURRENT_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- $RELEASE_VERSION_URL )"
+    echo "$( echo $local_CURRENT_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+}
+
+###############################################################################
+#
+# Synchronizes a release directory on the release server with an S3 bucket and
+# invalidates the CloudFront cache.
+#
+# The release directory must contain the AeroFS installers for all platforms
+# and a version file specifying the version of the release.
+#
+# NOTE: to rollback a production release for any reason:
+#       - log into release-prod@b.arrowfs.org
+#       - s3cmd sync -P --cf-invalidate --delete-removed /data/prod-downloads/[version]/* s3://nocache.client.aerofs.com
+#
+# @param $1 The version to publish
+# @param $2 The S3 bucket to which the release version will be pushed
+#
+###############################################################################
+function publish_to_s3() {
+    echo ">> publishing to s3 bucket ${2}"
+
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        # Check to see that a version file exists in the
+        # specified version directory and is non-empty
+        if [ ! -s "${INSTALLERS_DOWNLOAD_DIR}/${1}/${RELEASE_SERVER_VERSION_FILE}" ]; then
+            exit $ERRS3
+        fi
+
+        s3cmd sync -P --cf-invalidate --delete-removed "${INSTALLERS_DOWNLOAD_DIR}/${1}"/* $2 > /dev/null
+ENDCMDS
+}
+
+fi # endif

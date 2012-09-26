@@ -1,0 +1,50 @@
+#!/bin/bash -e -u
+
+###############################################################################
+#
+# This script runs the script given to it on the command line, setting important
+# variables
+#
+# This script adds the include() and call() function so that subscripts can
+# assume that no matter where they are called from, other scripts can be
+# called or included relative to the aerofs/tools/build directory.
+#
+###############################################################################
+
+# Private variable
+# see: http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
+readonly __BOOT_SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
+readonly __BOOT_SCRIPT_NAME="$( basename "${BASH_SOURCE[0]}" )"
+
+###############################################################################
+#
+# Includes the specified script relative to this bootstrap script's parent directory.
+# The included script runs in the same shell as the calling shell.
+#
+# @param $1 The script to include, relative to this script's parent directory
+# @param ... Any arguments to pass to the script
+#
+###############################################################################
+function include() {
+    local __="${__BOOT_SCRIPT_DIR}/${1}"
+    shift
+    . "${__}" $@
+}
+
+###############################################################################
+#
+# Calls the specified script relative to this bootstrap script's parent directory.
+# Starts the script in a new subshell. The new subshell will not carry over any
+# variables set in this one except for the functions defined in this script,
+# since this call recursively calls itself.
+#
+# @param $1 The script to call in another subshell, relative to this script's parent directory
+# @param ... Any arguments to pass to the script
+#
+###############################################################################
+function call() {
+    "${__BOOT_SCRIPT_DIR}/${__BOOT_SCRIPT_NAME}" $@
+}
+
+# Now we can call the appropriate script (we use include since we want it to run in the same shell)
+include $@

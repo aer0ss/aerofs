@@ -2,95 +2,45 @@
 
 ###############################################################################
 #
-# error codes
+# General includes
 #
 ###############################################################################
-
-readonly ERRBADARGS=17
-readonly ERRBADMODE=18
-readonly ERRBADPASS=19
+include include/common $1
 
 ###############################################################################
 #
-# usage, arguments and parameters
+# usage and parameters
 #
 ###############################################################################
-
-function usage() {
-    echo "usage: $0 [build_mode] [passphrase]" >&2
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+    echo "usage: $0 [build mode] [passphrase]" >&2
     echo " " >&2
     echo "[build mode]: STAGING or PROD" >&2
     echo "[passphrase]: release passphrase" >&2
     echo " " >&2
     echo "example: $0 STAGING" >&2
     echo "example: $0 PROD [passphrase]" >&2
-}
-
-if [[ $# -lt 1 || $# -gt 2 ]]; then
-    usage
     exit $ERRBADARGS
 fi
 
-MODE=""
-LOWERCASE_MODE=""
-INSTALLER_DOWNLOAD_BUCKET=""
-RELEASE_VERSION_URL=""
-if [ "$1" == "PROD" ]; then
-    echo
-    echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo "!! DEPLOY PRODUCTION !!"
-    echo "!!!!!!!!!!!!!!!!!!!!!!!"
-    echo
-
-    MODE="PROD"
-    LOWERCASE_MODE="prod"
-    INSTALLER_DOWNLOAD_BUCKET='s3://nocache.client.aerofs.com'
-    RELEASE_VERSION_URL='https://nocache.client.aerofs.com/current.ver'
-elif [ "$1" == "STAGING" ]; then
-    MODE="STAGING"
-    LOWERCASE_MODE="staging"
-    INSTALLER_DOWNLOAD_BUCKET='s3://nocache.client.stg.aerofs.com'
-    RELEASE_VERSION_URL='https://nocache.client.stg.aerofs.com/current.ver'
-else
-    echo "error: invalid build mode: $1 - expect STAGING or PROD" >&2
-    exit $ERRBADMODE
-fi
-readonly MODE
-readonly LOWERCASE_MODE
-readonly INSTALLER_DOWNLOAD_BUCKET
-readonly RELEASE_VERSION_URL
-
+# PROD requires a passphrase to deploy
 if [[ x"${2:-}" == x && $MODE == "PROD" ]]; then
     echo "error: passphrase required for production release" >&2
     exit $ERRBADPASS
 fi
 
-readonly STAGING_PASSPHRASE=temp123
 readonly PASSPHRASE=${2:-$STAGING_PASSPHRASE}
 
-# FIXME (AG): have build and release directories passed in
-# see: http://stackoverflow.com/questions/59895/can-a-bash-script-tell-what-directory-its-stored-in
-readonly SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" # get the directory this script is in no matter where it's called from
-readonly AEROFS_GIT_ROOT="$( cd $SCRIPT_DIR/../..; pwd )" # get the absolute path
-readonly BUILD_DIR=$AEROFS_GIT_ROOT/out.ant
-readonly RELEASE_DIR=$BUILD_DIR/release
-
-readonly RELEASE_SERVER_LOGIN="release-${LOWERCASE_MODE}@b.arrowfs.org"
-readonly RELEASE_SERVER_VERSION_FILE="current.ver"
-readonly INSTALLERS_DOWNLOAD_DIR="/data/${LOWERCASE_MODE}-downloads"
-
 ###############################################################################
 #
-# deployment step functions
+# Checks the current active version on S3 and computes the next logical version.
 #
 ###############################################################################
-
 function compute_next_release_version() {
-    local local_CURRENT_RELEASE_VERSION_STRING="$( wget --no-check-certificate --no-cache -q -O- $RELEASE_VERSION_URL )"
-    local local_CURRENT_RELEASE_VERSION="$( echo $local_CURRENT_RELEASE_VERSION_STRING | sed -e 's/.*=//' )"
+    local local_CURRENT_RELEASE_VERSION="$( current_release_version $RELEASE_VERSION_URL )"
     local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
     local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
-    local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 $SCRIPT_DIR/version )"
+    local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
 
     readonly local_CURRENT_RELEASE_VERSION_STRING
     readonly local_CURRENT_RELEASE_VERSION
@@ -106,68 +56,61 @@ function compute_next_release_version() {
     fi
 
     readonly RELEASE_VERSION="$local_LOCAL_VERSION_MAJOR_MINOR.$local_BUILD_NUMBER"
-
-    echo '+-------------------------'
-    echo '|' $RELEASE_VERSION $MODE
-    echo '+-------------------------'
-    echo ">> version: current => [major.minor.build:$local_CURRENT_RELEASE_VERSION major.minor:$local_CURRENT_RELEASE_VERSION_MAJOR_MINOR build:$local_CURRENT_RELEASE_VERSION_BUILD_NUMBR] next => [major.minor.build:$RELEASE_VERSION]"
+    echo "version: current => [major.minor.build:$local_CURRENT_RELEASE_VERSION] next => [major.minor.build:$RELEASE_VERSION]"
 }
 
-function build_and_upload_installers() {
-    echo ">> build and upload client installers"
-    "${SCRIPT_DIR}/make_release_resources" $MODE "$RELEASE_VERSION" "$AEROFS_GIT_ROOT" "$BUILD_DIR" "$RELEASE_DIR"
-    "${SCRIPT_DIR}/make_client_installers" $MODE "$RELEASE_VERSION" "$AEROFS_GIT_ROOT" "$RELEASE_DIR" "$PASSPHRASE"
-}
-
-function update_server_release_version() {
-    echo ">> update current.ver"
-    kssh $RELEASE_SERVER_LOGIN 'bash -s -e -u -x' << ENDCMDS
-        rm $INSTALLERS_DOWNLOAD_DIR/$RELEASE_SERVER_VERSION_FILE || true
-        echo Version=$RELEASE_VERSION > $INSTALLERS_DOWNLOAD_DIR/$RELEASE_SERVER_VERSION_FILE
-        chmod a+r $INSTALLERS_DOWNLOAD_DIR/$RELEASE_SERVER_VERSION_FILE
+###############################################################################
+#
+# Emails team@aerofs.com about this deployment.
+#
+###############################################################################
+function notify_successful_deployment() {
+    echo ">> notifying team of successful deployment"
+    kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         echo ' ' | mail -s "[$MODE] $RELEASE_VERSION deployed by $USER" team@aerofs.com
 ENDCMDS
 }
 
-function run_prepublish_tests() {
-    echo ">> run pre-publishing tests (safety net)"
-    "${SCRIPT_DIR}/exec_prepublish_checks" $MODE
-}
-
-##########
-# Note: to rollback a release for any reason:
-# log into release-prod@b.arrowfs.org
-# go to /data/prod-downloads
-# change current.ver
-# s3cmd -P --cf-invalidate sync /data/prod-downloads/current.ver s3://nocache.client.aerofs.com
-##########
-function publish() {
-    echo ">> publish all $MODE installers to cloudfront"
-    kssh $RELEASE_SERVER_LOGIN 'bash -s -e -u' << ENDCMDS
-        s3cmd -P --cf-invalidate sync /data/${LOWERCASE_MODE}-downloads/* $INSTALLER_DOWNLOAD_BUCKET > /dev/null
-ENDCMDS
-}
-
+###############################################################################
+#
+# Tags this release with an annotated tag so it is easy to checkout a deployed
+# build for debugging.
+#
+###############################################################################
 function tag_release() {
-    if [ "$MODE" == "PROD" ]; then
-        echo ">> update release tag"
+    if is_prod ; then
+        echo ">> tagging git release"
         git tag -a "$RELEASE_VERSION" -m "$RELEASE_VERSION"
         git push --tags
     fi
 }
 
-###############################################################################
-#
-# run deployment steps
-#
-###############################################################################
+#******************************************************************************
+#******************************************************************************
+#**
+#** Run all of the deployment steps
+#**
+#******************************************************************************
+#******************************************************************************
+if is_prod ; then
+    echo
+    echo "!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "!! DEPLOY PRODUCTION !!"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!"
+    echo
+fi
 
 compute_next_release_version
-build_and_upload_installers
-update_server_release_version
-run_prepublish_tests
-publish
+echo '+--------------------------'
+echo '| ' $RELEASE_VERSION $MODE
+echo '+--------------------------'
+
+call make_release_resources $MODE $RELEASE_VERSION
+call make_client_installers $MODE $RELEASE_VERSION $PASSPHRASE
+call exec_prepublish_checks $MODE $RELEASE_VERSION $RELEASE_SERVER_LOGIN "$INSTALLERS_DOWNLOAD_DIR"
+publish_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
 tag_release
+notify_successful_deployment
 
 echo ">> successfully deployed $MODE release version $RELEASE_VERSION"
 exit 0
