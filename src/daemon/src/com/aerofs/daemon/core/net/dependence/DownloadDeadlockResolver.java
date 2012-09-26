@@ -63,11 +63,20 @@ public class DownloadDeadlockResolver
             assert !type.equals(DependencyType.UNSPECIFIED) : cycle;
         }
 
+        // First detect the type of download cycle, then if it corresponds, break the cycle
+        // by renaming a given NameConflictDependencyEdge
+
+        // TODO (MJ) currently this uses static methods to perform the detection. Instead we should
+        // create a class DownloadDeadlock which *has* an ImmutableList of edges, and has methods
+        // isAllNameConflictCycle or isAncestralNameConflict. Perhaps even use a factory to
+        // construct an object downloadDeadlock, then simply invoke
+        // downloadDeadlock.resolve(...) which throws if it can't be resolved.
+
         // Case 1: cycle of elements, all of which are NAME_CONFLICTS
         NameConflictDependencyEdge ncDependency = detectAllNameConflictCycle(cycle);
         if (ncDependency != null) {
             // resolve by renaming the local conflict OID
-            breakDependencyByRenaming_(ncDependency);
+            breakDependencyByRenaming_(ncDependency, cycle);
             return;
         }
 
@@ -75,7 +84,7 @@ public class DownloadDeadlockResolver
         ncDependency = detectAncestralNameConflict(cycle);
         if (ncDependency != null) {
             // resolve by renaming the local child OID.
-            breakDependencyByRenaming_(ncDependency);
+            breakDependencyByRenaming_(ncDependency, cycle);
             return;
         }
 
@@ -189,8 +198,10 @@ public class DownloadDeadlockResolver
 
     /**
      * Break the dependency by renaming the source SOCID of the name-conflict
+     * @param cycle only required for debugging AssertionErrors
      */
-    private void breakDependencyByRenaming_(@Nonnull NameConflictDependencyEdge dependency)
+    private void breakDependencyByRenaming_(@Nonnull NameConflictDependencyEdge dependency,
+            ImmutableList<DependencyEdge> cycle)
             throws Exception
     {
         // The dependee SOCID should be local, the dependent should be remote;
@@ -201,12 +212,12 @@ public class DownloadDeadlockResolver
 
         // A name conflict should only involve META socids
         assert socidRemote.cid().isMeta() && socidRemote.cid().equals(socidLocal.cid())
-                : dependency;
+                : dependency + " " + cycle;
 
         Path pParent = _ds.resolve_(new SOID(socidLocal.sidx(), dependency._parent));
         int metaDiff = _mdiff.computeMetaDiff_(socidRemote.soid(), dependency._meta,
                 dependency._parent);
-        assert Util.test(metaDiff, MetaDiff.NAME) : dependency + " " + dependency._meta;
+        assert Util.test(metaDiff, MetaDiff.NAME) : dependency + " " + metaDiff + " " + cycle;
 
         SOCKID sockidRemote = new SOCKID(socidRemote);
         boolean wasPresent = _ds.isPresent_(sockidRemote);
@@ -218,7 +229,7 @@ public class DownloadDeadlockResolver
         try {
             CausalityResult cr = _ru.computeCausalityForMeta_(socidRemote.soid(), vRemote,
                     metaDiff);
-            assert cr != null : socidRemote + " " + vRemote + " " + metaDiff;
+            assert cr != null : socidRemote + " " + vRemote + " " + metaDiff + " " + cycle;
             _ru.resolveNameConflictByRenaming_(dependency._did, socidRemote.soid(),
                     socidLocal.soid(), wasPresent, dependency._parent, pParent, vRemote,
                     dependency._meta, metaDiff, dependency._soidMsg, dependency._requested, cr, t);
@@ -226,10 +237,10 @@ public class DownloadDeadlockResolver
             t.commit_();
         } catch (IOException e) {
             // Assert false as we want to know when exceptions happen in the DeadlockResolver
-            assert false : Util.e(e);
+            assert false : Util.e(e) + " " + cycle;
         } catch (ExNotFound e) {
             // Assert false as we want to know when exceptions happen in the DeadlockResolver
-            assert false : Util.e(e);
+            assert false : Util.e(e) + " " + cycle;
         } finally {
             t.end_();
         }
