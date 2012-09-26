@@ -14,8 +14,7 @@ public interface IMaxcast
 {
     ListenableFuture<Void> sendDatagram_(int maxcastId, SID sid, byte[] payload, Prio pri);
 
-    ListenableFuture<Void> updateLocalStoreInterest_(ImmutableSet<SID> added,
-            ImmutableSet<SID> removed);
+    ListenableFuture<Void> updateLocalStoreInterest_(ImmutableSet<SID> added, ImmutableSet<SID> removed);
 
     ListenableFuture<ImmutableSet<DID>> getMaxcastUnreachableOnlineDevices_();
 }
