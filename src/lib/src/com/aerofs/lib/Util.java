@@ -53,7 +53,6 @@ import com.aerofs.lib.ex.AbstractExWirable;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoAvailDevice;
-import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.KIndex;
@@ -581,7 +580,6 @@ public abstract class Util
     private static Set<Class<?>> s_excludes = new HashSet<Class<?>>();
     static {
         s_excludes.add(ExTimeout.class);
-        s_excludes.add(ExNoResource.class);
         s_excludes.add(ExAborted.class);
         s_excludes.add(ExNoAvailDevice.class);
     }

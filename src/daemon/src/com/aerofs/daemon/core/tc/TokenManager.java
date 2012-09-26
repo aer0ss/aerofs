@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -101,7 +102,12 @@ public class TokenManager implements IDumpStatMisc
     public Token acquireThrows_(Cat cat, String reason) throws ExNoResource
     {
         Token tk = acquire_(cat, reason);
-        if (tk == null) throw new ExNoResource(cat + " full");
+        if (tk == null) {
+            CatInfo catInfo = _catInfoMap.get(cat);
+            assert catInfo != null;
+
+            throw new ExNoResource(cat + " full: toks:" + dumpCatInfo(catInfo, ""));
+        }
         return tk;
     }
 
@@ -109,7 +115,7 @@ public class TokenManager implements IDumpStatMisc
      * Try to acquire a token for pausing/sleeping
      * @return null if the category is full
      */
-    public Token acquire_(Cat cat, String reason)
+    public @Nullable Token acquire_(Cat cat, String reason)
     {
         CatInfo info = _catInfoMap.get(cat);
         Prio prio = _tc.prio();
@@ -169,10 +175,21 @@ public class TokenManager implements IDumpStatMisc
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
-        for (CatInfo info : _catInfoMap.values()) {
-            for (Iterable<Token> tokens : info._tokenSetMap.values()) {
-                for (Token token : tokens) ps.println(indent + token);
+        for (CatInfo catInfo : _catInfoMap.values()) {
+            ps.print(dumpCatInfo(catInfo, indent));
+        }
+    }
+
+    private String dumpCatInfo(CatInfo catInfo, String indent)
+    {
+        StringBuffer sb = new StringBuffer();
+
+        for (Iterable<Token> tokens : catInfo._tokenSetMap.values()) {
+            for (Token token : tokens) {
+                sb.append(indent).append(token).append(", ");
             }
         }
+
+        return sb.toString();
     }
 }
