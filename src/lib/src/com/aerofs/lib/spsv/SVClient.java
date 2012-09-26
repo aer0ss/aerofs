@@ -539,7 +539,15 @@ public class SVClient
             OutArg<String> fileRes = new OutArg<String>();
             fileRes.set("n/a");
             try {
-                Util.execForeground(fileRes,"file", "/bin/ls");
+                if (OSUtil.isLinux()) {
+                    // /bin/ls may be a symlink on Linux.
+                    // On OSX, readlink doesn't have the -f option.
+                    OutArg<String> readlinkRes = new OutArg<String>();
+                    Util.execForeground(readlinkRes,"readlink", "-f", "/bin/ls");
+                    Util.execForeground(fileRes,"file", readlinkRes.get());
+                } else {
+                    Util.execForeground(fileRes,"file", "/bin/ls");
+                }
             } catch (Exception e2) {
                 //ignored
             }

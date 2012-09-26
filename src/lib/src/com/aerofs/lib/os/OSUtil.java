@@ -36,8 +36,13 @@ public class OSUtil
             OSArch arch;
             try {
                 OutArg<String> output = new OutArg<String>();
+                OutArg<String> realpath = new OutArg<String>();
                 // can't use Log4J as it may not be initialized yet
-                Util.execForegroundNoLogging(output, "file", "/bin/ls");
+                // We avoid uname because we care about the userspace bitness, not the kernel
+                // bitness.  /bin/ls may be a symlink to /usr/bin/ls, see
+                // http://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge
+                Util.execForegroundNoLogging(realpath, "readlink", "-f", "/bin/ls");
+                Util.execForegroundNoLogging(output, "file", realpath.get());
                 if (output.get().contains("64")) arch = OSArch.X86_64;
                 else arch = OSArch.X86;
             } catch (IOException e) {
