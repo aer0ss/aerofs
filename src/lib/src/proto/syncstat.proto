@@ -16,7 +16,7 @@ service SyncStatService {
      *   ExNotFound if the given device does not exist.
      *   ExFormatError if the cookie DID is malformed.
      */
-    rpc SignIn(SyncSignInCall) returns(Void);
+    rpc SignIn(SyncSignInCall) returns(SyncSignInReply);
 
     /**
      * Set the version hash for a given DID and OID.
@@ -26,6 +26,16 @@ service SyncStatService {
      *   ExFormatError if the cookie DID is malformed.
      */
     rpc SetVersionHash(SetVersionHashCall) returns(Void);
+
+    /**
+     * Tell the server the current epoch the client has received, so that the server can clean older
+     * entries.
+     *
+     * Throws:
+     *   ExNoPerm if the user has not yet signed in.
+     *   ExFormatError if the cookie DID is malformed.
+     */
+    rpc AckServerEpoch(AckServerEpochCall) returns(Void);
 
     /**
      * Given the client's current version hash epoch number, this call returns the new version
@@ -44,15 +54,26 @@ message SyncSignInCall {
     required bytes did = 3;
 }
 
+message SyncSignInReply {
+    required uint64 client_epoch = 1;
+}
+
 message SetVersionHashCall {
-    required bytes oid = 1;
-    required bytes sid = 2;
-    required bytes vh = 3;
+    required bytes sid = 1;
+    repeated bytes oid = 2;
+    repeated bytes vh = 3;
+
+    // Stored server side and only used to handle unclean redis shutdowns and crashes.
+    required uint64 client_epoch = 4;
+}
+
+message AckServerEpochCall {
+    required uint64 server_epoch = 1;
 }
 
 message GetSyncStatusCall {
     // Sync status epoch number.
-    required uint64 ss_epoch = 1;
+    required uint64 server_epoch = 1;
 }
 
 message GetSyncStatusReply {
@@ -65,8 +86,8 @@ message GetSyncStatusReply {
     }
 
     message SyncStatus {
-        required bytes oid = 1;
-        required bytes sid = 2;
+        required bytes sid = 1;
+        required bytes oid = 2;
         repeated DeviceSyncStatus devices = 3;
     }
 
@@ -75,7 +96,7 @@ message GetSyncStatusReply {
     // should request the sync status again, using the newly updated epoch sent down in the previous
     // message.
 
-    required uint64 ss_epoch = 1;
+    required uint64 server_epoch = 1;
     required bool more = 2;
     repeated SyncStatus sync_statuses = 3;
 }

@@ -37,7 +37,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
-import com.aerofs.proto.Syncstat.*;
+import com.aerofs.proto.Syncstat.GetSyncStatusReply;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
 import com.google.common.collect.Lists;
@@ -145,7 +145,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         for (SOID soid : expected) {
             SID sid = sm.get_(soid.sidx());
             OID oid = soid.oid();
-            verify(ssc, times(1)).setVersionHash_(eq(oid), eq(sid), any(byte[].class));
+            verify(ssc, times(1)).setVersionHash_(eq(sid), eq(oid), any(byte[].class));
         }
     }
 
@@ -403,7 +403,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
         // stub RPC call
         GetSyncStatusReply reply = GetSyncStatusReply.newBuilder()
-                .setSsEpoch(43)
+                .setServerEpoch(43)
                 .setMore(false)
                 .addSyncStatuses(SyncStatus.newBuilder()
                         .setSid(sm.get_(o_f1.sidx()).toPB())
@@ -464,7 +464,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         verify(ssc, times(1)).getSyncStatus_(42); // startup
 
         GetSyncStatusReply reply = GetSyncStatusReply.newBuilder()
-                .setSsEpoch(45)
+                .setServerEpoch(45)
                 .setMore(true)
                 .addSyncStatuses(SyncStatus.newBuilder()
                         .setSid(sm.get_(o_f22.sidx()).toPB())
@@ -478,7 +478,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         when(ssc.getSyncStatus_(42)).thenReturn(reply);
 
         reply = GetSyncStatusReply.newBuilder()
-                .setSsEpoch(46)
+                .setServerEpoch(46)
                 .setMore(false)
                 .addSyncStatuses(SyncStatus.newBuilder()
                         .setSid(sm.get_(o_d231.sidx()).toPB())
@@ -583,7 +583,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
 
         // check calls made during bootstrap sequence
-        verify(ssc, never()).setVersionHash_(any(OID.class), any(SID.class), any(byte[].class));
+        verify(ssc, never()).setVersionHash_(any(SID.class), any(OID.class), any(byte[].class));
 
         // check state of bootstrap table after startup
         assertBootstrapSeqEquals();
@@ -638,7 +638,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
 
         // check that no version hash is pushed for invalid SOID
-        verify(ssc, never()).setVersionHash_(any(OID.class), any(SID.class), any(byte[].class));
+        verify(ssc, never()).setVersionHash_(any(SID.class), any(OID.class), any(byte[].class));
 
         // check that push epoch was increased past invalid SOID
         Assert.assertEquals(1, lsync.getPushEpoch_());

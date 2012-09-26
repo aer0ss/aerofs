@@ -326,7 +326,7 @@ public class SyncStatusSynchronizer
             if (reply == null) return;
 
             long localEpochAfterCall = _lsync.getPullEpoch_();
-            long newEpoch = reply.getSsEpoch();
+            long newEpoch = reply.getServerEpoch();
             // Check whether this pull bring us any new information
             if (newEpoch <= localEpochAfterCall) {
                 if (reply.getMore()) {
@@ -338,7 +338,7 @@ public class SyncStatusSynchronizer
                 return;
             }
 
-            updateDB(reply.getSsEpoch(), reply.getSyncStatusesList());
+            updateDB(reply.getServerEpoch(), reply.getSyncStatusesList());
             more = reply.getMore();
         }
     }
@@ -525,7 +525,7 @@ public class SyncStatusSynchronizer
 
         byte[] vh = getVersionHash_(soid);
         l.warn(soid.toString() + " : " + Util.hexEncode(vh));
-        _ssc.setVersionHash_(soid.oid(), sid, vh);
+        _ssc.setVersionHash_(sid, soid.oid(), vh);
     }
 
     /**

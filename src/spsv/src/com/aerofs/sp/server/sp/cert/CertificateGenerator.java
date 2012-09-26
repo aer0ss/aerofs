@@ -49,7 +49,6 @@ public class CertificateGenerator implements ICertificateGenerator
         // only as the certificate's file names stored on the CA server, so the actual value of the
         // string is not important.
 
-        // TODO (MP) when the CA is pushed, this must be updated with the new URL syntax.
         URLConnection conn;
         try {
             conn = (new URL(_caURL + "?" + user + '-' + did.toStringFormal())).openConnection();

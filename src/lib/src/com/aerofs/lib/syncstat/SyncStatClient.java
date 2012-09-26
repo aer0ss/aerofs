@@ -1,10 +1,10 @@
 package com.aerofs.lib.syncstat;
 
+import com.aerofs.proto.Syncstat.SyncSignInReply;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.Syncstat.SyncStatServiceStub;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -26,18 +26,18 @@ public class SyncStatClient extends SyncStatServiceStub {
     /**
      * Sign into the Sync Status server with the config scryted credentials.
      */
-    public ListenableFuture<Common.Void> signInRemote()
+    public ListenableFuture<SyncSignInReply> signInRemote()
     {
-        ListenableFuture<Common.Void> future = super.signIn(_user,
+        ListenableFuture<SyncSignInReply> future = super.signIn(_user,
                 ByteString.copyFrom(Cfg.scrypted()),
                 ByteString.copyFrom(Cfg.did().getBytes()));
 
-        Futures.addCallback(future, new FutureCallback<Common.Void>()
+        Futures.addCallback(future, new FutureCallback<SyncSignInReply>()
         {
             @Override
-            public void onSuccess(Common.Void dummy)
+            public void onSuccess(SyncSignInReply reply)
             {
-                // Nothing to do.
+                // TODO (MP) possibly send activities to the server.
             }
 
             @Override

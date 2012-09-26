@@ -15,8 +15,11 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.syncstat.SyncStatBlockingClient;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+
+import java.util.List;
 
 /**
  * Single persistent connection to sync status server
@@ -96,13 +99,13 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     /**
      * Releases the core lock around the setVersionHash RPC call
      */
-    public void setVersionHash_(OID oid, SID sid, byte[] vh) throws Exception
+    public void setVersionHash_(SID sid, OID oid, byte[] vh) throws Exception
     {
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpush");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("syncstatpush");
-            setVersionHash(oid, sid, vh);
+            setVersionHash(sid, oid, vh);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
@@ -114,11 +117,19 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      *
      * NOTE: should not be called with the core lock held
      */
-    public synchronized void setVersionHash(OID oid, SID sid, byte[] vh) throws Exception
+    public synchronized void setVersionHash(SID sid, OID oid, byte[] vh) throws Exception
     {
         ensureConnected_();
         try {
-            _client.setVersionHash(oid.toPB(), sid.toPB(), ByteString.copyFrom(vh));
+            // TODO (MP) need to pass in the client epoch and can batch by sid.
+
+            List<ByteString> oids = Lists.newLinkedList();
+            oids.add(oid.toPB());
+
+            List<ByteString> vhs = Lists.newLinkedList();
+            vhs.add(ByteString.copyFrom(vh));
+
+            _client.setVersionHash(sid.toPB(), oids, vhs, 0L);
             notifyOnFirstSuccessfulCall_();
         } catch (Exception e) {
             reset_();
