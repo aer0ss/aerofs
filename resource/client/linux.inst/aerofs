@@ -12,7 +12,7 @@ if [ $PROG == gui ]; then
     fi
 fi
 
-if [ x"`file /bin/ls | grep 64`" != x ]; then
+if [ x"$(file $(readlink -f /bin/ls) | grep 64)" != x ]; then
     ARCH=64
 else
     ARCH=32
