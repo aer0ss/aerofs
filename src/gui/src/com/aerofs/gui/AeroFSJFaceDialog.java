@@ -5,6 +5,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
 
+import javax.annotation.Nullable;
+
 import com.aerofs.lib.S;
 
 /**
@@ -22,7 +24,7 @@ public class AeroFSJFaceDialog extends Dialog {
      * @param alwaysOnTop valid only if !sheet
      * @param close valid only if !sheet
      */
-    public AeroFSJFaceDialog(String title, Shell parentShell, boolean sheet,
+    public AeroFSJFaceDialog(@Nullable String title, Shell parentShell, boolean sheet,
             boolean resizable, boolean alwaysOnTop, boolean close)
     {
         super(parentShell);

@@ -58,8 +58,6 @@ public abstract class Updater
     private boolean _ongoing = false;
     private boolean _confirmingUpdate;
 
-    private int _ignoreCount;
-
     private boolean _skipUpdate = false;
     private int _percentDownloaded = 0;
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
@@ -524,20 +522,11 @@ public abstract class Updater
             confirmUpdate(downloadedVersion, force, hasPermissions);
         } else {
             // updater has root permission and can actually execute
-
-            boolean stillOpen = UI.isGUI() ? GUI.get().isStillOpenSinceLastTime() : false;
-
             if (!UI.isGUI() || !GUI.get().isOpen()) {
                 // not GUI, or GUI window is't open --> can always apply update
                 execUpdate(downloadedVersion, hasPermissions);
-            } else if (stillOpen || force || _ignoreCount >= 3) {
-                // GUI, window has been open since last time we checked, or we've
-                // lost patience, or force update
-                confirmUpdate(downloadedVersion, force, hasPermissions);
             } else {
-                // GUI, and window has been closed since last time we checked,
-                // user may be interacting with it now, don't update
-                _ignoreCount++;
+                confirmUpdate(downloadedVersion, force, hasPermissions);
             }
         }
 
@@ -557,15 +546,16 @@ public abstract class Updater
 
             try {
                 try {
-                    _skipUpdate = !UI.get()
+                    final long duration = 60;
+                    _skipUpdate = !((GUI)UI.get())
                                      .ask(MessageType.INFO,
-                                             S.IMPORTANT_UPDATE_DOWNLOADED + " Apply it now? " +
-                                             "Select \"Not Now\" if you'd like to skip the update" +
-                                             " until the next time " + S.PRODUCT + " restarts." +
-                                             " However, skipping this version may cause " +
-                                              S.PRODUCT + " to stop syncing with other computers.",
-                                             "Apply Update", "Not Now (files may stop syncing)");
-
+                                             S.IMPORTANT_UPDATE_DOWNLOADED + " Apply it now?\n" +
+                                             "Skipping this version may cause " + S.PRODUCT +
+                                             " to stop syncing with other computers.\n\n" +
+                                             S.PRODUCT + " is automatically going " +
+                                             "to update in %d seconds.\n",
+                                             "Apply Update", "Not Now (files may stop syncing)",
+                                             duration);
                     if (_skipUpdate) return;
                 } catch (ExNoConsole e) {
                     UI.get()
