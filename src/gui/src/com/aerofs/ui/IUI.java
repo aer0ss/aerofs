@@ -41,7 +41,7 @@ public interface IUI {
      * message before throwing.
      */
     boolean ask(MessageType mt, String msg, String yesLabel, String noLabel)
-        throws ExNoConsole;
+            throws ExNoConsole;
 
     boolean isUIThread();
 

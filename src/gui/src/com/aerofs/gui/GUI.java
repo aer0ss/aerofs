@@ -6,11 +6,13 @@ import com.aerofs.gui.password.DlgLogin;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.setup.DlgSetup;
 import com.aerofs.gui.tray.SystemTray;
+import com.aerofs.lib.C;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.ui.IUI;
@@ -314,6 +316,18 @@ public class GUI implements IUI {
     }
 
     /**
+     * Shows a message box with yes,no buttons for {@code duration} seconds
+     * that's gonna get updated every second.
+     * @param sh non-null for sheet-style dialogs.
+     * @param format Formatted string that contains a "%d" to display the remaining seconds.
+     * @param duration Number of seconds that our dialog will be open.
+     */
+    public boolean ask(@Nullable Shell sh, MessageType mt, String format, long duration)
+    {
+        return ask(sh, mt, format, IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL, duration);
+    }
+
+    /**
      * @param sh non-null for sheet-style dialogs
      */
     public boolean ask(Shell sh, MessageType mt, String msg, String yesLabel,
@@ -328,6 +342,27 @@ public class GUI implements IUI {
         }
 
         return askImpl(sh, sheet, mt, msg, yesLabel, noLabel);
+    }
+
+    /**
+     * Shows a message box with {@code yesLabel}, {@code noLabel} buttons for {@code duration}
+     * seconds that's gonna get updated every second.
+     * @param sh non-null for sheet-style dialogs.
+     * @param format Formatted string that contains a "%d" to display the remaining seconds.
+     * @param duration Number of seconds until the dialog closes.
+     */
+    public boolean ask(@Nullable Shell sh, MessageType mt, String format, String yesLabel,
+            String noLabel, long duration)
+    {
+        boolean sheet;
+        if (sh == null) {
+            sh = _sh;
+            sheet = false;
+        } else {
+            sheet = true;
+        }
+
+        return askImpl(sh, sheet, mt, format, yesLabel, noLabel, duration);
     }
 
     private boolean askImpl(final Shell sh, final boolean sheet, final MessageType mt,
@@ -347,6 +382,33 @@ public class GUI implements IUI {
         return yes.get();
     }
 
+    /**
+     * Shows a message box with {@code yesLabel}, {@code noLabel} buttons for {@code duration}
+     * seconds that's gonna get updated every second.
+     * @param sh non-null for sheet-style dialogs.
+     * @param format Formatted string that contains a "%d" to display the remaining seconds.
+     * @param duration Number of seconds until the dialog closes.
+     */
+    private boolean askImpl(@Nullable final Shell sh, final boolean sheet, final MessageType mt,
+            final String format, final String yesLabel, final String noLabel,
+            final long duration)
+    {
+        final InOutArg<Boolean> yes = new InOutArg<Boolean>(false);
+        exec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                final AeroFSTimedMessageBox atmb = new AeroFSTimedMessageBox(sh, sheet,
+                        mt2it(mt), format, yesLabel, noLabel, duration);
+                // update periodically the label to show the remaining time.
+                atmb.startTimer();
+                yes.set(atmb.open() == IDialogConstants.OK_ID);
+            }
+        });
+        return yes.get();
+    }
+
     @Override
     public boolean ask(MessageType mt, String msg)
     {
@@ -359,6 +421,32 @@ public class GUI implements IUI {
     {
         return askImpl(_sh, false, mt, msg, yesLabel, noLabel);
     }
+
+    /**
+     * Shows a message box with yes,no buttons for {@code duration} seconds
+     * that's gonna get updated every second.
+     * @param format Formatted string that contains a "%d" to display the remaining seconds.
+     * @param duration Number of seconds until the dialog closes.
+     */
+    public boolean ask(MessageType mt, String format, long duration)
+            throws ExNoConsole
+    {
+        return ask(_sh, mt, format, duration);
+    }
+
+    /**
+     * Shows a message box with {@code yesLabel}, {@code noLabel} buttons for {@code duration}
+     * seconds that's gonna get updated every second.
+     * @param format Formatted string that contains a "%d" to display the remaining seconds.
+     * @param duration Number of seconds until the dialog closes.
+     */
+    public boolean ask(MessageType mt, String format, String yesLabel,
+            String noLabel, long duration)
+            throws ExNoConsole
+    {
+        return askImpl(_sh, false, mt, format, yesLabel, noLabel, duration);
+    }
+
 
     // where run() is called in a different thread, okay and error are
     // called within the UI thread.
