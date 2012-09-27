@@ -14,7 +14,7 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.aerofs.servletlib.MockSessionUserID;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.sp.cert.CertificateGenerator;
@@ -42,8 +42,8 @@ import static org.mockito.Mockito.mock;
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
     private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
-    private final ThreadLocalTransaction _transaction =
-            new ThreadLocalTransaction(_dbParams.getProvider());
+    private final SQLThreadLocalTransaction _transaction =
+            new SQLThreadLocalTransaction(_dbParams.getProvider());
     private SPDatabase _db = new SPDatabase(_transaction);
 
     private final SPServiceReactor _reactor;
@@ -82,7 +82,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
      */
     public void init_()
             throws IOException, ClassNotFoundException, SQLException, InterruptedException,
-            ExAlreadyExist
+                ExAlreadyExist
     {
         // Database setup.
         LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);

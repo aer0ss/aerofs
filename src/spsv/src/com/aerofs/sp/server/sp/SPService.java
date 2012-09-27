@@ -41,7 +41,7 @@ import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.proto.Sp.SignUpCall;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
@@ -86,7 +86,7 @@ class SPService implements ISPService
     private static final String UNKNOWN_NAME = "(unknown)";
 
     private final SPDatabase _db;
-    private final ThreadLocalTransaction _transaction;
+    private final IThreadLocalTransaction<SQLException> _transaction;
 
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrCommander _verkehrCommander;
@@ -103,8 +103,9 @@ class SPService implements ISPService
     private final SharedFolderManagement _sharedFolderManagement;
     private final ICertificateGenerator _certificateGenerator;
 
-    SPService(SPDatabase db, ThreadLocalTransaction transaction, ISessionUserID sessionUser,
-            UserManagement userManagement, OrganizationManagement organizationManagement,
+    SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
+            ISessionUserID sessionUser, UserManagement userManagement,
+            OrganizationManagement organizationManagement,
             SharedFolderManagement sharedFolderManagement,
             ICertificateGenerator certificateGenerator)
     {

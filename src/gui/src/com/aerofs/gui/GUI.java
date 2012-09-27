@@ -6,7 +6,6 @@ import com.aerofs.gui.password.DlgLogin;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.setup.DlgSetup;
 import com.aerofs.gui.tray.SystemTray;
-import com.aerofs.lib.C;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;

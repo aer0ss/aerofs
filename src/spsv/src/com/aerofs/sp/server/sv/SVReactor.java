@@ -22,7 +22,7 @@ import com.aerofs.lib.spsv.sendgrid.Sendgrid;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.IThreadLocalTransaction;
 import com.aerofs.servletlib.sv.SVDatabase;
 import org.apache.log4j.Logger;
 
@@ -56,16 +56,17 @@ public class SVReactor
     private static final String DEFECT_LOG_PREFIX = "log.defect-";
     private static final int FILE_BUF_SIZE = 1 * C.MB;
     private final SVDatabase _db;
-    private final ThreadLocalTransaction _transaction;
+    private final IThreadLocalTransaction<SQLException> _transaction;
 
     private String _pathDefect;
     private String _pathArchive;
     private String _pathAnalytics;
     private final Map<ObfStackTrace, String> _retraceMap = Maps.newHashMap();
 
-    private static final RavenClient ravenClient = new RavenClient("https://79e419090a9049ba98e30674544cfc13:7de75d799f774a6ea8e8f75e9f7eb7ad@sentry.aerofs.com/3");
+    private static final RavenClient ravenClient =
+            new RavenClient("https://79e419090a9049ba98e30674544cfc13:7de75d799f774a6ea8e8f75e9f7eb7ad@sentry.aerofs.com/3");
 
-    SVReactor(SVDatabase db, ThreadLocalTransaction transaction)
+    SVReactor(SVDatabase db, IThreadLocalTransaction<SQLException> transaction)
     {
         _db = db;
         _transaction = transaction;
@@ -124,12 +125,14 @@ public class SVReactor
 
         PBSVEvent ev = call.getEvent();
         PBSVHeader header = call.getHeader();
+
         _transaction.begin();
         _db.addEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
 
         if (ev.getType() == Type.SIGN_UP) {
             _db.subscribeAllEmails(header.getUser());
         }
+
         _transaction.commit();
     }
 
@@ -219,7 +222,7 @@ public class SVReactor
         }
     }
     private void defect(PBSVCall call, InputStream is, String client)
-        throws SQLException, ExProtocolError, IOException, MessagingException
+        throws ExProtocolError, IOException, MessagingException, SQLException
     {
         Util.checkPB(call.hasDefect(), PBSVDefect.class);
         PBSVDefect defect = call.getDefect();

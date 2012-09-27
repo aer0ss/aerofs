@@ -7,8 +7,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 
-import com.aerofs.servletlib.db.PooledConnectionFactory;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sv.SVDatabase;
 import static com.aerofs.servletlib.sv.SVParam.*;
 import org.apache.log4j.Logger;
@@ -24,8 +24,9 @@ public class SVServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final PooledConnectionFactory _dbFactory = new PooledConnectionFactory();
-    private final ThreadLocalTransaction _transaction = new ThreadLocalTransaction(_dbFactory);
+    private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
+    private final SQLThreadLocalTransaction _transaction =
+            new SQLThreadLocalTransaction(_conProvider);
     private final SVDatabase _db = new SVDatabase(_transaction);
     private final SVReactor _reactor = new SVReactor(_db, _transaction);
 
@@ -49,7 +50,7 @@ public class SVServlet extends AeroServlet
     {
         String svdbRef = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);
 
-        _dbFactory.init_(svdbRef);
+        _conProvider.init_(svdbRef);
     }
 
     @Override

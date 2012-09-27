@@ -7,7 +7,7 @@ package com.aerofs.sp.server.sp;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.servletlib.sp.organization.Organization;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
@@ -37,8 +37,8 @@ public class TestListUser extends AbstractTest
     private final String nonQueriedOrgId = "dummy.com";
 
     private final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
-    @Spy private final ThreadLocalTransaction _transaction =
-            new ThreadLocalTransaction(_dbParams.getProvider());
+    @Spy private final SQLThreadLocalTransaction _transaction =
+            new SQLThreadLocalTransaction(_dbParams.getProvider());
     @Spy private SPDatabase _spdb = new SPDatabase(_transaction);
 
     @InjectMocks UserManagement userManagement;

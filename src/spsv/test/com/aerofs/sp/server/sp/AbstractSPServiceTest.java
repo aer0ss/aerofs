@@ -3,7 +3,7 @@ package com.aerofs.sp.server.sp;
 import com.aerofs.servletlib.MockSessionUserID;
 import com.aerofs.servletlib.db.JUnitSPDatabaseParams;
 import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
@@ -39,8 +39,8 @@ public abstract class AbstractSPServiceTest extends AbstractTest
 
     // Inject a real (spy) local test SP database into the SPService of AbstractSPServiceTest.
     protected final JUnitSPDatabaseParams _dbParams = new JUnitSPDatabaseParams();
-    @Spy protected final ThreadLocalTransaction _transaction =
-            new ThreadLocalTransaction(_dbParams.getProvider());
+    @Spy protected final SQLThreadLocalTransaction _transaction =
+            new SQLThreadLocalTransaction(_dbParams.getProvider());
     @Spy protected SPDatabase db = new SPDatabase(_transaction);
 
     @Before

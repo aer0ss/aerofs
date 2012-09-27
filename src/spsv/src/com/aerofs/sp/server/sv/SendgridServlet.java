@@ -16,8 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Category;
 import com.aerofs.lib.spsv.sendgrid.Sendgrid.Events;
-import com.aerofs.servletlib.db.PooledConnectionFactory;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sv.SVDatabase;
 import com.aerofs.sp.server.AeroServlet;
 import org.apache.log4j.Logger;
@@ -29,8 +29,9 @@ import static com.aerofs.servletlib.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
 public class SendgridServlet extends AeroServlet {
 
     private static final Logger l = Util.l(SendgridServlet.class);
-    private final PooledConnectionFactory _dbFactory = new PooledConnectionFactory();
-    private final ThreadLocalTransaction _transaction = new ThreadLocalTransaction(_dbFactory);
+    private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
+    private final SQLThreadLocalTransaction _transaction =
+            new SQLThreadLocalTransaction(_conProvider);
     private final SVDatabase _db = new SVDatabase(_transaction);
     private static final long serialVersionUID = 1L;
 
@@ -53,7 +54,7 @@ public class SendgridServlet extends AeroServlet {
     {
         String context = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);
 
-        _dbFactory.init_(context);
+        _conProvider.init_(context);
     }
 
     /**

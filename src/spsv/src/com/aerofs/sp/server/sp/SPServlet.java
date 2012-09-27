@@ -7,8 +7,8 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.SPServiceReactor;
-import com.aerofs.servletlib.db.PooledConnectionFactory;
-import com.aerofs.servletlib.db.ThreadLocalTransaction;
+import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.AeroServlet;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
@@ -41,8 +41,8 @@ public class SPServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final PooledConnectionFactory _conFactory = new PooledConnectionFactory();
-    private final ThreadLocalTransaction _spTrans = new ThreadLocalTransaction(_conFactory);
+    private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
+    private final SQLThreadLocalTransaction _spTrans = new SQLThreadLocalTransaction(_conProvider);
     private final SPDatabase _db = new SPDatabase(_spTrans);
 
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
@@ -75,7 +75,7 @@ public class SPServlet extends AeroServlet
         _certificateGenerator.setCAURL_(getServletContext().getInitParameter("ca_url"));
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrCommander());
 
-        _conFactory.init_(getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER));
+        _conProvider.init_(getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER));
     }
 
     private VerkehrCommander getVerkehrCommander()
