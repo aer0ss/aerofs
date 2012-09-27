@@ -29,7 +29,7 @@ public class LogicalObjectsPrinter
         assert oa.soid().equals(soid);
         Path path = ds.resolve_(oa);
 
-        String str = oa.soid() + " " + path;
+        String str = oa.soid() + (oa.isExpelled() ? " X " : " - ") + path;
         SOID soidParent;    // not null to recurse down to children
         if (oa.isFile()) {
             Util.l().info(str);

@@ -255,6 +255,28 @@ public class TestAggregateSyncStatus extends AbstractTest
     }
 
     @Test
+    public void shouldIgnoreCreationOfExpelledFile() throws Exception
+    {
+        // initial state
+        mds.root().agss(1, 1, 0)
+                .dir("foo").ss(true, true, false).agss(0, 0, 0).parent()
+                .dir("baz", true).ss(true, false, true).agss(0, 0, 0);
+
+        // check that aggregate status vector is derived properly from aggregate status counters
+        assertAggregateSyncStatusVectorEquals("foo", true, true, true);
+        assertAggregateSyncStatusVectorEquals("", true, true, false);
+
+        // state change
+        mds.touch("baz/touch", t, agsync);
+
+        // verify expected interactions caused by state change
+
+        // check that aggregate status vector is derived properly from aggregate status counters
+        assertAggregateSyncStatusVectorEquals("foo", true, true, true);
+        assertAggregateSyncStatusVectorEquals("", true, true, false);
+    }
+
+    @Test
     public void shouldUpdateOnFileDeletion() throws Exception
     {
         // initial state

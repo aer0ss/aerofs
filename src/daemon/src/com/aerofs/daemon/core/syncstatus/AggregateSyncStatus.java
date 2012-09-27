@@ -217,6 +217,12 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         OA oa = _ds.getOA_(soid);
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
+        // ignore expulsion resulting from object deletion (moving to trash)
+        while (!oa.parent().isRoot() && !oa.parent().equals(OID.TRASH)) {
+            oa = _ds.getOA_(new SOID(soid.sidx(), oa.parent()));
+        }
+        if (!oa.parent().isRoot()) return;
+
         if (l.isInfoEnabled())
             l.info("expelled " + soid);
         updateParentAggregateOnDeletion_(soid, parent, t);
@@ -293,7 +299,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         assert !soid.oid().isRoot() : soid + " " + parent;
 
         OA oa = _ds.getOA_(soid);
-        assert !oa.isExpelled() : soid + " " + parent;
+        // ignore creation of expelled objects, they do not affect aggregate sync status
+        if (oa.isExpelled()) return;
 
         BitVector status = _ds.getSyncStatus_(soid);
         if (oa.isDir()) {

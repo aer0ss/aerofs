@@ -244,6 +244,9 @@ public class MockDS
             ////////
             // mock OA
 
+            if (parent != null)
+                expelled |= parent._oa.isExpelled();
+
             _oa = mock(OA.class);
             when(_oa.soid()).thenReturn(_soid);
             when(_oa.name()).thenReturn(_name);
@@ -325,8 +328,10 @@ public class MockDS
 
             _parent.remove(this);
             _parent = newParent;
-            boolean expelled = _parent._oa.isExpelled();
-            when(_oa.isExpelled()).thenReturn(expelled);
+            if (_parent._oa.isExpelled() && !_oa.isExpelled()) {
+                when(_oa.isExpelled()).thenReturn(true);
+                // TODO: propagate to children
+            }
             when(_oa.parent()).thenReturn(_parent.soid().oid());
 
             if (!_name.equalsIgnoreCase(newName)) {
@@ -358,7 +363,7 @@ public class MockDS
                 d = d._parent;
             }
 
-            move(d != null ? ((MockDSAnchor) d)._thrash : _trash, _soid.oid().toStringFormal());
+            move(d != null ? ((MockDSAnchor) d)._trash : _trash, _soid.oid().toStringFormal());
         }
 
         public BitVector ss(BitVector newStatus) throws Exception
@@ -627,6 +632,11 @@ public class MockDS
             return child(name, MockDSDir.class);
         }
 
+        public MockDSDir dir(String name, boolean expelled) throws Exception
+        {
+            return child(name, MockDSDir.class, expelled);
+        }
+
         public MockDSAnchor anchor(String name) throws Exception
         {
             return child(name, MockDSAnchor.class);
@@ -641,7 +651,7 @@ public class MockDS
     public class MockDSAnchor extends MockDSDir
     {
         MockDSDir _root;
-        MockDSDir _thrash;
+        MockDSDir _trash;
 
         MockDSAnchor(String name, MockDSDir parent) throws Exception
         {
@@ -667,7 +677,7 @@ public class MockDS
 
             // create root dir
             _root = new MockDSDir(OA.ROOT_DIR_NAME, this, new SOID(sidx, OID.ROOT));
-            _thrash = new MockDSDir(C.TRASH, _root, true, new SOID(sidx, OID.TRASH));
+            _trash = new MockDSDir(C.TRASH, _root, true, new SOID(sidx, OID.TRASH));
 
             if (!expelled) {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(_root.soid());
@@ -727,6 +737,12 @@ public class MockDS
         public MockDSDir dir(String name) throws Exception
         {
             return _root.dir(name);
+        }
+
+        @Override
+        public MockDSDir dir(String name, boolean  expelled) throws Exception
+        {
+            return _root.dir(name, expelled);
         }
 
         @Override
@@ -793,8 +809,8 @@ public class MockDS
     public void touch(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
         Path path = Path.fromString(p);
-        MockDS.MockDSDir d = cd(path.removeLast());
-        MockDS.MockDSFile f = d.file(path.last());
+        MockDSDir d = cd(path.removeLast());
+        MockDSFile f = d.file(path.last());
         for (IDirectoryServiceListener listener : listeners)
             listener.objectCreated_(f.soid(), d.soid().oid(), path, t);
     }
@@ -802,8 +818,8 @@ public class MockDS
     public void mkdir(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
         Path path = Path.fromString(p);
-        MockDS.MockDSDir d = cd(path.removeLast());
-        MockDS.MockDSDir f = d.dir(path.last());
+        MockDSDir d = cd(path.removeLast());
+        MockDSDir f = d.dir(path.last());
         for (IDirectoryServiceListener listener : listeners)
             listener.objectCreated_(f.soid(), d.soid().oid(), path, t);
     }
@@ -811,11 +827,29 @@ public class MockDS
     public void delete(String p, Trans t, IDirectoryServiceListener... listeners) throws Exception
     {
         Path path = Path.fromString(p);
-        MockDS.MockDSDir d = cd(path.removeLast());
-        MockDS.MockDSObject c = d.child(path.last());
+        MockDSDir d = cd(path.removeLast());
+        MockDSObject c = d.child(path.last());
         c.delete();
         for (IDirectoryServiceListener listener : listeners)
             listener.objectDeleted_(c.soid(), d.soid().oid(), path, t);
+        expel(c, t, listeners);
+    }
+
+    private void expel(MockDSObject o, Trans t, IDirectoryServiceListener... listeners)
+            throws Exception
+    {
+        if (o instanceof MockDSFile) {
+            // TODO: delete all CAs
+        } else if (o instanceof MockDSAnchor) {
+            // TODO: remove anchored store
+        } else if (o instanceof MockDSDir) {
+            MockDSDir d = (MockDSDir)o;
+            for (MockDSObject c : d._children.values()) {
+                expel(c, t, listeners);
+            }
+        }
+        for (IDirectoryServiceListener listener : listeners)
+            listener.objectExpelled_(o.soid(), t);
     }
 
     public void move(String org, String dst, Trans t, IDirectoryServiceListener... listeners)
@@ -823,10 +857,10 @@ public class MockDS
     {
         Path from = Path.fromString(org);
         Path to = Path.fromString(dst);
-        MockDS.MockDSDir dfrom = cd(from.removeLast());
-        MockDS.MockDSObject c = dfrom.child(from.last());
+        MockDSDir dfrom = cd(from.removeLast());
+        MockDSObject c = dfrom.child(from.last());
 
-        MockDS.MockDSDir dto = cd(to.removeLast());
+        MockDSDir dto = cd(to.removeLast());
         c.move(dto, to.last());
         for (IDirectoryServiceListener listener : listeners)
             listener.objectMoved_(c.soid(), dfrom.soid().oid(), dto.soid().oid(), from, to, t);
@@ -836,8 +870,8 @@ public class MockDS
             throws Exception
     {
         Path path = Path.fromString(p);
-        MockDS.MockDSDir d = cd(path.removeLast());
-        MockDS.MockDSObject c = d.child(path.last());
+        MockDSDir d = cd(path.removeLast());
+        MockDSObject c = d.child(path.last());
         BitVector oldStatus = c.ss(newStatus);
         for (IDirectoryServiceListener listener : listeners)
             listener.objectSyncStatusChanged_(c.soid(), oldStatus, newStatus, t);
