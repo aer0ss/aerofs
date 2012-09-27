@@ -43,6 +43,15 @@ do
     cp -R "$RESOURCES"/$F "$DEBIAN"
 done
 
+# Logging directory for aerofs tomcat applications.
+cat << EOF >> "$DEBIAN"/preinst
+#!/bin/bash
+mkdir -p /var/log/aerofs
+chown -R tomcat6:tomcat6 /var/log/aerofs
+EOF
+
+chmod 0755 "$DEBIAN"/preinst
+
 # package-data files
 cp -R "$BASEDIR"/out.ant/artifacts/"$SERVLET_NAME"_"$MODE"/exploded/* "$INSTALL"/
 

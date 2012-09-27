@@ -11,8 +11,8 @@
         standard logging config
     -->
 
-    <appender name="rollingfile" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File" value="/var/log/zephyr/zephyr.log"/>
+    <appender name="rollingfile" class="org.apache.log4j.FileAppender">
+        <param name="File" value="/var/log/aerofs/zephyr.log"/>
         <param name="DatePattern" value="'.'yyyyMMdd"/>
         <param name="Append" value="true"/>
         <layout class="org.apache.log4j.PatternLayout">
