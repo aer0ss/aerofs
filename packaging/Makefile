@@ -5,21 +5,22 @@
 MODE?=STAGING
 
 PACKAGES= \
-	common \
-	kvm \
-	vmhost \
 	admin \
 	ca-server \
 	ca-tools \
-	zephyr \
-	verkehr \
-	pagerduty \
-	web \
 	cmd-server \
 	cmd-tools \
+	common \
+	kvm \
+	middleman \
+	pagerduty \
 	sp \
 	sv \
 	syncstat \
+	verkehr \
+	vmhost \
+	web \
+	zephyr \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 

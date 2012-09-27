@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ruby /opt/middleman/middleman_service.rb $1

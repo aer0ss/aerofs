@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e -u
+
+# Permissions
+chmod +x /etc/init.d/middleman
+
+gem install rdoc sinatra webrick parseconfig daemons
+
+service middleman start
