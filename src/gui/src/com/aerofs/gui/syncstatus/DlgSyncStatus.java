@@ -159,19 +159,18 @@ public class DlgSyncStatus extends AeroFSDialog
 
     private void populateSyncStatusList(Composite c)
     {
-        GetSyncStatusReply reply;
+        Layout listLayout = new GridLayout(3, false);
+        c.setLayout(listLayout);
+
+        GetSyncStatusReply reply = null;
         try {
             reply = _ritual.getSyncStatus(_path.toPB());
         } catch (Exception e) {
             l.warn(e);
-            return;
         }
 
-        Layout listLayout = new GridLayout(3, false);
-        c.setLayout(listLayout);
-
-        // do not show sync status when servers are known to be down
-        if (!reply.getIsServerUp()) {
+        // do not show sync status when servers are known to be down or when daemon is dead
+        if (reply == null || !reply.getIsServerUp()) {
             addLabelPreImage(S.SYNC_STATUS_DOWN, Images.get(Images.ICON_ERROR), c);
             return;
         }
