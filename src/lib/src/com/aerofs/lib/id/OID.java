@@ -49,4 +49,9 @@ public class OID extends UniqueID {
     {
         return equals(ROOT);
     }
+
+    public boolean isTrash()
+    {
+        return equals(TRASH);
+    }
 }

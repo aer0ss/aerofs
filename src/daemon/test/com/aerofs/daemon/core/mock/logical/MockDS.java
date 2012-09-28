@@ -244,8 +244,9 @@ public class MockDS
             ////////
             // mock OA
 
-            if (parent != null)
+            if (parent != null) {
                 expelled |= parent._oa.isExpelled();
+            }
 
             _oa = mock(OA.class);
             when(_oa.soid()).thenReturn(_soid);
