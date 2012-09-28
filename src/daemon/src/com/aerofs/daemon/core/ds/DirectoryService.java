@@ -626,18 +626,6 @@ public class DirectoryService implements IDumpStatMisc
     }
 
     /**
-     * @return true if the object is under a trash folder
-     */
-    public static boolean isDeleted(DirectoryService ds, OA oa) throws SQLException
-    {
-        SIndex sidx = oa.soid().sidx();
-        while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
-            oa = ds.getOA_(new SOID(sidx, oa.parent()));
-        }
-        return oa.parent().isTrash();
-    }
-
-    /**
      * Deleting meta-data entry is currently only required while performing aliasing.
      */
     public void deleteOA_(SOID soid, Trans t) throws SQLException
