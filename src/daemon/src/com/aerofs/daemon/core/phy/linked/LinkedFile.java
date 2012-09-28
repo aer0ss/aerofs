@@ -30,7 +30,6 @@ public class LinkedFile implements IPhysicalFile
 
     private final LinkedStorage _s;
     private final IFIDMaintainer _fidm;
-    private final CfgAbsRootAnchor _cfgAbsRootAnchor;
 
     final InjectableFile _f;
     final Path _path;
@@ -41,11 +40,10 @@ public class LinkedFile implements IPhysicalFile
             String pathAuxRoot)
     {
         _s = s;
-        _cfgAbsRootAnchor = cfgAbsRootAnchor;
         _path = path;
         _sokid = sokid;
         _f = factFile.create(sokid.kidx().equals(KIndex.MASTER) ?
-                join(_cfgAbsRootAnchor.get(), join(path.elements())) :
+                join(cfgAbsRootAnchor.get(), join(path.elements())) :
                 join(pathAuxRoot, AuxFolder.CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
         _fidm = factFIDMan.create_(sokid, _f);
     }

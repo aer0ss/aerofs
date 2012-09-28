@@ -184,7 +184,7 @@ public class DirectoryService implements IDumpStatMisc
     public @Nonnull Path resolve_(SOID soid) throws SQLException
     {
         Path ret = resolveNullable_(soid);
-        assert ret != null;
+        assert ret != null : soid;
         return ret;
     }
 
@@ -647,7 +647,7 @@ public class DirectoryService implements IDumpStatMisc
         _cacheOA.invalidateAll_();
     }
 
-    public String generateNameConflictFileName_(Path pParent, String name)
+    public String generateNameConflictFileName_(@Nonnull Path pParent, String name)
             throws SQLException, ExNotFound
     {
         do {

@@ -19,6 +19,8 @@ import com.aerofs.lib.Path;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+
+import javax.annotation.Nonnull;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -60,7 +62,7 @@ public class LocalACL
     /**
      * @return the SOID corresponding to the specified path
      */
-    public SOID checkThrows_(String subject, Path path, Role role)
+    public @Nonnull SOID checkThrows_(String subject, Path path, Role role)
             throws ExNotFound, SQLException, ExNoPerm, ExExpelled
     {
         SOID soid = _ds.resolveThrows_(path);
@@ -74,7 +76,7 @@ public class LocalACL
      * @return the SOID corresponding to the specified path. Do not follow anchor if the resolved
      * object is an anchor.
      */
-    public SOID checkNoFollowAnchorThrows_(String subject, Path path, Role role)
+    public @Nonnull SOID checkNoFollowAnchorThrows_(String subject, Path path, Role role)
             throws ExNotFound, SQLException, ExNoPerm
     {
         SOID soid = _ds.resolveThrows_(path);
@@ -109,7 +111,8 @@ public class LocalACL
     /**
      * @return the map of subjects to their permissions for a given store
      */
-    public ImmutableMap<String, Role> get_(SIndex sidx) throws ExNotFound, SQLException
+    public @Nonnull ImmutableMap<String, Role> get_(SIndex sidx)
+            throws ExNotFound, SQLException
     {
         ImmutableMap<String, Role> subject2role = _cache.get(sidx);
         if (subject2role == null) {
@@ -122,7 +125,8 @@ public class LocalACL
     /**
      * Read the subject-to-role mapping for the given store from the database.
      */
-    private ImmutableMap<String, Role> readFromDB_(SIndex sidx) throws SQLException, ExNotFound
+    private @Nonnull ImmutableMap<String, Role> readFromDB_(SIndex sidx)
+            throws SQLException, ExNotFound
     {
         ImmutableMap.Builder<String, Role> builder = ImmutableMap.builder();
         IDBIterator<Map.Entry<String, Role>> iter = _adb.get_(sidx);

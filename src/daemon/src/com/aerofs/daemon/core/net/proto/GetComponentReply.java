@@ -156,7 +156,8 @@ public class GetComponentReply
             // as a result, the system would enter an infinite loop.
             final OID oidParentTarget = _a2t.getNullable_(new SOID(socid.sidx(), oidParent));
             if (oidParentTarget != null) {
-                l.warn("dereferenced aliased parent " + oidParent + "->" + oidParentTarget);
+                l.warn(socid + ": dereferenced aliased parent "
+                        + oidParent + "->" + oidParentTarget);
 
                 // We don't gracefully handle the parent OID being the same as that sent in the msg
                 assert !oidParentTarget.equals(socid.oid()) : "parent msg " + oidParent

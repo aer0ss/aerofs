@@ -378,13 +378,12 @@ public class Aliasing
         throws Exception
     {
         l.info("Resolving name conflict by aliasing conflicting objects.");
-        assert soidRemote.sidx().equals(soidLocal.sidx());
+        assert soidRemote.sidx().equals(soidLocal.sidx()) : soidRemote + " " + soidLocal;
 
         Version vLocal = getMasterVersion_(new SOCID(soidLocal, CID.META));
         AliasAndTarget ar = determineAliasAndTarget_(soidLocal, soidRemote);
 
-        Path pParent = _ds.resolveNullable_(new SOID(soidRemote.sidx(), parent));
-        assert pParent != null;
+        Path pParent = _ds.resolve_(new SOID(soidRemote.sidx(), parent));
         String newName = _ds.generateNameConflictFileName_(pParent, meta.getName());
 
         String createName;

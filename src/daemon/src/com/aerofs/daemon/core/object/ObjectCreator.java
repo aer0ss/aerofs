@@ -49,7 +49,7 @@ public class ObjectCreator
 
             _ds.createCA_(soid, kidx, t);
 
-            _ds.getOANullable_(soid).caMaster().physicalFile().create_(op, t);
+            _ds.getOA_(soid).caMaster().physicalFile().create_(op, t);
 
             _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
         }
