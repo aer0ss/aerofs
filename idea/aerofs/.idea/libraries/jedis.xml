@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="jedis">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/jedis-2.2.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/server/mpillar-jedis-2.2.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
