@@ -218,7 +218,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
         // ignore expulsion resulting from object deletion (moving to trash)
-        if (_ds.isDeleted(oa)) return;
+        if (DirectoryService.isDeleted(_ds, oa)) return;
 
         if (l.isInfoEnabled())
             l.info("expelled " + soid);

@@ -607,7 +607,7 @@ public class MockDS
         {
             MockDSObject o = _children.get(name);
             Assert.assertNotNull(o);
-            Assert.assertTrue(o instanceof  MockDSDir);
+            Assert.assertTrue(o instanceof MockDSDir);
             return o instanceof MockDSAnchor ? ((MockDSAnchor)o)._root : (MockDSDir)o;
         }
 

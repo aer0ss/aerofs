@@ -628,11 +628,11 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * @return true if the object is under a trash folder
      */
-    public boolean isDeleted(OA oa) throws SQLException
+    public static boolean isDeleted(DirectoryService ds, OA oa) throws SQLException
     {
         SIndex sidx = oa.soid().sidx();
         while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
-            oa = getOA_(new SOID(sidx, oa.parent()));
+            oa = ds.getOA_(new SOID(sidx, oa.parent()));
         }
         return oa.parent().isTrash();
     }
