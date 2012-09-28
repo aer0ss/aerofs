@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import com.aerofs.daemon.core.collector.CollectorSeq;
@@ -26,6 +27,8 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 /**
@@ -687,16 +690,17 @@ public class CoreDatabaseDumper extends AbstractDatabase
             String strTime = new SimpleDateFormat("yyMMdd:HHmmss.SSS").format(time);
 
             if (formal) {
-                StringBuilder sbDIDs = new StringBuilder();
-                for (DID did : dids) sbDIDs.append(did.toStringFormal());
+                List<String> didStrings = Lists.newArrayListWithCapacity(dids.size());
+                for (DID did : dids) didStrings.add(did.toStringFormal());
+
                 ps.println(idx + "\t" + sidx + "\t" + oid.toStringFormal() + '\t' +
-                        Integer.toHexString(activities) + '\t' + strTime + '\t' + sbDIDs + '\t' +
+                        Integer.toHexString(activities) + '\t' + strTime + '\t' +
+                        Joiner.on(':').join(didStrings) + '\t' +
                         path + '\t' + pathTo);
             } else {
-                StringBuilder sbDIDs = new StringBuilder();
-                for (DID did : dids) sbDIDs.append(did.toString());
                 ps.println(idx + "\t" + sidx + "\t" + oid + '\t' + Integer.toHexString(activities) +
-                        '\t' + strTime + '\t' + sbDIDs + '\t' + path + '\t' + pathTo);
+                        '\t' + strTime + '\t' + Joiner.on(':').join(dids) + '\t' + path +
+                        '\t' + pathTo);
             }
         }
     }
