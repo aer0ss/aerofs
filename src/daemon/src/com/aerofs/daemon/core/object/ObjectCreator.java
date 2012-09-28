@@ -38,7 +38,7 @@ public class ObjectCreator
      * Create a new object. Create an empty physical file if it's a file and it's not
      * linker-initiated.
      */
-    public void create_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
+    public SOID create_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
             throws Exception
     {
         SOID soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
@@ -53,6 +53,7 @@ public class ObjectCreator
 
             _vu.update_(new SOCKID(soid, CID.CONTENT, kidx), t);
         }
+        return soid;
     }
 
     /**

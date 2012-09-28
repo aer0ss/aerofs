@@ -322,20 +322,20 @@ public class MightCreate
     private boolean createLogicalObject_(PathCombo pcPhysical, boolean dir, Trans t)
             throws Exception
     {
-        l.info("create " + pcPhysical);
-
         // create the object
         SOID soidParent = _ds.resolveThrows_(pcPhysical._path.removeLast());
         OA oaParent = _ds.getOA_(soidParent);
         if (oaParent.isExpelled()) {
             // after the false return, scanner or linker should create the parent and recurse down
             // to the child again. exact implementations depend on operating systems.
-            l.warn("parent is expelled. ignore child creation");
+            l.warn("parent is expelled. ignore child creation of " + pcPhysical);
             return false;
         } else {
            if (oaParent.isAnchor()) soidParent = _ds.followAnchorThrows_(oaParent);
-           _oc.create_(dir ? Type.DIR : Type.FILE, soidParent, pcPhysical._path.last(), MAP, t);
+           SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
+                   pcPhysical._path.last(), MAP, t);
            _a.incSaveCount();
+           l.info("created " + newSOID + " " + pcPhysical);
            return true;
         }
     }
