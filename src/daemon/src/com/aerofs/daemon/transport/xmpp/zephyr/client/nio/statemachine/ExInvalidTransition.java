@@ -12,7 +12,7 @@ package com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine;
  */
 public class ExInvalidTransition extends Exception
 {
-    public ExInvalidTransition(IState<?> prevState, IStateEvent ev)
+    public ExInvalidTransition(IState<?> prevState, StateMachineEvent ev)
     {
         _state = prevState;
         _event = ev;
@@ -23,7 +23,7 @@ public class ExInvalidTransition extends Exception
         return _state;
     }
 
-    public IStateEvent getEvent()
+    public StateMachineEvent getEvent()
     {
         return _event;
     }
@@ -32,7 +32,7 @@ public class ExInvalidTransition extends Exception
     private final IState<?> _state;
 
     /** the invalid transition event */
-    private final IStateEvent _event;
+    private final StateMachineEvent _event;
 
     /** serialization id */
     private static final long serialVersionUID = 1L;

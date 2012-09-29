@@ -6,143 +6,222 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
-import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEvent;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineSpec;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineSpec.StateMachineSpecBuilder;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.*;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.*;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.BOUND;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.CONNECTED;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.HANDSHAKE_COMPLETE;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PENDING_OUT_PACKET;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PREPARED_FOR_BINDING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PREPARED_FOR_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PREPARED_FOR_REGISTRATION;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_ACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_SYN;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_SYNACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.REGISTERED;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SEL_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SEL_READ;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SEL_WRITE;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SENT_SYN;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SENT_SYNACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.WRITE_COMPLETE;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.BINDING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.CONNECTING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.HANDSHAKE;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.PREP_FOR_BINDING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.PREP_FOR_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.PREP_FOR_REGISTRATION;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.RECVING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.REGISTERING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.SENDING_AND_RECVING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.WAIT_FOR_HANDSHAKE_ACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.WAIT_FOR_HANDSHAKE_SYNACK;
 
 /**
  * State machine specification for a ZephyrClient
  */
 class ZephyrClientSpec
 {
+    //
+    // IMPORTANT : keep these definitions before the static initializer so that references to them
+    // inside the transition definitions resolve properly
+    //
+
+    /** convenience set of events that most states would like to defer */
+    private static final ImmutableSet<IStateEventType> COMMON_DEFERRED_ASYNC_EVENTS =
+        ImmutableSet.<IStateEventType>of(RECVD_SYN, RECVD_SYNACK, RECVD_ACK, PENDING_OUT_PACKET);
+
     static {
-        //
-        // construct the full state machine
-        // 1. construct a temporary map
-        // 2. make immutable and store into fullmap
-        // 3. make fullmap immutable and store into _sm
+
         //
         // in all cases, returning HALT from a state terminates the state machine
         // and PARK simply waits for an external io event in the current state
         // hmm...is this pretty much an hsm?
         //
 
-        Map<IState<ZephyrClientContext>, Map<IStateEvent, IState<ZephyrClientContext>>> fullmap =
-            new HashMap<IState<ZephyrClientContext>, Map<IStateEvent, IState<ZephyrClientContext>>>();
-
-        //
-        // NEW state
-        //
-
-        Map<IStateEvent, IState<ZephyrClientContext>> newStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        newStateMap.put(BEGIN_CONNECT, PREP_FOR_CONNECT);
-
-        fullmap.put(NEW, Collections.unmodifiableMap(newStateMap));
+        StateMachineSpecBuilder<ZephyrClientContext> spec = StateMachineSpec.builder();
 
         //
         // PREP_FOR_CONNECT state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> prepForConnectStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        prepForConnectStateMap.put(PREPARED_FOR_CONNECT, CONNECTING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(PREPARED_FOR_CONNECT, CONNECTING);
 
-        fullmap.put(PREP_FOR_CONNECT, Collections.unmodifiableMap(prepForConnectStateMap));
+            spec.add_(PREP_FOR_CONNECT, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
 
         //
         // CONNECTING state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> connectingStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        connectingStateMap.put(SEL_CONNECT, CONNECTING);
-        connectingStateMap.put(CONNECTED, PREP_FOR_REGISTRATION);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(SEL_CONNECT, CONNECTING);
+            transitions.put(CONNECTED, PREP_FOR_REGISTRATION);
 
-        fullmap.put(CONNECTING, connectingStateMap);
+            spec.add_(CONNECTING, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
 
         //
         // PREP_FOR_REGISTRATION state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> prepForRegistrationStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        prepForRegistrationStateMap.put(PREPARED_FOR_REGISTRATION, REGISTERING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(PREPARED_FOR_REGISTRATION, REGISTERING);
 
-        fullmap.put(PREP_FOR_REGISTRATION, Collections.unmodifiableMap(prepForRegistrationStateMap));
+            spec.add_(PREP_FOR_REGISTRATION, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
 
         //
         // REGISTERING state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> registeringStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        registeringStateMap.put(SEL_READ, REGISTERING);
-        registeringStateMap.put(REGISTERED, RECVING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(SEL_READ, REGISTERING);
+            transitions.put(REGISTERED, HANDSHAKE); // FIXME (AG): may be processed after incoming syn...
 
-        fullmap.put(REGISTERING, Collections.unmodifiableMap(registeringStateMap));
+            spec.add_(REGISTERING, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
 
         //
-        // RECVING state
+        // HANDSHAKE state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> recvingStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        recvingStateMap.put(SEL_READ, RECVING);
-        recvingStateMap.put(PENDING_OUT_PACKET, PREP_FOR_BINDING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(RECVD_SYN, HANDSHAKE);
+            transitions.put(SENT_SYN, WAIT_FOR_HANDSHAKE_SYNACK);
+            transitions.put(SENT_SYNACK, WAIT_FOR_HANDSHAKE_ACK);
 
-        fullmap.put(RECVING, Collections.unmodifiableMap(recvingStateMap));
+            ImmutableSet.Builder<IStateEventType> deferred = ImmutableSet.builder();
+            deferred.add(RECVD_SYNACK);
+            deferred.add(RECVD_ACK);
+            deferred.add(PENDING_OUT_PACKET);
+
+            spec.add_(HANDSHAKE, deferred.build(), transitions.build());
+        }
+
+        //
+        // WAIT_FOR_HANDSHAKE_SYNACK
+        //
+
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(RECVD_SYN, HANDSHAKE);
+            transitions.put(RECVD_SYNACK, WAIT_FOR_HANDSHAKE_SYNACK);
+            transitions.put(RECVD_ACK, WAIT_FOR_HANDSHAKE_SYNACK);
+            transitions.put(HANDSHAKE_COMPLETE, PREP_FOR_BINDING);
+
+            ImmutableSet.Builder<IStateEventType> deferred = ImmutableSet.builder();
+            deferred.add(PENDING_OUT_PACKET);
+
+            spec.add_(WAIT_FOR_HANDSHAKE_SYNACK, deferred.build(), transitions.build());
+        }
+
+        //
+        // WAIT_FOR_HANDSHAKE_ACK
+        //
+
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(RECVD_SYN, WAIT_FOR_HANDSHAKE_ACK);
+            transitions.put(RECVD_SYNACK, WAIT_FOR_HANDSHAKE_ACK);
+            transitions.put(RECVD_ACK, WAIT_FOR_HANDSHAKE_ACK);
+            transitions.put(HANDSHAKE_COMPLETE, PREP_FOR_BINDING);
+
+            ImmutableSet.Builder<IStateEventType> deferred = ImmutableSet.builder();
+            deferred.add(PENDING_OUT_PACKET);
+
+            spec.add_(WAIT_FOR_HANDSHAKE_ACK, deferred.build(), transitions.build());
+        }
 
         //
         // PREP_FOR_BINDING state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> prepForBindingStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        prepForBindingStateMap.put(SEL_READ, PREP_FOR_BINDING); // wait....
-        prepForBindingStateMap.put(PENDING_OUT_PACKET, PREP_FOR_BINDING); // ignore until we get to SENDING_AND_RECVING...
-        prepForBindingStateMap.put(RECVD_REMOTE_CHAN_ID, PREP_FOR_BINDING);
-        prepForBindingStateMap.put(PREPARED_FOR_BINDING, BINDING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(SEL_READ, PREP_FOR_BINDING);
+            transitions.put(PREPARED_FOR_BINDING, BINDING);
 
-        fullmap.put(PREP_FOR_BINDING, Collections.unmodifiableMap(prepForBindingStateMap));
+            spec.add_(PREP_FOR_BINDING, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
 
         //
         // BINDING state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> bindingStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        bindingStateMap.put(SEL_READ, BINDING);
-        bindingStateMap.put(SEL_WRITE, BINDING);
-        bindingStateMap.put(PENDING_OUT_PACKET, BINDING); // ignore until we get to SENDING_AND_RECVING...
-        bindingStateMap.put(BOUND, SENDING_AND_RECVING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(SEL_READ, BINDING);
+            transitions.put(SEL_WRITE, BINDING);
+            transitions.put(BOUND, RECVING);
 
-        fullmap.put(BINDING, Collections.unmodifiableMap(bindingStateMap));
+            spec.add_(BINDING, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
+
+        //
+        // RECVING state
+        //
+
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(SEL_READ, BINDING);
+            transitions.put(PENDING_OUT_PACKET, SENDING_AND_RECVING);
+
+            ImmutableSet.Builder<IStateEventType> deferred = ImmutableSet.builder();
+            deferred.add(RECVD_SYN);
+            deferred.add(RECVD_SYNACK);
+            deferred.add(RECVD_ACK);
+
+            spec.add_(RECVING, deferred.build(), transitions.build());
+        }
+
 
         //
         // SENDING_AND_RECVING state
         //
 
-        Map<IStateEvent, IState<ZephyrClientContext>> sendingAndRecvingStateMap =
-            new HashMap<IStateEvent, IState<ZephyrClientContext>>();
-        sendingAndRecvingStateMap.put(SEL_READ, SENDING_AND_RECVING);
-        sendingAndRecvingStateMap.put(SEL_WRITE, SENDING_AND_RECVING);
-        sendingAndRecvingStateMap.put(PENDING_OUT_PACKET, SENDING_AND_RECVING);
+        {
+            ImmutableMap.Builder<IStateEventType, IState<ZephyrClientContext>> transitions = ImmutableMap.builder();
+            transitions.put(SEL_READ, SENDING_AND_RECVING);
+            transitions.put(SEL_WRITE, SENDING_AND_RECVING);
+            transitions.put(WRITE_COMPLETE, RECVING);
 
-        fullmap.put(SENDING_AND_RECVING, Collections.unmodifiableMap(sendingAndRecvingStateMap));
+            spec.add_(SENDING_AND_RECVING, COMMON_DEFERRED_ASYNC_EVENTS, transitions.build());
+        }
 
-        //
-        // make the final immutable state-machine map and store into _sm
-        //
-
-        STATE_MACHINE_SPEC = Collections.unmodifiableMap(fullmap);
+        STATE_MACHINE_SPEC = spec.build_();
     }
 
     /** unmodifiable state-machine specification for a ZephyrClient */
-    static final Map<IState<ZephyrClientContext>, Map<IStateEvent, IState<ZephyrClientContext>>> STATE_MACHINE_SPEC;
+    static final StateMachineSpec<ZephyrClientContext> STATE_MACHINE_SPEC;
 }

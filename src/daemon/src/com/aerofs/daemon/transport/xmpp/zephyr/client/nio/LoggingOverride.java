@@ -8,8 +8,8 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.ExInvalidTransition;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateContext;
-import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEvent;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachine;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
 import com.aerofs.lib.PackageLoggingOverride;
 import org.apache.log4j.Level;
 
@@ -27,7 +27,7 @@ public class LoggingOverride extends PackageLoggingOverride
         Class<?>[] classes = new Class<?>[] {
             IState.class,
             IStateContext.class,
-            IStateEvent.class,
+            StateMachineEvent.class,
             StateMachine.class,
             CoreEvent.class,
             ExInvalidTransition.class,
@@ -39,7 +39,7 @@ public class LoggingOverride extends PackageLoggingOverride
             ZephyrClientManager.class,
             ZephyrClientSpec.class,
             ZephyrClientUtil.class,
-            ZephyrClientEvent.class,
+            ZephyrClientEventType.class,
             ZephyrClientState.class,
             ExAbortState.class,
             ExBadMessage.class,

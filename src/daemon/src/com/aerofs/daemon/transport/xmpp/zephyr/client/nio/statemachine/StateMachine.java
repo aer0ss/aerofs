@@ -6,23 +6,24 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine;
 
 import java.util.Map;
+import java.util.Set;
 
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.HALT;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.PARK;
 
 /**
  * State machine execution code
- * @param <T>
+ * @param <T> {@link IStateContext} object used to hold system-state
  */
 public class StateMachine<T extends IStateContext>
 {
     /**
      * Constructor
-     * @param transitions transition map to be used by this state machine
+     * @param spec state machine specification described by an {@link StateMachineSpec}
      */
-    public StateMachine(Map<IState<T>, Map<IStateEvent, IState<T>>> transitions)
+    public StateMachine(StateMachineSpec<T> spec)
     {
-        _transitions = transitions;
+        _spec = spec;
     }
 
     /**
@@ -31,8 +32,8 @@ public class StateMachine<T extends IStateContext>
      *
      * @param ctx {@link IStateContext} object to be passed to each {@link IState}
      * to be used in processing
-     * @return either HALT (state machine terminated abnormally for this context
-     * and has to be shut down) or PARK (state machine needs to wait for an external
+     * @return either {@link HALT} (state machine terminated abnormally for this context
+     * and has to be shut down) or {@link PARK} (state machine needs to wait for an external
      * event for this context)
      * @throws ExInvalidTransition if the state machine has to process an event
      * for which there is no valid transition
@@ -41,25 +42,24 @@ public class StateMachine<T extends IStateContext>
      */
     public CoreEvent run_(T ctx) throws ExInvalidTransition
     {
-        IState<T> next = null;
-        IStateEvent ev = null;
+        IState<T> state;
+        StateMachineEvent ev = null;
         try {
-            while (true) { // run until the event queue is exhausted
-                ev = ctx.dequeue_();
+            while (true) {
+                ev = nextev_(ctx);
+                if (coreev_(ev)) break;
 
-                if (ev != null) assert ev != PARK : ("PARK in ctx eq"); // no explicit PARKs
+                while (true) { // run until the state machine requires external input
+                    state = currstate_(ctx);
 
-                if (ev == null) ev = PARK;
-                if (ev == PARK || ev == HALT) break;
+                    ev = process_(state, ev, ctx);
+                    if (coreev_(ev)) break;
 
-                next = transition_(ev, ctx);
-                ev = next.process_(ctx);
-                ctx.logger_().debug(ctx + ": R: (" + ev + ") " + ctx.curr_());
-                if (ev != PARK) ctx.enqueueEvent_(ev);
+                    transition_(ev, ctx);
+                }
             }
         } catch (ExInvalidTransition e) {
-            ctx.logger_().error(
-                "no trans: T: (" + ev + ") " + ctx.curr_() + "->???");
+            ctx.logger_().error("no trans: T: (" + ev + ") " + ctx.curr_() + "->???");
             throw e;
         }
 
@@ -67,34 +67,97 @@ public class StateMachine<T extends IStateContext>
     }
 
     /**
+     * @param ev {@code StateMachineEvent} to check
+     * @return true if the event is one of {@link PARK} or {@link HALT}
+     */
+    private boolean coreev_(StateMachineEvent ev)
+    {
+        return ev == PARK || ev == HALT;
+    }
+
+    /**
+     * Convenience method to return the properly type-casted that the state machine is in
+     *
+     * @param ctx {@link IStateContext} object in which the current state is stored
+     * @return {@link IState} that the state machine is in
+     */
+    @SuppressWarnings("unchecked")
+    private IState<T> currstate_(T ctx)
+    {
+        return (IState<T>) ctx.curr_();
+    }
+
+    /**
+     * Returns the next event that can be processed in this state
+     *
+     * @param ctx context object from which the current state is retrieved
+     * @return a valid implementor of {@code IStateEvent} or {@code CoreEvent}
+     */
+    private StateMachineEvent nextev_(T ctx)
+    {
+        StateMachineEvent ev = null;
+        IState<T> curr = currstate_(ctx);
+        Set<IStateEventType> defer = _spec.defer_(curr);
+
+        while (ev == null) {
+            ev = ctx.dequeue_(defer);
+
+            if (ev != null) assert ev != PARK : ("PARK in ctx eq"); // no explicit PARKs
+
+            if (ev == null) ev = PARK;
+            if (coreev_(ev)) break;
+
+            assert !defer.contains(ev.type()) : ("dequeue returned deferred ev:" + ev);
+        }
+
+        return ev;
+    }
+
+    /**
      * Actually performs the transition lookup given the current {@link IState}
-     * the {@link IStateContext} object is in, and the {@link IStateEvent} it
-     * generated
+     * the {@link IStateContext} object is in, and the {@link IStateEvent} that occurred
      *
      * @param ev  event generated by the previous state
      * @param ctx context object from which the current state is retrieved
-     * @return the next state to which to transition
      * @throws ExInvalidTransition if there is no valid transition given the
      * combination of current state and generated event
      */
-    private IState<T> transition_(IStateEvent ev, T ctx)
+    private void transition_(StateMachineEvent ev, T ctx)
         throws ExInvalidTransition
     {
-        IState<?> prev = ctx.curr_();
+        IState<T> prev = currstate_(ctx);
 
-        Map<IStateEvent, IState<T>> transmap = _transitions.get(prev);
-        assert transmap != null : ("no transitions for state:" + prev);
+        Map<IStateEventType, IState<T>> transmap = _spec.transitions_(prev);
+        assert transmap != null && !transmap.isEmpty() : ("no transitions:" + transmap + " for state:" + prev);
 
-        if (!transmap.containsKey(ev)) throw new ExInvalidTransition(prev, ev);
+        if (!transmap.containsKey(ev.type())) throw new ExInvalidTransition(prev, ev);
 
-        IState<T> next = transmap.get(ev);
+        IState<T> next = transmap.get(ev.type());
         ctx.next_(next);
 
         ctx.logger_().debug(ctx + ": T: (" + ev + ") " + prev + "->" + next);
-
-        return next;
     }
 
-    /** transition map for this state machine */
-    private final Map<IState<T>, Map<IStateEvent, IState<T>>> _transitions;
+    /**
+     * Run the processing function for the current {@link IState}
+     *
+     * @param state {@code IState} state to execute
+     * @param inev {@code IStateEvent} that triggered this state's execution
+     * @param ctx {@link IStateContext} object in which the current transient state is stored
+     * @return the event generated as a result of executing this state
+     */
+    private StateMachineEvent process_(IState<T> state, StateMachineEvent inev, T ctx)
+    {
+        StateMachineEvent retev = state.process_(inev, ctx);
+
+        ctx.logger_().debug(ctx + ": R: (" + retev + ") " + ctx.curr_());
+
+        return retev;
+    }
+
+    /**
+     * immutable state machine specification into which all events are fed and
+     * from which transitions are computed
+     */
+    private final StateMachineSpec<T> _spec;
 }

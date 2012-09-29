@@ -7,8 +7,11 @@ package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
-import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEvent;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
 import com.aerofs.lib.C;
+import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
+import com.aerofs.zephyr.core.ExAlreadyBound;
 import com.aerofs.zephyr.core.ZUtil;
 
 import java.io.ByteArrayInputStream;
@@ -23,51 +26,46 @@ import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID
 import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_MAGIC;
 import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_SERVER_HDR_LEN;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.BOUND;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.CONNECTED;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.PENDING_OUT_PACKET;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.PREPARED_FOR_BINDING;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.PREPARED_FOR_CONNECT;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.PREPARED_FOR_REGISTRATION;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.REGISTERED;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.BOUND;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.CONNECTED;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.HANDSHAKE_COMPLETE;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PENDING_OUT_PACKET;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PREPARED_FOR_BINDING;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PREPARED_FOR_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PREPARED_FOR_REGISTRATION;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_ACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_SYN;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_SYNACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.REGISTERED;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SENT_SYN;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SENT_SYNACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.WRITE_COMPLETE;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.HALT;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.PARK;
 import static com.aerofs.lib.Param.Zephyr.zephyrHost;
 import static com.aerofs.lib.Param.Zephyr.zephyrPort;
 
-// - Refactor variable incrementing on bytes in/out into separate functions?
-
 /**
  * State functions for a ZephyrClient
  *
- * @important operates on {@link com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext} context objects only.
- * Make sure this enum _never_ holds any state. EVER.
- *
- * - FIXME: Refactor variable incrementing on bytes in/out into separate functions?
+ * operates on {@link ZephyrClientContext} context objects only.
+ * <strong>Make sure this enum _never_ holds any state. EVER.</strong>
  */
 public enum ZephyrClientState implements IState<ZephyrClientContext>
 {
 
     // NOTE: the default name of an enum is its face name
-    // i.e. NEW, etc. This is a sane default, and perfectly acceptable
+    // i.e. PREP_FOR_CONNECT, etc. This is a sane default, and perfectly acceptable
     // for my uses
 
     //
     // state machine functions
     //
 
-    NEW {
-        @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
-        {
-            assert false : ("process_ should not be called for " + name());
-            return null; // satisfy compile
-        }
-    },
     PREP_FOR_CONNECT
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
@@ -79,13 +77,13 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                 return halt_(ctx, "connect failed", e);
             }
 
-            return PREPARED_FOR_CONNECT;
+            return new StateMachineEvent(PREPARED_FOR_CONNECT);
         }
     },
     CONNECTING
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
@@ -101,147 +99,148 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             }
 
             ctx._conntoserver = true;
-            ctx._boss.remoteConnected_(ctx._remdid);
 
-            return CONNECTED;
+            return new StateMachineEvent(CONNECTED);
         }
     },
     PREP_FOR_REGISTRATION
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
 
             ctx.cleanCtrlFields_();
 
-            return PREPARED_FOR_REGISTRATION;
+            return new StateMachineEvent(PREPARED_FOR_REGISTRATION);
         }
     },
     REGISTERING
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
 
             if (!ctx._k.isReadable()) {
-                    return park_(ctx, SelectionKey.OP_READ);
+                return park_(ctx, SelectionKey.OP_READ);
             }
 
             try {
-                ByteBuffer b = ctx._ctrlbuf;
-                b.limit(ZEPHYR_REG_MSG_LEN);
-
-                int bytesin = read_(ctx, ctx._ctrlbuf);
-                if (bytesin == 0) {
+                if (!readzid(ctx)) {
                     return park_(ctx, SelectionKey.OP_READ);
                 }
-
-                if (b.position() < ZEPHYR_SERVER_HDR_LEN) {
-                    return park_(ctx, SelectionKey.OP_READ);
-                }
-
-                // by this point I have at least enough bytes for the header
-
-                if (!ctx._ctrlhdrrcvd) {
-                    int bufpos = b.position();
-
-                    // IMPORTANT: i don't need to flip before reading here, since
-                    // I know for sure that all bytes I'll read are valid (see check
-                    // above). instead, I will simply set the position to 0 and read
-                    // only the magic and the length
-
-                    b.rewind();
-
-                    // magic
-
-                    byte[] m = new byte[ZEPHYR_MAGIC.length];
-                    b.get(m);
-                    if (!Arrays.equals(ZEPHYR_MAGIC, m)) {
-                        assert false : (ctx + ":expected reg"); // FIXME: remove
-
-                        throw new ExAbortState("expected reg msg",
-                            new ExBadMessage("expected reg"));
-                    }
-
-                    // length - now I know how many bytes past the header in the
-                    // buffer will be valid
-
-                    int len = b.getInt();
-                    if (len <= 0) {
-                        assert false : (ctx + ": invalid len"); // FIXME: remove
-
-                        throw new ExAbortState("bad len for reg msg",
-                            new ExBadMessage("invalid len"));
-                    }
-
-                    ctx._ctrlbodylen = len;
-                    ctx._ctrlhdrrcvd = true;
-
-                    // mark so that we know where the header ends
-                    assert b.position() == ZEPHYR_SERVER_HDR_LEN :
-                            ("bad hdr exp:" + ZEPHYR_SERVER_HDR_LEN + " act:" + b.position());
-                    b.mark();
-
-                    // reset to where we were before we checked the header
-                    b.position(bufpos);
-                }
-
-                if (b.position() < ZEPHYR_REG_MSG_LEN) {
-                    return park_(ctx, SelectionKey.OP_READ);
-                }
-
-                // move to where the mark was (i.e. the end of the header)
-                b.reset();
-
-                // channel id
-
-                int id = b.getInt();
-                assert id != ZEPHYR_INVALID_CHAN_ID :
-                    (ctx + ": zephyr sent invalid id");
-                ctx._loczid = id;
-
-                // done
 
                 ctx.cleanCtrlFields_(); // don't really have to do this
-                ctx._boss.sendZidToRemote_(ctx._remdid, ctx._loczid);
 
-                return REGISTERED;
+                return new StateMachineEvent(REGISTERED);
             } catch (ExAbortState e) {
                 ctx.cleanCtrlFields_();
                 return halt_(ctx, e.getAbortMsg(), e.getAbortException());
             }
         }
     },
-    RECVING
+    HANDSHAKE
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
 
-            IStateEvent recvev = recvPayload_(ctx);
+            IStateEventType type = ev.type();
 
-            return (recvev != HALT && !ctx._txq.isEmpty_()) ? PENDING_OUT_PACKET : recvev;
+            assert type == RECVD_SYN || type == REGISTERED : (ctx + ": unexpected ev:" + type);
+            assert ctx._remzid == ZEPHYR_INVALID_CHAN_ID : (ctx + ": existing remote zid:" + ctx._remzid);
+
+            if (type == REGISTERED) {
+                return synRemote(ctx);
+            }
+
+            PBZephyrCandidateInfo zi = getSignallingData(ev);
+            assert zi.getSourceZephyrId() != ZEPHYR_INVALID_CHAN_ID : (ctx + ": bad SYN:" + zi);
+
+            try {
+                StateMachineEvent retev;
+
+                if (shouldDefer(ctx, zi)) {
+                    ctx.setRemoteZid_(zi.getSourceZephyrId());
+                    retev = synackRemote(ctx);
+                } else {
+                    retev = synRemote(ctx);
+                }
+
+                return retev;
+            } catch (ExAlreadyBound e) {
+                return halt_(ctx, "handshake failed", e);
+            }
+        }
+    },
+    WAIT_FOR_HANDSHAKE_SYNACK
+    {
+        @Override
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
+        {
+            assertValidStateFunc(ctx, this);
+            assertValidZephyrClientContext(ctx);
+
+            IStateEventType type = ev.type();
+            if (type == SENT_SYN) return PARK; // wait for SYNACK
+
+            PBZephyrCandidateInfo zi = getSignallingData(ev);
+
+            if (type == RECVD_SYN && shouldDefer(ctx, zi)) {
+                return ev; // start the handshaking process again
+            }
+
+            try {
+                StateMachineEvent retev;
+
+                if (type == RECVD_SYNACK && zi.getDestinationZephyrId() == ctx._loczid) {
+                    ctx.setRemoteZid_(zi.getSourceZephyrId());
+                    retev = ackRemote(ctx);
+                } else {
+                    retev = ignorehs(ctx, zi);
+                }
+
+                return retev;
+            } catch (ExAlreadyBound e) {
+                return halt_(ctx, "handshake failed", e);
+            }
+        }
+    },
+    WAIT_FOR_HANDSHAKE_ACK
+    {
+        @Override
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
+        {
+            assertValidStateFunc(ctx, this);
+            assertValidZephyrClientContext(ctx);
+
+            IStateEventType type = ev.type();
+            if (type == SENT_SYNACK) return PARK; // wait for ACK
+
+            PBZephyrCandidateInfo zi = getSignallingData(ev);
+            StateMachineEvent retev;
+
+            if (type == RECVD_ACK && zi.getDestinationZephyrId() == ctx._loczid) {
+                retev = new StateMachineEvent(HANDSHAKE_COMPLETE);
+            } else {
+                retev = ignorehs(ctx, zi);
+            }
+
+            return retev;
         }
     },
     PREP_FOR_BINDING
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
-
-            IStateEvent recvev = recvPayload_(ctx); // always read regardless
-            if (recvev == HALT) return HALT;
-
-            // haven't got xmpp message with channel id from remote peer
-            if (ctx._remzid == ZEPHYR_INVALID_CHAN_ID) return PARK; // OP_READ will be set properly for key by recvPayload_
 
             ZephyrClientContext.l.debug(ctx + ": create bind remzid:" + ctx._remzid);
 
@@ -249,47 +248,74 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             Message.createBindMessage_(ctx._ctrlbuf, ctx._remzid);
             ctx._ctrlbuf.flip();
 
-            return PREPARED_FOR_BINDING;
-            }
-        },
+            return new StateMachineEvent(PREPARED_FOR_BINDING);
+        }
+    },
     BINDING
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
 
-            assert (ctx._remzid != ZEPHYR_INVALID_CHAN_ID) :
-                (ctx + ": invalid remzid");
+            assert (ctx._remzid != ZEPHYR_INVALID_CHAN_ID) : (ctx + ": invalid remzid");
 
-            IStateEvent bindev = bindWithZephyr_(ctx);
-            IStateEvent recvev = recvPayload_(ctx);
+            StateMachineEvent bindev = bindWithZephyr_(ctx);
+            if (bindev.type() == BOUND) ctx._boss.remoteConnected_(ctx._remdid);
 
-            if (bindev == HALT || recvev == HALT) return HALT;
-            if (bindev == BOUND) return BOUND;
-            return recvev;
+            return bindev;
+        }
+    },
+    RECVING
+    {
+        @Override
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
+        {
+            assertValidStateFunc(ctx, this);
+            assertValidZephyrClientContext(ctx);
+
+            StateMachineEvent retev;
+
+            if (ev.type() == PENDING_OUT_PACKET) {
+                retev = ev;
+            } else if (ev.type() == WRITE_COMPLETE) {
+                retev = PARK; // yield
+            } else {
+                retev = recvPayload_(ctx);
+            }
+
+            return retev;
         }
     },
     SENDING_AND_RECVING
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
 
-            IStateEvent recvev = recvPayload_(ctx);
-            IStateEvent sendev = sendPayload_(ctx);
+            StateMachineEvent recvev = recvPayload_(ctx);
+            StateMachineEvent sendev = sendPayload_(ctx);
 
-            if (recvev == HALT || sendev == HALT) return HALT;
-            return PARK;
+            StateMachineEvent retev;
+
+            if (recvev == HALT || sendev == HALT) {
+                retev = HALT;
+            } else if (sendev.type() == WRITE_COMPLETE) {
+                retev = sendev;
+            } else {
+                retev = PARK;
+            }
+
+            return retev;
         }
     },
     TERMINATED
     {
         @Override
-        public IStateEvent process_(ZephyrClientContext ctx)
+        public StateMachineEvent process_(StateMachineEvent ev, ZephyrClientContext ctx)
         {
             assertValidStateFunc(ctx, this);
             assertValidZephyrClientContext(ctx);
@@ -297,6 +323,12 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             return HALT;
         }
     };
+
+    @Override
+    public String shortname_()
+    {
+        return name();
+    }
 
     //
     // utility
@@ -320,14 +352,13 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
     private static void assertValidStateFunc(ZephyrClientContext ctx, IState<?> state)
     {
         assert ctx.curr_() == state:
-            (ctx + ": invalid state:" + ctx.curr_()  + " for state func");
+            (ctx + ": invalid state:" + ctx.curr_()  + " for state func:" + state.shortname_());
     }
 
     /**
      * Utility function to HALT a state machine
      *
-     * @param ctx  ZephyrClient object for which we want to halt state machine
-     * execution
+     * @param ctx  ZephyrClient object for which we want to halt state machine execution
      * @param haltmsg explanatory message indicating why we are HALTing
      * @param cause exception to be returned to the state-machine caller indicating
      * why we are HALTing
@@ -363,9 +394,9 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
      * @return HALT (if there was an error) or PARK (if the write could not complete
      * and we need to wait for the Selector to tell us that the socket is writable)
      *
-     * @important re-registers for OP_WRITE prior to returning PARK
+     * <strong>re-registers for OP_WRITE prior to returning PARK</strong>
      */
-    private static IStateEvent bindWithZephyr_(ZephyrClientContext ctx)
+    private static StateMachineEvent bindWithZephyr_(ZephyrClientContext ctx)
     {
         SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
         try {
@@ -379,7 +410,84 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
         }
 
         ctx.cleanCtrlFields_();
-        return BOUND;
+        return new StateMachineEvent(BOUND);
+    }
+
+    /**
+     * Convenience method that ignores an incoming handshake message and parks the state machine
+     *
+     * @param ctx context object from which to retrieve the current state
+     * @param zi object from which to retrieve the src and dst zids
+     * @return a {@code CoreEvent} with type {@link PARK}
+     */
+    private static StateMachineEvent ignorehs(ZephyrClientContext ctx, PBZephyrCandidateInfo zi)
+    {
+        ZephyrClientContext.l.warn(ctx + ": ignore hs msg srczid:" +
+            zi.getSourceZephyrId() + " dstzid:" + zi.getDestinationZephyrId());
+
+        return PARK;
+    }
+
+    /**
+     * Checks if the in-progress local handshake should proceed, or whether a remote-triggered
+     * handshake should be given priority
+     *
+     * @param ctx context object from which to retrieve the current state
+     * @param zi object from which to retrieve the src and dst zids
+     * @return true if the remote-triggered handshake has higher priority, false if not
+     */
+    private static boolean shouldDefer(ZephyrClientContext ctx, PBZephyrCandidateInfo zi)
+    {
+        return zi.getSourceZephyrId() > ctx._loczid;
+    }
+
+    /**
+     * Sends a valid {@code SYN} message to the remote peer
+     *
+     * @param ctx context object from which to retrieve the current state
+     * @return an event of {@link SENT_SYN} type
+     */
+    private static StateMachineEvent synRemote(ZephyrClientContext ctx)
+    {
+        ctx.sendsyn_();
+        return new StateMachineEvent(SENT_SYN);
+    }
+
+    /**
+     * Sends a valid {@code SYNACK} message to the remote peer
+     *
+     * @param ctx context object from which to retrieve the current state
+     * @return an event of {@link SENT_SYNACK} type
+     */
+    private static StateMachineEvent synackRemote(ZephyrClientContext ctx)
+    {
+        ctx.sendsynack_();
+        return new StateMachineEvent(SENT_SYNACK);
+    }
+
+    /**
+     * Sends a valid {@code ACK} message to the remote peer
+     *
+     * @param ctx context object from which to retrieve the current state
+     * @return an event of {@link HANDSHAKE_COMPLETED} type
+     */
+    private static StateMachineEvent ackRemote(ZephyrClientContext ctx)
+    {
+        ctx.sendack_();
+        return new StateMachineEvent(HANDSHAKE_COMPLETE);
+    }
+
+    /**
+     * Extract the signalling parameters from an incoming {@code StateMachineEvent}
+     *
+     * @param ev {@code StateMachineEvent} from which to extract the signalling parameters
+     * @return a valid {@link com.aerofs.proto.Transport.PBZephyrCandidateInfo} object
+     */
+    private static PBZephyrCandidateInfo getSignallingData(StateMachineEvent ev)
+    {
+        assert ev.data() != null : ("no signalling obj");
+        PBZephyrCandidateInfo zi = (PBZephyrCandidateInfo) ev.data();
+        return zi;
     }
 
     /**
@@ -394,7 +502,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
     private static int read_(ZephyrClientContext ctx, ByteBuffer[] bufs)
         throws ExAbortState
     {
-        int bytesin = 0;
+        int bytesin;
         try {
             SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
             bytesin = (int) sc.read(bufs); // pktsize << MAX_INT
@@ -424,6 +532,88 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
     }
 
     /**
+     * Utility function to read the assigned zid that is returned by the zephyr server when
+     *
+     * @param ctx context object for the ZephyrClient
+     * @return true if the zid was read fully and the caller can proceed; false if not enough bytes
+     * were read and the caller has to explicitly park
+     * @throws ExAbortState if bytes < 0
+     */
+    private static boolean readzid(ZephyrClientContext ctx)
+            throws ExAbortState
+    {
+        ByteBuffer b = ctx._ctrlbuf;
+        b.limit(ZEPHYR_REG_MSG_LEN);
+
+        int bytesin = read_(ctx, ctx._ctrlbuf);
+        if (bytesin == 0) {
+            return false;
+        }
+
+        if (b.position() < ZEPHYR_SERVER_HDR_LEN) {
+            return false;
+        }
+
+        // by this point I have at least enough bytes for the header
+
+        if (!ctx._ctrlhdrrcvd) {
+            int bufpos = b.position();
+
+            // IMPORTANT: i don't need to flip before reading here, since
+            // I know for sure that all bytes I'll read are valid (see check
+            // above). instead, I will simply set the position to 0 and read
+            // only the magic and the length
+
+            b.rewind();
+
+            // magic
+
+            byte[] m = new byte[ZEPHYR_MAGIC.length];
+            b.get(m);
+            if (!Arrays.equals(ZEPHYR_MAGIC, m)) {
+                assert false : (ctx + ":expected reg"); // FIXME: remove
+                throw new ExAbortState("expected reg msg", new ExBadMessage("expected reg"));
+            }
+
+            // length - now I know how many bytes past the header in the
+            // buffer will be valid
+
+            int len = b.getInt();
+            if (len <= 0) {
+                assert false : (ctx + ": invalid len"); // FIXME: remove
+                throw new ExAbortState("bad len for reg msg", new ExBadMessage("invalid len"));
+            }
+
+            ctx._ctrlbodylen = len;
+            ctx._ctrlhdrrcvd = true;
+
+            // mark so that we know where the header ends
+            assert b.position() == ZEPHYR_SERVER_HDR_LEN :
+                    ("bad hdr exp:" + ZEPHYR_SERVER_HDR_LEN + " act:" + b.position());
+            b.mark();
+
+            // reset to where we were before we checked the header
+            b.position(bufpos);
+        }
+
+        if (b.position() < ZEPHYR_REG_MSG_LEN) {
+            return false;
+        }
+
+        // move to where the mark was (i.e. the end of the header)
+        b.reset();
+
+        // channel id
+
+        int id = b.getInt();
+        assert id != ZEPHYR_INVALID_CHAN_ID : (ctx + ": zephyr sent invalid id");
+        ctx._loczid = id;
+
+        // done
+        return true;
+    }
+
+    /**
      * Utility function used when any state function wants to read payload
      * data from a remote ZephyrClient
      * @param ctx context object for the ZephyrClient
@@ -438,10 +628,10 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
      * implementation may be slightly less performant (unclear how much) but is
      * much easier to reason about and should be less buggy
      *
-     * @important <strong>Do not use for control buffers</strong>
-     * @important re-registers for OP_READ prior to returning PARK
+     * <strong>Do not use for control buffers</strong>
+     * <strong>re-registers for OP_READ prior to returning PARK</strong>
      */
-    private static IStateEvent recvPayload_(ZephyrClientContext ctx)
+    private static StateMachineEvent recvPayload_(ZephyrClientContext ctx)
     {
         try {
             while (true) {
@@ -518,8 +708,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                 ZephyrClientContext.l.debug(ctx + ": b:fin <- " + ctx._remdid);
 
                 for (ByteBuffer rdbuf : ctx._rdbufs) rdbuf.flip();
-                ByteArrayInputStream bais = ZephyrClientUtil.createByteArrayInputStream(
-                    ctx._rdbufs);
+                ByteArrayInputStream bais = ZephyrClientUtil.createByteArrayInputStream(ctx._rdbufs);
                 ctx.cleanRecvFields_();
 
                 try {
@@ -544,16 +733,20 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
      * data to a remote ZephyrClient
      * @param ctx context object for the ZephyrClient
      * @return either HALT (if there was an error) or PARK (if you are waiting
-     * for an external i/o event, i.e. WRITE event)
+     * for an external i/o event, i.e. WRITE event) or WRITE_COMPLETE if there are no packets
+     * left to be written
      *
-     * @important <strong>Do not use for control buffers</strong>
-     * @important re-registers for OP_READ prior to returning PARK
+     * <strong>Do not use for control buffers</strong>
+     * <strong>re-registers for OP_READ prior to returning PARK</strong>
      */
-    private static IStateEvent sendPayload_(ZephyrClientContext ctx)
+    private static StateMachineEvent sendPayload_(ZephyrClientContext ctx)
     {
         try {
+            boolean wrotepkt = false;
             while (true) {
-                if (ctx._wrcurrout == null && ctx._txq.isEmpty_()) return PARK;
+                if (wrotepkt || (ctx._wrcurrout == null && ctx._txq.isEmpty_())) {
+                    return new StateMachineEvent(WRITE_COMPLETE);
+                }
 
                 if (ctx._wrcurrout == null) {
                     assert ctx._wrbufs == null :
@@ -605,6 +798,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
                     ZephyrClientContext.l.debug(ctx + ": b:fin -> " + ctx._remdid);
                     if (ctx._wrcurrout._waiter != null) ctx._wrcurrout._waiter.okay();
                     ctx.cleanSendFields_(false);
+                    wrotepkt = true;
                 }
             }
         } catch (ExAbortState e) {
