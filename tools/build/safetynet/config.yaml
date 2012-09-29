@@ -1,0 +1,34 @@
+actor_defaults:
+    rsh: ssh
+    login: aerofstest
+    aero_userid: build+safetynet+1@aerofs.com
+    aero_password: temp123
+    root: ~/syncdet
+actors:
+    -
+        address: 192.168.1.14
+        aero_app_root: ~/.aerofs-bin
+        aero_rt_root: ~/.aerofs
+        details:
+            os: linux64
+            distribution: Ubuntu 11.04 natty
+            java: Java(TM) SE Runtime Environment (build 1.7.0_01-b08)
+    -
+        address: 192.168.1.15
+        aero_app_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFSExec
+        aero_rt_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFS
+        details:
+            os: Windows 7 Professional x64
+            java: Java(TM) SE Runtime Environment (build 1.7.0_07-b11)
+#    -
+#        address: 192.168.1.16
+#        login: safetynet
+#        aero_app_root: /Applications/AeroFS.app/Contents/Resources/Java
+#        aero_rt_root: "~/Library/Application Support/AeroFS"
+#        details:
+#            os: OSX Snow Leopard 10.6.3
+#            java: Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-10M3811)
+controller_address: # This config file is used as a template. When
+                    # launching SafetyNet, this config file is copied and
+                    # the controller_address field is populated with the
+                    # controller machine's IP address.

@@ -1,0 +1,3 @@
+:serial
+    safetynet.manage.stop_aerofs
+    safetynet.manage.rollback_installation

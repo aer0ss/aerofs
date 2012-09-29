@@ -1,8 +1,42 @@
 #!/bin/bash -e -u
 
+###############################################################################
+#
+# This script executes the necessary steps to check whether the specified release
+# is stable enough for publishing. The release should already be built, packaged,
+# and in the INSTALLER_DOWNLOAD_DIR on the release server.
+#
+###############################################################################
+
+include include/common $1
+
+###############################################################################
+#
+# arguments and usage
+#
+###############################################################################
+if [[ $# -ne 2 ]]; then
+    echo "usage: $0 [build mode] [release version]" >&2
+    echo " " >&2
+    echo "[release version]: major.minor.build" >&2
+    echo " " >&2
+    echo "example: PROD 0.4.98" >&2
+    exit $ERRBADARGS
+fi
+
+readonly RELEASE_VERSION="$2"
+
+
+#****************************************
+#****************************************
+#**
+#** Run all pre-publish checks here
+#**
+#****************************************
+#****************************************
 echo ">> execute pre-publish checks"
 
 # Run SafetyNet
-#call safetynet/deploy $1 $2 $3 $4
+call safetynet/safetynet $MODE $RELEASE_VERSION
 
 exit 0

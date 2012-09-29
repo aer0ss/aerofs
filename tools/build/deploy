@@ -112,7 +112,7 @@ echo '+--------------------------'
 
 call make_release_resources $MODE $RELEASE_VERSION
 call make_client_installers $MODE $RELEASE_VERSION "$PASSPHRASE"
-call exec_prepublish_checks $MODE $RELEASE_VERSION $RELEASE_SERVER_LOGIN "$INSTALLERS_DOWNLOAD_DIR"
+call exec_prepublish_checks $MODE $RELEASE_VERSION
 publish_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
 tag_release
 notify_successful_deployment

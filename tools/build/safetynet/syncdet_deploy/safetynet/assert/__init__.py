@@ -1,0 +1,1 @@
+"""Contains tests that assert invariants about the remote actors' AeroFS installations."""
