@@ -24,6 +24,8 @@ service SyncStatService {
      * Throws:
      *   ExNoPerm if the user has not yet signed in.
      *   ExFormatError if the cookie DID is malformed.
+     *   ExBadArgs if the length of the repeated fields are not equal.
+     *   ExNoResource if the verkehr publish fails.
      */
     rpc SetVersionHash(SetVersionHashCall) returns(Void);
 
