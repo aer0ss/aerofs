@@ -48,6 +48,8 @@ public class S
 
     public static final String ROOT_ANCHOR_NAME         = PRODUCT;
 
+    public static final String RAW_LOCATION_CHANGE      = PRODUCT + " Has Changed Location";
+
     public static final String GUI_LOADING              = "Loading...";
 
     public static final String BAD_CREDENTIAL_CAP       = "Username/password combination is incorrect";
