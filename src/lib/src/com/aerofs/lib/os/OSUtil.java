@@ -41,8 +41,20 @@ public class OSUtil
                 // We avoid uname because we care about the userspace bitness, not the kernel
                 // bitness.  /bin/ls may be a symlink to /usr/bin/ls, see
                 // http://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge
-                Util.execForegroundNoLogging(realpath, "readlink", "-f", "/bin/ls");
-                Util.execForegroundNoLogging(output, "file", realpath.get());
+                int result = Util.execForegroundNoLogging(realpath, "readlink", "-f", "/bin/ls");
+                if (result != 0) {
+                    Util.fatal("arch detect, error code " + result + ": could not read /bin/ls");
+                }
+
+                // Make sure we trim the newline at the end of the previous call's output,
+                // or the 'file' command won't be able to find the returned path
+                String path = realpath.get().trim();
+                result = Util.execForegroundNoLogging(output, "file", path);
+                if (result != 0) {
+                    Util.fatal("arch detect, error code " + result
+                            + ": could not read '" + path + "'");
+                }
+
                 if (output.get().contains("64")) arch = OSArch.X86_64;
                 else arch = OSArch.X86;
             } catch (IOException e) {
