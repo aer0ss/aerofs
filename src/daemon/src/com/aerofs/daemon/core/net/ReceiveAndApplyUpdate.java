@@ -32,6 +32,7 @@ import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -138,6 +139,13 @@ public class ReceiveAndApplyUpdate
             _hash = h;
             _vLocal = vLocal;
             _conflictRename = false;
+        }
+
+        @Override
+        public String toString()
+        {
+            return Joiner.on(' ').join(_kidx, _vAddLocal, _incrementVersion, _conflictRename,
+                    _kidcsDel, _hash, _vLocal);
         }
     }
 
@@ -773,6 +781,7 @@ public class ReceiveAndApplyUpdate
         }
 
         // check if the local version has changed during our pauses
+        assert res._vLocal != null : res;
         if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
             throw new ExAborted(k + " version changed locally.");
         }
