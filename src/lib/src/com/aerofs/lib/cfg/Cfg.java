@@ -12,6 +12,7 @@ import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
+
 import java.io.*;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;

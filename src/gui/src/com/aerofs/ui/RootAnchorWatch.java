@@ -4,12 +4,15 @@
 
 package com.aerofs.ui;
 
+import com.aerofs.cli.CLI;
+import com.aerofs.cli.CLIRootAnchorUpdater;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.misc.DlgRootAnchorUpdater;
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.injectable.InjectableJNotify;
 import com.aerofs.lib.os.OSUtil;
@@ -102,34 +105,26 @@ public class RootAnchorWatch implements JNotifyListener
     {
         blockingRitualCall();
 
-        if (onPotentialRootAnchorChange()) return;
-
-        try {
-            // Quit is the yesLabel which is highlighted which makes it seem more like the default
-            // option.
-            if (!UI.get().ask(MessageType.ERROR, "Your " + S.PRODUCT + " folder has been " +
-                    "moved or deleted from its original location, " + Cfg.absRootAnchor() + ". "
-                    + S.PRODUCT + " will not work properly until the folder is moved back" +
-                    ".\n\n" + "Please quit " + S.PRODUCT + ", move the folder back to" +
-                    " its original location, and launch " + S.PRODUCT + " again.\n\n" +
-                    "To move the folder properly without causing this dialog to" +
-                    " show up, use the " + S.PRODUCT + " Preferences dialog.", "Quit",
-                    "Unlink this computer") &&
-                    UI.get().ask(MessageType.WARN, S.UNLINK_THIS_COMPUTER_CONFIRM)) {
-
-                try {
-                    UIUtil.unlinkAndExit(_factFile);
-                } catch (Exception e) {
-                    UI.get().show(MessageType.ERROR, "Couldn't unlink the computer "
-                            + UIUtil.e2msg(e));
-                }
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (UI.isGUI()) new DlgRootAnchorUpdater(GUI.get().sh()).openDialog();
+                else new CLIRootAnchorUpdater(CLI.get()).ask();
             }
-        } catch (ExNoConsole e) {
-            UI.get().show(MessageType.INFO, "Quit now.");
-        } finally {
-            UI.get().shutdown();
-            System.exit(0);
+        };
+        UI.get().exec(runnable);
+
+        if (onPotentialRootAnchorChange()) {
+            try {
+                UI.dm().start();  // restart the daemon
+            } catch (Exception e1) {
+                GUI.get().show(MessageType.ERROR,
+                        "An error occured while starting up " + S.PRODUCT +
+                                " " + UIUtil.e2msg(e1));
+                l.warn(Util.e(e1));
+            }
         }
+
     }
 
     /**
@@ -175,8 +170,9 @@ public class RootAnchorWatch implements JNotifyListener
     }
 
     /*
-     * An arbitrary rpc to block until the daemon finishes. This prevents unnecessary dialogues
-     * showing when relocation of root anchor is in progress.
+     * An arbitrary rpc to block until the daemon finishes (i.e. if the daemon is still doing any
+     * work do not pop up the RAW dialog for relocation until the daemon is done processing).
+     * This prevents unnecessary dialogues showing when relocation of root anchor is in progress.
      */
     private void blockingRitualCall()
     {
