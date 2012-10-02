@@ -20,7 +20,7 @@ OS=`"$PPWD"/os`
 
 # Copy files to approot
 mkdir -p "$APPROOT"
-rm -rf "$APPROOT"/Growl.framework    # Symlinks prevent cp from overwriting the files
+rm -rf "$APPROOT"/Growl.framework # Symlinks prevent cp from overwriting the files
 cp -R "$ASIS"/common/* "$APPROOT"/
 cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
