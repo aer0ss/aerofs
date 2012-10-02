@@ -781,7 +781,10 @@ public class ReceiveAndApplyUpdate
         }
 
         // check if the local version has changed during our pauses
-        assert res._vLocal != null : res;
+        // N.B. (MJ) it appears that if vKLocal is empty, it is possible that res._vLocal can
+        // be null
+        //Version vKLocal = _nvc.getLocalVersion_(k);
+        //if (vKLocal.isZero_() || )
         if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
             throw new ExAborted(k + " version changed locally.");
         }
