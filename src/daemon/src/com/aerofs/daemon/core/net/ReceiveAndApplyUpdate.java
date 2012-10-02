@@ -172,7 +172,7 @@ public class ReceiveAndApplyUpdate
         int metaDiff) throws SQLException
     {
         SOCKID k = new SOCKID(soid, CID.META, KIndex.MASTER);
-        Version vLocal = _nvc.getLocalVersion_(k);
+        final Version vLocal = _nvc.getLocalVersion_(k);
         Version vR_L = vRemote.sub_(vLocal);
         Version vL_R = vLocal.sub_(vRemote);
 
@@ -781,12 +781,27 @@ public class ReceiveAndApplyUpdate
         }
 
         // check if the local version has changed during our pauses
+        //
         // N.B. (MJ) it appears that if vKLocal is empty, it is possible that res._vLocal can
-        // be null
-        //Version vKLocal = _nvc.getLocalVersion_(k);
-        //if (vKLocal.isZero_() || )
-        if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
-            throw new ExAborted(k + " version changed locally.");
+        // be null. The following could be replaced with a simpler
+        //  if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_())
+        //     throw new ExAborted(k + " version changed locally.");
+        // but because res._vLocal can be null, I want to assert that it is not (when it is safe to
+        // do so).
+        Version vKLocal = _nvc.getLocalVersion_(k);
+        if (vKLocal.isZero_()) {
+            // no-op -- the local version is zero, so hasn't changed during the pauses.
+            // N.B. (markj) I think res._vLocal is permitted to be null here. I *think* it is
+            // because the local version at the beginning of processing was zero, though I can't
+            // guarantee that.
+        } else {
+            // the local version is non-zero, so subtract the version recorded in the causality
+            // result from before the processing of this update started.
+            assert !vKLocal.isZero_();
+            assert res._vLocal != null : res;
+            if (!vKLocal.sub_(res._vLocal).isZero_()) {
+                throw new ExAborted(k + " version changed locally.");
+            }
         }
 
         // update version vectors

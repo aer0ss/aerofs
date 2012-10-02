@@ -18,6 +18,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
+import javax.annotation.Nonnull;
+
 /**
  * The *VersionControl's are thin wrappers for the implementations of
  * IVersionDatabase. Caching-support to come.
@@ -45,12 +47,12 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         _maxTick = _vdb.getGreatestTick_();
     }
 
-    public Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException
+    public @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException
     {
         return _vdb.getAllVersionDIDs_(sidx);
     }
 
-    public Version getKnowledgeExcludeSelf_(SIndex sidx) throws SQLException
+    public @Nonnull Version getKnowledgeExcludeSelf_(SIndex sidx) throws SQLException
     {
         return _vdb.getKnowledgeExcludeSelf_(sidx);
     }
@@ -65,7 +67,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
             l.info(this.getClass() + " add kwlg " + sidx + " " + did + tick);
     }
 
-    public IDBIterator<E> getMaxTicks_(SIndex sidx, DID did, Tick from) throws SQLException
+    public @Nonnull IDBIterator<E> getMaxTicks_(SIndex sidx, DID did, Tick from) throws SQLException
     {
         return _vdb.getMaxTicks_(sidx, did, from);
     }
@@ -73,7 +75,6 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
     /**
      * Deletes all version records for store s, after having backed up
      * the ticks for *this* DID
-     * @throws SQLException
      */
     public void deleteStore_(SIndex sidx, Trans t) throws SQLException
     {
@@ -99,7 +100,6 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
      *   the backup table will have no entries for Store s
      * - side effect: after restoring the backed up ticks,
      *   the method deletes all backups for Store s from the backup table
-     * @throws SQLException
      */
     public void restoreStore_(SIndex sidx, Trans t) throws SQLException
     {

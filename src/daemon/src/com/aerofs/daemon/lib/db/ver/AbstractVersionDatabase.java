@@ -19,6 +19,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
+import javax.annotation.Nonnull;
+
 import static com.aerofs.lib.db.CoreSchema.T_GT;
 
 /**
@@ -100,17 +102,14 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
     /**
      * Set the variable parameters in ps to add a *TickRow to the backup table
-     * @param ps
-     * @param sid
      * @param tr the Native or ImmigrantTickRow to add to the backup table
-     * @throws SQLException
      */
     abstract protected void setAddBackupParameters(PreparedStatement ps,
             final SIndex sidx, final E tr) throws SQLException;
 
 
     @Override
-    public Tick getGreatestTick_() throws SQLException
+    public @Nonnull Tick getGreatestTick_() throws SQLException
     {
         Statement s = null;
         try {
@@ -126,8 +125,6 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
             } finally {
                 rs.close();
             }
-        } catch (SQLException e) {
-            throw e;
         } finally {
             DBUtil.close(s);
         }
@@ -154,7 +151,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
     private PreparedStatement _psGK;
     @Override
-    public Version getKnowledgeExcludeSelf_(SIndex sidx) throws SQLException
+    public @Nonnull Version getKnowledgeExcludeSelf_(SIndex sidx) throws SQLException
     {
         try {
             if (_psGK == null) _psGK = c().prepareStatement("select "
@@ -206,7 +203,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
     private PreparedStatement _psGAVD;
     @Override
-    public Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException
+    public @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException
     {
         try {
             if (_psGAVD == null) {
@@ -312,6 +309,8 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
             _psDelBackupTicks.executeUpdate();
         } catch (SQLException e) {
+            DBUtil.close(_psDelBackupTicks);
+            _psDelBackupTicks = null;
             throw e;
         }
     }

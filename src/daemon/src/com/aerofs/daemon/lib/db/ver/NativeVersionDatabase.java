@@ -26,6 +26,9 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 public class NativeVersionDatabase
         extends AbstractVersionDatabase<NativeTickRow>
         implements INativeVersionDatabase
@@ -62,7 +65,7 @@ public class NativeVersionDatabase
 
     private PreparedStatement _psGetTicks;
     @Override
-    public IDBIterator<NativeTickRow> getMaxTicks_(SIndex sidx, DID did, Tick from)
+    public @Nonnull IDBIterator<NativeTickRow> getMaxTicks_(SIndex sidx, DID did, Tick from)
         throws SQLException
     {
         try {
@@ -205,7 +208,7 @@ public class NativeVersionDatabase
 
     private PreparedStatement _psGLT;
     @Override
-    public Tick getLocalTick_(SOCKID k) throws SQLException
+    public @Nullable Tick getLocalTick_(SOCKID k) throws SQLException
     {
         try {
             if (_psGLT == null) _psGLT = c()
@@ -237,19 +240,19 @@ public class NativeVersionDatabase
     }
 
     @Override
-    public Version getKMLVersion_(SOCID socid) throws SQLException
+    public @Nonnull Version getKMLVersion_(SOCID socid) throws SQLException
     {
         return getVersion_(socid, KIndex.KML);
     }
 
     @Override
-    public Version getLocalVersion_(SOCKID k) throws SQLException
+    public @Nonnull Version getLocalVersion_(SOCKID k) throws SQLException
     {
         return getVersion_(k.socid(), k.kidx());
     }
 
     private PreparedStatement _psGetV;
-    private Version getVersion_(SOCID socid, KIndex kidx) throws SQLException
+    private @Nonnull Version getVersion_(SOCID socid, KIndex kidx) throws SQLException
     {
         try {
             if (_psGetV == null) {
@@ -285,7 +288,7 @@ public class NativeVersionDatabase
 
     private PreparedStatement _psGetALV;
     @Override
-    public Version getAllLocalVersions_(SOCID socid) throws SQLException
+    public @Nonnull Version getAllLocalVersions_(SOCID socid) throws SQLException
     {
         try {
             if (_psGetALV == null) {
@@ -319,7 +322,7 @@ public class NativeVersionDatabase
     }
 
     @Override
-    public Version getAllVersions_(SOCID socid) throws SQLException
+    public @Nonnull Version getAllVersions_(SOCID socid) throws SQLException
     {
         try {
             // Theoretically we could query the maxticks table for better performance. But because
@@ -437,7 +440,7 @@ public class NativeVersionDatabase
 
     private PreparedStatement _psGetBackupTicks;
     @Override
-    public IDBIterator<NativeTickRow> getBackupTicks_(SIndex sidx) throws SQLException
+    public @Nonnull IDBIterator<NativeTickRow> getBackupTicks_(SIndex sidx) throws SQLException
     {
         try {
             if (_psGetBackupTicks == null) {

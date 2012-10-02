@@ -11,6 +11,8 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 
+import javax.annotation.Nonnull;
+
 /**
  * Native and Immigrant versions share some similarities in getters/setters.
  * This interface specifies the type-agnostic methods for persistent storage of
@@ -23,7 +25,7 @@ import com.aerofs.lib.id.SOCID;
  */
 public interface IVersionDatabase<E extends AbstractTickRow>
 {
-    Tick getGreatestTick_() throws SQLException;
+    @Nonnull Tick getGreatestTick_() throws SQLException;
 
     void setGreatestTick_(Tick tick, Trans t) throws SQLException;
 
@@ -31,7 +33,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
      * @return the entries with ticks greater than from. the returned ticks
      * must be in ascending order
      */
-    IDBIterator<E> getMaxTicks_(SIndex sidx, DID did, Tick from)
+    @Nonnull IDBIterator<E> getMaxTicks_(SIndex sidx, DID did, Tick from)
         throws SQLException;
 
     /**
@@ -40,7 +42,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
     boolean isTickKnown_(SOCID socid, DID did, Tick tick)
             throws SQLException;
 
-    Version getKnowledgeExcludeSelf_(SIndex sidx)
+    @Nonnull Version getKnowledgeExcludeSelf_(SIndex sidx)
             throws SQLException;
 
     void addKnowledge_(SIndex sidx, DID did, Tick tick, Trans t)
@@ -49,7 +51,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
     /**
      * @return all the devices mentioned in the version table
      */
-    Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException;
+    @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException;
 
     void deleteTicksFromStore_(SIndex sidx, Trans t) throws SQLException;
 
@@ -66,8 +68,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
     /**
      * Backup all *TickRows of the iterator into a different table than used for
      * regular versions
-     * @param sid the Store ID associated with the tick row
-     * @throws SQLException
+     * @param sidx the Store Index associated with the tick row
      */
     public void addBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
             throws SQLException;
@@ -75,7 +76,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
     /**
      * @return all backed-up tick entries in ascending order
      */
-    public IDBIterator<E> getBackupTicks_(SIndex sidx) throws SQLException;
+    public @Nonnull IDBIterator<E> getBackupTicks_(SIndex sidx) throws SQLException;
 
     public void deleteBackupTicksFromStore_(SIndex sidx, Trans t) throws SQLException;
 

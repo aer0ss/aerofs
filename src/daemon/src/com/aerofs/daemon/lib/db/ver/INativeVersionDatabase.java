@@ -8,6 +8,9 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Beyond the methods of IVersionDatabase, this interface represents
  * persistent storage of native versions
@@ -26,25 +29,25 @@ public interface INativeVersionDatabase extends IVersionDatabase<NativeTickRow>
     void deleteKMLVersion_(SOCID socid, Version v, Trans t)
             throws SQLException;
 
-    Tick getLocalTick_(SOCKID k)
+    @Nullable Tick getLocalTick_(SOCKID k)
             throws SQLException;
 
-    Version getKMLVersion_(SOCID socid)
+    @Nonnull Version getKMLVersion_(SOCID socid)
             throws SQLException;
 
-    Version getLocalVersion_(SOCKID k)
+    @Nonnull Version getLocalVersion_(SOCKID k)
             throws SQLException;
 
     /**
      * @return the union of the local version of all the branches.
      */
-    Version getAllLocalVersions_(SOCID socid) throws SQLException;
+    @Nonnull Version getAllLocalVersions_(SOCID socid) throws SQLException;
 
     /**
      * @return the union of KML and the local version of all the branches.
      * Note: this call may be expensive, so use it sparingly.
      */
-    Version getAllVersions_(SOCID socid)
+    @Nonnull Version getAllVersions_(SOCID socid)
             throws SQLException;
 
     /**

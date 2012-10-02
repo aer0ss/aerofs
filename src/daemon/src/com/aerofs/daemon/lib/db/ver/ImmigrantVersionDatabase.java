@@ -41,6 +41,8 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
+
 public class ImmigrantVersionDatabase
         extends AbstractVersionDatabase<ImmigrantTickRow>
         implements IImmigrantVersionDatabase
@@ -77,7 +79,7 @@ public class ImmigrantVersionDatabase
 
     private PreparedStatement _psGetImmTicks;
     @Override
-    public IDBIterator<ImmigrantTickRow> getMaxTicks_(SIndex sidx, DID immdid,
+    public @Nonnull IDBIterator<ImmigrantTickRow> getMaxTicks_(SIndex sidx, DID immdid,
             Tick from)
         throws SQLException
     {
@@ -171,7 +173,7 @@ public class ImmigrantVersionDatabase
 
     private PreparedStatement _psGetBackupTicks;
     @Override
-    public IDBIterator<ImmigrantTickRow> getBackupTicks_(SIndex sidx)
+    public @Nonnull IDBIterator<ImmigrantTickRow> getBackupTicks_(SIndex sidx)
             throws SQLException
     {
         try {

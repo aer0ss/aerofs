@@ -21,6 +21,9 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 // TODO: caching
 
 public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
@@ -81,8 +84,10 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
     /**
      * similar to getLocalVersion but only returns the tick of the local device
+     * @return null iff the local DID does not have an entry in the version vector, i.e. we have
+     *         made no local modifications
      */
-    public Tick getLocalTick_(SOCKID k) throws SQLException
+    public @Nullable Tick getLocalTick_(SOCKID k) throws SQLException
     {
         return _nvdb.getLocalTick_(k);
     }
@@ -126,7 +131,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         }
     }
 
-    public Version getLocalVersion_(SOCKID k) throws SQLException
+    public @Nonnull Version getLocalVersion_(SOCKID k) throws SQLException
     {
         return _nvdb.getLocalVersion_(k);
     }
@@ -167,7 +172,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         _tlva.get(t).versionDeletedPermanently_(k.socid(), v);
     }
 
-    public Version getKMLVersion_(SOCID socid) throws SQLException
+    public @Nonnull Version getKMLVersion_(SOCID socid) throws SQLException
     {
         Version v = _nvdb.getKMLVersion_(socid);
 
@@ -278,7 +283,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     /**
      * Note: this call may be expensive. Use it sparingly.
      */
-    public Version getAllVersions_(SOCID socid) throws SQLException
+    public @Nonnull Version getAllVersions_(SOCID socid) throws SQLException
     {
         return _nvdb.getAllVersions_(socid);
     }
