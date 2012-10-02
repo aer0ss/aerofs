@@ -144,8 +144,8 @@ public class ReceiveAndApplyUpdate
         @Override
         public String toString()
         {
-            return Joiner.on(' ').join(_kidx, _vAddLocal, _incrementVersion, _conflictRename,
-                    _kidcsDel, _hash, _vLocal);
+            return Joiner.on(' ').useForNull("null").join(_kidx, _vAddLocal, _incrementVersion,
+                    _conflictRename, _kidcsDel, _hash, _vLocal);
         }
     }
 
