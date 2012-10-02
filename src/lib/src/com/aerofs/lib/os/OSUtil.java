@@ -35,27 +35,19 @@ public class OSUtil
             _os = new OSUtilLinux(factFile);
             OSArch arch;
             try {
-                OutArg<String> output = new OutArg<String>();
-                OutArg<String> realpath = new OutArg<String>();
+                OutArg<String> commandOutput = new OutArg<String>();
                 // can't use Log4J as it may not be initialized yet
                 // We avoid uname because we care about the userspace bitness, not the kernel
                 // bitness.  /bin/ls may be a symlink to /usr/bin/ls, see
                 // http://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge
-                int result = Util.execForegroundNoLogging(realpath, "readlink", "-f", "/bin/ls");
-                if (result != 0) {
-                    Util.fatal("arch detect, error code " + result + ": could not read /bin/ls");
-                }
-
-                // Make sure we trim the newline at the end of the previous call's output,
-                // or the 'file' command won't be able to find the returned path
-                String path = realpath.get().trim();
-                result = Util.execForegroundNoLogging(output, "file", path);
+                String path = "/bin/ls";
+                int result = Util.execForegroundNoLogging(commandOutput, "file", "-L", path);
                 if (result != 0) {
                     Util.fatal("arch detect, error code " + result
                             + ": could not read '" + path + "'");
                 }
 
-                if (output.get().contains("64")) arch = OSArch.X86_64;
+                if (commandOutput.get().contains("64")) arch = OSArch.X86_64;
                 else arch = OSArch.X86;
             } catch (IOException e) {
                 arch = null;

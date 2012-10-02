@@ -18,20 +18,24 @@ public class Main {
     static final String PRODUCT_NAME = "AeroFS";
     static final String TITLE = "Downloading " + PRODUCT_NAME + " for initial setup...";
 
+    private static IProgressIndicator getDownloader(String indicatorType)
+    {
+        if (indicatorType.equals("gui")) return new GUIDownloader();
+        if (indicatorType.equals("headless")) return new SilentDownloader();
+        return new CLIDownloader();
+    }
+
     /**
-     * parameters:  ["gui"|"cli"] [url] [dest_path]
+     * parameters:  ["gui"|"cli"|"headless"] [url] [dest_path]
      * exit code: 0 if download succeeds, non-0 otherwise
      */
     public static void main(String[] args) throws Exception
     {
         if (args.length != 3) throw new Exception("bad paramaters");
 
-        boolean gui = args[0].equals("gui");
+        final IProgressIndicator pi = getDownloader(args[0]);
         final String url = args[1];
         final String dest = args[2];
-
-        final IProgressIndicator pi = gui ? new GUIDownloader() :
-            new CLIDownloader();
 
         pi.run(new Runnable() {
             @Override

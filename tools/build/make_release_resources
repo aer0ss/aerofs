@@ -135,7 +135,9 @@ function create_aerofs_installer() {
     local local_BIN="${AEROFS_RELEASE_DIR}/bin"
     local local_AEROFS_DLR_PKG=com/aerofs/downloader
     mkdir -p "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
-    mv "${AEROFS_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
+    # N.B. we use the downloader in both the main aerofs.jar (for recovery
+    # purposes) and the installer .jar (for initial setup).
+    cp "${AEROFS_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
     cp "${CLIENT_RESOURCES_DIR}/linux32/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s32.jar"
     cp "${CLIENT_RESOURCES_DIR}/linux64/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s64.jar"
     tar zcf - -C "$local_DOWNLOADER_TEMP" . | uuencode bin >> "${AEROFS_RELEASE_INST_DIR}/aerofs"
