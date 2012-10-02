@@ -24,6 +24,7 @@ import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
@@ -34,6 +35,7 @@ import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.NativeVersionControl;
@@ -79,7 +81,7 @@ import com.google.inject.Inject;
  *  transmitted to the sync status server and pulling the server for new information (to account
  *  for dropped verkher notifications).
  */
-public class SyncStatusSynchronizer
+public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandler
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
@@ -97,6 +99,7 @@ public class SyncStatusSynchronizer
     private final ExponentialRetry _er;
 
     private final boolean _enable;
+    private boolean _startupDone;
 
     @Inject
     public SyncStatusSynchronizer(CoreQueue q, CoreScheduler sched, TC tc, TransManager tm,
@@ -119,18 +122,20 @@ public class SyncStatusSynchronizer
         _er = new ExponentialRetry(sched);
         _enable = localUser.get().endsWith("@aerofs.com");
 
+        _ssc.setSignInHandler(this);
+
+        // only schedule new scans once the startup sequence is over
         al.addListener_(new IActivityLogListener()
         {
             @Override
             public void activitiesAdded_()
             {
-                scanActivityLog_();
+                if (_startupDone) scanActivityLog_();
             }
         });
 
         // 1) process items in the bootstrap table, if any
         // 2) process items in the activity log left by a previous run
-        // 3) make a first pull
         scheduleStartup();
     }
 
@@ -170,7 +175,7 @@ public class SyncStatusSynchronizer
             {
                 bootstrap_();
                 scanActivityLog_();
-                pullSyncStatus_();
+                _startupDone = true;
                 return null;
             }
         };
@@ -186,14 +191,20 @@ public class SyncStatusSynchronizer
     /**
      * @return a batch of bootstrap SOIDS from the DB
      */
-    private List<SOID> getBootstrapBatch_() throws SQLException
+    private Map<SIndex, Set<OID>> getBootstrapBatch_() throws SQLException
     {
         final int BOOTSTRAP_BATCH_MAX_SIZE = 100;
-        List<SOID> batch = Lists.newArrayList();
+        Map<SIndex, Set<OID>> batch = Maps.newHashMap();
         IDBIterator<SOID> soids = _lsync.getBootstrapSOIDs_();
         try {
             while (soids.next_() && batch.size() < BOOTSTRAP_BATCH_MAX_SIZE) {
-                batch.add(soids.get_());
+                SOID soid = soids.get_();
+                Set<OID> oids = batch.get(soid.sidx());
+                if (oids == null) {
+                    oids = Sets.newHashSet();
+                    batch.put(soid.sidx(), oids);
+                }
+                oids.add(soid.oid());
             }
         } finally {
             soids.close_();
@@ -214,19 +225,19 @@ public class SyncStatusSynchronizer
         if (!_enable) return;
 
         // batch DB reads
-        List<SOID> batch = getBootstrapBatch_();
+        Map<SIndex, Set<OID>> batch = getBootstrapBatch_();
         while (!batch.isEmpty()) {
-            // RPC calls
-            for (SOID soid : batch) {
-                l.info("bootstrap push : " + soid.toString());
-                pushVersionHash_(soid);
-            }
+            // push version hashes to server
+            pushVersionHashBatch_(batch, 0L, 0L);
 
-            // batch DB writes
+            // remove SOIDs whose hashes were pushed from the bootstrap table
             Trans t = _tm.begin_();
             try {
-                for (SOID soid : batch)
-                    _lsync.removeBootsrapSOID_(soid, t);
+                for (Entry<SIndex, Set<OID>> e : batch.entrySet()) {
+                    for (OID oid : e.getValue()) {
+                        _lsync.removeBootsrapSOID_(new SOID(e.getKey(), oid), t);
+                    }
+                }
                 t.commit_();
             } finally {
                 t.end_();
@@ -409,7 +420,8 @@ public class SyncStatusSynchronizer
      * Read a batch of modified SOIDs from the activity log
      * @return the highest push epoch for the batch
      */
-    private long getModifiedObjectBatch_(long pushEpoch, Set<SOID> soids) throws SQLException
+    private long getModifiedObjectBatch_(long pushEpoch, Map<SIndex, Set<OID>> soids)
+            throws SQLException
     {
         final int MODIFIED_OBJECT_BATCH_MAX_SIZE = 100;
         long lastEpoch = pushEpoch;
@@ -418,7 +430,12 @@ public class SyncStatusSynchronizer
         try {
             while (it.next_() && soids.size() < MODIFIED_OBJECT_BATCH_MAX_SIZE) {
                 ModifiedObject mo = it.get_();
-                soids.add(mo._soid);
+                Set<OID> oids = soids.get(mo._soid.sidx());
+                if (oids == null) {
+                    oids = Sets.newHashSet();
+                    soids.put(mo._soid.sidx(), oids);
+                }
+                oids.add(mo._soid.oid());
                 lastEpoch = Math.max(lastEpoch, mo._idx);
             }
         } finally {
@@ -475,14 +492,11 @@ public class SyncStatusSynchronizer
         try {
             // batch DB reads
             long lastIndex = _lsync.getPushEpoch_();
-            Set<SOID> soids = Sets.newHashSet();
+            Map<SIndex, Set<OID>> soids = Maps.newHashMap();
             long nextIndex = getModifiedObjectBatch_(lastIndex, soids);
             while (!soids.isEmpty()) {
-                // RPC calls
-                for (SOID soid : soids) {
-                    l.info("activity push : " + soid.toString());
-                    pushVersionHash_(soid);
-                }
+                // push version hashes to server
+                pushVersionHashBatch_(soids, lastIndex, nextIndex);
 
                 // update push epoch
                 setPushEpoch_(nextIndex);
@@ -510,22 +524,35 @@ public class SyncStatusSynchronizer
     }
 
     /**
-     * Make the actual SetVersionHash call to the sync status server and update
-     * local DB accordingly
+     * Make the actual SetVersionHash call to the sync status server
      */
-    private void pushVersionHash_(SOID soid) throws Exception
+    private void pushVersionHashBatch_(Map<SIndex, Set<OID>> soids, long currentEpoch,
+            long nextEpoch) throws Exception
     {
-        // TODO: batch pushes to reduce communication overhead?
+        int i = 0;
+        for (Entry<SIndex, Set<OID>> e : soids.entrySet()) {
+            SIndex sidx = e.getKey();
 
-        // NOTE: store might have been deleted between the creation of an activity log / bootstrap
-        // entry and a subsequent scan, if so ignore the object.
-        // TODO: markj wants to make this stricter but it requires discussion with weihanw first
-        SID sid = _sidx2sid.getNullable_(soid.sidx());
-        if (sid == null) return;
+            // NOTE: store might have been deleted between the creation of an activity log
+            // (or bootstrap) entry and a subsequent scan, if so ignore the object.
+            // TODO: markj wants to make this stricter, requires discussion with weihanw
+            SID sid = _sidx2sid.getNullable_(sidx);
+            if (sid == null) continue;
 
-        byte[] vh = getVersionHash_(soid);
-        l.warn(soid.toString() + " : " + Util.hexEncode(vh));
-        _ssc.setVersionHash_(sid, soid.oid(), vh);
+            List<ByteString> oids = Lists.newArrayList();
+            List<ByteString> vhs = Lists.newArrayList();
+            for (OID oid : e.getValue()) {
+                byte[] vh = getVersionHash_(new SOID(sidx, oid));
+                l.info(new SOID(sidx, oid).toString() + " : " + Util.hexEncode(vh));
+                oids.add(oid.toPB());
+                vhs.add(ByteString.copyFrom(vh));
+            }
+
+            l.info("vh push: " + sidx + " " + oids.size());
+            // only notify the server of the latest client epoch in the last chunk
+            long clientEpoch = (++i == soids.size() ? nextEpoch : currentEpoch);
+            _ssc.setVersionHash_(sid, oids, vhs, clientEpoch);
+        }
     }
 
     /**
@@ -589,5 +616,30 @@ public class SyncStatusSynchronizer
         }
 
         return md.digest();
+    }
+
+    /**
+     * Rollback push epoch in case of data loss on the server
+     */
+    @Override
+    public void onSignIn_(long clientEpoch) throws Exception
+    {
+        l.info("connected: " + clientEpoch);
+        long pushEpoch = _lsync.getPushEpoch_();
+        if (clientEpoch < pushEpoch) {
+            l.info("rollback from " + pushEpoch);
+            // rollback push epoch to recover from server data loss
+            setPushEpoch_(clientEpoch);
+
+            // TODO: repopulate bootstrap if push epoch cannot be rolled back far enough
+            // NB: only a concern in case of truncated activity log, currently not implemented
+
+            if (_scanInProgress) {
+                l.info("aborting in-progress scan");
+                // abort ongoing activity log scan (exp retry will kick in and on the next
+                // connection the push epoch will match the server epoch)
+                throw new ExAborted("Activity log scan aborted due to push epoch rollback");
+            }
+        }
     }
 }

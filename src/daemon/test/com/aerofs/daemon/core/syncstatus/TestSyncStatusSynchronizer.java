@@ -3,7 +3,9 @@ package com.aerofs.daemon.core.syncstatus;
 import com.aerofs.daemon.core.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -26,6 +28,7 @@ import com.aerofs.daemon.lib.db.IActivityLogDatabase.ModifiedObject;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
@@ -41,10 +44,14 @@ import com.aerofs.proto.Syncstat.GetSyncStatusReply;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
@@ -60,6 +67,9 @@ import com.aerofs.testlib.AbstractTest;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class TestSyncStatusSynchronizer extends AbstractTest
 {
@@ -140,12 +150,46 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         }
     }
 
+    private static class IsSetEqualTo<T> extends ArgumentMatcher<List<T>>
+    {
+        private final Set<T> _expected;
+
+        public IsSetEqualTo(Iterable<T> expected)
+        {
+            _expected = Sets.newHashSet(expected);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean matches(Object argument)
+        {
+            List<T> c = (List<T>)argument;
+            Util.l(this).info("setEq: " + c + " [" + _expected + "]");
+            return _expected.equals(Sets.newHashSet(c));
+        }
+    }
+
+    private static <T> List<T> setEq(Iterable<T> expected)
+    {
+        return argThat(new IsSetEqualTo<T>(expected));
+    }
+
     private void verifySetVersionHashInvocations(SOID... expected) throws Exception
     {
+        Map<SIndex, List<ByteString>> chunks = Maps.newHashMap();
         for (SOID soid : expected) {
-            SID sid = sm.get_(soid.sidx());
-            OID oid = soid.oid();
-            verify(ssc, times(1)).setVersionHash_(eq(sid), eq(oid), any(byte[].class));
+            List<ByteString> l = chunks.get(soid.sidx());
+            if (l == null) {
+                l = Lists.newArrayList();
+                chunks.put(soid.sidx(), l);
+            }
+            l.add(soid.oid().toPB());
+        }
+
+        for (Entry<SIndex, List<ByteString>> e : chunks.entrySet()) {
+            SID sid = sm.get_(e.getKey());
+            verify(ssc, times(1)).setVersionHash_(eq(sid), setEq(e.getValue()),
+                    anyListOf(ByteString.class), anyLong());
         }
     }
 
@@ -375,11 +419,10 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     {
         lsync.setPullEpoch_(42, t);
         createSynchronizer();
-        verify(ssc).getSyncStatus_(42);        // startup
 
         sync.notificationReceived_(PBSyncStatNotification.newBuilder().setSsEpoch(40).build());
 
-        verify(ssc).getSyncStatus_(anyLong());               // no extra pull
+        verify(ssc, never()).getSyncStatus_(anyLong());               // no pull
     }
 
     @Test
@@ -387,11 +430,10 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     {
         lsync.setPullEpoch_(42, t);
         createSynchronizer();
-        verify(ssc).getSyncStatus_(42);        // startup
 
         sync.notificationReceived_(PBSyncStatNotification.newBuilder().setSsEpoch(42).build());
 
-        verify(ssc).getSyncStatus_(anyLong());               // no extra pull
+        verify(ssc, never()).getSyncStatus_(anyLong());               // no pull
     }
 
     @Test
@@ -399,7 +441,6 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     {
         lsync.setPullEpoch_(42, t);
         createSynchronizer();
-        verify(ssc).getSyncStatus_(42);        // startup
 
         // stub RPC call
         GetSyncStatusReply reply = GetSyncStatusReply.newBuilder()
@@ -435,7 +476,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
         // pull
         sync.notificationReceived_(PBSyncStatNotification.newBuilder().setSsEpoch(43).build());
-        verify(ssc, times(2)).getSyncStatus_(anyLong()); // extra pull
+        verify(ssc, times(1)).getSyncStatus_(anyLong()); // extra pull
 
         // check value of epoch after pull
         Assert.assertEquals(43, lsync.getPullEpoch_());
@@ -461,7 +502,6 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     {
         lsync.setPullEpoch_(42, t);
         createSynchronizer();
-        verify(ssc, times(1)).getSyncStatus_(42); // startup
 
         GetSyncStatusReply reply = GetSyncStatusReply.newBuilder()
                 .setServerEpoch(45)
@@ -495,7 +535,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
         // pull
         sync.notificationReceived_(PBSyncStatNotification.newBuilder().setSsEpoch(43).build());
-        verify(ssc, times(3)).getSyncStatus_(anyLong()); // extra pulls
+        verify(ssc, times(2)).getSyncStatus_(anyLong()); // extra pulls
 
         // check value of epoch after pull
         Assert.assertEquals(46, lsync.getPullEpoch_());
@@ -583,7 +623,8 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
 
         // check calls made during bootstrap sequence
-        verify(ssc, never()).setVersionHash_(any(SID.class), any(OID.class), any(byte[].class));
+        verify(ssc, never()).setVersionHash_(
+                any(SID.class), anyListOf(ByteString.class), anyListOf(ByteString.class), anyLong());
 
         // check state of bootstrap table after startup
         assertBootstrapSeqEquals();
@@ -638,7 +679,8 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
 
         // check that no version hash is pushed for invalid SOID
-        verify(ssc, never()).setVersionHash_(any(SID.class), any(OID.class), any(byte[].class));
+        verify(ssc, never()).setVersionHash_(
+                any(SID.class), anyListOf(ByteString.class), anyListOf(ByteString.class), anyLong());
 
         // check that push epoch was increased past invalid SOID
         Assert.assertEquals(1, lsync.getPushEpoch_());
@@ -649,5 +691,35 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     public void shouldPushVersionForNewActivity() throws Exception
     {
         // TODO (huguesb): need more complex mocking of transaction manager...
+    }
+
+    @Test
+    public void shouldIgnoreSignInEpochEqualsPushEpoch() throws Exception
+    {
+        lsync.setPushEpoch_(42, t);
+        createSynchronizer();
+        sync.onSignIn_(42);
+
+        Assert.assertEquals(42, lsync.getPushEpoch_());
+    }
+
+    @Test
+    public void shouldIgnoreSignInEpochGreaterThanPushEpoch() throws Exception
+    {
+        lsync.setPushEpoch_(42, t);
+        createSynchronizer();
+        sync.onSignIn_(256);
+
+        Assert.assertEquals(42, lsync.getPushEpoch_());
+    }
+
+    @Test
+    public void shouldRollbackPushEpochIfSignInEpochLower() throws Exception
+    {
+        lsync.setPushEpoch_(42, t);
+        createSynchronizer();
+        sync.onSignIn_(7);
+
+        Assert.assertEquals(7, lsync.getPushEpoch_());
     }
 }

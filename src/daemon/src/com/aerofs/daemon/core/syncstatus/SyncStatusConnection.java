@@ -11,11 +11,9 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.Param.SyncStat;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.syncstat.SyncStatBlockingClient;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 
@@ -35,9 +33,20 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     private final TC _tc;
     private final CfgLocalUser _user;
     private final SyncStatBlockingClient.Factory _ssf;
+    private ISignInHandler _sih;
 
     private boolean _firstCall;
     private SyncStatBlockingClient _client;
+
+    public interface ISignInHandler
+    {
+        /**
+         * On sign in, the server sends the client epoch associated with the last successful version
+         * hash push. The client should rollback its push epoch if the server epoch indicates data
+         * loss.
+         */
+        void onSignIn_(long clientEpoch) throws Exception;
+    }
 
     @Inject
     SyncStatusConnection(CfgLocalUser user, TC tc, SyncStatBlockingClient.Factory ssf)
@@ -46,6 +55,11 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         _ssf = ssf;
         _user = user;
         _client = null;
+    }
+
+    void setSignInHandler(ISignInHandler sih)
+    {
+        _sih = sih;
     }
 
     /**
@@ -58,7 +72,8 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         if (_client == null) {
             try {
                 _client = _ssf.create(SyncStat.URL, _user.get());
-                _client.signInRemote();
+                long epoch = _client.signInRemote();
+                _sih.onSignIn_(epoch);
                 _firstCall = true;
             } catch (Exception e) {
                 _client = null;
@@ -99,13 +114,14 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     /**
      * Releases the core lock around the setVersionHash RPC call
      */
-    public void setVersionHash_(SID sid, OID oid, byte[] vh) throws Exception
+    public void setVersionHash_(SID sid, List<ByteString> oids, List<ByteString> vhs,
+            long clientEpoch) throws Exception
     {
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpush");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("syncstatpush");
-            setVersionHash(sid, oid, vh);
+            setVersionHash(sid, oids, vhs, clientEpoch);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
@@ -117,19 +133,12 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      *
      * NOTE: should not be called with the core lock held
      */
-    public synchronized void setVersionHash(SID sid, OID oid, byte[] vh) throws Exception
+    public synchronized void setVersionHash(SID sid, List<ByteString> oids, List<ByteString> vhs,
+            long clientEpoch) throws Exception
     {
         ensureConnected_();
         try {
-            // TODO (MP) need to pass in the client epoch and can batch by sid.
-
-            List<ByteString> oids = Lists.newLinkedList();
-            oids.add(oid.toPB());
-
-            List<ByteString> vhs = Lists.newLinkedList();
-            vhs.add(ByteString.copyFrom(vh));
-
-            _client.setVersionHash(sid.toPB(), oids, vhs, 0L);
+            _client.setVersionHash(sid.toPB(), oids, vhs, clientEpoch);
             notifyOnFirstSuccessfulCall_();
         } catch (Exception e) {
             reset_();

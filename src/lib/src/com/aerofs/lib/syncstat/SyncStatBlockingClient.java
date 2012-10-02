@@ -36,12 +36,12 @@ public class SyncStatBlockingClient extends SyncStatServiceBlockingStub {
     /**
      * Sign into the Sync Status server with the config scryted credentials
      */
-    public void signInRemote() throws Exception
+    public long signInRemote() throws Exception
     {
         try {
-            super.signIn(_user,
+            return super.signIn(_user,
                     ByteString.copyFrom(Cfg.scrypted()),
-                    ByteString.copyFrom(Cfg.did().getBytes()));
+                    ByteString.copyFrom(Cfg.did().getBytes())).getClientEpoch();
         } catch (ExBadCredential e) {
             l.warn("Signing into sync status server failed: " + Util.e(e));
             throw e;
