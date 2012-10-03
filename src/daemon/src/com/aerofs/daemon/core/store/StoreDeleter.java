@@ -5,6 +5,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -63,7 +66,7 @@ public class StoreDeleter
      * it. It's used to locate the physical files.
      */
     public void deleteRecursively_(SIndex sidx, Path pathOld, PhysicalOp op, Trans t)
-            throws Exception
+            throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
         // delete child stores. go through the store list before actual
         // operations to avoid concurrent modification exceptions
@@ -73,10 +76,10 @@ public class StoreDeleter
 
         for (SIndex sidxChild : _ss.getChildren_(sidx)) {
             // figure out the old path for the child store
-            if (pathNew == null) pathNew = _ds.resolveNullable_(new SOID(sidx, OID.ROOT));
+            if (pathNew == null) pathNew = _ds.resolve_(new SOID(sidx, OID.ROOT));
 
             OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidxChild));
-            Path pathNewChild = _ds.resolveNullable_(new SOID(sidx, oidAnchor));
+            Path pathNewChild = _ds.resolve_(new SOID(sidx, oidAnchor));
             Path pathOldChild = pathOld;
             for (int i = pathNew.elements().length; i < pathNewChild.elements().length; i++) {
                 // creating a new Path object on every iteration is a bit inefficient...
@@ -106,12 +109,13 @@ public class StoreDeleter
     }
 
     private void deletePhysicalObjectsRecursively_(final SOID soidRoot, Path pathOldRoot,
-            final PhysicalOp op, final Trans t) throws Exception
+            final PhysicalOp op, final Trans t)
+            throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         _ds.walk_(soidRoot, pathOldRoot, new IObjectWalker<Path>()
         {
             @Override
-            public Path prefixWalk_(Path pathOldParent, OA oa) throws Exception
+            public Path prefixWalk_(Path pathOldParent, OA oa)
             {
                 if (oa.type() != Type.DIR) {
                     return null;
@@ -123,7 +127,8 @@ public class StoreDeleter
             }
 
             @Override
-            public void postfixWalk_(Path pathOldParent, OA oa) throws Exception
+            public void postfixWalk_(Path pathOldParent, OA oa)
+                    throws IOException, SQLException
             {
                 Path path = pathOldParent.append(oa.name());
                 switch (oa.type()) {

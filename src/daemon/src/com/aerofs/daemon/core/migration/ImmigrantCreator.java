@@ -9,9 +9,16 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
 
@@ -53,13 +60,15 @@ public class ImmigrantCreator
      */
     public SOID createImmigrantRecursively_(final SOID soidFromRoot, SOID soidToRootParent,
             final String toRootName, final PhysicalOp op, final Trans t)
-            throws Exception
+            throws ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir
     {
         assert !soidFromRoot.sidx().equals(soidToRootParent.sidx());
 
         _ds.walk_(soidFromRoot, soidToRootParent, new IObjectWalker<SOID>() {
             @Override
-            public SOID prefixWalk_(SOID soidToParent, OA oaFrom) throws Exception
+            public SOID prefixWalk_(SOID soidToParent, OA oaFrom)
+                    throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
+                    ExStreamInvalid
             {
                 SOID soidTo = new SOID(soidToParent.sidx(), oaFrom.soid().oid());
                 String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
@@ -88,7 +97,9 @@ public class ImmigrantCreator
             SID _sid;
 
             @Override
-            public void postfixWalk_(SOID soidToParent, OA oaFrom) throws Exception
+            public void postfixWalk_(SOID soidToParent, OA oaFrom)
+                    throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound,
+                    ExStreamInvalid
             {
                 if (oaFrom.isDir()) {
                     // directories aren't migrated. so delete them manually

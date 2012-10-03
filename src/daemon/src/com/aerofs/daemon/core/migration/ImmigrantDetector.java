@@ -6,6 +6,7 @@ import java.util.Map.Entry;
 
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -74,14 +75,14 @@ public class ImmigrantDetector
         _sidx2sid = sidx2sid;
     }
 
-    private void immigrateFile_(OA oaFrom, OA oaTo, PhysicalOp op, Trans t) throws Exception
+    private void immigrateFile_(OA oaFrom, OA oaTo, PhysicalOp op, Trans t)
+            throws SQLException, IOException, ExNotFound
     {
         assert oaFrom.soid().oid().equals(oaTo.soid().oid());
         assert oaFrom.isFile() && oaTo.isFile();
         assert !oaFrom.isExpelled() && !oaTo.isExpelled();
 
-        Path pathTo = _ds.resolveNullable_(oaTo.soid());
-        assert pathTo != null;
+        Path pathTo = _ds.resolve_(oaTo.soid());
 
         SOCID socidFrom = new SOCID(oaFrom.soid(), CID.CONTENT);
         SOCID socidTo = new SOCID(oaTo.soid(), CID.CONTENT);
@@ -167,7 +168,7 @@ public class ImmigrantDetector
      * @return true if immigration has been performed
      */
     public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
-            throws Exception
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid
     {
         // assert for assumption 1) above
         assert !oaTo.isExpelled();

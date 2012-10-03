@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.expel;
 
 import static com.aerofs.daemon.core.ds.OA.*;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashSet;
 
@@ -16,11 +17,14 @@ import com.aerofs.daemon.lib.db.IExpulsionDatabase;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Util;
 import static com.aerofs.lib.Util.set;
 import static com.aerofs.lib.Util.unset;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
@@ -101,8 +105,8 @@ public class Expulsion
      * name changing alone doesn't affect expulsion state, the method should still be called to
      * rename physical objects. See {@Link IAdjuster} for operational details and parameter list.
      */
-    public void objectMoved_(boolean emigrate, PhysicalOp op, SOID soid, Path pathOld,
-            Trans t) throws Exception
+    public void objectMoved_(boolean emigrate, PhysicalOp op, SOID soid, Path pathOld, Trans t)
+            throws SQLException, ExNotFound, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         OA oa = _ds.getOA_(soid);
         int flagsOld = oa.flags();
@@ -128,7 +132,8 @@ public class Expulsion
      * The object has to be a folder or an anchor, otherwise {@code ExNotDir} will be thrown.
      * The method is idempotent if called multiple times with the same parameters.
      */
-    public void setExpelled_(boolean expelled, SOID soid, Trans t) throws Exception
+    public void setExpelled_(boolean expelled, SOID soid, Trans t)
+            throws SQLException, ExNotDir, ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist
     {
         OA oa = _ds.getOA_(soid);
 

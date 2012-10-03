@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.ds;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.List;
@@ -17,6 +18,7 @@ import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.id.*;
@@ -468,20 +470,24 @@ public class DirectoryService implements IDumpStatMisc
          * cookieFromParent}. Set to null to avoid traversing the children if the current node is a
          * directory or anchor.
          */
-        @Nullable T prefixWalk_(T cookieFromParent, OA oa) throws Exception;
+        @Nullable T prefixWalk_(T cookieFromParent, OA oa)
+                throws IOException, SQLException, ExStreamInvalid, ExNotFound, ExNotDir,
+                ExAlreadyExist;
 
         /**
          * This method is called on each object that is traversed. If the object is a directory or
          * anchor. This method is called _after_ traversing the children. If the object is a file,
          * the method is called immediately after prefixWalk_().
          *
+         * @param cookieFromParent the value returned from the {@code prefixWalk_()} on the parent
+         * of the current object.
          * @param oa the OA of the object currently being traversed. It may not reflect the current
          * state of object attributes if prefixWalk() or walking on siblings or children updates the
          * attributes.
-         * @param cookieFromParent the value returned from the {@code prefixWalk_()} on the parent
-         * of the current object.
          */
-        void postfixWalk_(T cookieFromParent, OA oa) throws Exception;
+        void postfixWalk_(T cookieFromParent, OA oa)
+                throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound,
+                ExStreamInvalid;
 
     }
     /**
@@ -490,16 +496,14 @@ public class DirectoryService implements IDumpStatMisc
     public static abstract class ObjectWalkerAdapter<T> implements IObjectWalker<T>
     {
         @Override
-        public void postfixWalk_(T cookeFromParent, OA oa) throws Exception
-        {
-        }
+        public void postfixWalk_(T cookeFromParent, OA oa) { }
     }
 
     /**
      * Traverse in DFS the directory tree rooted at {@code soid}.
      */
     public <T> void walk_(SOID soid, @Nullable T cookieFromParent, IObjectWalker<T> w)
-        throws Exception
+            throws ExNotFound, SQLException, IOException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         OA oa = getOAThrows_(soid);
 
