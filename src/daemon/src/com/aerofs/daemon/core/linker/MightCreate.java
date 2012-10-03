@@ -6,6 +6,11 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.aerofs.lib.PathObfuscator.*;
+
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExExpelled;
+import com.aerofs.lib.ex.ExNotDir;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.VersionUpdater;
@@ -320,7 +325,8 @@ public class MightCreate
      * @return whether a new logical object corresponding to the physical object is created
      */
     private boolean createLogicalObject_(PathCombo pcPhysical, boolean dir, Trans t)
-            throws Exception
+            throws ExNotFound, SQLException, ExExpelled, IOException, ExAlreadyExist, ExNotDir,
+            ExStreamInvalid
     {
         // create the object
         SOID soidParent = _ds.resolveThrows_(pcPhysical._path.removeLast());

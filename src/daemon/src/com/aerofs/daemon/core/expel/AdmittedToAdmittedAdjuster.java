@@ -38,7 +38,7 @@ class AdmittedToAdmittedAdjuster implements IExpulsionAdjuster
 
         _ds.setOAFlags_(soid, flags, t);
 
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         if (oa.isFile()) {
             for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
                 SOKID sokid = new SOKID(soid, en.getKey());

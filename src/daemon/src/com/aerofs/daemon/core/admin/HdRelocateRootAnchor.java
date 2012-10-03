@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Arrays;
 
 public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
@@ -173,7 +174,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     /**
      * oldParent has the File.separator affixed to the end of the path
      */
-    private @Nullable String _prefixWalk(String oldParent, OA oa) throws Exception
+    private @Nullable String _prefixWalk(String oldParent, OA oa)
     {
         if (oa.isExpelled()) {
             assert oa.fid() == null;
@@ -207,13 +208,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
         {
             @Override
-            public String prefixWalk_(String oldParent, OA oa) throws Exception
+            public String prefixWalk_(String oldParent, OA oa)
             {
                 return _prefixWalk(oldParent, oa);
             }
 
             @Override
-            public void postfixWalk_(String oldParent, OA oa) throws Exception
+            public void postfixWalk_(String oldParent, OA oa)
+                    throws IOException, SQLException
             {
                 // Root objects have null FIDs
                 if (!oa.soid().oid().isRoot() && oa.fid() != null) {
@@ -234,14 +236,15 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
         {
             @Override
-            public String prefixWalk_(String oldParent, OA oa) throws Exception
+            public String prefixWalk_(String oldParent, OA oa)
             {
                 return _prefixWalk(oldParent, oa);
             }
 
             @Override
-            public void postfixWalk_(String oldParent, OA oa) throws Exception
-            {
+            public void postfixWalk_(String oldParent, OA oa)
+                    throws IOException, SQLException
+{
                 if (!oa.soid().oid().isRoot() && oa.fid() != null) {
                     assert oa.fid().getBytes().length == _dr.getFIDLength() + 1;
 

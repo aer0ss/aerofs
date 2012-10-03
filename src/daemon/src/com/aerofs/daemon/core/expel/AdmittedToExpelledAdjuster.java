@@ -9,9 +9,13 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.StoreDeleter;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SID;
@@ -22,6 +26,8 @@ import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 {
@@ -47,11 +53,14 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
 
     @Override
     public void adjust_(final boolean emigrate, final PhysicalOp op, final SOID soidRoot, Path pOld,
-            final int flagsRoot, final Trans t) throws Exception
+            final int flagsRoot, final Trans t)
+            throws IOException, ExNotFound, SQLException, ExNotDir, ExStreamInvalid, ExAlreadyExist
     {
         _ds.walk_(soidRoot, pOld, new IObjectWalker<Path>() {
             @Override
-            public @Nullable Path prefixWalk_(Path pOldParent, OA oa) throws Exception
+            public @Nullable Path prefixWalk_(Path pOldParent, OA oa)
+                    throws IOException, SQLException, ExStreamInvalid, ExNotFound, ExNotDir,
+                    ExAlreadyExist
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
                 boolean oldExpelled = oa.isExpelled();
@@ -104,7 +113,8 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
             }
 
             @Override
-            public void postfixWalk_(Path pOldParent, OA oa) throws Exception
+            public void postfixWalk_(Path pOldParent, OA oa)
+                    throws IOException, SQLException
             {
                 boolean isRoot = soidRoot.equals(oa.soid());
 

@@ -9,11 +9,18 @@ import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
@@ -35,14 +42,16 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
     @Override
     public void adjust_(boolean emigrate, final PhysicalOp op, final SOID soidRoot, Path pOld,
             final int flagsRoot, final Trans t)
-            throws Exception
+            throws IOException, ExNotFound, SQLException, ExStreamInvalid, ExAlreadyExist,
+            ExNotDir
     {
         assert !emigrate;
 
         _ds.walk_(soidRoot, null, new ObjectWalkerAdapter<SOID>() {
             @Override
-            public SOID prefixWalk_(SOID unused, OA oa) throws Exception
-            {
+            public SOID prefixWalk_(SOID unused, OA oa)
+                    throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
+                    ExStreamInvalid {
                 boolean isRoot = soidRoot.equals(oa.soid());
 
                 // set the flags _before_ physically creating folders, since physical file

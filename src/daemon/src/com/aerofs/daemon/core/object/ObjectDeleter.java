@@ -3,11 +3,17 @@ package com.aerofs.daemon.core.object;
 import com.aerofs.daemon.core.migration.EmigrantCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import javax.annotation.Nullable;
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class ObjectDeleter
 {
@@ -28,8 +34,8 @@ public class ObjectDeleter
      * to notice the emigration of the children when downloading the folder.
      * See comment (A) in that method.
      */
-    public void delete_(SOID soid, PhysicalOp op, @Nullable SID sidEmigrantTarget,
-            Trans t) throws Exception
+    public void delete_(SOID soid, PhysicalOp op, @Nullable SID sidEmigrantTarget, Trans t)
+            throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound, ExStreamInvalid
     {
         String name = EmigrantCreator.getDeletedObjectName_(soid, sidEmigrantTarget);
         _om.moveInSameStore_(soid, OID.TRASH, name, op, sidEmigrantTarget != null, true, t);

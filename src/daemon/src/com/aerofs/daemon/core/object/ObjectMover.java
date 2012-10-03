@@ -7,6 +7,10 @@ import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOCKID;
@@ -14,6 +18,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 
 import javax.inject.Inject;
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class ObjectMover
 {
@@ -35,7 +41,7 @@ public class ObjectMover
       */
     public void moveInSameStore_(final SOID soid, OID oidParent, String name, PhysicalOp op,
             boolean emigrate, boolean updateVersion, Trans t)
-            throws Exception
+            throws SQLException, ExAlreadyExist, ExNotDir, IOException, ExNotFound, ExStreamInvalid
     {
         OA oaOld = _ds.getOANullable_(soid);
         OA oaParent = _ds.getOANullable_(new SOID(soid.sidx(), oidParent));

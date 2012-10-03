@@ -9,9 +9,16 @@ import com.aerofs.daemon.core.migration.ImmigrantDetector;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.google.inject.Inject;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.ds.OA.*;
 
@@ -39,7 +46,7 @@ public class ObjectCreator
      * linker-initiated.
      */
     public SOID create_(Type type, SOID soidParent, String name, PhysicalOp op, Trans t)
-            throws Exception
+            throws IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir, ExStreamInvalid
     {
         SOID soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
         createMeta_(type, soid, soidParent.oid(), name, 0, op, false, true, t);
@@ -63,7 +70,7 @@ public class ObjectCreator
      */
     public void createMeta_(OA.Type type, final SOID soid, OID oidParent, String name, int flags,
             PhysicalOp op, boolean detectImmigration, boolean updateVersion, Trans t)
-            throws Exception
+            throws ExNotFound, SQLException, ExAlreadyExist, IOException, ExNotDir, ExStreamInvalid
     {
         // the caller mustn't set these flags
         assert !Util.test(flags, FLAG_EXPELLED_ORG_OR_INH);
