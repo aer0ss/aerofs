@@ -20,7 +20,6 @@ node "z.arrowfs.org" inherits default {
   $fwknop_hostnames = [
     "sp.aerofs.com",
     "x.aerofs.com",
-    "x1.aerofs.com",
     "verkehr.aerofs.com",
   ]
 
@@ -43,8 +42,6 @@ node "z.arrowfs.org" inherits default {
   pagerduty::probe::base{[
     "sv df90 pagerduty@sv.aerofs.com 22 /dev/xvda1",
     "verkehr df90 pagerduty@verkehr.aerofs.com 22 /dev/xvda1",
-    "alpha df90 pagerduty@x1.aerofs.com 22 /dev/sda1",
-    "alpha df90 pagerduty@x1.aerofs.com 22 /dev/sdf1",
     "x df90 pagerduty@x.aerofs.com 22 /dev/xvda"
   ]:
     hour => "14",
