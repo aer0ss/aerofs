@@ -122,12 +122,13 @@ public class TestStoreDeleter extends AbstractTest
 
         when(ds.hasOA_(soidAnchorChild)).thenReturn(true);
         when(ds.hasOA_(soidAnchorGrandChild)).thenReturn(true);
-        when(ds.resolveNullable_(new SOID(sidxRoot, OID.ROOT))).thenReturn(pNewRoot);
-        when(ds.resolveNullable_(new SOID(sidxChild, OID.ROOT))).thenReturn(pNewChild);
-        when(ds.resolveNullable_(new SOID(sidxGrandChild, OID.ROOT))).thenReturn(pNewGrandChild);
-        when(ds.resolveNullable_(new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild))))
+
+        when(ds.resolve_(new SOID(sidxRoot, OID.ROOT))).thenReturn(pNewRoot);
+        when(ds.resolve_(new SOID(sidxChild, OID.ROOT))).thenReturn(pNewChild);
+        when(ds.resolve_(new SOID(sidxGrandChild, OID.ROOT))).thenReturn(pNewGrandChild);
+        when(ds.resolve_(new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild))))
                 .thenReturn(pNewChild);
-        when(ds.resolveNullable_(new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild))))
+        when(ds.resolve_(new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild))))
                 .thenReturn(pNewGrandChild);
 
         HashSet<OID> children = new HashSet<OID>();
