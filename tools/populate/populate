@@ -6,13 +6,17 @@
 set -e
 
 if [ x"$1" == x ]; then
-    echo "usage: $0 <approot> <resource/client>"
+    echo "usage: $0 <approot> <resource/client> <mode=STAGING>"
     echo "    <approot>: the approot folder path which doesn't need to pre-exist,"
     echo "    <resource/client> is the resource/client folder path which must exist."
+    echo "    <mode> the mode specifies which cacert.pem file to use and whether or not"
+    echo "           APPROOT/stg should be created. It defaults to STAGING."
     exit 1
 fi
 APPROOT="$1"
 ASIS="$2"
+MODE="${3:-'STAGING'}"
+
 VERSION_FILE=version
 
 PPWD=`dirname $0`
@@ -25,11 +29,20 @@ cp -R "$ASIS"/common/* "$APPROOT"/
 cp -R "$ASIS"/s3/lib/* "$APPROOT"/lib/
 cp -R "$ASIS"/$OS/* "$APPROOT"/
 
-# Set-up a staging environment
-touch "$APPROOT"/stg
+if [ "$MODE" == "CI" ]; then
+    # Set-up a CI environment
+    rm "$APPROOT"/cacert-staging.pem
+    mv "$APPROOT"/cacert-ci.pem "$APPROOT"/cacert.pem
+else
+    # Set-up a staging environment
+    touch "$APPROOT"/stg
+    rm "$APPROOT"/cacert-ci.pem
+    mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
+fi
+
+# Common to both staging and CI
 echo "100.0.0" > "$APPROOT"/$VERSION_FILE
 rm "$APPROOT"/cacert-prod.pem
-mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
 
 # Add the run script.
 cp "$PPWD/os" "$PPWD/run" "$APPROOT"/
