@@ -28,6 +28,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.Util;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /** Thread Control */
@@ -43,7 +44,8 @@ public class TC implements IDumpStatMisc
     }
 
     // thread control block
-    public class TCB {
+    public class TCB
+    {
         private final Condition _cv = _l.newProfiledCondition();
 
         private boolean _running = true;
@@ -291,11 +293,11 @@ public class TC implements IDumpStatMisc
     }
 
 
-    private void prePause_(TCB tcb, Token tk, String reason) throws ExAborted
+    private void prePause_(TCB tcb, Token tk, @Nonnull String reason) throws ExAborted
     {
         assert _l.isHeldByCurrentThread();
         assert _paused.size() < _total;
-        assert reason != null && !reason.isEmpty();
+        assert !reason.isEmpty();
 
         // there mustn't be active transactions or iterators before going to
         // sleep
@@ -322,7 +324,9 @@ public class TC implements IDumpStatMisc
         }
     }
 
-    // return false if timeout occurs
+    /**
+     * @return false if timeout occurs
+     */
     private boolean park_(TCB tcb, Cat cat, long timeout)
     {
         l.info("pause " + tcb._prio + '@' + cat + ' '
@@ -379,7 +383,8 @@ public class TC implements IDumpStatMisc
         TCB tcb = tcb();
         prePause_(tcb, tk, reason);
         try {
-            Util.verify(park_(tcb, tk.getCat(), FOREVER));
+            boolean taskCompleted = park_(tcb, tk.getCat(), FOREVER);
+            assert taskCompleted : tcb + " " + tk.getCat();
         } finally {
             postPause_(tcb);
         }
@@ -389,9 +394,9 @@ public class TC implements IDumpStatMisc
     {
         TCB tcb = tcb();
         prePause_(tcb, tk, reason);
-        boolean timedout;
+        boolean taskCompleted;
         try {
-            timedout = park_(tcb, tk.getCat(), timeout);
+            taskCompleted = park_(tcb, tk.getCat(), timeout);
         } finally {
             // abortion checking must precede timeout checking, since in some use
             // cases the application depends on the fact that abort signals can be
@@ -399,7 +404,7 @@ public class TC implements IDumpStatMisc
             postPause_(tcb);
         }
 
-        if (!timedout) {
+        if (!taskCompleted) {
             l.info("timed out");
             throw new ExTimeout();
         }
