@@ -239,8 +239,9 @@ public class ReceiveAndApplyUpdate
     /**
      * @return null if not to apply the update
      */
-    public CausalityResult computeCausalityForContent_(SOID soid,
-        Version vRemote, DigestedMessage msg, Token tk) throws Exception
+    public @Nullable CausalityResult computeCausalityForContent_(SOID soid,
+            Version vRemote, DigestedMessage msg, Token tk)
+            throws Exception
     {
         Version vAddLocal = new Version().add_(vRemote);
         KIndex kidxApply = null;
@@ -498,8 +499,8 @@ public class ReceiveAndApplyUpdate
         l.info("true name conflict");
 
         // Resolve this name conflict by aliasing only if
-        // 1) the object is not present locally,
-        // 2) the object is not an anchor,
+        // 1) the remote object is not present locally,
+        // 2) the remote object is not an anchor,
         // and 3) if the local and remote types of the object are equivalent
         if (!wasPresent && meta.getType() != PBMeta.Type.ANCHOR && typeRemote == oaLocal.type()) {
             // Resolving name conflict by aliasing the oids.

@@ -347,6 +347,16 @@ public class Download
         try {
             _f._dls.downloadSync_(dependency, to, _tk);
         } catch (Exception e2) {
+            // TODO (MJ) This is dangerous for name conflict resolution? I realize that
+            // on *any* exception here, if ignoreError is true (as it is for a name conflict),
+            // we will record that data has been requested and n'acked for e._ocid.
+            // Then when we loop around and try to download this object again, we will take
+            // the name-conflict resolution path in ReceiveAndApplyUpdate.resolveNameConflict_.
+            // In many cases this could be the aliasing code path
+            // but it might be undesired: what if the remote peer actually renamed the conflicted
+            // file, but threw an exception for some reason instead of sending the file.
+            // Instead we should catch ExNoComponentWithSpecifiedVersion, and only add the OCID to
+            // _requested in that case.
             if (e._ignoreError) l.info("dl dependency error, ignored: " + Util.e(e2));
             else throw e2;
         }
