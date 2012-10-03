@@ -18,7 +18,7 @@ class OSXUpdater extends Updater
 
     OSXUpdater()
     {
-        super("aerofs-osx-%s.zip", null);
+        super("aerofs-osx-%s.zip");
     }
 
     @Override

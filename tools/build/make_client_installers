@@ -55,6 +55,8 @@ function upload_release_files_to_release_server() {
     # NOTE: Instead of using rsync to get these files to the release server,
     # we zip then unzip because the Windows patch script requires a history of
     # zip files on the server to process diffs.
+    # NOTE (GS): We no longer do patch updates on Windows, so this isn't required
+    # anymore. We may switch to rsync.
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         rm -r "$RELEASE_UNPACK_DIR" 2> /dev/null || true
         mkdir -p "$RELEASE_UNPACK_DIR"
@@ -193,13 +195,12 @@ function make_linux_installers() {
 
 ###############################################################################
 #
-# Creates the Windows Installer and Patches on the release server
-# and moves them to the download directory. Uploads executables to Kaspersky
-# when deploying PROD mode.
+# Creates the Windows installer on the release server and moves it to the
+# download directory. Uploads installer to Kaspersky when deploying PROD mode.
 #
 ###############################################################################
 function make_windows_installers() {
-    echo ">> make windows exe and patches on release server"
+    echo ">> make windows installer on release server"
 
     local local_VERSIONED_INSTALLER_DIR="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
     readonly local_VERSIONED_INSTALLER_DIR
@@ -207,19 +208,19 @@ function make_windows_installers() {
     # deploy NSIS scripts
     rsync --archive --compress --rsh kssh "${LOCAL_NSIS_DIR}/" $RELEASE_SERVER_LOGIN:"$RELEASE_NSIS_DIR"
 
-    # now make the installer and the patches
+    # now make the installer
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        rm -rf "${WINDOWS_PACKAGER_DIR}/aerofs"*
+        rm -rf "${RELEASE_NSIS_DIR}/aerofs"*
 
-        # Copy the aerofs release directory to the NSIS packager directory
-        cp -r "${RELEASE_UNPACK_DIR}/aerofs" "${WINDOWS_PACKAGER_DIR}/"
+        # Copy the aerofs release directory to the NSIS directory
+        cp -r "${RELEASE_UNPACK_DIR}/aerofs" "${RELEASE_NSIS_DIR}/"
 
         # Copy the windows specific files to the aerofs directory
-        cp -r "${RELEASE_UNPACK_DIR}/aerofs.win"/* "${WINDOWS_PACKAGER_DIR}/aerofs"
+        cp -r "${RELEASE_UNPACK_DIR}/aerofs.win"/* "${RELEASE_NSIS_DIR}/aerofs"
 
-        chmod -R a+rx "${WINDOWS_PACKAGER_DIR}/aerofs"
+        chmod -R a+rx "${RELEASE_NSIS_DIR}/aerofs"
 
-        makensis -V1 -DAEROFS_SETUP_FOLDER="$local_VERSIONED_INSTALLER_DIR" -DAEROFS_VERSION="$RELEASE_VERSION" "${WINDOWS_PACKAGER_DIR}/setup.nsi"
+        makensis -V1 -DAEROFS_SETUP_FOLDER="$local_VERSIONED_INSTALLER_DIR" -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
 
         export PASSPHRASE="$PASSPHRASE"
         printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \
@@ -234,14 +235,10 @@ function make_windows_installers() {
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus
         if [ "$( is_prod )" ]; then
-            lftp -e 'mirror -R $WINDOWS_PACKAGER_DIR/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+            lftp -e 'mirror -R $RELEASE_NSIS_DIR/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
             lftp -e 'put $local_VERSIONED_INSTALLER_DIR/AeroFSInstall.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
         fi
 
-        echo ">> creating windows patches"
-        bash "${WINDOWS_PATCHER_DIR}/createPatches.sh" "$RELEASE_FILES_DIR" "$WINDOWS_PATCHER_DIR" "$RELEASE_VERSION" "$LOWERCASE_MODE"
-        mv "${WINDOWS_PATCHER_DIR}/patch-"* "$local_VERSIONED_INSTALLER_DIR" || true
-        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/patch-"* || true
 ENDCMDS
 }
 

@@ -13,7 +13,7 @@ class WindowsUpdater extends Updater
 {
     WindowsUpdater()
     {
-        super("AeroFSInstall-%s.exe", "patch-" + Cfg.ver() + "-%s.exe");
+        super("AeroFSInstall-%s.exe");
     }
 
     @Override
@@ -36,7 +36,7 @@ class WindowsUpdater extends Updater
                     }
                 });
 
-                Util.execBackground(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installerFilename));
+                Util.execBackground(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installerFilename), "/S");
                 System.exit(0);
             } catch (IOException e) {
                 l.warn("update: " + e);

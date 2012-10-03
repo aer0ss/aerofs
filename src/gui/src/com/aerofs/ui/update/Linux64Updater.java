@@ -4,7 +4,7 @@ class Linux64Updater extends AbstractLinuxUpdater
 {
     Linux64Updater()
     {
-        super("aerofs-%s-x86_64.tgz", null);
+        super("aerofs-%s-x86_64.tgz");
     }
 
     @Override

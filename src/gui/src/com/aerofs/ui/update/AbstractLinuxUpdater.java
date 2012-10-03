@@ -21,9 +21,9 @@ abstract class AbstractLinuxUpdater extends Updater
 {
     private static final InjectableFile.Factory s_factFile = new InjectableFile.Factory();
 
-    AbstractLinuxUpdater(String installerFilenameFormat, @Nullable String patchFilenameFormat)
+    AbstractLinuxUpdater(String installerFilenameFormat)
     {
-        super(installerFilenameFormat, patchFilenameFormat);
+        super(installerFilenameFormat);
     }
 
     protected final void execUpdateCommon(String instfile, String newVer, boolean hasPermissions)

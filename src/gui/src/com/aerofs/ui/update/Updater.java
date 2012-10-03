@@ -53,7 +53,7 @@ public abstract class Updater
 {
     protected static final Logger l = Util.l(Updater.class);
 
-    private String _installationFilename = ""; // can be either the patch or install file
+    private String _installationFilename = "";
 
     private boolean _ongoing = false;
     private boolean _confirmingUpdate;
@@ -63,7 +63,6 @@ public abstract class Updater
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     private final String _installerFilenameFormat;
-    private final String _patchFilenameFormat;
     private Status _status = Status.NONE;
 
     public static Updater getInstance_()
@@ -88,19 +87,16 @@ public abstract class Updater
     /**
      * @param installerFilenameFormat printf-style format of the installer filename; has a single
      * string parameter for the version
-     * @param patchFilenameFormat printf-style format of the patch filename; has a single
-     * parameter for the version; null if patching is not supported for this OS
      */
-    protected Updater(String installerFilenameFormat, @Nullable String patchFilenameFormat)
+    protected Updater(String installerFilenameFormat)
     {
         this._installerFilenameFormat = installerFilenameFormat;
-        this._patchFilenameFormat = patchFilenameFormat;
     }
 
     /**
      * Update AeroFS
      *
-     * @param installerFilename filename of the installer or patch executable to use in the update
+     * @param installerFilename filename of the installer to use in the update
      * @param newVersion version number of the update
      * @param hasPermissions if AeroFS has permissions to make changes to the executable and other
      * AeroFS components
@@ -163,31 +159,14 @@ public abstract class Updater
 
     private boolean doesUpdateFileExist(String wantedVersion)
     {
-        boolean fileExists = false;
-        String installationFilename; // filename of the available installation file
-
-        // start off by checking if the patch is available
-
-        installationFilename = createFilename(_patchFilenameFormat, wantedVersion);
-        if (installationFilename != null &&
-                new File(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installationFilename)).exists()) {
-            fileExists = true; // the patch exists; it takes priority and should be used
-        } else {
-
-            // no patch exists; try seeing if an installer exists
-
-            installationFilename = createFilename(_installerFilenameFormat, wantedVersion);
-            File f = new File(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installationFilename));
-            if (f.exists()) {
-                fileExists = true; // an installer exists; this should be used
-            }
-        }
-
-        if (fileExists) {
+        String installationFilename = createFilename(_installerFilenameFormat, wantedVersion);
+        File f = new File(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installationFilename));
+        if (f.exists()) {
             _installationFilename = installationFilename;
+            return true;
         }
 
-        return fileExists;
+        return false;
     }
 
     /**
@@ -349,7 +328,7 @@ public abstract class Updater
                 // be cleaned up (or change installation filename to be the correct path)
             }
 
-            // instfile should be file name only, to be passed to Updater.
+            // _installationFilename should be file name only, to be passed to Updater.
             _installationFilename = filename;
 
         } catch (Exception e) {
@@ -373,7 +352,7 @@ public abstract class Updater
      * certificate, we need to work around for cert verification to pass.
      *
      * HOWEVER, an attacker can still hijack the DNS and redirect the URLs to their own AWS servers.
-     * The ultimate solution is to sign installer / patcher binaries.
+     * The ultimate solution is to sign installer binaries.
      *
      * N.B. This method must be identical to the same method in downloader.Main
      */
@@ -469,24 +448,16 @@ public abstract class Updater
             }
 
             if (!doesUpdateFileExist(verServer)) {
-                // no update (either patch or installation) is available locally
+                // no update is available locally
 
                 // remove the update directory if it exists
                 _factFile.create(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR))
                          .deleteOrThrowIfExistRecursively();
 
-                // start by trying to download patch
-                String installationFilename = createFilename(_patchFilenameFormat, verServer);
-
-                // if no patch exists or we can't download it, try to download the installer
-                // IMPORTANT: _installationFilename is set by download()
-                if (installationFilename == null ||
-                        !downloadUpdate(installationFilename, verServer)) {
-                    l.info("patch unavailable - downloading installer");
-                    installationFilename = createFilename(_installerFilenameFormat, verServer);
-                    if (!downloadUpdate(installationFilename, verServer)) {
-                        throw new Exception("cannot download installer");
-                    }
+                // IMPORTANT: _installationFilename is set by checkForDownloadedUpdate()
+                String installationFilename = createFilename(_installerFilenameFormat, verServer);
+                if (!downloadUpdate(installationFilename, verServer)) {
+                    throw new Exception("cannot download installer");
                 }
             }
 
@@ -614,10 +585,8 @@ public abstract class Updater
         return true;
     }
 
-    @Nullable private static String createFilename(@Nullable String filenameFormat, String version)
+    private static String createFilename(String filenameFormat, String version)
     {
-        if (filenameFormat == null) return null;
-
         return String.format(filenameFormat, version);
     }
 }

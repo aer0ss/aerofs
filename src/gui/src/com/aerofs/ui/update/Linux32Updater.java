@@ -6,7 +6,7 @@ class Linux32Updater extends AbstractLinuxUpdater
 {
     Linux32Updater()
     {
-        super("aerofs-%s-x86.tgz", null);
+        super("aerofs-%s-x86.tgz");
     }
 
     @Override
