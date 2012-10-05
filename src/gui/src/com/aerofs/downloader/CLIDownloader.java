@@ -42,7 +42,7 @@ class CLIDownloader implements IProgressIndicator {
     @Override
     public void error(Throwable e)
     {
-        System.out.println(Main.getErrorMessage(e));
+        System.err.println(Main.getErrorMessage(e));
         System.exit(1);
     }
 }

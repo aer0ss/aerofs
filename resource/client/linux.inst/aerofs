@@ -12,11 +12,17 @@ if [ $PROG == gui ]; then
     fi
 fi
 
-if [ x"$(file $(readlink -f /bin/ls) | grep 64)" != x ]; then
+if [ x"$(file -L /bin/ls | grep 64 )" != x ]; then
     ARCH=64
+    PACKAGE_FILENAME=aerofs-x86_64.tgz
+    JRE_LIB_ARCH=amd64
 else
     ARCH=32
+    PACKAGE_FILENAME=aerofs-x86.tgz
+    JRE_LIB_ARCH=i386
 fi
+
+URL=https://cache.clientDOT_STAGING__TO_BE_REPLACED_BY_SED.aerofs.com/$PACKAGE_FILENAME
 
 DIST="$HOME/.aerofs-binDOT_STAGING__TO_BE_REPLACED_BY_SED"
 
@@ -38,13 +44,6 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
         exit 1
     fi
     uudecode -o /dev/stdout $0 | tar xzf - -C $TMP_DIR 2>/dev/null
-
-    if [ $ARCH == 64 ]; then
-        URL=aerofs-x86_64.tgz
-    else
-        URL=aerofs-x86.tgz
-    fi
-    URL=https://cache.clientDOT_STAGING__TO_BE_REPLACED_BY_SED.aerofs.com/$URL
 
     which java > /dev/null
     if [ $? != 0 ]; then
@@ -77,12 +76,24 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
     mkdir -p "$HOME/.config/autostart/"
     rm -f "$HOME/.config/autostart/aerofs.desktop"
     ln -s "$DIST/aerofs.desktop" "$HOME/.config/autostart/"
-fi
-
-if [ $ARCH == 64 ]; then
-    JRE_LIB_ARCH=amd64
 else
-    JRE_LIB_ARCH=i386
+    # Sanity check - ensure that aerofs libs match 32/64 bitness with userspace
+    if [ x"$( file -L "$DIST/aerofsd" | grep 64 )" != x ]; then
+        AEROFS_ARCH=64
+    else
+        AEROFS_ARCH=32
+    fi
+    if [ x"$AEROFS_ARCH" != x"$ARCH" ]; then
+        # Somehow we have the wrong binaries.  Redownload and reinstall.
+        TMP_DIR=$( mktemp -d )
+        TARGET="$TMP_DIR/retry"
+        java -cp $DIST/aerofs.jar com.aerofs.downloader.Main headless $URL "$TARGET"
+        rm -rf "$DIST"
+        tar zxf "$TARGET" -C "$TMP_DIR" 2>/dev/null
+        mv "$TMP_DIR/aerofs" "$DIST"
+        cd "$DIST" # Java doesn't like being launched from a deleted folder
+        rm -rf "$TMP_DIR"
+    fi
 fi
 
 JRE_BASE="$(dirname $(dirname $(readlink -f $(which java))))"
