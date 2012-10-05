@@ -28,7 +28,7 @@ readonly __BOOT_SCRIPT_NAME="$( basename "${BASH_SOURCE[0]}" )"
 function include() {
     local __="${__BOOT_SCRIPT_DIR}/${1}"
     shift
-    . "${__}" $@
+    . "${__}" "$@"
 }
 
 ###############################################################################
@@ -43,8 +43,8 @@ function include() {
 #
 ###############################################################################
 function call() {
-    "${__BOOT_SCRIPT_DIR}/${__BOOT_SCRIPT_NAME}" $@
+    "${__BOOT_SCRIPT_DIR}/${__BOOT_SCRIPT_NAME}" "$@"
 }
 
 # Now we can call the appropriate script (we use include since we want it to run in the same shell)
-include $@
+include "$@"

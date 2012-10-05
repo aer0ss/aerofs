@@ -20,6 +20,7 @@ if [ x"${__COMMON_INCLUDE__:-}" == x ] ; then readonly __COMMON_INCLUDE__=true
 # Error codes
 #
 ###############################################################################
+readonly ERRNOINTERNET=16
 readonly ERRBADARGS=17
 readonly ERRBADMODE=18
 readonly ERRBADPASS=19

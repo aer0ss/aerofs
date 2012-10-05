@@ -56,6 +56,8 @@ function upload_release_files_to_release_server() {
     # we zip then unzip because the Windows patch script requires a history of
     # zip files on the server to process diffs.
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        rm -r "$RELEASE_UNPACK_DIR" 2> /dev/null || true
+        mkdir -p "$RELEASE_UNPACK_DIR"
         unzip -qo -d "$RELEASE_UNPACK_DIR" "${RELEASE_FILES_DIR}/${RELEASE_FILE_NAME}".zip
 ENDCMDS
 }
@@ -81,7 +83,7 @@ function create_versioned_installer_directory_on_release_server() {
 
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         mkdir -p "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-        rm "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"/* || true
+        rm "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"/* 2> /dev/null || true
 ENDCMDS
 }
 

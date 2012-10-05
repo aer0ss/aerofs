@@ -29,7 +29,7 @@ if [[ x"${2:-}" == x && $MODE == "PROD" ]]; then
     exit $ERRBADPASS
 fi
 
-readonly PASSPHRASE=${2:-$STAGING_PASSPHRASE}
+readonly PASSPHRASE="${2:-$STAGING_PASSPHRASE}"
 
 ###############################################################################
 #
@@ -38,6 +38,11 @@ readonly PASSPHRASE=${2:-$STAGING_PASSPHRASE}
 ###############################################################################
 function compute_next_release_version() {
     local local_CURRENT_RELEASE_VERSION="$( current_release_version $RELEASE_VERSION_URL )"
+    if [ "$local_CURRENT_RELEASE_VERSION" == "" ]; then
+        echo "error: can't get current release version" >&2
+        exit $ERRNOINTERNET
+    fi
+
     local local_CURRENT_RELEASE_VERSION_MAJOR_MINOR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/\.[0-9]*$//' )"
     local local_CURRENT_RELEASE_VERSION_BUILD_NUMBR="$( echo $local_CURRENT_RELEASE_VERSION | sed -e 's/.*\.//' )"
     local local_LOCAL_VERSION_MAJOR_MINOR="$( head -1 ${BUILD_SCRIPT_DIR}/version )"
@@ -106,7 +111,7 @@ echo '| ' $RELEASE_VERSION $MODE
 echo '+--------------------------'
 
 call make_release_resources $MODE $RELEASE_VERSION
-call make_client_installers $MODE $RELEASE_VERSION $PASSPHRASE
+call make_client_installers $MODE $RELEASE_VERSION "$PASSPHRASE"
 call exec_prepublish_checks $MODE $RELEASE_VERSION $RELEASE_SERVER_LOGIN "$INSTALLERS_DOWNLOAD_DIR"
 publish_to_s3 $RELEASE_VERSION $INSTALLER_DOWNLOAD_BUCKET
 tag_release

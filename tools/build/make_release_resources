@@ -93,10 +93,10 @@ function copy_resources_to_local_release_directories() {
 function copy_java_class_files() {
     echo ">> copying java class files to release directory"
 
-    local local_BIN="${AEROFS_RELEASE_DIR}/bin"
+    local local_BIN="${LOCAL_RELEASE_DIR}/bin"
 
     mkdir -p $local_BIN
-    trap "rm -r $local_BIN" EXIT
+    trap "rm -r \"$local_BIN\" || true" EXIT
 
     cp -Rf "${BUILD_OUTPUT_DIR}/bin"/* "$local_BIN"
 
@@ -132,12 +132,12 @@ function create_aerofs_installer() {
     local local_DOWNLOADER_TEMP="$(mktemp -d -t aerofs-dlr_XXXXXX)"
     trap "rm -rf $local_DOWNLOADER_TEMP || true" EXIT
 
-    local local_BIN="${AEROFS_RELEASE_DIR}/bin"
+    local local_BIN="${LOCAL_RELEASE_DIR}/bin"
     local local_AEROFS_DLR_PKG=com/aerofs/downloader
     mkdir -p "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
     # N.B. we use the downloader in both the main aerofs.jar (for recovery
     # purposes) and the installer .jar (for initial setup).
-    cp "${AEROFS_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
+    cp "${LOCAL_RELEASE_DIR}/bin/${local_AEROFS_DLR_PKG}"/* "${local_DOWNLOADER_TEMP}/${local_AEROFS_DLR_PKG}"
     cp "${CLIENT_RESOURCES_DIR}/linux32/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s32.jar"
     cp "${CLIENT_RESOURCES_DIR}/linux64/lib/swt-"*.jar "${local_DOWNLOADER_TEMP}/s64.jar"
     tar zcf - -C "$local_DOWNLOADER_TEMP" . | uuencode bin >> "${AEROFS_RELEASE_INST_DIR}/aerofs"
@@ -176,7 +176,7 @@ function create_java_jar() {
     done
 
     # Package a jar with the contents of bin and org subdirectories of the local release directory (all the class files)
-    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${AEROFS_RELEASE_DIR}/bin" com -C "${AEROFS_RELEASE_DIR}/bin" org
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com -C "${LOCAL_RELEASE_DIR}/bin" org
 }
 
 ######################################################################
