@@ -349,6 +349,12 @@ Function un.preUninstall_privileged
 FunctionEnd
 
 Function un.uninstall_unprivileged
+    # Quit AeroFS before uninstalling
+    UserInfo::GetName
+    Pop $0
+    !insertmacro KillProcess "aerofs.exe" $0
+    !insertmacro KillProcess "aerofsd.exe" $0
+
     Delete /REBOOTOK "$SMPROGRAMS\AeroFS\Uninstall $(^Name).lnk"
     Delete /REBOOTOK "$SMPROGRAMS\AeroFS\$(^Name).lnk"
     Delete "$SMSTARTUP\$(^Name).lnk"
