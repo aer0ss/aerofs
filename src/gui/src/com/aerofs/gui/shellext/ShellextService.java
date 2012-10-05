@@ -1,5 +1,6 @@
 package com.aerofs.gui.shellext;
 
+import com.aerofs.lib.spsv.SVClient;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Path;
@@ -128,9 +129,10 @@ public class ShellextService
     private void greeting(GreetingCall call) throws ExProtocolError
     {
         if (call.getProtocolVersion() != PROTOCOL_VERSION) {
-            throw new ExProtocolError(
-                    "Trying to communicate with a different version of the shell extension." +
-                    "GUI: " + PROTOCOL_VERSION + " ShellExt: " + call.getProtocolVersion());
+            String msg = "Trying to communicate with a different version of the shell extension." +
+                    "GUI: " + PROTOCOL_VERSION + " ShellExt: " + call.getProtocolVersion();
+            SVClient.logSendDefectAsync(true, msg);
+            throw new ExProtocolError(msg);
         }
 
         notifyRootAnchor();
