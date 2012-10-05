@@ -224,7 +224,8 @@ public class TrayMenu
 
             final boolean paused = _prs.isPaused();
             String strPauseOrResume = paused ? "Resume Syncing" : "Pause syncing for an hour";
-            addMenuItem(_menu, strPauseOrResume , new AbstractListener(null) {
+            addMenuItem(_menu, strPauseOrResume , new AbstractListener(
+                    CLICKED_TASKBAR_PAUSE_SYNCING) {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
