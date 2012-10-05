@@ -68,8 +68,6 @@ VIAddVersionKey LegalCopyright ""
 InstallDir $APPDATA\AeroFSExec          # Always install to %AppData%\AeroFSExec
 ShowUninstDetails hide
 
-!insertmacro UsingRedist vcredist_2010_x64.exe 2010 64 "{DA5E371C-6333-3D8A-93A4-6FD5B20BCC6E}"
-!insertmacro UsingRedist vcredist_2010_x86.exe 2010 32 "{196BB40D-1578-3D01-B289-BEFC77A11A1E}"
 
 Function requestAdminPrivileges
 
@@ -125,8 +123,8 @@ Function isAdminRequired
     ${EndIf}
 
     # Require admin if some redistributables need to be installed
-    !insertmacro areAllRedistsInstalled
-    ${If} $0 != "1"
+    !insertmacro isVCRedistInstalled
+    ${If} $0 != "YES"
         StrCpy $0 "1"
         Return
     ${EndIf}
@@ -194,7 +192,7 @@ Function preInstall_privileged
     call DownloadAndInstallJREIfNecessary
 
     # Install the VC++ runtime libraries
-    !insertmacro checkAndInstallRedists
+    !insertmacro checkAndinstallVCRedists
 
 FunctionEnd
 
@@ -227,6 +225,7 @@ Function install_unprivileged
     !insertmacro allowPatchingOfLockedFile "$INSTDIR\sqlitejdbc.dll"
 
     # Copy files
+    DetailPrint "Copying files..."
     SetShellVarContext current
     SetOutPath $INSTDIR
     File /r aerofs\*
