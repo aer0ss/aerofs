@@ -41,8 +41,17 @@ tar -zxf "$UPDATE_FILE_PATH" -C "$TMPDIR" 2>/dev/null >/dev/null
 if [ ! -d "$TMPDIR/aerofs" ]; then
   rm -f "$UPDATE_FILE_PATH"
 else 
-  # copy over the update
-  cp -rf "$TMPDIR"/aerofs/* "$APP_ROOT/"
+  # Remove all files from the previous installation, then copy the new one in.
+  rm -rf "$APP_ROOT"
+  mv "$TMPDIR"/aerofs "$APP_ROOT"
+  if [ $? -ne 0 ]; then
+    # Failed to place new root.  Maybe the disk was full, or some other
+    # catastrophic failure took place.  AeroFS will attempt to redownload on the
+    # next user-started launch.
+    rm -rf "$APP_ROOT"
+    exit 1
+  fi
+  cd "$APP_ROOT" # Java doesn't like to run from deleted folders
 fi
 
 rm -rf "$TMPDIR"
