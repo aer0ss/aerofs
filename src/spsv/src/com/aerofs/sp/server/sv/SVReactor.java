@@ -28,7 +28,6 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExEmailAborted;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.raven.RavenClient;
@@ -133,8 +132,7 @@ public class SVReactor
     }
 
     private void email(PBSVCall call)
-            throws ExProtocolError, MessagingException, UnsupportedEncodingException,
-            ExEmailAborted
+            throws ExProtocolError, MessagingException, UnsupportedEncodingException
     {
         Util.checkPB(call.hasEmail(), PBSVEmail.class);
 
@@ -151,7 +149,9 @@ public class SVReactor
         try {
             f.get(); //block under email either sends or fails
         } catch (Exception e) {
-            throw new ExEmailAborted(e.getCause().getMessage());
+            // the only type of exception that EmailSender.sendEmail() can throw throw the
+            // executor service is a MessagingException
+            throw new MessagingException(e.getCause().getMessage());
         }
     }
 
@@ -224,7 +224,7 @@ public class SVReactor
         }
     }
     private void defect(PBSVCall call, InputStream is, String client)
-        throws ExProtocolError, IOException, MessagingException, SQLException, ExEmailAborted
+        throws ExProtocolError, IOException, MessagingException, SQLException
     {
         Util.checkPB(call.hasDefect(), PBSVDefect.class);
         PBSVDefect defect = call.getDefect();
@@ -271,7 +271,9 @@ public class SVReactor
             try {
                 f.get(); // block to make sure email reaches support system
             } catch (Exception e) {
-                throw new ExEmailAborted(e.getCause().getMessage());
+                // the only type of exception that EmailSender.sendEmail() can throw throw the
+                // executor service is a MessagingException
+                throw new MessagingException(e.getCause().getMessage());
             }
         }
 
