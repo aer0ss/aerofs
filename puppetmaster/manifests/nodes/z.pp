@@ -18,7 +18,6 @@ node "z.arrowfs.org" inherits default {
   }
 
   $fwknop_hostnames = [
-    "sp.aerofs.com",
     "x.aerofs.com",
     "verkehr.aerofs.com",
   ]
@@ -60,8 +59,8 @@ node "z.arrowfs.org" inherits default {
     "zephyr port zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
     # Staging
-    "staging port sp.aerofs.com 443",
-    "staging port sp.aerofs.com 80",
+    "staging port staging.aerofs.com 443",
+    "staging port staging.aerofs.com 80",
   ]:
     hour => "*",
     minute => "*/10",

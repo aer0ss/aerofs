@@ -24,7 +24,7 @@ node "c.aerofs.com" inherits default {
         mysql_sp_password       => $mysql_sp["password"],
         mysql_syncstat_password => $mysql_syncstat["password"],
         mysql_endpoint          => $mysql_endpoint,
-        verkehr_host            => "sp.aerofs.com",
+        verkehr_host            => "staging.aerofs.com",
         cacert_location         => $cacert_location
     }
     ### END STAGING SYNCSTAT ###

@@ -42,13 +42,13 @@ fi
 name=$(git config user.name | awk -F' ' '{print $1}' | tr '[A-Z]' '[a-z]')
 
 echo "Performing magic..."
-kscp sp.sql sp.aerofs.com:~/
+kscp sp.sql staging.aerofs.com:~/
 
 cmd="
 echo drop database aerofs_sp_staging_$name | mysql;
 echo create database aerofs_sp_staging_$name | mysql;
 mysql aerofs_sp_staging_$name < sp.sql"
 
-kssh -t -t sp.aerofs.com "$cmd"
+kssh -t -t staging.aerofs.com "$cmd"
 
 echo "Database has been successfully reset. Wow, that was easy!"

@@ -13,5 +13,5 @@ MAP_FILE="$DIR"/"$FILE"
 
 if [ ! -f "$MAP_FILE" ]; then
     echo "retrieving map file..."
-    kscp sp.aerofs.com:/maps/"$FILE" "$MAP_FILE"
+    kscp sv.aerofs.com:/maps/"$FILE" "$MAP_FILE"
 fi

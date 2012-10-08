@@ -70,7 +70,7 @@ public class Param
         static {
             URL url;
             try {
-                url = new URL("https://" + (Cfg.staging() ? "sp.aerofs.com/staging" : L.get().spHost()) + "/sp");
+                url = new URL("https://" + (Cfg.staging() ? "staging.aerofs.com/sp" : L.get().spHost()) + "/sp");
             } catch (MalformedURLException e) {
                 Util.fatal(e);
                 url = null;
@@ -81,7 +81,7 @@ public class Param
 
     public static class Verkehr
     {
-        public static final String VERKEHR_HOST = Cfg.staging() ? "sp.aerofs.com" : "verkehr.aerofs.com";
+        public static final String VERKEHR_HOST = Cfg.staging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
         public static final short VERKEHR_PORT = (short) (Cfg.staging() ? 80 : 443);
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
     }

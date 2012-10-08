@@ -7,4 +7,4 @@ fi
 
 ARG="--no-check-certificate"
 
-wget -q $ARG -O- "https://sp.aerofs.com/staging/sp?aerofs=lotsoflove&inviteCount=$1"
+wget -q $ARG -O- "https://staging.aerofs.com/sp/sp?aerofs=lotsoflove&inviteCount=$1"
