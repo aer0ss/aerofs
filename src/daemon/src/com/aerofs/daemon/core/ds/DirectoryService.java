@@ -432,12 +432,11 @@ public class DirectoryService implements IDumpStatMisc
     {
         OA oa = getOA_(soid);
         boolean oldExpelled = oa.isExpelled();
-        boolean newExpelled = Util.test(flags, OA.FLAG_EXPELLED_ORG_OR_INH);
 
         _mdb.setOAFlags_(soid, flags, t);
+        oa.flags(flags);
 
-        oa = _cacheOA.get_(soid);
-        if (oa != null) oa.flags(flags);
+        boolean newExpelled = oa.isExpelled();
 
         if (oldExpelled != newExpelled) {
             if (newExpelled) {
@@ -649,12 +648,33 @@ public class DirectoryService implements IDumpStatMisc
     }
 
     /**
+     * Retrieve the raw sync status for an object
+     * @return bitvector representing the sync status for all peers known to have {@code soid}
+     *
+     * NB: the returned sync status does not take into account the presence of content for recently
+     * admitted files. Use this method with the utmost care...
+     */
+    public BitVector getRawSyncStatus_(SOID soid) throws SQLException
+    {
+        return _mdb.getSyncStatus_(soid);
+    }
+
+    /**
      * Retrieve the sync status for an object
      * @return bitvector representing the sync status for all peers known to have {@code soid}
+     *
+     * NB: the returned sync status is garanteed to be out-of-sync for recently admitted files whose
+     * content has not been synced yet
      */
     public BitVector getSyncStatus_(SOID soid) throws SQLException
     {
-        return _mdb.getSyncStatus_(soid);
+        // Recently admitted files whose content has not been resynced yet are considered out of
+        // sync even though the DB may still have old sync status information (which is required
+        // to handle some exclusion/readmission corner cases in AggregateSyncStatus).
+        OA oa = getOA_(soid);
+        boolean recentlyAdmittedNotSynced = (!oa.isExpelled() && oa.isFile()
+                                                     && oa.caMasterNullable() == null);
+        return recentlyAdmittedNotSynced ? new BitVector() : _mdb.getSyncStatus_(soid);
     }
 
     /**
@@ -666,10 +686,8 @@ public class DirectoryService implements IDumpStatMisc
     public void setSyncStatus_(SOID soid, BitVector status, Trans t) throws SQLException
     {
         BitVector oldStatus = getSyncStatus_(soid);
-
+        _mdb.setSyncStatus_(soid, status, t);
         if (!oldStatus.equals(status)) {
-            _mdb.setSyncStatus_(soid, status, t);
-
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectSyncStatusChanged_(soid, oldStatus, status, t);
             }
