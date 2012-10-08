@@ -195,7 +195,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     {
         if (!firstBranchCreated) return;
 
-        BitVector status = _ds.getSyncStatus_(soid);
+        BitVector status = _ds.getRawSyncStatus_(soid);
         if (status.isEmpty()) return;
 
         // first CA creation for an object with non-empty sync status: successful download of
@@ -228,6 +228,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectExpelled_(SOID soid, Trans t) throws SQLException
     {
         OA oa = _ds.getOA_(soid);
+        assert oa.isExpelled() : soid;
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
         // ignore expulsion resulting from object deletion (moving to trash)
@@ -245,6 +246,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectAdmitted_(SOID soid, Trans t) throws SQLException
     {
         OA oa = _ds.getOA_(soid);
+        assert !oa.isExpelled() : soid;
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
         if (l.isInfoEnabled())
@@ -312,17 +314,22 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // expelled objects are only created when new META is received for an object whose parent
         // is known locally but expelled. No actual CONTENT is being created so no file/folder
         // is created either and aggregate sync status can therefore safely ignore these events
-        if (oa.isExpelled()) return;
+        if (oa.isExpelled()) {
+            if (l.isInfoEnabled()) l.info("ignore expelled " + soid);
+            return;
+        }
 
+        // files without any content (i.e. recently readmitted), may have old sync status in the DB
+        // but DirectoryService automatically filters it out until the file is re-synced.
         BitVector status = _ds.getSyncStatus_(soid);
         if (oa.isDir()) {
             status.andInPlace(getAggregateSyncStatusVector_(soid));
         }
 
-        if (!status.isEmpty() && !(oa.isFile() && oa.caMasterNullable() == null)) {
-            // the object being added has some sync status, full update required unless it is a file
-            // without any content (i.e. recently readmitted), in which case part of the update is
-            // delayed until some version of the content is resynced
+        if (!status.isEmpty()) {
+            // the object being added has some sync status, full update required
+            // this happens when objects are moved from one parent to another
+
             if (l.isInfoEnabled())
                 l.info("update parent on creation " + parent);
 
@@ -333,11 +340,11 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             // grandparent (and its parents) may need to be updated explicitly.
             SOID grandparent = new SOID(parent.sidx(), _ds.getOA_(parent).parent());
 
-            if (l.isInfoEnabled())
-                l.info("update grandparent on creation " + grandparent);
-
             CounterVector parentAggregate = _ds.getAggregateSyncStatus_(parent);
             int deviceCount = _sidx2dbm.getDeviceMapping_(parent.sidx()).size();
+
+            if (l.isInfoEnabled())
+                l.info("update grandparent on creation " + grandparent + " " + parentAggregate);
 
             BitVector parentStatus = parentAggregate.elementsEqual(
                     getSyncableChildCount_(parent) - 1, deviceCount);

@@ -105,9 +105,6 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         // map (DID -> sync status)
         Map<DID, Boolean> syncStatus = _lsync.getFullyAggregatedSyncStatusMap_(soid);
 
-        // recently admitted files whose content has not been resynced yet are considered OUT_SYNC
-        boolean recentlyAdmittedNotSynced = (oa.isFile() && oa.caMasterNullable() == null);
-
         // map (DID -> device name and user name)
         Map<DID, DeviceInfo> deviceInfo = _didinfo.getDeviceInfoMap_(syncStatus.keySet());
         // map (foreign user id -> sync status aggregated across all devices of that user)
@@ -116,7 +113,7 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         // first round: add devices owned by local user to result and aggregate foreign devices
         for (Entry<DID, Boolean> e : syncStatus.entrySet()) {
             DID did = e.getKey();
-            Status status = presenceAwareStatus(did, e.getValue() && !recentlyAdmittedNotSynced);
+            Status status = presenceAwareStatus(did, e.getValue());
             DeviceInfo info = deviceInfo.get(did);
             if (info == null) continue;
             if (info.owner.userId.equals(_localUser.get())) {
