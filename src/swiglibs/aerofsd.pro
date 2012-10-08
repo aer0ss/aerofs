@@ -52,7 +52,7 @@ win32 {
 
     # Linker settings
     LIBS += -L"$$PWD/3rd_party/lib/win32/"
-    LIBS += -lssleay32MD -llibeay32MD -lpsapi -lws2_32 -luser32 -lgdi32 -ladvapi32 -lshlwapi -lshell32 -liphlpapi
+    LIBS += -lssleay32 -llibeay32 -lpsapi -lws2_32 -luser32 -lgdi32 -ladvapi32 -lshlwapi -lshell32 -liphlpapi
 }
 
 SOURCES += \
