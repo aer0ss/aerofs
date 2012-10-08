@@ -28,6 +28,7 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExEmailAborted;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.raven.RavenClient;
@@ -43,6 +44,7 @@ import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.google.common.collect.Maps;
+import java.util.concurrent.Future;
 
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_RECEIVER;
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_SENDER;
@@ -131,12 +133,13 @@ public class SVReactor
     }
 
     private void email(PBSVCall call)
-            throws ExProtocolError, MessagingException, UnsupportedEncodingException
+            throws ExProtocolError, MessagingException, UnsupportedEncodingException,
+            ExEmailAborted
     {
         Util.checkPB(call.hasEmail(), PBSVEmail.class);
 
         PBSVEmail emailContents = call.getEmail();
-        EmailSender.sendEmail(emailContents.getFrom(), emailContents.getFromName(),
+        Future<Void> f = EmailSender.sendEmail(emailContents.getFrom(), emailContents.getFromName(),
                 emailContents.getTo(),
                 emailContents.hasReplyTo() ? emailContents.getReplyTo() : null,
                 emailContents.getSubject(), emailContents.getTextBody(),
@@ -145,7 +148,11 @@ public class SVReactor
                 emailContents.hasCategory() ? EmailCategory.valueOf(emailContents.getCategory()) :
                                               null);
 
-
+        try {
+            f.get(); //block under email either sends or fails
+        } catch (Exception e) {
+            throw new ExEmailAborted(e.getCause().getMessage());
+        }
     }
 
 
@@ -217,7 +224,7 @@ public class SVReactor
         }
     }
     private void defect(PBSVCall call, InputStream is, String client)
-        throws ExProtocolError, IOException, MessagingException, SQLException
+        throws ExProtocolError, IOException, MessagingException, SQLException, ExEmailAborted
     {
         Util.checkPB(call.hasDefect(), PBSVDefect.class);
         PBSVDefect defect = call.getDefect();
@@ -252,7 +259,7 @@ public class SVReactor
         int eom = desc.indexOf(C.END_OF_DEFECT_MESSAGE);
         if (eom >= 0) {
             String msg = desc.substring(0, eom);
-            EmailSender.sendEmail(header.getUser(),
+            Future<Void> f = EmailSender.sendEmail(header.getUser(),
                                   header.getUser(),
                                   SV.SUPPORT_EMAIL_ADDRESS,
                                   null,
@@ -261,6 +268,11 @@ public class SVReactor
                                   null,
                                   true,
                                   EmailCategory.SUPPORT);
+            try {
+                f.get(); // block to make sure email reaches support system
+            } catch (Exception e) {
+                throw new ExEmailAborted(e.getCause().getMessage());
+            }
         }
 
         // create defect file directory
