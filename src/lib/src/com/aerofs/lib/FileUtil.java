@@ -353,4 +353,30 @@ public class FileUtil
     {
         if (!f.delete()) deleteOnExit(f);
     }
+
+    public interface IFileSystemWalker
+    {
+        void prefixWalk(File f);
+        void postfixWalk(File f);
+    }
+
+    public static abstract class AbstractFileSystemWalker implements IFileSystemWalker
+    {
+        @Override
+        public void prefixWalk(File f) {}
+
+        @Override
+        public void postfixWalk(File f) {}
+    }
+
+    public static void walk(File r, IFileSystemWalker walker) {
+        walker.prefixWalk(r);
+        File[] children = r.listFiles();
+        if (children != null) {
+            for (File c : children) {
+                walk(c, walker);
+            }
+        }
+        walker.postfixWalk(r);
+    }
 }
