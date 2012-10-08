@@ -127,10 +127,9 @@ class EmailSender
      */
     private static Future<Void> sendEmail(final Message msg, final boolean usingSendGrid)
     {
-
         Future<Void> f = executor.submit(new Callable<Void>() {
             @Override
-            public Void call() throws Exception
+            public Void call() throws MessagingException
             {
 
                 try {
