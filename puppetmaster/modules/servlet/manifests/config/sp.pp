@@ -6,7 +6,7 @@ class servlet::config::sp(
         {
             param_name => "sp_database_resource_reference",
             name => "SPDatabase",
-            user => "aerofs_spsv",
+            user => "aerofs_sp",
             password => $mysql_password,
             endpoint => $mysql_endpoint,
             schema => "aerofs_sp",
