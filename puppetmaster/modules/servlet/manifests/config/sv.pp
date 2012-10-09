@@ -6,10 +6,10 @@ class servlet::config::sv(
         {
             param_name => "sv_database_resource_reference",
             name => "SVDatabase",
-            user => "aerofs_spsv",
+            user => "aerofs_sv",
             password => $mysql_password,
             endpoint => $mysql_endpoint,
-            schema => "aerofs_sv_beta",
+            schema => "aerofs_sv",
         }
     ]
 
