@@ -52,8 +52,12 @@ include common::logs
     }
 
     # include cacert
+    $ca_cert_filename = hiera("environment","") ? {
+        "staging"   => "cacert-staging.pem",
+        default     => "cacert.pem"
+    }
     file{"/etc/ssl/certs/AeroFS_CA.pem":
-        source  => "puppet:///aerofs_cacert/cacert.pem",
+        source  => "puppet:///aerofs_cacert/${ca_cert_filename}",
         ensure  => present
     }
 

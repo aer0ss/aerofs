@@ -1,5 +1,6 @@
 class ejabberd(
-    $mysql_password
+    $mysql_password,
+    $port = 443
 ){
     package { "ejabberd":
         ensure => installed
@@ -51,8 +52,14 @@ class ejabberd(
         table   => "nat",
         chain   => "PREROUTING",
         iniface => "eth0",
-        dport   => "443",
+        dport   => $port,
         jump    => "REDIRECT",
         toports => "5222"
+    }
+
+    file { "/etc/ejabberd/auth_all":
+        source => "puppet:///modules/ejabberd/auth_all",
+        mode   => "755",
+        notify => Service["ejabberd"]
     }
 }

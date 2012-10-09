@@ -57,7 +57,7 @@ public class AA implements ILabeling
     @Override
     public String xmppServerAddr()
     {
-        return "x.aerofs.com";
+        return Cfg.staging() ? "staging.aerofs.com" : "x.aerofs.com";
     }
 
     @Override
