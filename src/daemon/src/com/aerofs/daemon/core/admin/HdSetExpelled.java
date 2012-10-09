@@ -7,6 +7,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
@@ -32,6 +33,10 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
         try {
             _expulsion.setExpelled_(ev._expelled, soid, t);
             t.commit_();
+        } catch (Exception e) {
+            // make sure we get logging even if the rollback fails
+            Util.l(this).warn((ev._expelled ? "expulsion" : "admission") + " failed " + soid, e);
+            throw e;
         } finally {
             t.end_();
         }

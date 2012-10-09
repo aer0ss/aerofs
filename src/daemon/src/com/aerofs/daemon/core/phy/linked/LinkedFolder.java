@@ -100,7 +100,18 @@ public class LinkedFolder implements IPhysicalFolder
                 @Override
                 public void rollback_() throws IOException
                 {
-                    _f.mkdir();
+                    try {
+                        _f.mkdir();
+                    } catch (IOException e) {
+                        // InjectableFile.mkdir throws IOException if File.mkdir returns false
+                        // That can happen if the directory already exists, which is very much
+                        // unexpected in this case but not a good enough reason to wreak havoc with
+                        // a transaction rollback
+                        if (!(_f.exists() && _f.isDirectory())) {
+                            throw new IOException("fs rollback failed: " + _f.exists()
+                                    + " " + _f.isDirectory(), e);
+                        }
+                    }
                 }
             });
             // fallthrough
