@@ -615,7 +615,7 @@ public class TrayMenu
                 Color bg = Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_INACTIVE_BACKGROUND);
                 Color fg = Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_INACTIVE_FOREGROUND);
                 // Swap bg and fg on Windows XP
-                if (OSUtil.getOSName().equals("Windows XP")) {
+                if (OSUtil.isWindowsXP()) {
                     Color tmp = bg; bg = fg; fg = tmp;
                 }
                 menuItem.setImage(Images.getPieChart(done, total, 16, bg, fg, null, _pieChartCache));

@@ -90,7 +90,7 @@ public class SharedFolderTagFileAndIcon
         String iconExt = OSUtil.get().getIconFileExtension();
         String iconName = "sharedFolder";
         if (OSUtil.isWindows()) {
-            iconName += OSUtil.getOSName().equals("Windows XP") ? "XP" : "Vista";
+            iconName += OSUtil.isWindowsXP() ? "XP" : "Vista";
         }
         String iconPath = Util.join(AppRoot.abs(), "icons", iconName + "." + iconExt);
         _dr.setFolderIcon(absPath, iconPath);

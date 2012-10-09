@@ -13,6 +13,12 @@ import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 
+import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.cos;
+import static java.lang.Math.round;
+import static java.lang.Math.sin;
+
 // learn about resource management: http://help.eclipse.org/ganymede/index.jsp?topic=/org.eclipse.platform.doc.isv/reference/api/index.html
 
 public class Images {
@@ -151,11 +157,12 @@ public class Images {
      * @param done: amount of work already done.
      * @param total: total amount of work to do. Must be > 0.
      * @param size: the height and width of the resulting image.
-     * @param bgColor: Color used for the background of the pie chart, or null to disable drawing the background
+     * @param bgColor: Color used for the background of the pie chart, or null to disable drawing
+     *                 the background
      * @param fgColor: Color used for the foreground of the pie chart. Must be non-null.
      * @param borderColor: Color of the border, or null to disable drawing the border.
-     * @param cache: (optional, can be null) an instance of a map where the result will be cached, to avoid re-drawing
-     *  the same chart times and times again.
+     * @param cache: (optional, can be null) an instance of a map where the result will be cached,
+     *               to avoid re-drawing the same chart times and times again.
      * @return an Image of size x size pixels showing the pie chart. Remember to dispose
      * the image when it's no longer needed.
      */
@@ -175,8 +182,8 @@ public class Images {
             // otherwise we would not hit the cache for almost similar images (like 1/1000 vs 2/1000)
             // The new span we choose is PI * size of the graph, since this is roughly the amount of
             // pixels in the perimeter of the circle (which is the smallest perceivable change)
-            totalSteps = Math.round((float)Math.PI * size);
-            step = Math.round(totalSteps * done / total);
+            totalSteps = round((float) PI * size);
+            step = round(totalSteps * done / total);
 
             result = cache.get(step);
             if (result != null) {
@@ -193,8 +200,8 @@ public class Images {
         try {
             // Draw the pie chart
             final int start = 90;
-            final int angle = (cache != null) ? Math.max(Math.round(360 * step/totalSteps), 1)
-                                              : Math.max(Math.round(360 * done/total), 1);
+            final int angle = (cache != null) ? Math.max(round(360 * step / totalSteps), 1)
+                                              : Math.max(round(360 * done / total), 1);
 
             if (bgColor != null) {
                 gc.setBackground(bgColor);
@@ -239,6 +246,39 @@ public class Images {
 
         Image img = get(sb.toString());
         return img == null ? get("tray0.png") : img;
+    }
+
+    /**
+     * Returned a rotated version of the image
+     * @param src source image
+     * @param angle angle to rotate in degrees. A positive value indicates a clockwise rotation
+     * while a negative value indicates a counter-clockwise rotation.
+     * @return a rotated copy of the image. You must manually call dispose() on the resulting image
+     * when you no longer need it.
+     * Note: the rotated image will have a white background
+     */
+    public static Image rotate(Image src, float angle)
+    {
+        final int w = src.getBounds().width;
+        final int h = src.getBounds().height;
+        final double r = Math.toRadians(angle);
+
+        // Computing the rotated size of the image
+        int rW = (int) round(abs(w * cos(r) + h * cos(PI/2 - r)));
+        int rH = (int) round(abs(w * sin(r) + h * sin(PI/2 - r)));
+
+        Transform transform = new Transform(src.getDevice());
+        transform.translate(rW/2, rH/2);
+        transform.rotate(angle);
+        transform.translate(-rW/2, -rH/2);
+
+        Image dst = new Image(src.getDevice(), rW, rH);
+        GC gc = new GC(dst);
+        gc.setTransform(transform);
+        gc.drawImage(src, (rW-w)/2, (rH-h)/2);
+        gc.dispose();
+        transform.dispose();
+        return dst;
     }
 
     /**

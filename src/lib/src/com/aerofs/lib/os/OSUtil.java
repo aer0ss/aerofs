@@ -92,8 +92,19 @@ public class OSUtil
         return get().getOSFamily() == OSFamily.OSX;
     }
 
+    /**
+     * @return true for all versions of Windows
+     */
     public static boolean isWindows()
     {
         return get().getOSFamily() == OSFamily.WINDOWS;
+    }
+
+    /**
+     * @return for Windows XP only
+     */
+    public static boolean isWindowsXP()
+    {
+        return isWindows() && getOSName().equals("Windows XP");
     }
 }

@@ -1,6 +1,11 @@
 package com.aerofs.gui.tray;
 
+import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
+import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.swig.driver.Driver;
+import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tray;
@@ -15,8 +20,12 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sv;
 
+import javax.annotation.Nullable;
+import java.lang.reflect.Method;
+
 public class TrayIcon
 {
+    private final static Logger l = Util.l(TrayIcon.class);
     private final SystemTray _st;
     private final TrayItem _ti;
     private Thread _thdSpinning;
@@ -151,4 +160,72 @@ public class TrayIcon
         });
     }
 
+    public static class TrayPosition
+    {
+        public enum Orientation {Top, Right, Bottom, Left}
+        public int x;
+        public int y;
+        public Orientation orientation;
+
+        public TrayPosition() {}
+
+        public TrayPosition(int x, int y, Orientation o)
+        {
+            this.x = x;
+            this.y = y;
+            this.orientation = o;
+        }
+    }
+
+    /**
+     * @return the tray icon position and orientation, if supported by the platform, or null
+     */
+    public @Nullable TrayPosition getPosition()
+    {
+        if (OSUtil.isOSX()) {
+            return getPositionOSX();
+        } else if (OSUtil.isWindows()) {
+            return getPositionWin();
+        } else {
+            return null;
+        }
+    }
+
+    private TrayPosition getPositionOSX()
+    {
+        try {
+            Method getLocation = _ti.getClass().getDeclaredMethod("getLocation");
+            getLocation.setAccessible(true);
+            Point pos = (Point)getLocation.invoke(_ti);
+            return new TrayPosition(pos.x, pos.y, Orientation.Top);
+        } catch (Exception e) {
+            l.warn("Failed to get tray icon position: " + Util.e(e));
+            SVClient.logSendDefectAsync(true, "failed to get tray icon position from SWT", e);
+            return null;
+        }
+    }
+
+    private TrayPosition getPositionWin()
+    {
+        com.aerofs.swig.driver.TrayPosition pos = Driver.getTrayPosition();
+
+        TrayPosition tp = new TrayPosition();
+        tp.x = pos.getX();
+        tp.y = pos.getY();
+
+        // If the coordinates are (0,0) the native call failed.
+        if (tp.x == 0 && tp.y == 0) {
+            SVClient.logSendDefectAsync(true, "failed to get tray icon position from driver");
+            return null;
+        }
+
+        final int o = pos.getOrientation();
+        // Java doesn't want a switch() here because those are not compile-time constants
+        if (o == com.aerofs.swig.driver.TrayPosition.Top) { tp.orientation = Orientation.Top; }
+        else if (o == com.aerofs.swig.driver.TrayPosition.Right) { tp.orientation = Orientation.Right; }
+        else if (o == com.aerofs.swig.driver.TrayPosition.Bottom) { tp.orientation = Orientation.Bottom; }
+        else if (o == com.aerofs.swig.driver.TrayPosition.Left) { tp.orientation = Orientation.Left; }
+
+        return tp;
+    }
 }

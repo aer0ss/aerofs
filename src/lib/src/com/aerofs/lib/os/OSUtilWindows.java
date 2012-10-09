@@ -79,7 +79,7 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public void addToFavorite(String path) throws IOException
     {
-        if (OSUtil.getOSName().compareTo("Windows XP") != 0) {
+        if (!OSUtil.isWindowsXP()) {
             Util.execBackground(AppRoot.abs() + File.separator + "shortcut.exe",
                     "/F:\"" + System.getProperty("user.home") + File.separator +
                     "Links" + File.separator + "AeroFS.lnk" + "\"",
@@ -92,7 +92,7 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public void remFromFavorite(String path) throws IOException
     {
-        if (OSUtil.getOSName().compareTo("Windows XP") != 0) {
+        if (!OSUtil.isWindowsXP()) {
             File f = new File(System.getProperty("user.home") + File.separator +
                     "Links" + File.separator + "AeroFS.lnk");
             f.delete();

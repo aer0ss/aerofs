@@ -3,6 +3,7 @@ package com.aerofs.ui;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
+import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.syncstatus.DlgSyncStatus;
@@ -277,13 +278,11 @@ public class UIUtil
                 UI.get().preSetupUpdateCheck_();
                 SetupType st = UI.get().setup_(rtRoot);
                 if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-                UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        Program.launch(Cfg.absRootAnchor());
-                    }
-                });
+
+                if (UI.isGUI() && (OSUtil.isOSX() || OSUtil.isWindows())) {
+                    // Show the user tutorial on OS X and Windows
+                    new DlgTutorial(GUI.get().sh()).openDialog();
+                }
 
                 if (st == SetupType.NEW_USER && UI.isGUI()) {
                     // Check if there are any shared folder invitations to accept
@@ -292,6 +291,15 @@ public class UIUtil
                 }
 
                 finishLaunch(postLaunch);
+
+                UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        Program.launch(Cfg.absRootAnchor());
+                    }
+                });
+
                 break;
 
             case NEEDS_LOGIN:
