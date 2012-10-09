@@ -12,6 +12,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
+import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.fsi.FSIClient;
@@ -51,7 +52,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private Process startDaemon() throws Exception
     {
         final String aerofsdExec = OSUtil.isWindows() ? "aerofsd.exe" : "aerofsd";
-        Process proc = Util.execBackground(Util.join(AppRoot.abs(), aerofsdExec), Cfg.absRTRoot());
+        Process proc;
+        try {
+            proc = Util.execBackground(Util.join(AppRoot.abs(), aerofsdExec), Cfg.absRTRoot());
+        } catch (Exception e) {
+            throw new ExDaemonFailedToStart(e);
+        }
 
         int retries = UIParam.DM_LAUNCH_PING_RETRIES;
         while (true) {
