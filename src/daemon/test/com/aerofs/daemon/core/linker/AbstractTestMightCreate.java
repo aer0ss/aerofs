@@ -113,7 +113,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     protected void assign(SOID soid, FID fid) throws IOException, SQLException
     {
         OA oa = ds.getOANullable_(soid);
-        when(ds.getSOID_(fid)).thenReturn(soid);
+        when(ds.getSOIDNullable_(fid)).thenReturn(soid);
         when(oa.fid()).thenReturn(fid);
     }
 

@@ -600,7 +600,7 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * @return null if not found
      */
-    public @Nullable SOID getSOID_(FID fid) throws SQLException
+    public @Nullable SOID getSOIDNullable_(FID fid) throws SQLException
     {
         return _mdb.getSOID_(fid);
     }

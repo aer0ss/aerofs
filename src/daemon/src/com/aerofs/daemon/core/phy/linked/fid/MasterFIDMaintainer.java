@@ -56,7 +56,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
     {
         FID fid = getFIDFromFilesystem_(_f);
 
-        SOID soidOld = _ds.getSOID_(fid);
+        SOID soidOld = _ds.getSOIDNullable_(fid);
 
         // unmap the FID first if it exist for other objects
         if (soidOld != null && !_soid.equals(soidOld)) _ds.setFID_(soidOld, null, t);

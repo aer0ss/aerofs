@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.VersionUpdater;
@@ -53,10 +54,13 @@ public class MightCreate
     private final InjectableFile.Factory _factFile;
     private final InjectableDriver _dr;
     private final Analytics _a;
+    private final CfgAbsRootAnchor _cfgAbsRootAnchor;
+
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, HdMoveObject hdmo,
             ObjectMover om, ObjectCreator oc, InjectableDriver driver, HdCreateObject hdco,
-            VersionUpdater vu, InjectableFile.Factory factFile, Analytics a)
+            VersionUpdater vu, InjectableFile.Factory factFile,
+            Analytics a, CfgAbsRootAnchor cfgAbsRootAnchor)
     {
         _il = ignoreList;
         _ds = ds;
@@ -67,6 +71,7 @@ public class MightCreate
         _factFile = factFile;
         _dr = driver;
         _a = a;
+        _cfgAbsRootAnchor = cfgAbsRootAnchor;
     }
 
     public static enum Result {
@@ -118,12 +123,53 @@ public class MightCreate
         OA oaSamePath;
         SOID soid;
 
-        soid = _ds.getSOID_(fnt._fid);
+        soid = _ds.getSOIDNullable_(fnt._fid);
         if (soid == null) {
             // Logical object of the same FID is not found.
             cond = null;
         } else {
             assert !_ds.getOA_(soid).isExpelled();
+
+
+            Path logicalPath = _ds.resolveNullable_(soid);
+            if (logicalPath != null) {
+                // Hard-link handling: We only let one of the hard-linked physical files/folders to
+                // be recorded as a logical object in the databse; the rest of the physical objects
+                // are subsequently skipped by the scan_() method, which results in the removal of
+                // the object from the MetaDatabase.
+                // 1) We retrieve the logical path from our DB for the current FID.
+                // 2) If the logical and physical paths are not equal and the
+                //    physical file with that logical path has the same FID as the current file
+                //    then we detected a hard link between the logical object and the current
+                //    physical object. In this situation, we ignore our current object and keep the
+                //    logical object in the database.
+                //
+                // NOTE: If the user deletes the object that we decided to keep in our database
+                //       after a full scan happened, the other devices will see one of the other
+                //       hard linked object appear only after another full scan.
+
+                if (!pcPhysical._path.equalsIgnoreCase(logicalPath)) {
+                    // Do a case insensitive equals to tolerate both case preserving and insensitive
+                    // file systems to make sure we don't ignore mv operations on files that have
+                    // the same letters in their name.
+                    // Example scenario is: mv ./hello.txt ./HELLO.txt
+
+                    String absLogicalPath = logicalPath.toAbsoluteString(_cfgAbsRootAnchor.get());
+                    try {
+                        FIDAndType logicalFnt = _dr.getFIDAndType(absLogicalPath);
+
+                        if ((logicalFnt != null) && (logicalFnt._fid.equals(fnt._fid))) {
+                            return Result.IGNORED;
+                        }
+                    } catch (IOException e) {
+                        // File is not found or there was an IO exception, in either case
+                        // this means that the FID of the logical object was not found, most likely
+                        // deleted, so proceed to update the DB.
+                    } catch (ExNotFound e) {
+                        // see above
+                    }
+                }
+            }
             if (fnt._dir == _ds.getOA_(soid).isDirOrAnchor()) {
                 cond = Condition.SAME_FID_SAME_TYPE;
             } else {
@@ -226,7 +272,7 @@ public class MightCreate
         while (true) {
             Util.rand().nextBytes(bs);
             FID fid = new FID(bs);
-            if (_ds.getSOID_(fid) == null) {
+            if (_ds.getSOIDNullable_(fid) == null) {
                 _ds.setFID_(soid, fid, t);
                 return;
             }
