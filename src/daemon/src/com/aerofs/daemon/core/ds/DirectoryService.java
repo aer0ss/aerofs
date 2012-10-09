@@ -3,6 +3,8 @@ package com.aerofs.daemon.core.ds;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -23,6 +25,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.id.*;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -331,6 +334,8 @@ public class DirectoryService implements IDumpStatMisc
         OA oaParent = getOAThrows_(new SOID(sidx, oidParent));
 
         assert oaParent.isDir();
+        assert Normalizer.isNormalized(name, Form.NFC)
+                : Joiner.on(' ').join(sidx, oid, Form.valueOf(name));
 
         _mdb.createOA_(sidx, oid, oidParent, name, type, flags, t);
 
@@ -384,6 +389,10 @@ public class DirectoryService implements IDumpStatMisc
         assert !oa.soid().equals(oaParent.soid()) : oa + " " + oaParent;
 
         if (!oaParent.isDir()) throw new ExNotDir();
+
+        // verify the encoding of "name" is NFC
+        assert Normalizer.isNormalized(name, Form.NFC)
+                : Joiner.on(' ').join(oa, oaParent, Form.valueOf(name));
 
         Path pathFrom = resolve_(oa);
         Path pathTo = resolve_(oaParent).append(name);

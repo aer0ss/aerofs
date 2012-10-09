@@ -29,6 +29,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Set;
 
 public class GetComponentReply
@@ -165,6 +167,10 @@ public class GetComponentReply
 
                 oidParent = oidParentTarget;
             }
+
+            // Verify that encoding of the received meta is UTF-8 Normal Form C
+            assert Normalizer.isNormalized(meta.getName(), Form.NFC)
+                    : socid + " " + Form.valueOf(meta.getName());
 
             metaDiff = _mdiff.computeMetaDiff_(socid.soid(), meta, oidParent);
 
