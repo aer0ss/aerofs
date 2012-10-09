@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core.linker.notifier.osx;
 
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.LinkedHashSet;
 
 import com.aerofs.daemon.core.CoreQueue;
@@ -64,6 +66,14 @@ public class OSXNotifier implements INotifier, FSEventListener
         assert id == _id;
         assert name.length() > root.length();
 
+        // OSX uses a variant of Normal Form D therefore @param{name} can be in NFD.
+        // @see{http://developer.apple.com/library/mac/#qa/qa1173/_index.html}
+        // however the paths stored in the MetaDatabase are in Normal Form C.
+        // We have to normalize our NFD path to NFC to avoid the situation where
+        // we are looking up a given NFD path in the DS, but it is stored as NFC.
+        if (!Normalizer.isNormalized(name, Form.NFC)) {
+            name = Normalizer.normalize(name, Form.NFC);
+        }
         _batch.add(name);
         if (recurse) _recurse = true;
     }
