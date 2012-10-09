@@ -799,7 +799,7 @@ public class ReceiveAndApplyUpdate
             // the local version is non-zero, so subtract the version recorded in the causality
             // result from before the processing of this update started.
             assert !vKLocal.isZero_();
-            assert res._vLocal != null : res;
+            assert res._vLocal != null : k + " " + vRemote + " " + vKLocal + " " + res;
             if (!vKLocal.sub_(res._vLocal).isZero_()) {
                 throw new ExAborted(k + " version changed locally.");
             }
