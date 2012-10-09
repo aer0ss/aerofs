@@ -42,7 +42,9 @@ public class Param
     {
         public static String zephyrHost()
         {
-            return "zephyr.aerofs.com";
+            return Cfg.staging() ?
+                    "staging.aerofs.com" :
+                    "zephyr.aerofs.com";
         }
 
         public static short zephyrPort()
