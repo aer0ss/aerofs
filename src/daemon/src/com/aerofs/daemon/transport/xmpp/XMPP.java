@@ -120,12 +120,13 @@ import com.aerofs.proto.Transport.PBTransportDiagnosis;
  *         <code>enqueueThrows</code></li>
  * </ol>
  */
-public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignallingChannel, IXMPPServerConnectionWatcher
+public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignallingChannel,
+        IXMPPServerConnectionWatcher
 {
     // TODO use DI
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
+
     /**
-     *
      * @param sink
      * @param mcfr
      */
@@ -151,8 +152,14 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
 
         BasicStatsCounter sc = new BasicStatsCounter();
         Set<ISignalledPipe> pipes = new HashSet<ISignalledPipe>();
-        if (okj) pipes.add(new Jingle(JINGLE.id(), JINGLE.pref(), this, sc));
-        if (okz) pipes.add(new ZephyrClientManager(ZEPHYR.id(), ZEPHYR.pref(), this, sc, this)); // FIXME: hmm separate concerns?
+
+        if (okj) {
+            pipes.add(new Jingle(JINGLE.id(), JINGLE.pref(), this, sc));
+        }
+        if (okz) {
+            // FIXME: hmm separate concerns?
+            pipes.add(new ZephyrClientManager(ZEPHYR.id(), ZEPHYR.pref(), this, sc, this));
+        }
 
         _spf = new SignalledPipeFanout(_sched, pipes);
     }
@@ -161,7 +168,8 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     public void init_() throws Exception
     {
         TPUtil.registerCommonHandlers(this);
-        _disp.setHandler_(EOTransportReconfigRemoteDevice.class, new HdTransportReconfigRemoteDevice());
+        _disp.setHandler_(EOTransportReconfigRemoteDevice.class,
+                new HdTransportReconfigRemoteDevice());
 
         _spf.init_();
     }
