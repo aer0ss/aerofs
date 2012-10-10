@@ -91,7 +91,7 @@ public class DlgTutorial extends AeroFSDialog
 
             // Step 2
             new StepData("The AeroFS Icon",
-                    "The blue arrow on your screen shows the locations of the AeroFS icon." +
+                    "The blue arrow on your screen shows the location of the AeroFS icon." +
                             " Click the icon to open your AeroFS folder and manage your preferences.",
                     "tutorial2.png", _showArrow, _closeArrow),
 
