@@ -7,12 +7,12 @@ import time
 import socket
 import inception.common.network
 
-"""
-General network client, used for direct access to a protobuf manager over the
-network.
-"""
 
 class NetworkImplException(Exception):
+    """
+    General network client, used for direct access to a protobuf manager over the network.
+    """
+
     def __init__(self, error_message):
         self._error_message = error_message
 
@@ -34,12 +34,11 @@ class NetworkImpl(object):
     def decode_error(self, error_message):
         return NetworkImplException(error_message.errorMessage)
 
-"""
-More specialized class that creates the required socket based on the input host
-and port.
-"""
 
 class NetworkConnectImpl(NetworkImpl):
+    """
+    More specialized class that creates the required socket based on the input host and port.
+    """
 
     # Timeout for connect(), etc.
     CONST_SOCKET_TIMEOUT = 5.0
@@ -55,10 +54,11 @@ class NetworkConnectImpl(NetworkImpl):
         self.connect()
         NetworkImpl.__init__(self, self._sock)
 
-    """
-    Connect to the server application as a client.
-    """
     def connect(self):
+        """
+        Connect to the server application as a client.
+        """
+
         addr = (self._host, self._port)
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -71,10 +71,12 @@ class NetworkConnectImpl(NetworkImpl):
         self._sock.settimeout(NetworkConnectImpl.CONST_SOCKET_TIMEOUT)
         self._sock.connect((addr))
 
-    """
-    Disconnect and clean up sockets.
-    """
+
     def disconnect(self):
+        """
+        Disconnect and clean up sockets.
+        """
+
         if self._sock != None:
             self._sock.close()
             self._sock = None

@@ -7,10 +7,11 @@ import aerofs.command.server.log
 import aerofs.command.server.verkehr
 import aerofs.command.server.db
 
-"""
-The request pusher thread is responsible for pushing commands to verkehr.
-"""
 class RequestPusher(threading.Thread):
+    """
+    The request pusher thread is responsible for pushing commands to verkehr.
+    """
+
     def __init__(self,
                  log_handler,
                  log_level,

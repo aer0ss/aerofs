@@ -5,11 +5,11 @@ VM Management Functions
 import subprocess
 import os
 
-"""
-Get a list of kvm images currently in the KVM image directory.
-"""
-
 def get_kvm_domain_list(kvm_img_dir):
+    """
+    Get a list of kvm images currently in the KVM image directory.
+    """
+
     domain_list = []
 
     for root, dirs, files in os.walk(kvm_img_dir):
@@ -22,10 +22,10 @@ def get_kvm_domain_list(kvm_img_dir):
 
     return domain_list
 
-"""
-Access information about a kernel virtual machine, and configure autostart.
-"""
 class KernelVirtualMachine(object):
+    """
+    Access information about a kernel virtual machine, and configure autostart.
+    """
 
     def __init__(self, autostart_dir, domain):
         self._autostart_dir = autostart_dir

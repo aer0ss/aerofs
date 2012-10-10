@@ -2,10 +2,10 @@ import inception.common.forward
 import inception.vmhost.forward
 import inception.gen.vmhost_pb2
 
-"""
-Class to simplify client access to vmhost proto interface.
-"""
 class ProtoClientGenerator(object):
+    """
+    Class to simplify client access to vmhost proto interface.
+    """
 
     def __init__(self, vimpl):
         self._vimpl = vimpl

@@ -12,12 +12,10 @@ class Forwarder(object):
     def forward(self, bytes):
         raise Exception()
 
-"""
-Should be passed to the rpc stub to create a new client (i.e. "service")
-instance.
-"""
-
 class ForwardingImpl(inception.common.impl.NetworkImpl):
+    """
+    Should be passed to the rpc stub to create a new client (i.e. "service") instance.
+    """
 
     def __init__(self, identifier, forwarder):
         self._identifier = identifier

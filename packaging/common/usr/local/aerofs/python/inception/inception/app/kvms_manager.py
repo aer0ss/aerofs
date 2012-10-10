@@ -19,12 +19,6 @@ import inception.app.cmdline
 import inception.app.constants
 import inception.vmhost.manager
 
-"""
---------------------------------------------------------------------------------
-Signal handling
---------------------------------------------------------------------------------
-"""
-
 # Global event object used to signal the main thread.
 signal_event = threading.Event()
 
@@ -34,12 +28,6 @@ def receive_shutdown(signum, stack):
 
 # And the standard INT (interrupt) signal will be used for shutdown.
 signal.signal(signal.SIGINT, receive_shutdown)
-
-"""
---------------------------------------------------------------------------------
-Main function.
---------------------------------------------------------------------------------
-"""
 
 def main():
     logger = inception.app.cmdline.server_parseopts('KvmsManager',

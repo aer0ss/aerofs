@@ -48,11 +48,11 @@ class ServicesManager(threading.Thread,
         self._shutdown = True
         self.join()
 
-    """
-    Connect to the VM host manager (or enter retry loop) and communicate
-    forever.
-    """
     def run(self):
+        """
+        Connect to the VM host manager (or enter retry loop) and communica forever.
+        """
+
         # Connect and service loop.
         while self._shutdown == False:
 

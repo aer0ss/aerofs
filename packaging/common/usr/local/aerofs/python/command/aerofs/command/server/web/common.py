@@ -2,14 +2,15 @@ import threading
 import wsgiref.simple_server
 import aerofs.command.server.log
 
-"""
-A utility class (used for both the request and response WSGI servers). This class hooks nicely up
-to nginx on a specific port.
-
-The application object that you provide as a parameter must be callable and must accept two
-params: the environment and the WSGI response object.
-"""
 class CommandWebServer(threading.Thread):
+    """
+    A utility class (used for both the request and response WSGI servers). This class hooks nicely
+    up to nginx on a specific port.
+
+    The application object that you provide as a parameter must be callable and must accept two
+    params: the environment and the WSGI response object.
+    """
+
     def __init__(self, port, app_object, log_handler, log_level):
 
         # Create a logger

@@ -1,8 +1,6 @@
 """
---------------------------------------------------------------------------------
 Class that manages active connections and will periodically check for stale
 connections and close them.
---------------------------------------------------------------------------------
 """
 
 import abc

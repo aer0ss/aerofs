@@ -10,17 +10,17 @@ import socket
 import subprocess
 import inception.gen.kvm_pb2
 
-"""
-Linux system files
-"""
+#
+# Linux system files
+#
 
 INTERFACE_FILE = '/etc/network/interfaces'
 HOSTNAME_FILE = '/etc/hostname'
 HOSTS_FILE = '/etc/hosts'
 
-"""
-Some utilities to help out with the functions below.
-"""
+#
+# Some utilities to help out with the functions below.
+#
 
 def replace_in_file(filename, pattern, subst):
     # Create temp file
@@ -38,10 +38,10 @@ def replace_in_file(filename, pattern, subst):
 
     shutil.move(abs_path, filename)
 
-"""
-Functions to facilitate configuration of the KVM, as well as access to
-configuration information (mainly hostname, network and dns configuration).
-"""
+#
+# Functions to facilitate configuration of the KVM, as well as access to configuration information
+# (mainly hostname, network and dns configuration).
+#
 
 def configure_hostname(new_hostname):
     replace_in_file(HOSTS_FILE, socket.gethostname(), new_hostname)

@@ -15,9 +15,9 @@ HEADER_VERSION = 1
 HEADER = bytearray(4)
 struct.pack_into("!H", HEADER, 0, HEADER_VERSION)
 
-"""
-Some utils for creating and decoding headers. (Should not be needed publicly).
-"""
+#
+# Some utils for creating and decoding headers. (Should not be needed publicly).
+#
 
 def get_version(received_header):
     # ! = network byte order, H = unsigned short (16-bit).
@@ -27,9 +27,9 @@ def get_length(received_header):
     # network byte order, I = unsigned int (32-bit).
     return struct.unpack_from("!I", received_header, 4)[0]
 
-"""
-Public utils for sending/receiving messages on an inception network channel.
-"""
+#
+# Public utils for sending/receiving messages on an inception network channel.
+#
 
 def create_header(length):
     header = bytearray(HEADER_LENGTH)
@@ -65,12 +65,12 @@ def receive_message(sock):
         # Return the payload.
         return payload
 
-"""
-Common address reading function. Reads a host addr out of a file. Might throw an
-IOError or a socket.error.
-"""
-
 def read_addr_file(addr_file, port):
+    """
+    Common address reading function. Reads a host addr out of a file. Might throw an IOError or a
+    socket.error.
+    """
+
     fh = open(addr_file)
     server = fh.readline().strip()
     ip = socket.gethostbyname(server)

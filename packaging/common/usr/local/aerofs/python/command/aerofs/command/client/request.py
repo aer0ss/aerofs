@@ -24,10 +24,11 @@ Commands = Enum([
     'SEND_DEFECT',
     'LOG_THREADS'])
 
-"""
-A class that represents the payload of a command message.
-"""
 class CommandPayload(object):
+    """
+    A class that represents the payload of a command message.
+    """
+
     def __init__(self, type):
         # We require smart users! They should make sure the type they provide is indeed a valid
         # commands enum.
@@ -48,10 +49,11 @@ class CommandPayload(object):
     def get_type(self):
         return self._type
 
-"""
-A class that represents a command message.
-"""
 class CommandRequest(object):
+    """
+    A class that represents a command message.
+    """
+
     def __init__(self, user_email, ttl_hours, command_payload):
         self._pb = aerofs.command.gen.cmd_pb2.CommandRequest()
 

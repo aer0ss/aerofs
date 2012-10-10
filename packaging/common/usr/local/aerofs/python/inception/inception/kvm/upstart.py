@@ -15,10 +15,11 @@ def service_is_healthy(name):
     else:
         return False
 
-"""
-Get a count of the bad aerofs services running on this KVM.
-"""
 def count_of_bad_services():
+    """
+    Get a count of the bad aerofs services running on this KVM.
+    """
+
     aerofs_services = []
 
     for root, dirs, files in os.walk('/etc/init'):

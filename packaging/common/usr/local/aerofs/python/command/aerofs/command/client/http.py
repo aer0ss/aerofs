@@ -1,9 +1,10 @@
 import httplib
 
-"""
-Class to wrap in HTTP requests to the command server.
-"""
 class HttpCommandRequest(object):
+    """
+    Class to wrap in HTTP requests to the command server.
+    """
+
     def __init__(self, url, port):
         self._url = url
         self._port = port

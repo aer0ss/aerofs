@@ -8,14 +8,11 @@ import socket
 import logging
 import threading
 
-"""
---------------------------------------------------------------------------------
-Class that listens for client connections and notifies a listener when a new
-connection has been made.
---------------------------------------------------------------------------------
-"""
-
 class ConnListener(threading.Thread):
+    """
+    Class that listens for client connections and notifies a listener when a new connection has
+    been made.
+    """
 
     # The number of seconds select should wait.
     CONST_SELECT_SECONDS = 1.0

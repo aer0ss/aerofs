@@ -51,7 +51,7 @@ def main():
     cmdsrv.start()
     while True:
         signal_event.wait(10)
-        if (signal_event.isSet()):
+        if signal_event.isSet():
             cmdsrv.stop()
             break
 

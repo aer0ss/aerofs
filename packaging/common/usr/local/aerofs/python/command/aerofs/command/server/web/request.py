@@ -3,10 +3,11 @@ import aerofs.command.server.log
 import aerofs.command.server.db
 import aerofs.command.gen.cmd_pb2
 
-"""
-The request application object class is responsible for handling all command requests.
-"""
 class RequestApplicationObject(object):
+    """
+    The request application object class is responsible for handling all command requests.
+    """
+
     def __init__(self, log_handler, log_level, request_pusher):
         self._request_pusher = request_pusher
 
@@ -36,12 +37,13 @@ class RequestApplicationObject(object):
         response('200 OK', [('content-type', 'text/plain')])
         return ''
 
-"""
-An object that represents a command request server.
-"""
-class RequestServer(aerofs.command.server.web.common.CommandWebServer):
-    def __init__(self, port, log_handler, log_level, request_pusher):
 
+class RequestServer(aerofs.command.server.web.common.CommandWebServer):
+    """
+    An object that represents a command request server.
+    """
+
+    def __init__(self, port, log_handler, log_level, request_pusher):
         # Create an application object.
         app_object = RequestApplicationObject(log_handler, log_level, request_pusher)
 

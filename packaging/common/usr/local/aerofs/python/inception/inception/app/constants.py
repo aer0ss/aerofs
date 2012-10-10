@@ -6,9 +6,9 @@ Constants like timeouts, etc., are not included in this file. Only stuff
 related to network ports and filenames/directories.
 """
 
-"""
-Network ports
-"""
+#
+# Network ports
+#
 
 # KVMs manager application server port.
 KVMS_SRV_PORT = 64790
@@ -22,9 +22,9 @@ VMHOSTS_SRV_PORT = 64791
 # VM hosts manager application client port.
 VMHOSTS_CLT_PORT = 64792
 
-"""
-Config files - Common
-"""
+#
+# Config files - Common
+#
 
 # Certificate and private key.
 CERT_KEY_FILE = '/mnt/share/.config/cert.pem'
@@ -32,9 +32,9 @@ CERT_KEY_FILE = '/mnt/share/.config/cert.pem'
 # The log file for both the VM host Manager and the KVM Manager.
 LOG_FILE = '/var/log/aerofs.log'
 
-"""
-Config files - KVM
-"""
+#
+# Config files - KVM
+#
 
 # File holding the hostname/IP of the parent VM.
 VMHOST_ADDR_FILE = '/mnt/share/.config/vmhost.addr'
@@ -42,9 +42,9 @@ VMHOST_ADDR_FILE = '/mnt/share/.config/vmhost.addr'
 # File that holds the name of the KVM service.
 KVM_SERVICE_FILE = '/mnt/share/.config/service.name'
 
-"""
-Config files - VM host
-"""
+#
+# Config files - VM host
+#
 
 # File holding the hostname/IP of the admin panel server.
 ADMIN_ADDR_FILE = '/mnt/share/.config/admin.addr'

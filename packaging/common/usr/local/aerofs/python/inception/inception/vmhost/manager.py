@@ -54,13 +54,10 @@ import inception.gen.kvm_pb2
 import inception.gen.vmhost_pb2
 import inception.common.connmgr
 
-"""
---------------------------------------------------------------------------------
-Class that manages active KVM connections.
---------------------------------------------------------------------------------
-"""
-
 class KvmsConnManager(inception.common.connmgr.ConnManager):
+    """
+    Class that manages active KVM connections.
+    """
 
     def __init__(self, logger):
         inception.common.connmgr.ConnManager.__init__(self, logger)
@@ -74,13 +71,11 @@ class KvmsConnManager(inception.common.connmgr.ConnManager):
         except inception.common.impl.NetworkImplException, e:
             raise inception.common.connmgr.ConnManagerException(str(e))
 
-"""
---------------------------------------------------------------------------------
-Class that services requests from the shell clients and the admin panel.
---------------------------------------------------------------------------------
-"""
 
 class RequestServicer(threading.Thread, inception.gen.vmhost_pb2.VmHostService):
+    """
+    Class that services requests from the shell clients and the admin panel.
+    """
 
     # The number of seconds select should wait.
     CONST_SELECT_SECONDS = 0.1
@@ -164,10 +159,6 @@ class RequestServicer(threading.Thread, inception.gen.vmhost_pb2.VmHostService):
         reply = inception.gen.kvm_pb2.ErrorReply()
         reply.errorMessage = str(msg)
         return reply
-
-    """
-    Required VmHostService callbacks and some helpers.
-    """
 
     def send_msg_to_kvm(self, call):
         self._logger.debug('%s: forwarding message.', call.serviceName)
@@ -273,13 +264,11 @@ class RequestServicer(threading.Thread, inception.gen.vmhost_pb2.VmHostService):
 
         return reply
 
-"""
---------------------------------------------------------------------------------
-Class that connects to the admin panel.
---------------------------------------------------------------------------------
-"""
 
 class AdminConnector(threading.Thread, inception.common.exp.AwareSleeper):
+    """
+    Class that connects to the admin panel.
+    """
 
     # Timeout for connect(), etc.
     CONST_SOCKET_TIMEOUT = 1.0
@@ -364,12 +353,10 @@ class AdminConnector(threading.Thread, inception.common.exp.AwareSleeper):
 
         self._logger.info('AdminConnector thread finished.')
 
-"""
---------------------------------------------------------------------------------
-This is the class that will be used by the public.
---------------------------------------------------------------------------------
-"""
 class KvmsManager(object):
+    """
+    This is the class that will be used by the public.
+    """
 
     # The max number of KVMs we can connect to at one point.
     CONST_NUM_KVM_CONNECTIONS = 20

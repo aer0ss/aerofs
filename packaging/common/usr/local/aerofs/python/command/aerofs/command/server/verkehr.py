@@ -4,12 +4,11 @@ import struct
 import aerofs.command.gen.cmd_pb2
 import aerofs.command.gen.verkehr_pb2
 
-"""
-This class is an interface to the verkehr command channel.
-
-FIXME: can improve this class such that we can keep the connection open.
-"""
 class CommandClient(object):
+    """
+    This class is an interface to the verkehr command channel.
+    FIXME: can improve this class such that we can keep the connection open.
+    """
 
     _socket_timeout = 5 # seconds
 

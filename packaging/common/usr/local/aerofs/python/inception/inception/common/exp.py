@@ -30,11 +30,11 @@ class ExponentialRetryTimer(object):
 
         return self._timer
 
-"""
-Useful when doing exponential retrys.
-"""
 
 class AwareSleeper(object):
+    """
+    Class which is useful when doing exponential retrys.
+    """
 
     def __init__(self):
         self._shutdown = False

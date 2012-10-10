@@ -48,22 +48,20 @@ def main():
 if __name__ == '__main__':
     main()
 
-"""
-Example output:
-
-==> VM host IDs:
-vmHostIds: "32be65e4cd84c039efa88aa26cdccd73"
-
-==> Services:
-serviceNames: "sp-daemon"
-serviceNames: "admin-panel"
-serviceNames: "xmpp"
-statuses: CONNECTED
-statuses: CONNECTED
-statuses: DISABLED
-
-==> Status:
-hostname: "sp-daemon"
-status: GOOD
-networkType: DHCP
-"""
+# Example output:
+#
+# ==> VM host IDs:
+# vmHostIds: "32be65e4cd84c039efa88aa26cdccd73"
+#
+# ==> Services:
+# serviceNames: "sp-daemon"
+# serviceNames: "admin-panel"
+# serviceNames: "xmpp"
+# statuses: CONNECTED
+# statuses: CONNECTED
+# statuses: DISABLED
+#
+# ==> Status:
+# hostname: "sp-daemon"
+# status: GOOD
+# networkType: DHCP

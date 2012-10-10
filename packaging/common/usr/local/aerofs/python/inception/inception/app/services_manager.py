@@ -10,12 +10,6 @@ import inception.app.cmdline
 import inception.kvm.manager
 import inception.app.constants
 
-"""
---------------------------------------------------------------------------------
-Signal handling
---------------------------------------------------------------------------------
-"""
-
 # Global event object used to signal the main thread.
 signal_event = threading.Event()
 
@@ -24,12 +18,6 @@ def receive_shutdown(signum, stack):
     signal_event.set()
 
 signal.signal(signal.SIGINT, receive_shutdown)
-
-"""
---------------------------------------------------------------------------------
-Main entry point
---------------------------------------------------------------------------------
-"""
 
 def main():
     logger = inception.app.cmdline.server_parseopts('ServicesManager',
@@ -48,7 +36,7 @@ def main():
 
     while True:
         signal_event.wait(10)
-        if (signal_event.isSet()):
+        if signal_event.isSet():
             manager.shutdown()
             break
 

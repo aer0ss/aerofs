@@ -23,10 +23,10 @@ import inception.common.network
 import inception.common.impl
 import inception.common.connmgr
 
-"""
-Class to hold VM host sockets and periodically remove stale ones.
-"""
 class VmHostsConnManager(inception.common.connmgr.ConnManager):
+    """
+    Class to hold VM host sockets and periodically remove stale ones.
+    """
 
     def __init__(self, logger):
         inception.common.connmgr.ConnManager.__init__(self, logger)
@@ -40,11 +40,10 @@ class VmHostsConnManager(inception.common.connmgr.ConnManager):
         except inception.common.impl.NetworkImplException, e:
             raise inception.common.connmgr.ConnManagerException(str(e))
 
-"""
-Main class for the vmhosts manager server application.
-"""
-
 class VmHostsManager(inception.gen.admin_pb2.AdminPanelService):
+    """
+    Main class for the vmhosts manager server application.
+    """
 
     # Should be much more than enough.
     CONST_NUM_VMHOST_CONNECTIONS = 20
@@ -84,7 +83,7 @@ class VmHostsManager(inception.gen.admin_pb2.AdminPanelService):
     def new_socket(self, sock, addr):
         self._logger.info('Got new client connection %s', addr)
 
-        while self._shutdown == False:
+        while not self._shutdown:
             input_ready,output_ready,error_ready = select.select(
                     [sock], [], [],
                     VmHostsManager.CONST_SELECT_SECONDS)
@@ -140,9 +139,6 @@ class VmHostsManager(inception.gen.admin_pb2.AdminPanelService):
         reply.errorMessage = str(msg)
         return reply
 
-    """
-    Required AdminPanelService callbacks.
-    """
 
     def send_msg_to_vm_host(self, call):
         self._logger.info('%s: forwarding message.', call.vmHostId)

@@ -6,20 +6,21 @@ import sys
 import logging
 import getopt
 
-"""
-Parse command line options for the vmhost/kvm/admin server applications.
-"""
-
 def server_usage():
+    """
+    Parse command line options for the vmhost/kvm/admin server applications.
+    """
+
     print 'Usage:', sys.argv[0], '[options]'
     print 'Available options:'
     print '  -v  verbose.'
     print '  -f  print log messages to console (foreground).'
 
-"""
-Parse standard server command line options and return a logger.
-"""
 def server_parseopts(name, log_file):
+    """
+    Parse standard server command line options and return a logger.
+    """
+
     # Logging facility.
     fmt = '%(asctime)-6s %(name)s:%(levelname)s %(message)s'
     logger = logging.getLogger(name)
