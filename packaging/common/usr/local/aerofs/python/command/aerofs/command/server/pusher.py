@@ -1,3 +1,5 @@
+import sys
+import traceback
 import threading
 import multiprocessing
 import time
@@ -54,7 +56,9 @@ class RequestPusher(threading.Thread):
                     self._send_one_(user_email)
 
             except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
                 self._l.error(str(e))
+                self._l.error(traceback.format_tb(exc_traceback))
 
             time.sleep(1)
 
@@ -74,6 +78,8 @@ class RequestPusher(threading.Thread):
             if not result:
                 # This will be caught by the catch in the run method.
                 raise Exception('unable to send command to verkehr')
+
+            self._l.debug('Send successful')
 
     def stop(self):
         self._shutdown = True

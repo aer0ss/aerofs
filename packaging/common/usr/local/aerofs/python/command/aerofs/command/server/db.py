@@ -20,9 +20,9 @@ class CommandDatabase(object):
     _separator = '..'
 
     # Prefix for keys that map to a serialized protobuf command.
-    _prefix_command = 'c'
+    _prefix_command = 'cmd'
     # Prefix meta data.
-    _prefix_meta = 'm'
+    _prefix_meta = 'cmd-meta'
 
     # Key for the command id.
     _key_command_id = _separator.join([_prefix_meta, 'id'])
