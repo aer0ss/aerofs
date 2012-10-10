@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.net.proto;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Set;
 
 import com.aerofs.daemon.core.*;
@@ -309,7 +311,7 @@ public class GetComponentCall
             .setVersion(vLocal.toPB_());
 
         if (k.cid().isMeta()) {
-            sendMeta_(msg.did(), k, bdCore, bdReply, vLocal);
+            sendMeta_(msg.did(), k, bdCore, bdReply);
         } else if (k.cid().equals(CID.CONTENT)) {
             _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
                     msg.pb().getGetComCall().getPrefixLength(),
@@ -324,8 +326,7 @@ public class GetComponentCall
      *  - skip local permission checking on these devices
      *  - build ancestors for leaf nodes on these devices
      */
-    private void sendMeta_(DID did, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply,
-            Version v)
+    private void sendMeta_(DID did, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply)
         throws ExNotFound, SQLException, Exception
     {
         // guaranteed by the caller
@@ -333,6 +334,9 @@ public class GetComponentCall
 
         OA oa = _ds.getAliasedOANullable_(k.soid());
         assert oa != null : k;
+
+        // verify that the name we send is in Normalized Form C
+        assert Normalizer.isNormalized(oa.name(), Form.NFC) : oa + " " + Form.valueOf(oa.name());
 
         PBMeta.Builder bdMeta = PBMeta.newBuilder()
             .setType(toPB(oa.type()))
