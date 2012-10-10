@@ -342,6 +342,11 @@ public abstract class Util
         return builder.toString();
     }
 
+    public static String getThreadStackTrace(Thread t)
+    {
+        return getAllThreadStackTraces(new Thread[] {t});
+    }
+
     public static void logAllThreadStackTraces()
     {
         l().warn("==== BEGIN STACKS ====\n" +

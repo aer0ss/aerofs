@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import javax.inject.Inject;
 
 import com.aerofs.daemon.lib.db.ITransListener;
+import com.aerofs.lib.Util;
 import com.google.common.collect.Lists;
 
 /* usage:
@@ -24,6 +25,7 @@ public class TransManager
     private final ArrayList<ITransListener> _listeners = Lists.newArrayList();
 
     private Trans _ongoing; // for debugging
+    private Thread _ongoingThread; // for debugging
 
     @Inject
     public TransManager(Trans.Factory factTrans)
@@ -46,8 +48,10 @@ public class TransManager
      */
     public Trans begin_()
     {
-        assert !hasOngoingTransaction_();
+        assert !hasOngoingTransaction_() : "ongoing trans in \n"
+                + Util.getThreadStackTrace(_ongoingThread) + "\n===";
         _ongoing = _factTrans.create_(this);
+        _ongoingThread = Thread.currentThread();
         return _ongoing;
     }
 
