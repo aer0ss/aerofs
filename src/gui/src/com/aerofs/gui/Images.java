@@ -126,7 +126,11 @@ public class Images {
 
         Image image = cache.get(program);
         if (image == null) {
-            ImageData imageData = program.getImageData();
+            ImageData imageData = null;
+            try {
+                imageData = program.getImageData();
+            } catch (NullPointerException e) {}     // Work around a SWT bug where a NPE may be
+                                                    // thrown for some unknown reason
             if (imageData == null) {
                 image = get(ICON_FILE);
 
