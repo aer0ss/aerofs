@@ -26,8 +26,10 @@ public class DlgCreateSharedFolder extends AeroFSDialog
     @Override
     protected void open(Shell shell)
     {
-        if (GUIUtil.isWindowBuilderPro()) // $hide$
+        if (GUIUtil.isWindowBuilderPro()) {
             shell = new Shell(getParent(), getStyle());
+        }
+
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
         new CompInviteUsers(shell, _path);

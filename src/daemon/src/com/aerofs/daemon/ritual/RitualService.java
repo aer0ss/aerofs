@@ -109,7 +109,11 @@ public class RitualService implements IRitualService
             throws Exception
     {
         Map<String, Role> acl = Maps.newTreeMap();
-        for (PBSubjectRolePair srp : srps) acl.put(srp.getSubject(), Role.fromPB(srp.getRole()));
+
+        for (PBSubjectRolePair srp : srps) {
+            acl.put(srp.getSubject(), Role.fromPB(srp.getRole()));
+        }
+
         EIShareFolder ev = new EIShareFolder(user, new Path(path), acl);
         ev.execute(PRIO);
 
