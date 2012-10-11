@@ -48,11 +48,16 @@ public class TransManager
      */
     public Trans begin_()
     {
-        assert !hasOngoingTransaction_() : "ongoing trans in \n"
-                + Util.getThreadStackTrace(_ongoingThread) + "\n===";
+        assertNoOngoingTransaction_("");
         _ongoing = _factTrans.create_(this);
         _ongoingThread = Thread.currentThread();
         return _ongoing;
+    }
+
+    public void assertNoOngoingTransaction_(String msg)
+    {
+        assert !hasOngoingTransaction_() : "ongoing trans:\n"
+                + Util.getThreadStackTrace(_ongoingThread) + "\n===\n" + msg;
     }
 
     /**
