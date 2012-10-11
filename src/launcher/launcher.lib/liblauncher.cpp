@@ -124,6 +124,12 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
     vm_args.nOptions = options.size();
     vm_args.ignoreUnrecognized = JNI_FALSE;
 
+#ifdef DEBUG
+    for (unsigned int i = 0 ; i < options.size() ; i++) {
+        _ftprintf(stderr, _T("%s\n"), options[i].c_str());
+    }
+#endif
+
     jint result = create_jvm(pjvm, (void**)penv, &vm_args);
 
     delete vmopt;

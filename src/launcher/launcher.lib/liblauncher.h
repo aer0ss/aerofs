@@ -11,6 +11,7 @@
 #define _T(X) X
 #define _tcscmp(X, Y) strcmp(X, Y)
 #define _tprintf(...) printf(__VA_ARGS__)
+#define _ftprintf(...) fprintf(__VA_ARGS__)
 #endif
 typedef std::basic_string<_TCHAR> tstring;
 

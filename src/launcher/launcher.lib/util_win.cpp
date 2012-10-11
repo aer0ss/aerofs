@@ -85,7 +85,7 @@ tstring find_jvm()
         }
         RegCloseKey(jreKey);
     }
-    return NULL;
+    return _T("");
 }
 
 /**

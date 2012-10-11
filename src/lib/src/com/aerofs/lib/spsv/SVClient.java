@@ -274,7 +274,7 @@ public class SVClient
             {
                 try {
                     doLogSendDefect(automatic, desc, e, header, getCfgDatabase(), Cfg.absRTRoot(),
-                            secret, true, true, false);
+                            secret, true, true, false, true);
                 } catch (Throwable e) {
                     l.warn("can't send defect. ignored: " + Util.e(e));
                 }
@@ -292,7 +292,7 @@ public class SVClient
     {
         try {
             doLogSendDefect(automatic, context, e, newHeader(user, null, rtRoot),
-                    Collections.<Key, String>emptyMap(), rtRoot, null, true, true, false);
+                    Collections.<Key, String>emptyMap(), rtRoot, null, true, true, false, false);
             // it may throw out of memory error
         } catch (Throwable e1) {
             throw new IOException(e1);
@@ -318,6 +318,7 @@ public class SVClient
                         null,
                         false,
                         false,
+                        false,
                         false);
         } catch (Throwable e2) {
             l.error("can't send defect:", e2);
@@ -331,7 +332,7 @@ public class SVClient
     {
         try {
             doLogSendDefect(automatic, desc, e, newHeader(), getCfgDatabase(), Cfg.absRTRoot(),
-                    secret, true, true, false);
+                    secret, true, true, false, true);
         } catch (Throwable e2) {
             throw new IOException(e2);
         }
@@ -344,7 +345,7 @@ public class SVClient
             public void run() {
                 try {
                     doLogSendDefect(true, "core db", null, newHeader(), getCfgDatabase(),
-                            Cfg.absRTRoot(), null, true, false, true);
+                            Cfg.absRTRoot(), null, true, false, true, false);
                     l.warn("done");
                 } catch (Throwable e) {
                     l.warn("can't send db. ignored: " + Util.e(e));
@@ -527,7 +528,8 @@ public class SVClient
      */
     private static void doLogSendDefect(boolean automatic, String desc,
             @Nullable Throwable e, PBSVHeader header, Map<Key, String> cfgDB, String rtRoot,
-            @Nullable String secret, boolean verbose, final boolean sendLogs, final boolean sendDB)
+            @Nullable String secret, boolean verbose, final boolean sendLogs, final boolean sendDB,
+            final boolean sendHeapDumps)
             throws Exception
     {
         if (e == null) e = new Exception(desc);
@@ -651,7 +653,7 @@ public class SVClient
             }
 
             // don't send defect log for SP or staging
-            if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB)) {
+            if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps)) {
                 try {
                     // add log files
                     File[] files = new File(rtRoot).listFiles(
@@ -662,7 +664,8 @@ public class SVClient
                                     // Note: the core database consists of three files:
                                     // db, db-wal, and db-shm.
                                     return (sendLogs && arg1.endsWith(C.LOG_FILE_EXT)) ||
-                                            (sendDB && arg1.startsWith(C.CORE_DATABASE));
+                                            (sendDB && arg1.startsWith(C.CORE_DATABASE)) ||
+                                            (sendHeapDumps && arg1.endsWith(C.HPROF_FILE_EXT));
                                 }
                             });
 
@@ -671,11 +674,11 @@ public class SVClient
                         files = new File[0];
                     }
 
-                    l.info("compressing " + files.length + " logs/db files");
+                    l.info("compressing " + files.length + " logs/db/hprof files");
 
                     OutputStream os = new FileOutputStream(fZippedFiles);
                     try {
-                        compressIgnoreErorr(files, os);
+                        compressIgnoreError(files, os);
                     } finally {
                         os.close();
                     }
@@ -851,7 +854,7 @@ public class SVClient
     }
 
     // archive + compress multiple files into a stream
-    public static void compressIgnoreErorr(File[] files, OutputStream os)
+    public static void compressIgnoreError(File[] files, OutputStream os)
         throws IOException
     {
         ZipOutputStream out = null;
