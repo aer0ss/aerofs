@@ -40,12 +40,17 @@ class verkehr (
         require => Package["aerofs-verkehr"],
     }
 
+    $aerofs_ssl_dir = hiera("environment","") ? {
+        "staging"   => "aerofs_ssl/staging",
+        default     => "aerofs_ssl"
+    }
+
     file {"/opt/verkehr/verkehr.key":
         ensure  => present,
         owner   => "verkehr",
         group   => "verkehr",
         mode    => "0400",
-        source  => "puppet:///aerofs_ssl/verkehr.key",
+        source  => "puppet:///${aerofs_ssl_dir}/verkehr.key",
         require => Package["aerofs-verkehr"],
         notify  => Service["verkehr"]
     }
@@ -55,7 +60,7 @@ class verkehr (
         owner   => "verkehr",
         group   => "verkehr",
         mode    => "0400",
-        source  => "puppet:///aerofs_ssl/verkehr.crt",
+        source  => "puppet:///${aerofs_ssl_dir}/verkehr.crt",
         require => Package["aerofs-verkehr"],
         notify  => Service["verkehr"]
     }
