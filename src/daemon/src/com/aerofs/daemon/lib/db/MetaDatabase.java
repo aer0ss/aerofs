@@ -34,6 +34,7 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 
 /*
@@ -274,7 +275,8 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psSCAH.setBytes(3, soid.oid().getBytes());
             _psSCAH.setInt(4, kidx.getInt());
 
-            Util.verify(_psSCAH.executeUpdate() == 1);
+            int updates = _psSCAH.executeUpdate();
+            assert updates == 1 : Joiner.on(' ').join(updates, soid, kidx);
         } catch (SQLException e) {
             DBUtil.close(_psSCAH);
             _psSCAH = null;
