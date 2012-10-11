@@ -189,7 +189,7 @@ public class TC implements IDumpStatMisc
 
                             _disp.dispatch_(ev, outPrio.get());
 
-                            assert !_tm.hasOngoingTransaction_() : ev.getClass();
+                            _tm.assertNoOngoingTransaction_(ev.getClass().toString());
                         } catch (Throwable e) {
                             // fail fast
                             throw Util.fatal(e);
@@ -299,9 +299,8 @@ public class TC implements IDumpStatMisc
         assert _paused.size() < _total;
         assert !reason.isEmpty();
 
-        // there mustn't be active transactions or iterators before going to
-        // sleep
-        assert !_tm.hasOngoingTransaction_();
+        // there mustn't be active transactions or iterators before going to sleep
+        _tm.assertNoOngoingTransaction_(reason);
         DBIteratorMonitor.assertNoActiveIterators_();
 
         assert !_l.hasWaiters(tcb._cv);
@@ -369,6 +368,10 @@ public class TC implements IDumpStatMisc
 
         tcb._tk.removeTCB_(tcb);
         tcb._tk = null;    // not necessary. for debugging only
+
+        // there mustn't be active transactions or iterators when coming back from sleep
+        _tm.assertNoOngoingTransaction_(tcb._pauseReason);
+        DBIteratorMonitor.assertNoActiveIterators_();
 
         if (!tcb._running) {
             tcb._running = true;
