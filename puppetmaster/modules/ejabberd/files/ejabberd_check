@@ -1,0 +1,19 @@
+#!/bin/bash
+
+DEAD_EJABBERD_RC=3
+EJABBERDCTL_BIN=ejabberdctl
+
+$EJABBERDCTL_BIN status
+if [ $? -eq $DEAD_EJABBERD_RC ]
+then
+        # ejabberd is not up
+
+        # this is a hack, and this is the one that's preventing me from running
+        # a cron for the staging ejabberd
+        echo "killing epmd"
+        EPMD_PID=`ps -ef | grep 'epmd' | grep -v 'grep' | awk '{print $2}'`
+        kill -9 $EPMD_PID || echo "epmd is dead"
+
+        echo "restarting ejabberd"
+        service ejabberd start
+fi

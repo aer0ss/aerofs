@@ -18,7 +18,10 @@ node "staging.aerofs.com" inherits default {
 
     class { "ejabberd":
         mysql_password => hiera("mysql_password"),
-        port => 9328
+    }
+
+    class { "ejabberd::firewall_rules" :
+        port => 9328,
     }
 
     include zephyr

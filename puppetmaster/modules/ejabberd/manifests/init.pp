@@ -1,7 +1,6 @@
 class ejabberd(
     $mysql_password,
-    $port = 443
-){
+) {
     package { "ejabberd":
         ensure => installed
     }
@@ -48,18 +47,31 @@ class ejabberd(
         notify  => Service["ejabberd"],
     }
 
-    firewall { "500 forward traffic for xmpp clients on port 443":
-        table   => "nat",
-        chain   => "PREROUTING",
-        iniface => "eth0",
-        dport   => $port,
-        jump    => "REDIRECT",
-        toports => "5222"
-    }
-
     file { "/etc/ejabberd/auth_all":
         source => "puppet:///modules/ejabberd/auth_all",
         mode   => "755",
         notify => Service["ejabberd"]
+    }
+
+    file { "/etc/init.d/ejabberd":
+        source => "puppet:///modules/ejabberd/ejabberd",
+        mode   => "755",
+        owner  => "root",
+        group  => "root",
+        notify => Service["ejabberd"]
+    }
+
+    $ejabberd_check = "/etc/ejabberd/ejabberd_check"
+    file { $ejabberd_check:
+        source => "puppet:///modules/ejabberd/ejabberd_check",
+        mode   => "755",
+        owner  => "root",
+        group  => "root"
+    }
+
+    cron { "ejabberd_check":
+        command => "${ejabberd_check}",
+        user => "root",
+        minute => "*/3"
     }
 }

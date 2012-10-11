@@ -4,7 +4,6 @@ node "sv.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    # install syncstat servlet
     class{"servlet::sv":
         mysql_password => hiera("mysql_password"),
         mysql_endpoint => hiera("mysql_endpoint")
