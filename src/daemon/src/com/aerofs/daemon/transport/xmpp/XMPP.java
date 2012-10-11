@@ -539,7 +539,6 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             @Override
             public void handle_()
             {
-                //To change body of implemented methods use File | Settings | File Templates.
                 OutArg<Integer> len = new OutArg<Integer>(0);
                 String enc = XMPP.encodeBody(len, msg.toByteArray());
 

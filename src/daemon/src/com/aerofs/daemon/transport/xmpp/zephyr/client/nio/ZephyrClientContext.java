@@ -11,11 +11,13 @@ import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.transport.xmpp.XUtil;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateContext;
-import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEvent;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
 import com.aerofs.lib.C;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.DID;
+import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
 import com.aerofs.zephyr.core.ExAlreadyBound;
 import org.apache.log4j.Logger;
 
@@ -24,8 +26,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.QUEUE_LENGTH;
 import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_BIND_MSG_LEN;
@@ -33,9 +37,16 @@ import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID
 import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_MSG_BYTE_ORDER;
 import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ClientConstants.ZEPHYR_CLIENT_HDR_LEN;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.BEGIN_CONNECT;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.PENDING_OUT_PACKET;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.RECVD_REMOTE_CHAN_ID;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.ACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.SYN;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.SYNACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.BEGIN_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.PENDING_OUT_PACKET;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_ACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_SYN;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.RECVD_SYNACK;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.PREP_FOR_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.SENDING_AND_RECVING;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientState.TERMINATED;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientUtil.handleError;
 import static com.aerofs.zephyr.core.ZUtil.istdesc;
@@ -70,8 +81,6 @@ public class ZephyrClientContext implements IStateContext
         assert boss != null :
             ("zc: attempt construct with no boss");
 
-        // FIXME: as much as possible, move these out of the constructor when I have time
-
         _locdid = local;
         _remdid = remote;
         _k = k;
@@ -94,10 +103,10 @@ public class ZephyrClientContext implements IStateContext
         _wrbodybytes = 0;
         _wrbufs = null;
         _bytestx = 0;
-        _state = ZephyrClientState.NEW;
+        _state = PREP_FOR_CONNECT;
         _conntoserver = false;
         _haltex = null;
-        _eq = new ArrayBlockingQueue<IStateEvent>(3);
+        _eq = new LinkedBlockingQueue<StateMachineEvent>(10);
 
         assert _ctrlbuf.capacity() >= Math.max(ZEPHYR_REG_MSG_LEN, ZEPHYR_BIND_MSG_LEN) :
                ("control buffer too small");
@@ -129,14 +138,15 @@ public class ZephyrClientContext implements IStateContext
             l.debug(toString() + ": +out b:" + out._length);
         }
 
-        switch (_state) {
-        case RECVING:
-        case SENDING_AND_RECVING:
-            if (_eq.peek() != PENDING_OUT_PACKET) _eq.add(PENDING_OUT_PACKET);
-            _boss.reschedule_(this);
-            break;
-        default: break;
-        }
+        // FIXME (AG) : consider putting the out data into the PENDING_OUT_PACKET
+        //
+        // right now I'm using _txq as the holder for all outgoing data. this was a consequence
+        // of the first design in which PENDING_OUT_PACKET was simply a marker and both RECVING
+        // and SENDING_AND_RECVING simply used the marker as a signal to transition or drain _txq.
+        // now that I only write out a single packet before yielding I can store the data in the
+        // PENDING_OUT_PACKET event and use it within sendPayload_
+
+        enqueueAndReschedule_(new StateMachineEvent(PENDING_OUT_PACKET));
     }
 
     //
@@ -156,23 +166,50 @@ public class ZephyrClientContext implements IStateContext
         assert s != null : (toString() + ": attempt to set invalid state");
 
         if (_state != next) {
-            l.info(toString() + ": T: " + _state + "->" + next);
+            if (!l.isDebugEnabled()) { // too much noise when combined when sm's debugging output
+                l.info(toString() + ": T: " + _state + "->" + next);
+            }
         }
 
         _state = s;
     }
 
     @Override
-    public IStateEvent dequeue_()
+    public void enqueue_(StateMachineEvent ev)
     {
-        return _eq.poll();
+        logqueue_("preeq");
+
+        boolean added = _eq.offer(ev);
+        assert added : ("ev:" + ev + " not added to eq contents:" + _eq);
+
+        if (l.isDebugEnabled()) {
+            l.debug(toString() + ": +" + ev + " eq");
+        }
+
+        logqueue_("psteq");
     }
 
     @Override
-    public void enqueueEvent_(IStateEvent ev)
+    public StateMachineEvent dequeue_(Set<IStateEventType> defer)
     {
-        boolean added = _eq.offer(ev);
-        assert added : ("ev:" + ev + " not added");
+        StateMachineEvent ev = null;
+
+        logqueue_("predq");
+
+        Iterator<StateMachineEvent> evit = _eq.iterator();
+        while (evit.hasNext()) {
+            ev = evit.next();
+            if (!defer.contains(ev.type())) {
+                evit.remove();
+                break;
+            } else {
+                ev = null;
+            }
+        }
+
+        logqueue_("pstdq");
+
+        return ev;
     }
 
     @Override
@@ -184,6 +221,29 @@ public class ZephyrClientContext implements IStateContext
     //
     // ZephyrClientContext-specific methods
     //
+
+    /**
+     * Enqeueue an event into this context object's event queue and schedule the state machine to run
+     * NOTE: the state machine may run immediately!
+     *
+     * @param ev {@code StateMachineEvent} to add to this context object's event queue
+     */
+    private void enqueueAndReschedule_(StateMachineEvent ev)
+    {
+        enqueue_(ev);
+        _boss.reschedule_(this);
+    }
+
+    /**
+     * Print the contents of the event and transmission queues
+     * @param action context in which the queue is being modified
+     */
+    private void logqueue_(String action)
+    {
+        if (l.isDebugEnabled()) {
+            l.debug(toString() + ": [" + action + "] eq sz:" + _eq.size() + " txq sz:" + _txq.length_() + " eq:" + _eq);
+        }
+    }
 
     @Override
     public String toString()
@@ -276,13 +336,7 @@ public class ZephyrClientContext implements IStateContext
     {
         l.info(toString() + ": start sm");
 
-        if (_eq.isEmpty()) {
-            _eq.add(BEGIN_CONNECT);
-            _boss.reschedule_(this);
-        } else {
-            IStateEvent ev = _eq.peek();
-            assert ev == BEGIN_CONNECT : (toString() + ": in NEW but ev:" + ev + " enqueued");
-        }
+        enqueueAndReschedule_(new StateMachineEvent(BEGIN_CONNECT));
     }
 
     /**
@@ -326,48 +380,114 @@ public class ZephyrClientContext implements IStateContext
     }
 
     /**
-     * Sets the remotezid to which we will be sending data. Also enqueues an
-     * event onto the event queue and unparks the state machine for
-     * this ZephyrClientContext object if it is currently waiting for
-     * a zid from the remote.
+     * Set the remote zid to which this context object is bound
+     *
+     * @param remzid remote id of the peer to which we are bound
+     * @throws ExAlreadyBound if a remote id was previously set
+     */
+    void setRemoteZid_(int remzid)
+        throws ExAlreadyBound
+    {
+        if (_remzid != ZEPHYR_INVALID_CHAN_ID) {
+            l.warn(toString() + ": already bound old:" + _remzid +  " inc:" + remzid);
+            throw new ExAlreadyBound(_remzid, remzid);
+        }
+
+        _remzid = remzid;
+
+        l.info(toString() + ": set remzid:" + _remzid);
+    }
+
+    /**
+     * Enqueues the appropriate event onto the event queue (one of {@code RECVD_SYN},
+     * {@code RECVD_SYNACK} or {@code RECVD_ACK}) and unparks the state machine for
+     * this ZephyrClientContext object.
      *
      * <strong>IMPORTANT:</strong> If this ZephyrClientContext object has just
      * been created you must call startup_ manually, otherwise Zephyr will
      * not establish connections. In other words, with a new ZephyrClientContext
-     * DO NOT SET _remotezid AND JUST RETURN, OR YOU WILL WONDER WHY THE STATE
+     * DO NOT SIMPLY CALL processSignallingZids_ AND JUST RETURN, OR YOU WILL WONDER WHY THE STATE
      * MACHINE SIMPLY ISN'T RUNNING!
      *
-     * @param remotezid Zephyr ID of the remote peer's connection to Zephyr
-     * @throws ExAlreadyBound if the remotezid has already been set to a valid zid
-     *
-     * FIXME: gotta figure out a clean way around this...
+     * @param zi {@code PBZephyrCandidateInfo} object with all the signalling information
+     * instance has
      */
-    void setRemoteZid_(int remotezid)
-        throws ExAlreadyBound
+    void processSignallingZids_(PBZephyrCandidateInfo zi)
     {
-        l.info(toString() + ": attempt set remote id:" + remotezid + " existing id:" + _remzid);
+        assert _state != SENDING_AND_RECVING && _state != TERMINATED :
+            (": recv late hs msg srczid:" + zi.getSourceZephyrId() + " dstzid:" + zi.getDestinationZephyrId());
 
-        assert _state != TERMINATED :
-            (toString() + ": in TERMINATED state");
+        final int srczid = zi.getSourceZephyrId();
+        final int dstzid = zi.getDestinationZephyrId();
+        final HandshakeMessageType hstype = toType(srczid, dstzid);
 
-        assert remotezid != ZEPHYR_INVALID_CHAN_ID :
-            (toString() + ": attempt to set remote id to invalid chan id");
+        l.info(toString() +
+            ": recv hs msg srczid:" + srczid + " dstzid:" + dstzid + " hstype:" + hstype);
 
-        if (_remzid != ZEPHYR_INVALID_CHAN_ID) {
-            throw new ExAlreadyBound(_remzid, remotezid);
-        }
-
-        _remzid = remotezid;
-
-        l.info(toString() + ": succeed set remote id:" + _remzid);
-
-        switch(_state) {
-        case PREP_FOR_BINDING:
-            _eq.add(RECVD_REMOTE_CHAN_ID);
-            _boss.reschedule_(this);
+        IStateEventType type = null;
+        switch (hstype) {
+        case SYN:
+            type = RECVD_SYN;
             break;
-        default: break;
+        case SYNACK:
+            type = RECVD_SYNACK;
+            break;
+        case ACK:
+            type = RECVD_ACK;
+            break;
+        default:
+            assert false : ("unexpected hstype:" + hstype);
         }
+
+        enqueueAndReschedule_(new StateMachineEvent(type, zi));
+    }
+
+    /**
+     * Convert an incoming set of handshake parameters into an enum
+     * (@see ZephyrClientContext.HandshakeMessageType) that represents the type of message it is
+     *
+     * @param srczid Zephyr ID of the remote peer's connection to Zephyr
+     * @param dstzid Zephyr ID that the remote peer thinks that this context object instance has
+     * @return a {@code HandshakeMessageType} describing the type of handshake message
+     * <p/>
+     * <strong>IMPORTANT:</strong> asserts if this is an invalid handshake message
+     */
+    static HandshakeMessageType toType(int srczid, int dstzid)
+    {
+        if (srczid != ZEPHYR_INVALID_CHAN_ID && dstzid == ZEPHYR_INVALID_CHAN_ID) {
+            return SYN;
+        } else if (srczid != ZEPHYR_INVALID_CHAN_ID) {
+            return SYNACK;
+        } else if (dstzid != ZEPHYR_INVALID_CHAN_ID) {
+            return ACK;
+        }
+
+        assert false : ("srczid:" + srczid + " dstzid:" + dstzid);
+        return null; // satisfy compiler
+    }
+
+    /**
+     * Send a SYN to the remote peer via the {@code _boss}
+     */
+    void sendsyn_()
+    {
+        _boss.sendZidToRemote_(_remdid, _loczid, ZEPHYR_INVALID_CHAN_ID);
+    }
+
+    /**
+     * Send a SYNACK to the remote peer via the {@code _boss}
+     */
+    void sendsynack_()
+    {
+        _boss.sendZidToRemote_(_remdid, _loczid, _remzid);
+    }
+
+    /**
+     * Send an ACK to the remote peer via the {@code _boss}
+     */
+    void sendack_()
+    {
+        _boss.sendZidToRemote_(_remdid, ZEPHYR_INVALID_CHAN_ID, _remzid);
     }
 
     //
@@ -375,9 +495,20 @@ public class ZephyrClientContext implements IStateContext
     //
 
     /**
+     * The three-way handshake stages
+     */
+    enum HandshakeMessageType
+    {
+        NONE,
+        SYN,
+        SYNACK,
+        ACK
+    }
+
+    /**
      * Internal representation of an outgoing packet
      */
-    class Out
+    final class Out
     {
         Out(IResultWaiter waiter, byte[][] bss, Object strmCookie)
             throws IOException
@@ -538,7 +669,7 @@ public class ZephyrClientContext implements IStateContext
     static Logger l = com.aerofs.lib.Util.l(ZephyrClientContext.class);
 
     /** event queue into which the state machine functions feed events */
-    private final Queue<IStateEvent> _eq;
+    private final Queue<StateMachineEvent> _eq;
 
     /** size of bytebuffer to hold zephyr control messages */
     private static final int ZEPHYR_CONTROL_MSG_BYTEBUFFER_SIZE = ZEPHYR_BIND_MSG_LEN * 3;

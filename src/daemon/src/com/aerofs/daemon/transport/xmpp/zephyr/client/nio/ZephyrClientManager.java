@@ -17,6 +17,7 @@ import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.ExInvalidTransition;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachine;
+import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoResource;
@@ -30,7 +31,6 @@ import com.aerofs.zephyr.core.BufferPool;
 import com.aerofs.zephyr.core.FatalIOEventHandlerException;
 import com.aerofs.zephyr.core.IIOEventHandler;
 import com.aerofs.zephyr.core.ZUtil;
-import com.aerofs.zephyr.core.ExAlreadyBound;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
@@ -47,9 +47,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.SEL_CONNECT;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.SEL_READ;
-import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEvent.SEL_WRITE;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SEL_CONNECT;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SEL_READ;
+import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.SEL_WRITE;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.HALT;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.ZEPHYR_CANDIDATE_INFO;
 
@@ -70,9 +70,7 @@ import static com.aerofs.proto.Transport.PBTPHeader.Type.ZEPHYR_CANDIDATE_INFO;
  * Unless explicitly specified, all references to a <code>DID <em>d</em></code>
  * refer to the <em>remote</em> <code>DID</code>, not the local one.
  *
- * - FIXME: verify ZephyrClientContext objects removed in all situations
  * - FIXME: remove SelectionKey from ZephyrClientContext
- * - FIXME: order methods in this class in a consistent way
  */
 public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
 {
@@ -367,7 +365,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         assert k.isConnectable() : ("zm: k:" + k + "not connectable");
 
         ZephyrClientContext c = getContext_(k);
-        c.enqueueEvent_(SEL_CONNECT);
+        c.enqueue_(new StateMachineEvent(SEL_CONNECT));
         runClientStateMachine_(c);
     }
 
@@ -381,7 +379,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         assert k.isReadable() : ("zm: k:" + k + " not readable");
 
         ZephyrClientContext c = getContext_(k);
-        c.enqueueEvent_(SEL_READ);
+        c.enqueue_(new StateMachineEvent(SEL_READ));
         runClientStateMachine_(c);
     }
 
@@ -395,7 +393,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         assert k.isWritable() : ("zm: k:" + k + "not writable");
 
         ZephyrClientContext c = getContext_(k);
-        c.enqueueEvent_(SEL_WRITE);
+        c.enqueue_(new StateMachineEvent(SEL_WRITE));
         runClientStateMachine_(c);
     }
 
@@ -415,7 +413,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
     // IPipeDebug methods
     //
 
-    // FIXME: refactor use of cvobj out
+    // FIXME (AG): refactor use of cvobj out
 
     @Override
     public long getBytesRx(final DID did)
@@ -576,13 +574,18 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         final PBZephyrCandidateInfo zi = msg.getZephyrInfo();
         assert zi != null : ("zm: null zi from d:" + d);
 
+        if (!zi.hasDestinationZephyrId()) {
+            l.warn("zm: ->sig d:" + d + " drop old signalling msg");
+            return;
+        }
+
         enqueueIntoZephyr(new AbstractEBSelfHandling()
         {
             @Override
             public void handle_()
             {
                 try {
-                    processRemoteZid_(d, zi.getSourceZephyrId());
+                    processSignallingZids_(d, zi);
                 } catch (IOException e) {
                     l.error("err processing channel id from peer:" + e);
                 }
@@ -594,17 +597,21 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
      * Send the Zephyr ID for our connection to a remote ZephyrClient to that client
      * @param remotedid {@link com.aerofs.lib.id.DID} of the remote ZephyrClient
      * @param localzid Zephyr ID of our connection to the Zephyr relay server
+     * @param remotezid Zephyr ID of the endpoint being connected to
      */
-    void sendZidToRemote_(final DID remotedid, final int localzid)
+    void sendZidToRemote_(final DID remotedid, final int localzid, int remotezid)
     {
-        l.info("zm: <-zid:" + localzid + " d:" + remotedid);
+        l.info("zm: <-zid:" + localzid + " remzid:" + remotezid + " d:" + remotedid);
 
         assertDispThread();
 
-        PBTPHeader zci = PBTPHeader.newBuilder()
+        PBTPHeader zci = PBTPHeader
+            .newBuilder()
             .setType(ZEPHYR_CANDIDATE_INFO)
-            .setZephyrInfo(PBZephyrCandidateInfo.newBuilder()
-                    .setSourceZephyrId(localzid))
+            .setZephyrInfo(PBZephyrCandidateInfo
+                .newBuilder()
+                .setSourceZephyrId(localzid)
+                .setDestinationZephyrId(remotezid))
             .build();
 
         _sc.sendMessageOnSignallingChannel(remotedid, zci, this);
@@ -615,7 +622,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         assertDispThread();
 
         _pc.closePeerStreams(d, true, true); // terminate sessions that may be lying around
-        _pc.peerConnected(d, ConnectionType.WRITABLE, this);
+        _pc.peerConnected(d, ConnectionType.WRITABLE, this); // FIXME (AG): actually both readable/writable
     }
 
     void remoteDisconnected_(DID d)
@@ -751,51 +758,24 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
         }
     }
 
-    private void processRemoteZid_(DID remotedid, int remotezid)
+    private void processSignallingZids_(DID remotedid, PBZephyrCandidateInfo zi)
         throws IOException
     {
         assertDispThread();
 
-        {
-            ZephyrClientContext c = null;
-            try {
-                SelectionKey k = _dids.get(remotedid);
-                if (k != null) {
-                    l.info("zm: ->zid:" + remotezid + " d:" + remotedid + " cli old");
-                    c = getContext_(k);
-                    c.setRemoteZid_(remotezid);
-                    return;
-                }
-            } catch (ExAlreadyBound e) {
-                l.warn("zm: cli: " + c + " already bound - replace " +
-                        "prev:" + e.getPrevid() +  " new:" + e.getNewid());
-                kill_(remotedid, e);
-            }
-        }
+        ZephyrClientContext c = null;
+        SelectionKey k = _dids.get(remotedid);
+        if (k != null) {
+            l.info("zm: ->sig[srczid:" + zi.getSourceZephyrId() + " dstzid:" + zi.getDestinationZephyrId() + " d:" + remotedid + "] cli old");
+            c = getContext_(k);
+            c.processSignallingZids_(zi);
+        } else {
+            assert !_dids.containsKey(remotedid) : ("zm: exists cli for did:" + remotedid);
 
-        // you can get here only via two cases:
-        // 1. we don't have an entry for this did (first time local talks to remote)
-        //    [maps entry is null]
-        // 2. entry was already bound to a remotezid but now we are trying to rebind
-        //    (can happen due to transient errors)
-        //    [we kill_() the old client, in which case the maps entry is null]
-        //
-        // in either case no entry should exist anymore for this remotedid and
-        // we can create it and set the remotezid without issues
-
-        assert !_dids.containsKey(remotedid) :
-            ("zm: exists cli for did:" + remotedid);
-
-        {
-            ZephyrClientContext c = null;
-            try {
-                l.info("zm: ->zid:" + remotezid + " d:" + remotedid + " cli new");
-                c = create_(remotedid);
-                c.setRemoteZid_(remotezid);
-                c.startup_(); // new client, so explicit startup required
-            } catch (ExAlreadyBound e) {
-                assert false : ("zm: fail set remotezid: " + remotezid + " for cli: " + c);
-            }
+            l.info("zm: ->sig[srczid:" + zi.getSourceZephyrId() + " dstzid:" + zi.getDestinationZephyrId() + " d:" + remotedid + "] cli new");
+            c = create_(remotedid);
+            c.processSignallingZids_(zi);
+            c.startup_(); // new client, so explicit startup required
         }
     }
 
@@ -996,7 +976,6 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
      * Enqueue an event into the {@link ClientDispatcher} event queue to be handled later
      * @param event to be handled
      * @param prio priority of the event
-     * @throws ExNoResource if the event cannot be added to the Dispatcher's queue
      * for handling (this means that this event cannot be handled!)
      */
     private void enqueueIntoZephyr(AbstractEBSelfHandling event, Prio prio)
