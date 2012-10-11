@@ -26,6 +26,6 @@ if [ x"$TTL" == x ]; then
     TTL=10
 fi
 
-ssh ${PUPPET_MASTER} -C "kick ${PUPPET_AGENT} ${TTL}"
+ssh ${PUPPET_MASTER} -C "puppet kick ${PUPPET_AGENT} --foreground"
 
 exit 0

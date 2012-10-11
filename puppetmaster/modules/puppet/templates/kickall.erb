@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 <% require "yaml"   -%>
 <% require "puppet" -%>
 <% directory = Dir.new("/var/lib/puppet/yaml/node") -%>
@@ -6,6 +7,52 @@
 <%    node = YAML.load_file(File.join(directory.path, file)) -%>
 <%    node.name -%>
 <% end -%>
-<% nodes.compact.each do |node| %>
-kick <%= node %> 10
-<% end %>
+
+class KickAll
+
+  def initialize(hosts)
+    @hosts = hosts
+  end
+
+  def run
+    kick_cmd = "puppet kick #{@hosts.join(" ")} --foreground --parallel 1"
+    puts kick_cmd
+    @output = `#{kick_cmd}`
+  end
+
+  def response_codes
+    Hash[ finished_lines.map{ |l|
+      [l.split.first, l.split.last.to_i]
+    }]
+  end
+
+  def finished_lines
+    @output.select{ |l|
+      l.include? "finished"
+    }
+  end
+
+  def unsuccessful_hosts
+    response_codes.reject{ |k,v| v == 0 }.keys
+  end
+
+end
+
+# find all nodes that will be kicked
+nodes = <%= nodes.inspect %>
+
+hosts_to_kick = nodes
+
+3.times do
+
+  kick_all = KickAll.new(hosts_to_kick)
+  kick_all.run
+
+  hosts_to_kick = kick_all.unsuccessful_hosts
+  break if hosts_to_kick.size == 0
+
+  sleep 20
+
+end
+
+exit hosts_to_kick.size == 0
