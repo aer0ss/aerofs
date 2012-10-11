@@ -132,9 +132,9 @@ public class PathStatus
         } catch (SQLException e) {
             throw Util.fatal(e);
         } catch (ExExpelled e) {
-            throw Util.fatal(e);
+            return PBPathStatus.Sync.OUT_SYNC;
         } catch (ExNotFound e) {
-            throw Util.fatal(e);
+            return PBPathStatus.Sync.OUT_SYNC;
         }
         if (s.allInSync) return PBPathStatus.Sync.IN_SYNC;
         if (s.atLeastOneInSync) return PBPathStatus.Sync.PARTIAL_SYNC;
