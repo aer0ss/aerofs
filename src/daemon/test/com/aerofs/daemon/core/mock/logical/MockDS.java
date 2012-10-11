@@ -779,7 +779,7 @@ public class MockDS
     public MockDS dbm(DeviceBitMap dbm) throws Exception
     {
         assert _sidx2dbm != null;
-        when(_sidx2dbm.getDeviceMapping_(eq(new SIndex(1)))).thenReturn(dbm);
+        when(_sidx2dbm.getDeviceMapping_(eq(_root.soid().sidx()))).thenReturn(dbm);
         return this;
     }
 

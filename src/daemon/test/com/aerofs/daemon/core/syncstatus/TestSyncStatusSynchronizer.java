@@ -225,7 +225,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
                                 .anchor("a2.3.3");
 
         // get SOIDs for all objects
-        o_r = resolve("");
+        o_r = mds.root().soid();
         o_f1 = resolve("f1");
         o_d2 = resolve("d2");
         o_f22 = resolve("d2/f2.2");
