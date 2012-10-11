@@ -65,7 +65,7 @@ Steps to using a new openssl:
       > "C:\Program Files (x86)\nasm\nasmpath.bat"
       > perl Configure VC-WIN32
       > ms\do_nasm.bat
-      > nmake -f ms\ntdll.mak
+      > nmake -f ms\nt.mak
 
     4) Copy the binaries from out32dll:
        * libeay32.dll and ssleay32.dll should be copied to resource/client/win/
