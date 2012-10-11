@@ -84,21 +84,21 @@ public class DlgTutorial extends AeroFSDialog
 
     private StepData[] _steps = {
             // Step 1
-            new StepData("Welcome to AeroFS!",
-                    "AeroFS creates a special folder on your computer. All the files you" +
+            new StepData("Welcome to " + S.PRODUCT + "!",
+                    S.PRODUCT + " creates a special folder on your computer. All the files you" +
                             " put there will be synced with all your other computers.",
                     "tutorial1.png", null, null),
 
             // Step 2
-            new StepData("The AeroFS Icon",
-                    "The blue arrow on your screen shows the location of the AeroFS icon." +
-                            " Click the icon to open your AeroFS folder and manage your preferences.",
+            new StepData("The " + S.PRODUCT + " Icon",
+                    "The blue arrow on your screen shows the location of the " + S.PRODUCT + " icon." +
+                            " Click the icon to open your " + S.PRODUCT + " folder and manage your preferences.",
                     "tutorial2.png", _showArrow, _closeArrow),
 
             // Step 3
             new StepData("Share folders with people you know",
-                    "You can share any folder in AeroFS with friends or colleagues, " +
-                            "even if they're not using AeroFS yet.",
+                    "You can share any folder in " + S.PRODUCT + " with friends or colleagues, " +
+                            "even if they're not using " + S.PRODUCT + " yet.",
                     "tutorial3.png", null, null)
     };
 
