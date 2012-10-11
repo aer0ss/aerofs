@@ -9,4 +9,6 @@ node "sv.aerofs.com" inherits default {
         mysql_password => hiera("mysql_password"),
         mysql_endpoint => hiera("mysql_endpoint")
     }
+
+    include mailserver
 }
