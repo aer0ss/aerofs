@@ -9,6 +9,9 @@ import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import org.apache.commons.lang.ArrayUtils;
+
+import javax.annotation.Nullable;
 
 /**
  * Transactions. Client should not create Transaction objects directly. Use TransManager instead.
@@ -83,6 +86,35 @@ public class Trans
         } else {
             for (int i = _listeners.size() - 1; i >= 0; i--) _listeners.get(i).aborted_();
             _tm.aborted_();
+        }
+    }
+
+    /**
+     * Concat the stack trace of {@code b} to that of {@code a}
+     */
+    private void concatStackTrace(Throwable a, Throwable b)
+    {
+        a.setStackTrace((StackTraceElement[])ArrayUtils.addAll(a.getStackTrace(),
+                                                               b.getStackTrace()));
+    }
+
+    /**
+     * abort the transaction if commit_() hasn't been called after begin_().
+     * otherwise commit the transaction
+     *
+     * If the rollback fails due to an exception
+     * @param rollbackCause rollback cause, if any
+     */
+    public void end_(@Nullable Throwable rollbackCause) throws SQLException
+    {
+        try {
+            end_();
+        } catch (Error e) {
+            if (rollbackCause != null) concatStackTrace(e, rollbackCause);
+            throw e;
+        } catch (SQLException e) {
+            if (rollbackCause != null) concatStackTrace(e, rollbackCause);
+            throw e;
         }
     }
 

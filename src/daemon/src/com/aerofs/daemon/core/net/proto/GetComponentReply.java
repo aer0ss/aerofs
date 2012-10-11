@@ -252,6 +252,7 @@ public class GetComponentReply
         final boolean wasPresent = _ds.isPresent_(targetBranch);
 
         Trans t = null;
+        Throwable rollbackCause = null;
         try {
             switch (type) {
             case META:
@@ -300,9 +301,14 @@ public class GetComponentReply
 
             t.commit_();
             l.warn(socid + " ok " + msg.ep());
-
+        } catch (Exception e) {
+            rollbackCause = e;
+            throw e;
+        } catch (Error e) {
+            rollbackCause = e;
+            throw e;
         } finally {
-            if (t != null) t.end_();
+            if (t != null) t.end_(rollbackCause);
         }
     }
 }

@@ -17,6 +17,19 @@ public class FileUtil
 {
     private static LinkedHashSet<String> _filesToDelete = new LinkedHashSet<String>();
 
+    /**
+     * Annotate filename with extra infos to make defect reports more informative
+     */
+    private static String debugString(File f)
+    {
+        return (f.exists() ? "e" : "-")
+                + (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-"))
+                + (f.canRead() ? "r" : "-")
+                + (f.canWrite() ? "w" : "-")
+                + (f.canExecute() ? "x" : "-")
+                + " " + f;
+    }
+
     private FileUtil() {}
 
     /**
@@ -79,7 +92,7 @@ public class FileUtil
                 deleteRecursively(child);
             }
         }
-        if (!file.delete()) throw new IOException("Could not delete " + file);
+        if (!file.delete()) throw new IOException("Could not delete " + debugString(file));
     }
 
     private static File _javaTempDir;
@@ -131,22 +144,25 @@ public class FileUtil
 
     public static void rename(File from, File to) throws IOException
     {
-        if (!from.renameTo(to)) throw new IOException("Couldn't rename " + from + " to " + to);
+        if (!from.renameTo(to)) {
+            throw new IOException("Couldn't rename " + debugString(from)
+                    + " to " + debugString(to));
+        }
     }
 
     public static void delete(File file) throws IOException
     {
-        if (!file.delete()) throw new IOException("Couldn't delete: " + file);
+        if (!file.delete()) throw new IOException("Couldn't delete: " + debugString(file));
     }
 
     public static void mkdir(File dir) throws IOException
     {
-        if (!dir.mkdir()) throw new IOException("Couldn't mkdir: " + dir);
+        if (!dir.mkdir()) throw new IOException("Couldn't mkdir: " + debugString(dir));
     }
 
     public static void mkdirs(File dir) throws IOException
     {
-        if (!dir.mkdirs()) throw new IOException("Couldn't mkdirs: " + dir);
+        if (!dir.mkdirs()) throw new IOException("Couldn't mkdirs: " + debugString(dir));
     }
 
     public static File ensureDirExists(File dir) throws IOException
@@ -154,7 +170,7 @@ public class FileUtil
         if (!dir.isDirectory()) {
             if (!dir.mkdirs()) {
                 if (!dir.isDirectory()) {
-                    throw new IOException("Couldn't mkdir: " + dir);
+                    throw new IOException("Couldn't mkdir: " + debugString(dir));
                 }
             }
         }
@@ -183,8 +199,8 @@ public class FileUtil
      */
     public static long getLengthOrZeroIfNotFile(File f)
     {
-        // We could return f.length() without checking. However, its behavior is unspecified if the f designates
-        // a folder.
+        // We could return f.length() without checking. However, its behavior is unspecified if
+        // f designates a folder.
         return f.isFile() ? f.length() : 0;
     }
 
@@ -225,7 +241,8 @@ public class FileUtil
             throws IOException
     {
         if (!from.renameTo(to)) {
-            throw new IOException("couldn't rename " + from + " to " + to);
+            throw new IOException("couldn't rename " + debugString(from)
+                    + " to " + debugString(to));
         }
     }
 
@@ -242,7 +259,8 @@ public class FileUtil
             try {
                  copy(from, to, false, false);
             } catch (IOException e) {
-                throw new IOException("couldn't rename " + from + " to " + to, e);
+                throw new IOException("couldn't rename " + debugString(from)
+                        + " to " + debugString(to), e);
             }
             deleteOrOnExit(from);
         }
@@ -252,7 +270,7 @@ public class FileUtil
     {
         throwIfNotFile(f);
         if (!f.setLastModified(mtime)) {
-            throw new IOException("can't set mtime for " + f);
+            throw new IOException("can't set mtime for " + debugString(f));
         }
     }
 
@@ -262,7 +280,7 @@ public class FileUtil
     public static void deleteOrThrowIfExist(File f) throws IOException
     {
         if (!f.delete() && f.exists()) {
-            throw new IOException("couldn't delete " + f);
+            throw new IOException("couldn't delete " + debugString(f));
         }
     }
 
