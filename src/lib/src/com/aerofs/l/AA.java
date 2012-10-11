@@ -93,7 +93,7 @@ public class AA implements ILabeling
     @Override
     public String spHost()
     {
-        return "reloadedsp.aerofs.com";
+        return "sp.aerofs.com";
     }
 
     @Override
