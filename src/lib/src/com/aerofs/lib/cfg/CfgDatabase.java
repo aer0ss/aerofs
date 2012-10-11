@@ -99,7 +99,7 @@ public class CfgDatabase
         ;
 
         private final String _str;
-        private final String _defaultValue;
+        private @Nullable final String _defaultValue;
 
         /**
          * @param str the string representation of the key. Ideally it should be derived from

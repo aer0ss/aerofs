@@ -297,8 +297,12 @@ public class SVReactor
         }
 
         // send notification email
-        String body = desc + "\n\n" +
-            header.getVersion() + "\n" + dc + "\n\n" + javaEnv.toString();
+        String body = desc
+                + "\n\n" + header.getVersion()
+                + "\n" + "DID " + (header.hasDeviceId() ?
+                     Util.hexEncode(header.getDeviceId().toByteArray()) : "(unknown)")
+                + "\n" + dc
+                + "\n\n" + javaEnv.toString();
 
         String subject = (defect.getAutomatic() ? "" : "Priority ") + " Defect " +
             id + ": " + header.getUser();
