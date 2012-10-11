@@ -293,18 +293,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     }
 
     /**
-     * @return true if the object is under a trash folder
-     */
-    private boolean isDeleted(OA oa) throws SQLException
-    {
-        SIndex sidx = oa.soid().sidx();
-        while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
-            oa = _ds.getOA_(new SOID(sidx, oa.parent()));
-        }
-        return oa.parent().isTrash();
-    }
-
-    /**
      * Called from DirectoryService when an object is expelled
      */
     @Override
@@ -316,7 +304,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
         // ignore expulsion resulting from object deletion (moving to trash)
-        if (isDeleted(oa)) return;
+        if (_ds.isDeleted(oa)) return;
 
         if (l.isInfoEnabled()) l.info("expelled " + soid);
         updateParentAggregateOnDeletion_(soid, parent, path, t);
