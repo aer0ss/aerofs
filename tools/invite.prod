@@ -20,4 +20,4 @@ if [ x"$FROM" == x ]; then
 fi
 FROM=`echo "$FROM" | sed -e 's/ /+/g'`
 
-wget -q $ARG -O- "https://reloadedsp.aerofs.com/sp?aerofs=love&fromPerson=$FROM&to=$ENCODED"
+wget -q $ARG -O- "https://sp.aerofs.com/sp?aerofs=love&fromPerson=$FROM&to=$ENCODED"
