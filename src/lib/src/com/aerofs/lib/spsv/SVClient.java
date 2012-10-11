@@ -20,6 +20,7 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -28,6 +29,7 @@ import com.aerofs.lib.ExitCode;
 import com.aerofs.lib.FileUtil.AbstractFileSystemWalker;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
+import com.aerofs.lib.ex.AbstractExWirable;
 import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import com.aerofs.proto.Sv.PBSVEmail;
 import org.apache.log4j.Logger;
@@ -186,8 +188,7 @@ public class SVClient
      * @param desc
      *            optional description of the event
      */
-    public static void sendEventAsync(final PBSVEvent.Type type,
-            final String desc)
+    public static void sendEventAsync(final PBSVEvent.Type type, @Nullable final String desc)
     {
         Thread thd = new Thread(new Runnable() {
             @Override
@@ -206,7 +207,7 @@ public class SVClient
         thd.start();
     }
 
-    public static void sendEventSync(PBSVEvent.Type type, String desc)
+    public static void sendEventSync(PBSVEvent.Type type, @Nullable String desc)
     {
         if (Cfg.staging()) {
             l.info("sv event sending disabled on staging");
@@ -235,7 +236,7 @@ public class SVClient
         return newHeader(Cfg.user(), Cfg.did(), Cfg.absRTRoot());
     }
 
-    private static PBSVHeader newHeader(String user, DID did, String rtRoot)
+    private static PBSVHeader newHeader(String user, @Nullable DID did, String rtRoot)
     {
         if (did == null) did = new DID(UniqueID.ZERO);
 
@@ -263,7 +264,7 @@ public class SVClient
      * is OutOfMemory
      */
     public static void logSendDefectAsync(final boolean automatic,
-            final String desc, final Throwable e, final String secret)
+            final String desc, final Throwable e, @Nullable final String secret)
     {
         // create the header here so that we can get accurate creation time
         final PBSVHeader header = newHeader();
@@ -387,7 +388,7 @@ public class SVClient
         }
     }
 
-    private static Map<Key, String> getCfgDatabase()
+    private static @Nonnull Map<Key, String> getCfgDatabase()
     {
         assert Cfg.inited();
 
@@ -527,9 +528,9 @@ public class SVClient
      * if the error is OutOfMemory
      */
     private static void doLogSendDefect(boolean automatic, String desc,
-            @Nullable Throwable e, PBSVHeader header, Map<Key, String> cfgDB, String rtRoot,
-            @Nullable String secret, boolean verbose, final boolean sendLogs, final boolean sendDB,
-            final boolean sendHeapDumps)
+            @Nullable Throwable e, PBSVHeader header, @Nonnull Map<Key, String> cfgDB,
+            String rtRoot, @Nullable String secret, boolean verbose, final boolean sendLogs,
+            final boolean sendDB, final boolean sendHeapDumps)
             throws Exception
     {
         if (e == null) e = new Exception(desc);
@@ -796,7 +797,8 @@ public class SVClient
         }
     }
 
-    private static void recv(Socket s) throws Exception
+    private static void recv(Socket s)
+            throws IOException, AbstractExWirable
     {
         DataInputStream dis = new DataInputStream(new BufferedInputStream(s.getInputStream()));
 
