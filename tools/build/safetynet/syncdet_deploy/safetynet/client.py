@@ -8,18 +8,9 @@ import sys
 import os
 import subprocess
 import urllib2
+import re
 
 from lib import app
-
-def PlatformSpecificClientFactory():
-    if "linux" in sys.platform:
-        return _LinuxClient()
-    elif "darwin" in sys.platform:
-        return _OSXClient()
-    elif "cygwin" in sys.platform:
-        return _WindowsClient()
-    else:
-        raise Exception("unsupported platform: {0}".format(sys.platform))
 
 class _PackagedAeroFSClient(object):
     def __init__(self, get_gui_pids_command, get_daemon_pids_command):
@@ -200,8 +191,38 @@ class _WindowsClient(_PackagedAeroFSClient):
     def _stop_aerofs_daemon(self):
         subprocess.check_call(["taskkill", "/f", "/im", "aerofsd.exe"])
 
+    def version_file_path(self):
+        # Windows uses a versioned install directory, so we need to read in the
+        # version directory from the aerofs.ini file
+        aerofs_ini = os.path.join(app.app_root_path(), "aerofs.ini")
+        if not os.path.exists(aerofs_ini):
+            # This file may not exist if the installed AeroFS version
+            # is from before the versioned installation directories
+            # were introduced.
+            return super(_WindowsClient, self).version_file_path()
 
-_client = PlatformSpecificClientFactory()
+        with open(aerofs_ini, 'r') as f:
+            # Search for the version directory string
+            match = re.search("(v_[.0-9]+)", f.read())
+            if match:
+                # If it exists, create the path to the version file
+                # Still reading the version file ensures that the installation
+                # was successful and keeps the common code the same
+                return os.path.join(app.app_root_path(), match.group(0), "version")
+            else:
+                raise Exception("could not find the version file")
+
+def _createPlatformSpecificClient():
+    if "linux" in sys.platform:
+        return _LinuxClient()
+    elif "darwin" in sys.platform:
+        return _OSXClient()
+    elif "cygwin" in sys.platform:
+        return _WindowsClient()
+    else:
+        raise Exception("unsupported platform: {0}".format(sys.platform))
+
+_client = _createPlatformSpecificClient()
 
 def instance():
     return _client
