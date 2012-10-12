@@ -36,7 +36,10 @@ readonly RELEASE_VERSION="$2"
 #****************************************
 echo ">> execute pre-publish checks"
 
-# Run SafetyNet
-call safetynet/safetynet $MODE $RELEASE_VERSION
+# Only run SafetyNet when deploying PROD
+if is_prod ; then
+    # Run SafetyNet
+    call safetynet/safetynet $MODE $RELEASE_VERSION
+fi
 
 exit 0

@@ -68,6 +68,9 @@ function copy_resources_to_local_release_directories() {
     # Remove all unit test dependencies
     rm -rf "${AEROFS_RELEASE_DIR}/lib.test"
 
+    # Remove the ci cacerts (they are not needed in a packaged client)
+    rm "${AEROFS_RELEASE_DIR}/cacert-ci.pem"
+
     # Adjust files for prod or staging
     if [ "$MODE" == "PROD" ]; then
         rm "${AEROFS_RELEASE_DIR}/cacert-staging.pem"
