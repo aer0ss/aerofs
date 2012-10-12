@@ -14,4 +14,4 @@ CONFIG=''
 create_updated_config_file CONFIG
 
 # Run the SyncDET test that stops the SafetyNet clients and copies the backed up installation over the original
-syncdet.py --config="$CONFIG" "$SAFETYNET_SYNCDET_DEPLOY_DIR" "${GIT_ROOT}/syncdet_test" -s "${SAFETYNET_SYNCDET_DEPLOY_DIR}/rollback.scn"
+"${SYNCDET}" --config="$CONFIG" "$SAFETYNET_SYNCDET_DEPLOY_DIR" "${GIT_ROOT}/syncdet_test" -s "${SAFETYNET_SYNCDET_DEPLOY_DIR}/rollback.scn"
