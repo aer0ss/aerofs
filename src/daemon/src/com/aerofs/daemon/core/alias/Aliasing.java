@@ -241,6 +241,7 @@ public class Aliasing
         }
 
         Trans t = _tm.begin_();
+        Throwable rollbackCause = null;
         try {
             if (!_ds.hasAliasedOA_(target)) {
                 l.info("Target object is not available locally, processing new object...");
@@ -354,8 +355,14 @@ public class Aliasing
 
             t.commit_();
             l.info("Done processing alias message");
+        } catch (Exception e) {
+            rollbackCause = e;
+            throw e;
+        } catch (Error e) {
+            rollbackCause = e;
+            throw e;
         } finally {
-            t.end_();
+            t.end_(rollbackCause);
         }
     }
 
