@@ -195,11 +195,6 @@ class _WindowsClient(_PackagedAeroFSClient):
         # Windows uses a versioned install directory, so we need to read in the
         # version directory from the aerofs.ini file
         aerofs_ini = os.path.join(app.app_root_path(), "aerofs.ini")
-        if not os.path.exists(aerofs_ini):
-            # This file may not exist if the installed AeroFS version
-            # is from before the versioned installation directories
-            # were introduced.
-            return super(_WindowsClient, self).version_file_path()
 
         with open(aerofs_ini, 'r') as f:
             # Search for the version directory string
@@ -210,7 +205,10 @@ class _WindowsClient(_PackagedAeroFSClient):
                 # was successful and keeps the common code the same
                 return os.path.join(app.app_root_path(), match.group(0), "version")
             else:
-                raise Exception("could not find the version file")
+                # This string may not exist if the installed AeroFS version
+                # is from before the versioned installation directories
+                # were introduced.
+                return super(_WindowsClient, self).version_file_path()
 
 def _createPlatformSpecificClient():
     if "linux" in sys.platform:
