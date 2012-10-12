@@ -106,7 +106,7 @@ public class ZephyrClientContext implements IStateContext
         _state = PREP_FOR_CONNECT;
         _conntoserver = false;
         _haltex = null;
-        _eq = new LinkedBlockingQueue<StateMachineEvent>(10);
+        _eq = new LinkedBlockingQueue<StateMachineEvent>(QUEUE_LENGTH);
 
         assert _ctrlbuf.capacity() >= Math.max(ZEPHYR_REG_MSG_LEN, ZEPHYR_BIND_MSG_LEN) :
                ("control buffer too small");
@@ -180,11 +180,7 @@ public class ZephyrClientContext implements IStateContext
         logqueue_("preeq");
 
         boolean added = _eq.offer(ev);
-        assert added : ("ev:" + ev + " not added to eq contents:" + _eq);
-
-        if (l.isDebugEnabled()) {
-            l.debug(toString() + ": +" + ev + " eq");
-        }
+        assert added : ("ev:" + ev + " not added to eq:" + _eq + " txq:" + _txq);
 
         logqueue_("psteq");
     }
