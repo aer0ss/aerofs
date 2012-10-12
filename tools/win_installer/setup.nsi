@@ -1,8 +1,9 @@
 # AeroFS Installer
 #
 # The installer requires the following parameters to be specified in command line:
-# AEROFS_SETUP_FOLDER - The full path to the folder where the setup package file should be generated
-# AEROFS_VERSION - The current version in the form <major>.<minor>.<build>
+# AEROFS_IN_FOLDER  - Path to the folder that is to be installed on the user's machine
+# AEROFS_OUT_FOLDER - The full path to the folder where the setup package file should be generated
+# AEROFS_VERSION    - The current version in the form <major>.<minor>.<build>
 #
 
 !AddPluginDir "Plugins"
@@ -18,12 +19,13 @@ RequestExecutionLevel user
 SetOverwrite try
 
 # General Symbol Definitions
-!define VERSION "${AEROFS_VERSION}.0"
-!define COMPANY "Air Computing, Inc."
-!define URL http://www.aerofs.com
+!define VERSION               "${AEROFS_VERSION}.0"
+!define COMPANY               "Air Computing, Inc."
+!define URL                    http://www.aerofs.com
+!define AEROFS_SHELLEXT_CLSID "{882108B0-26E6-4926-BC70-EA1D738D5DEB}"
 
 # MUI Symbol Definitions
-!define MUI_ICON aerofs\icons\logo.ico
+!define MUI_ICON "${AEROFS_IN_FOLDER}\v_${AEROFS_VERSION}\icons\logo.ico"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 # Java Runtime Environment
@@ -31,13 +33,14 @@ SetOverwrite try
 !define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=63691"  # Java 7u4 - url from: http://www.java.com/en/download/manual.jsp
 
 # Included files
+!include 'LogicLib.nsh'
+!include Library.nsh
+!include vcredist.nsh
 !include common.nsh
 !include Sections.nsh
 !include MUI2.nsh
-!include Library.nsh
 !include jre.nsh
 !include UAC.nsh
-!include vcredist.nsh
 !include WinVer.nsh
 
 # Variables
@@ -53,7 +56,7 @@ Var USERNAME
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile "${AEROFS_SETUP_FOLDER}\AeroFSInstall-${AEROFS_VERSION}.exe"
+OutFile "${AEROFS_OUT_FOLDER}\AeroFSInstall-${AEROFS_VERSION}.exe"
 CRCCheck on
 XPStyle on
 ShowInstDetails hide
@@ -68,6 +71,14 @@ VIAddVersionKey LegalCopyright ""
 InstallDir $APPDATA\AeroFSExec          # Always install to %AppData%\AeroFSExec
 ShowUninstDetails hide
 
+# Sanity check: make sure that the aerofs.ini has been created
+# This step is done by the build script, by SED'ing the version number into a template aerofs.ini
+# If this step fails or we forget to do it for some reason, AeroFS will not launch
+${!defineifexist} AEROFS_DOT_INI_EXISTS "${AEROFS_IN_FOLDER}\aerofs.ini"
+!ifndef AEROFS_DOT_INI_EXISTS
+    !error "Missing aerofs.ini in ${AEROFS_IN_FOLDER}. Aborting."
+!endif
+!undef AEROFS_DOT_INI_EXISTS
 
 Function requestAdminPrivileges
 
@@ -81,7 +92,7 @@ uac_tryagain:
         Quit
     ${EndIf}
 
-    # if ( ($0 == 0 && $1 == 3) || $0 == 1223 )
+    # if (($0 == 0 && $1 == 3) || $0 == 1223)
     ${If} $0 = 0
     ${AndIf} $1 = 3
     ${OrIf} $0 = 1223
@@ -105,39 +116,11 @@ uac_tryagain:
     # All other cases, simply try to proceed with the installation
 FunctionEnd
 
-/**
-Checks if we can install without admin privileges (at the cost of some features such as icon overlay),
-or if we absolutely need admin rights (to install the JRE, for example)
-
-Returns: $0 = "0" if we can continue without being admin, "1" otherwise
-*/
-Function isAdminRequired
-    # Require admin if JRE is not installed
-    Push "${JRE_VERSION}"
-    Call DetectJRE
-    Pop $0
-    Pop $1
-    ${If} $0 != "OK"
-        StrCpy $0 "1"
-        Return
-    ${EndIf}
-
-    # Require admin if some redistributables need to be installed
-    !insertmacro isVCRedistInstalled
-    ${If} $0 != "YES"
-        StrCpy $0 "1"
-        Return
-    ${EndIf}
-
-    # End of checks, admin is not required
-    StrCpy $0 "0"
-    Return
-FunctionEnd
-
 /**************************************
  **  Installer
  *************************************/
 Function .onInit
+
     # Enables logging to $INSTDIR\install.log
     # Caveat: this will only log operations performed under unprivileged sections
     # Sections running with elevated privileges will not have their output logged
@@ -146,7 +129,6 @@ Function .onInit
     # a default makensis compiler without logging support enabled. In this case,
     # follow the instructions in "compiling NSIS linux.txt" under the TEAM/docs folder
     # to get a makensis with logging support.
-
     LogSet on
     LogText "Installing AeroFS ${VERSION}..."
 
@@ -196,6 +178,7 @@ Function preInstall_privileged
 
 FunctionEnd
 
+
 /**
  *  This function will be called in the regular user context.
  *  All install code that doesn't need special privileges should go here.
@@ -205,31 +188,58 @@ FunctionEnd
  */
 Function install_unprivileged
 
-    # Try to quit AeroFS before installing
+    # Kill AeroFS
     !insertmacro KillProcess "aerofs.exe" $USERNAME
     !insertmacro KillProcess "aerofsd.exe" $USERNAME
 
-    # Make it possible to overwrite a previous version of the shell extension
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\AeroFSShellExt32.dll"
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\AeroFSShellExt64.dll"
+    # Unregister the Shell Extension
+    !insertmacro unregShellExt
 
-    # Note
-    # We temporarily need to do this because the installer is also being used to
-    # update and we haven't implemented the one-folder-per-version solution
-    # TODO: Remove this block of code once it's done
-    !insertmacro waitForAeroFSJar
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\aerofsd.exe"
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\aerofsd.dll"
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\aerofsj.dll"
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\aerofsjn.dll"
-    !insertmacro allowPatchingOfLockedFile "$INSTDIR\sqlitejdbc.dll"
+    # Delete the previous versions
+    ClearErrors
+    FindFirst $1 $2 "$INSTDIR\v_*"
+    ${Unless} ${Errors}
+        ${Do}
+            ${If} $2 != "v_${AEROFS_VERSION}"
+                DetailPrint "Deleting previous version: $2"
+                RMDir /r "$INSTDIR\$2"
+            ${EndIf}
+            ClearErrors
+            FindNext $1 $2
+        ${LoopUntil} ${Errors}
+        FindClose $1
+    ${EndUnless}
+
+    # Delete the old AeroFS files before we switched to the one-folder-per-version model
+    # TODO: This code can be removed after, say, April 2013 (6 months from now)
+    RMDir /r /REBOOTOK "$INSTDIR\bin"
+    RMDir /r /REBOOTOK "$INSTDIR\icons"
+    RMDir /r /REBOOTOK "$INSTDIR\lib"
+    Delete /REBOOTOK "$INSTDIR\aerofs.jar"
+    Delete /REBOOTOK "$INSTDIR\shortcut.exe"
+    Delete /REBOOTOK "$INSTDIR\aerofsd.dll"
+    Delete /REBOOTOK "$INSTDIR\aerofsj.dll"
+    Delete /REBOOTOK "$INSTDIR\aerofsjn.dll"
+    Delete /REBOOTOK "$INSTDIR\AeroFSShellExt32.dll"
+    Delete /REBOOTOK "$INSTDIR\AeroFSShellExt64.dll"
+    Delete /REBOOTOK "$INSTDIR\sqlitejdbc.dll"
+    Delete /REBOOTOK "$INSTDIR\version"
+    Delete /REBOOTOK "$INSTDIR\cacert.pem"
+    Delete /REBOOTOK "$INSTDIR\cacert-ci.pem"
+
+    # Allow overwritting aerofs.exe and aerofsd.exe even if they are still in use
+    # This should not be the case, but we never know, since they are not in the
+    # per-version folder.
+    !insertmacro allowOverwritting "$INSTDIR\aerofs.exe"
+    !insertmacro allowOverwritting "$INSTDIR\aerofsd.exe"
 
     # Copy files
     DetailPrint "Copying files..."
     SetShellVarContext current
     SetOutPath $INSTDIR
-    File /r aerofs\*
+    File /r ${AEROFS_IN_FOLDER}\*
 
+    # Create the uninstaller and the shortcuts
     WriteUninstaller $INSTDIR\uninstall.exe
     SetOutPath $SMPROGRAMS\AeroFS
     CreateShortcut "$SMPROGRAMS\AeroFS\Uninstall $(^Name).lnk" $INSTDIR\uninstall.exe
@@ -262,14 +272,14 @@ Function postInstall_privileged
         !insertmacro UAC_AsUser_GetGlobalVar $USERNAME
     ${EndIf}
 
-    # Allow java.exe and aerofs.exe to go through the Windows Firewall
+    # Allow aerofs.exe and aerofsd.exe to go through the Windows Firewall
     SimpleFC::AddApplication "AeroFS" "$USERS_INSTDIR\aerofs.exe" 0 2 "" 1
     SimpleFC::AddApplication "AeroFS Daemon" "$USERS_INSTDIR\aerofsd.exe" 0 2 "" 1
 
     # Register the shell extension
     DetailPrint "Registering the shell extension"
-    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\AeroFSShellExt32.dll"'
-    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\AeroFSShellExt64.dll"'
+    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt32.dll"'
+    ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt64.dll"'
 
     # Relaunch explorer on Windows XP - otherwise it won't detect that we added a new shell extension
     # But do not relaunch on updates (silent mode) otherwise Explorer would be restarted too often
@@ -299,12 +309,7 @@ FunctionEnd
  **  Uninstaller
  *************************************/
 
-Var UN_USERS_INSTDIR
-
 Function un.onInit
-
-    # Save the user's instdir so that we can retrieve it later while running as admin
-    StrCpy $UN_USERS_INSTDIR $INSTDIR
 
     uac_tryagain:
         !insertmacro UAC_RunElevated
@@ -337,15 +342,8 @@ Section -un.Main
 SectionEnd
 
 Function un.preUninstall_privileged
-    # Get the non-admin's $INSTDIR.
-    ${If} ${UAC_IsInnerInstance}
-        !insertmacro UAC_AsUser_GetGlobalVar $UN_USERS_INSTDIR
-    ${EndIf}
-
     # Unregister the shell extension
-    DetailPrint "Unregistering the shell extension"
-    ExecWait 'regsvr32.exe /u /s "$UN_USERS_INSTDIR\AeroFSShellExt32.dll"'
-    ExecWait 'regsvr32.exe /u /s "$UN_USERS_INSTDIR\AeroFSShellExt64.dll"'
+    !insertmacro unregShellExt
 FunctionEnd
 
 Function un.uninstall_unprivileged
