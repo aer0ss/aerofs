@@ -375,8 +375,10 @@ public class DirectoryService implements IDumpStatMisc
 
     /**
      * @return true if the object is under a trash folder
+     *
+     * This method is final because it would be a pain in the ass to mock
      */
-    public boolean isDeleted(@Nonnull OA oa) throws SQLException
+    final public boolean isDeleted(@Nonnull OA oa) throws SQLException
     {
         SIndex sidx = oa.soid().sidx();
         while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
