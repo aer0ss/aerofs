@@ -65,8 +65,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             ResultSet rs = _psGetChild.executeQuery();
             try {
                 if (rs.next()) {
-                    OID oid = new OID(rs.getBytes(1));
-                    return oid;
+                    return new OID(rs.getBytes(1));
                 } else {
                     return null;
                 }
@@ -159,9 +158,9 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         }
     }
 
-    // @param v may be null
-    private PreparedStatement setOABlob_(SOID soid, String column, byte[] v,
-            Trans t, PreparedStatement ps) throws SQLException
+    private PreparedStatement setOABlob_(SOID soid, String column, @Nullable byte[] v, Trans t,
+            @Nullable PreparedStatement ps)
+            throws SQLException
     {
         if (ps == null) ps = c().prepareStatement("update " + T_OA + " set "
                 + column + "=? where " + C_OA_SIDX + "=? and " + C_OA_OID
@@ -174,8 +173,9 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         return ps;
     }
 
-    private PreparedStatement setOAInt_(SOID soid, String column, int v,
-            Trans t, PreparedStatement ps) throws SQLException
+    private PreparedStatement setOAInt_(SOID soid, String column, int v, Trans t,
+            @Nullable PreparedStatement ps)
+            throws SQLException
     {
         if (ps == null) ps = c().prepareStatement("update " + T_OA + " set "
                 + column + "=? where " + C_OA_SIDX + "=? and " + C_OA_OID

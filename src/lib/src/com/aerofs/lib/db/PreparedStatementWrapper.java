@@ -4,18 +4,19 @@
 
 package com.aerofs.lib.db;
 
+import javax.annotation.Nullable;
 import java.sql.PreparedStatement;
 
 public class PreparedStatementWrapper
 {
-    private PreparedStatement _ps;
+    private @Nullable PreparedStatement _ps;
 
     public PreparedStatement get()
     {
         return _ps;
     }
 
-    public PreparedStatement set(PreparedStatement ps)
+    public PreparedStatement set(@Nullable PreparedStatement ps)
     {
         return _ps = ps;
     }

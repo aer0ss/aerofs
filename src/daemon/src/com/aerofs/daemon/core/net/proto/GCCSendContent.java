@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.Arrays;
 
+import com.google.common.base.Joiner;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
@@ -80,6 +81,7 @@ public class GCCSendContent
         long fileLength = ca.length();
         IPhysicalFile pf = ca.physicalFile();
 
+        assert mtime >= 0 : Joiner.on(' ').join(k, oa, mtime);
         bdReply.setMtime(mtime);
 
         // Send hash if available.

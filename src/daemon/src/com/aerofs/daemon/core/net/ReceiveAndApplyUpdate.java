@@ -733,8 +733,9 @@ public class ReceiveAndApplyUpdate
             }
 
             assert reply.hasMtime();
-            long mtime = _ps.apply_(pfPrefix, pf, wasPresent,
-                reply.getMtime(), t);
+            long replyMTime = reply.getMtime();
+            assert replyMTime >= 0 : Joiner.on(' ').join(replyMTime, k, vRemote, wasPresent);
+            long mtime = _ps.apply_(pfPrefix, pf, wasPresent, replyMTime, t);
 
             assert msg.streamKey() == null ||
                 _pvc.getPrefixVersion_(k.soid(), k.kidx()).equals(vRemote);
