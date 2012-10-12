@@ -447,12 +447,7 @@ public class DirectoryService implements IDumpStatMisc
         // hierarchy and it does not seem like it would adversely impact the syncing algorithm. It
         // might however be a problem for expulsion and re-admission.
         boolean fromTrash = isDeleted(oa);
-        boolean toTrash = oaParent.soid().oid().isTrash();
-
-        // Note: we do not call isDeleted() to determine if the destination is under a trash as
-        // we're operating under the (reasonable?) assumption that the only valid move target that
-        // can be expelled is the trash itself. This is enforced by the assertion below.
-        assert toTrash == oaParent.isExpelled() : oaParent;
+        boolean toTrash = oaParent.soid().oid().isTrash() || isDeleted(oaParent);
 
         if (fromTrash && !toTrash) {
             for (IDirectoryServiceListener listener : _listeners) {
