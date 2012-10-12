@@ -36,7 +36,7 @@ public interface IDownloadStateListener {
         {
             return "Started";
         }
-        static final Started SINGLETON = new Started();
+        public static final Started SINGLETON = new Started();
     }
 
     public static class Ended extends State {
@@ -50,12 +50,12 @@ public interface IDownloadStateListener {
         {
             return "Ended " + (_okay ? "okay" : "failed");
         }
-        static final Ended SINGLETON_OKAY = new Ended(true);
-        static final Ended SINGLETON_FAILED = new Ended(false);
+        public static final Ended SINGLETON_OKAY = new Ended(true);
+        public static final Ended SINGLETON_FAILED = new Ended(false);
     }
 
     public static class Ongoing extends State {
-        Ongoing(Endpoint ep, long done, long total)
+        public Ongoing(Endpoint ep, long done, long total)
         {
             _ep = ep;
             _done = done;

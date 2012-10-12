@@ -15,6 +15,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -26,6 +27,8 @@ import java.util.Map;
  */
 public class TransferStateAggregator
 {
+    private final static Logger l = Util.l(TransferStateAggregator.class);
+
     public final static int NoTransfer  = 0;
     public final static int Uploading   = PBPathStatus.Flag.UPLOADING_VALUE;
     public final static int Downloading = PBPathStatus.Flag.DOWNLOADING_VALUE;
@@ -71,15 +74,16 @@ public class TransferStateAggregator
         private int propagateUpwards(int previousState)
         {
             int currentState = _ownState | _childrenState;
+            if (currentState == previousState) return 0;
             // propagate state change upwards if needed
-            if (currentState != previousState && _parent != null) {
+            if (_parent != null) {
                 // auto-removal of nodes who no longer carry any useful state
                 if (currentState == NoTransfer && (_children == null || _children.isEmpty())) {
                     _parent._children.remove(_name);
                 }
                 return 1 + _parent.updateChildrenStatus();
             }
-            return 0;
+            return 1;
         }
 
         private int updateChildrenStatus() {
@@ -111,7 +115,7 @@ public class TransferStateAggregator
         try {
             path = _ds.resolveNullable_(socid.soid());
         } catch (SQLException e) {
-            Util.l().warn(Util.e(e));
+            l.warn(Util.e(e));
             return notify;
         }
         if (path == null) return notify;
@@ -151,7 +155,7 @@ public class TransferStateAggregator
         try {
             path = _ds.resolveNullable_(socid.soid());
         } catch (SQLException e) {
-            Util.l().warn(Util.e(e));
+            l.warn(Util.e(e));
             return notify;
         }
         if (path == null) return notify;
@@ -200,9 +204,10 @@ public class TransferStateAggregator
     {
         Node n = node_(path, true);
         int d = n.setState(start ? n._ownState | state : n._ownState & (~state));
-
-        while (d-- > 0) {
+        while (d > 0) {
             notify.put(path, n.state());
+            // break now to avoid an assert failure in Path in case we reached the root
+            if (--d == 0) break;
             path = path.removeLast();
             n = n._parent;
         }
@@ -224,7 +229,7 @@ public class TransferStateAggregator
                     return null;
                 }
             }
-            Node c = _root._children.get(s);
+            Node c = n._children.get(s);
             if (c == null) {
                 if (create) {
                     c = new Node(s, n);
