@@ -7,6 +7,7 @@
 <%    node = YAML.load_file(File.join(directory.path, file)) -%>
 <%    node.name -%>
 <% end -%>
+<% nodes.delete "staging.aerofs.com" -%>
 
 class KickAll
 
@@ -15,7 +16,7 @@ class KickAll
   end
 
   def run
-    kick_cmd = "puppet kick #{@hosts.join(" ")} --foreground --parallel 1"
+    kick_cmd = "puppet kick #{@hosts.join(" ")} --foreground --parallel 2"
     puts kick_cmd
     @output = `#{kick_cmd}`
   end
