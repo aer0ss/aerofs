@@ -78,8 +78,8 @@ public class Hasher
 
     private final Map<SOKID, Set<TCB>> _map = Maps.newHashMap();
 
-    private void mergeBranches_(SOKID sokid, ContentHash h) throws
-            Exception
+    private void mergeBranches_(SOKID sokid, ContentHash h)
+            throws SQLException, IOException, ExNotFound
     {
         assert h != null;
         assert h.equals(_ds.getCAHash_(sokid));
@@ -157,7 +157,7 @@ public class Hasher
      * Computing hash may pause thread so shouldn't be invoked in middle of a transaction.
      */
     public ContentHash computeHash_(SOKID sokid, boolean mergeBranches, Token tk)
-        throws Exception
+            throws ExAborted, ExNotFound, SQLException, DigestException, IOException
     {
         ContentHash h = _ds.getCAHash_(sokid);
         if (h != null) return h;
@@ -170,6 +170,7 @@ public class Hasher
             // will compute hash.
             waitingThreads = new HashSet<TCB>();
             Util.verify(_map.put(sokid, waitingThreads) == null);
+            Exception abortException = null;
             try {
                 SOCKID sockid = new SOCKID(sokid.soid(), CID.CONTENT, sokid.kidx());
                 Version vBeforeHash = _nvc.getLocalVersion_(sockid);
@@ -220,10 +221,25 @@ public class Hasher
                 for (TCB thread : waitingThreads) thread.resume_();
 
                 return h;
-            } catch (Exception e) {
-                for (TCB thread : waitingThreads) thread.abort_(e);
+            } catch (ExAborted e) {
+                abortException = e;
+                throw e;
+            } catch (ExNotFound e) {
+                abortException = e;
+                throw e;
+            } catch (SQLException e) {
+                abortException = e;
+                throw e;
+            } catch (DigestException e) {
+                abortException = e;
+                throw e;
+            } catch (IOException e) {
+                abortException = e;
                 throw e;
             } finally {
+                if (abortException != null) {
+                    for (TCB thread : waitingThreads) thread.abort_(abortException);
+                }
                 Util.verify(_map.remove(sokid) == waitingThreads);
             }
 

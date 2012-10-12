@@ -37,6 +37,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -215,20 +216,20 @@ public class ReceiveAndApplyUpdate
         }
     }
 
-    private boolean isContentSame_(SOCKID k, ContentHash hRemote, Token tk)
-        throws Exception
+    private boolean isContentSame_(SOCKID k, @Nonnull ContentHash hRemote, Token tk)
+            throws DigestException, ExAborted, IOException, ExNotFound, SQLException
     {
-        assert hRemote != null;
         ContentHash hLocal = _hasher.computeHash_(k.sokid(), false, tk);
         return isContentSame(k, hLocal, hRemote);
     }
 
-    private static boolean isContentSame(SOCKID k, ContentHash hLocal, ContentHash hRemote)
+    private static boolean isContentSame(SOCKID k, @Nonnull ContentHash hLocal,
+            @Nonnull ContentHash hRemote)
     {
         if (l.isInfoEnabled()) {
             l.info("Local hash: " + hLocal.toHex() + " Remote hash:" + hRemote.toHex());
         }
-        boolean result = hLocal.equals(hRemote);
+        boolean result = hRemote.equals(hLocal);
         if (l.isInfoEnabled()) {
             l.info("Comparing hashes: " + result + " " + k);
         }
