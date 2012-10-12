@@ -13,4 +13,4 @@ CONFIG=''
 create_updated_config_file CONFIG
 
 # Run the SyncDET test that decreases each actor's version number
-syncdet.py --config="$CONFIG" "$SAFETYNET_SYNCDET_DEPLOY_DIR" "${GIT_ROOT}/syncdet_test" -s "${SAFETYNET_SYNCDET_DEPLOY_DIR}/decrease_version.scn"
+"${SYNCDET}" --config="$CONFIG" "$SAFETYNET_SYNCDET_DEPLOY_DIR" "${GIT_ROOT}/syncdet_test" -s "${SAFETYNET_SYNCDET_DEPLOY_DIR}/decrease_version.scn"
