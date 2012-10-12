@@ -374,6 +374,18 @@ public class DirectoryService implements IDumpStatMisc
     }
 
     /**
+     * @return true if the object is under a trash folder
+     */
+    public boolean isDeleted(@Nonnull OA oa) throws SQLException
+    {
+        SIndex sidx = oa.soid().sidx();
+        while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
+            oa = getOA_(new SOID(sidx, oa.parent()));
+        }
+        return oa.parent().isTrash();
+    }
+
+    /**
      * N.B. should be called by ObjectMovement only
      */
     public void setOAParentAndName_(@Nonnull OA oa, @Nonnull OA oaParent, String name, Trans t)
@@ -404,18 +416,42 @@ public class DirectoryService implements IDumpStatMisc
             _cacheDS.invalidate_(pathFrom);
             _cacheDS.invalidate_(pathTo);
             _cacheOA.invalidate_(oa.soid());
-
         } else {
             // Children objects and stores under the old and new paths need to be invalidated
             _cacheDS.invalidateAll_();
-
             // Physical objects of all the children objects needs to be invalidated
             _cacheOA.invalidateAll_();
         }
 
         // update activity log
-        boolean fromTrash = oa.parent().equals(OID.TRASH);
-        boolean toTrash = oaParent.soid().oid().equals(OID.TRASH);
+
+        // Deleting a file means moving it to the trash but we don't currently flatten the object
+        // hierarchy when doing so wich results in interesting race conditions :
+        //
+        // Assume devices A and B share the following hierarchy
+        // foo
+        // \---> bar
+        // \---> baz
+        //
+        // Now if device A deletes foo and device B deletes bar concurrently, device A will attempt
+        // to move bar from its parent foo into the trash but foo is itself already into the trash
+        // which would cause multiple duplicate calls to the deletion callback (and a world of hurt)
+        // if we simply checked whether the source parent is the trash. Instead we have to check
+        // (recursively) whether the source is already under a trash folder.
+        //
+        // TODO: examine whether there is a valid reason to preserve tree structure in the trash
+        // It is simpler for sync status (and activity log and probably any code building upon
+        // deletion listeners) to assume that objects under the trash have a completely flat
+        // hierarchy and it does not seem like it would adversely impact the syncing algorithm. It
+        // might however be a problem for expulsion and re-admission.
+        boolean fromTrash = isDeleted(oa);
+        boolean toTrash = oaParent.soid().oid().isTrash();
+
+        // Note: we do not call isDeleted() to determine if the destination is under a trash as
+        // we're operating under the (reasonable?) assumption that the only valid move target that
+        // can be expelled is the trash itself. This is enforced by the assertion below.
+        assert toTrash == oaParent.isExpelled() : oaParent;
+
         if (fromTrash && !toTrash) {
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectCreated_(oa.soid(), oaParent.soid().oid(), pathTo, t);
