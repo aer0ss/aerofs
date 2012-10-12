@@ -33,7 +33,7 @@ public interface IUploadStateListener {
         // @param done == total means completion, either failure or success
         public final long _done, _total;
 
-        Value(long done, long total)
+        public Value(long done, long total)
         {
             _done = done;
             _total = total;
