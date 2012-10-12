@@ -5,10 +5,14 @@
 
 #include "../launcher.lib/liblauncher.h"
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <regex>
+#define DIRECTORY_SEPARATOR _T('\\')
+#else
 #include <signal.h>      /* for signal(3).  We need to ignore SIGPIPE. */
 #include <unistd.h>      /* for readlink(2), chdir(2) */
 #include <libgen.h>      /* For dirname(3) */
+#define DIRECTORY_SEPARATOR '/'
 #endif
 
 #ifdef __APPLE__
@@ -16,16 +20,8 @@
 #include <mach-o/dyld.h> /* For _NSGetExecutablePath() */
 #endif
 
-#ifdef _WIN32
-#define DIRECTORY_SEPARATOR _T('\\')
-#else
-#define DIRECTORY_SEPARATOR '/'
-#endif
-
 static tstring get_approot(void);
 static tstring get_executable_path(void);
-// TODO (DF): reenable once we figure out how to deal with the obfuscated jar better
-// static bool set_approot_static_member(JNIEnv* env, tstring path);
 
 /**
   Main entry point for the aerofs daemon.  This launches the aerofs daemon with
@@ -83,16 +79,6 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // set AppRoot's static field to the appropriate value through JNI
-    // TODO (DF): uncomment this when we have it working
-    /*
-    bool approot_set_successfully = set_approot_static_member(env, approot);
-    if (!approot_set_successfully) {
-        printf("Couldn't set AppRoot._abs\n");
-        return EXIT_FAILURE;
-    }
-    */
-
     int exit_code = launcher_launch(env, &errmsg);
     if (exit_code != EXIT_SUCCESS) {
         _tprintf(_T("Error: %s\n"), errmsg);
@@ -111,11 +97,50 @@ int main(int argc, char* argv[])
 */
 static tstring get_approot(void)
 {
-    tstring retval = get_executable_path();
+    tstring approot = get_executable_path();
     // Truncate the path from the trailing folder separator onward
     // to turn the executable path into the dirname
-    retval = retval.substr(0, retval.rfind(DIRECTORY_SEPARATOR));
-    return retval;
+    approot = approot.substr(0, approot.rfind(DIRECTORY_SEPARATOR));
+
+    // On Windows, we now install AeroFS in a different subfolder for each version
+    // Only aerofs.exe, aerofs.ini and aerofsd.exe stay at the top-level folder
+    // So in order to find the approot, we have to read the current version folder from aerofs.ini
+
+#ifdef _WIN32
+
+    // Open aerofs.ini
+    // Note: we have to use the Win32 API since the path may have Unicode characters in it
+    tstring path = approot + _T("\\aerofs.ini");
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        _tprintf(_T("Warning: could not open %s\n"), path.c_str());
+        return approot;
+    }
+
+    // Read the first 100 chars of the file into a buffer
+    char buf[100];
+    DWORD bytesRead = 0;
+    ReadFile(hFile, buf, sizeof(buf)-1, &bytesRead, NULL);
+    CloseHandle(hFile);
+    buf[bytesRead] = '\0';
+
+    // Use a regular expression to find the current version folder
+    std::regex rx("(v_[.0-9]+)");
+    std::cmatch result;
+    std::regex_search(buf, result, rx);
+    if (result.length() < 2) {
+        _tprintf(_T("Warning: could not find the current AeroFS version in %s\n"), path.c_str());
+        return approot;
+    }
+
+    // Append the version folder to the approot
+    std::string version(result[1]);
+    approot += _T("\\") + tstring(version.begin(), version.end());
+
+#endif
+
+    return approot;
 }
 
 /**
@@ -193,42 +218,3 @@ static tstring get_executable_path(void) {
 #undef MAX_PATH
 #endif
 }
-
-/**
- * Sets the static variable AppRoot._abs to the given path via JNI.
- * This is useful because AppRoot is still doing guesswork about paths
- */
-/* Disabled until we figure out how to deal with obfuscation sanely.
-   com.aerofs.lib.AppRoot doesn't exist as a name in the obfuscated jars. - (DF)
-bool set_approot_static_member(JNIEnv* env, tstring path)
-{
-    char* class_name = "com/aerofs/lib/AppRoot";
-    char* member_name = "_abs";
-    char* member_sig = "Ljava/lang/String;";
-    jclass cls = env->FindClass(class_name);
-    if (!cls) {
-        fprintf(stderr, "Could not load class '%s'\n", class_name);
-        if (env->ExceptionOccurred()) {
-            env->ExceptionDescribe();
-        }
-        return false;
-    }
-    jfieldID field_id = env->GetStaticFieldID(cls, member_name, member_sig);
-    if (!field_id) {
-        fprintf(stderr, "Could not get field id for '%s' (type '%s')\n", member_name, member_sig);
-        if (env->ExceptionOccurred()) {
-            env->ExceptionDescribe();
-        }
-        return false;
-    }
-    // Construct new jstring containing the absolute path to the approot
-#ifdef _WIN32
-    jstring jpath = env->NewString(path.c_str(), path.length());
-#else
-    jstring jpath = env->NewStringUTF(path.c_str());
-#endif
-    // Set AppRoot._abs to that string.
-    env->SetStaticObjectField(cls, field_id, jpath);
-    return true;
-}
-*/

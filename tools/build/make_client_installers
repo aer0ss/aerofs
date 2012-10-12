@@ -210,17 +210,35 @@ function make_windows_installers() {
 
     # now make the installer
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
-        rm -rf "${RELEASE_NSIS_DIR}/aerofs"*
 
-        # Copy the aerofs release directory to the NSIS directory
-        cp -r "${RELEASE_UNPACK_DIR}/aerofs" "${RELEASE_NSIS_DIR}/"
+        # Create a temporary directory to work in
+        NSIS_TEMP_DIR="\$( mktemp -d -t nsis.XXXXXXXX )"
+        trap "rm -r \"\$NSIS_TEMP_DIR\"" EXIT
 
-        # Copy the windows specific files to the aerofs directory
-        cp -r "${RELEASE_UNPACK_DIR}/aerofs.win"/* "${RELEASE_NSIS_DIR}/aerofs"
+        # Create a subfolder in that directory with the version number
+        # Note: we prepend v_ to the version number to make it easy for the NSIS installer
+        # to enumerate and delete all previous versions directories
+        NSIS_TEMP_DIR_WITH_VERSION="\${NSIS_TEMP_DIR}/v_${RELEASE_VERSION}"
+        mkdir "\${NSIS_TEMP_DIR_WITH_VERSION}"
 
-        chmod -R a+rx "${RELEASE_NSIS_DIR}/aerofs"
+        # Copy the aerofs release files in that directory
+        cp -r "${RELEASE_UNPACK_DIR}/aerofs"/* "\${NSIS_TEMP_DIR_WITH_VERSION}/"
+        cp -r "${RELEASE_UNPACK_DIR}/aerofs.win"/* "\${NSIS_TEMP_DIR_WITH_VERSION}/"
 
-        makensis -V1 -DAEROFS_SETUP_FOLDER="$local_VERSIONED_INSTALLER_DIR" -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
+        # Move the things that need to stay at the top-level folder
+        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "\${NSIS_TEMP_DIR}/"
+        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "\${NSIS_TEMP_DIR}/"
+        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/plugins" "\${NSIS_TEMP_DIR}/"
+
+        # Move aerofs.ini from from the version directory to the parent dir and sed the version number into it
+        sed -e "s={RELEASE_VERSION__TO_BE_REPLACED_BY_SED}=$RELEASE_VERSION=" \
+            "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.ini.template" > "\${NSIS_TEMP_DIR}/aerofs.ini"
+        rm "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.ini.template"
+
+        chmod -R a+rx "\${NSIS_TEMP_DIR}"
+
+        makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" -DAEROFS_OUT_FOLDER="$local_VERSIONED_INSTALLER_DIR" \
+                 -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
 
         export PASSPHRASE="$PASSPHRASE"
         printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \

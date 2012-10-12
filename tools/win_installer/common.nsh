@@ -1,7 +1,88 @@
 /**
- * Utility functions used by both the packager and the patcher
- */
+ *  Kills all instances of a process owned by the specified user.
+ *  Use this macro to avoid killing other users' processes.
+*/
+!macro KillProcess Process Username
+    LogText "killing ${Process} for user ${Username}"
+    nsExec::Exec 'taskkill /f /im ${Process} /fi "USERNAME eq ${Username}"'
+!macroend
 
+/**
+ * Unregister the shell extension
+ *
+ * Note:
+ * This should be called with admin privileges in order to fully remove all registry keys that we create.
+ * But using this macro without admin privileges will also succeed and will remove most of the keys.
+ *
+ * Note:
+ * In order to figure out which keys need admin privileges to be created or removed, you can look at the *.rgs files
+ * in the Shell Extension source code folder. Those named *Admin.rgs define registry keys that need admin privileges.
+ */
+!macro unregShellExt
+
+    DetailPrint "Unregistering the shell extension"
+
+    # Read the path to the currently registered shell extension in the registry
+    Push $0
+    SetRegView 32
+    ReadRegStr $0 HKCR "CLSID\${AEROFS_SHELLEXT_CLSID}\InprocServer32" ""
+    ExecWait 'regsvr32.exe /u /s $0'
+
+    SetRegView 64
+    ReadRegStr $0 HKCR "CLSID\${AEROFS_SHELLEXT_CLSID}\InprocServer32" ""
+    ExecWait 'regsvr32.exe /u /s $0'
+    Pop $0
+
+!macroend
+
+
+/**
+Checks if we can install without admin privileges (at the cost of some features such as icon overlay),
+or if we absolutely need admin rights (to install the JRE, for example)
+
+Returns: $0 = "0" if we can continue without being admin, "1" otherwise
+*/
+Function isAdminRequired
+    # Require admin if JRE is not installed
+    Push "${JRE_VERSION}"
+    Call DetectJRE
+    Pop $0
+    Pop $1
+    ${If} $0 != "OK"
+        StrCpy $0 "1"
+        Return
+    ${EndIf}
+
+    # Require admin if some redistributables need to be installed
+    !insertmacro isVCRedistInstalled
+    ${If} $0 != "YES"
+        StrCpy $0 "1"
+        Return
+    ${EndIf}
+
+    # End of checks, admin is not required
+    StrCpy $0 "0"
+    Return
+FunctionEnd
+
+/**
+ * Check if a file exists at compile time
+ * Source: http://nsis.sourceforge.net/Check_if_a_file_exists_at_compile_time
+ */
+!macro !defineifexist _VAR_NAME _FILE_NAME
+    !tempfile _TEMPFILE
+    !ifdef NSIS_WIN32_MAKENSIS
+        ; Windows - cmd.exe
+        !system 'if exist "${_FILE_NAME}" echo !define ${_VAR_NAME} > "${_TEMPFILE}"'
+    !else
+        ; Posix - sh
+        !system 'if [ -e "${_FILE_NAME}" ]; then echo "!define ${_VAR_NAME}" > "${_TEMPFILE}"; fi'
+    !endif
+    !include '${_TEMPFILE}'
+    !delfile '${_TEMPFILE}'
+    !undef _TEMPFILE
+!macroend
+!define !defineifexist "!insertmacro !defineifexist"
 
 /**
  * Rename a file by appending a suffix and a numeric id to it.
@@ -38,13 +119,13 @@
 !macroend
 
 /**
- * Allows a file currently in use by the OS to be patched
+ * Renames an EXE or DLL currently in use by the OS to a temporary name
+ * so that the file can be overwritten.
  *
  * This works because Windows allows a running EXE or DLL to be renamed
- * (but not deleted or patched). So we rename it to a temporary name, copy
- * it back to its orignal name and patch it.
+ * (but not deleted or patched).
  */
-!macro allowPatchingOfLockedFile Filename
+!macro allowOverwritting Filename
     # Delete all old temp copies
     Delete /REBOOTOK "${Filename}.bak*"
 
@@ -52,65 +133,8 @@
         # Rename the file with the first available suffix
         !insertmacro renameWithSuffix ${Filename} ".bak"
         ${If} $0 != ""
-            # Copy back the file to the orignal name
-            CopyFiles $0 ${Filename}
-            # Schedule the new temp file for deletion
+            # Schedule it for deletion
             Delete /REBOOTOK $0
         ${EndIf}
     ${EndIf}
-!macroend
-
-
-/**
- * Wait until aerofs.jar is unlocked, or until we reach a 20 seconds timeout
- * If we timeout, display an error message to the user and quit
- */
-!macro waitForAeroFSJar
-    Push  $9
-    StrCpy $9 0
-    ${Do}
-        IntOp $9 $9 + 1
-        # If we tried more than 100 times, abort (with 200ms sleep between each attempt => 20s)
-        ${If} $9 >= 100
-             DetailPrint "Aborting setup because files are locked"
-             MessageBox MB_OK|MB_ICONSTOP|MB_TOPMOST "AeroFS couldn't be updated because it is still running \
-             in the background. Please restart your computer and try launching AeroFS again.$\n$\n\
-             If the problem persists, please email: support@aerofs.com"
-             Quit
-        ${EndIf}
-
-        !insertmacro isFileLocked "$INSTDIR\aerofs.jar"
-        Sleep 200
-    ${LoopWhile} $0 == "1"
-    Pop $9
-!macroend
-
-/**
- * Try to rename a file to a temporary name to see whether the file is locked or not
- * NOTE: This will report a false positive if there is a file named "${Filename}.lock"
- */
-!macro isFileLocked Filename
-    ClearErrors
-    ${If} ${FileExists} "${Filename}"
-        Rename ${Filename} "${Filename}.lock"
-        ${If} ${Errors}
-            DetailPrint "File ${Filename} is locked"
-            StrCpy $0 "1"
-        ${Else}
-            DetailPrint "File ${Filename} NOT locked"
-            Rename "${Filename}.lock" ${Filename}
-            StrCpy $0 "0"
-        ${EndIf}
-    ${Else}
-        StrCpy $0 "0"
-    ${EndIf}
-!macroend
-
-/**
- *  Kills all instances of a process owned by the specified user.
- *  Use this macro to avoid killing other users' processes.
-*/
-!macro KillProcess Process Username
-    LogText "killing ${Process} for user ${Username}"
-    nsExec::Exec 'taskkill /f /im ${Process} /fi "USERNAME eq ${Username}"'
 !macroend

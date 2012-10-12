@@ -18,6 +18,7 @@ import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -43,6 +44,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private final FrequentDefectSender _fdsHeartbeatGone = new FrequentDefectSender();
     private final FrequentDefectSender _fdsRestartFail = new FrequentDefectSender();
     private final InjectableDriver _driver = new InjectableDriver();
+    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     /** waits until daemon starts and the key is set, or until timeout occurs
      *
@@ -51,10 +53,24 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      */
     private Process startDaemon() throws Exception
     {
-        final String aerofsdExec = OSUtil.isWindows() ? "aerofsd.exe" : "aerofsd";
+        String aerofsd;
+        if (OSUtil.isWindows()) {
+            // On Windows, try to find aerofsd.exe in approot's parent directory and fall back to
+            // approot if it's not found (if we're running from a dev environment for example)
+            final String daemonName = "aerofsd.exe";
+            InjectableFile appRoot = _factFile.create(AppRoot.abs());
+            InjectableFile daemon = appRoot.getParentFile().newChild(daemonName);
+            if (!daemon.exists()) {
+                daemon = appRoot.newChild(daemonName);
+            }
+            aerofsd = daemon.getAbsolutePath();
+        } else {
+            aerofsd = Util.join(AppRoot.abs(), "aerofsd");
+        }
+
         Process proc;
         try {
-            proc = Util.execBackground(Util.join(AppRoot.abs(), aerofsdExec), Cfg.absRTRoot());
+            proc = Util.execBackground(aerofsd, Cfg.absRTRoot());
         } catch (Exception e) {
             throw new ExDaemonFailedToStart(e);
         }
