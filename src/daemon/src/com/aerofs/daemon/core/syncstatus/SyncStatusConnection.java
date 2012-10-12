@@ -4,11 +4,14 @@
 
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.serverstatus.AbstractConnectionStatusNotifier;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param.SyncStat;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.SID;
@@ -31,6 +34,7 @@ import java.util.List;
 public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 {
     private final TC _tc;
+    private final CoreScheduler _sched;
     private final CfgLocalUser _user;
     private final SyncStatBlockingClient.Factory _ssf;
     private ISignInHandler _sih;
@@ -49,11 +53,13 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     }
 
     @Inject
-    SyncStatusConnection(CfgLocalUser user, TC tc, SyncStatBlockingClient.Factory ssf)
+    SyncStatusConnection(CfgLocalUser user, TC tc, CoreScheduler sched,
+            SyncStatBlockingClient.Factory ssf)
     {
         _tc = tc;
         _ssf = ssf;
         _user = user;
+        _sched = sched;
         _client = null;
     }
 
@@ -66,14 +72,44 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      * Try connecting if needed and notify listeners in case of successful connection
      *
      * NOTE: should only be called with the object lock held (i.e synchronized method or similar)
+     * and the core lock released
      */
     private void ensureConnected_() throws Exception
     {
         if (_client == null) {
             try {
                 _client = _ssf.create(SyncStat.URL, _user.get());
-                long epoch = _client.signInRemote();
-                _sih.onSignIn_(epoch);
+                final long epoch = _client.signInRemote();
+
+                /**
+                 * Some gymnastic must be done here:
+                 * The sign-in handler must be called with the core lock held because it needs to
+                 * read from, and possibly write to, the DB. However this method is called with the
+                 * core lock released to avoid network-related stalls so we schedule a core event
+                 * to call the handler and wait for its completion using wait/notify.
+                 */
+                final OutArg<Exception> ex = new OutArg<Exception>();
+                _sched.schedule(new AbstractEBSelfHandling() {
+                    @Override
+                    public void handle_()
+                    {
+                        synchronized (SyncStatusConnection.this) {
+                            try {
+                                _sih.onSignIn_(epoch);
+                            } catch (Exception e) {
+                                ex.set(e);
+                            }
+                            // notify the connection to keep going
+                            SyncStatusConnection.this.notify();
+                        }
+                    }
+                }, 0);
+
+                // wait for the sign-in handler to complete
+                wait();
+                // rethrow any error from the sign-in handler
+                if (ex.get() != null) throw ex.get();
+
                 _firstCall = true;
             } catch (Exception e) {
                 _client = null;
