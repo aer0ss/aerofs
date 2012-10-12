@@ -298,8 +298,7 @@ public class SVReactor
 
         // send notification email
         String body = desc
-                + "\n\n" + header.getVersion()
-                + "\n" + "DID " + (header.hasDeviceId() ?
+                + "\n\n" + header.getVersion() + " on dev " + (header.hasDeviceId() ?
                      Util.hexEncode(header.getDeviceId().toByteArray()) : "(unknown)")
                 + "\n" + dc
                 + "\n\n" + javaEnv.toString();
