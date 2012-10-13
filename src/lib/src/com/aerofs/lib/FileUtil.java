@@ -1,5 +1,7 @@
 package com.aerofs.lib;
 
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nullable;
@@ -22,11 +24,13 @@ public class FileUtil
      */
     private static String debugString(File f)
     {
-        return (f.exists() ? "e" : "-")
-                + (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-"))
-                + (f.canRead() ? "r" : "-")
-                + (f.canWrite() ? "w" : "-")
-                + (f.canExecute() ? "x" : "-")
+        return Joiner.on("").join(
+                (f.exists() ? "e" : "-"),
+                (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-")),
+                (f.canRead() ? "r" : "-"),
+                (f.canWrite() ? "w" : "-"),
+                (f.canExecute() ? "x" : "-"),
+                (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-"))
                 + " " + f;
     }
 
@@ -216,7 +220,7 @@ public class FileUtil
 
     /**
      * @return whether the modification time and file length is different from the given values
-     * @throw IOException if {@code f} is not a file or doesn't exist.
+     * @throws IOException if {@code f} is not a file or doesn't exist.
      */
     public static boolean wasModifiedSince(File f, long mtime, long len)
             throws IOException
