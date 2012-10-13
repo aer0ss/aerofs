@@ -14,6 +14,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.*;
 
+import com.aerofs.lib.ex.AbstractExWirable;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
@@ -81,22 +82,29 @@ public class GetComponentReply
         }
     }
 
-    /*
-     * @param requested see Download._requested for more information
-     */
-    void processReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
-            throws Exception
+    public void extractAnyExceptionFromReply_(DigestedMessage msg)
+            throws AbstractExWirable
     {
         try {
-            Util.checkPB(msg.pb().hasGetComReply() || msg.pb().hasExceptionReply(),
-                PBGetComReply.class);
-
             if (msg.pb().hasExceptionReply()) {
                 throw Exceptions.fromPB(msg.pb().getExceptionReply());
             }
+        } finally {
+            // TODO put this statement into a more general method
+            if (msg.streamKey() != null) _iss.end_(msg.streamKey());
+        }
+    }
 
+    /**
+     * @param msg the message sent in response to GetComponentCall
+     * @param requested see Download._requested for more information
+     */
+    public void processReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
+            throws Exception
+    {
+        try {
+            Util.checkPB(msg.pb().hasGetComReply(), PBGetComReply.class);
             doProcessReply_(socid, msg, requested, tk);
-
         } finally {
             // TODO put this statement into a more general method
             if (msg.streamKey() != null) _iss.end_(msg.streamKey());
@@ -113,7 +121,7 @@ public class GetComponentReply
     private void doProcessReply_(SOCID socid, DigestedMessage msg, Set<OCID> requested, Token tk)
             throws Exception
     {
-        PBGetComReply pbReply = msg.pb().getGetComReply();
+        final PBGetComReply pbReply = msg.pb().getGetComReply();
         final CIDType type = CIDType.infer(socid.cid());
 
         /////////////////////////////////////////

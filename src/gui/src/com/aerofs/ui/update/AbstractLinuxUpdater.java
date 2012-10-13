@@ -15,8 +15,6 @@ import com.aerofs.lib.spsv.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 
-import javax.annotation.Nullable;
-
 abstract class AbstractLinuxUpdater extends Updater
 {
     private static final InjectableFile.Factory s_factFile = new InjectableFile.Factory();

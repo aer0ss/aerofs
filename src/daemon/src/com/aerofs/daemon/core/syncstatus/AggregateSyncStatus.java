@@ -18,7 +18,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

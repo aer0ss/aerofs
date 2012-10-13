@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.util.Set;
 
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -21,7 +20,6 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.spsv.SVClient;
 import com.google.inject.Inject;
@@ -65,7 +63,6 @@ public class GetComponentCall
     private DirectoryService _ds;
     private IPhysicalStorage _ps;
     private LocalACL _lacl;
-    private GetComponentReply _gcr;
     private NSL _nsl;
     private GCCSendContent _sendContent;
     // TODO (MJ) remove when no longer deleting non-alias ticks from alias objects
@@ -73,13 +70,12 @@ public class GetComponentCall
     private AliasingMover _almv;
 
     @Inject
-    public void inject_(NSL nsl, GetComponentReply gcr, LocalACL lacl, IPhysicalStorage ps,
+    public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
             EmigrantCreator emc, GCCSendContent sendContent, MapAlias2Target a2t, TransManager tm,
             AliasingMover almv)
     {
         _nsl = nsl;
-        _gcr = gcr;
         _lacl = lacl;
         _ps = ps;
         _ds = ds;
@@ -93,8 +89,12 @@ public class GetComponentCall
         _almv = almv;
     }
 
-    public DigestedMessage rpc1_(SOCID socid, To src, Token tk)
-        throws Exception
+
+    /**
+     * @return the response Message received from the remote peer
+     */
+    public DigestedMessage remoteRequestComponent_(SOCID socid, To src, Token tk)
+            throws Exception
     {
         // Several of the version control and physical storage classes require a branch, not socid.
         // We know that downloads will only ever act on the master branch.
@@ -202,15 +202,6 @@ public class GetComponentCall
 
         bd.setPrefixLength(len);
         bd.setPrefixVersion(vPre.toPB_());
-    }
-
-    /**
-     * @param requested see Download._requested for more information
-     */
-    public void rpc2_(SOCID socid, DigestedMessage reply, Set<OCID> requested, Token tk)
-        throws Exception
-    {
-        _gcr.processReply_(socid, reply, requested, tk);
     }
 
     public void processCall_(DigestedMessage msg)
