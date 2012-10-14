@@ -13,6 +13,6 @@
 	<classpathentry kind="lib" path="resource/server/servlet-api-2.5.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/servletlib"/>
 	<classpathentry kind="lib" path="approot/lib/json_simple-1.1.jar"/>
-	<classpathentry kind="lib" path="approot/lib/netty-3.5.7.jar"/>
+	<classpathentry kind="lib" path="approot/lib/netty-3.5.8.jar"/>
 	<classpathentry kind="output" path="approot/bin"/>
 </classpath>
