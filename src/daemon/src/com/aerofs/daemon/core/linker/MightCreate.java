@@ -110,9 +110,7 @@ public class MightCreate
         // OS-specific files should be ignored
         if (fnt == null) return Result.IGNORED;
 
-        if (l.isInfoEnabled()) {
-            l.info(pcPhysical + ":" + fnt._fid);
-        }
+        if (l.isDebugEnabled()) l.debug(pcPhysical + ":" + fnt._fid);
 
         // TODO acl checking
 
@@ -129,7 +127,6 @@ public class MightCreate
             cond = null;
         } else {
             assert !_ds.getOA_(soid).isExpelled();
-
 
             Path logicalPath = _ds.resolveNullable_(soid);
             if (logicalPath != null) {
@@ -383,12 +380,12 @@ public class MightCreate
             l.warn("parent is expelled. ignore child creation of " + pcPhysical);
             return false;
         } else {
-           if (oaParent.isAnchor()) soidParent = _ds.followAnchorThrows_(oaParent);
-           SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
-                   pcPhysical._path.last(), MAP, t);
-           _a.incSaveCount();
-           l.info("created " + newSOID + " " + pcPhysical);
-           return true;
+            if (oaParent.isAnchor()) soidParent = _ds.followAnchorThrows_(oaParent);
+            SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
+                    pcPhysical._path.last(), MAP, t);
+            _a.incSaveCount();
+            l.info("created " + newSOID + " " + pcPhysical);
+            return true;
         }
     }
 
