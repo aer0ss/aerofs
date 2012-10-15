@@ -2,13 +2,13 @@ package com.aerofs.daemon.core.net;
 
 import java.io.ByteArrayInputStream;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -58,7 +58,7 @@ public class IncomingStreams
     private static class IncomingStream
     {
         final PeerContext _pc;
-        final Queue<ByteArrayInputStream> _chunks = new LinkedList<ByteArrayInputStream>();
+        final Queue<ByteArrayInputStream> _chunks = Lists.newLinkedList();
         TCB _tcb;
         InvalidationReason _invalidationReason;
         int _seq; // the last seq received. see IUnicastOutputLayer.sendOutgoingStreamChunk comment
