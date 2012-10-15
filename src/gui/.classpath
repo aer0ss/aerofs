@@ -22,6 +22,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/lib"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/spsv"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/verkehr"/>
-	<classpathentry kind="lib" path="approot/lib/netty-3.5.7.jar"/>
+	<classpathentry kind="lib" path="approot/lib/netty-3.5.8.jar"/>
 	<classpathentry kind="output" path="approot/bin"/>
 </classpath>
