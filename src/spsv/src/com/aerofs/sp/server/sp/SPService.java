@@ -56,7 +56,7 @@ import com.aerofs.servletlib.sp.organization.Organization;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
 import com.aerofs.servletlib.sp.user.ISessionUserID;
 import com.aerofs.servletlib.sp.user.User;
-import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -89,7 +89,7 @@ class SPService implements ISPService
     private final IThreadLocalTransaction<SQLException> _transaction;
 
     private VerkehrPublisher _verkehrPublisher;
-    private VerkehrCommander _verkehrCommander;
+    private VerkehrAdmin _verkehrAdmin;
 
     // Several methods in this SPService require access to the HttpSession's user id.
     // Since the Protobuf plugin cannot get access to the session user,
@@ -120,13 +120,13 @@ class SPService implements ISPService
         _certificateGenerator = certificateGenerator;
     }
 
-    public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrCommander verkehrCommander)
+    public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
     {
         assert verkehrPublisher != null : ("cannot set null verkehr publisher client");
-        assert verkehrCommander != null : ("cannot set null verkehr commander client");
+        assert verkehrAdmin != null : ("cannot set null verkehr admin client");
 
         _verkehrPublisher = verkehrPublisher;
-        _verkehrCommander = verkehrCommander;
+        _verkehrAdmin = verkehrAdmin;
     }
 
     @Override
@@ -726,7 +726,7 @@ class SPService implements ISPService
 
     /**
      * Utility to minimize duped code in the below verkehr-related methods.
-     * @param future either the verkehr publisher or commander.
+     * @param future either the verkehr publisher or admin.
      */
     private void verkehrFutureGet_(ListenableFuture<Void> future)
             throws Exception
@@ -767,7 +767,7 @@ class SPService implements ISPService
             throws Exception
     {
         l.info("command verkehr, #serials: " + serials.size());
-        ListenableFuture<Void> succeeded = _verkehrCommander.updateCRL_(serials);
+        ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL_(serials);
         verkehrFutureGet_(succeeded);
     }
 

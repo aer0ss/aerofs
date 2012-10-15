@@ -19,7 +19,7 @@ import com.aerofs.servletlib.sp.DoPostDelegate;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.servletlib.sp.SPParam;
 import com.aerofs.servletlib.sp.ThreadLocalHttpSessionUser;
-import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.apache.log4j.Logger;
 
@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import static com.aerofs.servletlib.sp.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
+import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 
 public class SPServlet extends AeroServlet
@@ -73,14 +73,14 @@ public class SPServlet extends AeroServlet
         init_();
 
         _certificateGenerator.setCAURL_(getServletContext().getInitParameter("ca_url"));
-        _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrCommander());
+        _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
 
         _conProvider.init_(getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER));
     }
 
-    private VerkehrCommander getVerkehrCommander()
+    private VerkehrAdmin getVerkehrAdmin()
     {
-        return (VerkehrCommander) getServletContext().getAttribute(VERKEHR_COMMANDER_ATTRIBUTE);
+        return (VerkehrAdmin) getServletContext().getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
     }
 
     private VerkehrPublisher getVerkehrPublisher()

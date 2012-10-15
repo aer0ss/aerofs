@@ -49,13 +49,13 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
     }
 
     /**
-     * Short-circuit the verkehr commander; make sure it always passes.
+     * Short-circuit the verkehr admin; make sure it always passes.
      */
     @SuppressWarnings("unchecked")
     @Before
     public void setupVerkehrToCommandSuccessfully()
     {
-        when(verkehrCommander.updateCRL_(any(ImmutableList.class)))
+        when(_verkehrAdmin.updateCRL_(any(ImmutableList.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 

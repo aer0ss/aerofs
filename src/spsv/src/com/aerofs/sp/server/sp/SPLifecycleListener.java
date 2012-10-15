@@ -3,7 +3,7 @@ package com.aerofs.sp.server.sp;
 import com.aerofs.lib.Util;
 import com.aerofs.servletlib.NoopConnectionListener;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
-import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.apache.log4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
@@ -18,8 +18,8 @@ import java.util.concurrent.Executors;
 import static com.aerofs.lib.Util.join;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ACK_TIMEOUT;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMANDER_ATTRIBUTE;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_COMMAND_PORT_INIT_PARAMETER;
+import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
+import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ADMIN_PORT_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_HOST_INIT_PARAMETER;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
@@ -38,14 +38,14 @@ public class SPLifecycleListener implements ServletContextListener
 
         l.info("verkehr host:" + ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER) +
                 " pub port:" + ctx.getInitParameter(VERKEHR_PUBLISH_PORT_INIT_PARAMETER) +
-                " cmd port:" + ctx.getInitParameter(VERKEHR_COMMAND_PORT_INIT_PARAMETER) +
+                " adm port:" + ctx.getInitParameter(VERKEHR_ADMIN_PORT_INIT_PARAMETER) +
                 " cacert:" + ctx.getInitParameter(VERKEHR_CACERT_INIT_PARAMETER)
         );
 
         String host = ctx.getInitParameter(VERKEHR_HOST_INIT_PARAMETER);
 
         short publishPort = parseShort(ctx.getInitParameter(VERKEHR_PUBLISH_PORT_INIT_PARAMETER));
-        short commandPort = parseShort(ctx.getInitParameter(VERKEHR_COMMAND_PORT_INIT_PARAMETER));
+        short adminPort = parseShort(ctx.getInitParameter(VERKEHR_ADMIN_PORT_INIT_PARAMETER));
 
         String cacert =  getCacertPath(ctx);
 
@@ -53,28 +53,26 @@ public class SPLifecycleListener implements ServletContextListener
         Executor workers = Executors.newCachedThreadPool();
         HashedWheelTimer timer = new HashedWheelTimer();
 
-        // FIXME (AG): HMMMMMMMM...notice how similar the commander is to a publisher?
+        // FIXME (AG): HMMMMMMMM...notice how similar the admin is to a publisher?
         // FIXME (AG): really we should simply store the factories
 
-        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer,
-                new NoopConnectionListener(), sameThreadExecutor());
+        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer, new NoopConnectionListener(), sameThreadExecutor());
         publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
-        VerkehrCommander commander = getCommander(host, commandPort, cacert, boss, workers, timer,
-                new NoopConnectionListener(), sameThreadExecutor());
-        commander.start();
-        ctx.setAttribute(VERKEHR_COMMANDER_ATTRIBUTE, commander);
+        VerkehrAdmin admin = getAdmin(host, adminPort, cacert, boss, workers, timer, new NoopConnectionListener(), sameThreadExecutor());
+        admin.start();
+        ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
     }
 
-    private VerkehrCommander getCommander(String host, short commandPort,
+    private VerkehrAdmin getAdmin(String host, short adminPort,
             String cacert,
             Executor bossExecutor, Executor ioWorkerExecutor,
             HashedWheelTimer timer,
             IConnectionListener listener, Executor listenerExecutor)
     {
-        com.aerofs.verkehr.client.lib.commander.ClientFactory commanderFactory =
-                new com.aerofs.verkehr.client.lib.commander.ClientFactory(host, commandPort,
+        com.aerofs.verkehr.client.lib.admin.ClientFactory adminFactory =
+                new com.aerofs.verkehr.client.lib.admin.ClientFactory(host, adminPort,
                         bossExecutor, ioWorkerExecutor,
                         cacert,
                         VERKEHR_RECONNECT_DELAY,
@@ -82,7 +80,7 @@ public class SPLifecycleListener implements ServletContextListener
                         timer,
                         listener, listenerExecutor);
 
-        return commanderFactory.create();
+        return adminFactory.create();
     }
 
     private VerkehrPublisher getPublisher(String host, short publishPort,
@@ -120,8 +118,8 @@ public class SPLifecycleListener implements ServletContextListener
         assert publisher != null;
         publisher.stop();
 
-        VerkehrCommander commander =  (VerkehrCommander) ctx.getAttribute(VERKEHR_COMMANDER_ATTRIBUTE);
-        assert commander != null;
-        commander.stop();
+        VerkehrAdmin admin =  (VerkehrAdmin) ctx.getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
+        assert admin != null;
+        admin.stop();
     }
 }
