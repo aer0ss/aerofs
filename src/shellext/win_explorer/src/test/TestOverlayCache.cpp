@@ -68,6 +68,20 @@ TEST(OverlayCache, shouldEvictItems) {
 	COMPARE(3, cache.value(L"baz"));
 }
 
+TEST(OverlayCache, shouldNotCrashWhenInterleavingInsertionLookupAndEviction) {
+	OverlayCache cache(4);
+	cache.insert(L"a", 1);
+	cache.insert(L"b", 2);
+	cache.insert(L"c", 3);
+	COMPARE(2, cache.value(L"b"));
+	cache.insert(L"d", 4);
+	COMPARE(2, cache.value(L"b"));
+	cache.insert(L"e", 5);
+	cache.insert(L"f", 6);
+	cache.insert(L"g", 7);
+	COMPARE(-1, cache.value(L"d"));
+}
+
 TEST(OverlayCache, shouldMoveToHeadOnLookup) {
 	OverlayCache cache(2);
 

@@ -557,7 +557,7 @@ template <typename T> struct Differ {
 template <typename T> inline void check_eq(const T& expected, const T& actual,
 	const std::string& fail_msg) {
 	if (!(expected == actual)) {
-		DOUT(fail_msg << Differ<T>::diff(actual, expected));
+		DOUT(fail_msg << Differ<T>::diff(expected, actual));
 		Test::fail();
 	}
 }

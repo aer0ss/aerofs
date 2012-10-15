@@ -53,7 +53,7 @@ static std::equal_to<std::wstring> E;
  */
 inline void add(Node** buckets, int numBuckets, Node* n)
 {
-	int i = H(n->key) % numBuckets;
+	size_t i = H(n->key) % numBuckets;
 	n->collision = buckets[i];
 	buckets[i] = n;
 }
@@ -106,8 +106,8 @@ int OverlayCache::limit() const
 
 void OverlayCache::setLimit(int limit)
 {
+	if (limit <= 0) return;
 	CriticalSectionLocker csLocker(&m_cs);
-	assert(limit > 0);
 	m_limit = limit;
 	trim();
 }
@@ -118,6 +118,7 @@ void OverlayCache::clear()
 	free(m_buckets);
 	m_bucketCount = 0;
 	m_entryCount = 0;
+	m_buckets = 0;
 
 	// delete all nodes
 	Node* h = m_head;
@@ -168,7 +169,7 @@ void OverlayCache::trim() {
 
 void OverlayCache::remove(Node* n)
 {
-	int i = H(n->key) % m_bucketCount;
+	size_t i = H(n->key) % m_bucketCount;
 	Node* t = m_buckets[i];
 	if (t == n) {
 		m_buckets[i] = n->collision;
@@ -176,14 +177,14 @@ void OverlayCache::remove(Node* n)
 		while (t && t->collision != n) {
 			t = t->collision;
 		}
-		t->collision = n->collision;
+		if (t) t->collision = n->collision;
 	}
 }
 
 Node* OverlayCache::find(const std::wstring& key)
 {
 	if (m_bucketCount <= 0) return 0;
-	int i = H(key) % m_bucketCount;
+	size_t i = H(key) % m_bucketCount;
 	Node* n = m_buckets[i];
 	while (n && !E(n->key, key)) {
 		n = n->collision;
@@ -198,10 +199,20 @@ void OverlayCache::moveToHead(Node* n)
 {
 	if (m_head == n) return;
 
+	// keep track of old tail
+	Node* tail = m_head ? m_head->prev : 0;
+
+	// remove node from doubly-linked list
 	if (n->prev) n->prev->next = n->next;
-	n->prev = m_head ? (m_head->prev == n ? n->prev : m_head->prev) : n;
+	if (n->next) n->next->prev = n->prev;
+
+	// preserve semi-circularity: new_head->prev = tail
+	if (tail != n) n->prev = tail ? tail : n;
+
+	// insert node before old head
 	if (m_head) m_head->prev = n;
 	n->next = m_head;
+
 	m_head = n;
 }
 
