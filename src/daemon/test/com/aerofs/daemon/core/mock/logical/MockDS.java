@@ -269,6 +269,7 @@ public class MockDS
             when(_ds.resolveThrows_(eq(_soid))).thenReturn(path);
 
             when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector());
+            when(_ds.getRawSyncStatus_(eq(_soid))).thenReturn(new BitVector());
 
             // The path of a root object should be resolved into the anchor's SOID. So we skip
             // mocking the path resolution for roots.
@@ -371,6 +372,7 @@ public class MockDS
         {
             BitVector oldStatus = _ds.getSyncStatus_(_soid);
             when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector(newStatus));
+            when(_ds.getRawSyncStatus_(eq(_soid))).thenReturn(new BitVector(newStatus));
             return oldStatus;
         }
     }
