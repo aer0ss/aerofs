@@ -1,15 +1,15 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="VerkehrSubscriberTestClient" type="Application" factoryName="Application">
-    <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr-subscriber.log" checked="true" skipped="true" show_all="false" alias="subscriber" />
+  <configuration default="false" name="VerkehrSubscriberOverflowClient" type="Application" factoryName="Application">
+    <log_file path="$PROJECT_DIR$/../../src/verkehr/resources/staging/verkehr-overflow-subscriber.log" checked="true" skipped="true" show_all="false" alias="overflow-subscriber" />
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
         <option name="PATTERN" value="com.aerofs.verkehr.client.lib.subscriber.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrSubscriberTestClient" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.client.overflow.VerkehrSubscriberOverflowClient" />
     <option name="VM_PARAMETERS" value="-ea -Djavax.net.debug=ssl:handshake:sessioncache:sslctx:keygen" />
-    <option name="PROGRAM_PARAMETERS" value="localhost 9091 client.crt client.key cacert.pem" />
+    <option name="PROGRAM_PARAMETERS" value="staging.aerofs.com 80 200 client.crt client.key cacert.pem" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../src/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />

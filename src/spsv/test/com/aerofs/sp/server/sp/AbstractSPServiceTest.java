@@ -6,7 +6,7 @@ import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.servletlib.sp.SPDatabase;
 import com.aerofs.testlib.AbstractTest;
-import com.aerofs.verkehr.client.lib.commander.VerkehrCommander;
+import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +27,7 @@ public abstract class AbstractSPServiceTest extends AbstractTest
 
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
-    @Mock protected VerkehrCommander verkehrCommander;
+    @Mock protected VerkehrAdmin _verkehrAdmin;
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - UserManagement,
@@ -50,7 +50,7 @@ public abstract class AbstractSPServiceTest extends AbstractTest
         LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
 
         // Verkehr setup.
-        service.setVerkehrClients_(verkehrPublisher, verkehrCommander);
+        service.setVerkehrClients_(verkehrPublisher, _verkehrAdmin);
     }
 
     @After
