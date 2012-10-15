@@ -710,13 +710,18 @@ public class DirectoryService implements IDumpStatMisc
      */
     public BitVector getSyncStatus_(SOID soid) throws SQLException
     {
+        return adjustedSyncStatus_(soid, _mdb.getSyncStatus_(soid));
+    }
+
+    private BitVector adjustedSyncStatus_(SOID soid, BitVector status) throws SQLException
+    {
         // Recently admitted files whose content has not been resynced yet are considered out of
         // sync even though the DB may still have old sync status information (which is required
         // to handle some exclusion/readmission corner cases in AggregateSyncStatus).
         OA oa = getOA_(soid);
         boolean recentlyAdmittedNotSynced = (!oa.isExpelled() && oa.isFile()
                                                      && oa.caMasterNullable() == null);
-        return recentlyAdmittedNotSynced ? new BitVector() : _mdb.getSyncStatus_(soid);
+        return recentlyAdmittedNotSynced ? new BitVector() : status;
     }
 
     /**
@@ -729,6 +734,7 @@ public class DirectoryService implements IDumpStatMisc
     {
         BitVector oldStatus = getSyncStatus_(soid);
         _mdb.setSyncStatus_(soid, status, t);
+        status = adjustedSyncStatus_(soid, status);
         if (!oldStatus.equals(status)) {
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectSyncStatusChanged_(soid, oldStatus, status, t);
