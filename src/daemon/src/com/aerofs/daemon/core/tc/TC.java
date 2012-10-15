@@ -65,7 +65,8 @@ public class TC implements IDumpStatMisc
          */
         public boolean resume_()
         {
-            return abort_(null);
+            l.info("resume " + _thd.getName());
+            return unblockWithThrowable_(null);
         }
 
         // N.B. since the same tcb is reused for each thread, the user must
@@ -78,10 +79,8 @@ public class TC implements IDumpStatMisc
         /**
          * @return false if the thread is already resumed or aborted
          */
-        public boolean abort_(@Nullable Throwable cause)
+        private boolean unblockWithThrowable_(@Nullable Throwable cause)
         {
-            l.info("abort " + _thd.getName() + ": " + cause);
-
             assert _l.isHeldByCurrentThread();
 
             if (_running) {
@@ -93,6 +92,18 @@ public class TC implements IDumpStatMisc
                 _cv.signal();
                 return true;
             }
+        }
+
+        /**
+         * @return false if the thread is already resumed or aborted
+         */
+        public boolean abort_(@Nonnull Throwable cause)
+        {
+            assert cause != null;
+
+            l.info("abort " + _thd.getName() + ": " + cause);
+
+            return unblockWithThrowable_(cause);
         }
 
         public void pseudoResumed_() throws ExAborted

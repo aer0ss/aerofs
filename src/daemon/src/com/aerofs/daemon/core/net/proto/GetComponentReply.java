@@ -85,13 +85,12 @@ public class GetComponentReply
     public void extractAnyExceptionFromReply_(DigestedMessage msg)
             throws AbstractExWirable
     {
-        try {
-            if (msg.pb().hasExceptionReply()) {
-                throw Exceptions.fromPB(msg.pb().getExceptionReply());
-            }
-        } finally {
-            // TODO put this statement into a more general method
+        if (msg.pb().hasExceptionReply()) {
+            // End the stream in case there is an exception. This can not be
+            // executed in a finally block because the stream will be ended
+            // even if there is no exception.
             if (msg.streamKey() != null) _iss.end_(msg.streamKey());
+            throw Exceptions.fromPB(msg.pb().getExceptionReply());
         }
     }
 
