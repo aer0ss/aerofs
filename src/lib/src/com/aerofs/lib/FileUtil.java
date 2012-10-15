@@ -25,6 +25,7 @@ public class FileUtil
     private static String debugString(File f)
     {
         return Joiner.on("").join(
+                (f.getParentFile().exists() ? "p" : "-"),
                 (f.exists() ? "e" : "-"),
                 (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-")),
                 (f.canRead() ? "r" : "-"),
