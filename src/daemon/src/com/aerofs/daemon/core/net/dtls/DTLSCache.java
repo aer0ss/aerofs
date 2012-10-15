@@ -10,6 +10,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExDTLS;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.DID;
 import com.aerofs.swig.dtls.DTLSEngine;
@@ -148,7 +149,7 @@ class DTLSCache implements IDumpStatMisc
         return entryList;
     }
 
-    DTLSEntry createEntry_(PeerContext pc) throws Exception
+    DTLSEntry createEntry_(PeerContext pc) throws ExDTLS
     {
         DTLSEngine engine = null;
         l.info("create entry");
@@ -159,7 +160,7 @@ class DTLSCache implements IDumpStatMisc
             SSLCtx ctx = new SSLCtx();
             if (ctx.init(_isSender, _pathCACert, _pathCACert.length(), _pathDevCert,
                     _pathDevCert.length(), privKey, privKey.length()) == -1) {
-                throw new Exception("cliCtx creation failed");
+                throw new ExDTLS("cliCtx creation failed");
             }
             _cliCtx = ctx;
         }
@@ -167,7 +168,7 @@ class DTLSCache implements IDumpStatMisc
         engine = new DTLSEngine();
         DTLS_RETCODE rc = engine.init(_isSender, _cliCtx);
 
-        if (DTLS_RETCODE.DTLS_OK != rc) throw new Exception("engine.init returned an error");
+        if (DTLS_RETCODE.DTLS_OK != rc) throw new ExDTLS("engine.init returned error " + rc);
 
         DTLSEntry entry = new DTLSEntry(_layer, engine);
         addNewEntry_(_backlog, pc, entry);
