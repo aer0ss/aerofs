@@ -76,7 +76,6 @@ abstract class AbstractDBCW implements IDBCW
         }
     }
 
-
     @Override
     public final void commit_() throws SQLException
     {

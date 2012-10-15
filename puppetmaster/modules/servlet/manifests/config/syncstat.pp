@@ -13,14 +13,6 @@ class servlet::config::syncstat(
             password => $mysql_sp_password,
             endpoint => $mysql_endpoint,
             schema => "aerofs_sp",
-        },
-        {
-            param_name => "ss_database_resource_reference",
-            name => "SSDatabase",
-            user => "aerofs_syncstat",
-            password => $mysql_syncstat_password,
-            endpoint => $mysql_endpoint,
-            schema => "aerofs_syncstat",
         }
     ]
 

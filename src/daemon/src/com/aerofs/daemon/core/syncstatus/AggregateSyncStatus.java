@@ -171,17 +171,19 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             int prev = parentAggregate.get(i);
             if (newStatus.test(i)) {
                 // out_sync -> in_sync
-                assert prev < total;
+                assert prev < total : "prev: " + prev + " total: " + total;
                 parentAggregate.inc(i);
             } else {
                 // in_sync -> out_sync
-                assert prev > 0;
+                assert prev > 0 : "prev: " + prev;
                 parentAggregate.dec(i);
             }
         }
 
-        if (l.isInfoEnabled())
+        if (l.isInfoEnabled()) {
             l.info(" -> " + parentAggregate);
+        }
+
         _ds.setAggregateSyncStatus_(parent, parentAggregate, t);
 
         // derive new aggregte sync status vector for parent

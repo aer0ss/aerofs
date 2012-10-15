@@ -33,10 +33,32 @@ class redis {
         require     => Apt::Key["dotdeb"]
     }
 
-    package{"redis-server":
+    # Until redis 2.6 is rolled out publicly, we have to use our own build.
+    package{"aerofs-redis-server":
         ensure => installed,
         require => [
-            Apt::Source["dotdeb"]
+            Apt::Source["aerofs"]
         ]
+    }
+
+    line{ "redis.conf1":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "port 6379",
+        require => Package["aerofs-redis-server"]
+    }
+
+    line{ "redis.conf2":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "daemonize yes",
+        require => Package["aerofs-redis-server"]
+    }
+
+    line{ "redis.conf3":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "pidfile /tmp/redis.pid",
+        require => Package["aerofs-redis-server"]
     }
 }

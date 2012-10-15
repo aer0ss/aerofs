@@ -12,6 +12,16 @@
     <param-value><%= @cacert_location %></param-value>
   </context-param>
 
+  <!-- Redis -->
+  <context-param>
+    <param-name>redis_host</param-name>
+    <param-value>localhost</param-value>
+  </context-param>
+  <context-param>
+    <param-name>redis_post</param-name>
+    <param-value>6379</param-value>
+  </context-param>
+
   <!-- initialization listener -->
   <listener>
     <listener-class>com.aerofs.syncstat.server.SyncStatLifecycleListener</listener-class>

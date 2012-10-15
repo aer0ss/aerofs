@@ -1,4 +1,5 @@
-GUIUtil.shortenText() is copied from SWT Win32 Extension library (http://sourceforge.net/projects/feeling/)
+GUIUtil.shortenText() is copied from SWT Win32 Extension library
+(http://sourceforge.net/projects/feeling/)
 
 third-party code includes:
 
