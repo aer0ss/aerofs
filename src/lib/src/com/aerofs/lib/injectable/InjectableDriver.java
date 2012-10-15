@@ -3,6 +3,7 @@ package com.aerofs.lib.injectable;
 import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
@@ -82,7 +83,10 @@ public class InjectableDriver
 
     private static void throwIOException(String path) throws IOException
     {
-        throw new IOException("getFid: " + obfuscate(path));
+        File f = new File(path);
+        // TODO (MJ) this seems like a gross dependency from InjectableDriver->FileUtil
+        // this should be refactored and perhaps even made non-static somehow?
+        throw new IOException("getFid: " + FileUtil.debugString(f));
     }
 
     public void setFolderIcon(String folderPath, String iconName)

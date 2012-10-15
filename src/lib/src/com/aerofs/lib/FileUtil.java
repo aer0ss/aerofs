@@ -22,7 +22,7 @@ public class FileUtil
     /**
      * Annotate filename with extra infos to make defect reports more informative
      */
-    private static String debugString(File f)
+    public static String debugString(File f)
     {
         return Joiner.on("").join(
                 (f.getParentFile().exists() ? "p" : "-"),
@@ -32,7 +32,7 @@ public class FileUtil
                 (f.canWrite() ? "w" : "-"),
                 (f.canExecute() ? "x" : "-"),
                 (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-"))
-                + " " + f;
+                + " " + PathObfuscator.obfuscate(f.getAbsolutePath());
     }
 
     private FileUtil() {}
