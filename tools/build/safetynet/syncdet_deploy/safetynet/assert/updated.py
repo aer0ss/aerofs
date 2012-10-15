@@ -3,7 +3,6 @@ import urllib2
 import time
 
 from lib import app
-from lib.files import wait_file
 from safetynet import client
 
 def monitor_version_file():
@@ -15,13 +14,22 @@ def monitor_version_file():
     data = urllib2.urlopen(client.instance().current_version_url())
     new_release_version = data.readline().replace("Version=", "").strip()
 
-    version_file_path = client.instance().version_file_path()
-
     line = ''
     while line != new_release_version:
         try:
-            wait_file(version_file_path)
+            # Sleeping right away is fine because clients are known to
+            # actually update well after this test case is started
             time.sleep(1)
+
+            # We need to get the file path each time because the path
+            # changes between updates on Windows
+            version_file_path = client.instance().version_file_path()
+
+            # Check if the version file exists. We do not use lib.files.wait_file
+            # because we need to grab a new version file path each time
+            if not os.path.exists(version_file_path):
+                continue
+
             with open(version_file_path, 'r') as f:
                 line = f.readline().strip()
         except IOError:
