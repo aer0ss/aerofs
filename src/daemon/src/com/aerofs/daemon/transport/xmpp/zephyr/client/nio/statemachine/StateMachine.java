@@ -47,7 +47,9 @@ public class StateMachine<T extends IStateContext>
         try {
             while (true) {
                 ev = nextev_(ctx);
-                if (coreev_(ev)) break;
+
+                assert ev != HALT : ("nextev_ return bad ev:" + ev);
+                if (ev == PARK) break;
 
                 while (true) { // run until the state machine requires external input
                     state = currstate_(ctx);
@@ -57,6 +59,13 @@ public class StateMachine<T extends IStateContext>
 
                     transition_(ev, ctx);
                 }
+
+                // if we get here then the state machine took an external input and transitioned
+                // as much as it could. the last state processed could have returned either PARK
+                // or HALT. if it returned PARK, return to the top and get the next external input
+                // to process; if it returned HALT, shut down.
+
+                if (ev == HALT) break;
             }
         } catch (ExInvalidTransition e) {
             ctx.logger_().error("no trans: T: (" + ev + ") " + ctx.curr_() + "->???");
@@ -102,11 +111,12 @@ public class StateMachine<T extends IStateContext>
         while (ev == null) {
             ev = ctx.dequeue_(defer);
 
-            if (ev != null) assert ev != PARK : ("PARK in ctx eq"); // no explicit PARKs
+            if (ev == null) {
+                ev = PARK;
+                break;
+            }
 
-            if (ev == null) ev = PARK;
-            if (coreev_(ev)) break;
-
+            assert !coreev_(ev) : ("core ev in ctx eq ev:" + ev); // no explicit PARK/HALT
             assert !defer.contains(ev.type()) : ("dequeue returned deferred ev:" + ev);
         }
 
