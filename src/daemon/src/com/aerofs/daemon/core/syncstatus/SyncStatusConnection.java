@@ -39,6 +39,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     private final SyncStatBlockingClient.Factory _ssf;
     private ISignInHandler _sih;
 
+    // fields protected by synchronized (this)
     private boolean _firstCall;
     private SyncStatBlockingClient _client;
 
@@ -123,9 +124,12 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     /**
      * Emit connection notification after first successful call
      *
-     * This is needed because the syncstat server will sometimes accept imcoming connections but
-     * fail to service subsequent calls which will cause the connection to quickly jump back to
-     * a CONNECTED state after a disconnection even though it isn't making any actual progress.
+     * This is needed because the syncstat server will sometimes accept incoming connections but
+     * fail to service subsequent calls. The connection would remain in a CONNECTED state for a
+     * whole minute (default socket timeout) while waiting for a call to complete, revert to
+     * DISCONNECTED at the end of that minute and quickly jump back to CONNECTED as the connection
+     * would again be accepted upon retry (but still not serviced)... As a result, sync status would
+     * mistakenly be assumed to be up-to-date even though the connection wouldn't make any progress.
      *
      * NOTE: should only be called with the object lock held (i.e synchronized method or similar)
      */
