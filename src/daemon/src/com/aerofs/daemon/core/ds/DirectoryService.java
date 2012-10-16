@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.ds;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -335,7 +336,7 @@ public class DirectoryService implements IDumpStatMisc
 
         assert oaParent.isDir();
         assert Normalizer.isNormalized(name, Form.NFC)
-                : Joiner.on(' ').join(sidx, oid, Form.valueOf(name));
+                : Joiner.on(' ').join(sidx, oid, Util.hexEncode(Util.string2utf(name)));
 
         _mdb.createOA_(sidx, oid, oidParent, name, type, flags, t);
 
