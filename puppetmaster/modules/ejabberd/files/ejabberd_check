@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DEAD_EJABBERD_RC=3
-EJABBERDCTL_BIN=ejabberdctl
+EJABBERDCTL_BIN=/usr/sbin/ejabberdctl
 
 $EJABBERDCTL_BIN status
 if [ $? -eq $DEAD_EJABBERD_RC ]
