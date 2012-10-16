@@ -69,8 +69,6 @@ public interface IOSUtil
 
     boolean isShellExtensionInstalled();
 
-    String getIconFileExtension();
-
     /**
      * Mark the file specified in the path as a hidden, system file. Nop on non-Windows OSes
      */

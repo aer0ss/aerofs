@@ -16,9 +16,9 @@ import java.util.TreeMap;
 import javax.annotation.Nullable;
 
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.os.OSUtil.Icon;
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.PostUpdate;
@@ -299,13 +299,11 @@ class Setup
 
     private void setRootAnchorIcon()
     {
-        // set folder icon for the root anchor
-        String absIconPath = Util.join(AppRoot.abs(), "icons",
-                "rootFolder." + OSUtil.get().getIconFileExtension());
+        if (OSUtil.isLinux()) return;
 
         // TODO use real dependency injection
         InjectableDriver dr = new InjectableDriver();
-        dr.setFolderIcon(Cfg.absRootAnchor(), absIconPath);
+        dr.setFolderIcon(Cfg.absRootAnchor(), OSUtil.getIconPath(Icon.RootAnchor));
     }
 
     private void initializeCoreDatabase(boolean s3setup)

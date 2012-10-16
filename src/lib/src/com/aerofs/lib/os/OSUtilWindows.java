@@ -9,6 +9,7 @@ import java.util.HashSet;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
 
@@ -84,7 +85,7 @@ public class OSUtilWindows implements IOSUtil
                     "/F:\"" + System.getProperty("user.home") + File.separator +
                     "Links" + File.separator + "AeroFS.lnk" + "\"",
                     "/A:C",
-                    "/I:\"" + Util.join(AppRoot.abs(), "icons", "libraryFolder.ico") + "\"",
+                    "/I:\"" + OSUtil.getIconPath(Icon.WinLibraryFolder) + "\"",
                     "/T:\"" + path + "\"");
         }
     }
@@ -241,12 +242,6 @@ public class OSUtilWindows implements IOSUtil
     public void startShellExtension(int port)
     {
         // Shell extensions are installed by the installer and patcher on Windows
-    }
-
-    @Override
-    public String getIconFileExtension()
-    {
-        return "ico";
     }
 
     @Override

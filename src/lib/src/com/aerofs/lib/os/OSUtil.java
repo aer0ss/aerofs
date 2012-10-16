@@ -2,9 +2,11 @@ package com.aerofs.lib.os;
 
 import java.io.IOException;
 
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.spsv.SVClient;
 
 public class OSUtil
 {
@@ -17,6 +19,21 @@ public class OSUtil
     public static enum OSArch {
         X86,
         X86_64,
+    }
+
+    public static enum Icon
+    {
+        SharedFolder("sharedFolder", true),          // shared folders icon
+        RootAnchor("rootFolder", false),             // root anchor icon
+        WinLibraryFolder("libraryFolder", false);    // Windows-only: the library icon
+
+        final String name;
+        final boolean hasXPStyle;
+
+        Icon(String name, boolean hasXPStyle) {
+            this.name = name;
+            this.hasXPStyle = hasXPStyle;
+        }
     }
 
     private static final IOSUtil _os;
@@ -106,5 +123,32 @@ public class OSUtil
     public static boolean isWindowsXP()
     {
         return isWindows() && getOSName().equals("Windows XP");
+    }
+
+    /**
+     * Return the path to an OS-specific icon resource
+     * We need this method because those icons are not necessarily stored under approot like other
+     * image resources. On Windows, they are at the top-level folder so that their path stays
+     * constant across versions.
+     */
+    public static String getIconPath(Icon icon)
+    {
+        // TODO use real dependency-injection
+        InjectableFile.Factory factFile = new InjectableFile.Factory();
+
+        InjectableFile result = factFile.create(AppRoot.abs());
+        if (OSUtil.isOSX())  {
+            result = result.newChild("icons").newChild(icon.name + ".icns");
+        } else if (OSUtil.isWindows()) {
+            String suffix = icon.hasXPStyle ? (OSUtil.isWindowsXP() ? "XP" : "Vista") : "";
+            result = result.getParentFile().newChild("icons").newChild(icon.name + suffix + ".ico");
+        } else {
+            assert false;
+        }
+
+        if (!result.exists()) {
+            SVClient.logSendDefectAsync(true, "icon not found: " + result.getAbsolutePath());
+        }
+        return result.getAbsolutePath();
     }
 }
