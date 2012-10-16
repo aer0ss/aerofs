@@ -76,7 +76,9 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      */
     private void ensureConnected_() throws Exception
     {
-        if (_client == null) {
+        // Need the while loop because we're releasing the object's monitor while waiting for
+        // the sign-in handler to complete (in a core thread)
+        while (_client == null) {
             try {
                 _client = _ssf.create(SyncStat.URL, _user.get());
                 final long epoch = _client.signInRemote();
