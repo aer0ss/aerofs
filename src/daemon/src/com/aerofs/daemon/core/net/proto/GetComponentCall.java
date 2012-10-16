@@ -210,9 +210,8 @@ public class GetComponentCall
         Util.checkPB(msg.pb().hasGetComCall(), PBGetComCall.class);
         PBGetComCall pb = msg.pb().getGetComCall();
 
-        SOCKID k = new SOCKID(msg.sidx(), new OID(pb.getObjectId()),
-                new CID(pb.getComId()));
-        l.info("recv from " + msg.ep() + " for " + k);
+        SOCKID k = new SOCKID(msg.sidx(), new OID(pb.getObjectId()), new CID(pb.getComId()));
+        l.warn("recv from " + msg.ep() + " for " + k);
 
         try {
             // Give up if the requested SOCKID is not present locally (either meta or content)
