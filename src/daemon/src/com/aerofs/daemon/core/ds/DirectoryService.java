@@ -601,6 +601,8 @@ public class DirectoryService implements IDumpStatMisc
 
         // Non-master branches must have non-null hashes. See Hasher for detail.
         assert h != null || sokid.kidx().equals(KIndex.MASTER);
+        // Mtime since the 1970 epoch must not be negative
+        assert mtime >= 0 : Joiner.on(' ').join(sokid, oa, mtime);
 
         _mdb.setCA_(sokid.soid(), sokid.kidx(), len, mtime, h, t);
 
