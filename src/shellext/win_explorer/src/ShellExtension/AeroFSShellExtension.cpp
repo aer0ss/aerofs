@@ -42,7 +42,7 @@ We should not do heavy de-initilization in the destructor
 */
 void AeroFSShellExtension::cleanup()
 {
-	m_socket->disconnect();
+	m_socket->forceDisconnect();
 }
 
 AeroFSShellExtension* AeroFSShellExtension::instance()
@@ -398,6 +398,11 @@ STDAPI DllUnregisterServer(void)
 	DEBUG_LOG(" ========== UNREG SERVER ===========");
 	HRESULT hr = _instance.DllUnregisterServer(FALSE);
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
+	// Force the sheel extension module to be unloaded to allow a different
+	// (presumably newer) version to be loaded instead. Without this call the
+	// old version will be kept in memory by Explorer until reboot.
+	// NB: this will only take effect after all explorer windows are closed
+	CoFreeUnusedLibrariesEx(200, 0);
 	return hr;
 }
 

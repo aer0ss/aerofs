@@ -50,6 +50,14 @@ void AeroSocket::disconnect()
 	}
 }
 
+void AeroSocket::forceDisconnect()
+{
+	if (m_socket) {
+		m_socket->forceDisconnect();
+		m_socket.reset();
+	}
+}
+
 void AeroSocket::sendMessage(const ShellextCall& call)
 {
 	if (!m_socket) {
@@ -109,10 +117,12 @@ void AeroSocket::onSocketRead(const std::string& data, int state)
 		break;
 
 	case ReadingData:
-		notification.ParseFromString(data);
+		if (!notification.ParseFromString(data)) {
+			disconnect();
+			break;
+		}
 		AeroFSShellExtension::instance()->parseNotification(notification);
 
-		// TODO: handle invalid PB (catch -> disconnect)
 		listenForMessage(); // Wait for the next message
 		break;
 	}

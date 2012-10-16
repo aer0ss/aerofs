@@ -183,6 +183,15 @@ void AsyncSocket::disconnect()
 	PostQueuedCompletionStatus(m_hIocp, 0, 0, op->overlapped());
 }
 
+void AsyncSocket::forceDisconnect()
+{
+	if (m_state == Terminated) {
+		return;
+	}
+
+	terminate();
+}
+
 void AsyncSocket::send(const std::string& data, int tag)
 {
 	if (m_state == Terminated) {

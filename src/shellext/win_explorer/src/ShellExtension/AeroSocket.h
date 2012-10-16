@@ -28,6 +28,7 @@ public:
 	void sendMessage(const ShellextCall& call);
 	bool isConnected() const;
 	void disconnect();
+	void forceDisconnect();
 
 private:
 	// ISocketDelegate interface
