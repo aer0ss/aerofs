@@ -51,7 +51,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
      * @return the daemon process. N.B. The caller shouldn't use the returned value to reliably
      * detect daemon crashes as the process may be a wrapper of the daemon process.
      */
-    private Process startDaemon() throws Exception
+    private Process startDaemon()
+            throws ExUIMessage, IOException, ExTimeout, ExDaemonFailedToStart
     {
         String aerofsd;
         if (OSUtil.isWindows()) {
@@ -90,7 +91,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 " of safety. Contact us at " + SV.SUPPORT_EMAIL_ADDRESS +
                                 " for more questions.");
                     } else {
-                        throw new Exception(getMessage(exitCode));
+                        throw new IOException(getMessage(exitCode));
                     }
                 } catch (IllegalThreadStateException e) {
                     // the process is still running
@@ -128,7 +129,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     }
 
     @Override
-    public void start() throws Exception
+    public void start()
+            throws IOException, ExUIMessage, ExDaemonFailedToStart, ExTimeout
     {
         // Cleanup any previous existing daemons
         try {
