@@ -71,7 +71,7 @@ class servlet {
         ssl_cert             => '/etc/nginx/certs/ssl.cert',
         ssl_key              => '/etc/nginx/certs/ssl.key',
         proxy                => 'http://127.0.0.1:8080',
-        client_max_body_size => '100m',
+        client_max_body_size => '1024m',
         ensure               => present,
         require              => File ["/etc/nginx/certs/ssl.key", "/etc/nginx/certs/ssl.cert"],
     }
