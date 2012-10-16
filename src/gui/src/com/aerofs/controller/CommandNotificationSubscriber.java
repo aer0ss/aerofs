@@ -104,6 +104,7 @@ public final class CommandNotificationSubscriber
 
                 // Skip the command if we have already executed it previously.
                 if (cmdId <= localMaxCmdId) {
+                    l.info("skipping cmdId " + cmdId + "(last recvd cmdId: " + localMaxCmdId);
                     continue;
                 }
 
