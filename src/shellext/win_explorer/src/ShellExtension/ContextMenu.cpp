@@ -32,8 +32,6 @@ HRESULT ContextMenu::Initialize(PCIDLIST_ABSOLUTE pidlFolder, IDataObject* pdtob
 {
 	// Do not show the AeroFS menu if we are not connected to the GUI
 	if (!m_instance->isConnectedToGUI()) {
-		// FIXME(huguesb): sometimes the first right click will fail because the shell ext is not
-		// yet connected...
 		return E_INVALIDARG;
 	}
 

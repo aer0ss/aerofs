@@ -33,6 +33,7 @@ public:
 	void initialize();
 	void connect(const std::string& host, unsigned short port);
 	void disconnect();
+	void forceDisconnect();
 	void send(const std::string& data, int tag);
 	void receive(int length, int tag);
 	ConnectionState connectionState() const;
