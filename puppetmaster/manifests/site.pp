@@ -20,6 +20,7 @@ include common::logs
         "default-jdk",
         "htop",
         "dstat",
+        "openntpd"
         ]:
         ensure => latest,
     }
