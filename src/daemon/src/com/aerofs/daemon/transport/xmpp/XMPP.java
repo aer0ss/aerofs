@@ -126,6 +126,10 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     // TODO use DI
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
+    // TODO (EK) remove variables once OOM error fixed
+    private int stackTraceCount = 0;
+    private final int stackTracePeriod = 20;
+
     /**
      * @param sink
      * @param mcfr
@@ -732,6 +736,14 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             _q.enqueueThrows(ev, pri);
         } catch (ExNoResource e) {
             l.warn("fail enq ev " + ev.getClass() + " - resched for immediate ex");
+
+            // TODO (EK) remove this block once OOM fixed
+            if (stackTraceCount % stackTracePeriod == 0) {
+                Util.logAllThreadStackTraces();
+                stackTraceCount = 0; // reset
+            }
+            stackTraceCount++;
+
             _sched.schedule(ev, 0);
         }
     }
