@@ -731,7 +731,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         try {
             _q.enqueueThrows(ev, pri);
         } catch (ExNoResource e) {
-            l.warn("fail enq ev - resched for immediate ex");
+            l.warn("fail enq ev " + ev.getClass() + " - resched for immediate ex");
             _sched.schedule(ev, 0);
         }
     }

@@ -92,6 +92,7 @@ public abstract class Util
     public static Error fatal(final Throwable e) throws Error
     {
         l.fatal("FATAL:" + Util.e(e));
+        if (e instanceof OutOfMemoryError) logAllThreadStackTraces();
         SVClient.logSendDefectNoLogsIgnoreErrors(true, "FATAL:", e);
         ExitCode.FATAL_ERROR.exit();
         throw new Error(e);
