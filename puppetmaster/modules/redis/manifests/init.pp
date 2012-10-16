@@ -61,4 +61,32 @@ class redis {
         line => "pidfile /tmp/redis.pid",
         require => Package["aerofs-redis-server"]
     }
+
+    line{ "redis.conf4":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "save 60 100",
+        require => Package["aerofs-redis-server"]
+    }
+
+    line{ "redis.conf5":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "logfile /var/log/redis/redis.log",
+        require => Package["aerofs-redis-server"]
+    }
+
+    line{ "redis.conf5":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "dbfilename /var/log/redis/redis.rdb",
+        require => Package["aerofs-redis-server"]
+    }
+
+    line{ "sysctl.conf vm overcommit":
+         ensure => present,
+         file => "/etc/sysctl.conf",
+         line => "vm.overcommit_memory = 1",
+         require => Package["aerofs-redis-server"]
+    }
 }

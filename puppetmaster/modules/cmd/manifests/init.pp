@@ -36,28 +36,6 @@ class cmd {
         ]
     }
 
-    # Ensure redis is in journalling mode for the command server.
-    line{ "cmd redis.conf1":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "appendonly yes",
-        require => Package["aerofs-redis-server"]
-    }
-
-    line{ "cmd redis.conf2":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "appendfilename /var/log/redis/redis.aof",
-        require => Package["aerofs-redis-server"]
-    }
-
-    line{ "sysctl.conf vm overcommit":
-        ensure => present,
-        file => "/etc/sysctl.conf",
-        line => "vm.overcommit_memory = 1",
-        require => Package["aerofs-redis-server"]
-    }
-
     include nginx
 
     nginx::resource::vhost {"cmd-vhost":
