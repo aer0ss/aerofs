@@ -374,7 +374,7 @@ public class GUI implements IUI {
             public void run()
             {
                 AeroFSMessageBox amb = new AeroFSMessageBox(sh, sheet, msg, mt2it(mt),
-                        ButtonType.OKAY_CANCEL, yesLabel, noLabel, null);
+                        ButtonType.OKAY_CANCEL, yesLabel, noLabel, null, true);
                 yes.set(amb.open() == IDialogConstants.OK_ID);
             }
         });
@@ -399,7 +399,7 @@ public class GUI implements IUI {
             public void run()
             {
                 final AeroFSTimedMessageBox atmb = new AeroFSTimedMessageBox(sh, sheet,
-                        mt2it(mt), format, yesLabel, noLabel, duration);
+                        mt2it(mt), format, ButtonType.OKAY_CANCEL, yesLabel, noLabel, duration);
                 // update periodically the label to show the remaining time.
                 atmb.startTimer();
                 yes.set(atmb.open() == IDialogConstants.OK_ID);
