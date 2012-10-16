@@ -240,10 +240,11 @@ public class SVReactor
 
         String desc = defect.getDescription();
         if (defect.hasStacktrace()) {
-            desc = desc + "\n" + defect.getStacktrace();
+            String unobfuscatedStackTrace = retrace(defect.getStacktrace(), header.getVersion());
+            desc = desc + "\n" + unobfuscatedStackTrace;
 
             //log the defect into sentry
-            sentry(defect.getStacktrace(),
+            sentry(unobfuscatedStackTrace,
                     header.getUser(),
                     Util.hexEncode(header.getDeviceId().toByteArray()),
                     header.getVersion());
@@ -329,42 +330,11 @@ public class SVReactor
     private void sentry(String exString, String user, String deviceId, String version)
             throws ExProtocolError, IOException
     {
-        OutArg<String> retracedEx = new OutArg<String>();
         String message;
         Matcher matcher;
 
-        synchronized (_retraceMap) {
-            ObfStackTrace obfStack = new ObfStackTrace(exString, version);
-
-            if (_retraceMap.containsKey(obfStack)) {
-                retracedEx.set(_retraceMap.get(obfStack));
-            } else {
-                File f = FileUtil.createTempFile("afs", "retrace", null, false);
-                BufferedWriter bw = new BufferedWriter(new FileWriter(f));
-                try {
-                    bw.write(exString);
-                } finally {
-                    bw.close();
-                }
-
-                //yuris note: please make sure that the "proguard" package is installed
-                Util.execForeground(retracedEx,
-                        "java",
-                        "-jar",
-                        "/usr/share/java/retrace.jar",
-                        "/maps/aerofs-"+version+"-prod.map",
-                        f.getAbsolutePath()
-                        );
-
-                FileUtil.deleteOrOnExit(f);
-
-                _retraceMap.put(obfStack, retracedEx.get());
-            }
-        } //synchronized
-
-
-        message = retracedEx.get().substring(0, retracedEx.get().indexOf("\n"));
-        matcher = PATTERN.matcher(retracedEx.get());
+        message = exString.substring(0, exString.indexOf("\n"));
+        matcher = PATTERN.matcher(exString);
 
 
         ArrayList<RavenTraceElement> rteList = new ArrayList<RavenTraceElement>();
@@ -385,6 +355,36 @@ public class SVReactor
                                         RavenUtils.getTimestampLong());
 
         ravenClient.captureException(rt);
+    }
+
+    private String retrace(String exString, String version)
+            throws IOException
+    {
+        synchronized (_retraceMap) {
+            ObfStackTrace obfStack = new ObfStackTrace(exString, version);
+
+            if (_retraceMap.containsKey(obfStack)) {
+                return _retraceMap.get(obfStack);
+            } else {
+                OutArg<String> retracedEx = new OutArg<String>();
+                File f = FileUtil.createTempFile("afs", "retrace", null, false);
+                BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+                try {
+                    bw.write(exString);
+                } finally {
+                    bw.close();
+                }
+
+                //yuris note: please make sure that the "proguard" package is installed
+                Util.execForeground(retracedEx, "java", "-jar", "/usr/share/java/retrace.jar",
+                        "/maps/aerofs-" + version + "-prod.map", f.getAbsolutePath());
+
+                FileUtil.deleteOrOnExit(f);
+
+                _retraceMap.put(obfStack, retracedEx.get());
+                return retracedEx.get();
+            }
+        }
     }
 
 }
