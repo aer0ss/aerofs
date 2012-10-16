@@ -79,7 +79,9 @@ public class RitualClientHandler extends SimpleChannelHandler implements RitualS
                 if (!channelFuture.isSuccess()) {
                     readFuture.setException(new ChannelException("Writing to the daemon failed",
                             channelFuture.getCause()));
-                    _pendingReads.remove(readFuture);
+                    synchronized (RitualClientHandler.this) {
+                        _pendingReads.remove(readFuture);
+                    }
                 }
             }
         });
@@ -148,10 +150,12 @@ public class RitualClientHandler extends SimpleChannelHandler implements RitualS
 
     private void drainPendingRequests(Throwable reason)
     {
-        for (UncancellableFuture<byte[]> pending : _pendingReads) {
-            pending.setException(reason);
+        synchronized (this) {
+            for (UncancellableFuture<byte[]> pending : _pendingReads) {
+                pending.setException(reason);
+            }
+            _pendingReads.clear();
+            _pendingWrites.clear();
         }
-        _pendingReads.clear();
-        _pendingWrites.clear();
     }
 }
