@@ -61,7 +61,7 @@ class redis {
     line{ "redis.conf3":
         ensure => present,
         file => "/etc/redis/redis.conf",
-        line => "pidfile /tmp/redis.pid",
+        line => "pidfile /run/redis.pid",
         require => Package["aerofs-redis-server"]
     }
 
