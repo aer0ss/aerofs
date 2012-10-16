@@ -239,12 +239,6 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     }
 
     @Override
-    public String getIconFileExtension()
-    {
-        return "icns";
-    }
-
-    @Override
     public void showInFolder(String path)
     {
         try {

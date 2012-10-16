@@ -9,7 +9,6 @@ import javax.inject.Inject;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -19,6 +18,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.os.OSUtil.Icon;
 
 /**
  * This class adds and removes tag files and overlay icons for shared folders
@@ -87,13 +87,9 @@ public class SharedFolderTagFileAndIcon
     private void addTagFileAndIconImpl(SIndex sidx, Path path) throws IOException, SQLException
     {
         String absPath = path.toAbsoluteString(_cfgAbsRootAnchor.get());
-        String iconExt = OSUtil.get().getIconFileExtension();
-        String iconName = "sharedFolder";
-        if (OSUtil.isWindows()) {
-            iconName += OSUtil.isWindowsXP() ? "XP" : "Vista";
+        if (!OSUtil.isLinux()) {
+            _dr.setFolderIcon(absPath, OSUtil.getIconPath(Icon.SharedFolder));
         }
-        String iconPath = Util.join(AppRoot.abs(), "icons", iconName + "." + iconExt);
-        _dr.setFolderIcon(absPath, iconPath);
 
         SID sid = _sidx2sid.getNullable_(sidx);
         // this method may be called during store creation when the sidx hasn't been added to the

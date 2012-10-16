@@ -25,7 +25,7 @@ SetOverwrite try
 !define AEROFS_SHELLEXT_CLSID "{882108B0-26E6-4926-BC70-EA1D738D5DEB}"
 
 # MUI Symbol Definitions
-!define MUI_ICON "${AEROFS_IN_FOLDER}\v_${AEROFS_VERSION}\icons\logo.ico"
+!define MUI_ICON "${AEROFS_IN_FOLDER}\icons\logo.ico"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
 
 # Java Runtime Environment
