@@ -76,7 +76,7 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
-    line{ "redis.conf5":
+    line{ "redis.conf6":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "dbfilename /var/log/redis/redis.rdb",
