@@ -41,6 +41,7 @@ class redis {
         ]
     }
 
+    # Port information.
     line{ "redis.conf1":
         ensure => present,
         file => "/etc/redis/redis.conf",
@@ -48,6 +49,7 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
+    # Run in the background.
     line{ "redis.conf2":
         ensure => present,
         file => "/etc/redis/redis.conf",
@@ -55,6 +57,7 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
+    # PID file.
     line{ "redis.conf3":
         ensure => present,
         file => "/etc/redis/redis.conf",
@@ -62,27 +65,27 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
+    # Persistence config.
     line{ "redis.conf4":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "save 60 100",
         require => Package["aerofs-redis-server"]
     }
-
     line{ "redis.conf5":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "dbfilename redis.rdb",
+        require => Package["aerofs-redis-server"]
+    }
+
+    # Logging.
+    line{ "redis.conf6":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "logfile /var/log/redis/redis.log",
         require => Package["aerofs-redis-server"]
     }
-
-    line{ "redis.conf6":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "dbfilename /var/log/redis/redis.rdb",
-        require => Package["aerofs-redis-server"]
-    }
-
     line{ "redis.conf7":
         ensure => present,
         file => "/etc/redis/redis.conf",
@@ -90,6 +93,7 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
+    # System-related config.
     line{ "sysctl.conf vm overcommit":
          ensure => present,
          file => "/etc/sysctl.conf",
