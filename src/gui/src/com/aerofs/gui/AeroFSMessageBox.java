@@ -14,6 +14,8 @@ import org.eclipse.swt.layout.GridData;
 
 import org.eclipse.swt.widgets.Button;
 
+import javax.annotation.Nullable;
+
 public class AeroFSMessageBox extends AeroFSJFaceDialog {
 
     public static enum IconType {
@@ -38,6 +40,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     private final ButtonType _bt;
     private final String _checkBoxText;
     private boolean _checked;
+    private Button _okayBtn, _cancelBtn;
     private final String _okayLabel, _cancelLabel;
 
     /**
@@ -58,16 +61,17 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
             ButtonType bt, String checkBoxText)
     {
         this(parentShell, sheet, msg, it, bt, IDialogConstants.OK_LABEL,
-                IDialogConstants.CANCEL_LABEL, checkBoxText);
+                IDialogConstants.CANCEL_LABEL, checkBoxText, true);
     }
 
     /**
      * @param checkBoxText null to not show the check box
      */
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it,
-            ButtonType bt, String okayLabel, String cancelLabel, String checkBoxText)
+            ButtonType bt, String okayLabel, String cancelLabel,
+            String checkBoxText, boolean allowClose)
     {
-        super(null, parentShell, sheet, false, true, true);
+        super(null, parentShell, sheet, false, true, allowClose);
         _checkBoxText = checkBoxText;
         _it = it;
         _bt = bt;
@@ -142,11 +146,12 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     {
         switch (_bt) {
         case OKAY_CANCEL:
-            createButton(parent, OK_ID, _okayLabel, true);
-            createButton(parent, CANCEL_ID, _cancelLabel, false);
+            _okayBtn = createButton(parent, OK_ID, _okayLabel, true);
+            _cancelBtn = createButton(parent, CANCEL_ID, _cancelLabel, false);
             break;
         default:
-            createButton(parent, OK_ID, IDialogConstants.OK_LABEL, true);
+            _okayBtn = createButton(parent, OK_ID, IDialogConstants.OK_LABEL, true);
+            _cancelBtn = null;
             break;
         }
     }
@@ -155,5 +160,21 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     {
         assert _checkBoxText != null;
         return _checked;
+    }
+
+
+    public Label getLbl() {
+        return _lbl;
+    }
+
+    public Button getOkayBtn() {
+        return _okayBtn;
+    }
+
+    /**
+     * Null if ButtonType is not OKAY_CANCEL.
+     */
+    public @Nullable Button getCancelBtn() {
+        return _cancelBtn;
     }
 }

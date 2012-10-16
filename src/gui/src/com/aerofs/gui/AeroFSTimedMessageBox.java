@@ -4,40 +4,22 @@
 
 package com.aerofs.gui;
 
-import com.aerofs.gui.AeroFSMessageBox.IconType;
-
 import com.aerofs.lib.C;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Button;
 
 /**
  * A Timed dialog similar to AeroFSDialog except that after the time runs out
  * the dialog closes itself and sets its return code to OK.
  */
-public class AeroFSTimedMessageBox extends AeroFSJFaceDialog
+public class AeroFSTimedMessageBox extends AeroFSMessageBox
 {
-    public static final int OK_ID = IDialogConstants.OK_ID;
-    public static final int CANCEL_ID = IDialogConstants.CANCEL_ID;
-
-    private Label _lbl;
-    private final IconType _it;
     private String _format;
-    private final String _okayLabel, _cancelLabel;
-    private final long _duration;        ///< Total number of seconds for which the dialog is open.
     private volatile long _countdown;    ///< Number of seconds remaining until dialog closes.
-    private Button _yesBtn;
-    private Button _noBtn;
 
     private final long refreshDelay = 1* C.SEC; ///< refresh the dialog every second.
 
@@ -49,14 +31,11 @@ public class AeroFSTimedMessageBox extends AeroFSJFaceDialog
      * @param duration Number of seconds that we want to leave this dialog open.
      */
     public AeroFSTimedMessageBox(Shell parentShell, boolean sheet, IconType it, String format,
-            String okayLabel, String cancelLabel, long duration)
+            ButtonType bt, String okayLabel, String cancelLabel, long duration)
     {
-        super(null, parentShell, sheet, false, true, false);
+        super(parentShell, sheet, String.format(format,duration), it,
+                bt, okayLabel, cancelLabel, null, false);
         _format = format;
-        _it = it;
-        _okayLabel = okayLabel;
-        _cancelLabel = cancelLabel;
-        _duration = duration;
         _countdown = duration;
     }
 
@@ -85,46 +64,6 @@ public class AeroFSTimedMessageBox extends AeroFSJFaceDialog
         });
     }
 
-    @Override
-    protected Control createDialogArea(Composite parent)
-    {
-        Composite container = (Composite) super.createDialogArea(parent);
-        GridLayout gl_container = new GridLayout(2, false);
-        gl_container.verticalSpacing = GUIParam.MAJOR_SPACING;
-        gl_container.horizontalSpacing = GUIParam.MAJOR_SPACING;
-        gl_container.marginWidth = GUIParam.MARGIN;
-        gl_container.marginHeight = GUIParam.MARGIN;
-        container.setLayout(gl_container);
-
-        int icon;
-        switch (_it) {
-        case WARN:      icon = SWT.ICON_WARNING;        break;
-        case ERROR:     icon = SWT.ICON_ERROR;          break;
-        case QUESTION:  icon = SWT.ICON_QUESTION;       break;
-        case INFO:      icon = SWT.ICON_INFORMATION;    break;
-        default:        throw new IllegalArgumentException("No such IconType was found");
-        }
-
-        CLabel iconLbl = new CLabel(container, SWT.NONE);
-        iconLbl.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, true, 1, 1));
-        iconLbl.setImage(getShell().getDisplay().getSystemImage(icon));
-
-        _lbl = new Label(container, SWT.WRAP);
-        GridData gd__text = new GridData(SWT.FILL, SWT.CENTER, true, true, 1, 1);
-        gd__text.widthHint = 360;
-        _lbl.setLayoutData(gd__text);
-        _lbl.setText(String.format(_format, _duration));
-
-        return container;
-    }
-
-    @Override
-    protected void createButtonsForButtonBar(Composite parent)
-    {
-        _yesBtn = createButton(parent, OK_ID, _okayLabel, true);
-        _noBtn = createButton(parent, CANCEL_ID, _cancelLabel, false);
-    }
-
     /**
      * Update the counter and label in the UI to display the number of seconds remaining
      * until the dialog closes. If the countdown hits 0 we set the return code to be OK.
@@ -135,7 +74,7 @@ public class AeroFSTimedMessageBox extends AeroFSJFaceDialog
         if (_countdown <= 0) {
             setReturnCode(IDialogConstants.OK_ID);
         } else {
-            _lbl.setText(String.format(_format, _countdown));
+            getLbl().setText(String.format(_format, _countdown));
         }
     }
 
@@ -151,7 +90,7 @@ public class AeroFSTimedMessageBox extends AeroFSJFaceDialog
      */
     private void addStopTimerListeners(final Runnable runnable)
     {
-        _yesBtn.addListener(SWT.Selection, new Listener()
+        getOkayBtn().addListener(SWT.Selection, new Listener()
         {
             @Override
             public void handleEvent(Event event)
@@ -161,7 +100,7 @@ public class AeroFSTimedMessageBox extends AeroFSJFaceDialog
             }
         });
 
-        _noBtn.addListener(SWT.Selection, new Listener()
+        getCancelBtn().addListener(SWT.Selection, new Listener()
         {
             @Override
             public void handleEvent(Event event)
