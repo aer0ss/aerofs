@@ -5,9 +5,6 @@ tomcat6_manager:
     password: "55555"
     roles: "manager"
 
-mysql_syncstat:
-    password: "testpw1"
-
 mysql_sp:
     password: "testpw1"
 

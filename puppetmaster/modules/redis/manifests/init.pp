@@ -83,6 +83,13 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
+    line{ "redis.conf7":
+        ensure => present,
+        file => "/etc/redis/redis.conf",
+        line => "loglevel debug",
+        require => Package["aerofs-redis-server"]
+    }
+
     line{ "sysctl.conf vm overcommit":
          ensure => present,
          file => "/etc/sysctl.conf",

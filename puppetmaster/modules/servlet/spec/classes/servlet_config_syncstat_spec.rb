@@ -8,7 +8,6 @@ describe 'servlet::config::syncstat' do
     let(:params) {
         {
             :mysql_sp_password       => "foo",
-            :mysql_syncstat_password => "bar",
             :mysql_endpoint          => "localhost",
             :verkehr_host            => "verkehr.aerofs.com",
             :cacert_location         => "/etc/ssl/certs/AeroFS_CA.pem"

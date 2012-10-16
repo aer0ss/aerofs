@@ -1,6 +1,5 @@
 class servlet::syncstat(
     $mysql_sp_password,
-    $mysql_syncstat_password,
     $mysql_endpoint,
     $verkehr_host,
     $cacert_location
@@ -16,7 +15,6 @@ class servlet::syncstat(
 
     class{"servlet::config::syncstat":
         mysql_sp_password       => $mysql_sp_password,
-        mysql_syncstat_password => $mysql_syncstat_password,
         mysql_endpoint          => $mysql_endpoint,
         verkehr_host            => $verkehr_host,
         cacert_location         => $cacert_location
