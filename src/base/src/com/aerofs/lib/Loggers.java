@@ -33,7 +33,7 @@ public class Loggers
         if (isAndroid) {
             String name = "aerofs." + cls.getSimpleName();
             if (name.length() > TAG_MAX_LENGTH) {
-                name = name.substring(0, TAG_MAX_LENGTH - 1) + '…';
+                name = name.substring(0, TAG_MAX_LENGTH - 1) + '\u2026';
             }
             return LoggerFactory.getLogger(name);
         } else {

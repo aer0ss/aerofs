@@ -26,6 +26,7 @@ public class MagicHeader
 
     public static class BadMagicHeaderException extends IOException
     {
+        public static final long serialVersionUID = 1;
     }
 
     private final byte[] _magic;
