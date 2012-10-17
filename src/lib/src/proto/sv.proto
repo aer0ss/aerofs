@@ -85,6 +85,7 @@ message PBSVEvent {
         FOLDERLESS_INVITE_SENT = 301;
 
         FILE_SAVED = 0;
+        FILE_CONFLICT = 1;             // create conflict branch
 
         SIGN_UP = 1000;
         SIGN_RETURNING = 1001;
@@ -94,7 +95,11 @@ message PBSVEvent {
         JOIN_STORE = 1005;             // initial request to join
         JOIN_STORE_OK = 1006;          // join successfully
         UPDATE = 1007;                 // the program is updated
-
+        EXCLUDE = 1008;                // exclude a folder from sync
+        INCLUDE = 1009;                // readmit an excluded folder
+        KICKOUT = 1010;                // kicked-out from a shared folder
+        UNLINK = 1011;                 // unlink device (reinstall on next run)
+        MOVE_ROOT = 1012;              // move root anchor
     }
 
     required Type type = 1;

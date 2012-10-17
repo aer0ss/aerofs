@@ -18,7 +18,9 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.spsv.SPBlockingClient;
 import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Sp.GetPreferencesReply;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
@@ -335,6 +337,7 @@ public class CompPreferences extends Composite
             {
                 if (GUI.get().ask(getShell(), MessageType.WARN, S.UNLINK_THIS_COMPUTER_CONFIRM)) {
                     try {
+                        SVClient.sendEventAsync(Type.UNLINK);
                         UIUtil.unlinkAndExit(_factFile);
                     } catch (Exception e) {
                         GUI.get()
