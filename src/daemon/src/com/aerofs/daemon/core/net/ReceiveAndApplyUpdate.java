@@ -28,6 +28,7 @@ import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
+import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
 import com.aerofs.proto.Core.PBGetComReply;
@@ -75,13 +76,14 @@ public class ReceiveAndApplyUpdate
     private BranchDeleter _bd;
     private TransManager _tm;
     private MapSIndex2Store _sidx2s;
+    private Analytics _a;
 
     @Inject
     public void inject_(DirectoryService ds, PrefixVersionControl pvc, NativeVersionControl nvc,
             Hasher hasher, VersionUpdater vu, ObjectCreator oc, ObjectMover om,
             IPhysicalStorage ps, DownloadState dlState, ComputeHashCall computeHashCall, StoreCreator sc,
             IncomingStreams iss, Metrics m, Aliasing al, BranchDeleter bd, TransManager tm,
-            MapSIndex2Store sidx2s, MapAlias2Target alias2target)
+            MapSIndex2Store sidx2s, MapAlias2Target alias2target, Analytics a)
     {
         _ds = ds;
         _pvc = pvc;
@@ -101,6 +103,7 @@ public class ReceiveAndApplyUpdate
         _tm = tm;
         _sidx2s = sidx2s;
         _a2t = alias2target;
+        _a = a;
     }
 
     public static class CausalityResult
@@ -743,7 +746,15 @@ public class ReceiveAndApplyUpdate
 
             _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
 
-            if (!wasPresent) _ds.createCA_(k.soid(), k.kidx(), t);
+            if (!wasPresent) {
+                if (k.kidx() != KIndex.MASTER) {
+                    // record creation of conflict branch here instead of in DirectoryService
+                    // Aliasing and Migration may recreate them and we only want to record each
+                    // conflict once
+                    _a.incConflictCount();
+                }
+                _ds.createCA_(k.soid(), k.kidx(), t);
+            }
             _ds.setCA_(k.sokid(), len, mtime, h, t);
 
             okay = true;

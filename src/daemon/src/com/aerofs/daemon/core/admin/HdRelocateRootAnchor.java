@@ -29,6 +29,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -57,13 +59,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     }
 
     @Override
-
     protected void handleThrows_(EIRelocateRootAnchor ev, Prio prio) throws Exception
     {
         if (!new File(ev._newRootAnchor).isAbsolute()) {
             throw new ExBadArgs("the path to new " + S.PRODUCT + " location is not absolute");
 
         }
+
+        SVClient.sendEventAsync(Type.MOVE_ROOT);
 
         // Even though we expect the UI to adjust the new root anchor, users may pass in a raw path
         // through the Ritual call.

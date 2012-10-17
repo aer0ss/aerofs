@@ -8,6 +8,8 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;
 
 public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
@@ -30,6 +32,7 @@ public class HdSetExpelled extends AbstractHdIMC<EISetExpelled>
         SOID soid = _ds.resolveThrows_(ev._path);
         Trans t = _tm.begin_();
         Throwable rollbackCause = null;
+        SVClient.sendEventAsync(ev._expelled ? Type.EXCLUDE : Type.INCLUDE);
         try {
             _expulsion.setExpelled_(ev._expelled, soid, t);
             t.commit_();
