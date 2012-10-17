@@ -77,15 +77,14 @@ public class InjectableDriver
     private static void throwNotFoundOrIOException(String path)
             throws IOException, ExNotFound
     {
-        if (new File(path).exists()) throwIOException(path);
-        else throw new ExNotFound(obfuscate(path));
+        File f = new File(path);
+        if (f.exists()) throwIOException(path);
+        else throw new ExNotFound(FileUtil.debugString(f));
     }
 
     private static void throwIOException(String path) throws IOException
     {
         File f = new File(path);
-        // TODO (MJ) this seems like a gross dependency from InjectableDriver->FileUtil
-        // this should be refactored and perhaps even made non-static somehow?
         throw new IOException("getFid: " + FileUtil.debugString(f));
     }
 

@@ -280,10 +280,9 @@ public class MightCreate
             throws Exception
     {
         // move the logical object if it's at a different path
-        Path pLogical = _ds.resolveNullable_(soid);
-        assert pLogical != null;
-
+        Path pLogical = _ds.resolve_(soid);
         Path pPhysical = pcPhysical._path;
+
         if (!pPhysical.equals(pLogical)) {
             // the two paths differ
 

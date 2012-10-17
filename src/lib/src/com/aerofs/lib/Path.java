@@ -2,6 +2,7 @@ package com.aerofs.lib;
 
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Common.PBPath;
+import com.google.common.base.Joiner;
 
 import java.io.File;
 import java.util.Arrays;
@@ -140,9 +141,14 @@ public class Path implements Comparable<Path>
         return FORMAL_SEP + toStringFormal();
     }
 
+    // TODO (MJ) Why do we define/use a FORMAL_SEP here when File.java defines File.separatorChar
+    // (and we even use it in toAbsoluteString?)
+    // Does File.separatorChar == '\\' depending on the OS?
     private final static String FORMAL_SEP = "/";
 
-    private static final Pattern FILE_SEP_PATTERN =
+    private final static Joiner FORMAL_SEP_JOINER = Joiner.on(FORMAL_SEP);
+
+    private final static Pattern FILE_SEP_PATTERN =
             Pattern.compile(File.separatorChar == '\\' ? "\\\\" : File.separator);
 
     private final static Pattern FORMAL_SEP_PATTERN = File.separator.equals(FORMAL_SEP) ?
@@ -154,15 +160,8 @@ public class Path implements Comparable<Path>
      */
     public String toStringFormal()
     {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        for (String elem : _elems) {
-            if (first) first = false;
-            else sb.append(FORMAL_SEP);
-            assert !elem.isEmpty();
-            sb.append(elem);
-        }
-        return sb.toString();
+        assertNoEmptyElement();
+        return FORMAL_SEP_JOINER.join(_elems);
     }
 
     /**

@@ -1,8 +1,10 @@
 package com.aerofs.lib;
 
+import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -10,14 +12,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class FileUtil
 {
-    private static LinkedHashSet<String> _filesToDelete = new LinkedHashSet<String>();
+    private static Set<String> _filesToDelete = Sets.newLinkedHashSet();
 
     /**
      * Annotate filename with extra infos to make defect reports more informative
@@ -31,7 +33,9 @@ public class FileUtil
                 (f.canRead() ? "r" : "-"),
                 (f.canWrite() ? "w" : "-"),
                 (f.canExecute() ? "x" : "-"),
-                (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-"))
+                "|",  // To separate FS properties from name properties
+                (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-"),
+                (OSUtilWindows.isValidFileName(f.getName()) ? "v" : "-"))
                 + " " + PathObfuscator.obfuscate(f.getAbsolutePath());
     }
 
@@ -44,7 +48,7 @@ public class FileUtil
     {
         Collection<String> toDelete = _filesToDelete;
         _filesToDelete = null;
-        ArrayList<String> files = Lists.newArrayList(toDelete);
+        List<String> files = Lists.newArrayList(toDelete);
         Collections.reverse(files);
         for (String path : files) {
             new File(path).delete();
