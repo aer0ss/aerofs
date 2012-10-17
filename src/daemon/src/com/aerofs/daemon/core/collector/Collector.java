@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.Set;
 
 import com.aerofs.lib.ex.collector.AbstractExPermanentError;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
@@ -178,7 +179,7 @@ public class Collector implements IDumpStatMisc
                 // stop this retry thread if someone called start_() again
                 if (startSeq != _startSeq) return null;
 
-                assert !started_();
+                assert !started_() : Joiner.on(' ').join(_occs, _first, _startSeq);
                 collect_(_first ? t : null);
                 return null;
             }
