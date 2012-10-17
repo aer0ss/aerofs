@@ -135,13 +135,13 @@ public class ShellextService
         }
     }
 
-    private void greeting(GreetingCall call) throws ExProtocolError
+    private void greeting(GreetingCall call)
     {
         if (call.getProtocolVersion() != PROTOCOL_VERSION) {
-            String msg = "Trying to communicate with a different version of the shell extension." +
-                    "GUI: " + PROTOCOL_VERSION + " ShellExt: " + call.getProtocolVersion();
-            SVClient.logSendDefectAsync(true, msg);
-            throw new ExProtocolError(msg);
+            ExProtocolError e = new ExProtocolError("Trying to communicate with a different " +
+                    "version of the shell extension. GUI: " + PROTOCOL_VERSION + " ShellExt: " +
+                    call.getProtocolVersion());
+            SVClient.logSendDefectAsync(true, e.getMessage(), e);
         }
 
         notifyRootAnchor();
