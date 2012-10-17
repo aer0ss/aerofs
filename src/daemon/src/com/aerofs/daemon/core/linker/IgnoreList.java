@@ -19,6 +19,7 @@ public class IgnoreList
         _set.add("Icon\r");
         _set.add(".DS_Store");
         _set.add("desktop.ini");
+        _set.add("Thumbs.db");
         _set.add(C.SHARED_FOLDER_TAG);
     }
 
