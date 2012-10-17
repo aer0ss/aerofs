@@ -12,11 +12,11 @@ import org.jboss.netty.channel.SimpleChannelDownstreamHandler;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
 
-public class AddressResolver extends SimpleChannelDownstreamHandler
+public class AddressResolverHandler extends SimpleChannelDownstreamHandler
 {
     private final Executor _executor;
 
-    public AddressResolver(Executor executor)
+    public AddressResolverHandler(Executor executor)
     {
         _executor = executor;
     }
@@ -48,8 +48,8 @@ public class AddressResolver extends SimpleChannelDownstreamHandler
 
     private void handleConnect(ChannelHandlerContext ctx, ChannelStateEvent event)
     {
-        InetSocketAddress address = (InetSocketAddress)event.getValue();
         try {
+            InetSocketAddress address = (InetSocketAddress)event.getValue();
             InetSocketAddress resolved = resolve(address);
             Channels.connect(ctx, event.getFuture(), resolved);
         } catch (Exception e) {

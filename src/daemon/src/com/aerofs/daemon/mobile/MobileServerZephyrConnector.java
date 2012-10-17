@@ -5,7 +5,7 @@
 package com.aerofs.daemon.mobile;
 
 import com.aerofs.daemon.mobile.TransportDataExtension.TransportDataIQ;
-import com.aerofs.lib.net.AddressResolver;
+import com.aerofs.lib.net.AddressResolverHandler;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.net.TraceHandler;
@@ -64,7 +64,7 @@ public class MobileServerZephyrConnector
                 ChannelPipeline p = Channels.pipeline();
                 _mobileServiceFactory.appendToPipeline(p);
                 p.addFirst("zephyrPipeHandler", new ZephyrPipeHandler());
-                p.addFirst("resolver", new AddressResolver(null));
+                p.addFirst("resolver", new AddressResolverHandler(null));
                 p.addFirst("tracer", new TraceHandler());
                 return p;
             }
