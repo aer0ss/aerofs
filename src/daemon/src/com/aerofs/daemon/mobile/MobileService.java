@@ -12,11 +12,12 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
-import com.aerofs.lib.async.FutureUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.net.AbstractRpcServerHandler;
+import com.aerofs.lib.net.MagicHeader;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.Void;
@@ -29,24 +30,15 @@ import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 
@@ -165,17 +157,6 @@ public class MobileService implements IMobileService
         }
     }
 
-    private static byte[] toByteArray(ChannelBuffer cb)
-    {
-        if (cb.hasArray() && cb.arrayOffset() == 0 &&
-                cb.readerIndex() == 0 && cb.writerIndex() == cb.array().length) {
-            return cb.array();
-        }
-        byte[] array = new byte[cb.readableBytes()];
-        cb.getBytes(cb.readerIndex(), array);
-        return array;
-    }
-
     private static <T> ListenableFuture<T> createReply(T reply)
     {
         SettableFuture<T> future = SettableFuture.create();
@@ -214,71 +195,9 @@ public class MobileService implements IMobileService
         return bd.build();
     }
 
-    private static abstract class BaseServiceHandler extends SimpleChannelUpstreamHandler
+    private static class MobileServiceHandler extends AbstractRpcServerHandler
     {
-        private static final Logger l = Util.l(BaseServiceHandler.class);
-
-        protected abstract ListenableFuture<byte[]> react(byte[] data);
-
-        ListenableFuture<?> _latest = Futures.immediateFuture(null);
-
-        @Override
-        public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
-        {
-            try {
-                ChannelBuffer cb = (ChannelBuffer)e.getMessage();
-                byte[] message = toByteArray(cb);
-                final Channel channel = e.getChannel();
-
-                final SettableFuture<?> next = SettableFuture.create();
-                final ListenableFuture<?> previous = _latest;
-                _latest = next;
-
-                final ListenableFuture<byte[]> future = react(message);
-
-                previous.addListener(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        Futures.addCallback(future, new FutureCallback<byte[]>()
-                        {
-                            @Override
-                            public void onSuccess(byte[] response)
-                            {
-                                try {
-                                    channel.write(ChannelBuffers.wrappedBuffer(response));
-                                } finally {
-                                    next.set(null);
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(Throwable throwable)
-                            {
-                                next.setException(throwable);
-                                l.warn("Received an exception from the reactor. This should never happen. Aborting.");
-                                throw Util.fatal(throwable);
-                            }
-                        });
-                    }
-                }, MoreExecutors.sameThreadExecutor());
-
-            } catch (Exception ex) {
-                l.warn("Exception: " + Util.e(ex));
-            }
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
-        {
-            // Close the connection when an exception is raised
-            e.getChannel().close();
-        }
-    }
-
-    private static class MobileServiceHandler extends BaseServiceHandler
-    {
-        private final MobileService _service; // = new MobileService(_imce);
+        private final MobileService _service;
         private final Mobile.MobileServiceReactor _reactor;
 
         public MobileServiceHandler(MobileService service)

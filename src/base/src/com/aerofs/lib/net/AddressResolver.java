@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib;
+package com.aerofs.lib.net;
 
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -35,21 +35,27 @@ public class AddressResolver extends SimpleChannelDownstreamHandler
                     handleConnect(ctx, e);
                 }
             };
-            if (_executor == null) {
-                command.run();
-            } else {
+            if (_executor != null) {
                 _executor.execute(command);
+            } else {
+                command.run();
             }
             return;
+        } else {
+            super.connectRequested(ctx, e);
         }
-        super.connectRequested(ctx, e);
     }
 
     private void handleConnect(ChannelHandlerContext ctx, ChannelStateEvent event)
     {
         InetSocketAddress address = (InetSocketAddress)event.getValue();
-        InetSocketAddress resolved = resolve(address);
-        Channels.connect(ctx, event.getFuture(), resolved);
+        try {
+            InetSocketAddress resolved = resolve(address);
+            Channels.connect(ctx, event.getFuture(), resolved);
+        } catch (Exception e) {
+            event.getFuture().setFailure(e);
+            Channels.fireExceptionCaught(ctx, e);
+        }
     }
 
     private static InetSocketAddress resolve(InetSocketAddress address)

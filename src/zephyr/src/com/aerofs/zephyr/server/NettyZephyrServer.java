@@ -5,9 +5,9 @@
 package com.aerofs.zephyr.server;
 
 import com.aerofs.lib.Loggers;
-import com.aerofs.zephyr.core.TraceHandler;
-import com.aerofs.zephyr.core.ZephyrConstants;
-import com.aerofs.zephyr.core.ZephyrPipeHandler;
+import com.aerofs.lib.net.TraceHandler;
+import com.aerofs.lib.net.ZephyrConstants;
+import com.aerofs.lib.net.ZephyrPipeHandler;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
