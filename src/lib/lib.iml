@@ -12,6 +12,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="swiglibs" />
+    <orderEntry type="module" module-name="base" exported="" />
     <orderEntry type="library" exported="" name="guava" level="project" />
     <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" name="log4j" level="project" />
