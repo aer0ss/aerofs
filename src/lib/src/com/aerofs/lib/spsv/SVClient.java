@@ -480,8 +480,11 @@ public class SVClient
      */
     private static String appRootContents()
     {
+        File appRoot = new File(AppRoot.abs());
+        // On windows approot is in a per-version subfolder, so get the content of the parent folder
+        if (OSUtil.isWindows()) appRoot = appRoot.getParentFile();
         final StringBuilder bdAppRoot = new StringBuilder();
-        FileUtil.walk(new File(AppRoot.abs()), new AbstractFileSystemWalker() {
+        FileUtil.walk(appRoot, new AbstractFileSystemWalker() {
             private int _indent = 0;
             private static final String _noMD5 = "................................";
 
@@ -635,15 +638,15 @@ public class SVClient
                 try {
                     s = appRootContents();
                 } catch (Exception e2) {
-                    // ignored
+                    l.warn("appRootContents failed: " + Util.e(e2));
                 }
                 bdDefect.addJavaEnvName("approot");
                 bdDefect.addJavaEnvValue(s);
 
                 if (e instanceof UnsatisfiedLinkError) {
                     // TODO: try to diagnose driver dependency issues
-                    // the simplest way would be to ship depends.exe and write the results to a
-                    // special log file
+                    // the simplest way would be to try to LoadLibrary a bunch of potential system
+                    // libraries like msvcp100.dll and see if they all load
                 }
             }
 
