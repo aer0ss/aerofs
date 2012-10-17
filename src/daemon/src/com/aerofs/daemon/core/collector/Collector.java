@@ -179,7 +179,7 @@ public class Collector implements IDumpStatMisc
                 // stop this retry thread if someone called start_() again
                 if (startSeq != _startSeq) return null;
 
-                assert !started_() : Joiner.on(' ').join(_occs, _first, _startSeq);
+                assert !started_() : _first + " " + Collector.this;
                 collect_(_first ? t : null);
                 return null;
             }
@@ -516,5 +516,12 @@ public class Collector implements IDumpStatMisc
     {
         ps.println(indent + "occs: " + _occs + " dls: " + _downloads +
                 " backoff: " + _backoffScheduled);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "C["+ Joiner.on(' ').useForNull("null")
+                .join(_s.sidx(), _occs, _downloads, _startSeq, _backoffScheduled) + "]";
     }
 }
