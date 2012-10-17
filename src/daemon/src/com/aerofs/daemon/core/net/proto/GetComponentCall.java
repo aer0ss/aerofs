@@ -2,8 +2,6 @@ package com.aerofs.daemon.core.net.proto;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
@@ -16,6 +14,7 @@ import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -326,7 +325,7 @@ public class GetComponentCall
         assert oa != null : k;
 
         // verify that the name we send is in Normalized Form C
-        assert Normalizer.isNormalized(oa.name(), Form.NFC) : oa + " " + Form.valueOf(oa.name());
+        FileUtil.logIfNotNFC(oa.name(), oa.toString());
 
         PBMeta.Builder bdMeta = PBMeta.newBuilder()
             .setType(toPB(oa.type()))
