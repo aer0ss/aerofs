@@ -3,8 +3,6 @@ package com.aerofs.daemon.core.ds;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.text.Normalizer;
-import java.text.Normalizer.Form;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;

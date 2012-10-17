@@ -7,7 +7,7 @@ import javax.inject.Inject;
 
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.collect.Lists;
 
 /* usage:
@@ -24,14 +24,16 @@ public class TransManager
 {
     private final Trans.Factory _factTrans;
     private final ArrayList<ITransListener> _listeners = Lists.newArrayList();
+    private final CfgLocalUser _cfgLocalUser;
 
     private Trans _ongoing; // for debugging
     private Exception _lastTransactionBeginStacktraceHolder; // for debugging
 
     @Inject
-    public TransManager(Trans.Factory factTrans)
+    public TransManager(Trans.Factory factTrans, CfgLocalUser cfgLocalUser)
     {
         _factTrans = factTrans;
+        _cfgLocalUser = cfgLocalUser;
     }
 
     /**
@@ -54,7 +56,7 @@ public class TransManager
         // TODO: (DF) remove when debugging this bug is done
         // some users get assertion errors in TC.run, but constructing stack traces is expensive
         // so only enable it for certain users
-        String userCRC = Util.crc32(Cfg.user());
+        String userCRC = Util.crc32(_cfgLocalUser.get());
         if (userCRC.equals("9bf60261")    // puredizzi@gmail.com
             || userCRC.equals("498232b9") // myles.steinhauser@gmail.com
             || userCRC.equals("3a1a17a")  // tobias@buro71a.de

@@ -63,6 +63,9 @@ import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
 import com.google.protobuf.GeneratedMessageLite;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 public abstract class Util
 {
     public static final String REMOTE_STACKTRACE = "Remote stacktrace:";
@@ -1157,7 +1160,7 @@ public abstract class Util
         }
     }
 
-    public static String crc32(String name)
+    public static @Nonnull String crc32(@Nonnull String name)
     {
         return crc32(name.getBytes());
     }

@@ -10,7 +10,9 @@ import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.aerofs.lib.cfg.CfgLocalUser;
 import org.apache.log4j.Logger;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -31,12 +33,12 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 
+
 public class TCTestSetup
 {
     private static final Logger l = Util.l(TCTestSetup.class);
 
     public CoreQueue _q = new CoreQueue();
-//    public CoreScheduler _sched = new CoreScheduler(_q);
 
     static class ScheduledWrapper<V> implements Delayed
     {
@@ -127,8 +129,14 @@ public class TCTestSetup
                 Mockito.any(IEvent.class), Mockito.any(Prio.class));
     }
 
+    public CfgLocalUser _cfgLocalUser = Mockito.mock(CfgLocalUser.class);
+    {
+        Mockito.when(_cfgLocalUser.get()).thenReturn("null");
+    }
+
     public CoreDBCW _coreDBCW = new InMemorySQLiteDBCW().mockCoreDBCW();
-    public TransManager _transManager = new TransManager(new Trans.Factory(_coreDBCW));
+    public TransManager _transManager = new TransManager(new Trans.Factory(_coreDBCW),
+            _cfgLocalUser);
     public TokenManager _tokenManager = new TokenManager();
     public TC _tc = new TC();
     {
