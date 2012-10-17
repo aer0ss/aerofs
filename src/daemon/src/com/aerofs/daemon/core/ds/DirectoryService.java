@@ -23,6 +23,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
@@ -334,8 +335,7 @@ public class DirectoryService implements IDumpStatMisc
         OA oaParent = getOAThrows_(new SOID(sidx, oidParent));
 
         assert oaParent.isDir();
-        assert Normalizer.isNormalized(name, Form.NFC)
-                : Joiner.on(' ').join(sidx, oid, Util.hexEncode(Util.string2utf(name)));
+        FileUtil.logIfNotNFC(name, new SOID(sidx, oid).toString());
 
         _mdb.createOA_(sidx, oid, oidParent, name, type, flags, t);
 
@@ -405,8 +405,7 @@ public class DirectoryService implements IDumpStatMisc
         if (!oaParent.isDir()) throw new ExNotDir();
 
         // verify the encoding of "name" is NFC
-        assert Normalizer.isNormalized(name, Form.NFC)
-                : Joiner.on(' ').join(oa, oaParent, Form.valueOf(name));
+        FileUtil.logIfNotNFC(name, oa + " " + oaParent);
 
         Path pathFrom = resolve_(oa);
         Path pathTo = resolve_(oaParent).append(name);

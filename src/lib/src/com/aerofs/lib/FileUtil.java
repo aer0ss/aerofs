@@ -12,6 +12,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Set;
 public class FileUtil
 {
     private static Set<String> _filesToDelete = Sets.newLinkedHashSet();
+    private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     /**
      * Annotate filename with extra infos to make defect reports more informative
@@ -405,5 +408,31 @@ public class FileUtil
             }
         }
         walker.postfixWalk(r);
+    }
+
+    // TODO (MJ) The following *IfNotNFC(...) methods barely belong in this class.
+    // Once we determine what we're doing about (and handle) Normalization for string compares,
+    // they can be moved or removed and replace with definitive asserts.
+    public static void logIfNotNFC(String name, String extraLogs)
+    {
+        reportIfNotNFC(name, extraLogs, true);
+    }
+
+    public static void assertIfNotNFC(String name, String extraLogs)
+    {
+        reportIfNotNFC(name, extraLogs, false);
+    }
+
+    private static void reportIfNotNFC(String name, String extraLogs, boolean shouldLogOnly)
+    {
+        if (!Normalizer.isNormalized(name, Form.NFC)) {
+            final String msg = Joiner.on(' ').useForNull("null").join(
+                    "Not NFC:",
+                    Util.hexEncode(Util.string2utf(name)),
+                    extraLogs);
+
+            if (shouldLogOnly) _defectSender.logSendAsync(msg);
+            else assert false : msg;
+        }
     }
 }
