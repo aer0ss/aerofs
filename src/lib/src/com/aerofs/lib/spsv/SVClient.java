@@ -248,23 +248,23 @@ public class SVClient
 
     public static void logSendDefectAsync(boolean automatic, String desc)
     {
-        logSendDefectAsync(automatic, desc, new Exception(), null);
+        logSendDefectAsyncImpl(automatic, desc, null);
     }
 
     /*
      * @param e may be null if stack trace is not needed
      */
-    public static void logSendDefectAsync(boolean automatic, String desc, Throwable e)
+    public static void logSendDefectAsync(boolean automatic, String desc, @Nonnull Throwable e)
     {
-        logSendDefectAsync(automatic, desc, e, null);
+        logSendDefectAsyncImpl(automatic, desc, e);
     }
 
     /**
      * send the defect and then archive logs. exit the program if the error
      * is OutOfMemory
      */
-    public static void logSendDefectAsync(final boolean automatic,
-            final String desc, final Throwable e, @Nullable final String secret)
+    private static void logSendDefectAsyncImpl(final boolean automatic, final String desc,
+            @Nullable final Throwable e)
     {
         // create the header here so that we can get accurate creation time
         final PBSVHeader header = newHeader();
@@ -275,7 +275,7 @@ public class SVClient
             {
                 try {
                     doLogSendDefect(automatic, desc, e, header, getCfgDatabase(), Cfg.absRTRoot(),
-                            secret, true, true, false, true);
+                            null, true, true, false, true);
                 } catch (Throwable e) {
                     l.warn("can't send defect. ignored: " + Util.e(e));
                 }
@@ -329,7 +329,7 @@ public class SVClient
      * @param secret the string that should be hidden from the log files
      */
     public static void logSendDefectSync(boolean automatic, String desc,
-            @Nullable Throwable e, String secret) throws Exception
+            @Nullable Throwable e, @Nullable String secret) throws Exception
     {
         try {
             doLogSendDefect(automatic, desc, e, newHeader(), getCfgDatabase(), Cfg.absRTRoot(),

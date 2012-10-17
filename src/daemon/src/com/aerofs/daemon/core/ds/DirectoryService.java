@@ -2,7 +2,6 @@ package com.aerofs.daemon.core.ds;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
