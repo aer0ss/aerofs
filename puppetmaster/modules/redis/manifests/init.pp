@@ -49,16 +49,8 @@ class redis {
         require => Package["aerofs-redis-server"]
     }
 
-    # Run in the background.
-    line{ "redis.conf2":
-        ensure => present,
-        file => "/etc/redis/redis.conf",
-        line => "daemonize yes",
-        require => Package["aerofs-redis-server"]
-    }
-
     # PID file.
-    line{ "redis.conf3":
+    line{ "redis.conf2":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "pidfile /run/redis.pid",
@@ -66,13 +58,13 @@ class redis {
     }
 
     # Persistence config.
-    line{ "redis.conf4":
+    line{ "redis.conf3":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "save 60 100",
         require => Package["aerofs-redis-server"]
     }
-    line{ "redis.conf5":
+    line{ "redis.conf4":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "dbfilename redis.rdb",
@@ -80,13 +72,13 @@ class redis {
     }
 
     # Logging.
-    line{ "redis.conf6":
+    line{ "redis.conf5":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "logfile /var/log/redis/redis.log",
         require => Package["aerofs-redis-server"]
     }
-    line{ "redis.conf7":
+    line{ "redis.conf6":
         ensure => present,
         file => "/etc/redis/redis.conf",
         line => "loglevel debug",
