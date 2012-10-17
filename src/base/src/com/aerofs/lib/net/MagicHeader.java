@@ -2,10 +2,11 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.mobile;
+package com.aerofs.lib.net;
 
+import com.aerofs.lib.Loggers;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferFactory;
+import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
@@ -14,15 +15,17 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 
 public class MagicHeader
 {
+    static final Logger LOGGER = Loggers.getLogger(MagicHeader.class);
+
     public static class BadMagicHeaderException extends IOException
     {
-        public static final long serialVersionUID = 1;
     }
 
     private final byte[] _magic;
@@ -34,28 +37,6 @@ public class MagicHeader
         _magic = magic;
         _version = version;
         _size = _magic.length + 4;
-    }
-
-    private ChannelBuffer getHeader(ChannelBufferFactory bufferFactory)
-    {
-        ChannelBuffer buffer = bufferFactory.getBuffer(_size);
-        buffer.writeBytes(_magic);
-        buffer.writeInt(_version);
-        return buffer;
-    }
-
-    private boolean isMatchingHeader(ChannelBuffer buffer)
-    {
-        for (int i = 0, len = _magic.length; i < len; ++i) {
-            if (buffer.readByte() != _magic[i]) {
-                return false;
-            }
-        }
-        int version = buffer.readInt();
-        if (version != _version) {
-            return false;
-        }
-        return true;
     }
 
     public class WriteMagicHeaderHandler extends SimpleChannelHandler
@@ -101,10 +82,12 @@ public class MagicHeader
         {
             if (_done) return;
             _done = true;
-            ChannelBufferFactory bufferFactory = ctx.getChannel().getConfig().getBufferFactory();
-            ChannelBuffer buffer = getHeader(bufferFactory);
+            ChannelBuffer buffer = ChannelBuffers.buffer(_size);
+            buffer.writeBytes(_magic);
+            buffer.writeInt(_version);
             Channels.write(ctx, Channels.future(ctx.getChannel()), buffer);
             ctx.getPipeline().remove(this);
+//            LOGGER.debug("wrote magic header {} v{}", StringUtils.encodeHex(_magic), _version);
         }
     }
 
@@ -115,16 +98,33 @@ public class MagicHeader
                 throws Exception
         {
             if (buffer.readableBytes() < _size) return null;
+            final int readerIndex = buffer.readerIndex();
             ctx.getPipeline().remove(this);
-            if (!isMatchingHeader(buffer.readBytes(_size))) {
+            if (!isMatchingHeader(buffer)) {
+                buffer.readerIndex(readerIndex);
                 throw new BadMagicHeaderException();
             }
+//            LOGGER.debug("read magic header {} v{}", StringUtils.encodeHex(_magic), _version);
 
             if (buffer.readable()) {
                 return buffer;
             } else {
                 return null;
             }
+        }
+
+        private boolean isMatchingHeader(ChannelBuffer buffer)
+        {
+            for (int i = 0, len = _magic.length; i < len; ++i) {
+                if (buffer.readByte() != _magic[i]) {
+                    return false;
+                }
+            }
+            int version = buffer.readInt();
+            if (version != _version) {
+                return false;
+            }
+            return true;
         }
     }
 }

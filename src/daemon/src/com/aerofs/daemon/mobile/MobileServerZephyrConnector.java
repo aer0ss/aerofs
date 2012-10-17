@@ -5,14 +5,14 @@
 package com.aerofs.daemon.mobile;
 
 import com.aerofs.daemon.mobile.TransportDataExtension.TransportDataIQ;
-import com.aerofs.lib.AddressResolver;
+import com.aerofs.lib.net.AddressResolver;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.net.TraceHandler;
+import com.aerofs.lib.net.ZephyrPipeHandler;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
-import com.aerofs.zephyr.core.TraceHandler;
-import com.aerofs.zephyr.core.ZephyrPipeHandler;
 import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.channel.Channel;

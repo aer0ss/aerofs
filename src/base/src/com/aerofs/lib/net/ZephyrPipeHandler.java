@@ -2,8 +2,9 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.zephyr.core;
+package com.aerofs.lib.net;
 
+import com.aerofs.lib.Loggers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -11,14 +12,12 @@ import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelFutureListener;
 import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelLocal;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.LifeCycleAwareChannelHandler;
 import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -38,10 +37,10 @@ import java.nio.channels.ClosedChannelException;
  */
 public class ZephyrPipeHandler extends SimpleChannelHandler
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ZephyrPipeHandler.class);
+    private static final Logger LOGGER = Loggers.getLogger(ZephyrPipeHandler.class);
 
-    private int _localZid = -1;
-    private int _remoteZid = -1;
+    private int _localZid = ZEPHYR_INVALID_CHAN_ID;
+    private int _remoteZid = ZEPHYR_INVALID_CHAN_ID;
 
     private ChannelFuture _upstreamConnected;
 
@@ -72,20 +71,7 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
 
     public ChannelFuture setRemoteZid(final int zid)
     {
-        if (zid == -1) throw new IllegalArgumentException();
-        _connected.addListener(new ChannelFutureListener()
-        {
-            @Override
-            public void operationComplete(ChannelFuture future)
-                    throws Exception
-            {
-                if (!future.isSuccess()) return;
-                future.getChannel().getPipeline().sendDownstream(
-                        new SendZephyrIDEvent(future.getChannel(),  zid));
-//                future.getChannel().write(ZephyrID.valueOf(zid));
-//                _sendRemoteZid.setSuccess();
-            }
-        });
+        sendRemoteZid(_ctx, zid);
         return _sendRemoteZid;
     }
 
@@ -108,20 +94,12 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
                     _recvLocalZid.setFailure(future.getCause());
                     _sendRemoteZid.setFailure(future.getCause());
                     future.getChannel().close();
+                    return;
                 }
             }
         });
         ctx.getPipeline().addBefore(ctx.getName(), ctx.getName() + "Decoder",
                 new ZephyrInitDecoder());
-//        _sendRemoteZid.addListener(new ChannelFutureListener()
-//        {
-//            @Override
-//            public void operationComplete(ChannelFuture future)
-//                    throws Exception
-//            {
-//                Channels.fireChannelConnected(_ctx, future.getChannel().getRemoteAddress());
-//            }
-//        });
         super.channelOpen(ctx, e);
     }
 
@@ -166,13 +144,18 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
 
     private void finishConnecting()
     {
+        ChannelFuture upstreamConnected;
+        synchronized (this) {
+            upstreamConnected = _upstreamConnected;
+        }
+        if (upstreamConnected == null) return;
         if (!_recvLocalZid.isSuccess()) {
-            _upstreamConnected.setFailure(_recvLocalZid.getCause());
+            upstreamConnected.setFailure(_recvLocalZid.getCause());
         } else if (!_sendRemoteZid.isSuccess()) {
-            _upstreamConnected.setFailure(_sendRemoteZid.getCause());
+            upstreamConnected.setFailure(_sendRemoteZid.getCause());
         } else {
-            _upstreamConnected.setSuccess();
-            Channels.fireChannelConnected(_ctx, _upstreamConnected.getChannel().getRemoteAddress());
+            upstreamConnected.setSuccess();
+            Channels.fireChannelConnected(_ctx, upstreamConnected.getChannel().getRemoteAddress());
         }
     }
 
@@ -180,41 +163,40 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
-        // added listener in channelOpen()
-//        _connected.setSuccess();
-//        super.channelConnected(ctx, e);
+        // ignore, already added listener in channelOpen()
     }
 
     @Override
     public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e)
             throws Exception
     {
-//        LOGGER.debug("downstream: {}", e);
         if (e instanceof SendZephyrIDEvent) {
             int zid = ((SendZephyrIDEvent)e).getZephyrID();
             sendRemoteZid(ctx, zid);
-//            LOGGER.debug("sendZid: {}", zid);
-//            if (zid == -1) throw new IllegalArgumentException();
-//            synchronized (this) {
-//                if (_remoteZid != -1 && _remoteZid != zid) throw new IllegalStateException();
-//                _remoteZid = zid;
-//            }
-//            ctx.sendDownstream(e);
-//            _sendRemoteZid.setSuccess();
         } else {
             super.handleDownstream(ctx, e);
         }
     }
 
-    private void sendRemoteZid(ChannelHandlerContext ctx, int zid)
+    private void sendRemoteZid(final ChannelHandlerContext ctx, final int zid)
     {
-        if (zid == -1) throw new IllegalArgumentException();
+        if (zid == ZEPHYR_INVALID_CHAN_ID) throw new IllegalArgumentException();
         synchronized (this) {
-            if (_remoteZid != -1 && _remoteZid != zid) throw new IllegalStateException();
+            if (_remoteZid == zid) return;
+            if (_remoteZid != ZEPHYR_INVALID_CHAN_ID) throw new IllegalStateException();
             _remoteZid = zid;
         }
-        Channels.write(ctx, Channels.future(ctx.getChannel()), encodeZephyrID(zid));
-        _sendRemoteZid.setSuccess();
+        _connected.addListener(new ChannelFutureListener()
+        {
+            @Override
+            public void operationComplete(ChannelFuture future)
+                    throws Exception
+            {
+                if (!future.isSuccess()) return;
+                Channels.write(ctx, Channels.future(ctx.getChannel()), encodeZephyrID(zid));
+                _sendRemoteZid.setSuccess();
+            }
+        });
     }
 
     @Override
@@ -223,14 +205,14 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     {
         if (e instanceof ReceiveZephyrIDEvent) {
             int zid = ((ReceiveZephyrIDEvent)e).getZephyrID();
-            recvLocalZid(zid);
+            recvLocalZid(ctx, zid);
         }
         super.handleUpstream(ctx, e);
     }
 
-    private void recvLocalZid(int zid)
+    private void recvLocalZid(ChannelHandlerContext ctx, int zid)
     {
-        if (zid == -1) throw new IllegalArgumentException();
+        if (zid == ZEPHYR_INVALID_CHAN_ID) throw new IllegalArgumentException();
         synchronized (this) {
             if (_localZid != -1) throw new IllegalStateException();
             _localZid = zid;
@@ -243,8 +225,6 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     public static final int ZEPHYR_BIND_PAYLOAD_LEN = ZephyrConstants.ZEPHYR_BIND_PAYLOAD_LEN;
     public static final int ZEPHYR_ID_LEN = ZephyrConstants.ZEPHYR_ID_LEN;
     public static int ZEPHYR_INVALID_CHAN_ID = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
-
-    static final ChannelLocal<Integer> _channelZephyrID = new ChannelLocal<Integer>();
 
     private static ChannelBuffer encodeZephyrID(int zid)
     {
@@ -306,7 +286,8 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         @Override
         public String toString()
         {
-            return getClass().getSimpleName() + "[" + getZephyrID() + "]";
+            // silly cast to work around IntelliJ IDEA bug
+            return ((Object)this).getClass().getSimpleName() + "[" + getZephyrID() + "]";
         }
 
         public int getZephyrID()
@@ -346,30 +327,9 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     private static class ZephyrInitDecoder extends FrameDecoder implements
             LifeCycleAwareChannelHandler
     {
-        private int _zid = ZEPHYR_INVALID_CHAN_ID;
-        private ChannelFuture _future;
-
         public ZephyrInitDecoder()
         {
             super(true);
-        }
-
-        public ChannelFuture getFuture()
-        {
-            return _future;
-        }
-
-        public int getZephyrID()
-        {
-            return _zid;
-        }
-
-        @Override
-        public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
-                throws Exception
-        {
-            _future.setFailure(new ClosedChannelException());
-            super.channelClosed(ctx, e);
         }
 
         @Override
@@ -378,14 +338,11 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         {
             int zid = decodeZephyrID(buffer);
             if (zid == ZEPHYR_INVALID_CHAN_ID) return null;
-            _zid = zid;
-            _channelZephyrID.set(channel, zid);
+            LOGGER.trace("receiveZid: {}", zid);
 
             // remove this handler after reading header
             ctx.getPipeline().remove(this);
 
-            LOGGER.trace("receiveZid: {}", zid);
-            _future.setSuccess();
             ctx.sendUpstream(new ReceiveZephyrIDEvent(channel, zid));
 
             if (buffer.readable()) {
@@ -396,31 +353,6 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
                 // Nothing to hand off
                 return null;
             }
-        }
-
-        @Override
-        public void beforeAdd(ChannelHandlerContext ctx)
-                throws Exception
-        {
-        }
-
-        @Override
-        public void afterAdd(ChannelHandlerContext ctx)
-                throws Exception
-        {
-            _future = Channels.future(ctx.getChannel());
-        }
-
-        @Override
-        public void beforeRemove(ChannelHandlerContext ctx)
-                throws Exception
-        {
-        }
-
-        @Override
-        public void afterRemove(ChannelHandlerContext ctx)
-                throws Exception
-        {
         }
     }
 }
