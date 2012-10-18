@@ -254,7 +254,7 @@ function make_windows_installers() {
         # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus
-        if [ "$( is_prod )" ]; then
+        if [ "$MODE" == "PROD" ]; then
             lftp -e 'mirror -R $RELEASE_NSIS_DIR/aerofs/ /aerofs/; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
             lftp -e 'put $local_VERSIONED_INSTALLER_DIR/AeroFSInstall.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
         fi
