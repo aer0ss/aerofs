@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.linker.scanner.ScanSession.Factory;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.PathObfuscator;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -16,6 +17,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import java.io.PrintStream;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -24,6 +26,7 @@ import java.util.Map.Entry;
 public class ScanSessionQueue implements IDumpStatMisc
 {
     private static Logger l = Util.l(ScanSessionQueue.class);
+    private static FrequentDefectSender fds = new FrequentDefectSender();
 
     private static class TimeKey implements Comparable<TimeKey>
     {
@@ -275,20 +278,28 @@ public class ScanSessionQueue implements IDumpStatMisc
                 _sched.schedule(ev, 0);
                 return false;
             }
+        } catch (SQLException e) {
+            fds.logSendAsync("scan sqlerror", e);
+            onException(e, tk, pk);
+            return true;
 
         } catch (Exception e) {
             Util.fatalOnUncheckedException(e);
-
-            // schedule an exponential retry and return
-            long delay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);
-            delay = Math.min(delay, Param.EXP_RETRY_MAX_DEFFAULT);
-            Util.l(ScanSessionQueue.class).warn("retry in " + delay + ": " + Util.e(e));
-
-            // re-enqueue the request. no need to schedule it since this method assumes that
-            // scheduling will be done by the caller.
-            enqueue_(pk, delay);
+            onException(e, tk, pk);
             return true;
         }
+    }
+
+    private void onException(Exception e, final TimeKey tk, final PathKey pk)
+    {
+        // schedule an exponential retry and return
+        long delay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);
+        delay = Math.min(delay, Param.EXP_RETRY_MAX_DEFFAULT);
+        l.warn("retry in " + delay + ": " + Util.e(e));
+
+        // re-enqueue the request. no need to schedule it since this method assumes that
+        // scheduling will be done by the caller.
+        enqueue_(pk, delay);
     }
 
     @Override
