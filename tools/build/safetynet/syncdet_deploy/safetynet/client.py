@@ -82,12 +82,20 @@ class _PackagedAeroFSClient(object):
         except Exception:
             return False
 
+    def versioned_approot_path(self):
+        """Return the path to the AeroFS versioned approot directory. This is the same path
+        as the approot directory on OSX and Linux, but on Windows it is a sub-directory of the
+        approot directory.
+
+        """
+        return app.app_root_path()
+
     def version_file_path(self):
         """Returns the path to the version file located in the AeroFS
         installation directory.
 
         """
-        return os.path.join(app.app_root_path(), "version")
+        return os.path.join(self.versioned_approot_path(), "version")
 
     def current_version_url(self):
         """Return the URL where the current AeroFS release version number is located."""
@@ -96,11 +104,18 @@ class _PackagedAeroFSClient(object):
         else:
             return "https://nocache.client.aerofs.com/current.ver"
 
-def _nix_kill(pids):
-    """Kill the processes identified in the list 'pids'. Only compatible with *nix systems."""
-    map(subprocess.check_call, [ ('kill', '-9', str(pid)) for pid in pids ])
+class _NixClient(_PackagedAeroFSClient):
+    def _kill(self, pids):
+        """Kill the processes identified in the list 'pids'. Only compatible with *nix systems."""
+        map(subprocess.check_call, [ ('kill', '-9', str(pid)) for pid in pids ])
 
-class _LinuxClient(_PackagedAeroFSClient):
+    def _stop_aerofs_gui(self):
+        self._kill(self.get_aerofs_gui_pids())
+
+    def _stop_aerofs_daemon(self):
+        self._kill(self.get_aerofs_daemon_pids())
+
+class _LinuxClient(_NixClient):
     AEROFS_GET_PIDS_TEMPLATE = "ps -e -o pid,user,command | grep {0} | grep -v grep | awk '{{ print $1 }}'"
 
     def __init__(self):
@@ -120,13 +135,7 @@ class _LinuxClient(_PackagedAeroFSClient):
             subprocess.check_call([aerofs_gui_path], env=env,
                     stderr=subprocess.STDOUT, stdout=dev_null)
 
-    def _stop_aerofs_gui(self):
-        _nix_kill(self.get_aerofs_gui_pids())
-
-    def _stop_aerofs_daemon(self):
-        _nix_kill(self.get_aerofs_daemon_pids())
-
-class _OSXClient(_PackagedAeroFSClient):
+class _OSXClient(_NixClient):
     AEROFS_GET_PIDS_TEMPLATE = "ps -e -o pid,user,command | grep {0} | grep -v grep | awk '{{ print $1 }}'"
 
     def __init__(self):
@@ -144,12 +153,6 @@ class _OSXClient(_PackagedAeroFSClient):
             aerofs_gui_path = os.path.normpath(aerofs_gui_path)
             subprocess.check_call(['open', aerofs_gui_path],
                     stderr=subprocess.STDOUT, stdout=dev_null)
-
-    def _stop_aerofs_gui(self):
-        _nix_kill(self.get_aerofs_gui_pids())
-
-    def _stop_aerofs_daemon(self):
-        _nix_kill(self.get_aerofs_daemon_pids())
 
 class _WindowsClient(_PackagedAeroFSClient):
     AEROFS_GET_PIDS_TEMPLATE = "tasklist /fi \"IMAGENAME eq {0}\" /fo TABLE /nh | awk '{{ print $2 }}'"
@@ -191,7 +194,7 @@ class _WindowsClient(_PackagedAeroFSClient):
     def _stop_aerofs_daemon(self):
         subprocess.check_call(["taskkill", "/f", "/im", "aerofsd.exe"])
 
-    def version_file_path(self):
+    def versioned_approot_path(self):
         # Windows uses a versioned install directory, so we need to read in the
         # version directory from the aerofs.ini file
         aerofs_ini = os.path.join(app.app_root_path(), "aerofs.ini")
@@ -200,15 +203,13 @@ class _WindowsClient(_PackagedAeroFSClient):
             # Search for the version directory string
             match = re.search("(v_[.0-9]+)", f.read())
             if match:
-                # If it exists, create the path to the version file
-                # Still reading the version file ensures that the installation
-                # was successful and keeps the common code the same
-                return os.path.join(app.app_root_path(), match.group(0), "version")
+                # If it exists, create the path to the directory
+                return os.path.join(app.app_root_path(), match.group(0))
             else:
                 # This string may not exist if the installed AeroFS version
                 # is from before the versioned installation directories
                 # were introduced.
-                return super(_WindowsClient, self).version_file_path()
+                return super(_WindowsClient, self).versioned_approot_path()
 
 def _createPlatformSpecificClient():
     if "linux" in sys.platform:
