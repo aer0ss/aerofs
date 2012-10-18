@@ -263,7 +263,7 @@ public class GetComponentCall
                 if (l.isInfoEnabled()) {
                     l.info("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
                 }
-                throw new ExNoComponentWithSpecifiedVersion();
+                throw new ExNoComponentWithSpecifiedVersion(k + " " + vRemote);
             }
 
             // the kml_version field is used only as a hint for the receiver to

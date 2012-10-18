@@ -174,7 +174,7 @@ public class GetComponentReply
             }
 
             // Verify that encoding of the received meta is UTF-8 Normal Form C
-            FileUtil.assertIfNotNFC(meta.getName(), socid.toString());
+            FileUtil.logIfNotNFC(meta.getName(), socid.toString());
 
             metaDiff = _mdiff.computeMetaDiff_(socid.soid(), meta, oidParent);
 

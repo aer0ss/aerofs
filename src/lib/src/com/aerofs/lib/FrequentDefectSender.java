@@ -4,7 +4,8 @@ import org.apache.log4j.Logger;
 
 import com.aerofs.lib.spsv.SVClient;
 
-public class FrequentDefectSender {
+public class FrequentDefectSender
+{
     private static final Logger l = Util.l(FrequentDefectSender.class);
 
     private long _lastSend;
