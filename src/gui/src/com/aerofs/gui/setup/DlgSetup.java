@@ -488,8 +488,8 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         if (email == null) email = _txtUserID.getText();
         String passwd = _txtPasswd.getText();
         String passwd2 = _txtPasswd2.getText();
-        String firstName = _txtFirstName.getText();
-        String lastName = _txtLastName.getText();
+        String firstName = _txtFirstName.getText().trim();
+        String lastName = _txtLastName.getText().trim();
         boolean isExistingUser = _btnIsExistingUser.getSelection();
 
         email = email.trim();
