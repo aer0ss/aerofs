@@ -357,9 +357,11 @@ public class Aliasing
             l.info("Done processing alias message");
         } catch (Exception e) {
             rollbackCause = e;
+            l.warn("triggered rollback: " + Util.stackTrace2string(rollbackCause));
             throw e;
         } catch (Error e) {
             rollbackCause = e;
+            l.warn("triggered rollback: " + Util.stackTrace2string(rollbackCause));
             throw e;
         } finally {
             t.end_(rollbackCause);
