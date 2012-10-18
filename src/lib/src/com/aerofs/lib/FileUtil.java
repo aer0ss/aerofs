@@ -217,13 +217,16 @@ public class FileUtil
     }
 
     /**
-     * @return the mtime of a file
+     * @return the mtime of a file, if the mtime is negative then return 0.
      * @throw IOException if {@code f} is not a file or doesn't exist.
      */
     public static long lastModified(File f) throws IOException
     {
         throwIfNotFile(f);
-        return f.lastModified();
+
+        // set mtime to be 0 in case the modification time is before epoch.
+        long mtime = f.lastModified();
+        return mtime < 0 ? 0 : mtime;
     }
 
     /**
@@ -235,7 +238,7 @@ public class FileUtil
     {
         throwIfNotFile(f);
         long lenNow = f.length();
-        long mtimeNow = f.lastModified();
+        long mtimeNow = lastModified(f);
         return mtimeNow != mtime || lenNow != len;
     }
 

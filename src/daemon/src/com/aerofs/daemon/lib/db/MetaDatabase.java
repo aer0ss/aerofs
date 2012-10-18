@@ -314,7 +314,10 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                 while (rs.next()) {
                     long len = rs.getLong(1);
                     KIndex kidx = new KIndex(rs.getInt(2));
+
+                    // getLong() returns 0 if the value is SQL NULL.
                     long mtime = rs.getLong(3);
+
                     cas.put(kidx, new CA(len, mtime));
                 }
                 return cas;

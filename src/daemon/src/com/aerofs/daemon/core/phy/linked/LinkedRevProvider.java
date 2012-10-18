@@ -16,6 +16,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.aerofs.lib.FileUtil;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
@@ -107,8 +108,9 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     // called from LocalStorage
     LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx)
+            throws IOException
     {
-        long mtime = new File(absPath).lastModified();
+        long mtime = FileUtil.lastModified(new File(absPath));
         String date = new SimpleDateFormat(DATE_FORMAT).format(new Date(mtime));
 
         String pathRev = Util.join(_pathBase, Util.join(path.elements()));

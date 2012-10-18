@@ -228,7 +228,7 @@ public class HistoryModel
             if (!index.isDeleted) {
                 // For non-deleted files, add current version
                 File f = new File(path.toAbsoluteString(Cfg.absRootAnchor()));
-                Version current = new Version(path, null, f.length(), f.lastModified());
+                Version current = new Version(path, null, f.length(), FileUtil.lastModified(f));
                 current.tmpFile = f.getAbsolutePath();
                 revs.add(current);
             }
