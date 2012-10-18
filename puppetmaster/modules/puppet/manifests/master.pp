@@ -13,7 +13,17 @@ class puppet::master inherits puppet {
 
   file { "/usr/local/bin/kickall":
     mode => 755,
-    content => template("puppet/kickall.erb"),
+    source => "puppet:///modules/puppet/kickall",
+  }
+
+  file { "/etc/puppet/nodes.yaml":
+    mode => 666,
+    content => template("puppet/nodes.yaml.erb")
+  }
+
+  file { "/etc/puppet/do_not_kick.yaml":
+    mode => 666,
+    ensure => present
   }
 
   package { "bsd-mailx":

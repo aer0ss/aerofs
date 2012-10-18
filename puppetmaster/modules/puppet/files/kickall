@@ -1,13 +1,5 @@
 #!/usr/bin/ruby
-<% require "yaml"   -%>
-<% require "puppet" -%>
-<% directory = Dir.new("/var/lib/puppet/yaml/node") -%>
-<% nodes = directory.map do |file| -%>
-<%    next if File.directory?(file)  -%>
-<%    node = YAML.load_file(File.join(directory.path, file)) -%>
-<%    node.name -%>
-<% end -%>
-<% nodes.delete "staging.aerofs.com" -%>
+require "yaml"
 
 class KickAll
 
@@ -40,9 +32,16 @@ class KickAll
 end
 
 # find all nodes that will be kicked
-nodes = <%= nodes.inspect %>
+nodes = YAML::load(File.open("/etc/puppet/nodes.yaml"))
 
-hosts_to_kick = nodes
+do_not_kick_nodes = YAML::load(File.open("/etc/puppet/do_not_kick.yaml"))
+
+# take difference of two arrays, unless do_not_kick_nodes is not an Array
+if do_not_kick_nodes.kind_of?(Array)
+    hosts_to_kick = nodes - do_not_kick_nodes
+else
+    hosts_to_kick = nodes
+end
 
 3.times do
 
@@ -56,4 +55,5 @@ hosts_to_kick = nodes
 
 end
 
+puts "FAILED: Unable to kick #{hosts_to_kick.join(" ")}" if hosts_to_kick.size > 0
 exit hosts_to_kick.size == 0
