@@ -17,7 +17,7 @@ import com.aerofs.daemon.core.admin.HdPauseOrResumeSyncing;
 import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdSaveRevision;
-import com.aerofs.daemon.core.admin.HdSetACL;
+import com.aerofs.daemon.core.admin.HdUpdateACL;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
 import com.aerofs.daemon.core.admin.HdSetPrivateKey;
 import com.aerofs.daemon.core.admin.HdTransportFlood;
@@ -61,7 +61,7 @@ import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EISaveRevision;
-import com.aerofs.daemon.event.admin.EISetACL;
+import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.admin.EISetPrivateKey;
 import com.aerofs.daemon.event.admin.EITransportFlood;
@@ -121,7 +121,7 @@ public class CoreEventDispatcher extends EventDispatcher
             HdReloadConfig hdReloadConfig,
             HdPauseOrResumeSyncing hdPauseOrResumeSyncing,
             HdGetACL hdGetACL,
-            HdSetACL hdSetACL,
+            HdUpdateACL hdUpdateACL,
             HdDeleteACL hdDeleteACL,
             HdSetAttr hdSetAttr,
             HdGetChildrenAttr hdGetChildrenAttr,
@@ -147,7 +147,7 @@ public class CoreEventDispatcher extends EventDispatcher
             .setHandler_(EIGetAttr.class, hdGetAttr)
             .setHandler_(EIGetChildrenAttr.class, hdGetChildrenAttr)
             .setHandler_(EIGetACL.class, hdGetACL)
-            .setHandler_(EISetACL.class, hdSetACL)
+            .setHandler_(EIUpdateACL.class, hdUpdateACL)
             .setHandler_(EIDeleteACL.class, hdDeleteACL)
             .setHandler_(EISetAttr.class, hdSetAttr)
 

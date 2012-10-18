@@ -34,7 +34,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SPBlockingClient;
@@ -259,10 +258,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             @Override
             public void run() throws Exception
             {
-                SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-                sp.signInRemote();
-
-                SID sid;
                 RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 try {
                     PBPath pbpath = _path.toPB();
@@ -270,11 +265,10 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     for (String subject : subjects) {
                         srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
                     }
-                    sid = new SID(ritual.shareFolder(Cfg.user(), pbpath, srps).getShareId());
+                    ritual.shareFolder(Cfg.user(), pbpath, srps, note);
                 } finally {
                     ritual.close();
                 }
-                sp.shareFolder(_path.last(), sid.toPB(), subjects, note);
 
                 SVClient.sendEventAsync(Sv.PBSVEvent.Type.INVITE_SENT,Integer.toString(subjects.size()));
             }

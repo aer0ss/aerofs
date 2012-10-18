@@ -66,7 +66,7 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         pair.add(new SubjectRolePair(TEST_USER_1_NAME, Role.OWNER).toPB());
         pair.add(new SubjectRolePair(TEST_USER_2_NAME, Role.EDITOR).toPB());
 
-        service.setACL(TEST_SID_1.toPB(), pair).get();
+        service.shareFolder(TEST_SID_1.toString(), TEST_SID_1.toPB(), pair, "").get();
     }
 
     /**

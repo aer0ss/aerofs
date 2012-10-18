@@ -33,13 +33,14 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TestSPSignupHelper extends AbstractTest
 {
-    private final InvitationEmailer _emailer = mock(InvitationEmailer.class);
+    private final InvitationEmailer.Factory _emailFactory = mock(InvitationEmailer.Factory.class);
 
     private final LocalSPServiceReactorCaller _serviceReactorCaller =
-            new LocalSPServiceReactorCaller(_emailer);
+            new LocalSPServiceReactorCaller(_emailFactory);
 
     @Spy SPServiceBlockingStub _sp = new SPServiceBlockingStub(_serviceReactorCaller);
     @InjectMocks SPSignupHelper _spSignupHelper;
@@ -53,6 +54,12 @@ public class TestSPSignupHelper extends AbstractTest
     public void setup()
         throws Exception
     {
+        // return stub invitation emails to avoid NPE
+        when(_emailFactory.createUserInvitation(anyString(), anyString(), anyString(), anyString(),
+                anyString(), anyString())).thenReturn(new InvitationEmailer());
+        when(_emailFactory.createFolderInvitation(anyString(), anyString(), anyString(), anyString(),
+                anyString(), anyString())).thenReturn(new InvitationEmailer());
+
         _serviceReactorCaller.init_();
     }
 
@@ -134,7 +141,7 @@ public class TestSPSignupHelper extends AbstractTest
         // Verify an invitation email would have been sent: from the ADMIN_ID to userId.
         // Capture the code to return to the caller.
         ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
-        verify(_emailer, atLeastOnce()).sendUserInvitationEmail(
+        verify(_emailFactory, atLeastOnce()).createUserInvitation(
                 eq(LocalSPServiceReactorCaller.ADMIN_ID), eq(userId), anyString(), anyString(),
                 anyString(), code.capture());
 

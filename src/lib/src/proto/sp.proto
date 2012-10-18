@@ -161,10 +161,9 @@ service SPService {
      *
      * If the user doesn't exist yet, this method will automatically call InviteUser
      * If the invitee email address is outside the organization's allowed domain, he
-     * will be invited to the default organization.
-     *
-     * Note: this function doesn't change the ACLs. You must also call ShareFolder in
-     *       ritual.proto before calling this.
+     * will be invited to the default organization. If the user is authorized to share
+     * with the invitee, ACLs will be set for them and they will be sent an email
+     * notification.
      *
      * TODO: this function currently accepts sharing with several people at once to ease
      *       transition. Make it single-person in the future.
@@ -174,6 +173,7 @@ service SPService {
      * Throws:
      *   ExNoPerm if the sharee is (or would be created) in a different organization *and*
      *            sharing outside the organization isn't allowed for either the sharer or sharee
+     *   ExNoPerm if the sharer isn't authorized to modify ACLs for the given SID
      *   TODO change the exception type below
      *   ExNoPerm if the caller's email address needs to be verified first.
      */
@@ -338,7 +338,7 @@ service SPService {
     // Required Auth Level: user for all of them
 
     rpc GetACL(GetACLCall) returns (GetACLReply);
-    rpc SetACL(SetACLCall) returns (Void);
+    rpc UpdateACL(UpdateACLCall) returns (Void);
     rpc DeleteACL(DeleteACLCall) returns (Void);
 
     /**
@@ -467,7 +467,6 @@ message CertifyDeviceReply {
 }
 
 message InviteUserCall {
-
     // email address of the person being invited
     // TODO: repeated field now to ease transition. Switch to single email_address after
     repeated string email_addresses = 1;
@@ -478,15 +477,17 @@ message InviteUserCall {
 }
 
 message ShareFolderCall {
-
     // name of the folder being shared
     required string folder_name = 3;
 
     required bytes share_id = 2;
 
-    // email address of the person with whom we want to share
-    // TODO: repeated field now to ease transition. Switch to single email_address after
-    repeated string email_address = 1;
+    // SubjectRolePair of the person with whom we want to share
+    // The client (desktop/admin panel/...) is responsible for choosing the default role of
+    // invited users. This has better transactional properties than inviting then changing
+    // the roles of invited users in a subsequent call.
+    // TODO: repeated field now to ease transition. Switch to single subject_role after
+    repeated PBSubjectRolePair subject_role = 1;
 
     // Message to the person
     optional string note = 4;
@@ -558,7 +559,7 @@ message GetACLReply {
     required uint64 epoch = 2;
 }
 
-message SetACLCall {
+message UpdateACLCall {
     required bytes store_id = 1;
     repeated PBSubjectRolePair subject_role = 2;
 }

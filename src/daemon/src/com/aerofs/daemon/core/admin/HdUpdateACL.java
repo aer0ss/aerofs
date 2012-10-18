@@ -3,28 +3,27 @@ package com.aerofs.daemon.core.admin;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.event.admin.EISetACL;
+import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.ex.ExNotShared;
-import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
-public class HdSetACL extends AbstractHdIMC<EISetACL>
+public class HdUpdateACL extends AbstractHdIMC<EIUpdateACL>
 {
     private final ACLSynchronizer _aclsync;
     private final DirectoryService _ds;
 
     @Inject
-    public HdSetACL(ACLSynchronizer aclsync, DirectoryService ds)
+    public HdUpdateACL(ACLSynchronizer aclsync, DirectoryService ds)
     {
         _aclsync = aclsync;
         _ds = ds;
     }
 
     @Override
-    protected void handleThrows_(EISetACL ev, Prio prio)
+    protected void handleThrows_(EIUpdateACL ev, Prio prio)
             throws Exception
     {
         // Don't check ACL here. SP Servlet will check it for us.
@@ -32,8 +31,8 @@ public class HdSetACL extends AbstractHdIMC<EISetACL>
         OA oa = _ds.getOA_(soid);
         if (oa.isAnchor()) soid = _ds.followAnchorThrows_(oa);
 
-        if (!soid.oid().equals(OID.ROOT)) throw new ExNotShared();
+        if (!soid.oid().isRoot()) throw new ExNotShared();
 
-        _aclsync.set_(soid.sidx(), ev._subject2role);
+        _aclsync.update_(soid.sidx(), ev._subject2role);
     }
 }

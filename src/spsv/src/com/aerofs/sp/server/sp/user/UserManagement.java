@@ -37,17 +37,17 @@ public class UserManagement
 
     private final SPDatabase _db;
     private final IUserSearchDatabase _usdb;
-    private final InvitationEmailer _invitationEmailer;
+    private final InvitationEmailer.Factory _emailerFactory;
     private final PasswordResetEmailer _passwordResetEmailer;
 
     private static final Logger l = Util.l(UserManagement.class);
 
-    public UserManagement(SPDatabase db, IUserSearchDatabase usdb, InvitationEmailer invitationEmailer,
-            PasswordResetEmailer passwordResetEmailer)
+    public UserManagement(SPDatabase db, IUserSearchDatabase usdb,
+            InvitationEmailer.Factory emailerFactory, PasswordResetEmailer passwordResetEmailer)
     {
         _db = db;
         _usdb = usdb;
-        _invitationEmailer = invitationEmailer;
+        _emailerFactory = emailerFactory;
         _passwordResetEmailer = passwordResetEmailer;
     }
 
@@ -84,32 +84,38 @@ public class UserManagement
         return _db.getUser(userID);
     }
 
-    public void inviteOneUser(User inviter, String inviteeId, Organization inviteeOrg,
+    /**
+     * This method performs business logic checks prior to sending invite email and wrap the
+     * call to the emailer in a nice and clean Callable that should be used outside of the DB
+     * transaction.
+     *
+     * @return a callable doing the actual email sending
+     */
+    public InvitationEmailer inviteOneUser(User inviter, String inviteeId, Organization inviteeOrg,
             @Nullable String folderName, @Nullable String note)
             throws Exception
     {
         assert inviteeId != null;
 
         // TODO could change userId field in DB to be case-insensitive to avoid normalization
-        inviteeId = User.normalizeUserId(inviteeId);
+        final String normalizedId = User.normalizeUserId(inviteeId);
 
         // Check that the invitee doesn't exist already
-        checkUserIdDoesNotExist(inviteeId);
+        checkUserIdDoesNotExist(normalizedId);
 
         // USER-level inviters can only invite to an organization that matches the domain
         if (inviter._level.equals(AuthorizationLevel.USER)
                 && !inviteeOrg.domainMatches(inviteeId)) {
-            throw new ExNoPerm(inviter._id + " cannot invite + " + inviteeId
+            throw new ExNoPerm(inviter._id + " cannot invite + " + normalizedId
                     + " to " + inviteeOrg._id);
         }
 
-        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+        final String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
 
-        _db.addTargetedSignupCode(code, inviter._id, inviteeId, inviteeOrg._id);
+        _db.addTargetedSignupCode(code, inviter._id, normalizedId, inviteeOrg._id);
 
-        _invitationEmailer.sendUserInvitationEmail(inviter._id, inviteeId, inviter._firstName,
-                folderName, note, code);
-
+        return _emailerFactory.createUserInvitation(inviter._id, normalizedId, inviter._firstName,
+                        folderName, note, code);
     }
 
     public void checkUserIdDoesNotExist(String userId)

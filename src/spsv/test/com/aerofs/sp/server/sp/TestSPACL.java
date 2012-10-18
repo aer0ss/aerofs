@@ -2,21 +2,21 @@ package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Role;
-import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
+import com.aerofs.servletlib.sp.user.AuthorizationLevel;
+import com.aerofs.servletlib.sp.user.User;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -31,13 +31,15 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 
-public class TestSPACL extends AbstractSPUserBasedTest
+/**
+ * Test the functionality of our ACL system, including SP.shareFolder's ability to set ACLs, but
+ * don't bother testing shareFolder more deeply here (see TestSPShareFolder)
+ */
+public class TestSPACL extends AbstractSPFolderPermissionTest
 {
     // Another random person (in addition to the ones created by our parent).
     private static final String TEST_USER_4_NAME = "USER_4";
-
-    private static final SID TEST_SID_1 = new SID(UniqueID.generate());
-    private static final SID TEST_SID_2 = new SID(UniqueID.generate());
+    private static final byte[] TEST_USER_4_CRED = "CREDENTIALS".getBytes();
 
     private long getInitialServerACL()
     {
@@ -98,6 +100,18 @@ public class TestSPACL extends AbstractSPUserBasedTest
         assertTrue("no entry for j:" + subject + " r:" + expectedRole.getDescription(), found);
     }
 
+    @Before
+    public void setupTestSPACL()
+            throws Exception
+    {
+        // set up TEST_USER_4
+        _transaction.begin();
+        db.addUser(new User(TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_CRED,
+                true, false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
+        db.markUserVerified(TEST_USER_4_NAME);
+        _transaction.commit();
+    }
+
     //
     // TESTS
     //
@@ -108,8 +122,7 @@ public class TestSPACL extends AbstractSPUserBasedTest
     {
         setupMockVerkehrToSuccessfullyPublish();
 
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
 
         GetACLReply getAcl = service.getACL(0L).get();
 
@@ -134,20 +147,15 @@ public class TestSPACL extends AbstractSPUserBasedTest
 
         // malicious user creates an acl for someone's root store
         // note that they don't put themselves in the list!
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(getRootSID(TEST_USER_2_NAME).toPB(), makePair(TEST_USER_3_NAME,
-                Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, getRootSID(TEST_USER_2_NAME),
+                TEST_USER_3_NAME, Role.OWNER);
 
         // clear this set out, because I don't care about what happens prior to the last call
-
         published.clear();
 
         // now the actual owner comes along and tries to do the same
-
-        sessionUser.setUser(TEST_USER_2_NAME);
-        service.setACL(getRootSID(TEST_USER_2_NAME).toPB(), makePair(TEST_USER_2_NAME,
-                Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_2_NAME, getRootSID(TEST_USER_2_NAME), TEST_USER_2_NAME,
+                Role.OWNER);
 
         // we still expect both epoch of 1) the owner and 2) the person who was flushed to be
         // updated and a notification published to them
@@ -175,34 +183,24 @@ public class TestSPACL extends AbstractSPUserBasedTest
         Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add yourself
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
-
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
         assertEquals(1, published.size());
         assertTrue(published.contains(TEST_USER_1_NAME));
         published.clear();
 
         // add the second person
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_2_NAME, Role.OWNER)).get();
-
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_2_NAME, Role.OWNER);
         assertEquals(2, published.size());
         assertTrue(published.contains(TEST_USER_1_NAME));
         assertTrue(published.contains(TEST_USER_2_NAME));
         published.clear();
 
         // now lets see if the other person can add a third person
-
-        sessionUser.setUser(TEST_USER_2_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_4_NAME, Role.EDITOR)).get();
-
-        assertEquals(2, published.size());
+        shareFolderThroughSP(TEST_USER_2_NAME, TEST_SID_1, TEST_USER_4_NAME, Role.EDITOR);
+        assertEquals(3, published.size());
         assertTrue(published.contains(TEST_USER_1_NAME));
         assertTrue(published.contains(TEST_USER_2_NAME));
-        // IMPORTANT: user 3 doesn't exist in the user table, so no notification can be published
-        // to him!
+        assertTrue(published.contains(TEST_USER_4_NAME));
         published.clear();
 
         // now let's see what the acls are like
@@ -224,19 +222,14 @@ public class TestSPACL extends AbstractSPUserBasedTest
         setupMockVerkehrToSuccessfullyPublish();
 
         // add the owner
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
 
         // add an editor
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_2_NAME, Role.EDITOR)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_2_NAME, Role.EDITOR);
 
         // get the editor to try and make some role changes
         try {
-            sessionUser.setUser(TEST_USER_2_NAME);
-            service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_4_NAME, Role.EDITOR)).get();
+            shareFolderThroughSP(TEST_USER_2_NAME, TEST_SID_1, TEST_USER_4_NAME, Role.EDITOR);
         } catch (Exception e) {
             // make sure we clean up after uncommitted transaction(s)
             _transaction.handleException();
@@ -251,24 +244,15 @@ public class TestSPACL extends AbstractSPUserBasedTest
         Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
-
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
         published.clear(); // don't care
 
         // add a second person (as owner)
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_2_NAME, Role.OWNER)).get();
-
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_2_NAME, Role.OWNER);
         published.clear(); // don't care
 
         // add a third person (as editor)
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_3_NAME, Role.EDITOR)).get();
-
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_3_NAME, Role.EDITOR);
         published.clear(); // don't care
 
         // now have the second guy delete the third
@@ -315,10 +299,7 @@ public class TestSPACL extends AbstractSPUserBasedTest
         Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
-
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
         published.clear(); // don't care
 
         // now attempt to delete someone for whom the role doesn't exist
@@ -346,14 +327,10 @@ public class TestSPACL extends AbstractSPUserBasedTest
         setupMockVerkehrToSuccessfullyPublish();
 
         // add the owner
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
 
         // add an editor
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_2_NAME, Role.EDITOR)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_2_NAME, Role.EDITOR);
 
         // get the editor to try to delete the owner
         try {
@@ -372,24 +349,16 @@ public class TestSPACL extends AbstractSPUserBasedTest
         setupMockVerkehrToSuccessfullyPublish();
 
         // add the owner for store # 1
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
 
         // add the owner for store # 2
-
-        sessionUser.setUser(TEST_USER_2_NAME);
-        service.setACL(TEST_SID_2.toPB(), makePair(TEST_USER_2_NAME, Role.OWNER)).get();
+        shareFolderThroughSP(TEST_USER_2_NAME, TEST_SID_2, TEST_USER_2_NAME, Role.OWNER);
 
         // add an editor for store # 1
-
-        sessionUser.setUser(TEST_USER_1_NAME);
-        service.setACL(TEST_SID_1.toPB(), makePair(TEST_USER_3_NAME, Role.EDITOR)).get();
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_3_NAME, Role.EDITOR);
 
         // add an editor for store # 2
-
-        sessionUser.setUser(TEST_USER_2_NAME);
-        service.setACL(TEST_SID_2.toPB(), makePair(TEST_USER_3_NAME, Role.EDITOR)).get();
+        shareFolderThroughSP(TEST_USER_2_NAME, TEST_SID_2, TEST_USER_3_NAME, Role.EDITOR);
 
         // now have the editor do a getacl call
 
@@ -422,10 +391,118 @@ public class TestSPACL extends AbstractSPUserBasedTest
         }
     }
 
-    private List<PBSubjectRolePair> makePair(String subject, Role role)
+    @Test
+    public void shouldAllowUpdateACLToChangeACLsAlreadyInDatabase()
+            throws Exception
     {
-        ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
-        pair.add(new SubjectRolePair(subject, role).toPB());
-        return pair;
+        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+
+        // add the owner for store # 1
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
+
+        // add user 3 as editor for store # 1
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_3_NAME, Role.EDITOR);
+
+        published.clear(); // clear out notifications from sharing
+
+        // update ACL for user 3 as user 1
+        sessionUser.setUser(TEST_USER_1_NAME);
+        service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_3_NAME, Role.OWNER));
+
+        // check that notifications were published on update
+        assertEquals(2, published.size());
+        assertTrue(published.contains(TEST_USER_1_NAME));
+        assertTrue(published.contains(TEST_USER_3_NAME));
+
+        // verify user 3 has updated ACL in place
+        sessionUser.setUser(TEST_USER_3_NAME);
+        GetACLReply reply = service.getACL(0L).get();
+
+        // epoch for this guy should be 2 (started at 0, added as editor then as owner)
+        assertEquals(getInitialServerACL() + 2, reply.getEpoch());
+
+        // he should have 1 store entry
+        assertEquals(1, reply.getStoreAclCount());
+
+        PBStoreACL acl = reply.getStoreAcl(0);
+        assertEquals(2, acl.getSubjectRoleCount());
+        List<PBSubjectRolePair> pairs = acl.getSubjectRoleList();
+        assertACLContains(TEST_USER_1_NAME, Role.OWNER, pairs);
+        assertACLContains(TEST_USER_3_NAME, Role.OWNER, pairs);
+    }
+
+    @Test (expected = ExNoPerm.class) // thrown when owner tries to update nonexistent ACL entry
+    public void shouldForbidUpdateACLFromChangingACLsNotInDatabase()
+            throws Exception
+    {
+        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+
+        // add the owner for store # 1
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
+        published.clear(); // throw away this notification
+
+        // update ACL for user 3 as user 1
+        sessionUser.setUser(TEST_USER_1_NAME);
+        Exception ex = null;
+        try {
+            // should fail with ExNoPerm
+            service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_3_NAME, Role.OWNER));
+        } catch (Exception e) {
+            _transaction.handleException();
+            ex = e;
+        }
+
+        // ensure that nothing was published
+        assertEquals(0, published.size());
+
+        // check that user 3 still has no ACLs set in the db
+        sessionUser.setUser(TEST_USER_3_NAME);
+        GetACLReply reply = service.getACL(0L).get();
+        assertEquals(getInitialServerACL(), reply.getEpoch());
+        assertEquals(0, reply.getStoreAclCount());
+
+        // rethrow exception caught above
+        if (ex != null) throw ex;
+    }
+
+    @Test (expected = ExNoPerm.class) // thrown when editor tries to update ACL entry
+    public void shouldForbidUpdateACLFromUserWithNonOwnerPermissions()
+            throws Exception
+    {
+        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+
+        // add the owner for store # 1
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_1_NAME, Role.OWNER);
+
+        // add user 3 as editor for store # 1
+        shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_3_NAME, Role.EDITOR);
+
+        published.clear(); // throw away these notifications
+
+        // try to edit user 1's ACL entry for store 1 as user 3
+        sessionUser.setUser(TEST_USER_3_NAME);
+        Exception ex = null;
+        try {
+            // should fail with ExNoPerm
+            service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_1_NAME, Role.EDITOR));
+        } catch (Exception e) {
+            _transaction.handleException();
+            ex = e;
+        }
+
+        // ensure that nothing was published
+        assertEquals(0, published.size());
+
+        // check that user 3 only has editor permissions
+        sessionUser.setUser(TEST_USER_3_NAME);
+        GetACLReply reply = service.getACL(0L).get();
+        assertEquals(getInitialServerACL() + 1, reply.getEpoch());
+        assertEquals(1, reply.getStoreAclCount());
+        List<PBSubjectRolePair> pairs = reply.getStoreAcl(0).getSubjectRoleList();
+        assertACLContains(TEST_USER_1_NAME, Role.OWNER, pairs);
+        assertACLContains(TEST_USER_3_NAME, Role.EDITOR, pairs);
+
+        // rethrow exception caught above
+        if (ex != null) throw ex;
     }
 }

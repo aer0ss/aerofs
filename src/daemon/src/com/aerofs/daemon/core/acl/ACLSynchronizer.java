@@ -11,9 +11,10 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Role;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.spsv.SPBlockingClient;
@@ -24,9 +25,10 @@ import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
@@ -70,6 +72,43 @@ public class ACLSynchronizer
         _lacl = lacl;
         _sidx2sid = sIndex2SID;
         _sid2sidx = sid2SIndex;
+    }
+
+    /**
+     * For faster UI refresh and syncing with newly added users, this method immediately adds new
+     * ACL entries to the local database rather than waiting for notifications from the push
+     * service.
+     *
+     * Notes:
+     * This should only be called AFTER a successful call to SP! This just brings the local ACL
+     * database in sync with what should be on the server, so please ensure that the server has
+     * accepted the new changes before setting them locally.
+     * Also, this uses a transaction internally, so it cannot be used when inside of another
+     * transaction.
+     */
+    public void commitNewACLsToLocalDatabase(SIndex sidx, Map<String, Role> subject2role)
+            throws SQLException, ExNotFound
+    {
+        Trans t = _tm.begin_();
+        try {
+            _lacl.set_(sidx, subject2role, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
+
+    /**
+     * Resolve the given SIndex to a SID
+     * TODO: move this to a common location so other classes can use it too
+     */
+    private SID resolveSIndex(SIndex sidx)
+            throws SQLException
+    {
+        SID sid = _sidx2sid.getNullable_(sidx);
+        if (sid == null) sid = _sidx2sid.getAbsent_(sidx);
+
+        return sid;
     }
 
     /**
@@ -201,47 +240,32 @@ public class ACLSynchronizer
         return new ServerACLReturn(serverEpoch, acl);
     }
 
-    public void set_(SIndex sidx, Map<String, Role> subject2role)
+    /**
+     * Update ACLs via the SP.updateACL call
+     */
+    public void update_(SIndex sidx, Map<String, Role> subject2role)
             throws Exception
     {
-        //
-        // call SP first to avoid setting local ACL if SP returns no permissions or other errors.
-        //
+        // first, resolve the sid and prepare data for protobuf
+        SID sid = resolveSIndex(sidx);
+        List<PBSubjectRolePair> roles = SubjectRolePairs.mapToPB(subject2role);
 
-        // first, resolve the sid
-        SID sid = _sidx2sid.getNullable_(sidx);
-        if (sid == null) sid = _sidx2sid.getAbsent_(sidx);
-
-        ArrayList<PBSubjectRolePair> roles = new ArrayList<PBSubjectRolePair>();
-        for (Map.Entry<String, Role> pair : subject2role.entrySet()) {
-            roles.add(new SubjectRolePair(pair.getKey(), pair.getValue()).toPB());
-        }
-
-        // make the SP call
+        // make the SP call (done before adding entries to the local database to avoid changing the
+        // local database if the SP call fails)
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");
             SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
             sp.signInRemote();
-            sp.setACL(sid.toPB(), roles);
+            sp.updateACL(sid.toPB(), roles);
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();
         }
 
-        //
-        // for faster UI refresh and syncing with newly added users, immediately add the entries to
-        // the local database rather than waiting for notifications from the push service.
-        //
-
-        Trans t = _tm.begin_();
-        try {
-            _lacl.set_(sidx, subject2role, t);
-            t.commit_();
-        } finally {
-            t.end_();
-        }
+        // add new entries to the local database
+        commitNewACLsToLocalDatabase(sidx, subject2role);
     }
 
     public void delete_(SIndex sidx, Iterable<String> subjects)

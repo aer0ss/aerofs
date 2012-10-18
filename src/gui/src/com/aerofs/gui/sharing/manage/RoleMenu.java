@@ -1,7 +1,6 @@
 package com.aerofs.gui.sharing.manage;
 
 import java.util.Collections;
-import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -12,13 +11,10 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SPBlockingClient;
 import com.aerofs.lib.spsv.SPClientFactory;
-import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Common.PBSubjectRolePair;
 
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
@@ -39,6 +35,7 @@ public class RoleMenu
     private final Path _path;
     private final Menu _menu;
     private final String _subject;
+    private final Role _role;
     private final CompUserList _compUserList;
 
     public RoleMenu(CompUserList compUserList, SubjectRolePair srp, Control ctrl, Path path)
@@ -46,6 +43,7 @@ public class RoleMenu
         _menu = new Menu(ctrl);
         _path = path;
         _subject = srp._subject;
+        _role = srp._role;
         _compUserList = compUserList;
 
         if (srp._role != Role.OWNER) {
@@ -115,22 +113,19 @@ public class RoleMenu
     private void reinvite()
     {
         try {
-            SID sid;
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-            try {
-                PBPath pbpath = _path.toPB();
-                List<PBSubjectRolePair> srps = Collections.emptyList();
-                sid = new SID(ritual.shareFolder(Cfg.user(), pbpath, srps).getShareId());
-            } finally {
-                ritual.close();
-            }
-
+            // TODO: All this just to get fromPerson... fix this once we cache user preferences
             SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
             sp.signInRemote();
             String fromPerson = sp.getPreferences(Cfg.did().toPB()).getFirstName();
+
             String note = CompInviteUsers.getDefaultInvitationNote(_path.last(), fromPerson);
-            List<String> subjects = Collections.singletonList(_subject);
-            sp.shareFolder(_path.last(), sid.toPB(), subjects, note);
+            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+            try {
+                ritual.shareFolder(Cfg.user(), _path.toPB(), Collections.singletonList(
+                        new SubjectRolePair(_subject, _role).toPB()), note);
+            } finally {
+                ritual.close();
+            }
 
             GUI.get().show(_compUserList.getShell(), MessageType.INFO, _subject +
                     " was reinvited successfully.");
@@ -155,7 +150,8 @@ public class RoleMenu
                     ritual.deleteACL(Cfg.user(), _path.toPB(), Collections.singletonList(_subject));
                 } else {
                     SubjectRolePair srp = new SubjectRolePair(_subject, role);
-                    ritual.setACL(Cfg.user(), _path.toPB(), Collections.singletonList(srp.toPB()));
+                    ritual.updateACL(Cfg.user(), _path.toPB(),
+                            Collections.singletonList(srp.toPB()));
                 }
                 _compUserList.load(ritual);
 

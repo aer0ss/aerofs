@@ -11,8 +11,7 @@ public class SubjectRolePair
     public final Role _role;
     @Nullable private PBSubjectRolePair _pb;
 
-    public SubjectRolePair(PBSubjectRolePair pb)
-            throws ExBadArgs
+    public SubjectRolePair(PBSubjectRolePair pb) throws ExBadArgs
     {
         this._role = Role.fromPB(pb.getRole());
         this._subject = pb.getSubject();

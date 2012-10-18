@@ -7,7 +7,6 @@ import com.aerofs.lib.Role;
 import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 
@@ -60,14 +59,11 @@ public class CmdInvite implements IShellCommand<ShProgram>
         PBPath path = s.d().buildPath_(cl.getArgs()[0]);
         SubjectRolePair srp = new SubjectRolePair(cl.getArgs()[1], Role.fromString(role));
 
-        RitualBlockingClient ritual = s.d().getRitualClient_();
-        SID sid = new SID(ritual.shareFolder(Cfg.user(), path,
-                Collections.singletonList(srp.toPB())) .getShareId());
-
         String name = path.getElemCount() == 0 ? "unkown folder" :
                 path.getElem(path.getElemCount() - 1);
         String note = CompInviteUsers.getDefaultInvitationNote(name, Cfg.user());
-        s.d().getSPClient_().shareFolder(name, sid.toPB(), Collections.singletonList(srp._subject),
-                note);
+
+        RitualBlockingClient ritual = s.d().getRitualClient_();
+        ritual.shareFolder(Cfg.user(), path, Collections.singletonList(srp.toPB()), note);
     }
 }

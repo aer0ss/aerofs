@@ -7,13 +7,13 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Role;
 
-public class EISetACL extends AbstractEBIMC
+public class EIUpdateACL extends AbstractEBIMC
 {
     public final String _user;
     public final Path _path;
     public final Map<String, Role> _subject2role;
 
-    public EISetACL(String user, Path path, Map<String, Role> subject2role, IIMCExecutor imce)
+    public EIUpdateACL(String user, Path path, Map<String, Role> subject2role, IIMCExecutor imce)
     {
         super(imce);
         _path = path;

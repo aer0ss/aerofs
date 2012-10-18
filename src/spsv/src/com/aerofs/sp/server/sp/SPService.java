@@ -4,6 +4,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.async.UncancellableFuture;
@@ -42,6 +43,7 @@ import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.proto.Sp.SignUpCall;
 import com.aerofs.servletlib.db.IThreadLocalTransaction;
+import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.sp.cert.Certificate;
 import com.aerofs.sp.server.sp.cert.ICertificateGenerator;
 import com.aerofs.sp.server.sp.organization.OrganizationManagement;
@@ -458,16 +460,32 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
-            List<String> emailAddresses, String note)
+            List<PBSubjectRolePair> rolePairs, @Nullable String note)
             throws Exception
     {
+        SID sid = new SID(shareId);
+        String user = _sessionUser.getUser();
+
+        l.info("user:" + user + " attempt to share folder with subjects:" + rolePairs.size());
+
+        if (rolePairs.isEmpty()) throw new ExNoPerm("Must specify one or more sharee");
+
+        // The sending of invitation emails is deferred to the end of the transaction to ensure
+        // that all business logic checks pass and the changes are sucessfully committed to the DB
+        List<InvitationEmailer> emailers = Lists.newLinkedList();
+
+        List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
+
         _transaction.begin();
-
-        _sharedFolderManagement.shareFolder(folderName, new SID(shareId),
-                _sessionUser.getUser(), emailAddresses, note);
-
+        Map<String, Long> epochs =
+                _sharedFolderManagement.shareFolder(folderName, sid, user, srps, note, emailers);
+        // send verkehr notification as part of the transaction
+        publish_(epochs);
         _transaction.commit();
 
+        l.info(user + " completed share folder for s:" + sid);
+
+        InvitationEmailer.sendAll(emailers);
         return createVoidReply();
     }
 
@@ -577,6 +595,8 @@ class SPService implements ISPService
             Boolean inviteToDefaultOrg)
             throws Exception
     {
+        if (emailAddresses.isEmpty()) throw new ExNoPerm("Must specify one or more invitee");
+
         _transaction.begin();
 
         User user = _userManagement.getUser(_sessionUser.getUser());
@@ -593,12 +613,16 @@ class SPService implements ISPService
                 C.DEFAULT_ORGANIZATION : user._orgId);
 
         // Invite all invitees to Organization "org"
+        // The sending of invitation emails is deferred to the end of the transaction to ensure
+        // that all business logic checks pass and the changes are sucessfully committed to the DB
+        List<InvitationEmailer> emailers = Lists.newLinkedList();
         for (String invitee : emailAddresses) {
-            _userManagement.inviteOneUser(user, invitee, org, null, null);
+            emailers.add(_userManagement.inviteOneUser(user, invitee, org, null, null));
         }
 
         _transaction.commit();
 
+        InvitationEmailer.sendAll(emailers);
         return createVoidReply();
     }
 
@@ -639,46 +663,26 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setACL(final ByteString storeId,
+    public ListenableFuture<Void> updateACL(final ByteString storeId,
             final List<PBSubjectRolePair> subjectRoleList)
             throws Exception
     {
-        //
-        // making the modification to the database, and then getting the current acl list should
-        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
-        //
-
-        _transaction.begin();
+        if (subjectRoleList.isEmpty()) throw new ExNoPerm("Must specify one or more subjects");
 
         String user = _sessionUser.getUser();
-
-        l.info("user:" + user + " attempt set acl for subjects:" + subjectRoleList.size());
-
-        assert subjectRoleList.size() > 0;
-
-        // convert the pb message into the appropriate format to make the db call
-
         SID sid = new SID(storeId);
-        List<SubjectRolePair> pairs = Lists.newArrayListWithCapacity(subjectRoleList.size());
-        for (PBSubjectRolePair pbPair : subjectRoleList) {
-            SubjectRolePair pair = new SubjectRolePair(pbPair);
-            pairs.add(pair);
 
-            l.info("add role for s:" + sid + " j:" + pair._subject + " r:" + pair._role);
-        }
+        l.info("user:" + user + " attempt update acl for subjects:" + subjectRoleList.size());
 
-        // make the db call and publish the result via verkehr
+        List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(subjectRoleList);
 
-        // add a db entry for the shared folder if it isn't yet initialized
-        _db.addSharedFolder(sid);
-
-        Map<String, Long> updatedEpochs = _db.setACL(user, sid, pairs);
-        publish_(updatedEpochs);
-        l.info(user + " completed set acl for s:" + sid);
-
-        // after publishing, committing is considered done
+        _transaction.begin();
+        Map<String, Long> epochs = _db.updateACL(user, sid, srps);
+        // send verkehr notification as part of the transaction
+        publish_(epochs);
         _transaction.commit();
+
+        l.info(user + " completed update acl for s:" + sid);
 
         return createVoidReply();
     }

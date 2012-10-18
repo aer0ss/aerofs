@@ -47,15 +47,15 @@ public class SPServlet extends AeroServlet
 
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
 
-    private final InvitationEmailer _emailer = new InvitationEmailer();
+    private final InvitationEmailer.Factory _emailerFactory = new InvitationEmailer.Factory();
 
     private final UserManagement _userManagement =
-            new UserManagement(_db, _db, _emailer, new PasswordResetEmailer());
+            new UserManagement(_db, _db, _emailerFactory, new PasswordResetEmailer());
     private final OrganizationManagement _organizationManagement =
             new OrganizationManagement(_db, _userManagement);
 
     private final SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(
-            _db, _userManagement, _organizationManagement, _emailer);
+            _db, _userManagement, _organizationManagement, _emailerFactory);
 
     private final CertificateGenerator _certificateGenerator = new CertificateGenerator();
 
@@ -202,8 +202,8 @@ public class SPServlet extends AeroServlet
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
         _db.addTargetedSignupCode(code, SV.SUPPORT_EMAIL_ADDRESS, to, orgId);
 
-        _emailer.sendUserInvitationEmail(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null,
-                code);
+        _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null, code)
+                .send();
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>

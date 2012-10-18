@@ -9,9 +9,15 @@ import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.servletlib.sp.user.AuthorizationLevel;
 import com.aerofs.servletlib.sp.user.User;
 import com.aerofs.proto.Common.Void;
+import com.aerofs.sp.server.email.InvitationEmailer;
+import com.aerofs.sp.server.sp.organization.OrganizationManagement;
+import com.aerofs.sp.server.sp.user.UserManagement;
 import org.junit.Before;
+import org.mockito.Spy;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -19,6 +25,16 @@ import static org.mockito.Mockito.when;
  */
 public class AbstractSPUserBasedTest extends AbstractSPServiceTest
 {
+    // Mock invitation emailer for use with sp.shareFolder calls
+    protected final InvitationEmailer.Factory emailerFactory = mock(InvitationEmailer.Factory.class);
+
+    @Spy UserManagement _userManagement = new UserManagement(db, db, emailerFactory, null);
+    @Spy OrganizationManagement _organizationManagement =
+            new OrganizationManagement(db, _userManagement);
+    @Spy SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(db,
+            _userManagement, _organizationManagement, emailerFactory);
+
+
     protected static final String TEST_USER_1_NAME = "USER_1";
     protected static final byte[] TEST_USER_1_CRED = "CREDENTIALS".getBytes();
 
@@ -42,6 +58,12 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
     {
         Log.info("Add a few users to the database");
 
+        // return stub invitation emails to avoid NPE
+        when(emailerFactory.createUserInvitation(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString())).thenReturn(new InvitationEmailer());
+        when(emailerFactory.createFolderInvitation(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString())).thenReturn(new InvitationEmailer());
+
         final boolean finalized = true;
         final boolean verified = false; // This field doesn't matter.
         String orgId = C.DEFAULT_ORGANIZATION;
@@ -51,10 +73,13 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
         _transaction.begin();
         db.addUser(new User(TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_CRED,
                 finalized, verified, orgId, level));
+        db.markUserVerified(TEST_USER_1_NAME);
         db.addUser(new User(TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_CRED,
                 finalized, verified, orgId, level));
+        db.markUserVerified(TEST_USER_2_NAME);
         db.addUser(new User(TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_CRED,
                 finalized, verified, orgId, level));
+        db.markUserVerified(TEST_USER_3_NAME);
         _transaction.commit();
     }
 }

@@ -25,7 +25,7 @@ import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
-import com.aerofs.daemon.event.admin.EISetACL;
+import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
@@ -105,16 +105,12 @@ public class RitualService implements IRitualService
 
     @Override
     public ListenableFuture<ShareFolderReply> shareFolder(String user, PBPath path,
-            List<PBSubjectRolePair> srps)
+            List<PBSubjectRolePair> srps, String emailNote)
             throws Exception
     {
         Map<String, Role> acl = Maps.newTreeMap();
-
-        for (PBSubjectRolePair srp : srps) {
-            acl.put(srp.getSubject(), Role.fromPB(srp.getRole()));
-        }
-
-        EIShareFolder ev = new EIShareFolder(user, new Path(path), acl);
+        for (PBSubjectRolePair srp : srps) acl.put(srp.getSubject(), Role.fromPB(srp.getRole()));
+        EIShareFolder ev = new EIShareFolder(user, new Path(path), acl, emailNote);
         ev.execute(PRIO);
 
         ShareFolderReply reply = ShareFolderReply.newBuilder()
@@ -286,13 +282,13 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> setACL(String user, PBPath path, List<PBSubjectRolePair> srps)
+    public ListenableFuture<Void> updateACL(String user, PBPath path, List<PBSubjectRolePair> srps)
             throws Exception
     {
         Map<String, Role> map = Maps.newTreeMap();
         for (PBSubjectRolePair srp : srps) map.put(srp.getSubject(), Role.fromPB(srp.getRole()));
 
-        EISetACL ev = new EISetACL(user, new Path(path), map, Core.imce());
+        EIUpdateACL ev = new EIUpdateACL(user, new Path(path), map, Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }

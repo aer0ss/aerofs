@@ -31,7 +31,6 @@ import java.sql.SQLException;
 
 import static org.mockito.Mockito.mock;
 
-
 /**
  * A mock/test implementation of SPServiceStubCallbacks.
  *
@@ -52,26 +51,27 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
     public static final String ADMIN_ID = "testadmin@company.com";
     public static final byte [] ADMIN_CRED = SecUtil.scrypt("adminpswd".toCharArray(), ADMIN_ID);
 
-    public LocalSPServiceReactorCaller(InvitationEmailer emailer)
+    public LocalSPServiceReactorCaller(InvitationEmailer.Factory emailerFactory)
     {
         // Instantiate with a
         // - local mysql db
         // - local JUnitSPDatabaseParams
         // - local ThreadLocalTransaction
-        // - mock SessionUserID (does not use thread-local variables; tests should be single-threaded)
+        // - mock SessionUserID (no thread-local variables; tests should be single-threaded)
         // - real UserManagement class (using a local database).
         // - mock OrganizationManagement class
         // - injected InvitationEmailer
 
-        assert emailer != null;
+        assert emailerFactory != null;
 
         UserManagement userManagement =
-                new UserManagement(_db, _db, emailer, mock(PasswordResetEmailer.class));
+                new UserManagement(_db, _db, emailerFactory, mock(PasswordResetEmailer.class));
         OrganizationManagement organizationManagement = mock(OrganizationManagement.class);
 
         SPService service = new SPService(_db, _transaction, new MockSessionUserID(),
                 userManagement, organizationManagement,
-                new SharedFolderManagement(_db, userManagement, organizationManagement, emailer),
+                new SharedFolderManagement(_db, userManagement, organizationManagement,
+                        emailerFactory),
                 new CertificateGenerator());
 
         _reactor = new SPServiceReactor(service);

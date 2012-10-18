@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -17,13 +18,20 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Role;
+import com.aerofs.lib.SubjectRolePairs;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.ex.ExExpelled;
@@ -34,12 +42,15 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.spsv.SPBlockingClient;
+import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.inject.Inject;
 
 public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
     private final LocalACL _lacl;
-    private final ACLSynchronizer _aclsync;
+    private final TC _tc;
     private final TransManager _tm;
     private final ObjectCreator _oc;
     private final DirectoryService _ds;
@@ -48,14 +59,16 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final ObjectDeleter _od;
     private final IMapSID2SIndex _sid2sidx;
     private final IStores _stores;
+    private final ACLSynchronizer _aclsync;
 
     @Inject
-    public HdShareFolder(LocalACL lacl, TransManager tm, ObjectCreator oc, DirectoryService ds,
+    public HdShareFolder(LocalACL lacl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
             ImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
             ACLSynchronizer aclsync, IStores stores)
     {
         _stores = stores;
         _lacl = lacl;
+        _tc = tc;
         _tm = tm;
         _oc = oc;
         _ds = ds;
@@ -78,7 +91,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         }
 
         // throw if the object is expelled
-        OA oa = _ds.getOANullable_(soid);
+        OA oa = _ds.getOA_(soid);
         if (oa.isExpelled()) throw new ExExpelled();
 
         // throw if a parent folder is already shared
@@ -97,7 +110,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         //
         // You have to:
         // 1) calculate the SID
-        // 2) contact the central ACL server to update the acl
+        // 2) contact the central ACL server to share the folder
         // 3) convert the local folder into a shared folder
         //
         // The output of 1) is used by 2) and 3), so it has to run first.
@@ -137,7 +150,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         }
 
         ////////
-        // add the acl
+        // share the folder through SP
 
         Map<String, Role> subject2role = new TreeMap<String, Role>(ev._subject2role);
 
@@ -159,8 +172,11 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
                 }
             }
 
-            // this method may block and therefore the transaction can't be reused below
-            _aclsync.set_(sidx, subject2role);
+            requestSPToShare_(sid, ev._path.last(), SubjectRolePairs.mapToPB(subject2role),
+                    ev._emailNote);
+
+            // write ACLs to local DB to avoid lag between sharing and verkehr notification
+            _aclsync.commitNewACLsToLocalDatabase(sidx, subject2role);
         }
 
         ////////
@@ -179,6 +195,25 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         }
 
         ev.setResult_(sid);
+    }
+
+    /**
+     * Make the SP call to update the authoritative centralized ACL DB
+     */
+    private void requestSPToShare_(SID sid, String folderName, List<PBSubjectRolePair> roles,
+            String emailNote) throws Exception
+    {
+        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
+        TCB tcb = null;
+        try {
+            tcb = tk.pseudoPause_("spacl");
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            sp.signInRemote();
+            sp.shareFolder(folderName, sid.toPB(), roles, emailNote);
+        } finally {
+            if (tcb != null) tcb.pseudoResumed_();
+            tk.reclaim_();
+        }
     }
 
     /**

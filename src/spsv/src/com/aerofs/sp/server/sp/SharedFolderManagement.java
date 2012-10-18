@@ -6,6 +6,7 @@ package com.aerofs.sp.server.sp;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Role;
+import com.aerofs.lib.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -23,6 +24,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class to handle all interactions with shared folders
@@ -34,15 +36,15 @@ public class SharedFolderManagement
     ISharedFolderDatabase _db;
     UserManagement _userManagement;
     OrganizationManagement _organizationManagement;
-    InvitationEmailer _invitationEmailer;
+    InvitationEmailer.Factory _emailerFactory;
 
     public SharedFolderManagement(ISharedFolderDatabase db, UserManagement userManagement,
-            OrganizationManagement organizationManagement, InvitationEmailer invitationEmailer)
+            OrganizationManagement organizationManagement, InvitationEmailer.Factory emailerFactory)
     {
         _db = db;
         _userManagement = userManagement;
         _organizationManagement = organizationManagement;
-        _invitationEmailer = invitationEmailer;
+        _emailerFactory = emailerFactory;
     }
 
     private void updateSharedFolderName(SID sid, String folderName, String userID)
@@ -54,8 +56,13 @@ public class SharedFolderManagement
         }
     }
 
-    public void shareFolder(String folderName, SID sid, String userID,
-            List<String> emailAddresses, @Nullable String note)
+    /**
+     * Shares the given folder with the given set of subject-role pairs.
+     * @param emails invitation emails to be sent once the transaction is committed (out arg)
+     * @return a map of user IDs and epochs to be returned via verkehr.
+     */
+    public Map<String, Long> shareFolder(String folderName, SID sid, String userID,
+            List<SubjectRolePair> rolePairs, @Nullable String note, List<InvitationEmailer> emails)
             throws Exception
     {
         User sharer = _userManagement.getUser(userID);
@@ -64,42 +71,52 @@ public class SharedFolderManagement
         if (!sharer._isVerified) {
             // TODO (GS): We want to throw a specific exception if the inviter isn't verified
             // to allow easier error handling on the client-side
-            throw new ExNoPerm();
+            throw new ExNoPerm("user " + userID + " is not yet verified");
         }
 
+        // Move forward with setting ACLs and sharing the folder
+        // NB: if any user fails business rules check, the whole transaction is rolled back
+        Map<String, Long> epochs = _db.createACL(userID, sid, rolePairs);
         updateSharedFolderName(sid, folderName, userID);
 
-        // TODO could look up sharer Organization once, outside the loop.
-        // But if supporting list of email addresses is temporary, don't bother.
-        for (String sharee : emailAddresses) {
-            shareFolderWithOne(sharer, sharee, folderName, sid, note);
+        Organization sharerOrg = _organizationManagement.getOrganization(sharer._orgId);
+        for (SubjectRolePair rolePair : rolePairs) {
+            emails.add(shareFolderWithOne(sharer, sharerOrg, rolePair._subject, folderName, sid,
+                    note));
         }
+
+        return epochs;
     }
 
-    private void shareFolderWithOne(User sharer, String shareeEmail, String folderName,
-            SID sid, @Nullable String note)
+    private InvitationEmailer shareFolderWithOne(final User sharer, Organization sharerOrg,
+            String shareeEmail, final String folderName, SID sid, @Nullable final String note)
             throws Exception
     {
-        Organization sharerOrg = _organizationManagement.getOrganization(sharer._orgId);
+        InvitationEmailer emailer;
         Organization shareeOrg;
-
-        User sharee = _userManagement.getUserNullable(shareeEmail);
+        final User sharee = _userManagement.getUserNullable(shareeEmail);
         if (sharee == null) {  // Sharing with a non-AeroFS user.
             boolean domainMatch = sharerOrg.domainMatches(shareeEmail);
             shareeOrg = _organizationManagement.getOrganization(
                     domainMatch ? sharerOrg._id : C.DEFAULT_ORGANIZATION);
             createFolderInvitation(sharer._id, shareeEmail, sharerOrg, shareeOrg, sid,
                     folderName);
-            _userManagement.inviteOneUser(sharer, shareeEmail, shareeOrg, folderName, note);
-        } else {
+            emailer = _userManagement.inviteOneUser(sharer, shareeEmail, shareeOrg, folderName,
+                    note);
+        } else if (!sharee._id.equals(sharer._id)) {
             shareeOrg = _organizationManagement.getOrganization(sharee._orgId);
-            String code = createFolderInvitation(sharer._id, sharee._id, sharerOrg, shareeOrg,
+            final String code = createFolderInvitation(sharer._id, sharee._id, sharerOrg, shareeOrg,
                     sid, folderName);
-            _invitationEmailer.sendFolderInvitationEmail(sharer._id, sharee._id, sharer._firstName,
-                    folderName, note, code);
+            emailer = _emailerFactory.createFolderInvitation(sharer._id, sharee._id,
+                            sharer._firstName, folderName, note, code);
+        } else {
+            // do not create invite code for/send email to the requester
+            l.warn(sharer + " tried to invite himself");
+            emailer = new InvitationEmailer();
         }
 
         l.info("folder sharer " + sharer + " sharee " + shareeEmail);
+        return emailer;
     }
 
     /**

@@ -63,7 +63,7 @@ service RitualService {
 
     // Set users and their roles for a shared folder.
     // Throw NOT_SHARED if called on a unshared folder
-    rpc SetACL(SetACLCall) returns(Void);
+    rpc UpdateACL(UpdateACLCall) returns(Void);
 
     // Delete users from a shared folder.
     // Throw NOT_SHARED if called on a unshared folder
@@ -144,6 +144,7 @@ message ShareFolderCall {
     required string user = 1;
     required PBPath path = 2;
     repeated PBSubjectRolePair subject_role = 3;
+    required string note = 4;
 }
 
 message ShareFolderReply {
@@ -216,7 +217,7 @@ message GetACLReply {
     repeated PBSubjectRolePair subject_role = 1;
 }
 
-message SetACLCall {
+message UpdateACLCall {
     required string user = 1;
     required PBPath path = 2;
     repeated PBSubjectRolePair subject_role = 3;
