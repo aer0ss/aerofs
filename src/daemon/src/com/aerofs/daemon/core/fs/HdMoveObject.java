@@ -40,7 +40,7 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
     {
         SOID soid = _ds.resolveThrows_(ev._from);
 
-        if (soid.oid().equals(OID.TRASH) || soid.oid().equals(OID.ROOT)) {
+        if (soid.oid().isTrash() || soid.oid().isRoot()) {
             throw new ExNoPerm("can't move system folders");
         }
 

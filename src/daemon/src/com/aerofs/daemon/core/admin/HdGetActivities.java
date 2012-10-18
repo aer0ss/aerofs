@@ -22,8 +22,6 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -123,19 +121,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 
                 // set the current path of the object. don't set path for trashed objects.
                 OA oa = _ds.getAliasedOANullable_(ar._soid);
-                if (oa != null) {
-                    OID oid = oa.parent();
-                    boolean trashed = false;
-                    do {
-                        if (oid.equals(OID.TRASH)) {
-                            trashed = true;
-                            break;
-                        }
-                        oid = _ds.getOA_(new SOID(ar._soid.sidx(), oid)).parent();
-                    } while (!oid.isRoot());
-
-                    if (!trashed) bd.setPath(_ds.resolve_(oa).toPB());
-                }
+                if (oa != null && !_ds.isDeleted_(oa)) bd.setPath(_ds.resolve_(oa).toPB());
 
                 activities.add(bd.build());
 

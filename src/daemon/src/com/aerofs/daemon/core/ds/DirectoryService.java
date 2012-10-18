@@ -342,7 +342,7 @@ public class DirectoryService implements IDumpStatMisc
         // all the children under the path need to be invalidated.
         _cacheDS.invalidateAll_();
 
-        if (!oidParent.equals(OID.TRASH)) {
+        if (!isTrashOrDeleted_(new SOID(sidx, oidParent))) {
             Path path = resolve_(oaParent).append(name);
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectCreated_(soid, oaParent.soid().oid(), path, t);
@@ -376,13 +376,18 @@ public class DirectoryService implements IDumpStatMisc
      *
      * This method is final because it would be a pain in the ass to mock
      */
-    final public boolean isDeleted(@Nonnull OA oa) throws SQLException
+    final public boolean isDeleted_(@Nonnull OA oa) throws SQLException
     {
         SIndex sidx = oa.soid().sidx();
         while (!oa.parent().isRoot() && !oa.parent().isTrash()) {
             oa = getOA_(new SOID(sidx, oa.parent()));
         }
         return oa.parent().isTrash();
+    }
+
+    final public boolean isTrashOrDeleted_(@Nonnull SOID soid) throws SQLException
+    {
+        return soid.oid().isTrash() || isDeleted_(getOA_(soid));
     }
 
     /**
@@ -443,8 +448,8 @@ public class DirectoryService implements IDumpStatMisc
         // deletion listeners) to assume that objects under the trash have a completely flat
         // hierarchy and it does not seem like it would adversely impact the syncing algorithm. It
         // might however be a problem for expulsion and re-admission.
-        boolean fromTrash = isDeleted(oa);
-        boolean toTrash = oaParent.soid().oid().isTrash() || isDeleted(oaParent);
+        boolean fromTrash = isDeleted_(oa);
+        boolean toTrash = oaParent.soid().oid().isTrash() || isDeleted_(oaParent);
 
         if (fromTrash && !toTrash) {
             for (IDirectoryServiceListener listener : _listeners) {

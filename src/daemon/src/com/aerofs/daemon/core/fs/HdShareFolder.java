@@ -73,7 +73,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // sanity and security check
 
         SOID soid = _ds.resolveThrows_(ev._path);
-        if (soid.oid().equals(OID.ROOT) || soid.oid().equals(OID.TRASH)) {
+        if (soid.oid().isRoot() || soid.oid().isTrash()) {
             throw new ExNoPerm("can't share system folders");
         }
 

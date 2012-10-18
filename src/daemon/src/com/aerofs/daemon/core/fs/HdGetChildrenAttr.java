@@ -41,7 +41,7 @@ public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
         ArrayList<OA> oas = new ArrayList<OA>();
         for (OID oidChild : _ds.getChildren_(soid)) {
             SOID soidChild = new SOID(soid.sidx(), oidChild);
-            if (oidChild.equals(OID.TRASH)) continue;
+            if (oidChild.isTrash()) continue;
             oas.add(_ds.getOANullable_(soidChild));
         }
 

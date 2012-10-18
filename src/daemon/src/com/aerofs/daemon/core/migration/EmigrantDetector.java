@@ -71,14 +71,16 @@ public class EmigrantDetector
         if (sidsEmigrantTargetAncestor.isEmpty()) return;
 
         // do nothing if it's not an emigrant
-        if (!EmigrantCreator.isEmigrantName(nameTo) || !oidParentTo.equals(OID.TRASH)) return;
+        // TODO: check isDeleted_ ? (if so, in which store?)
+        if (!EmigrantCreator.isEmigrantName(nameTo) || !oidParentTo.isTrash()) return;
 
         // do nothing if the object doesn't exist (no emigration is needed)
         OA oa = _ds.getOANullable_(soid);
         if (oa == null) return;
 
         // do nothing if the object has been migrated before
-        if (EmigrantCreator.isEmigrantName(oa.name()) && oa.parent().equals(OID.TRASH)) return;
+        // TODO: check isDeleted_ ?
+        if (EmigrantCreator.isEmigrantName(oa.name()) && oa.parent().isTrash()) return;
 
         SID sidTo = EmigrantCreator.getEmigrantTargetSID(nameTo);
         assert sidTo != null : nameTo;

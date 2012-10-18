@@ -98,7 +98,8 @@ public class EmigrantCreator
     public List<SID> getEmigrantTargetAncestorSIDsForMeta_(OID oidParent, String name)
             throws SQLException
     {
-        if (!oidParent.equals(OID.TRASH)) return Collections.emptyList();
+        // TODO: do we need to check isDeleted_ instead? (in which store?)
+        if (!oidParent.isTrash()) return Collections.emptyList();
         SID sid = getEmigrantTargetSID(name);
         if (sid == null) return Collections.emptyList();
         SIndex sidx = _sid2sidx.getNullable_(sid);
