@@ -27,7 +27,7 @@
     <ClInclude Include="Test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ShellExtension\OverlayCache.h">
+    <ClInclude Include="..\..\..\common\OverlayCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClCompile Include="TestOverlayCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ShellExtension\OverlayCache.cpp">
+    <ClCompile Include="..\..\..\common\OverlayCache.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

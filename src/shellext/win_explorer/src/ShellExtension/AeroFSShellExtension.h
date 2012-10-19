@@ -9,6 +9,8 @@
 */
 #pragma once
 
+#include "../../../common/OverlayCache.h"
+
 #include <string>
 #include <memory>
 #include <set>
@@ -36,6 +38,7 @@ enum PathFlag {
 };
 
 class AeroFSShellExtension : public ATL::CAtlDllModuleT<AeroFSShellExtension>
+                           , public OverlayCache::EvictionDelegate
 {
 public:
 	AeroFSShellExtension();
@@ -63,6 +66,8 @@ private:
 	void onPathStatusNotification(const PathStatusNotification& fstatus);
 	void clearCache();
 
+	virtual void evicted(const std::wstring& key, int value) const;
+
 private:
 	CRITICAL_SECTION m_cs;
 	std::shared_ptr<AeroSocket> m_socket;
@@ -71,5 +76,4 @@ private:
 	std::wstring m_userId;
 	unsigned long m_lastConnectionAttempt;
 	unsigned short m_port;
-	bool m_syncStatCached;
 };

@@ -83,7 +83,7 @@ public class ServerConnectionStatus
         addListener_(ssc, Server.SYNCSTAT);
     }
 
-    private void setStatus(Server server, boolean connected)
+    private synchronized void setStatus(Server server, boolean connected)
     {
         _status.put(server, connected);
 
@@ -101,26 +101,22 @@ public class ServerConnectionStatus
     private void addListener_(IConnectionStatusNotifier csn, final Server server)
     {
         // set default server status
+        assert !_status.containsKey(server) : "Multiple status notifiers for " + server;
         _status.put(server, false);
 
-        csn.addListener_(new IListener()
-        {
+        csn.addListener_(new IListener() {
             @Override
             public void onConnected()
             {
-                synchronized (ServerConnectionStatus.this) {
-                    l.debug("connected " + server);
-                    setStatus(server, true);
-                }
+                l.debug("connected " + server);
+                setStatus(server, true);
             }
 
             @Override
             public void onDisconnected()
             {
-                synchronized (ServerConnectionStatus.this) {
-                    l.debug("disconnected " + server);
-                    setStatus(server, false);
-                }
+                l.debug("disconnected " + server);
+                setStatus(server, false);
             }
         });
     }
@@ -166,13 +162,14 @@ public class ServerConnectionStatus
     public synchronized void addListener(IServiceStatusListener listener, Server... servers)
     {
         boolean level = listener.isAvailable(ImmutableMap.copyOf(_status));
+        ServiceStatusEdgeDetector ed = new ServiceStatusEdgeDetector(listener, level);
         for (Server server : servers) {
             List<ServiceStatusEdgeDetector> l = _listeners.get(server);
             if (l == null) {
                 l = Lists.newLinkedList();
                 _listeners.put(server, l);
             }
-            l.add(new ServiceStatusEdgeDetector(listener, level));
+            l.add(ed);
         }
         if (level) listener.available();
     }

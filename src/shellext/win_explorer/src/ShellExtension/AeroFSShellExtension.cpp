@@ -7,7 +7,6 @@
 #include <shlobj.h>
 
 #include "AeroSocket.h"
-#include "OverlayCache.h"
 #include "logger.h"
 #include "string_helpers.h"
 #include "../../gen/shellext.pb.h"
@@ -25,8 +24,7 @@ AeroFSShellExtension::AeroFSShellExtension()
 	m_cache(new OverlayCache(OVERLAY_CACHE_SIZE_LIMIT)),
 	m_rootAnchor(),
 	m_lastConnectionAttempt(0),
-	m_port(0),
-	m_syncStatCached(false)
+	m_port(0)
 {
 	InitializeCriticalSection(&m_cs);
 }
@@ -192,6 +190,8 @@ Overlay AeroFSShellExtension::overlay(std::wstring& path)
 		m_socket->sendMessage(call);
 
 		status = O_None;
+	} else {
+		// TODO: clear placeholders (O_None) after a cooldown period?
 	}
 
 	if (!shouldEnableTestingFeatures()) {
@@ -200,6 +200,10 @@ Overlay AeroFSShellExtension::overlay(std::wstring& path)
 
 	return (Overlay)status;
 }
+
+ void AeroFSShellExtension::evicted(const std::wstring& key, int value) const {
+	SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, key.c_str(), NULL);
+ }
 
 /**
  * Process notifications from the GUI about file status changes
@@ -222,17 +226,10 @@ void AeroFSShellExtension::onPathStatusNotification(const PathStatusNotification
 	DEBUG_LOG("Received status update for " << path << " "
 		<< status.sync() << ":" << status.flags());
 
-	// clear cache if sync status is no longer reliable
-	if (status.sync() == PBPathStatus_Sync_UNKNOWN) {
-		if (m_syncStatCached) clearCache();
-	} else {
-		m_syncStatCached = true;
-	}
-
 	// TODO: use RTROOT-relative path as cache key to save memory
 	int oldOverlay = m_cache->value(path, -1);
 	int newOverlay = overlayForStatus(status);
-	if (oldOverlay != newOverlay) {
+	if (oldOverlay != -1 && newOverlay != oldOverlay) {
 		// update cache
 		m_cache->insert(path, newOverlay);
 		// mark overlay as dirty
@@ -273,7 +270,6 @@ void AeroFSShellExtension::clearCache()
 {
 	// clear cache
 	m_cache->clear();
-	m_syncStatCached = false;
 
 	// Tell the shell to refresh the icons
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);

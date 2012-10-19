@@ -136,7 +136,7 @@ public class PathStatus
         } catch (ExExpelled e) {
             return PBPathStatus.Sync.OUT_SYNC;
         } catch (ExNotFound e) {
-            return PBPathStatus.Sync.OUT_SYNC;
+            return PBPathStatus.Sync.UNKNOWN;
         }
         if (s.allInSync) return PBPathStatus.Sync.IN_SYNC;
         if (s.atLeastOneInSync) return PBPathStatus.Sync.PARTIAL_SYNC;
