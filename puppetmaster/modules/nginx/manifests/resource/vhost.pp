@@ -43,7 +43,9 @@ define nginx::resource::vhost(
   $proxy            = undef,
   $index_files      = ['index.html', 'index.htm', 'index.php'],
   $www_root         = undef,
-  $client_max_body_size = '10m'
+  $client_max_body_size = '10m',
+  $proxy_read_timeout = '60',
+  $proxy_send_timeout = '60'
 ) {
 
   File {
