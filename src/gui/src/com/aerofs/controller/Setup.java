@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil.Icon;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -157,8 +158,16 @@ class Setup
             }
 
             l.info("userId:" + userId + " returning:" + returning);
-
             RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, true);
+
+            /**
+             * Returning user & setup in a non-empty root-anchor is likely to be a reinstall (or a
+             * "seeded" install which is pretty much equivalent for us). Log that event to determine
+             * how badly we need to restore shared folders unpon reinstall.
+             */
+            if (returning && _factFile.create(rootAnchorPath).list() != null) {
+                SVClient.sendEventAsync(Type.REINSTALL);
+            }
 
             // Create the setup flag file. Ignore errors if the file already exists.
             // This file is used to mark the completion of the set up so that we

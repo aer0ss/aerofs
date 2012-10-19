@@ -240,11 +240,7 @@ public class CLISetup
                     signUpCode, firstName, lastName, s3config);
         }
 
-        if (s3BucketId != null) {
-
-            // send another SIGN_UP event just so we have a counter on # users who use S3
-            SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGN_UP, "enable S3. id: " + userID);
-        }
+        if (s3BucketId != null) SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
 
         cli.notify(MessageType.INFO,
                 "+-------------------------------------------------+\n" +

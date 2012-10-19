@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.aerofs.gui.history.DlgHistory;
+import com.aerofs.proto.Sv.PBSVEvent;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
@@ -435,7 +436,7 @@ public class TrayMenu
     {
         if (_enabled) {
             addMenuItem(menuHelp, S.WHY_ARENT_MY_FILES_SYNCED,
-                new AbstractListener(null) {
+                new AbstractListener(CLICKED_TASKBAR_WHY_NOT_SYNCED) {
                     @Override
                     protected void handleEventImpl(Event event)
                     {

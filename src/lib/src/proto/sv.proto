@@ -79,6 +79,8 @@ message PBSVEvent {
 
         CLICKED_TASKBAR_PAUSE_SYNCING = 111;
 
+        CLICKED_TASKBAR_WHY_NOT_SYNCED = 120;
+
         CLICKED_SHELLEXT = 200;
         CLICKED_SHELLEXT_INVITE_FOLDER = 201;
 
@@ -101,6 +103,8 @@ message PBSVEvent {
         KICKOUT = 1010;                // kicked-out from a shared folder
         UNLINK = 1011;                 // unlink device (reinstall on next run)
         MOVE_ROOT = 1012;              // move root anchor
+        S3_SETUP = 1013;               // S3 client setup
+        REINSTALL = 1014;              // install with existing shared folders?
     }
 
     required Type type = 1;
