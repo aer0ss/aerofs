@@ -426,8 +426,9 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         long lastEpoch = pushEpoch;
         soids.clear();
         IDBIterator<ModifiedObject> it = _aldb.getModifiedObjects_(pushEpoch);
+        int oidsCounter = 0;
         try {
-            while (it.next_() && soids.size() < MODIFIED_OBJECT_BATCH_MAX_SIZE) {
+            while (it.next_() && oidsCounter++ < MODIFIED_OBJECT_BATCH_MAX_SIZE) {
                 ModifiedObject mo = it.get_();
                 Set<OID> oids = soids.get(mo._soid.sidx());
                 if (oids == null) {
