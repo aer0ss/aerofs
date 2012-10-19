@@ -106,14 +106,12 @@ public class AliasingMover
     {
         assert alias.cid() == CID.CONTENT && target.cid() == CID.CONTENT;
         assert alias.sidx().equals(target.sidx());
-        assert _ds.hasOA_(alias.soid());
-        assert _ds.hasOA_(target.soid());
 
         // Ordered set of KIndices useful for comparison of branches below.
         // TODO because SortedMap is a Map, its keyset is simply a Set, but we know it's
         // actually sorted. See Comment A at the end of this method for a more robust solution.
-        Set<KIndex> kidxsTarget = _ds.getOAThrows_(target.soid()).cas().keySet();
-        Set<KIndex> kidxsAlias = _ds.getOAThrows_(alias.soid()).cas().keySet();
+        Set<KIndex> kidxsTarget = _ds.getOA_(target.soid()).cas().keySet();
+        Set<KIndex> kidxsAlias = _ds.getOA_(alias.soid()).cas().keySet();
 
         Version vAllLocalTarget = _nvc.getAllLocalVersions_(target);
         Version vAllLocalAlias = _nvc.getAllLocalVersions_(alias);
