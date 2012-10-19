@@ -14,6 +14,7 @@ import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param.SyncStat;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.syncstat.SyncStatBlockingClient;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply;
@@ -178,13 +179,28 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     public synchronized void setVersionHash(SID sid, List<ByteString> oids, List<ByteString> vhs,
             long clientEpoch) throws Exception
     {
-        ensureConnected_();
-        try {
-            _client.setVersionHash(sid.toPB(), oids, vhs, clientEpoch);
-            notifyOnFirstSuccessfulCall_();
-        } catch (Exception e) {
-            reset_();
-            throw e;
+        int attempts = 0;
+
+        // Use a while loop to avoid code dup and to allow for a single retry when we our session is
+        // expired.
+        while (true) {
+            attempts++;
+            ensureConnected_();
+
+            try {
+                _client.setVersionHash(sid.toPB(), oids, vhs, clientEpoch);
+                notifyOnFirstSuccessfulCall_();
+                return;
+            } catch (ExNoPerm e) {
+                reset_();
+
+                if (attempts > 1) {
+                    throw e;
+                }
+            } catch (Exception e) {
+                reset_();
+                throw e;
+            }
         }
     }
 
@@ -211,14 +227,28 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      */
     public synchronized GetSyncStatusReply getSyncStatus(long ssEpoch) throws Exception
     {
-        ensureConnected_();
-        try {
-            GetSyncStatusReply r = _client.getSyncStatus(ssEpoch);
-            notifyOnFirstSuccessfulCall_();
-            return r;
-        } catch (Exception e) {
-            reset_();
-            throw e;
+        int attempts = 0;
+
+        // Use a while loop to avoid code dup and to allow for a single retry when we our session is
+        // expired.
+        while (true) {
+            attempts++;
+            ensureConnected_();
+
+            try {
+                GetSyncStatusReply r = _client.getSyncStatus(ssEpoch);
+                notifyOnFirstSuccessfulCall_();
+                return r;
+            } catch (ExNoPerm e) {
+                reset_();
+
+                if (attempts > 1) {
+                    throw e;
+                }
+            } catch (Exception e) {
+                reset_();
+                throw e;
+            }
         }
     }
 }
