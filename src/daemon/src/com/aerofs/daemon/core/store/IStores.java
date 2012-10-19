@@ -50,7 +50,7 @@ public interface IStores
     Set<SIndex> getAll_() throws SQLException;
 
     /**
-     * Get a set of all stores (recursively) under a given SOID
+     * Get a set of all stores (strictly) under a given SOID (recursively)
      */
     Set<SIndex> getDescendants_(SOID soid) throws SQLException;
 }
