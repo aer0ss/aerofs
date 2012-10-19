@@ -137,7 +137,7 @@ public class LocalSyncStatus
             for (Entry<DID, Boolean> e : m.d.entrySet()) {
                 Boolean a = d.get(e.getKey());
                 Boolean b = e.getValue();
-                d.put(e.getKey(), a == null ? a : a && b);
+                d.put(e.getKey(), a == null ? b : a && b);
             }
         }
     }
@@ -161,9 +161,22 @@ public class LocalSyncStatus
             throws SQLException, ExExpelled
     {
         OA oa = _ds.getOA_(soid);
-        Util.l(this).info("aggregate " + soid);
+        l.info("aggregate " + soid);
         aggregateWithinStore_(soid, oa.isDir(), aggregated);
-        if (oa.isDirOrAnchor()) aggregateDescendants_(soid, aggregated);
+        if (oa.isDir()) {
+            // aggregate stores strictly under this directory
+            aggregateDescendants_(soid, aggregated);
+        } else if (oa.isAnchor()) {
+            SOID root = _ds.followAnchorThrows_(oa);
+
+            // aggregate root of this store
+            IAggregatedStatus saggregate = aggregated.create();
+            aggregateWithinStore_(root, true, saggregate);
+            aggregated.mergeStore_(saggregate);
+
+            // aggregate child stores strictly under the root of this store
+            aggregateDescendants_(soid, aggregated);
+        }
     }
 
     /**
@@ -202,7 +215,7 @@ public class LocalSyncStatus
             SOID croot = _ds.followAnchorNullable_(_ds.getOA_(csoid));
             // the anchor will be null for expelled stores
             if (croot != null) {
-                Util.l(this).info("aggregate store " + croot);
+                l.info("aggregate store " + croot);
                 IAggregatedStatus saggregate = aggregated.create();
                 aggregateWithinStore_(croot, true, saggregate);
                 aggregated.mergeStore_(saggregate);

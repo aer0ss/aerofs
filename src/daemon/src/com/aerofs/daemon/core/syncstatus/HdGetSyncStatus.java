@@ -91,13 +91,13 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         // result of ritual call
         List<PBSyncStatus> result = Lists.newArrayList();
 
-        SOID soid = _ds.resolveThrows_(ev.getPath());
-
         // do not show sync status when any of the servers is known to be down
         if (!_scs.isConnected(Server.SYNCSTAT, Server.VERKEHR)) {
             ev.setResult_(false, result);
             return;
         }
+
+        SOID soid = _ds.resolveThrows_(ev.getPath());
 
         OA oa = _ds.getOA_(soid);
         if (oa.isExpelled()) throw new ExExpelled(ev.getPath().toString() + " is expelled");
