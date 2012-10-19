@@ -64,7 +64,6 @@ import com.aerofs.swig.driver.LogLevel;
 import com.google.protobuf.GeneratedMessageLite;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public abstract class Util
 {

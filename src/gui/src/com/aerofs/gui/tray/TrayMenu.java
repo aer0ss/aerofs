@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.proto.Sv.PBSVEvent;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;

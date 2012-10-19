@@ -12,7 +12,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Role;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

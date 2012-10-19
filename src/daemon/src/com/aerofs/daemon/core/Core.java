@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.l.L;
 import com.aerofs.lib.Util;
