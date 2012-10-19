@@ -329,7 +329,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
         }
     }
 
-    NSLog(@"Received status update %@ %d:%d %d", notification.path, status.sync, status.flags, o);
+    //NSLog(@"Received status update %@ %d:%d %d", notification.path, status.sync, status.flags, o);
 }
 
 -(void)clearCache

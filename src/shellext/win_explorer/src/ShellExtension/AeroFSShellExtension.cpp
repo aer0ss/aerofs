@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "AeroFSShellExtension.h"
 
 #include <string>
@@ -219,7 +219,7 @@ void AeroFSShellExtension::onPathStatusNotification(const PathStatusNotification
 		return;
 	}
 
-	INFO_LOG("Received status update for " << path << " "
+	DEBUG_LOG("Received status update for " << path << " "
 		<< status.sync() << ":" << status.flags());
 
 	// clear cache if sync status is no longer reliable
