@@ -105,6 +105,8 @@ public class RootAnchorWatch implements JNotifyListener
     {
         blockingRitualCall();
 
+        if (onPotentialRootAnchorChange()) return;
+
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
