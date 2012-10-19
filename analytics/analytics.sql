@@ -11,7 +11,7 @@ insert into tt_sign_up(ev_user,ev_ts)
     hdr_user as ev_user,
     FROM_UNIXTIME(MIN(hdr_ts)/1000) as ev_ts
     from
-    aerofs_sv_beta.sv_event
+    aerofs_sv.sv_event
     where ev_type='1000'
     group by ev_user;
 
@@ -29,7 +29,7 @@ insert into tt_file_saved(ev_user,ev_ts)
     hdr_user as ev_user,
     FROM_UNIXTIME(hdr_ts/1000) as ev_ts
     from
-    aerofs_sv_beta.sv_event
+    aerofs_sv.sv_event
     where ev_type='0';
 
 -- tt_clicked_taskbar
@@ -44,7 +44,7 @@ create table tt_clicked_taskbar(
 insert into tt_clicked_taskbar
     select hdr_user as ev_user,
     FROM_UNIXTIME(hdr_ts/1000) as ev_ts
-    from aerofs_sv_beta.sv_event
+    from aerofs_sv.sv_event
     where ev_type='100';
 
 --
@@ -59,7 +59,7 @@ create table tt_invite_sent(
 insert into tt_invite_sent
     select hdr_user as ev_user,
     FROM_UNIXTIME(hdr_ts/1000) as ev_ts
-    from aerofs_sv_beta.sv_event
+    from aerofs_sv.sv_event
     where ev_type='300';
 
 drop table if exists tt_folderless_invite_sent;
@@ -73,7 +73,7 @@ create table tt_folderless_invite_sent(
 insert into tt_folderless_invite_sent
     select hdr_user as ev_user,
     FROM_UNIXTIME(hdr_ts/1000) as ev_ts
-    from aerofs_sv_beta.sv_event
+    from aerofs_sv.sv_event
     where ev_type='301';
 
 --
@@ -173,3 +173,14 @@ insert into analytics_file_saved(user,sign_up_ts)
     tt_sign_up.ev_user as user,
     tt_sign_up.ev_ts as sign_up_ts
     from tt_sign_up;
+
+drop table if exists analytics_file_save_count;
+create table analytics_file_save_count as
+select count(*) as count from aerofs_sv.sv_event where ev_type = 0 as count;
+
+drop table if exists analytics_total_events;
+create table analytics_total_events as
+select count(distinct hdr_user) as users
+from aerofs_sv.sv_event
+where FROM_UNIXTIME(hdr_ts/1000) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+and ev_type != 1002;

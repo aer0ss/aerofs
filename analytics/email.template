@@ -1,0 +1,12 @@
+This is an automated weekly analytics report
+
+The analytics presented are for the cohort which began ${COHORT_AGE} ago.
+The analytics track the most recent ${COHORT_ACTIVITY} days for the cohort.
+
+Cohort = ${THIS_COHORT}
+Invites sent = ${THIS_COHORT_INVITES_SENT}
+Signups = ${THIS_COHORT_SIGNUPS} (${SIGNUPS_AS_PERCENT_OF_INVITES_SENT}% of invites)
+
+In this cohort, ${THIS_COHORT_USERS_SHARED_AFD}% of users invited others to AeroFS after ${COHORT_ACTIVITY} days. (${USERS_SHARED_AFD_DIFF}% compared to last cohort).
+
+The retention after ${COHORT_ACTIVITY} for this cohort is ${THIS_COHORT_RETENTION_AFD}% (${RETENTION_AFD_DIFF}% compared to last cohort).
