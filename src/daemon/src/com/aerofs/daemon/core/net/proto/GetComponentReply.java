@@ -305,6 +305,8 @@ public class GetComponentReply
 
             t.commit_();
             l.warn(socid + " ok " + msg.ep());
+
+        // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception e) {
             rollbackCause = e;
             throw e;

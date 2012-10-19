@@ -100,9 +100,11 @@ public class Trans
 
     /**
      * abort the transaction if commit_() hasn't been called after begin_().
-     * otherwise commit the transaction
+     * otherwise commit the transaction.
      *
-     * If the rollback fails due to an exception
+     * If the rollback fails due to an exception, append to its the stack trace that of the
+     * {@code rollbackCause}, if any, to avoid loosing valuable debugging information
+     *
      * @param rollbackCause rollback cause, if any
      */
     public void end_(@Nullable Throwable rollbackCause) throws SQLException
@@ -110,6 +112,9 @@ public class Trans
         try {
             end_();
         } catch (Error e) {
+            if (rollbackCause != null) concatStackTrace(e, rollbackCause);
+            throw e;
+        } catch (RuntimeException e) {
             if (rollbackCause != null) concatStackTrace(e, rollbackCause);
             throw e;
         } catch (SQLException e) {

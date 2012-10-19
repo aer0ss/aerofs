@@ -355,6 +355,8 @@ public class Aliasing
 
             t.commit_();
             l.info("Done processing alias message");
+
+        // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception e) {
             rollbackCause = e;
             l.warn("triggered rollback: " + Util.stackTrace2string(rollbackCause));
