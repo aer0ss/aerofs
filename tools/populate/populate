@@ -6,21 +6,24 @@
 set -e
 
 if [ x"$1" == x ]; then
-    echo "usage: $0 <approot> <resource/client> <mode=STAGING>"
-    echo "    <approot>: the approot folder path which doesn't need to pre-exist,"
-    echo "    <resource/client> is the resource/client folder path which must exist."
-    echo "    <mode> the mode specifies which cacert.pem file to use and whether or not"
-    echo "           APPROOT/stg should be created. It defaults to STAGING."
+    echo "usage: $0 <approot> <resource> <mode=STAGING> <os>" >&2
+    echo "    <approot>  The approot folder path which doesn't need to pre-exist." >&2
+    echo "    <resource> The resource/client folder path which must exist." >&2
+    echo "    <mode>     (optional) the mode specifies which cacert.pem file to use and" >&2
+    echo "               whether or not APPROOT/stg should be created. Defaults to STAGING." >&2
+    echo "    <os>       (optional) The OS to populate for. Can be osx, win, linux32 or" >&2
+    echo "               linux64. If not set, we will use the output from the ./os script." >&2
     exit 1
 fi
+
+PPWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 APPROOT="$1"
 ASIS="$2"
 MODE="${3:-'STAGING'}"
+OS="${4:-`"$PPWD"/os`}"
 
 VERSION_FILE=version
-
-PPWD=`dirname $0`
-OS=`"$PPWD"/os`
 
 # Copy files to approot
 mkdir -p "$APPROOT"
