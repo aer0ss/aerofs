@@ -341,7 +341,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                     // Should return null bytestream
                     OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
-                    Util.verify(null == entry.decrypt(input, pc, Footer.IN_OLD, hsSent));
+                    Util.verify(null == entry.decrypt_(input, pc, Footer.IN_OLD, hsSent));
                     assert hsSent.get() == true;
 
                     break;
@@ -373,7 +373,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                             OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
-                            ByteArrayInputStream isToDeliver = entry.decrypt(input, pc,
+                            ByteArrayInputStream isToDeliver = entry.decrypt_(input, pc,
                                     Footer.IN_OLD, hsSent);
 
 
@@ -425,7 +425,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                             OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
-                            ByteArrayInputStream isToDeliver = entry.decrypt(input, pc,
+                            ByteArrayInputStream isToDeliver = entry.decrypt_(input, pc,
                                     Footer.OUT_OLD, hsSent);
 
                             //hanshake message sent through decrypt();
