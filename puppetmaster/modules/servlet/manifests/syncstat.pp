@@ -4,7 +4,10 @@ class servlet::syncstat(
     $verkehr_host,
     $cacert_location
 ) {
-    include servlet
+    class{"servlet":
+        proxy_read_timeout => "300",
+        proxy_send_timeout => "300"
+    }
 
     package{"aerofs-syncstat":
         ensure => latest,

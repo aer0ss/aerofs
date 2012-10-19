@@ -1,5 +1,7 @@
   location <%= location %> {
     proxy_pass <%= proxy %>;
     client_max_body_size <%= client_max_body_size %>;
+    proxy_read_timeout <%= proxy_read_timeout %>;
+    proxy_send_timeout <%= proxy_send_timeout %>;
   }
 

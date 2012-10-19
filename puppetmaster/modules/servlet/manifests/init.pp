@@ -25,7 +25,10 @@
 #
 # Copyright 2012 Air Computing Inc
 #
-class servlet {
+class servlet (
+        $proxy_read_timeout = "60",
+        $proxy_send_timeout = "60"
+    ) {
 
     include tomcat6
 
@@ -65,6 +68,8 @@ class servlet {
         notify  => Service["nginx"]
     }
 
+    # N.B. we are using a custom nginx module so that we can configure the proxy read and send
+    # timeouts.
     nginx::resource::vhost {"${fqdn}":
         listen_port          => '443',
         ssl                  => 'true',
@@ -72,6 +77,8 @@ class servlet {
         ssl_key              => '/etc/nginx/certs/ssl.key',
         proxy                => 'http://127.0.0.1:8080',
         client_max_body_size => '1024m',
+        proxy_read_timeout   => $proxy_read_timeout,
+        proxy_send_timeout   => $proxy_send_timeout,
         ensure               => present,
         require              => File ["/etc/nginx/certs/ssl.key", "/etc/nginx/certs/ssl.cert"],
     }
