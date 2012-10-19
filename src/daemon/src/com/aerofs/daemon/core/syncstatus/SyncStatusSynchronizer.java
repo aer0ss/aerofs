@@ -317,8 +317,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
     }
 
     /**
-     * Make the actual GetSyncStatus call to the sync status server and update
-     * local DB accordingly
+     * Make the actual GetSyncStatus call to the sync status server and update local DB accordingly.
      */
     private void pullSyncStatus_() throws Exception
     {
