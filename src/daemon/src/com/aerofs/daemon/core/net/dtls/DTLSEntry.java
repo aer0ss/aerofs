@@ -108,22 +108,19 @@ class DTLSEntry
     /**
      * @return the data that's to be delivered to the upper layer
      */
-    ByteArrayInputStream decrypt(byte[] input, PeerContext pc, Footer footer,
+    ByteArrayInputStream decrypt_(byte[] input, PeerContext pc, Footer footer,
             OutArg<Boolean> hsSent)
         throws Exception
     {
         l.info("dec msg " + input.length);
-        DTLS_RETCODE rc = DTLS_RETCODE.DTLS_OK;
 
         byte[] output = new byte[DTLS.BUF_SIZE]; // hardcoded number for now
         int[] outputLen = { output.length - Footer.SIZE };
 
-        rc = cryptImpl_(false, input, output, outputLen);
+        DTLS_RETCODE rc = cryptImpl_(false, input, output, outputLen);
 
-        if (DTLS_RETCODE.DTLS_NEEDREAD == rc
-                || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
-            l.info("eng ret need r/w, drop packet & send msg " +
-                    outputLen[0]);
+        if (DTLS_RETCODE.DTLS_NEEDREAD == rc || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
+            l.info("eng ret need r/w, drop packet & send msg " + outputLen[0]);
 
             if (outputLen[0] > 0) {
                 output[outputLen[0]] = (byte) footer.ordinal();
