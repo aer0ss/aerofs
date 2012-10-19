@@ -123,6 +123,8 @@ public class PathStatus
 
     /**
      * @return protobuf-encoded sync status summary
+     *
+     * TODO: What summary for file not shared with any other device? (currently appear as in sync)
      */
     private PBPathStatus.Sync getSyncStatusSummary_(Path path)
     {

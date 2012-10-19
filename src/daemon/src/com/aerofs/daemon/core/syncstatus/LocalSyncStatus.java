@@ -163,12 +163,7 @@ public class LocalSyncStatus
         OA oa = _ds.getOA_(soid);
         Util.l(this).info("aggregate " + soid);
         aggregateWithinStore_(soid, oa.isDir(), aggregated);
-        if (oa.isAnchor()) {
-            SOID root = _ds.followAnchorThrows_(oa);
-            aggregateDescendants_(root, aggregated);
-        } else if (oa.isDir()) {
-            aggregateDescendants_(soid, aggregated);
-        }
+        if (oa.isDirOrAnchor()) aggregateDescendants_(soid, aggregated);
     }
 
     /**
