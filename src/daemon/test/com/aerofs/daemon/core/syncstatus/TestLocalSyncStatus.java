@@ -9,7 +9,6 @@ import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
-import com.aerofs.daemon.core.update.DPUTUpdateSchemaForSyncStatus;
 import com.aerofs.lib.id.UniqueID;
 import com.google.common.collect.Lists;
 import junit.framework.Assert;
@@ -175,7 +174,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
     private void addBootstrapSOIDs(SOID... soids) throws SQLException
     {
-        DPUTUpdateSchemaForSyncStatus.addBootstrapSOIDs(dbcw.getConnection(),
+        SyncStatusDatabase.addBootstrapSOIDs(dbcw.getConnection(),
                 Lists.newArrayList(soids));
     }
 

@@ -175,4 +175,22 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
             s.close();
         }
     }
+
+    @Override
+    public boolean tableExists(String tableName) throws SQLException {
+        Statement s = getConnection().createStatement();
+        try {
+            boolean ok = false;
+            ResultSet rs = s.executeQuery("select name from sqlite_master" +
+                    " where type='table' and name='" + tableName + "'");
+            try {
+                ok = rs.next();
+            } finally {
+                rs.close();
+            }
+            return ok;
+        } finally {
+            s.close();
+        }
+    }
 }

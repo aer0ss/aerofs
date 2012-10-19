@@ -2,14 +2,20 @@ package com.aerofs.daemon.lib.db;
 
 import static com.aerofs.lib.db.CoreSchema.C_EPOCH_SYNC_PULL;
 import static com.aerofs.lib.db.CoreSchema.C_EPOCH_SYNC_PUSH;
+import static com.aerofs.lib.db.CoreSchema.C_OA_FID;
+import static com.aerofs.lib.db.CoreSchema.C_OA_OID;
+import static com.aerofs.lib.db.CoreSchema.C_OA_SIDX;
 import static com.aerofs.lib.db.CoreSchema.C_SSBS_OID;
 import static com.aerofs.lib.db.CoreSchema.C_SSBS_SIDX;
 import static com.aerofs.lib.db.CoreSchema.T_EPOCH;
+import static com.aerofs.lib.db.CoreSchema.T_OA;
 import static com.aerofs.lib.db.CoreSchema.T_SSBS;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
@@ -20,6 +26,7 @@ import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 /**
@@ -152,5 +159,44 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
             _psGBO = null;
             throw e;
         }
+    }
+
+    /**
+     * Public for use in two different post-update tasks
+     */
+    public static void fillBootstrapTable(Connection c) throws SQLException
+    {
+        // Only expelled objects and the root anchor have NULL FID
+        PreparedStatement ps = c.prepareStatement("select " + C_OA_SIDX + "," + C_OA_OID +
+                " from " + T_OA + " where " + C_OA_FID + " is not null");
+
+        ResultSet rs = ps.executeQuery();
+        List<SOID> soids = Lists.newArrayList();
+        try {
+            while (rs.next()) {
+                soids.add(new SOID(new SIndex(rs.getInt(1)), new OID(rs.getBytes(2))));
+            }
+        } finally {
+            rs.close();
+        }
+        addBootstrapSOIDs(c, soids);
+    }
+
+    /**
+     * Add a list of SOIDs to the bootstrap table
+     *
+     * NOTE: this is only public to avoid exposing the DB schema in unit tests
+     */
+    public static void addBootstrapSOIDs(Connection c, Iterable<SOID> soids) throws SQLException
+    {
+        PreparedStatement ps = c.prepareStatement("insert into " + T_SSBS +
+                " (" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
+                " values(?,?)");
+        for (SOID soid : soids) {
+            ps.setInt(1, soid.sidx().getInt());
+            ps.setBytes(2, soid.oid().getBytes());
+            ps.addBatch();
+        }
+        ps.executeBatch();
     }
 }
