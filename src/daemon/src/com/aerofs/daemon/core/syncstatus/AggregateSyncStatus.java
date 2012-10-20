@@ -453,8 +453,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                 return;
             }
 
-            if (l.isInfoEnabled()) l.info("update grandparent on creation " + grandparent);
-
             // keep track of new status for Ritual notifications
             _tlStatusModified.get(t).add(ppath);
 
