@@ -110,7 +110,20 @@ public class GetComponentCall
             // 2) all of its KMLs must be alias ticks
             Version vAllLocal = _nvc.getAllLocalVersions_(socid);
             assert vAllLocal.withoutAliasTicks_().isZero_() : socid + " " + vAllLocal;
-            assertRequestedAliasKMLsHaveOnlyAliasTicks(vKML, socid, target, vLocal, vAllLocal);
+
+            if (socid.cid().isMeta()) {
+                // Aliased meta should only have alias ticks
+                assertRequestedAliasKMLsHaveOnlyAliasTicks(vKML, socid, target, vLocal, vAllLocal);
+            } else {
+                assert (socid.cid().equals(CID.CONTENT)) : socid;
+
+                // Aliased content should have *no* ticks.
+                // Furthermore, if we get here it's because we *just* aliased the meta-data and
+                // didn't abort the Download loop. Should abort the request, since any content
+                // should be downloaded for the target object
+                assert vKML.isZero_() : socid + " " + vKML;
+                throw new ExAborted("empty KML for aliased " + socid);
+            }
         }
 
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()

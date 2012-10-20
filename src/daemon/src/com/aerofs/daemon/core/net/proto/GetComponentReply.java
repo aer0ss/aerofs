@@ -15,6 +15,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.*;
 
 import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
@@ -140,6 +141,11 @@ public class GetComponentReply
         int metaDiff;
         if (type != CIDType.META) {
             metaDiff = 0;
+
+            // We should not receive content for an aliased object:
+            // specifically there was no reason to request content for a locally-aliased object
+            assert !_a2t.isAliased_(socid.soid()) : socid;
+
             if (_ds.hasOA_(socid.soid())) {
                 if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
                     throw new ExSenderHasNoPerm();
@@ -161,17 +167,10 @@ public class GetComponentReply
             // *  after the dependency is incorrectly "resolved", the download subsystem attempts
             //    the original object, causing step 1 to repeat.
             // as a result, the system would enter an infinite loop.
-            final OID oidParentTarget = _a2t.getNullable_(new SOID(socid.sidx(), oidParent));
-            if (oidParentTarget != null) {
-                l.warn(socid + ": dereferenced aliased parent "
-                        + oidParent + "->" + oidParentTarget);
+            oidParent = _a2t.dereferenceAliasedOID_(new SOID(socid.sidx(), oidParent)).oid();
 
-                // We don't gracefully handle the parent OID being the same as that sent in the msg
-                assert !oidParentTarget.equals(socid.oid()) : "parent msg " + oidParent
-                        + " parent target " + oidParentTarget + " socid " + socid;
-
-                oidParent = oidParentTarget;
-            }
+            // We don't gracefully handle the parent OID being the same as that sent in the msg
+            assert !oidParent.equals(socid.oid()) : "p msg " + oidParent + " socid " + socid;
 
             // Verify that encoding of the received meta is UTF-8 Normal Form C
             FileUtil.logIfNotNFC(meta.getName(), socid.toString());

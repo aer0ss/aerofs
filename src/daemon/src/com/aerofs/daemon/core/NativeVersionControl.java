@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
 
+import com.aerofs.lib.id.SOID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -16,7 +17,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;
@@ -101,17 +101,17 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         // A non-meta socid should never have an alias tick.
         assert socid.cid().isMeta() || !tick.isAlias() : ("s " + socid + " d " + did + " t" + tick);
 
-        // If the socid is an aliased object (has a non-null target) but the tick is for a
-        // non-aliased object, reassign the tick from the socid to its target. This ensures that
+        // If the tick is for a non-aliased object, but the socid is aliased,
+        // reassign the tick from the socid to its target. This ensures that
         // the versions of local aliased objects only propagate information about aliasing
         // not META or CONTENT components.
         // Safety proof:
         //   If the SOCID is aliased and we move the non-alias tick to its target's KML,
         //   we are assuming that the sender of this tick will eventually perform aliasing on the
         //   given socid and we will be able to download the content via the target OID.
-        OID target = _alias2target.getNullable_(socid.soid());
-        if (target != null && !tick.isAlias()) {
-            socid = new SOCID(socid.sidx(), target, socid.cid());
+        if (!tick.isAlias()) {
+            final SOID dereferenced = _alias2target.dereferenceAliasedOID_(socid.soid());
+            socid = new SOCID(dereferenced, socid.cid());
         }
 
         // Comment A

@@ -272,15 +272,11 @@ public class Aliasing
             assert _ds.hasAliasedOA_(target);
 
             // Check whether target is aliased locally, and update target if so.
-            OID targetOfTarget = _a2t.getNullable_(target);
-            if (targetOfTarget != null) {
-                l.info("Target " + target + " is locally aliased to: " + targetOfTarget);
-                target = new SOID(sidx, targetOfTarget);
-            }
+            target = _a2t.dereferenceAliasedOID_(target);
 
             // Ensure target is not aliased locally.
             assert _ds.hasOA_(target);
-            assert _a2t.getNullable_(target) == null;
+            assert !_a2t.isAliased_(target);
             SOCID aliasMeta = new SOCID(alias, CID.META);
             if (_ds.hasAliasedOA_(alias)) {
                 OID targetLocalOID = _a2t.getNullable_(alias);

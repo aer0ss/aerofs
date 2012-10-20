@@ -2,13 +2,16 @@ package com.aerofs.daemon.core.alias;
 
 import com.aerofs.daemon.lib.db.IAliasDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -16,6 +19,8 @@ import javax.annotation.Nullable;
  */
 public class MapAlias2Target
 {
+    private static final Logger l = Util.l(MapAlias2Target.class);
+
     private final IAliasDatabase _aldb;
 
     @Inject
@@ -42,5 +47,24 @@ public class MapAlias2Target
     public @Nullable OID getNullable_(SOID alias) throws SQLException
     {
         return _aldb.getTargetOID_(alias.sidx(), alias.oid());
+    }
+
+    public boolean isAliased_(SOID soid) throws SQLException
+    {
+        return getNullable_(soid) != null;
+    }
+
+    /**
+     * @return the target SOID of {@code soid} if it is aliased, otherwise return soid
+     */
+    public @Nonnull SOID dereferenceAliasedOID_(SOID soid) throws SQLException
+    {
+        final OID oidTarget = getNullable_(soid);
+        if (oidTarget == null) return soid;
+
+        SOID soidTarget = new SOID(soid.sidx(), oidTarget);
+        l.info("dereferenced alias" + soid + "->" + soidTarget);
+
+        return soidTarget;
     }
 }

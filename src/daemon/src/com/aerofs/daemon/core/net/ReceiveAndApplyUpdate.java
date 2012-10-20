@@ -385,8 +385,8 @@ public class ReceiveAndApplyUpdate
 
         // Neither the OID of interest nor the OID for the parent should be an aliased object
         // at this point. They should have been dereferenced in GetComponentReply
-        assert null == _a2t.getNullable_(soidParent) : soidParent;
-        assert null == _a2t.getNullable_(soid) : soid;
+        assert !_a2t.isAliased_(soidParent) : soidParent;
+        assert !_a2t.isAliased_(soid) : soid;
 
         // The parent must exist locally, otherwise this SOID depends on the parent
         if (!_ds.hasOA_(soidParent)) {
