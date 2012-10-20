@@ -9,6 +9,15 @@ cohort int(6) not null,
 percent double not null,
 PRIMARY KEY(cohort, day)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+drop table if exists analytics_for_email;
+create table trailing_cohort_analytics_for_email(
+cohort int(6) unique not null,
+invites_sent int not null,
+signups int not null,
+users_shared_afd int not null,  -- users_shared after fourteen days
+retention_afd int not null      -- retention after fourteen days
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 "
 for i in {1..30}
 do
