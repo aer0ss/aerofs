@@ -1,6 +1,5 @@
 #!/bin/bash
-set -x -e
-
+set -e
 
 # The amount of time a cohort takes to "close" from the first da it opens
 COHORT_SIZE=7
@@ -52,15 +51,25 @@ function selectSQLDataForPlot() {
 
 #calculate a percentage
 function percent() {
-    echo "scale = 2; $1/$2*100" | bc
+    # use printf for precise rounding (bc doesn't round properly)
+    echo "scale = 1; $1*100/$2" | bc | xargs printf "%1.0f"
 }
 
 #calculate the percentage difference between two numbers
+#return an HTML string with appropriate coloring and directional arrow depending on the sign
+# of the result.
 function percentDiff() {
     TEMP=$(percent $1 $2)
-    TEMP=$(echo "scale = 2; $TEMP-100" | bc)
+    # use printf for precise rounding (bc doesn't round properly)
+    TEMP=$(echo "scale = 1; $TEMP-100" | bc | xargs printf "%1.0f")
     if [[ $TEMP =~ ^[\.0-9]+$ ]]; then
-        TEMP="+${TEMP}"
+        # Unicode 9650 is a black upward triangle
+        TEMP="<font color=\"green\">&#9650; ${TEMP}%</font>"
+    else
+        TEMP=$(echo $TEMP | sed -e 's/^-//')
+        # Unicode 9660 is a black upward triangle
+        TEMP="<font color=\"red\">&#9660; ${TEMP}%</font>"
+
     fi
     echo "${TEMP}"
 }
@@ -74,12 +83,14 @@ function gnuPlot() {
     PLOT_FILE=`mktemp -t --suffix=.png gnuplot.XXXX`
 
     echo "
-    set terminal png nocrop font small size 640,480
+    set terminal png nocrop font "Arial" small size 640,200
     set output '${PLOT_FILE}'
     set style data linespoints
     set title '${TITLE}'
+    set yrange [0:]
     set xlabel '${XLABEL}'
     set ylabel '${YLABEL}'
+    set nokey
     plot '${DATA_FILE}' using 1:2
     " | gnuplot
 
@@ -92,11 +103,13 @@ TMP_TASQL=`mktemp -t trailing_analytics.XXXX`
 ###########################
 # RUN THE ANALYTICS QUERY #
 ###########################
-mysql analytics -e < trailing_analytics.sql
-
+#mysql $DATABASE < trailing_analytics.sql
 
 THIS_COHORT=$(mysql -sN -e "SELECT YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL ${COHORT_AGE} DAY))")
 LAST_COHORT=$(mysql -sN -e "SELECT YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL ${COHORT_AGE}+${COHORT_SIZE} DAY))")
+
+# retrieve the week of year from the Cohort IDs. A Cohort ID is in the format of "201240" where 40 is the week number.
+THIS_COHORT_WEEK_OF_YEAR=$(echo ${THIS_COHORT} | cut -c5-6 )
 
 THIS_COHORT_INVITES_SENT=$(selectSQL ${INVITES_SENT} ${THIS_COHORT})
 LAST_COHORT_INVITES_SENT=$(selectSQL ${INVITES_SENT} ${LAST_COHORT})
@@ -107,6 +120,9 @@ LAST_COHORT_SIGNUPS=$(selectSQL ${SIGNUPS} ${LAST_COHORT})
 SIGNUPS_DIFF=$(percentDiff $THIS_COHORT_SIGNUPS $LAST_COHORT_SIGNUPS)
 SIGNUPS_AS_PERCENT_OF_INVITES_SENT=$(percent ${THIS_COHORT_SIGNUPS} ${THIS_COHORT_INVITES_SENT})
 
+LAST_SIGNUPS_AS_PERCENT_OF_INVITES_SENT=$(percent ${LAST_COHORT_SIGNUPS} ${LAST_COHORT_INVITES_SENT})
+SIGNUPS_AS_PERCENT_OF_INVITES_SENT_DIFF=$(percentDiff ${SIGNUPS_AS_PERCENT_OF_INVITES_SENT} ${LAST_SIGNUPS_AS_PERCENT_OF_INVITES_SENT})
+
 THIS_COHORT_USERS_SHARED_AFD=$(selectSQL ${USERS_SHARED} ${THIS_COHORT})
 LAST_COHORT_USERS_SHARED_AFD=$(selectSQL ${USERS_SHARED} ${LAST_COHORT})
 USERS_SHARED_AFD_DIFF=$(percentDiff ${THIS_COHORT_USERS_SHARED_AFD} ${LAST_COHORT_USERS_SHARED_AFD})
@@ -115,25 +131,36 @@ THIS_COHORT_RETENTION_AFD=$(selectSQL ${RETENTION} ${THIS_COHORT})
 LAST_COHORT_RETENTION_AFD=$(selectSQL ${RETENTION} ${LAST_COHORT})
 RETENTION_AFD_DIFF=$(percentDiff ${THIS_COHORT_RETENTION_AFD} ${LAST_COHORT_RETENTION_AFD})
 
+SHARE_DATA_PATH=$(selectSQLDataForPlot ${USERS_SHARED})
+RETENTION_DATA_PATH=$(selectSQLDataForPlot ${RETENTION})
 
-SHARE_DATA_FILE=$(selectSQLDataForPlot ${USERS_SHARED})
-RETENTION_DATA_FILE=$(selectSQLDataForPlot ${RETENTION})
+SHARE_GRAPH_PATH=$(gnuPlot $SHARE_DATA_PATH "History Trends in Approximate Virality" "Cohort ID" "%")
+RETENTION_GRAPH_PATH=$(gnuPlot $RETENTION_DATA_PATH "History Trends in Approximate Retention" "Cohort ID" "%")
 
-SHARE_DATA_IMG=$(gnuPlot $SHARE_DATA_FILE "Share data by cohort after ${COHORT_ACTIVITY} days" "cohort" "%")
-RETENTION_DATA_IMG=$(gnuPlot $RETENTION_DATA_FILE "Retention data by cohort after ${COHORT_ACTIVITY} days" "cohort" "%")
+VIRALITY_GRAPH_BASE64=$(base64 "${SHARE_GRAPH_PATH}")
+RETENTION_GRAPH_BASE64=$(base64 "${RETENTION_GRAPH_PATH}")
+
+HTML=$(eval "echo \"$(<email.template.html)\"")
 
 ##############
 # SEND EMAIL #
 ##############
-eval "echo \"$(<email.template)\"" | mutt -s "Weekly cohort analysis" -a $SHARE_DATA_IMG $RETENTION_DATA_IMG -- yuri@aerofs.com
 
+# "multipart/related" is required to prevent GMail from showing embedded images as attachments.
+# Also required is the "filename" field in the Content-Type of the images (in the file
+# email.template.multipart). See http://stackoverflow.com/questions/4040358/how-to-stop-embedded-images-in-email-being-displayed-as-attachments-by-gmail for detail.
+eval "echo \"$(<email.template.multipart)\"" | mail \
+    -a "From: AeroFS SV <root@sv.aerofs.com>" \
+    -a "Content-Type: multipart/related; boundary=\"multipart_boundary\"" \
+    -s "Weekly Key Metrics Report, week #$THIS_COHORT_WEEK_OF_YEAR" \
+    weihan@aerofs.com
 
 ############
 # CLEAN UP #
 ############
 rm $TMP_EMAIL
 rm $TMP_TASQL
-rm $SHARE_DATA_FILE
-rm $RETENTION_DATA_FILE
-rm $SHARE_DATA_IMG
-rm $RETENTION_DATA_IMG
+rm $SHARE_DATA_PATH
+rm $RETENTION_DATA_PATH
+rm $SHARE_GRAPH_PATH
+rm $RETENTION_GRAPH_PATH

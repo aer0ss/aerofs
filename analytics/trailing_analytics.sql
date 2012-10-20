@@ -21,7 +21,7 @@ WHERE ev_type='1000'
 AND YEARWEEK(FROM_UNIXTIME(hdr_ts/1000)) = @COHORT;
 
 SELECT percent INTO @users_shared
-FROM COHORT_percentage_shared
+FROM cohort_percentage_shared
 WHERE time_to_first_share <= @COHORT_ACTIVITY
 AND cohort = @COHORT
 ORDER BY time_to_first_share DESC
