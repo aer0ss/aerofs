@@ -352,13 +352,11 @@ public class DirectoryService implements IDumpStatMisc
 
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
-        OA oa = getOA_(soid);
-        boolean first = oa.cas().isEmpty() && kidx == KIndex.MASTER;
+        boolean first = kidx.equals(KIndex.MASTER);
 
         _mdb.createCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
-        // OA was invalidated so resolve from SOID
         Path path = resolve_(soid);
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentModified_(soid, path, first, t);
