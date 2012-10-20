@@ -77,7 +77,8 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         throws Exception
     {
         _transaction.begin();
-        Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1, sessionUser.getUser());
+        Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1.getBytes(),
+                sessionUser.getUser());
         _transaction.commit();
 
         // The size is correct (only the correct devices were returned).

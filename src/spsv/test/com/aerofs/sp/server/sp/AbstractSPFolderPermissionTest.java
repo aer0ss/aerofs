@@ -10,9 +10,7 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AbstractSPFolderPermissionTest extends AbstractSPUserBasedTest
