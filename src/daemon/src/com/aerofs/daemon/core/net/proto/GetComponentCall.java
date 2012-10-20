@@ -5,22 +5,18 @@ import java.sql.SQLException;
 
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.alias.AliasingMover;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.EmigrantCreator;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.spsv.SVClient;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -64,15 +60,11 @@ public class GetComponentCall
     private LocalACL _lacl;
     private NSL _nsl;
     private GCCSendContent _sendContent;
-    // TODO (MJ) remove when no longer deleting non-alias ticks from alias objects
-    private TransManager _tm;
-    private AliasingMover _almv;
 
     @Inject
     public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
-            EmigrantCreator emc, GCCSendContent sendContent, MapAlias2Target a2t, TransManager tm,
-            AliasingMover almv)
+            EmigrantCreator emc, GCCSendContent sendContent, MapAlias2Target a2t)
     {
         _nsl = nsl;
         _lacl = lacl;
@@ -84,8 +76,6 @@ public class GetComponentCall
         _emc = emc;
         _sendContent = sendContent;
         _a2t = a2t;
-        _tm = tm;
-        _almv = almv;
     }
 
 
@@ -95,41 +85,18 @@ public class GetComponentCall
     public DigestedMessage remoteRequestComponent_(SOCID socid, To src, Token tk)
             throws Exception
     {
+        abortIfComponentIsAliasedContent(socid);
+
         // Several of the version control and physical storage classes require a branch, not socid.
         // We know that downloads will only ever act on the master branch.
         SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
         l.info("send for " + socid);
 
-        Version vKML = _nvc.getKMLVersion_(socid);
         Version vLocal = _nvc.getLocalVersion_(sockid);
-
-        OID target = _a2t.getNullable_(socid.soid());
-        if (target != null) {
-            // If socid is a locally-aliased object,
-            // 1) it should have no local non-alias versions
-            // 2) all of its KMLs must be alias ticks
-            Version vAllLocal = _nvc.getAllLocalVersions_(socid);
-            assert vAllLocal.withoutAliasTicks_().isZero_() : socid + " " + vAllLocal;
-
-            if (socid.cid().isMeta()) {
-                // Aliased meta should only have alias ticks
-                assertRequestedAliasKMLsHaveOnlyAliasTicks(vKML, socid, target, vLocal, vAllLocal);
-            } else {
-                assert (socid.cid().equals(CID.CONTENT)) : socid;
-
-                // Aliased content should have *no* ticks.
-                // Furthermore, if we get here it's because we *just* aliased the meta-data and
-                // didn't abort the Download loop. Should abort the request, since any content
-                // should be downloaded for the target object
-                assert vKML.isZero_() : socid + " " + vKML;
-                throw new ExAborted("empty KML for aliased " + socid);
-            }
-        }
 
         PBGetComCall.Builder bd = PBGetComCall.newBuilder()
             .setObjectId(socid.oid().toPB())
             .setComId(socid.cid().getInt())
-            .setKmlVersion(vKML.toPB_())
             .setLocalVersion(vLocal.toPB_());
         // TODO (DF): Look into how the receiver uses the localVersion. Should we send all
         // versions?  Does the receiver care for which branch we're sending versions?
@@ -142,56 +109,35 @@ public class GetComponentCall
         return _rpc.do_(src, socid.sidx(), call, tk, "gcc " + socid + " " + src);
     }
 
+
     /**
-     * @param socid is assumed to be aliased to {@code target}
+     * @throws ExAborted if socid is content for an aliased object
+     * N.B. also asserts on version invariants for an aliased socid
      */
-    private void assertRequestedAliasKMLsHaveOnlyAliasTicks(Version vKML, SOCID socid, OID target,
-            Version vLocal, Version vAllLocal)
-            throws Exception
+    private void abortIfComponentIsAliasedContent(SOCID socid)
+            throws SQLException, ExAborted
     {
-        Version vKMLNonAlias = vKML.withoutAliasTicks_();
-        if (!vKMLNonAlias.isZero_()) {
-            // Temporarily migrate the alias non-tick KMLs if they are
-            // present in the target object's versions.
-            // TODO (MJ) remove this migration and replace with assert (vKMLNonAlias.isZero())
-            SOCID socidTarget = new SOCID(socid.sidx(), target, socid.cid());
+        if (!_a2t.isAliased_(socid.soid())) return;
 
-            String msg =  "(alias " + socid + ")->(" + socidTarget + " target) "
-                    + "vkmlnonalias " + vKMLNonAlias + " vLocal " + vLocal;
+        // socid is a locally-aliased object
 
-            Trans t = _tm.begin_();
-            try {
-                if (vKMLNonAlias.isEntirelyShadowedBy_(_nvc.getAllVersions_(socidTarget))) {
-                    // Delete the non-alias versions from the alias, *if* those versions have
-                    // already been migrated to the target
-                    _nvc.deleteKMLVersionPermanently_(socid, vKMLNonAlias, t);
-                    msg = "by delete. " + msg;
-                } else {
-                    // Migrate the non-alias versions from the alias object to its target
-                    _almv.moveKMLVersion_(socid, socidTarget, vAllLocal,
-                            _nvc.getAllLocalVersions_(socidTarget), t);
-                    msg = "by migration. " + msg;
-                }
-                t.commit_();
-            } catch (Exception e) {
-                l.warn(Util.e(e));
-                SVClient.logSendDefectAsync(true, "gcc failed repair", e);
-                throw e;
-            } finally {
-                t.end_();
-            }
+        // all of its local versions must be alias ticks
+        final Version vAllLocal = _nvc.getAllLocalVersions_(socid);
+        assert vAllLocal.withoutAliasTicks_().isZero_() : socid + " " + vAllLocal;
 
-            Version vAllTarget = _nvc.getAllVersions_(socidTarget);
-            msg = msg + " vAllTarget " + vAllTarget;
+        final Version vKML = _nvc.getKMLVersion_(socid);
+        if (socid.cid().isMeta()) {
+            // Aliased meta should only have alias ticks
+            assert vKML.withoutAliasTicks_().isZero_() : socid + " " + vKML;
+        } else {
+            assert (socid.cid().equals(CID.CONTENT)) : socid;
 
-            assert _nvc.getKMLVersion_(socid).withoutAliasTicks_().isZero_() : msg;
-            assert vKMLNonAlias.isEntirelyShadowedBy_(vAllTarget) : msg;
-
-            // Report this event to SV, then abort the current request.
-            ExAborted e = new ExAborted("Invalid alias KML resolved. Should see this log once. "
-                    + msg);
-            SVClient.logSendDefectAsync(true, "abort gcc", e);
-            throw e;
+            // Aliased content should have *no* ticks.
+            // Furthermore, if we get here it's because we *just* aliased the meta-data and
+            // didn't abort the Download loop. Should abort the request, since any content
+            // should be downloaded for the target object
+            assert vKML.isZero_() : socid + " " + vKML;
+            throw new ExAborted("empty KML for aliased " + socid);
         }
     }
 

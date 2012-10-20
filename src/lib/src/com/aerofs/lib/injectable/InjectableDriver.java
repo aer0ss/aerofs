@@ -11,7 +11,6 @@ import com.aerofs.swig.driver.Driver;
 
 import javax.annotation.Nullable;
 
-import static com.aerofs.lib.PathObfuscator.obfuscate;
 import static com.aerofs.swig.driver.DriverConstants.*;
 
 /**

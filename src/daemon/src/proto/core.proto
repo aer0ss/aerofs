@@ -172,14 +172,13 @@ message PBGetVersReplyBlock {
 message PBGetComCall {
     required bytes object_id = 1;
     required uint32 com_id = 2;
-    required PBVer kml_version = 3;
-    required PBVer local_version = 4;
+    required PBVer local_version = 3;
 
     // present only if the component is content
-    optional uint64 prefix_length = 5 [ default = 0 ];
+    optional uint64 prefix_length = 4 [ default = 0 ];
 
     // valid only if prefix_length > 0
-    optional PBVer prefix_version = 6;
+    optional PBVer prefix_version = 5;
 }
 
 message PBComputeHashCall {
