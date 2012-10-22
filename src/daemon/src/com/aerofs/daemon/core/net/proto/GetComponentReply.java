@@ -15,7 +15,6 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.*;
 
 import com.aerofs.lib.ex.AbstractExWirable;
-import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;

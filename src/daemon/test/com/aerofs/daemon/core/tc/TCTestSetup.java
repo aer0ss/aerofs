@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.aerofs.lib.cfg.CfgLocalUser;
 import org.apache.log4j.Logger;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
