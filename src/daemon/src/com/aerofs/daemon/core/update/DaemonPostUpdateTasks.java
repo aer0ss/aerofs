@@ -49,7 +49,8 @@ public class DaemonPostUpdateTasks
                 new DPUTCreateActivityLogTables(_dbcw, _dr),
                 new DPUTUpdateSchemaForSyncStatus(_dbcw),
                 new DPUTAddAggregateSyncColumn(_dbcw, _tm, _sdb, _mdb, _sidx2dbm),
-                new DPUTMakeMTimesNaturalNumbersOnly(_dbcw)
+                new DPUTMakeMTimesNaturalNumbersOnly(_dbcw),
+                new DPUTGetEncodingStats(_dbcw)
                 // new tasks go here
         };
 
