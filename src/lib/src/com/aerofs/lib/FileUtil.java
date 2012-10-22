@@ -21,6 +21,8 @@ import java.util.Set;
 
 public class FileUtil
 {
+    private FileUtil() {}
+
     private static Set<String> _filesToDelete = Sets.newLinkedHashSet();
     private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
@@ -29,20 +31,23 @@ public class FileUtil
      */
     public static String debugString(File f)
     {
-        return Joiner.on("").join(
-                (f.getParentFile().exists() ? "p" : "-"),
-                (f.exists() ? "e" : "-"),
-                (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-")),
-                (f.canRead() ? "r" : "-"),
-                (f.canWrite() ? "w" : "-"),
-                (f.canExecute() ? "x" : "-"),
-                "|",  // To separate FS properties from name properties
-                (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-"),
-                (OSUtilWindows.isValidFileName(f.getName()) ? "v" : "-"))
-                + " " + PathObfuscator.obfuscate(f.getAbsolutePath());
+        String attrParent = getDebuggingAttributesString(f.getParentFile());
+        String attrSelf = getDebuggingAttributesString(f);
+
+        // Do not obfuscate the path since the string may be displayed to the user as error messages
+        return f.getAbsolutePath() + " (attributes: " + attrParent + "," + attrSelf + ")";
     }
 
-    private FileUtil() {}
+    private static String getDebuggingAttributesString(File f)
+    {
+        return  (f.exists() ? "e" : "-") +
+                (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-")) +
+                (f.canRead() ? "r" : "-") +
+                (f.canWrite() ? "w" : "-") +
+                (f.canExecute() ? "x" : "-") +
+                (CharMatcher.ASCII.matchesAllOf(f.getAbsolutePath()) ? "a" : "-") +
+                (OSUtilWindows.isValidFileName(f.getName()) ? "v" : "-");
+    }
 
     /**
      * Called as a Runtime shutdown hook

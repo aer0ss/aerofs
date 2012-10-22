@@ -9,9 +9,6 @@ import org.eclipse.swt.layout.FillLayout;
 
 public class DlgExclusion extends AeroFSDialog
 {
-    /**
-     * @param path the path to the folder to be shared, relative to the root anchor path.
-     */
     public DlgExclusion(Shell parent)
     {
         super(parent, "Selective Sync", true, true);
