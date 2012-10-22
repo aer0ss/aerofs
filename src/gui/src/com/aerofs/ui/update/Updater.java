@@ -522,15 +522,14 @@ public abstract class Updater
             try {
                 try {
                     final long duration = 60;
-                    _skipUpdate = !((GUI)UI.get())
-                                     .ask(MessageType.INFO,
-                                             S.IMPORTANT_UPDATE_DOWNLOADED + " Apply it now?\n" +
-                                             "Skipping this version may cause " + S.PRODUCT +
-                                             " to stop syncing with other computers.\n\n" +
-                                             S.PRODUCT + " is automatically going " +
-                                             "to update in %d seconds.\n",
-                                             "Apply Update", "Not Now (files may stop syncing)",
-                                             duration);
+                    _skipUpdate = !((GUI)UI.get()).ask(MessageType.INFO,
+                            S.IMPORTANT_UPDATE_DOWNLOADED + " Apply it now?\n" +
+                            "Skipping this version may cause " + S.PRODUCT +
+                            " to stop syncing with other computers.\n\n" +
+                            S.PRODUCT + " is going to update automatically" +
+                            " in %d seconds.",
+                            "Apply Update", "Not Now (files may stop syncing)",
+                            duration);
                     if (_skipUpdate) return;
                 } catch (ExNoConsole e) {
                     UI.get()
