@@ -105,6 +105,8 @@ public class RootAnchorWatch implements JNotifyListener
     {
         blockingRitualCall();
 
+        // Check if a 'move' operation was executed from the 'Preferences' menu.
+        // If so we stop the watch on the previous root anchor and a new watch for the new location.
         if (onPotentialRootAnchorChange()) return;
 
         Runnable runnable = new Runnable() {
@@ -116,6 +118,8 @@ public class RootAnchorWatch implements JNotifyListener
         };
         UI.get().exec(runnable);
 
+        // Check if we successfully changed the location of the root anchor after the user
+        // manually moved the root anchor. If so stop the previous watch and add a new one.
         if (onPotentialRootAnchorChange()) {
             try {
                 UI.dm().start();  // restart the daemon
