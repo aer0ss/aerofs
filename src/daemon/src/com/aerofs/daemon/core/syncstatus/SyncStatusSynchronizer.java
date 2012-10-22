@@ -161,9 +161,16 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                 if (fastForward) {
                     l.info("successful fast forward from " + localEpoch + " to " + serverEpoch);
                     return;
+                } else {
+                    l.info("pull required to go from " + localEpoch + " to " + serverEpoch);
                 }
             }
             schedulePull_();
+        } else {
+            // 1) corrupted DB?
+            // 2) server-side data loss causing a regression of epoch numbers?
+            // 3) pull completed before reception of notification?
+            l.warn("notification anterior to pull epoch: " + serverEpoch + " vs " + localEpoch);
         }
     }
 
@@ -344,7 +351,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                     continue;
                 }
                 // nothing new...
-                l.info("Nothing new in server reply");
+                l.info("Nothing new in server reply: " + newEpoch + " vs " + localEpochAfterCall);
                 return;
             }
 
