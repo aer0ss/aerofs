@@ -177,7 +177,14 @@ public abstract class Updater
     public void onStartup()
     {
         String downloadedVersion = checkForDownloadedUpdate();
-        if (downloadedVersion != null) applyUpdate(downloadedVersion, true);
+        if (downloadedVersion != null) {
+            applyUpdate(downloadedVersion, true);
+        } else {
+            // Remove the update folder if it exists, since the downloaded update version is either
+            // already applied or there is no downloaded update.
+            InjectableFile f = _factFile.create(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR));
+            f.deleteIgnoreErrorRecursively();
+        }
     }
 
     /**
@@ -223,9 +230,6 @@ public abstract class Updater
                 if (UI.isGUI() && GUI.get().st() != null) {
                     GUI.get().st().getIcon().showNotification(false);
                 }
-
-                InjectableFile f = _factFile.create(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR));
-                f.deleteIgnoreErrorRecursively();
 
                 Util.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
 
