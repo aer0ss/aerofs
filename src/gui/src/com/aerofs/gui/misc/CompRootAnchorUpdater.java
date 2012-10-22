@@ -9,6 +9,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
@@ -28,6 +29,7 @@ import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.widgets.Button;
 import com.aerofs.lib.S;
 import org.eclipse.swt.layout.FillLayout;
+import java.io.File;
 
 public class CompRootAnchorUpdater extends Composite
 {
@@ -130,6 +132,10 @@ public class CompRootAnchorUpdater extends Composite
         String newRootPath = RootAnchorUtil.adjustRootAnchor(rootPath);
         try {
             RootAnchorUtil.checkNewRootAnchor(oldRootPath, newRootPath);
+            File f = new File(newRootPath);
+            if (!f.exists() || !f.isDirectory())
+                throw new ExBadArgs("New location:\n" + newRootPath +
+                        " does not exist or not a directory");
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.WARN, UIUtil.e2msg(e) +
                     ". Please select a different folder.");
