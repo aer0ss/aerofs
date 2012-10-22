@@ -153,7 +153,7 @@ eval "echo \"$(<email.template.multipart)\"" | mail \
     -a "From: AeroFS SV <root@sv.aerofs.com>" \
     -a "Content-Type: multipart/related; boundary=\"multipart_boundary\"" \
     -s "Weekly Key Metrics Report, week #$THIS_COHORT_WEEK_OF_YEAR" \
-    weihan@aerofs.com
+    team@aerofs.com
 
 ############
 # CLEAN UP #
