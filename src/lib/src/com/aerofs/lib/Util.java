@@ -321,7 +321,7 @@ public abstract class Util
         for (StackTraceElement e : stackTrace) {
             if (e == null) break; // technically this should never happen
 
-            builder.append("\t").append(e.toString());
+            builder.append("\t").append("at" + e.toString());
             builder.append(System.getProperty("line.separator"));
         }
 
