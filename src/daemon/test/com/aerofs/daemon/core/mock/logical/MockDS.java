@@ -79,6 +79,7 @@ public class MockDS
     private final @Nullable IMapSIndex2SID _sidx2sid;
     private final @Nullable MapSIndex2DeviceBitMap _sidx2dbm;
 
+    private int _nextSidx;
     private final SID _sid;
     private final MockDSDir _root;
     private final MockDSDir _trash;
@@ -123,8 +124,10 @@ public class MockDS
         _sidx2sid = sidx2sid;
         _sidx2dbm = sidx2dbm;
 
+        _nextSidx = 1;
+
         // mock root store
-        SIndex sidx = new SIndex(1);
+        SIndex sidx = new SIndex(_nextSidx++);
         _sid = new SID(UniqueID.generate());
         _root = new MockDSDir(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
         _trash = new MockDSDir(C.TRASH, _root, true, new SOID(sidx, OID.TRASH));
@@ -670,10 +673,8 @@ public class MockDS
             when(_oa.isDir()).thenReturn(false);
             when(_oa.isAnchor()).thenReturn(true);
 
-            SIndex sidx;
-            do {
-                sidx = new SIndex(Util.rand().nextInt() % 1000);
-            } while (sidx.getInt() < 0 && _sidx2sid != null && _sidx2sid.getNullable_(sidx) != null);
+            SIndex sidx = new SIndex(_nextSidx++);
+            assert _sidx2sid == null || _sidx2sid.getNullable_(sidx) == null : sidx;
 
             // SIDMap mocking
             mockSIDMap(SID.anchorOID2storeSID(_oa.soid().oid()), sidx);
