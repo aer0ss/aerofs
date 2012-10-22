@@ -164,19 +164,20 @@ public class TCPProactorMT
                 Socket s = _ss.accept();
 
                 if (_acceptPaused) {
+                    l.debug("not accepting, discard accepted socket");
                     s.close();
                     synchronized (_resumeAcceptSynchronizer) {
                         while (_acceptPaused) Util.waitUninterruptable(_resumeAcceptSynchronizer);
                     }
+                } else {
+                    InetSocketAddress remaddr = getaddr(s, false);
+                    int localPort = getaddr(s, true).getPort();
+
+                    l.info(_name + ": accepted conn rem:" + remaddr + " locport:" + localPort);
+
+                    Peer p = new Peer(s);
+                    receive(p, s, false);
                 }
-
-                InetSocketAddress remaddr = getaddr(s, false);
-                InetSocketAddress locaddr = getaddr(s, true);
-
-                l.info(_name + ": accepted conn rem:" + remaddr + " locport:" + locaddr.getPort());
-
-                Peer p = new Peer(s);
-                receive(p, s, false);
             } catch (IOException e) {
                 l.error(_name + ": error accepting connections: " + e);
                 break;
@@ -468,7 +469,7 @@ public class TCPProactorMT
 
     private void discard(Peer p, Exception ex)
     {
-        l.debug("discard: " + (p._key == null ? "null" : p._key));
+        l.debug("discard: " + (p._key == null ? "null" : p._key) + ", cause: " + ex);
 
         Socket is, os;
 

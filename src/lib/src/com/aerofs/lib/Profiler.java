@@ -2,17 +2,31 @@ package com.aerofs.lib;
 
 import com.aerofs.lib.cfg.Cfg;
 
+import javax.annotation.Nonnull;
+
 public class Profiler {
 
     private boolean _started;
     private long _ts;
     private long _threshold;
     private final boolean _adjustThreshold;
+    private final String _label;
 
-    public Profiler()
+    public Profiler(@Nonnull String label)
     {
         _adjustThreshold = false;
         _threshold = Cfg.profilerStartingThreshold();
+
+        String stackTraceMessage = "PROFILER";
+        if (!label.isEmpty()) {
+            stackTraceMessage = stackTraceMessage + " - " + label;
+        }
+        _label = stackTraceMessage;
+    }
+
+    public Profiler()
+    {
+        this("");
     }
 
     public void start()
@@ -38,9 +52,18 @@ public class Profiler {
 
             long diff = System.currentTimeMillis() - _ts;
             if (diff > _threshold) {
-                Util.printStack("PROFILER: " + diff + " ms");
+                Util.printStack(_label + ": " + diff + " ms");
                 if (_adjustThreshold) _threshold = diff;
             }
+        }
+    }
+
+    public void reset()
+    {
+        if (_threshold != 0) {
+            assert _started;
+            _started = false;
+            Util.l().warn(_label + " reset");
         }
     }
 }

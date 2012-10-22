@@ -84,7 +84,6 @@ public abstract class AbstractLinkStateService implements ILinkStateService
 
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
 //        l.debug("ls:ifs:");
-        StringBuilder sb = new StringBuilder();
 
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
                 e.hasMoreElements();) {
@@ -93,25 +92,33 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             // cache interface information as local variables, since some queries on some Windows
             // computers are very slow. Experiments showed that getName and isUp can take 100ms
             // each on computers with VirtualBox installed :S
-            String name = iface.getName();
-            boolean isUp = iface.isUp();
-            boolean isLoopback = iface.isLoopback();
-            boolean isVirtual = iface.isVirtual();
+            final String name = iface.getName();
+            final boolean isUp = iface.isUp();
+            final boolean isLoopback = iface.isLoopback();
+            final boolean isVirtual = iface.isVirtual();
 
-//            if (l.isDebugEnabled()) {
-//                l.debug(name + "(u:" + isUp + " l:" + isLoopback + " v:" + isVirtual + ")");
-//            }
+            // If debug is enabled, generate the debug message
+            StringBuilder sb = new StringBuilder();
+            if (l.isDebugEnabled()) {
+                sb.append(' ').append(name);
 
-            sb.append(' ').append(iface.getName());
-            if (iface.getDisplayName() != null && !iface.getDisplayName().equals(iface.getName())) {
-                sb.append('[').append(iface.getDisplayName()).append(']');
+                // The displayName can be different than the name. If they are different,
+                // output something like "name[displayName]".
+                final String displayName = iface.getDisplayName();
+                if (displayName != null && !displayName.equals(name)) {
+                    sb.append('[').append(displayName).append(']');
+                }
+
+                // Output the link state. Inclusion of a symbol means the state it represents
+                // is true. i.e, if 'u' is present in the message, then u = true, meaning isUp
+                // is true.
+                sb.append('(');
+                if (isUp) sb.append('u');
+                if (isLoopback) sb.append('l');
+                if (isVirtual) sb.append('v');
+                if (iface.supportsMulticast()) sb.append('m');
+                sb.append(')');
             }
-            sb.append('(');
-            if (iface.isUp()) sb.append('u');
-            if (iface.isLoopback()) sb.append('l');
-            if (iface.isVirtual()) sb.append('v');
-            if (iface.supportsMulticast()) sb.append('m');
-            sb.append(')');
 
             // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
             // simply removes the interface's IPV4 address. This caused a situation where
@@ -125,14 +132,17 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                     if (address instanceof Inet4Address) {
                         // it is an IPv4 address
                         ifaceBuilder.add(iface);
-                        sb.append(':').append(address.getHostAddress());
+
+                        if (l.isDebugEnabled()) {
+                            sb.append(':').append(address.getHostAddress());
+                        }
                         break;
                     }
                 }
             }
-        }
 
-        l.debug(sb);
+            l.debug(sb);
+        }
 
         return ifaceBuilder.build();
     }

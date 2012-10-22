@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.net.dtls;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
+
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.net.PeerContext;
@@ -13,6 +14,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDTLS;
 import com.aerofs.swig.dtls.DTLSEngine;
 import com.aerofs.swig.dtls.DTLSEngine.DTLS_RETCODE;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 // TODO use separate object for sender and receiver. the receiver should not
 // have the queue
@@ -60,11 +64,10 @@ class DTLSEntry
      * @param hsSent returns whether a handshake message was sent
      * @return the data that's to be pushed to the lower layer
      */
-    byte[] encrypt(byte[] bs, PeerContext pc, Footer footer,
-            OutArg<Boolean> hsSent) throws Exception
+    byte[] encrypt(byte[] bs, PeerContext pc, Footer footer, @Nullable OutArg<Boolean> hsSent)
+            throws Exception
     {
         l.debug("enc msg " + bs.length);
-        DTLS_RETCODE rc = DTLS_RETCODE.DTLS_OK;
 
         if (null == _engine) {
             l.warn("can't get/create eng. eng is null");
@@ -74,7 +77,7 @@ class DTLSEntry
         byte[] bsToSend = new byte[DTLS.BUF_SIZE]; // hardcoded number for now
         int[] outputLen = { bsToSend.length - Footer.SIZE };
 
-        rc = cryptImpl_(true, bs, bsToSend, outputLen);
+        DTLS_RETCODE rc = cryptImpl_(true, bs, bsToSend, outputLen);
 
         if (DTLS_RETCODE.DTLS_NEEDREAD == rc
                 || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
@@ -109,7 +112,7 @@ class DTLSEntry
      * @return the data that's to be delivered to the upper layer
      */
     ByteArrayInputStream decrypt_(byte[] input, PeerContext pc, Footer footer,
-            OutArg<Boolean> hsSent)
+            @Nonnull OutArg<Boolean> hsSent)
         throws Exception
     {
         l.debug("dec msg " + input.length);

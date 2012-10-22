@@ -10,7 +10,6 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.tng.base.http.ProxyAwareSocketFactory;
-import com.aerofs.l.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

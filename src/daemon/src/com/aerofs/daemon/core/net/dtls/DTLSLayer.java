@@ -114,11 +114,6 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         _recv = _f._factCache.create_(this, false, pathCACert, pathDevCert);
     }
 
-    IUnicastOutputLayer lower()
-    {
-        return _lower;
-    }
-
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
@@ -233,6 +228,11 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         _lower = lower;
     }
 
+    IUnicastOutputLayer lower()
+    {
+        return _lower;
+    }
+
     @Override
     public void endIncomingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
@@ -256,8 +256,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         } else {
             l.debug("verify user");
             try {
-                for (int i = 0; i < USERID_MAGIC_BYTES.length; i++) {
-                    if (USERID_MAGIC_BYTES[i] != is.read()) {
+                for (byte b : USERID_MAGIC_BYTES) {
+                    if (b != is.read()) {
                         throw new ExDTLS(pc.did() + " userid magic mismatch");
                     }
                 }
@@ -278,10 +278,10 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                 _f._d2u.processMappingFromPeer_(pc.did(), user);
 
                 if (sender) {
-                    _send.promote_(pc, entry);
+                    _send.promote_(pc.ep(), entry);
 
                 } else {
-                    _recv.promote_(pc, entry);
+                    _recv.promote_(pc.ep(), entry);
 
                     // the sender already send the userid message at the time of
                     // engine creation
@@ -334,20 +334,19 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                     // TODO vulnerable to DoS attacks. Use engine numbers to prevent
                     // it (see dtls.docx)
                     //
-                    DTLSEntry entry = _recv.findEntryInBacklog_(pc);
-                    if (entry != null) _recv.removeEntry_(pc, entry);
+                    _recv.removeEntryInBacklog_(pc.ep());
 
-                    entry = _recv.createEntry_(pc);
+                    DTLSEntry entry = _recv.createEntry_(pc.ep());
 
                     // Should return null bytestream
                     OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
                     Util.verify(null == entry.decrypt_(input, pc, Footer.IN_OLD, hsSent));
-                    assert hsSent.get() == true;
+                    assert hsSent.get();
 
                     break;
                 }
                 case OUT_OLD: {
-                    ArrayList<DTLSEntry> entries = _recv.findEntryList_(pc);
+                    ArrayList<DTLSEntry> entries = _recv.findEntryList_(pc.ep());
 
                     if (entries.isEmpty()) {
                         l.debug("svr: send HS_REQ");
@@ -385,7 +384,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                                 //if the timeout has elapsed, the client with the sender channel has already removed
                                 //us from the backlog. That means we should also remove this entry from the backlog
                                 //to allow the client to re-negotiate as necessary
-                                _recv.timeoutDTLSInHandShake(entry, pc, true);
+                                _recv.timeoutDTLSInHandShake(entry, pc.ep(), true);
 
                                 // if the decrypt() command generated a message
                                 // directly to the lower layer, no need to check
@@ -415,7 +414,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                      * message)... I'm not sure
                      * how this case can be produced though.
                      */
-                    ArrayList<DTLSEntry> entries = _send.findEntryList_(pc);
+                    ArrayList<DTLSEntry> entries = _send.findEntryList_(pc.ep());
                     if (entries.isEmpty()) {
                         // Client must have died and restarted
                         l.debug("cli: can't find entry matching svr's PC, drop");
@@ -435,13 +434,12 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                                 //the corresponding client with the recv channel has timed us out.
                                 //here we assume that both sender and receiver have similar timeouts
                                 //and so it is safe to remove this entry from the backlog if the timeout has passed
-                                _send.timeoutDTLSInHandShake(entry, pc, true); //send because of IN_OLD
+                                _send.timeoutDTLSInHandShake(entry, pc.ep(), true); //send because of IN_OLD
                                 break;
                             }
 
                             if (null != isToDeliver) {
-                                deliverOrVerifyUser_(entry, msg, wirelen, pc,
-                                        isToDeliver, true);
+                                deliverOrVerifyUser_(entry, msg, wirelen, pc, isToDeliver, true);
                                 delivered = true;
                                 // if we successfully decrypted, no need
                                 // to iterate over the rest of the entries
@@ -452,7 +450,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                             }
 
                             // process_ queued up messages to be encrypted
-                            _send.drainAndSendQueue_(entry, pc);
+                            _send.drainAndSendEnqueuedMessages_(entry, pc);
                         }
                     }
                     break;
@@ -472,11 +470,11 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                 case OUT_NEW:
                 case OUT_OLD:
                     l.debug("rm eng from recvCache");
-                    _recv.removeEntries_(pc);
+                    _recv.removeEntries_(pc.ep());
                     break;
                 case IN_OLD:
                     l.debug("rm eng from sendCache");
-                    _send.removeEntries_(pc);
+                    _send.removeEntries_(pc.ep());
                     break;
                 case HS_REQ:
                     break;
@@ -511,7 +509,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
     private DTLSEntry kickOffHandShaking_(PeerContext pc) throws Exception
     {
-        DTLSEntry entry = _send.createEntry_(pc);
+        DTLSEntry entry = _send.createEntry_(pc.ep());
 
         // send the user id message first. it must be the highest priority
         // so that it's always sent before any other message.
@@ -524,7 +522,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             assert encryptedBS == null; // should not return anything here
         } catch (ExDTLS e) {
             l.debug("remove entry from sendCache");
-            _send.removeEntries_(pc);
+            _send.removeEntries_(pc.ep());
             throw e;
         }
 
@@ -534,7 +532,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     private void processSendMsg_(DTLSMessage<byte[]> msg, PeerContext pc)
             throws Exception
     {
-        ArrayList<DTLSEntry> entries = _send.findEntryList_(pc);
+        ArrayList<DTLSEntry> entries = _send.findEntryList_(pc.ep());
 
         // if we can't find a DTLSEntry,
         // then this is a new session for an OUT context
@@ -572,7 +570,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                         if (null != bsToSend) {
                             assert !hsSent.get();
 
-                            _send.promote_(pc, entry);
+                            _send.promote_(pc.ep(), entry);
 
                             sendToLowerLayer_(msg, bsToSend, pc);
 
@@ -589,7 +587,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                                 //need to timeout the dtls entry if the timeout time has passed
                                 //this assumes that both the client and the server have similar timeout values
 
-                                _send.timeoutDTLSInHandShake(entry, pc, true);
+                                _send.timeoutDTLSInHandShake(entry, pc.ep(), true);
                                 break;
                             } else {
                                 l.debug("not in hs, !hsSent && !bsToSend");
@@ -598,14 +596,14 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                     } catch (ExDTLS e) {
                         l.debug("remove eng from sendCache");
-                        _send.removeEntries_(pc);
+                        _send.removeEntries_(pc.ep());
                         throw e;
                     }
 
                 } else if (!sendQ.isFull_()) {
                     l.debug("cli: eng q not full, enq msg");
                     sendQ.enqueue_(msg, _f._tc.prio());
-                    _send.drainAndSendQueue_(entry, pc);
+                    _send.drainAndSendEnqueuedMessages_(entry, pc);
 
                 } else {
                     throw new ExNoResource("CLI: eng q full, drop pkt");
