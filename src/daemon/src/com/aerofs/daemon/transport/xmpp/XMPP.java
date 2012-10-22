@@ -128,9 +128,8 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     // TODO use DI
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
-    // TODO (EK) remove variables once OOM error fixed
-    private int stackTraceCount = 0;
-    private final int stackTracePeriod = 20;
+    // TODO (EK) remove once OOM fixed
+    private boolean _isSamplerThreadActive = false;
 
     /**
      * @param sink
@@ -753,12 +752,25 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         } catch (ExNoResource e) {
             l.warn("fail enq ev " + ev.getClass().getName() + " - resched for immediate ex");
 
-            // TODO (EK) remove this block once OOM fixed
-            if (stackTraceCount % stackTracePeriod == 0) {
-                Util.logAllThreadStackTraces();
-                stackTraceCount = 0; // reset
+            // TODO (EK) remove sampling thread once OOM fixed
+            if (!_isSamplerThreadActive) {
+                _isSamplerThreadActive = true;
+                Runnable runnable = new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        long period = 500; // sample every 500 ms
+                        int MAX = 50, counter = 0;
+                        while(counter < MAX) {
+                            Util.logAllThreadStackTraces();
+                            Util.sleepUninterruptable(period);
+                            counter++;
+                        }
+                    }
+                };
+                Util.startDaemonThread("sampler", runnable);
             }
-            stackTraceCount++;
 
             _sched.schedule(ev, 0);
         }
