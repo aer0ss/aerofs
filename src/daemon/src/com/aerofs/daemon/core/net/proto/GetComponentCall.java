@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.net.proto;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.core.*;
@@ -142,7 +141,7 @@ public class GetComponentCall
     }
 
     private void setIncrementalDownloadInfo_(SOCID socid, Builder bd)
-        throws SQLException, IOException, ExNotFound
+            throws SQLException, ExNotFound
     {
         OA oa = _ds.getOANullable_(socid.soid());
         if (oa == null) return;

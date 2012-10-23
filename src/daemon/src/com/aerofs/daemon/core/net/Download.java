@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -28,7 +30,6 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
-import com.aerofs.daemon.lib.exception.ExIncrementalDownload;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
@@ -42,6 +43,7 @@ import javax.annotation.Nullable;
 public class Download
 {
     private static final Logger l = Util.l(Download.class);
+    private static final FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     private final To _src;
     private final Listeners<IDownloadCompletionListener> _ls = Listeners.newListeners();
@@ -245,10 +247,6 @@ public class Download
             } catch (ExNoAvailDevice e) {
                 throw e;
 
-            } catch (ExIncrementalDownload e) {
-                reenqueue(started);
-                l.warn("inc dl failed. full dl now.");
-
             } catch (ExNameConflictDependsOn e) {
                 // N.B. this exception specializes ExDependsOn and thus must precede the
                 // catch for ExDependsOn
@@ -317,6 +315,15 @@ public class Download
                 reenqueue(started);
                 l.error(_socid + ": sender has no perm");
                 avoidDevice_(replier, e);
+
+            } catch (IOException e) {
+                reenqueue(started);
+                _defectSender.logSendAsync("ioex in dl", e);
+                onGeneralException(e, replier);
+
+                // If there was a local IOException, then trying another device won't help. Just
+                // re-throw and let the collector try again later
+                throw e;
 
             } catch (Exception e) {
                 reenqueue(started);

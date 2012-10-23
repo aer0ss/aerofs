@@ -23,7 +23,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
-import com.aerofs.daemon.lib.exception.ExIncrementalDownload;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.l.L;
@@ -570,7 +569,7 @@ public class ReceiveAndApplyUpdate
     public Trans applyContent_(DigestedMessage msg, SOCKID k, KIndex kidxOld,
             boolean wasPresent, Version vRemote, CausalityResult res, Token tk)
             throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted, ExStreamInvalid,
-            ExNoResource, ExOutOfSpace, ExIncrementalDownload, ExNotFound, DigestException
+            ExNoResource, ExOutOfSpace, ExNotFound, DigestException
     {
         PBGetComReply reply = msg.pb().getGetComReply();
 
