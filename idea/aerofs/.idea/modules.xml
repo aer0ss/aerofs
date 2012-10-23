@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../../src/android/android.iml" filepath="$PROJECT_DIR$/../../src/android/android.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/base/base.iml" filepath="$PROJECT_DIR$/../../src/base/base.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/daemon/daemon.iml" filepath="$PROJECT_DIR$/../../src/daemon/daemon.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/gui/gui.iml" filepath="$PROJECT_DIR$/../../src/gui/gui.iml" />
