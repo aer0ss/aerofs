@@ -27,16 +27,16 @@ public final class EventQueueBasedEventLoop implements IEventLoop
     private static final Logger l = Util.l(EventQueueBasedEventLoop.class);
 
     private final AtomicBoolean _started = new AtomicBoolean(false);
-    private final BlockingPrioQueue<IEvent> _sink;
+    private final BlockingPrioQueue<IEvent> _eq;
     private final EventDispatcher _dispatcher = new EventDispatcher();
     private final Scheduler _scheduler;
 
     @Nullable private Thread _eventLoopThread;
 
-    public EventQueueBasedEventLoop(BlockingPrioQueue<IEvent> sink)
+    public EventQueueBasedEventLoop(BlockingPrioQueue<IEvent> eq)
     {
-        this._sink = sink;
-        this._scheduler = new Scheduler(_sink, "tp-sched");
+        this._eq = eq;
+        this._scheduler = new Scheduler(_eq, "tp-sched");
     }
 
     @Override
@@ -52,7 +52,7 @@ public final class EventQueueBasedEventLoop implements IEventLoop
             {
                 OutArg<Prio> evPrio = new OutArg<Prio>();
                 while (true) {
-                    IEvent ev = _sink.dequeue(evPrio);
+                    IEvent ev = _eq.dequeue(evPrio);
                     _dispatcher.dispatch_(ev, evPrio.get());
                 }
             }
@@ -64,7 +64,7 @@ public final class EventQueueBasedEventLoop implements IEventLoop
     private final void execute_(final Runnable runnable, Prio pri)
     {
         try {
-            _sink.enqueueThrows(new AbstractEBSelfHandling()
+            _eq.enqueueThrows(new AbstractEBSelfHandling()
             {
                 @Override
                 public void handle_()

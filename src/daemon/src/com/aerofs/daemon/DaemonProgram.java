@@ -1,7 +1,5 @@
 package com.aerofs.daemon;
 
-import org.apache.log4j.Level;
-
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.linker.MightCreate;
 import com.aerofs.daemon.core.linker.MightDelete;
@@ -16,8 +14,8 @@ import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.aerofs.s3.S3Module;
@@ -25,6 +23,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 public class DaemonProgram implements IProgram {
 
@@ -68,14 +68,40 @@ public class DaemonProgram implements IProgram {
         Util.l(Download.class).setLevel(Level.INFO);
 
         //
-        // set logging overrides on a package basis (works when classes are package local)
+        // pull all packages with sensible logging levels to info
         //
 
-        com.aerofs.zephyr.core.LoggingOverride.setLogLevels_();
-        com.aerofs.daemon.core.linker.scanner.LoggingOverride.setLogLevels_();
-        com.aerofs.daemon.transport.xmpp.jingle.LoggingOverride.setLogLevels_();
-        com.aerofs.daemon.transport.xmpp.routing.LoggingOverride.setLogLevels_();
-        com.aerofs.daemon.transport.xmpp.zephyr.client.nio.LoggingOverride.setLogLevels_();
+        {
+            String[] packages = {
+                    "com.aerofs.daemon.core.linker.scanner",
+                    "com.aerofs.daemon.transport",
+                    "com.aerofs.daemon.tng",
+                    "com.aerofs.daemon.tap",
+                    "com.aerofs.zephyr.core"
+            };
+
+            setLogLevels(packages, Level.INFO);
+        }
+
+        // com.aerofs.daemon.core.linker.scanner.LoggingOverride.setLogLevels_();
+    }
+
+    private static void setLogLevels(String[] packages, Level desiredLevel)
+    {
+        if (packages.length == 0) return;
+
+        Level rootLogLevel = Logger.getRootLogger().getLevel();
+        Level currentLevel;
+        Logger logger;
+        for (String pkg : packages) {
+            assert pkg != null : ("packages:" + packages);
+
+            logger = Logger.getLogger(pkg);
+            currentLevel = logger.getLevel() == null ? rootLogLevel : logger.getLevel();
+            if (currentLevel.isGreaterOrEqual(desiredLevel)) {
+                logger.setLevel(desiredLevel);
+            }
+        }
     }
 
     private Daemon inject_()

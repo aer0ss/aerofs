@@ -30,24 +30,26 @@ import com.aerofs.lib.id.DID;
 
 public class MaxcastFilterReceiver {
     private static final Logger l = Util.l(MaxcastFilterReceiver.class);
-    // Map of DID to maxcast IDs
-    private final Map<DID, Integer> _mmcids;
+
+    private final Map<DID, Integer> _didToMaxcastIds;
 
     public MaxcastFilterReceiver()
     {
-        _mmcids = new HashMap<DID, Integer>();
+        _didToMaxcastIds = new HashMap<DID, Integer>();
     }
 
     public boolean isRedundant(DID did, int mcastid)
     {
         boolean retVal;
+
         synchronized (this) {
             retVal = isRedundant_(did, mcastid);
         }
-        if (l.isInfoEnabled()) {
-            l.info( ((retVal) ? ("redundant") : ("unique"))
-                + " mcast recvd: " + did + " " + mcastid);
+
+        if (l.isDebugEnabled()) {
+            l.debug( ((retVal) ? ("redundant") : ("unique")) + " mc recvd: " + did + " " + mcastid);
         }
+
         return retVal;
     }
 
@@ -55,10 +57,11 @@ public class MaxcastFilterReceiver {
     {
         assert did != null;
 
-        Integer oldmcid = _mmcids.put(did, mcastid);
+        Integer oldmcid = _didToMaxcastIds.put(did, mcastid);
         if (oldmcid == null || oldmcid.compareTo(mcastid) != 0) {
             return false;
         }
+
         return true;
     }
 }

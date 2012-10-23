@@ -270,5 +270,6 @@ public class ZephyrServer implements IIOEventHandler
     private final BufferPool _bufpool;
     private ServerSocketChannel _ssc;
     private boolean _inited;
-    private final Logger l = Util.l(ZephyrServer.class);
+
+    private static final Logger l = Util.l(ZephyrServer.class);
 }

@@ -185,7 +185,7 @@ public class Dispatcher implements Runnable
     {
         try {
             if (_sel != null) _sel.close();
-            l.debug("zd: sel: close");
+            l.info("zd: sel: close");
         } catch (IOException e) {
             l.warn("zd: sel: e on close:" + e);
         }

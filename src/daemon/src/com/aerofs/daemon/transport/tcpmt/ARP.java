@@ -112,8 +112,7 @@ public class ARP
 
         notifyWatchers_(did, REM);
 
-        l.info(
-            "arp: rem: d:" + (ret == null ? "null" : did + "rem:" + printaddr(ret._isa)) + " m:" + onmulticast);
+        l.info("arp: rem: d:" + (ret == null ? "null" : did + "rem:" + printaddr(ret._isa)) + " m:" + onmulticast);
 
         return ret;
     }

@@ -81,7 +81,7 @@ class DIDPipeRouter<T extends IPipe>
      */
     void peerConnected_(IPipe p)
     {
-        l.debug(_pream + " connected on p:" + p.id());
+        l.info(_pream + " connected on p:" + p.id());
 
         assertValidPipe(p);
 
@@ -144,7 +144,7 @@ class DIDPipeRouter<T extends IPipe>
 
     void peerDisconnected_(IPipe p)
     {
-        l.debug(_pream + " disconnected on p:" + p.id());
+        l.info(_pream + " disconnected on p:" + p.id());
 
         pipeDisconnected_(p);
     }
@@ -217,7 +217,7 @@ class DIDPipeRouter<T extends IPipe>
         l.debug(_pream + " begin connect betters:" + better.size());
 
         for(DIDPipeConnectionCounter tcc : better) {
-            l.debug(_pream + " connect to p:" + tcc.p().id());
+            l.info(_pream + " connect to p:" + tcc.p().id());
             tcc.p().connect_(_did);
         }
 

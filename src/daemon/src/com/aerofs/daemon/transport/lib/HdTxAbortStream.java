@@ -28,7 +28,7 @@ public class HdTxAbortStream implements IEventHandler<EOTxAbortStream>
         try {
             OutgoingStream ostrm = _sm.removeOutgoingStream(ev._streamId);
             if (ostrm == null) {
-                Util.l(this).info("ostrm " + ev._streamId + " not found. ignore");
+                Util.l(this).warn("ostrm " + ev._streamId + " not found. ignore");
                 return;
             }
 
@@ -41,7 +41,7 @@ public class HdTxAbortStream implements IEventHandler<EOTxAbortStream>
 
             _ucast.send_(ostrm._did, null, prio, TPUtil.newControl(h), ostrm._cookie);
         } catch (Exception e) {
-            Util.l(this).info("cannot abort stream " + ev._streamId +
+            Util.l(this).warn("cannot abort stream " + ev._streamId +
                     ". ignored: " + Util.e(e, ExDeviceOffline.class));
         }
     }

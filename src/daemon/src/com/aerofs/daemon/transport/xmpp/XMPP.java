@@ -1,55 +1,5 @@
 package com.aerofs.daemon.transport.xmpp;
 
-import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
-import static com.aerofs.daemon.lib.DaemonParam.XMPP.QUEUE_LENGTH;
-import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.JINGLE;
-import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.ZEPHYR;
-import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
-import static com.aerofs.daemon.transport.lib.TPUtil.makeDiagnosis;
-import static com.aerofs.daemon.transport.lib.TPUtil.newControl;
-import static com.aerofs.daemon.transport.lib.TPUtil.processUnicastControlDiagnosis;
-import static com.aerofs.lib.C.NOSTUN;
-import static com.aerofs.lib.C.NOZEPHYR;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
-import static com.aerofs.proto.Transport.PBTPHeader.Type.TRANSPORT_CHECK_PULSE_CALL;
-import static org.jivesoftware.smack.packet.Message.Type.chat;
-import static org.jivesoftware.smack.packet.Message.Type.error;
-import static org.jivesoftware.smack.packet.Message.Type.groupchat;
-import static org.jivesoftware.smack.packet.Message.Type.headline;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.net.NetworkInterface;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
-import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
-import com.aerofs.daemon.mobile.MobileService;
-import org.apache.log4j.Logger;
-import org.jivesoftware.smack.PacketListener;
-import org.jivesoftware.smack.SASLAuthentication;
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.OrFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
-import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.packet.Message;
-import org.jivesoftware.smack.packet.Packet;
-import org.jivesoftware.smack.packet.Presence;
-
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
@@ -62,6 +12,8 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
+import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.INetworkStats.BasicStatsCounter;
@@ -94,6 +46,52 @@ import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import org.apache.log4j.Logger;
+import org.jivesoftware.smack.PacketListener;
+import org.jivesoftware.smack.SASLAuthentication;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.filter.MessageTypeFilter;
+import org.jivesoftware.smack.filter.OrFilter;
+import org.jivesoftware.smack.filter.PacketFilter;
+import org.jivesoftware.smack.filter.PacketTypeFilter;
+import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
+
+import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.NetworkInterface;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
+import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.JINGLE;
+import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.ZEPHYR;
+import static com.aerofs.daemon.lib.DaemonParam.XMPP.QUEUE_LENGTH;
+import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
+import static com.aerofs.daemon.transport.lib.TPUtil.makeDiagnosis;
+import static com.aerofs.daemon.transport.lib.TPUtil.newControl;
+import static com.aerofs.daemon.transport.lib.TPUtil.processUnicastControlDiagnosis;
+import static com.aerofs.lib.C.NOSTUN;
+import static com.aerofs.lib.C.NOZEPHYR;
+import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
+import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
+import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
+import static com.aerofs.proto.Transport.PBTPHeader.Type.TRANSPORT_CHECK_PULSE_CALL;
+import static org.jivesoftware.smack.packet.Message.Type.chat;
+import static org.jivesoftware.smack.packet.Message.Type.error;
+import static org.jivesoftware.smack.packet.Message.Type.groupchat;
+import static org.jivesoftware.smack.packet.Message.Type.headline;
 
 /**
  * Acts as a controller (or wrapper) over a number of {@link IPipe} implementations
@@ -982,7 +980,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         assertDispThread();
 
         if (hdr == null) {
-            l.info("null return");
+            l.debug("null return");
             return;
         }
 
@@ -1019,7 +1017,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         }
 
         PBTPHeader.Type type = hdr.getType();
-        l.info("rcv msg type:" + hdr.getType().name());
+        l.debug("rcv msg type:" + hdr.getType().name());
 
         ISignallingClient mp = _processors.get(type);
         if (mp == null) throw new ExProtocolError(type.getClass());
@@ -1100,8 +1098,10 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         try {
             int magic = is.readInt();
             if (magic != C.CORE_MAGIC) {
-                l.info("magic mismatch from " + did + ": " + body);
-                    return null;
+                l.warn("magic mismatch " +
+                        "d:" + did + " exp:" + C.CORE_MAGIC + " act:" + magic + " bdy:" + body);
+
+                return null;
             }
 
             // Parse the maxcast id.

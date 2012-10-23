@@ -186,7 +186,7 @@ public class TPUtil
                     sink.enqueueThrows(new EIChunk(ep, new SID(h.getSid()), streamId, seq, is,
                             wirelen), Prio.LO);
                 } catch (Exception e) {
-                    l.info("can't enqueue EIChunk. abort stream: " + Util.e(e));
+                    l.warn("can't enqueue EIChunk. abort stream: " + Util.e(e));
                     sm.removeIncomingStream(ep.did(), streamId);
                     throw e;
                 }
@@ -195,7 +195,7 @@ public class TPUtil
                     sink.enqueueThrows(new EIStreamBegun(ep, new SID(h.getSid()), streamId, is,
                             wirelen), Prio.LO);
                 } catch (Exception e) {
-                    l.info("can't enqueue EIStreamBegun. abort stream: " + Util.e(e));
+                    l.warn("can't enqueue EIStreamBegun. abort stream: " + Util.e(e));
                     sm.removeIncomingStream(ep.did(), streamId);
                     throw e;
                 }

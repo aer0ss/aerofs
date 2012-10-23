@@ -1,22 +1,5 @@
 package com.aerofs.daemon.transport.tcpmt;
 
-import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.log4j.Logger;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
@@ -34,6 +17,23 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import org.apache.log4j.Logger;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import static com.aerofs.daemon.transport.lib.AddressUtils.getinetaddr;
 
 // TODO: checksum
 
@@ -90,7 +90,7 @@ class Multicast implements IMaxcast
             s.leaveGroup(InetAddress.getByName(L.get().mcastAddr()));
             s.close();
         } catch (Exception e) {
-            l.info("error closing mcast socket. ignored: " + e);
+            l.warn("error closing mcast socket. ignored: " + e);
         }
     }
 
@@ -158,13 +158,13 @@ class Multicast implements IMaxcast
             close(s);
         }
 
-        l.info("mc:current ifs:");
+        l.debug("mc:current ifs:");
         Set<Map.Entry<NetworkInterface, MulticastSocket>> entries = _iface2sock.entrySet();
         int i = 0;
         for (Map.Entry<NetworkInterface, MulticastSocket> e : entries) {
             int sval = (e.getValue() == null ? 0 : 1);
-            l.info("if" + i + ": " + e.getKey().getDisplayName() + "s:" + sval);
-            l.info(e.getKey());
+            l.debug("if" + i + ": " + e.getKey().getDisplayName() + "s:" + sval);
+            l.debug(e.getKey());
             i++;
         }
     }
@@ -189,8 +189,9 @@ class Multicast implements IMaxcast
                 }
 
                 // read magic
-                if (new DataInputStream(is).readInt() != C.CORE_MAGIC) {
-                    l.info("magic mismatch");
+                int pktmagic = new DataInputStream(is).readInt();
+                if (pktmagic != C.CORE_MAGIC) {
+                    l.warn("magic mismatch exp:" + C.CORE_MAGIC + " act:" + pktmagic);
                     continue;
                 }
 
@@ -226,7 +227,7 @@ class Multicast implements IMaxcast
                     l.info("retry in " + DaemonParam.TCP.RETRY_INTERVAL + " ms");
                     Util.sleepUninterruptable(DaemonParam.TCP.RETRY_INTERVAL);
                 } else {
-                    l.info("socket closed by linkStateChanged. exit thread");
+                    l.info("socket closed by lsc; exit");
                     return;
                 }
             }
@@ -280,8 +281,8 @@ class Multicast implements IMaxcast
             synchronized (_iface2sock) {
                 for (MulticastSocket s : _iface2sock.values()) {
                     try {
-                        if (l.isInfoEnabled()) {
-                            l.info("beg mc send:" + h.getType().name() + " s:" + pkt.getSocketAddress());
+                        if (l.isDebugEnabled()) {
+                            l.debug("beg mc send:" + h.getType().name() + " s:" + pkt.getSocketAddress());
                         }
 
                         s.send(pkt);

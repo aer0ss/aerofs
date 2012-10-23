@@ -165,12 +165,6 @@ public class ZephyrClientContext implements IStateContext
         ZephyrClientState s = (ZephyrClientState) next;
         assert s != null : (toString() + ": attempt to set invalid state");
 
-        if (_state != next) {
-            if (!l.isDebugEnabled()) { // too much noise when combined when sm's debugging output
-                l.info(toString() + ": T: " + _state + "->" + next);
-            }
-        }
-
         _state = s;
     }
 

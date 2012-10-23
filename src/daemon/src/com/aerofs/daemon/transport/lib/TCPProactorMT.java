@@ -178,7 +178,7 @@ public class TCPProactorMT
                 Peer p = new Peer(s);
                 receive(p, s, false);
             } catch (IOException e) {
-                l.info(_name + ": error accepting connections: " + e);
+                l.error(_name + ": error accepting connections: " + e);
                 break;
             }
         }
@@ -271,8 +271,8 @@ public class TCPProactorMT
                 _bytesrx.addAndGet(wirelen);
                 p._bytesrx += wirelen;
 
-                if (l.isInfoEnabled()) {
-                    l.info("recv fin:" + getTransferString_(s, true) + " b:" + wirelen);
+                if (l.isDebugEnabled()) {
+                    l.debug("recv fin:" + getTransferString_(s, true) + " b:" + wirelen);
                 }
 
                 // process_ the message
@@ -286,7 +286,7 @@ public class TCPProactorMT
             l.info(s.getRemoteSocketAddress() + " closed conection");
             discard(p, e);
         } catch (Exception e) {
-            l.info("error receiving from " + s.getRemoteSocketAddress() +
+            l.warn("error receiving from " + s.getRemoteSocketAddress() +
                     ". close the socket: " + Util.e(e, IOException.class));
             discard(p, e);
         }
@@ -358,8 +358,8 @@ public class TCPProactorMT
             bytesSent = Util.writeMessage(out, _magic, bss);
             _bytestx.addAndGet(bytesSent);
         }
-        if (l.isInfoEnabled()) {
-            l.info("send fin:" + getTransferString_(s, false) + " b:" + bytesSent + " t:" +
+        if (l.isDebugEnabled()) {
+            l.debug("send fin:" + getTransferString_(s, false) + " b:" + bytesSent + " t:" +
                     (System.currentTimeMillis() - sendBegin));
         }
 
@@ -426,10 +426,10 @@ public class TCPProactorMT
 
             OutArg<Prio> outPrio = new OutArg<Prio>();
             while (true) {
-                l.info("wait evsend");
+                l.debug("wait evsend");
                 long evwtbeg = System.currentTimeMillis();
                 EvSend ev = (EvSend) p._sendq.dequeue(outPrio);
-                l.info("ev wt t:" + (System.currentTimeMillis() - evwtbeg));
+                l.debug("ev wt t:" + (System.currentTimeMillis() - evwtbeg));
 
                 if (ev == EV_CLOSE) break;
 
@@ -438,7 +438,7 @@ public class TCPProactorMT
                     if (ev._waiter != null) ev._waiter.okay();
                 } catch (IOException e) {
                     if (ev._waiter != null) {
-                        l.info("notify " + ev._waiter + " sending error: " + e);
+                        l.debug("notify " + ev._waiter + " sending error: " + e);
                         ev._waiter.error(e);
                     }
                     throw e;
@@ -490,7 +490,7 @@ public class TCPProactorMT
                     EvSend ev = (EvSend) p._sendq.tryDequeue_(outPrio);
                     if (ev == null) break;
                     if (ev._waiter != null) {
-                        l.info("notify " + ev._waiter + " to drain send q");
+                        l.debug("notify " + ev._waiter + " to drain send q");
                         ev._waiter.error(new IOException("draining send q"));
                     }
                 }
@@ -517,23 +517,23 @@ public class TCPProactorMT
             }
         }
 
-        l.info("discard: close sockets");
+        l.debug("discard: close sockets");
 
         try {
             // this causes the threads receiving/sending at the socket to fail
             if (is != null) {
                 if (is != os) {
-                    l.info("close in socket at local port " + is.getLocalPort());
+                    l.debug("close in socket at local port " + is.getLocalPort());
                     is.close();
                 } else {
-                    l.info("close input half of socket at local port " + is.getLocalPort());
+                    l.debug("close input half of socket at local port " + is.getLocalPort());
                     is.shutdownInput();
                 }
             }
 
             if (os != null) {
                 p._sendthd.interrupt();
-                l.info("interrupt thd to close socket at local port " + os.getLocalPort());
+                l.debug("interrupt thd to close socket at local port " + os.getLocalPort());
             }
         } catch (IOException e) {
             l.warn("ignored: " + Util.e(e, SocketException.class));
