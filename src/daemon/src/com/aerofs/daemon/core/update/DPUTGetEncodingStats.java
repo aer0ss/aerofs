@@ -36,7 +36,7 @@ public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
         try {
             ResultSet rs = s.executeQuery("select " + C_OA_NAME + " from " + T_OA);
             while (rs.next()) {
-                String name = rs.getString(0);
+                String name = rs.getString(1);
 
                 if (name == null) {
                     nullNameCount++;
