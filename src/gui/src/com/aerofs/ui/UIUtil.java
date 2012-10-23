@@ -4,8 +4,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
-import com.aerofs.gui.sharing.DlgCreateSharedFolder;
-import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
@@ -19,13 +17,11 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.lib.spsv.SPBlockingClient;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.ui.IUI.MessageType;
@@ -353,39 +349,6 @@ public class UIUtil
         if (postLaunch != null) {
             UI.get().asyncExec(postLaunch);
         }
-    }
-
-    /**
-     * This method can be run in a non-UI thread
-     */
-    public static void createOrManageSharedFolder(final Path path)
-    {
-        final boolean create;
-
-        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-        try {
-            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user(), path.toPB())
-                    .getObjectAttributes()
-                    .getType();
-            create = type != PBObjectAttributes.Type.SHARED_FOLDER;
-        } catch (Exception e) {
-            l.warn(Util.e(e));
-            return;
-        } finally {
-            ritual.close();
-        }
-
-        GUI.get().asyncExec(new Runnable() {
-            @Override
-            public void run()
-            {
-                if (create) {
-                    new DlgCreateSharedFolder(GUI.get().sh(), path).openDialog();
-                } else {
-                    new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
-                }
-            }
-        });
     }
 
     /**

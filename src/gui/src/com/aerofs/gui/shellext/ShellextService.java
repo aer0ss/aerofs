@@ -1,5 +1,6 @@
 package com.aerofs.gui.shellext;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -158,7 +159,7 @@ public class ShellextService
             return;
         }
 
-        UIUtil.createOrManageSharedFolder(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.createOrManageSharedFolder(Path.fromAbsoluteString(absRootAnchor, absPath));
     }
 
     /**

@@ -119,9 +119,11 @@ public class DlgLogin extends AeroFSJFaceDialog {
 
             final String passwd = _passwd.getText();
 
-            GUI.get().work(new ISWTWorker() {
+            GUI.get().unsafeWork(new ISWTWorker()
+            {
                 @Override
-                public void run() throws Exception
+                public void run()
+                        throws Exception
                 {
                     try {
                         UI.controller().updateStoredPassword(Cfg.user(), passwd);
@@ -141,8 +143,9 @@ public class DlgLogin extends AeroFSJFaceDialog {
                         _passwd.setFocus();
                     } else {
                         // If it's not a bad credential, show the error
-                        GUI.get().show(getShell(), MessageType.ERROR,
-                                S.PASSWORD_CHANGE_INTERNAL_ERROR + "\n" + UIUtil.e2msg(e));
+                        GUI.get()
+                                .show(getShell(), MessageType.ERROR,
+                                        S.PASSWORD_CHANGE_INTERNAL_ERROR + "\n" + UIUtil.e2msg(e));
                         _status.setText("");
                     }
                     getButton(IDialogConstants.OK_ID).setEnabled(true);

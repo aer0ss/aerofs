@@ -459,9 +459,14 @@ public class GUI implements IUI {
         void error(Exception e);
     }
 
-    public void work(final ISWTWorker worker)
+    /**
+     * This method calls worker.run() in a separate thread, and call either worker.okay() or error()
+     * depending on whether run() throws. Avoid using this method when possible. Use safeWork()
+     * instead.
+     */
+    public void unsafeWork(final ISWTWorker worker)
     {
-        Thread thd = new Thread() {
+        Util.startDaemonThread("GUI worker", new Runnable() {
             @Override
             public void run()
             {
@@ -482,11 +487,14 @@ public class GUI implements IUI {
                     }
                 });
             }
-        };
-        thd.setDaemon(true);
-        thd.start();
+        });
     }
 
+    /**
+     * Same as unsafeWork(), except that it checks whether the given widget has been disposed before
+     * calling okay() or error(). Since these methods usually refressh the GUI, it's important to
+     * make sure the widget to refresh is still valid before refreshing (not disposed).
+     */
     public void safeWork(final Widget w, final ISWTWorker worker)
     {
         Thread thd = new Thread() {

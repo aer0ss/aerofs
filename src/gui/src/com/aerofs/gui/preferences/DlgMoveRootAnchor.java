@@ -68,7 +68,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
             {
                 _compSpin.start();
 
-                GUI.get().work(DlgMoveRootAnchor.this);
+                GUI.get().safeWork(getShell(), DlgMoveRootAnchor.this);
             }
         });
     }

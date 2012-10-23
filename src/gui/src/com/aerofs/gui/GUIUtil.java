@@ -2,6 +2,16 @@ package com.aerofs.gui;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.gui.sharing.DlgCreateSharedFolder;
+import com.aerofs.gui.sharing.DlgManageSharedFolder;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.S;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.UI;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.VerifyEvent;
@@ -249,5 +259,45 @@ public class GUIUtil
     {
         // ON_TOP makes dialogs frame-less on Linux
         return OSUtil.isLinux() ? 0 : SWT.ON_TOP;
+    }
+
+    /**
+     * This method can be run in a non-UI thread
+     */
+    public static void createOrManageSharedFolder(final Path path)
+    {
+        final boolean create;
+
+        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+        try {
+            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user(), path.toPB())
+                    .getObjectAttributes()
+                    .getType();
+            create = type != PBObjectAttributes.Type.SHARED_FOLDER;
+        } catch (Exception e) {
+            l.warn(Util.e(e));
+            return;
+        } finally {
+            ritual.close();
+        }
+
+        if (path.isEmpty()) {
+            // Sharing the root folder? C'mon, the UI should have prevented it.
+            SVClient.logSendDefectAsync(true, "share root AeroFS folder?");
+            UI.get().show(MessageType.WARN, "The root " + S.PRODUCT + " folder can't be shared.");
+            return;
+        }
+
+        GUI.get().asyncExec(new Runnable() {
+            @Override
+            public void run()
+            {
+                if (create) {
+                    new DlgCreateSharedFolder(GUI.get().sh(), path).openDialog();
+                } else {
+                    new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
+                }
+            }
+        });
     }
 }

@@ -409,10 +409,12 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         getButton(IDialogConstants.OK_ID).setEnabled(false);
         _compSpinIC.start();
 
-        GUI.get().work(new ISWTWorker() {
+        GUI.get().unsafeWork(new ISWTWorker()
+        {
 
             @Override
-            public void run() throws Exception
+            public void run()
+                    throws Exception
             {
                 try {
                     _invitedUser = UI.controller().resolveSignUpCode(ic).getEmail();
@@ -579,16 +581,20 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             }
         });
 
-        GUI.get().work(new ISWTWorker() {
+        GUI.get().unsafeWork(new ISWTWorker()
+        {
             @Override
-            public void run() throws Exception
+            public void run()
+                    throws Exception
             {
                 if (_isExistingUser) {
-                    UI.controller().setupExistingUser(userID, new String(passwd), _absRootAnchor,
-                            _deviceName, null);
+                    UI.controller()
+                            .setupExistingUser(userID, new String(passwd), _absRootAnchor,
+                                    _deviceName, null);
                 } else {
-                    UI.controller().setupNewUser(userID, new String(passwd), _absRootAnchor,
-                            _deviceName, ic, firstName, lastName, null);
+                    UI.controller()
+                            .setupNewUser(userID, new String(passwd), _absRootAnchor, _deviceName,
+                                    ic, firstName, lastName, null);
                 }
 
                 // setup shell extension
@@ -597,13 +603,15 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                         OSUtil.get().installShellExtension(false);
                         break;
                     } catch (SecurityException e) {
-                        if (!UI.get().ask(MessageType.QUESTION,
-                                S.PRODUCT + " needs your authorization to install the "
-                                + OSUtil.get().getShellExtensionName() + ".\n\n"
-                                + "Would you like to retry entering your password?\n"
-                                + "If you click Cancel, the " + OSUtil.get().getShellExtensionName()
-                                + " won't be available.",
-                                IDialogConstants.OK_LABEL, IDialogConstants.CANCEL_LABEL)) {
+                        if (!UI.get()
+                                .ask(MessageType.QUESTION,
+                                        S.PRODUCT + " needs your authorization to install the " +
+                                                OSUtil.get().getShellExtensionName() + ".\n\n" +
+                                                "Would you like to retry entering your password?\n" +
+                                                "If you click Cancel, the " +
+                                                OSUtil.get().getShellExtensionName() +
+                                                " won't be available.", IDialogConstants.OK_LABEL,
+                                        IDialogConstants.CANCEL_LABEL)) {
                             break;
                         }
                     } catch (IOException e) {

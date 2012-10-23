@@ -663,7 +663,7 @@ public class DlgHistory extends AeroFSDialog
                 {
                     _compSpin.start();
 
-                    GUI.get().work(RestoreFeedbackDialog.this);
+                    GUI.get().safeWork(getShell(), RestoreFeedbackDialog.this);
                 }
             });
 

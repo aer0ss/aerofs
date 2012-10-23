@@ -2,6 +2,7 @@ package com.aerofs.gui.sharing.folders;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.gui.GUIUtil;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -9,7 +10,6 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.sharing.folders.CompFoldersTree.IListener;
 import com.aerofs.lib.Path;
-import com.aerofs.ui.UIUtil;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -96,6 +96,6 @@ public class CompFolders extends Composite
         assert _sel != null;
         getShell().close();
 
-        UIUtil.createOrManageSharedFolder(_sel);
+        GUIUtil.createOrManageSharedFolder(_sel);
     }
 }
