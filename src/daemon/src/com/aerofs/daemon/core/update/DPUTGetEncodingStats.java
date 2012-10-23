@@ -11,6 +11,7 @@ import com.aerofs.lib.spsv.SVClient;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
 import static com.aerofs.lib.db.CoreSchema.T_OA;
@@ -43,17 +44,18 @@ public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
                     continue;
                 }
 
-                try {
-                    Form form = Form.valueOf(name);
-                    switch (form) {
-                    case NFD:       nfdCount++;     break;
-                    case NFKC:      nfkcCount++;    break;
-                    case NFKD:      nfkdCount++;    break;
-                    default:        break;
-                    }
-                } catch (IllegalArgumentException e) {
+                if (Normalizer.isNormalized(name, Form.NFC)) {
+                    // no-op, heuristic to make the searching faster
+                } else if (Normalizer.isNormalized(name, Form.NFD)) {
+                    nfdCount++;
+                } else if (Normalizer.isNormalized(name, Form.NFKC)) {
+                    nfkcCount++;
+                } else if (Normalizer.isNormalized(name, Form.NFKD)) {
+                    nfkdCount++;
+                } else {
                     unknownCount++;
                 }
+
             }
         } finally {
             s.close();
