@@ -4,8 +4,6 @@
       <root url="jar://$PROJECT_DIR$/../../approot/lib/netty-3.5.8.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../resource/src/netty-3.5.7.Final-sources.jar!/" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

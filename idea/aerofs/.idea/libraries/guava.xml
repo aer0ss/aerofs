@@ -3,11 +3,7 @@
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../approot/lib/guava-11.0.1.jar!/" />
     </CLASSES>
-    <JAVADOC>
-      <root url="jar://$PROJECT_DIR$/../../resource/src/guava-11.0.1-javadoc.jar!/" />
-    </JAVADOC>
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../resource/src/guava-11.0.1-sources.jar!/" />
-    </SOURCES>
+    <JAVADOC />
+    <SOURCES />
   </library>
 </component>
