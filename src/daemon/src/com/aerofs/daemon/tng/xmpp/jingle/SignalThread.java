@@ -166,6 +166,9 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
 
         l.info("create_ xmppmain");
 
+        // The xmpp server address is an unresolved hostname.
+        // We avoid resolving the hostname ourselves and let
+        // SMACK do the DNS query on its thread.
         InetSocketAddress address = Param.xmppAddress();
         _main = new XmppMain(address.getHostName(), address.getPort(), true, _jidSelf,
                 ID.getShaedXMPP(), L.get().jingleRelayHost(), L.get().jingleRelayPort(),

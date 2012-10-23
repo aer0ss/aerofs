@@ -4,6 +4,8 @@ import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.id.DID;
 
+import javax.annotation.Nullable;
+
 /**
  * Implemented by classes that provide packet-transmission services
  * <br/>
@@ -68,6 +70,6 @@ public interface IUnicast
     // FIXME: add a parameter to indicate if packet must be sent via reliable channels (some messages without stream ids - transport flood, sent by <code>sendPayload</code>) need reliability
     // FIXME: split this into at least two calls: one for individual packets, another for streams
     // FIXME: separate stream/datagram reliable/unreliable payload/control dimensions
-    Object send_(DID did, IResultWaiter wtr, Prio pri, byte[][] bss, Object cke)
+    Object send_(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
         throws Exception;
 }

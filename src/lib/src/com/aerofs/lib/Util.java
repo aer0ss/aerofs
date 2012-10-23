@@ -235,19 +235,6 @@ public abstract class Util
         waitUninterruptable(obj, 0);
     }
 
-    /**
-     * print the current thread stack to l().error().
-     * @param msg
-     */
-    public static void printStack(String msg)
-    {
-        try {
-            throw new Exception(msg);
-        } catch (Exception e) {
-            l.error(stackTrace2string(e));
-        }
-    }
-
     public static String q(Object o)
     {
         return "\"" + o + "\"";

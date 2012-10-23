@@ -55,9 +55,17 @@ public class HttpProxySocket extends Socket
 
         InetSocketAddress address = (InetSocketAddress) socketAddress;
 
+        final String host;
+        if (address.isUnresolved()) {
+            // The proxy may wish to resolve this to a different IP address
+            host = address.getHostName();
+        } else {
+            host = address.getAddress().getHostAddress();
+        }
+
         try {
             // Send the CONNECT request
-            URI uri = new URI(address.getHostName() + ":" + address.getPort());
+            URI uri = new URI(host + ":" + address.getPort());
             HttpMessage request = HttpMessage.createRequest(Method.CONNECT, uri,
                     Collections.<String, String>emptyMap());
             getOutputStream().write(request.toString().getBytes("UTF-8"));

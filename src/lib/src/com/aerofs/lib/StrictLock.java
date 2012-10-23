@@ -11,7 +11,7 @@ public class StrictLock extends ReentrantLock
 
     private static final long serialVersionUID = 1L;
 
-    private final Profiler _profiler = new Profiler();
+    private final Profiler _profiler = new Profiler(StrictLock.class.getSimpleName());
 
     @Override
     public void lock()
@@ -73,11 +73,6 @@ public class StrictLock extends ReentrantLock
         return super.getWaitQueueLength(unwrap(condition));
     }
 
-    public Profiler profiler()
-    {
-        return _profiler;
-    }
-
     private Condition profiled(Condition cond)
     {
         if (!(cond instanceof ProfiledCondition)) {
@@ -103,6 +98,7 @@ public class StrictLock extends ReentrantLock
             _cond = cond;
         }
 
+        @Override
         public void await() throws InterruptedException
         {
             _profiler.stop();
@@ -113,6 +109,7 @@ public class StrictLock extends ReentrantLock
             }
         }
 
+        @Override
         public void awaitUninterruptibly()
         {
             _profiler.stop();
@@ -123,6 +120,7 @@ public class StrictLock extends ReentrantLock
             }
         }
 
+        @Override
         public long awaitNanos(long nanosTimeout) throws InterruptedException
         {
             _profiler.stop();
@@ -133,8 +131,8 @@ public class StrictLock extends ReentrantLock
             }
         }
 
-        public boolean await(long time, TimeUnit unit)
-                throws InterruptedException
+        @Override
+        public boolean await(long time, TimeUnit unit) throws InterruptedException
         {
             _profiler.stop();
             try {
@@ -144,6 +142,7 @@ public class StrictLock extends ReentrantLock
             }
         }
 
+        @Override
         public boolean awaitUntil(Date deadline) throws InterruptedException
         {
             _profiler.stop();
@@ -154,11 +153,14 @@ public class StrictLock extends ReentrantLock
             }
         }
 
+        @Override
         public void signal()
         {
             _cond.signal();
         }
 
+
+        @Override
         public void signalAll()
         {
             _cond.signalAll();

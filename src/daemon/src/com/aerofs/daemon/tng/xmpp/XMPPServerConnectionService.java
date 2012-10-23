@@ -241,6 +241,9 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
      */
     private XMPPConnection createNewConnection()
     {
+        // The xmpp server address is an unresolved hostname.
+        // We avoid resolving the hostname ourselves and let
+        // SMACK do the DNS query on its thread.
         InetSocketAddress address = Param.xmppAddress();
         ConnectionConfiguration cc = new ConnectionConfiguration(
                 address.getHostName(), address.getPort());
@@ -281,15 +284,15 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
                 } catch (XMPPException e) {
                     // 502: remote-server-error(502): java.net.ConnectException: Operation timed out
                     // 504: remote-server-error(504): connection refused
-                    int errcode = e.getXMPPError().getCode();
-
-                    if (e.getXMPPError() != null && (errcode == 502 || errcode == 504)) {
-                        throw new Exception("" + e.getXMPPError().getCode());
-                    } else {
-                        throw new Exception(Util.e(e));
+                    if (e.getXMPPError() != null) {
+                        int errcode = e.getXMPPError().getCode();
+                        if (errcode == 502 || errcode == 504) {
+                            throw new Exception(String.valueOf(errcode));
+                        }
                     }
+                    throw new Exception(Util.e(e));
                 } catch (Exception e) {
-                    Util.printStack(e.toString());
+                    l.error(Util.stackTrace2string(e));
                 }
 
                 return null;

@@ -539,6 +539,9 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         if (entries.isEmpty()) {
             DTLSEntry entry = kickOffHandShaking_(pc);
 
+            // We only start the Profiler for the first message to kick off a handshake
+            msg.getProfiler().start();
+
             l.debug("cli: enqueue msg for later");
             entry._sendQ.enqueue_(msg, _f._tc.prio());
 

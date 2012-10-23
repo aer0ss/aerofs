@@ -96,6 +96,9 @@ public class XMPPServerConnection implements IDumpStatMisc
 
     private XMPPConnection newConnection()
     {
+        // The xmpp server address is an unresolved hostname.
+        // We avoid resolving the hostname ourselves and let
+        // SMACK do the DNS query on its thread.
         InetSocketAddress address = Param.xmppAddress();
         ConnectionConfiguration cc = new ConnectionConfiguration(
                 address.getHostName(), address.getPort());
@@ -140,15 +143,14 @@ public class XMPPServerConnection implements IDumpStatMisc
                         if (e.getXMPPError() != null) {
                             int errorCode = e.getXMPPError().getCode();
                             if (errorCode == 502 || errorCode == 504) {
-                                throw new Exception("" + e.getXMPPError().getCode());
+                                throw new Exception(String.valueOf(errorCode));
                             }
                         }
 
                         // all other cases should throw an exception with no message
                         throw new Exception(Util.e(e));
                     } catch (Exception e) {
-                        l.warn("error", e);
-                        Util.printStack(e.toString());
+                        l.error(Util.stackTrace2string(e));
                     }
 
                     return null;

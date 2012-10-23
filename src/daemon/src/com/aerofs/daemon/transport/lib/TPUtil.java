@@ -40,6 +40,7 @@ import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
@@ -89,7 +90,7 @@ public class TPUtil
      * @param streamId null for non-stream messages
      * @param seq 0 for non-stream messages
      */
-    public static byte[][] newPayload(StreamID streamId, int seq, SID sid, byte[] bs)
+    public static byte[][] newPayload(@Nullable StreamID streamId, int seq, SID sid, byte[] bs)
     {
         PBTPHeader.Builder bdHeader = PBTPHeader.newBuilder()
             .setType(DATAGRAM)

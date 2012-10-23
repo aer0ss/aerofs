@@ -1,5 +1,6 @@
 package com.aerofs.daemon.ritual;
 
+import com.aerofs.daemon.transport.lib.AddressUtils;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FutureUtil;
 import com.aerofs.lib.cfg.Cfg;
@@ -64,7 +65,7 @@ public class RitualServer
                 new InetSocketAddress(port) : new InetSocketAddress(host, port);
         bootstrap.bind(address);
 
-        l.debug("The ritual has begun on " + address.getHostName() + ":" + address.getPort());
+        l.debug("The ritual has begun on " + AddressUtils.printaddr(address));
     }
 
     /**

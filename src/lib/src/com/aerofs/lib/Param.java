@@ -84,6 +84,8 @@ public class Param
 
         public static String zephyrHost()
         {
+            // Hostname here will not do a reverse lookup since
+            // the zephyrAddress() was created with a hostname.
             return zephyrAddress().getHostName();
         }
 

@@ -49,7 +49,7 @@ public class AddressUtils
     {
         assert a != null : ("invalid isa");
 
-        return a.getHostName() + ":" + a.getPort();
+        return a.getAddress() + ":" + a.getPort();
     }
 
     /**
