@@ -4,6 +4,8 @@
 
 package com.aerofs.lib.net;
 
+import java.net.InetSocketAddress;
+
 public class ZephyrConstants
 {
     ZephyrConstants() {}
@@ -11,6 +13,16 @@ public class ZephyrConstants
     public static final String ZEPHYR_HOST = "zephyr.aerofs.com";
 
     public static final int ZEPHYR_PORT = 443;
+
+    public static final InetSocketAddress ZEPHYR_ADDRESS =
+            InetSocketAddress.createUnresolved(ZEPHYR_HOST, ZEPHYR_PORT);
+
+    public static final String ZEPHYR_STAGING_HOST = "staging.aerofs.com";
+
+    public static final int ZEPHYR_STAGING_PORT = 8888;
+
+    public static final InetSocketAddress ZEPHYR_STAGING_ADDRESS =
+            InetSocketAddress.createUnresolved(ZEPHYR_STAGING_HOST, ZEPHYR_STAGING_PORT);
 
     /**
      * magic number identifying incoming messages
