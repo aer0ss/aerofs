@@ -55,15 +55,8 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     {
         String aerofsd;
         if (OSUtil.isWindows()) {
-            // On Windows, try to find aerofsd.exe in approot's parent directory and fall back to
-            // approot if it's not found (if we're running from a dev environment for example)
-            final String daemonName = "aerofsd.exe";
-            InjectableFile appRoot = _factFile.create(AppRoot.abs());
-            InjectableFile daemon = appRoot.getParentFile().newChild(daemonName);
-            if (!daemon.exists()) {
-                daemon = appRoot.newChild(daemonName);
-            }
-            aerofsd = daemon.getAbsolutePath();
+            aerofsd = _factFile.create(AppRoot.abs()).getParentFile()
+                    .newChild("aerofsd.exe").getAbsolutePath();
         } else {
             aerofsd = Util.join(AppRoot.abs(), "aerofsd");
         }
