@@ -55,46 +55,12 @@ public final class ACLNotificationSubscriber
         @Override
         public void onSubscribed()
         {
-            runInCoreThread_(new AbstractEBSelfHandling()
-            {
-                @Override
-                public void handle_()
-                {
-                    handleSuccessfulSubscription();
-                }
-            });
+            launchExpRetryAclSync(null);
         }
 
-        private void handleSuccessfulSubscription()
-        {
+        private void launchExpRetryAclSync(@Nullable final byte[] payload) {
+
             final long currentACLSyncSeqNum = ++_aclSyncSeqNum;
-
-            _er.retry("aclsync", new Callable<Void>()
-            {
-                @Override
-                public Void call()
-                        throws Exception
-                {
-                    if (currentACLSyncSeqNum == _aclSyncSeqNum) {
-                        l.debug("sync to local");
-                        _aclsync.syncToLocal_();
-                    } else {
-                        l.warn("seqnum mismatch: "
-                                + "exp:" + currentACLSyncSeqNum + " act:" + _aclSyncSeqNum);
-                    }
-
-                    return null;
-                }
-            });
-        }
-
-        @Override
-        public void onNotificationReceivedFromVerkehr(final String topic,
-                @Nullable final byte[] payload)
-        {
-            assert topic.equals(_topic);
-
-            l.info("recv notification t:" + topic);
 
             runInCoreThread_(new AbstractEBSelfHandling()
             {
@@ -107,13 +73,34 @@ public final class ACLNotificationSubscriber
                         public Void call()
                                 throws Exception
                         {
-                            long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
-                            _aclsync.syncToLocal_(aclEpoch);
+                            if (currentACLSyncSeqNum == _aclSyncSeqNum) {
+                                l.debug("sync to local");
+                                if (payload != null) {
+                                    long aclEpoch = PBACLNotification.parseFrom(payload).getAclEpoch();
+                                    _aclsync.syncToLocal_(aclEpoch);
+                                } else {
+                                    _aclsync.syncToLocal_();
+                                }
+                            } else {
+                                l.warn("seqnum mismatch: "
+                                        + "exp:" + currentACLSyncSeqNum + " act:" + _aclSyncSeqNum);
+                            }
+
                             return null;
                         }
                     });
-                }
+                };
             });
+        }
+
+        @Override
+        public void onNotificationReceivedFromVerkehr(final String topic,
+                @Nullable final byte[] payload)
+        {
+            assert topic.equals(_topic);
+
+            l.info("recv notification t:" + topic);
+            launchExpRetryAclSync(payload);
         }
 
         @Override
