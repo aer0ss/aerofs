@@ -36,7 +36,6 @@ class CommandClient(object):
         ssl_sock.send(struct.pack(">H1", (len(pb_bytes))) + pb_bytes)
 
         # We get a heartbeat on connect and then we get an ack for our request.
-        ssl_sock.read()
         ack = ssl_sock.read()
         ssl_sock.close()
 
