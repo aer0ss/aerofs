@@ -182,34 +182,10 @@ public class GetComponentCall
                 throw new ExNoComponentWithSpecifiedVersion();
             }
 
-            /* check permissions
-             *
-             * member users may download metadata even if they don't have access
-             * to them. this's to ease metadata management on local devices,
-             * in particular ACL inheritance, as well as to expedite metadata
-             * dissemination among member devices. However, this leads to a
-             * security breach as the user may access non-authorized metadata
-             * by directly peaking at underlying data stores.
-             */
-            if (k.cid().isMeta()) {
-                // we comment out the code blow to temporarily avoid
-                // complexities of 1) NO_PERM processing and 2) issues due to
-                // non-member users' inability to store metadata. one issue is
-                // that if a user has permission on /a/b but not /a then /a on
-                // the user's device has to be handled specially.
-                //
-//                short ops = ACE.or(ACE.OP_READ_ATTR, ACE.OP_READ_ACL);
-//                if (!_dacl.check_(as.user(), k.soid(), ops) &&
-//                        !as.store().isMemberUser_(as.user(), c)) {
-//                    l.debug("no permission & non-member user. Throwing NO_PERM");
-//                    reason = Reason.NO_PERM;
-//                    return;
-//                }
-            } else {
-                if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
-                    l.debug("receiver has no permission");
-                    throw new ExNoPerm();
-                }
+            // check permissions
+            if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
+                l.debug("receiver has no permission");
+                throw new ExNoPerm();
             }
 
             Version vRemote = new Version(pb.getLocalVersion());
