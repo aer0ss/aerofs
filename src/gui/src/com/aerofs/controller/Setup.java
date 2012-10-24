@@ -142,8 +142,6 @@ class Setup
             @Nullable String lastName, @Nullable PBS3Config s3config)
             throws Exception
     {
-        InjectableFile fLOL = _factFile.create(_rtRoot, C.LOL);
-
         try {
             // basic preconditions - all of these should be enforced at the UI level
             assert !userId.isEmpty();
@@ -244,9 +242,6 @@ class Setup
             // indicates that the user is fully setup
             fSettingUp.deleteOrOnExit();
 
-            // disable lol after setup succeeds
-            fLOL.deleteOrOnExit();
-
             // Proceed with AeroFS launch
             new Launcher(_rtRoot).launch(true);
 
@@ -260,10 +255,6 @@ class Setup
                     SVClient.logSendDefectSyncNoCfgIgnoreError(true, "setup", e, userId, _rtRoot);
                 }
             }
-
-            // Enable lots of logs so future attempts can be analyzed (even if the user canceled the
-            // setup (which throws ExAborted)
-            fLOL.createNewFileIgnoreError();
 
             throw e;
         }
