@@ -3,6 +3,9 @@ package com.aerofs;
 import java.io.File;
 import java.io.IOException;
 
+import java.lang.reflect.Field;
+
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ExitCode;
 import org.apache.log4j.Logger;
 
@@ -17,6 +20,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.spsv.SVClient;
+
 
 public class Main {
     final static Logger l = Util.l(Main.class);
@@ -105,6 +109,20 @@ public class Main {
             }
             System.err.println(msg);
             ExitCode.FAIL_TO_INITIALIZE_LOGGING.exit();
+        }
+
+        // Set the library path to be APPROOT to avoid library not found exceptions
+        // {@see http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/}
+        try {
+            System.setProperty("java.library.path", AppRoot.abs());
+
+            Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
+            fieldSysPath.setAccessible(true);
+            fieldSysPath.set(null, null); // force sys_paths to re-evaluate java.library.path
+        } catch (Exception e) {
+            // ignored
+            l.warn("The property java.library.path could not be set to "
+                    + AppRoot.abs() + " - " + Util.e(e));
         }
 
         Util.setDefaultUncaughtExceptionHandler();
