@@ -97,7 +97,6 @@ public class SyncStatusNotificationSubscriber
         public void onDisconnected()
         {
             l.warn("disconnected from vk");
-            // TODO: sync status is not accurate anymore: make that known to HdGetSyncStatus
         }
     }
 }
