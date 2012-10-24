@@ -82,7 +82,9 @@ public class ARP
 
         notifyWatchers_(did, isNew ? ADD : UPD);
 
-        l.info("arp: add: d:" + did + " rem:" + printaddr(isa) + " m:" + multicast + " n:" + isNew);
+        if (l.isDebugEnabled()) {
+            l.debug("arp: add: d:" + did + " rem:" + printaddr(isa) + " m:" + multicast + " n:" + isNew);
+        }
 
         return isNew;
     }
@@ -112,7 +114,9 @@ public class ARP
 
         notifyWatchers_(did, REM);
 
-        l.info("arp: rem: d:" + (ret == null ? "null" : did + "rem:" + printaddr(ret._isa)) + " m:" + onmulticast);
+        if (l.isDebugEnabled()) {
+            l.debug("arp: rem: d:" + (ret == null ? "null" : did + "rem:" + printaddr(ret._isa)) + " m:" + onmulticast);
+        }
 
         return ret;
     }

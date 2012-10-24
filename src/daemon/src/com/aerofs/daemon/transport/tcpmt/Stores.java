@@ -123,7 +123,7 @@ public class Stores
 
     PBTCPStores.Builder newStoresForSP(DID did, Collection<Prefix> prefixes)
     {
-        l.info("newMS-SP " + did);
+        l.debug("newMS-SP " + did);
         assert Cfg.isSP();
 
         PBTCPStores.Builder bd = PBTCPStores.newBuilder();
@@ -177,8 +177,8 @@ public class Stores
         ARPEntry arpentry = _arp.get(did);
         InetSocketAddress ep = new InetSocketAddress(addr, port);
 
-        if (l.isInfoEnabled()) {
-            l.info("prefixes changed " + did + " " + prefixes);
+        if (l.isDebugEnabled()) {
+            l.debug("prefixes changed " + did + " " + prefixes);
         }
 
         ImmutableSet<SID> sidsOnline;
@@ -207,7 +207,7 @@ public class Stores
     {
         InetSocketAddress ep = new InetSocketAddress(addr, port);
 
-        l.info("fs from d:" + did + " m:" + multicast);
+        l.debug("fs from d:" + did + " m:" + multicast);
 
         BFSID filter;
         ImmutableSet<SID> sidsOnline;
@@ -229,8 +229,8 @@ public class Stores
             }
             sidsOnline = builder.build();
 
-            if (l.isInfoEnabled()) {
-                l.info("filter changed " + did + " " + filter + " " + fs.getSequence() + " old " +
+            if (l.isDebugEnabled()) {
+                l.debug("filter changed " + did + " " + filter + " " + fs.getSequence() + " old " +
                         (arpEntry == null ? null : arpEntry._filterSeq) + " " + sidsOnline);
             }
 
@@ -401,7 +401,7 @@ public class Stores
                 public void handle_()
                 {
                     try {
-                        l.info("arp sender: sched pong");
+                        l.debug("arp sender: sched pong");
                         _tcp.mcast().sendControlMessage(newPongMessage(true));
                     } catch (Exception e) {
                         l.error("mc pong: " + Util.e(e));

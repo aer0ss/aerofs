@@ -166,7 +166,7 @@ public abstract class Util
             l.debug("profiler: " + Cfg.profilerStartingThreshold());
         }
 
-        Logger.getRootLogger().setLevel(Cfg.lotsOfLog(rtRoot) ? Level.DEBUG : Level.WARN);
+        Logger.getRootLogger().setLevel(Cfg.lotsOfLog(rtRoot) ? Level.DEBUG : Level.INFO);
 
         // print termination banner
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {

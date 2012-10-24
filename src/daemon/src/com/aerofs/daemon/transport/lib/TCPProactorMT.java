@@ -468,7 +468,7 @@ public class TCPProactorMT
 
     private void discard(Peer p, Exception ex)
     {
-        l.info("discard: " + (p._key == null ? "null" : p._key));
+        l.debug("discard: " + (p._key == null ? "null" : p._key));
 
         Socket is, os;
 
