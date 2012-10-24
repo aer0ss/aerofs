@@ -143,7 +143,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         _al.localVersionAdded_(k.soid(), v, t);
 
-        if (l.isInfoEnabled()) l.info("add local ver " + k + " " + v);
+        if (l.isDebugEnabled()) l.debug("add local ver " + k + " " + v);
         _nvdb.addLocalVersion_(k, v, t);
         _tlva.get(t).localVersionAdded_(k.socid(), v);
     }
@@ -153,7 +153,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_())  return;
 
-        if (l.isInfoEnabled()) l.info("del local ver " + k + " " + v);
+        if (l.isDebugEnabled()) l.debug("del local ver " + k + " " + v);
         _nvdb.deleteLocalVersion_(k, v, t);
         _tlva.get(t).versionDeleted_(k.socid(), v);
     }
@@ -167,7 +167,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return;
 
-        if (l.isInfoEnabled()) l.info("del local ver perm " + k + " " + v);
+        if (l.isDebugEnabled()) l.debug("del local ver perm " + k + " " + v);
         _nvdb.deleteLocalVersion_(k, v, t);
         _tlva.get(t).versionDeletedPermanently_(k.socid(), v);
     }
@@ -237,7 +237,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return false;
 
-        if (l.isInfoEnabled()) l.info("add kml ver " + socid + " " + v);
+        if (l.isDebugEnabled()) l.debug("add kml ver " + socid + " " + v);
 
         if (expensiveAssert) {
             // assert the KML to be added is disjoint from all the versions of socid.
@@ -256,7 +256,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return;
 
-        if (l.isInfoEnabled()) l.info("del kml ver " + socid + " " + v);
+        if (l.isDebugEnabled()) l.debug("del kml ver " + socid + " " + v);
         _nvdb.deleteKMLVersion_(socid, v, t);
         _tlva.get(t).versionDeleted_(socid, v);
     }
@@ -270,7 +270,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_())  return;
 
-        if (l.isInfoEnabled()) l.info("del kml ver perm " + socid + " " + v);
+        if (l.isDebugEnabled()) l.debug("del kml ver perm " + socid + " " + v);
         _nvdb.deleteKMLVersion_(socid, v, t);
         _tlva.get(t).versionDeletedPermanently_(socid, v);
     }

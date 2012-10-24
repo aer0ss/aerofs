@@ -125,7 +125,7 @@ public class Aliasing
     private void performAliasingOnLocallyAvailableObjects_(SOID alias, Version vAliasMeta,
             SOID target, Version vTargetMeta, boolean isAliasADir, Trans t) throws Exception
     {
-        l.info("Aliasing soids, alias:" + alias + " target: " + target);
+        l.debug("Aliasing soids, alias:" + alias + " target: " + target);
 
         assert !alias.equals(target);
         SIndex sidx = alias.sidx();
@@ -192,7 +192,7 @@ public class Aliasing
         // on alias are sent via target oid later when sender learns about alias-->target mapping.
         // Drop the message and move non-alias part of KML version of alias to target.
 
-        l.info("This peer has performed aliasing for alias: " + alias + " to target: " +
+        l.debug("This peer has performed aliasing for alias: " + alias + " to target: " +
             targetOIDLocal + ". Dropping message.");
 
         Trans t = _tm.begin_();
@@ -234,8 +234,8 @@ public class Aliasing
         SIndex sidx = alias.sidx();
         assert sidx.equals(target.sidx());
 
-        if (l.isInfoEnabled()) {
-            l.info("Processing alias msg, alias: " + alias + " vRemoteAliasMeta: " +
+        if (l.isDebugEnabled()) {
+            l.debug("Processing alias msg, alias: " + alias + " vRemoteAliasMeta: " +
                     vRemoteAliasMeta + " target: " + target + " vRemoteTargetMeta: " +
                     vRemoteTargetMeta);
         }
@@ -244,7 +244,7 @@ public class Aliasing
         Throwable rollbackCause = null;
         try {
             if (!_ds.hasAliasedOA_(target)) {
-                l.info("Target object is not available locally, processing new object...");
+                l.debug("Target object is not available locally, processing new object...");
                 SOCKID k = new SOCKID(target, CID.META, KIndex.MASTER);
 
                 // Although CausalityResult is only used in applyUpdateMetaAndContent_()
@@ -267,7 +267,7 @@ public class Aliasing
                 if (!oidsAliasedOnNameConflict) {
                     _ru.applyUpdateMetaAndContent_(k, vRemoteTargetMeta, cr, t);
                 }
-                l.info("Done receiving new target object");
+                l.debug("Done receiving new target object");
             }
             assert _ds.hasAliasedOA_(target);
 
@@ -283,14 +283,14 @@ public class Aliasing
                 boolean isDir = _ds.getAliasedOANullable_(alias).isDir();
 
                 if (targetLocalOID == null) {
-                    l.info("Alias object is present locally but aliasing operation hasn't be " +
+                    l.debug("Alias object is present locally but aliasing operation hasn't be " +
                             "performed on it.");
                     Version vAliasMeta = _nvc.getLocalVersion_(new SOCKID(alias, CID.META));
                     Version vTargetMeta = _nvc.getLocalVersion_(new SOCKID(target, CID.META));
                     performAliasingOnLocallyAvailableObjects_(alias, vAliasMeta, target,
                         vTargetMeta, isDir, t);
                 } else if (!targetLocalOID.equals(target.oid())) {
-                    l.info("Name conflict between multiple targets.");
+                    l.debug("Name conflict between multiple targets.");
                     AliasAndTarget ar = determineAliasAndTarget_(new SOID(sidx, targetLocalOID),
                         target);
                     Version vAliasMeta = _nvc.getLocalVersion_(new SOCKID(ar._alias, CID.META));
@@ -299,11 +299,11 @@ public class Aliasing
                         vTargetMeta, isDir, t);
                 } else {
                     // Aliasing operation already performed on this device for alias object.
-                    l.info("Object locally aliased to target");
+                    l.debug("Object locally aliased to target");
                 }
 
             } else {
-                l.info("Alias object not present locally, add alias entry.");
+                l.debug("Alias object not present locally, add alias entry.");
                 // New version during aliasing operation is generated only for meta-data
                 // and not for content of alias object. Hence KML version for content can be
                 // safely moved from alias to target.
@@ -350,7 +350,7 @@ public class Aliasing
             _nvc.addLocalVersion_(new SOCKID(aliasMeta), vAddLocal, t);
 
             t.commit_();
-            l.info("Done processing alias message");
+            l.debug("Done processing alias message");
 
         // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception e) {
@@ -384,7 +384,7 @@ public class Aliasing
             OID parent, Version vRemote, PBMeta meta, @Nullable SOID soidNoNewVersion, Trans t)
         throws Exception
     {
-        l.info("Resolving name conflict by aliasing conflicting objects.");
+        l.debug("Resolving name conflict by aliasing conflicting objects.");
         assert soidRemote.sidx().equals(soidLocal.sidx()) : soidRemote + " " + soidLocal;
 
         Version vLocal = getMasterVersion_(new SOCID(soidLocal, CID.META));
@@ -398,7 +398,7 @@ public class Aliasing
         if (soidRemote.equals(ar._target)) {
             vTargetMeta = vRemote;
             vAliasMeta = vLocal;
-            l.info("name: " + meta.getName() + " newName: " + newName);
+            l.debug("name: " + meta.getName() + " newName: " + newName);
             // Since local object is selected as alias object, move it to a new name
             // which will be deleted on completion of aliasing operation.
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);
@@ -431,8 +431,8 @@ public class Aliasing
     private void dumpVersions_(SOCID targetMeta, SOCID targetContent, SOCID aliasMeta,
             SOCID aliasContent) throws SQLException
     {
-        if (l.isInfoEnabled()) {
-            l.info(" vTargetMeta: " + getMasterVersion_(targetMeta) +
+        if (l.isDebugEnabled()) {
+            l.debug(" vTargetMeta: " + getMasterVersion_(targetMeta) +
                    " vTargetContent: " + getMasterVersion_(targetContent) +
                    " vAliasMeta: " + getMasterVersion_(aliasMeta) +
                    " vAliasContent: " + getMasterVersion_(aliasContent) +

@@ -141,7 +141,7 @@ public class CoreQueueBasedTransportListener implements ITransportListener
             return;
         }
 
-        l.info("starting receive loop on incoming stream: " + stream);
+        l.debug("starting receive loop on incoming stream: " + stream);
 
         final Endpoint endpoint = new Endpoint(_transport, stream.getDid_());
 
@@ -157,7 +157,7 @@ public class CoreQueueBasedTransportListener implements ITransportListener
                 Iterator<Chunk> iterator = chunks.iterator();
 
                 // This is the first set of data, so send the Begin Stream event with this data
-                l.info("sending begin stream event to core");
+                l.debug("sending begin stream event to core");
                 Chunk firstChunk = iterator.next();
                 _coreQueue.enqueueBlocking(new EIStreamBegun(endpoint, stream,
                         firstChunk.getChunkIs_(), firstChunk.getWirelen_()), Prio.LO);
@@ -168,7 +168,7 @@ public class CoreQueueBasedTransportListener implements ITransportListener
                     @Override
                     public void onFailure(Throwable throwable)
                     {
-                        l.info("stream died: " + throwable);
+                        l.debug("stream died: " + throwable);
 
                         InvalidationReason reason = InvalidationReason.INTERNAL_ERROR;
                         if (throwable instanceof  ExStreamInvalid) {
@@ -197,7 +197,7 @@ public class CoreQueueBasedTransportListener implements ITransportListener
             @Override
             public void onFailure(Throwable throwable)
             {
-                l.info("failed reading from stream: " + throwable);
+                l.debug("failed reading from stream: " + throwable);
             }
         }, _executor);
     }
@@ -221,7 +221,7 @@ public class CoreQueueBasedTransportListener implements ITransportListener
             @Override
             public void onFailure(Throwable throwable)
             {
-                l.info("failed reading from stream: " + throwable);
+                l.debug("failed reading from stream: " + throwable);
             }
         }, _executor);
     }

@@ -102,7 +102,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
 
     private void add_(ITransport tp, int idx)
     {
-        Util.l(this).info("add transport " + tp);
+        Util.l(this).debug("add transport " + tp);
 
         _tps[idx] = tp;
         IIMCExecutor imce = new QueueBasedIMCExecutor(tp.q());

@@ -55,7 +55,7 @@ public class LinkedFile implements IPhysicalFile
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("create " + this);
+        if (l.isDebugEnabled()) l.debug("create " + this);
 
         switch (op) {
         case APPLY:
@@ -91,7 +91,7 @@ public class LinkedFile implements IPhysicalFile
     public void move_(IPhysicalObject po, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("move " + this + " -> " + po);
+        if (l.isDebugEnabled()) l.debug("move " + this + " -> " + po);
 
         LinkedFile lf = (LinkedFile) po;
 
@@ -111,7 +111,7 @@ public class LinkedFile implements IPhysicalFile
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("delete " + this);
+        if (l.isDebugEnabled()) l.debug("delete " + this);
 
         switch (op) {
         case APPLY:

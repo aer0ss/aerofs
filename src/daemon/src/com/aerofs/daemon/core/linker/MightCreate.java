@@ -176,7 +176,7 @@ public class MightCreate
                 // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
                 // Linux. In either case, we assign the logical object with a random FID and proceed
                 // to the condition determination code.
-                l.info("set random fid for " + soid);
+                l.debug("set random fid for " + soid);
                 assignRandomFID_(soid, t);
                 cond = null;
             }
@@ -299,7 +299,7 @@ public class MightCreate
             }
 
             // move the logical object
-            l.info("move " + soid + ":" + obfuscate(pLogical) + "->" + obfuscate(pPhysical));
+            l.debug("move " + soid + ":" + obfuscate(pLogical) + "->" + obfuscate(pPhysical));
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
@@ -314,7 +314,7 @@ public class MightCreate
     private void replaceFID_(SOID soid, PathCombo pc, boolean dir, FID fid, Trans t)
             throws Exception
     {
-        l.info("replace " + soid + ":" + pc);
+        l.debug("replace " + soid + ":" + pc);
 
         // update the FID of that object
         _ds.setFID_(soid, fid, t);
@@ -333,8 +333,8 @@ public class MightCreate
     private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, Trans t)
             throws Exception
     {
-        if (l.isInfoEnabled()) {
-            l.info("rename conflict " + oa.soid() + ":" + pc);
+        if (l.isDebugEnabled()) {
+            l.debug("rename conflict " + oa.soid() + ":" + pc);
         }
 
         // can't rename the root
@@ -355,8 +355,8 @@ public class MightCreate
             break;
         }
 
-        if (l.isInfoEnabled()) {
-            l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscate(name));
+        if (l.isDebugEnabled()) {
+            l.debug("move for confict " + oa.soid() + ":" + pc + "->" + obfuscate(name));
         }
 
         // rename the logical object
@@ -383,7 +383,7 @@ public class MightCreate
             SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
                     pcPhysical._path.last(), MAP, t);
             _a.incSaveCount();
-            l.info("created " + newSOID + " " + pcPhysical);
+            l.debug("created " + newSOID + " " + pcPhysical);
             return true;
         }
     }
@@ -408,7 +408,7 @@ public class MightCreate
         }
 
         if (modified) {
-            l.info("modify " + soid);
+            l.debug("modify " + soid);
             _vu.update_(new SOCKID(soid, CID.CONTENT), t);
             _a.incSaveCount();
         }

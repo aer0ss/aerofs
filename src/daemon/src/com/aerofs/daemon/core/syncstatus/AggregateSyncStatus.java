@@ -142,7 +142,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         int first = diffStatus.findFirstSetBit();
         if (parentSyncableChildCountDiff == 0 && first == -1) {
-            if (l.isInfoEnabled()) l.info("no change " + parent);
+            if (l.isDebugEnabled()) l.debug("no change " + parent);
             return;
         }
 
@@ -162,9 +162,9 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                     total - parentSyncableChildCountDiff, deviceCount);
         parentDiffStatus.andInPlace(parentStatus);
 
-        if (l.isInfoEnabled()) {
-            l.info("update " + parent + " " + diffStatus + " " + newStatus + " " + parentAggregate);
-            l.info("\t" + parentSyncableChildCountDiff + " " + parentStatus + " " + parentDiffStatus);
+        if (l.isDebugEnabled()) {
+            l.debug("update " + parent + " " + diffStatus + " " + newStatus + " " + parentAggregate);
+            l.debug("\t" + parentSyncableChildCountDiff + " " + parentStatus + " " + parentDiffStatus);
         }
 
         for (int i = first; i != -1; i = diffStatus.findNextSetBit(i + 1)) {
@@ -180,8 +180,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             }
         }
 
-        if (l.isInfoEnabled()) {
-            l.info(" -> " + parentAggregate);
+        if (l.isDebugEnabled()) {
+            l.debug(" -> " + parentAggregate);
         }
 
         _ds.setAggregateSyncStatus_(parent, parentAggregate, t);
@@ -194,7 +194,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         parentDiffStatus.xorInPlace(parentNewStatus);
 
         if (parentDiffStatus.isEmpty()) {
-            if (l.isInfoEnabled()) l.info("cascading stopped");
+            if (l.isDebugEnabled()) l.debug("cascading stopped");
             return;
         }
 
@@ -213,8 +213,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         // recursively update
         SOID grandparent = new SOID(parent.sidx(), oaParent.parent());
-        if (l.isInfoEnabled())
-            l.info("pupdate " + grandparent + " " + parentDiffStatus +  " " + parentNewStatus);
+        if (l.isDebugEnabled())
+            l.debug("pupdate " + grandparent + " " + parentDiffStatus +  " " + parentNewStatus);
 
         updateRecursively_(grandparent, parentDiffStatus, parentNewStatus, 0, path.removeLast(), t);
     }
@@ -225,7 +225,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     @Override
     public void objectCreated_(SOID soid, OID parent, Path pathTo, Trans t) throws SQLException
     {
-        if (l.isInfoEnabled()) l.info("created " + soid + " " + parent);
+        if (l.isDebugEnabled()) l.debug("created " + soid + " " + parent);
 
         updateParentAggregateOnCreation_(soid, new SOID(soid.sidx(), parent), pathTo, t);
     }
@@ -236,7 +236,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     @Override
     public void objectDeleted_(SOID soid, OID parent, Path pathFrom, Trans t) throws SQLException
     {
-        if (l.isInfoEnabled()) l.info("deleted " + soid + " " + parent);
+        if (l.isDebugEnabled()) l.debug("deleted " + soid + " " + parent);
 
         updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parent), pathFrom, t);
     }
@@ -261,7 +261,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         // TODO: figure out if expelled objects can be moved and what to do in this case
 
-        if (l.isInfoEnabled()) l.info("moved " + soid + " " + parentFrom + " " + parentTo);
+        if (l.isDebugEnabled()) l.debug("moved " + soid + " " + parentFrom + " " + parentTo);
 
         updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parentFrom), pathFrom, t);
         updateParentAggregateOnCreation_(soid, new SOID(soid.sidx(), parentTo), pathTo, t);
@@ -284,7 +284,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         OA oa = _ds.getOA_(soid);
         assert oa.isFile() : soid;
 
-        if (l.isInfoEnabled()) l.info("synced readmitted file " + soid + " " + status);
+        if (l.isDebugEnabled()) l.debug("synced readmitted file " + soid + " " + status);
 
         // keep track of new status for Ritual notifications
         _tlStatusModified.get(t).add(path);
@@ -307,7 +307,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // ignore expulsion resulting from object deletion (moving to trash)
         if (_ds.isDeleted_(oa)) return;
 
-        if (l.isInfoEnabled()) l.info("expelled " + soid);
+        if (l.isDebugEnabled()) l.debug("expelled " + soid);
         updateParentAggregateOnDeletion_(soid, parent, path, t);
     }
 
@@ -322,7 +322,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         Path path = _ds.resolve_(soid);
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
-        if (l.isInfoEnabled()) l.info("admitted " + soid + " " + _ds.getSyncStatus_(soid));
+        if (l.isDebugEnabled()) l.debug("admitted " + soid + " " + _ds.getSyncStatus_(soid));
         updateParentAggregateOnCreation_(soid, parent, path, t);
     }
 
@@ -333,7 +333,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectSyncStatusChanged_(SOID soid, BitVector oldStatus, BitVector newStatus,
             Trans t) throws SQLException
     {
-        if (l.isInfoEnabled()) l.info("sschanged " + soid + " " + oldStatus + " " + newStatus);
+        if (l.isDebugEnabled()) l.debug("sschanged " + soid + " " + oldStatus + " " + newStatus);
 
         OA oa = _ds.getOA_(soid);
         // expelled objects are not taken into account by aggregate sync status
@@ -410,7 +410,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // is known locally but expelled. No actual CONTENT is being created so no file/folder
         // is created either and aggregate sync status can therefore safely ignore these events
         if (oa.isExpelled()) {
-            if (l.isInfoEnabled()) l.info("ignore expelled " + soid);
+            if (l.isDebugEnabled()) l.debug("ignore expelled " + soid);
             return;
         }
 
@@ -427,7 +427,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             // the object being added has some sync status, full update required
             // this happens when objects are moved from one parent to another
 
-            if (l.isInfoEnabled()) l.info("update parent on creation " + parent);
+            if (l.isDebugEnabled()) l.debug("update parent on creation " + parent);
 
             _tlStatusModified.get(t).add(path);
 
@@ -441,15 +441,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             CounterVector parentAggregate = _ds.getAggregateSyncStatus_(parent);
             int deviceCount = _sidx2dbm.getDeviceMapping_(parent.sidx()).size();
 
-            if (l.isInfoEnabled())
-                l.info("update grandparent on creation " + grandparent + " " + parentAggregate);
+            if (l.isDebugEnabled())
+                l.debug("update grandparent on creation " + grandparent + " " + parentAggregate);
 
             BitVector parentStatus = parentAggregate.elementsEqual(
                     getSyncableChildCount_(parent) - 1, deviceCount);
             parentStatus.andInPlace(_ds.getSyncStatus_(parent));
 
             if (parentStatus.isEmpty()) {
-                if (l.isInfoEnabled()) l.info("cascading stopped at grandparent " + grandparent);
+                if (l.isDebugEnabled()) l.debug("cascading stopped at grandparent " + grandparent);
                 return;
             }
 

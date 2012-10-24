@@ -171,17 +171,17 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private static void logbw(DID d, double abw, double rbw)
     {
-        l.info("d:" + d + " cbw:" + abw + " rbw:" + rbw);
+        l.debug("d:" + d + " cbw:" + abw + " rbw:" + rbw);
     }
 
     private static void lognewalloc(double bw, DID d)
     {
-        l.info("newbw:" + bw + " -> d:" + d);
+        l.debug("newbw:" + bw + " -> d:" + d);
     }
 
     private void logsysbw()
     {
-        l.info("ubw:" + _totalBw
+        l.debug("ubw:" + _totalBw
                 + " abw[l]:" + _availBwLoLvl + " abw[h]:" + _availBwHiLvl);
     }
 
@@ -200,7 +200,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private void readStream(StreamID sid, RawMessage r, PeerContext pc)
     {
-        l.info("rx: t:S sid:" + sid + " d:" + pc.did() + " b:" + r._wirelen);
+        l.debug("rx: t:S sid:" + sid + " d:" + pc.did() + " b:" + r._wirelen);
 
         try {
             processBytesIn(r._is, r._wirelen, pc);
@@ -215,7 +215,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             throws Exception
     {
         assert pc != null;
-        l.info("tx lim:tc -> " + pc.did());
+        l.debug("tx lim:tc -> " + pc.did());
 
         _lowerUnicastOutput.sendUnicastDatagram_(msg, pc);
     }
@@ -266,7 +266,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         logsysbw();
 
         if (_totalBw > _availBwHiLvl) {
-            l.info("tbw > abw[h]: perf lim");
+            l.debug("tbw > abw[h]: perf lim");
 
             final long bwdiff = _totalBw - _availBwLoLvl;
             long rembwdiff = bwdiff;
@@ -283,7 +283,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                             ((ti.rollingBw / (double) _totalBw) * bwdiff * _PENALTY_FACTOR);
                 }
 
-                l.info("calc red:" + reduc + " d:" + ti.lastPeerContext.did());
+                l.debug("calc red:" + reduc + " d:" + ti.lastPeerContext.did());
 
                 try {
                     long newbw =
@@ -310,7 +310,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         logsysbw();
 
         if (_totalBw < _availBwLoLvl) {
-            l.info("ubw < abw[l]");
+            l.debug("ubw < abw[l]");
 
             try {
                 long newbw = ti.rollingBw + (_availBwLoLvl - _totalBw);
@@ -320,13 +320,13 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                         " d:" + pc.did() + " while lim less");
             }
         } else {
-            l.info("ubw >= abw[l]");
+            l.debug("ubw >= abw[l]");
         }
     }
 
     private void scheduleRecompute(long ms)
     {
-        l.info("schd bwrc:" + (System.currentTimeMillis() + _RECOMPUTE_INTERVAL));
+        l.debug("schd bwrc:" + (System.currentTimeMillis() + _RECOMPUTE_INTERVAL));
 
         _f._sched.schedule(new AbstractEBSelfHandling()
         {
@@ -347,7 +347,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
         DID d = pc.did();
         if (!_transmitMap.containsKey(d)) {
-            l.info("newti: d:" + d);
+            l.debug("newti: d:" + d);
             _transmitMap.put(d, new TransmitInfo());
         }
 
@@ -368,7 +368,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         assert pbl != null;
 
         if (pbl.getType() == Limit.PBLimit.Type.REQUEST_BW) {
-            l.info("lhdr:REQ");
+            l.debug("lhdr:REQ");
 
             long now = System.currentTimeMillis();
             if (ti.firstLimitLess == 0) ti.firstLimitLess = now;
@@ -377,10 +377,10 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
                 respondToLimitLess(ti, pc);
                 ti.firstLimitLess = 0;
             } else {
-                l.info("wait more lhdr");
+                l.debug("wait more lhdr");
             }
         } else {
-            l.info("lhdr:ALL");
+            l.debug("lhdr:ALL");
 
             if (pbl.getType() == Limit.PBLimit.Type.ALLOCATE) {
                 _lim.processControlLimit_(d, pbl);
@@ -410,7 +410,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        l.info("rx: t:UC d:" + pc.did() + " b:" + r._wirelen);
+        l.debug("rx: t:UC d:" + pc.did() + " b:" + r._wirelen);
 
         try {
             processBytesIn(r._is, r._wirelen, pc);
@@ -418,7 +418,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             if (r._is.available() != 0) {
                 _upperUnicastInput.onUnicastDatagramReceived_(r, pc);
             } else {
-                l.info("is: no b");
+                l.debug("is: no b");
             }
         } catch (Exception e) {
             l.error("ignoring e for pkt from: " + pc.did() + "e: " + e);
@@ -472,7 +472,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
     {
         TransmitInfo ti = _transmitMap.remove(d);
         if (ti != null) {
-            l.info("rem ti d:" + d);
+            l.debug("rem ti d:" + d);
         }
     }
 }

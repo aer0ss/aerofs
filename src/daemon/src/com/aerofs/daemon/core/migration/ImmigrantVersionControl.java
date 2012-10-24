@@ -55,8 +55,8 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
             Trans t) throws SQLException
     {
         if (!_ivdb.isTickKnown_(socid, did, tick)) {
-            if (l.isInfoEnabled()) {
-                l.info("add imm ver" + socid + " imm " + immDid + immTick + " " + did + tick);
+            if (l.isDebugEnabled()) {
+                l.debug("add imm ver" + socid + " imm " + immDid + immTick + " " + did + tick);
             }
             _ivdb.addImmigrantVersion_(socid, immDid, immTick, did, tick, t);
             return true;

@@ -45,7 +45,7 @@ public class HdChunk implements IEventHandler<EIChunk>
     {
         SIndex sidx = _sid2sidx.getNullable_(ev._sid);
         if (sidx == null) {
-            l.info("no store " + ev._sid);
+            l.debug("no store " + ev._sid);
             // notify upper layers
             _stack.input().onStreamAborted_(ev._streamId, ev._ep, STORE_NOT_FOUND);
             // notify lower layers

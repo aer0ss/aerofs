@@ -79,7 +79,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         try {
             CoreIMC.execute_(ev, _f._tc, tk);
         } catch (Exception e) {
-            l.info("begin stream failed strmid " + streamId + " " + pc + ": " + e);
+            l.debug("begin stream failed strmid " + streamId + " " + pc + ": " + e);
             throw e;
         }
     }
@@ -96,7 +96,7 @@ public class UnicastOutputBottomLayer implements IUnicastOutputLayer
         try {
             CoreIMC.execute_(ev, _f._tc, tk);
         } catch (Exception e) {
-            l.info("send chunk failed strmid " + streamId + " " + pc + ": " + e);
+            l.debug("send chunk failed strmid " + streamId + " " + pc + ": " + e);
             throw e;
         }
     }

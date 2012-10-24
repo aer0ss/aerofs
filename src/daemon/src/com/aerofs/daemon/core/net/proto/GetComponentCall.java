@@ -90,7 +90,7 @@ public class GetComponentCall
         // Several of the version control and physical storage classes require a branch, not socid.
         // We know that downloads will only ever act on the master branch.
         SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
-        l.info("send for " + socid);
+        l.debug("send for " + socid);
 
         Version vLocal = _nvc.getLocalVersion_(sockid);
 
@@ -156,7 +156,7 @@ public class GetComponentCall
         if (len == 0) return;
 
         Version vPre = _pvc.getPrefixVersion_(branch.soid(), branch.kidx());
-        l.info("prefix ver " + vPre + " len " + len);
+        l.debug("prefix ver " + vPre + " len " + len);
 
         bd.setPrefixLength(len);
         bd.setPrefixVersion(vPre.toPB_());
@@ -169,7 +169,7 @@ public class GetComponentCall
         PBGetComCall pb = msg.pb().getGetComCall();
 
         SOCKID k = new SOCKID(msg.sidx(), new OID(pb.getObjectId()), new CID(pb.getComId()));
-        l.warn("recv from " + msg.ep() + " for " + k);
+        l.warn("gcc for " + k + " from " + msg.ep());
 
         try {
             // Give up if the requested SOCKID is not present locally (either meta or content)
@@ -179,7 +179,7 @@ public class GetComponentCall
             // aliased objects?
             if (!_ds.isPresent_(k) &&
                 !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
-                l.info(k + " not present. Throwing");
+                l.debug(k + " not present. Throwing");
                 throw new ExNoComponentWithSpecifiedVersion();
             }
 
@@ -202,13 +202,13 @@ public class GetComponentCall
 //                short ops = ACE.or(ACE.OP_READ_ATTR, ACE.OP_READ_ACL);
 //                if (!_dacl.check_(as.user(), k.soid(), ops) &&
 //                        !as.store().isMemberUser_(as.user(), c)) {
-//                    l.info("no permission & non-member user. Throwing NO_PERM");
+//                    l.debug("no permission & non-member user. Throwing NO_PERM");
 //                    reason = Reason.NO_PERM;
 //                    return;
 //                }
             } else {
                 if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
-                    l.info("receiver has no permission");
+                    l.debug("receiver has no permission");
                     throw new ExNoPerm();
                 }
             }
@@ -219,8 +219,8 @@ public class GetComponentCall
             if (!vLocal.sub_(vRemote).isZero_()) {
                 sendReply_(msg, k);
             } else {
-                if (l.isInfoEnabled()) {
-                    l.info("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
+                if (l.isDebugEnabled()) {
+                    l.debug("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
                 }
                 throw new ExNoComponentWithSpecifiedVersion(k + " " + vRemote);
             }
@@ -233,7 +233,7 @@ public class GetComponentCall
 //            Version vKnown = _cd.getKnownVersion_(k.socid());
 //
 //            if (!vRemoteKnown.sub_(vKnown).isZero_()) {
-//                l.info("TODO add diff to db and issue a download");
+//                l.debug("TODO add diff to db and issue a download");
 //            }
         } catch (Exception e) {
             PBCore core = CoreUtil.newReply(msg.pb())
@@ -249,7 +249,7 @@ public class GetComponentCall
     public void sendReply_(DigestedMessage msg, SOCKID k)
         throws Exception
     {
-        l.info("send to " + msg.ep() + " for " + k);
+        l.debug("send to " + msg.ep() + " for " + k);
 
         Version vLocal = _nvc.getLocalVersion_(k);
 
@@ -301,7 +301,7 @@ public class GetComponentCall
             bdMeta.setTargetOid(targetOID.toPB());
             Version vTarget = _nvc.getLocalVersion_(new SOCKID(k.sidx(), targetOID, CID.META));
             bdMeta.setTargetVersion(vTarget.toPB_());
-            l.info("Sending target oid: " + targetOID + " target version: "
+            l.debug("Sending target oid: " + targetOID + " target version: "
                    + vTarget + " alias SOCKID: " + k);
         }
 

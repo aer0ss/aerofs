@@ -157,7 +157,7 @@ public class Main {
         if (!Cfg.inited()) {
             try {
                 Cfg.init_(rtRoot, ui || controller || prog.equals(DAEMON_NAME));
-                l.info("id " + Cfg.did().toStringFormal() + (Cfg.isSP() ? " SP mode" : ""));
+                l.debug("id " + Cfg.did().toStringFormal() + (Cfg.isSP() ? " SP mode" : ""));
             } catch (ExNotSetup e) {
                 // gui and cli will run setup itself
                 if (!ui && !controller) throw e;

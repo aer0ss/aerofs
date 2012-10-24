@@ -72,10 +72,10 @@ public class FSIReactor implements IReactor
             String user;
             if (call.hasUser()) {
                 user = call.getUser();
-                l.info(call.getType() + " by " + user);
+                l.debug(call.getType() + " by " + user);
             } else {
                 user = Cfg.user();
-                l.info(call.getType());
+                l.debug(call.getType());
             }
 
             switch (call.getType()) {

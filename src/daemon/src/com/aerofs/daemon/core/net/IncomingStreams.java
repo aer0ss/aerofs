@@ -142,7 +142,7 @@ public class IncomingStreams
     {
         IncomingStream v = _map.get(key);
         if (v == null) {
-            l.info("recv chunk after strm ends " + key);
+            l.debug("recv chunk after strm ends " + key);
 
         } else if (seq != ++v._seq) {
                 _fds.logSendAsync("istrm " + key + " expect seq " + v._seq + " actual " + seq);
@@ -162,7 +162,7 @@ public class IncomingStreams
     {
         IncomingStream v = _map.get(key);
         if (v == null) {
-            l.info("aborted after strm ends " + key);
+            l.debug("aborted after strm ends " + key);
 
         } else {
             v._invalidationReason = reason;

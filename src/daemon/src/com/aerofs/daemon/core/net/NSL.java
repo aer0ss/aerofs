@@ -62,13 +62,13 @@ public class NSL
 
     public void recvUnicast_(Endpoint ep, PBCore pb, @Nullable StreamID sid)
     {
-        l.info(CoreUtil.typeString(pb) + ',' + pb.getRpcid() + " <- " + ep +
+        l.debug(CoreUtil.typeString(pb) + ',' + pb.getRpcid() + " <- " + ep +
                 (sid == null ? "" : " sid " + sid));
     }
 
     public void recvMaxcast_(Endpoint ep, PBCore pb)
     {
-        l.info("mc " + CoreUtil.typeString(pb) + ',' + pb.getRpcid() + " <- " + ep);
+        l.debug("mc " + CoreUtil.typeString(pb) + ',' + pb.getRpcid() + " <- " + ep);
     }
 
     //
@@ -79,7 +79,7 @@ public class NSL
             throws Exception
     {
         assert !ep.did().equals(Cfg.did());
-        l.info(type + ',' + rpcid + " -> " + ep);
+        l.debug(type + ',' + rpcid + " -> " + ep);
         if (bs.length > _m.getMaxUnicastSize_()) {
             // unicast messages shall never exceeds the limit
             Util.fatal("uc too large " + bs.length);
@@ -113,10 +113,10 @@ public class NSL
     private void sendMaxcast_(SIndex sidx, String type, int rpcid, byte[] bs)
             throws Exception
     {
-        l.info("mc " + type + ',' + rpcid + " -> " + sidx);
+        l.debug("mc " + type + ',' + rpcid + " -> " + sidx);
 
         if (bs.length > _m.getRecommendedMaxcastSize_()) {
-            l.info("mc too large " + bs.length + ". send anyway");
+            l.debug("mc too large " + bs.length + ". send anyway");
         }
 
         EOMaxcastMessage ev = new EOMaxcastMessage(_sidx2sid.getThrows_(sidx),
@@ -143,7 +143,7 @@ public class NSL
                 for (DID did : muod) {
                     assert !did.equals(Cfg.did());
                     if (s.isOnlinePotentialMemberDevice_(did)) {
-                        l.info("mc-muod " + sidx + " -> " + did);
+                        l.debug("mc-muod " + sidx + " -> " + did);
                         sendUnicast_(new Endpoint(tp, did), type, rpcid, sidx, bs);
                     }
                 }
@@ -163,7 +163,7 @@ public class NSL
             // request issued for the first message, the second message will be
             // queued up until handshake times out at the client side.
             //
-            l.info("mc " + sidx + " -> sp");
+            l.debug("mc " + sidx + " -> sp");
             sendUnicast_(L.get().spDID(), type, rpcid, sidx, bs);
         }
     }
@@ -175,11 +175,11 @@ public class NSL
         DID did = to.pick_();
 
         if (did != null) {
-            l.info(strTo + '~' + did);
+            l.debug(strTo + '~' + did);
             return sendUnicast_(did, type, rpcid, sidx, bs);
         } else {
             // maxcast
-            l.info(strTo + '~' + to.sidx());
+            l.debug(strTo + '~' + to.sidx());
             sendMaxcast_(to.sidx(), type, rpcid, bs);
             return null;
         }

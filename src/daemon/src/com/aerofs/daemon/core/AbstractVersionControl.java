@@ -63,8 +63,8 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         assert !did.equals(_cfgLocalDID.get());
         assert !tick.equals(Tick.ZERO);
         _vdb.addKnowledge_(sidx, did, tick, t);
-        if (l.isInfoEnabled())
-            l.info(this.getClass() + " add kwlg " + sidx + " " + did + tick);
+        if (l.isDebugEnabled())
+            l.debug(this.getClass() + " add kwlg " + sidx + " " + did + tick);
     }
 
     public @Nonnull IDBIterator<E> getMaxTicks_(SIndex sidx, DID did, Tick from) throws SQLException
@@ -78,7 +78,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
      */
     public void deleteStore_(SIndex sidx, Trans t) throws SQLException
     {
-        l.info("Delete store " + sidx + " and backup max ticks");
+        l.debug("Delete store " + sidx + " and backup max ticks");
         IDBIterator<E> iter = getMaxTicks_(sidx, _cfgLocalDID.get(), Tick.ZERO);
         try {
             _vdb.addBackupTicks_(sidx, iter, t);
@@ -103,7 +103,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
      */
     public void restoreStore_(SIndex sidx, Trans t) throws SQLException
     {
-        l.info("Restore store " + sidx + " and delete backup ticks");
+        l.debug("Restore store " + sidx + " and delete backup ticks");
 
         IDBIterator<E> iter = _vdb.getBackupTicks_(sidx);
         try {

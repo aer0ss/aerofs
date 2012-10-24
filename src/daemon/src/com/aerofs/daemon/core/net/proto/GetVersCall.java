@@ -205,7 +205,7 @@ public class GetVersCall
         Store s = _sidx2s.getThrows_(msg.sidx());
         SenderFilterAndIndex sfi = s.senderFilters().get_(msg.did(), fromBase);
 
-        if (l.isInfoEnabled()) l.info("send 2 " + msg.ep() + " 4 " + msg.sidx() +
+        if (l.isDebugEnabled()) l.debug("send 2 " + msg.ep() + " 4 " + msg.sidx() +
                 " l " + vKwlgLocalES + " r " + vKwlgRemote + " fs " +
                 (sfi == null ? null : sfi._filter));
 

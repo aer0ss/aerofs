@@ -134,9 +134,9 @@ public abstract class AbstractLimiter implements ILimiter
     public void respondToTimeIn_()
             throws Exception
     {
-        if (l.isInfoEnabled()) {
-            l.info(name() + ": beg tihd:" + System.currentTimeMillis());
-            l.info(printstat_());
+        if (l.isDebugEnabled()) {
+            l.debug(name() + ": beg tihd:" + System.currentTimeMillis());
+            l.debug(printstat_());
         }
 
         Exception procEx = null;
@@ -144,7 +144,7 @@ public abstract class AbstractLimiter implements ILimiter
             boolean continueDrain = true;
             while (continueDrain) {
                 if (hasPending_()) {
-                    l.info(name() + ": has pnd");
+                    l.debug(name() + ": has pnd");
 
                     Outgoing op = peekPending_(); // nt
                     Prio p = peekPendingPrio_(); // nt
@@ -152,7 +152,7 @@ public abstract class AbstractLimiter implements ILimiter
                     printOutgoingParams_(op, p);
 
                     if (hasTokens_(op)) { // nt
-                        l.info(name() + ": has tok");
+                        l.debug(name() + ": has tok");
 
                         Outgoing o = getPending_(); // nt
                         assert o == op;
@@ -169,11 +169,11 @@ public abstract class AbstractLimiter implements ILimiter
                             procEx = new ExOutgoingProcessingError(o, e);
                         }
                     } else {
-                        l.info(name() + ": no tok");
+                        l.debug(name() + ": no tok");
                         continueDrain = false;
                     }
                 } else {
-                    l.info(name() + ": no pnd");
+                    l.debug(name() + ": no pnd");
                     continueDrain = false;
                 }
             }
@@ -183,7 +183,7 @@ public abstract class AbstractLimiter implements ILimiter
             if (procEx != null) throw procEx;
         }
 
-        l.info(name() + ": fin tihd");
+        l.debug(name() + ": fin tihd");
     }
 
     /**
@@ -203,49 +203,49 @@ public abstract class AbstractLimiter implements ILimiter
     public void processOutgoing_(Outgoing o, Prio p)
             throws Exception
     {
-        if (l.isInfoEnabled()) {
-            l.info(name() + ": beg po");
-            l.info(printstat_());
+        if (l.isDebugEnabled()) {
+            l.debug(name() + ": beg po");
+            l.debug(printstat_());
         }
 
         printOutgoingParams_(o, p);
 
         if (!hasPending_()) { // nt
-            l.info(name() + ": no pnd");
+            l.debug(name() + ": no pnd");
 
             if (hasTokens_(o)) { // nt
-                l.info(name() + ": has tok");
+                l.debug(name() + ": has tok");
                 confirm_(o); // nt
                 processConfirmedOutgoing_(o, p); // throw
             } else {
-                l.info(name() + ": no tok");
+                l.debug(name() + ": no tok");
                 addPending_(o, p); // throw
                 scheduleNextTimeout_(); // nt
             }
         } else {
-            l.info(name() + ": has pnd");
+            l.debug(name() + ": has pnd");
 
             if (peekPendingPrio_() == Prio.higher(p, peekPendingPrio_())) {
-                l.info(name() + ": lo p");
+                l.debug(name() + ": lo p");
                 addPending_(o, p); // throw
             } else {
-                l.info(name() + ": hi p");
+                l.debug(name() + ": hi p");
                 if (hasTokens_(o)) { // nt
-                    l.info(name() + ": has tok");
+                    l.debug(name() + ": has tok");
                     confirm_(o); // nt
                     scheduleNextTimeout_(); // nt
                     indicateTokensNeeded_(o); // nt
                     processConfirmedOutgoing_(o, p); // throw
                 } else {
                     // FIXME: this happens regardless of whether you have less size than the current LO-prio waiter...
-                    l.info(name() + ": no tok");
+                    l.debug(name() + ": no tok");
                     addPending_(o, p); // throw
                     scheduleNextTimeout_(); // nt
                 }
             }
         }
 
-        l.info(name() + ": fin po");
+        l.debug(name() + ": fin po");
     }
 
     // FIXME: I'm pretty sure this is a bad idea
@@ -293,7 +293,7 @@ public abstract class AbstractLimiter implements ILimiter
 
     protected void printOutgoingParams_(Outgoing o, Prio p)
     {
-        l.info(name() + ": len:" + o.getLength() + " pr:" + p);
+        l.debug(name() + ": len:" + o.getLength() + " pr:" + p);
     }
 
     /**
@@ -310,7 +310,7 @@ public abstract class AbstractLimiter implements ILimiter
         _fillRate = fillRate;
         _tokens = (_tokens > _bucket ? _bucket : _tokens);
 
-        l.info(name() + ": upd bk:" + oldBucket + "->" + _bucket +
+        l.debug(name() + ": upd bk:" + oldBucket + "->" + _bucket +
                 " fr:" + oldFillRate + "->" + _fillRate);
     }
 
@@ -336,7 +336,7 @@ public abstract class AbstractLimiter implements ILimiter
     {
         if (_q.isFull_()) throw new ExNoResource(name() + ": q full");
 
-        l.info(name() + ": add pnd");
+        l.debug(name() + ": add pnd");
         _q.enqueue_(o, p);
     }
 
@@ -386,7 +386,7 @@ public abstract class AbstractLimiter implements ILimiter
     {
         NextTimeoutInfo nt = null;
         if (!_q.isEmpty_()) {
-            l.info(name() + ": pnd q ne");
+            l.debug(name() + ": pnd q ne");
 
             OutArg<Prio> peekPrio = new OutArg<Prio>(Prio.LO);
             Outgoing o = _q.peek_(peekPrio);
@@ -394,7 +394,7 @@ public abstract class AbstractLimiter implements ILimiter
             long timeDiff =
                     (long) Math.ceil(((o.getLength() - _tokens) / (double) _fillRate) * _MS_PER_SEC);
 
-            l.info(name() + ": wait:" + timeDiff);
+            l.debug(name() + ": wait:" + timeDiff);
 
             nt = new NextTimeoutInfo(
                     System.currentTimeMillis() + timeDiff, peekPrio.get());
@@ -418,7 +418,7 @@ public abstract class AbstractLimiter implements ILimiter
             };
             _sched.schedule(ce, timeDiff);
         } else {
-            l.info(name() + ": pnd q e");
+            l.debug(name() + ": pnd q e");
         }
 
         _nextTimeout = nt;

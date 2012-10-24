@@ -326,7 +326,7 @@ public class DirectoryService implements IDumpStatMisc
             Trans t) throws ExAlreadyExist, ExNotFound, SQLException
     {
         SOID soid = new SOID(sidx, oid);
-        if (l.isInfoEnabled()) l.info(soid + ": create " + oidParent + "/" + name);
+        if (l.isDebugEnabled()) l.debug(soid + ": create " + oidParent + "/" + name);
 
         assert !oid.equals(oidParent) : "s " + sidx + " o " + oid + " p " + oidParent;
 
@@ -394,7 +394,7 @@ public class DirectoryService implements IDumpStatMisc
     public void setOAParentAndName_(@Nonnull OA oa, @Nonnull OA oaParent, String name, Trans t)
         throws SQLException, ExAlreadyExist, ExNotDir
     {
-        if (l.isInfoEnabled()) l.info(oa.soid() + ": move to " + oaParent.soid() + "/" + name);
+        if (l.isDebugEnabled()) l.debug(oa.soid() + ": move to " + oaParent.soid() + "/" + name);
 
         // assigning the child to a parent in a different store is always wrong.
         assert oa.soid().sidx().equals(oaParent.soid().sidx()) : oa + " " + oaParent;

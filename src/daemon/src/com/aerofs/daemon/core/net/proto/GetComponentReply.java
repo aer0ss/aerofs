@@ -212,7 +212,7 @@ public class GetComponentReply
                     // for update on a locally aliased object hence return from this point.
                     return;
                 } else {
-                    l.info("meta diff: " + String.format("0x%1$x", metaDiff));
+                    l.debug("meta diff: " + String.format("0x%1$x", metaDiff));
                     if (metaDiff != 0 && _ds.hasOA_(socid.soid())) {
                         if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
                             throw new ExSenderHasNoPerm();

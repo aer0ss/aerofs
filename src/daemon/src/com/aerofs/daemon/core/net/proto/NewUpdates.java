@@ -88,7 +88,7 @@ public class NewUpdates
                 }
 
                 Tick tick = _nvc.getLocalTick_(k);
-                if (l.isInfoEnabled()) l.info("send " + k + "? " + tick);
+                if (l.isDebugEnabled()) l.debug("send " + k + "? " + tick);
                 if (tick == null) continue;
 
                 PBNewUpdate.newBuilder()
@@ -106,7 +106,7 @@ public class NewUpdates
             }
 
             if (os != null) {
-                l.info("send out");
+                l.debug("send out");
                 _nsl.sendMaxcast_(sidx, String.valueOf(Type.NEW_UPDATES.getNumber()),
                         CoreUtil.NOT_RPC, os);
             }
@@ -115,7 +115,7 @@ public class NewUpdates
 
     public void process_(DigestedMessage msg) throws Exception
     {
-        l.info("recv from " + msg.ep());
+        l.debug("recv from " + msg.ep());
 
         Trans t = _tm.begin_();
         try {
@@ -133,8 +133,8 @@ public class NewUpdates
                 Tick tick = new Tick(update.getTick());
                 if (_nvc.tickReceived_(socid, msg.did(), tick, t)) {
                     news = true;
-                    if (done.add(oid) && filter.add_(oid) && l.isInfoEnabled()) {
-                        l.info("add oid " + oid + " to " + filter);
+                    if (done.add(oid) && filter.add_(oid) && l.isDebugEnabled()) {
+                        l.debug("add oid " + oid + " to " + filter);
                     }
                 }
             }

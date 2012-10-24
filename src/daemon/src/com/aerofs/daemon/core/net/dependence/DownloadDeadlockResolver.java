@@ -141,7 +141,7 @@ public class DownloadDeadlockResolver
         }
 
         if (ncRet == null) {
-            l.info("no name conflict found");
+            l.debug("no name conflict found");
             return null;
         }
 
@@ -186,7 +186,7 @@ public class DownloadDeadlockResolver
                 // * the source does not match the SOCID of the expected remote ancestor
                 if (!(socidLocalChild.equals(cur.dst) && socidRemoteAncestor.equals(cur._src)
                         && cur.type().equals(DependencyType.NAME_CONFLICT))) {
-                    l.info("bad chain");
+                    l.debug("bad chain");
                     return null;
                 }
             }

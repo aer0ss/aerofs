@@ -80,8 +80,8 @@ public class GetVersReply
                     new BFOID(pb.getSenderFilter()) : null;
 
             SIndex sidx = msg.sidx();
-            if (l.isInfoEnabled()) {
-                l.info("recv from " + msg.ep() + " for " + sidx + " " + filter);
+            if (l.isDebugEnabled()) {
+                l.debug("recv from " + msg.ep() + " for " + sidx + " " + filter);
             }
 
             if (msg.streamKey() == null) {
@@ -199,7 +199,7 @@ public class GetVersReply
         try {
             PBGetVersReplyBlock block;
 
-            l.info("blocks/tx=" + qblocks.size());
+            l.debug("blocks/tx=" + qblocks.size());
             while (null != (block = qblocks.poll())) {
                 assert !block.getIsLastBlock() || qblocks.isEmpty();
                 didBlock = processBlock_(sidx, block, didBlock, vKwlgLocal, vImmKwlgLocal, from,

@@ -31,7 +31,7 @@ public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
     {
         SIndex sidx = _sid2sidx.getNullable_(ev._sid);
         if (sidx == null) {
-            Util.l(this).info("no store " + ev._sid);
+            Util.l(this).debug("no store " + ev._sid);
         } else {
             PeerContext pc = new PeerContext(ev._ep, sidx);
             RawMessage r = new RawMessage(ev.is(), ev.wireLength());

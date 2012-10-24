@@ -161,7 +161,7 @@ public class LocalSyncStatus
             throws SQLException, ExExpelled
     {
         OA oa = _ds.getOA_(soid);
-        l.info("aggregate " + soid);
+        l.debug("aggregate " + soid);
         aggregateWithinStore_(soid, oa.isDir(), aggregated);
         if (oa.isDir()) {
             // aggregate stores strictly under this directory
@@ -197,7 +197,7 @@ public class LocalSyncStatus
             }
         }
 
-        l.info("-> " + status);
+        l.debug("-> " + status);
 
         DeviceBitMap dbm = _sidx2dbm.getDeviceMapping_(soid.sidx());
         aggregated.mergeDevices_(dbm, status);
@@ -215,7 +215,7 @@ public class LocalSyncStatus
             SOID croot = _ds.followAnchorNullable_(_ds.getOA_(csoid));
             // the anchor will be null for expelled stores
             if (croot != null) {
-                l.info("aggregate store " + croot);
+                l.debug("aggregate store " + croot);
                 IAggregatedStatus saggregate = aggregated.create();
                 aggregateWithinStore_(croot, true, saggregate);
                 aggregated.mergeStore_(saggregate);

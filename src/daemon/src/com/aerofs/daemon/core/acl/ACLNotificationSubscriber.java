@@ -76,7 +76,7 @@ public final class ACLNotificationSubscriber
                         throws Exception
                 {
                     if (currentACLSyncSeqNum == _aclSyncSeqNum) {
-                        l.info("sync to local");
+                        l.debug("sync to local");
                         _aclsync.syncToLocal_();
                     } else {
                         l.warn("seqnum mismatch: "

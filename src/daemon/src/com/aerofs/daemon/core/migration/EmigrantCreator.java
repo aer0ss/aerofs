@@ -83,7 +83,7 @@ public class EmigrantCreator
             return new SID(new UniqueID(name, EMIGRANT_NAME_LEN - SID_STRING_LEN,
                     EMIGRANT_NAME_LEN));
         } catch (ExFormatError e) {
-            l.info("name format error. ignored for emigration: " + name);
+            l.debug("name format error. ignored for emigration: " + name);
             return null;
         }
     }

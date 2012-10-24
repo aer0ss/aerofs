@@ -274,9 +274,9 @@ public class FSIUtil
             boolean offline;
             Long rtt = null;
             try {
-                l.info("ping rpc " + seqPrev + " " + seqNext + " " + forceNext);
+                l.debug("ping rpc " + seqPrev + " " + seqNext + " " + forceNext);
                 rtt = pingRPC(did, fsi, seqPrev, seqNext, forceNext, ignoreOffline);
-                l.info("ping rpc returns " + rtt);
+                l.debug("ping rpc returns " + rtt);
                 offline = false;
             } catch (ExDeviceOffline e) {
                 rttMaybeNull = true;

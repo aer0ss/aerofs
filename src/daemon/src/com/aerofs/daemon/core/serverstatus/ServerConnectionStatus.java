@@ -48,7 +48,7 @@ public class ServerConnectionStatus
             public void onConnected()
             {
                 synchronized (ServerConnectionStatus.this) {
-                    l.info("connected " + server);
+                    l.debug("connected " + server);
                     _status.put(server, true);
                 }
             }
@@ -57,7 +57,7 @@ public class ServerConnectionStatus
             public void onDisconnected()
             {
                 synchronized (ServerConnectionStatus.this) {
-                    l.info("disconnected " + server);
+                    l.debug("disconnected " + server);
                     _status.put(server, false);
                 }
             }

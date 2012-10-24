@@ -180,7 +180,7 @@ public class ReceiveAndApplyUpdate
         Version vR_L = vRemote.sub_(vLocal);
         Version vL_R = vLocal.sub_(vRemote);
 
-        if (l.isInfoEnabled()) l.info(k + " l " + vLocal);
+        if (l.isDebugEnabled()) l.debug(k + " l " + vLocal);
 
         if (vR_L.isZero_()) {
             if (_ds.isPresent_(k) || !vL_R.isZero_()) {
@@ -202,7 +202,7 @@ public class ReceiveAndApplyUpdate
         // all non-conflict cases have been handled above. now it's a conflict
 
         if (metaDiff == 0) {
-            l.info("merge false meta conflict");
+            l.debug("merge false meta conflict");
             return new CausalityResult(KIndex.MASTER, vR_L, vLocal);
         } else {
             // TODO forbidden meta should always win
@@ -210,10 +210,10 @@ public class ReceiveAndApplyUpdate
             int comp = compareLargestDIDsInVersions(vR_L, vL_R);
             assert comp != 0;
             if (comp > 0) {
-                l.info("true meta conflict. l > r. don't apply");
+                l.debug("true meta conflict. l > r. don't apply");
                 return null;
             } else {
-                l.info("true meta conflict. l < r. merge");
+                l.debug("true meta conflict. l < r. merge");
                 return new CausalityResult(KIndex.MASTER, vR_L, null, true, null, vLocal);
             }
         }
@@ -229,12 +229,12 @@ public class ReceiveAndApplyUpdate
     private static boolean isContentSame(SOCKID k, @Nonnull ContentHash hLocal,
             @Nonnull ContentHash hRemote)
     {
-        if (l.isInfoEnabled()) {
-            l.info("Local hash: " + hLocal.toHex() + " Remote hash:" + hRemote.toHex());
+        if (l.isDebugEnabled()) {
+            l.debug("Local hash: " + hLocal.toHex() + " Remote hash:" + hRemote.toHex());
         }
         boolean result = hRemote.equals(hLocal);
-        if (l.isInfoEnabled()) {
-            l.info("Comparing hashes: " + result + " " + k);
+        if (l.isDebugEnabled()) {
+            l.debug("Comparing hashes: " + result + " " + k);
         }
         return result;
     }
@@ -272,7 +272,7 @@ public class ReceiveAndApplyUpdate
                     } finally {
                         is.close();
                     }
-                    l.info("Read " + hashBytesRead + " hash bytes of " + hashBytesTotal);
+                    l.debug("Read " + hashBytesRead + " hash bytes of " + hashBytesTotal);
                 }
                 hRemote = new ContentHash(os.toByteArray());
             } else {
@@ -293,7 +293,7 @@ public class ReceiveAndApplyUpdate
             Version vBranch = _nvc.getLocalVersion_(kBranch);
             kidxMax = Math.max(kidx.getInt(), kidxMax);
 
-            if (l.isInfoEnabled()) l.info(kBranch + " l " + vBranch);
+            if (l.isDebugEnabled()) l.debug(kBranch + " l " + vBranch);
 
             if (vRemote.sub_(vBranch).isZero_()) {
                 if (_ds.isPresent_(kBranch) || !vBranch.sub_(vRemote).isZero_()) {
@@ -314,7 +314,7 @@ public class ReceiveAndApplyUpdate
                 // only once.
                 final boolean isRemoteDominating = vBranch.sub_(vRemote).isZero_();
                 if (!isRemoteDominating && hRemote == null) {
-                    l.info("Fetching hash on demand");
+                    l.debug("Fetching hash on demand");
                     // Abort the ongoing transfer.  If we don't, the peer will continue sending
                     // file content which we will queue until we exhaust the heap.
                     if (msg.streamKey() != null) {
@@ -347,8 +347,8 @@ public class ReceiveAndApplyUpdate
                 }
             }
 
-            if (l.isInfoEnabled()) {
-                l.info("kidx: " + kidx.getInt() + " vAddLocal: " + vAddLocal);
+            if (l.isDebugEnabled()) {
+                l.debug("kidx: " + kidx.getInt() + " vAddLocal: " + vAddLocal);
             }
         }
 
@@ -361,8 +361,8 @@ public class ReceiveAndApplyUpdate
             vAddLocal = vAddLocal.sub_(vApply);
         }
 
-        if (l.isInfoEnabled()) {
-            l.info("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
+        if (l.isDebugEnabled()) {
+            l.debug("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
         }
         return new CausalityResult(kidxApply, vAddLocal, kidcsDel, false,
             hRemote, vApply);
@@ -454,7 +454,7 @@ public class ReceiveAndApplyUpdate
         OA oaLocal = _ds.getOA_(soidLocal);
         OA.Type typeRemote = fromPB(meta.getType());
 
-        if (l.isInfoEnabled()) l.info("name conflict on " + pLocal + ": local " + soidLocal.oid() +
+        if (l.isDebugEnabled()) l.debug("name conflict on " + pLocal + ": local " + soidLocal.oid() +
                 " " + oaLocal.type() + " remote " + soidRemote.oid() + " " + typeRemote);
 
         if (_sc.detectFolderToAnchorConversion_(soidLocal.oid(), oaLocal.type(), soidRemote.oid(),
@@ -472,7 +472,7 @@ public class ReceiveAndApplyUpdate
             // local renaming. If not, the folder name will become permanently
             // inconsistent with other peers.
             //
-            l.info("folder->anchor conversion detected: " + soidLocal + "->" + soidRemote);
+            l.debug("folder->anchor conversion detected: " + soidLocal + "->" + soidRemote);
             String newName = L.get().product() + " temporary folder - do not remove";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
@@ -500,7 +500,7 @@ public class ReceiveAndApplyUpdate
         }
 
         // Either cyclic dependency or local object already sync'ed
-        l.info("true name conflict");
+        l.debug("true name conflict");
 
         // Resolve this name conflict by aliasing only if
         // 1) the remote object is not present locally,
@@ -524,14 +524,14 @@ public class ReceiveAndApplyUpdate
             throws Exception
     {
         // Resolve name conflict by generating a new name.
-        l.info("Resolving name conflicts by renaming one of the oid.");
+        l.debug("Resolving name conflicts by renaming one of the oid.");
 
         int comp = soidLocal.compareTo(soidRemote);
         assert comp != 0;
         String newName = _ds.generateNameConflictFileName_(pParent, meta.getName());
         if (comp > 0) {
             // local wins
-            l.info("change remote name");
+            l.debug("change remote name");
             PBMeta newMeta = PBMeta.newBuilder().mergeFrom(meta).setName(newName).build();
             applyMeta_(did, soidRemote, newMeta, parent, wasPresent, metaDiff, t, null,
                     vRemote, soidMsg, requested, cr);
@@ -544,7 +544,7 @@ public class ReceiveAndApplyUpdate
             cr._conflictRename = true;
         } else {
             // remote wins
-            l.info("change local name");
+            l.debug("change local name");
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, true, t);
             applyMeta_(did, soidRemote, meta, parent, wasPresent, metaDiff, t, null,
                     vRemote, soidMsg, requested, cr);
@@ -622,7 +622,7 @@ public class ReceiveAndApplyUpdate
             // persistent store (see above).
             assert vPrefixOld.equals(vRemote);
 
-            l.info("prefix accepted: " + reply.getPrefixLength());
+            l.debug("prefix accepted: " + reply.getPrefixLength());
             append = true;
 
         } else {
@@ -655,7 +655,7 @@ public class ReceiveAndApplyUpdate
                 t.end_();
             }
 
-            l.info("prefix transferred " + kidxOld + "->" + k.kidx() + ": " +
+            l.debug("prefix transferred " + kidxOld + "->" + k.kidx() + ": " +
                 reply.getPrefixLength());
             append = true;
         }
@@ -789,8 +789,8 @@ public class ReceiveAndApplyUpdate
         Version vKML_R = vKML.sub_(vRemote);
         Version vDelKML = vKML.sub_(vKML_R);
 
-        if (l.isInfoEnabled()) {
-            l.info(k + ": r " + vRemote + " kml " + vKML + " -kml " + vDelKML +
+        if (l.isDebugEnabled()) {
+            l.debug(k + ": r " + vRemote + " kml " + vKML + " -kml " + vDelKML +
                 " +l " + res._vAddLocal + " -kidx " + res._kidcsDel);
         }
 

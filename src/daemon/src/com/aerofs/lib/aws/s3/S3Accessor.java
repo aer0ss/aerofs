@@ -33,7 +33,7 @@ public class S3Accessor
 
     public S3Accessor(AmazonS3Client client, String bucketid)
     {
-        l.info("Initialize S3 Credentials");
+        l.debug("Initialize S3 Credentials");
 
         _s3 = client;
         _bucketId = bucketid;
@@ -49,7 +49,7 @@ public class S3Accessor
 
     public boolean exists(final String key) throws IOException
     {
-        l.info("check if " + key + " exists ");
+        l.debug("check if " + key + " exists ");
 
         return AWSRetry.retry(new Callable<Boolean>() {
             @Override
@@ -57,11 +57,11 @@ public class S3Accessor
                 try {
                     //will throw AmazonServiceException if object is not found
                     _s3.getObjectMetadata(_bucketId, key);
-                    l.info(key + " exists in s3");
+                    l.debug(key + " exists in s3");
                     return true;
                 } catch (AmazonServiceException e)  {
                     if (ERROR_NOT_FOUND == e.getStatusCode()) {
-                        l.info(key + " DNE in s3");
+                        l.debug(key + " DNE in s3");
                         return false;
                     } else {
                         l.warn(e);
@@ -77,7 +77,7 @@ public class S3Accessor
         AWSRetry.retry(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-               l.info("upload " + key);
+               l.debug("upload " + key);
                _s3.putObject(_bucketId, key, f);
                return null;
             }
@@ -86,7 +86,7 @@ public class S3Accessor
 
     public void download(final String key, final File f) throws IOException
     {
-        l.info(" download " + key);
+        l.debug(" download " + key);
         assert exists(key);
         AWSRetry.retry(new Callable<Void>() {
             @Override
@@ -100,7 +100,7 @@ public class S3Accessor
 
     public void delete(final String key) throws IOException
     {
-        l.info(" delete " + key);
+        l.debug(" delete " + key);
         AWSRetry.retry(new Callable<Void>() {
             @Override
             public Void call() throws Exception {

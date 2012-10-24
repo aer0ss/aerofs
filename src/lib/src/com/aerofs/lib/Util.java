@@ -158,12 +158,12 @@ public abstract class Util
         }
 
         String strDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
-        l.info(app + " ========================================================\n" +
+        l.debug(app + " ========================================================\n" +
             Cfg.ver() + (Cfg.staging() ? " staging " : " ") +
             strDate + " " + AppRoot.abs() + " " + new File(rtRoot).getAbsolutePath());
 
         if (Cfg.useProfiler()) {
-            l.info("profiler: " + Cfg.profilerStartingThreshold());
+            l.debug("profiler: " + Cfg.profilerStartingThreshold());
         }
 
         Logger.getRootLogger().setLevel(Cfg.lotsOfLog(rtRoot) ? Level.DEBUG : Level.WARN);
@@ -175,7 +175,7 @@ public abstract class Util
             {
                 DateFormat format = new SimpleDateFormat("yyyyMMdd");
                 String strDate = format.format(new Date());
-                l.info("TERMINATED " + strDate);
+                l.debug("TERMINATED " + strDate);
             }
         }));
     }
@@ -268,7 +268,7 @@ public abstract class Util
 
     public static Thread startDaemonThread(String name, Runnable run)
     {
-        if (l.isInfoEnabled()) l.info("startDaemonThread: " + name);
+        if (l.isDebugEnabled()) l.debug("startDaemonThread: " + name);
         Thread thd = new Thread(run);
         thd.setName(name);
         thd.setDaemon(true);
@@ -739,7 +739,7 @@ public abstract class Util
             throws IOException
     {
         ProcessBuilder pb = new ProcessBuilder(cmds);
-        if (logging) l.info("execForeground: " + pb.command());
+        if (logging) l.debug("execForeground: " + pb.command());
         pb.redirectErrorStream(true);
 
         Process proc = pb.start();
@@ -752,7 +752,7 @@ public abstract class Util
             if (read == -1) break;
             String temp = new String(bs, 0, read);
             if (output != null) sb.append(temp);
-            if (logging) l.info("command '" + cmds[0] + "' output:\n" + temp);
+            if (logging) l.debug("command '" + cmds[0] + "' output:\n" + temp);
         }
 
         if (output != null) output.set(sb.toString());
@@ -768,7 +768,7 @@ public abstract class Util
     public static Process execBackground(String ... cmds) throws IOException
     {
         ProcessBuilder pb = new ProcessBuilder(cmds);
-        l.info("execBackground: " + pb.command());
+        l.debug("execBackground: " + pb.command());
 
         Process proc = pb.start();
         proc.getInputStream().close();

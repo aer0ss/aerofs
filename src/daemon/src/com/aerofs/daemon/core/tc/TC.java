@@ -65,7 +65,7 @@ public class TC implements IDumpStatMisc
          */
         public boolean resume_()
         {
-            l.info("resume " + _thd.getName());
+            l.debug("resume " + _thd.getName());
             return unblockWithThrowable_(null);
         }
 
@@ -84,7 +84,7 @@ public class TC implements IDumpStatMisc
             assert _l.isHeldByCurrentThread();
 
             if (_running) {
-                l.info("already running");
+                l.debug("already running");
                 return false;
             } else {
                 _running = true;
@@ -101,7 +101,7 @@ public class TC implements IDumpStatMisc
         {
             assert cause != null;
 
-            l.info("abort " + _thd.getName() + ": " + cause);
+            l.debug("abort " + _thd.getName() + ": " + cause);
 
             return unblockWithThrowable_(cause);
         }
@@ -171,7 +171,7 @@ public class TC implements IDumpStatMisc
         final String name = _threadNamePool.isEmpty() ? THREAD_NAME_PREFIX
                 + _total : _threadNamePool.removeFirst();
 
-        l.info("new: " + name + " (" + _total + ")");
+        l.debug("new: " + name + " (" + _total + ")");
 
         Thread thd = new Thread(_threadGroup, new Runnable() {
             @Override
@@ -207,7 +207,7 @@ public class TC implements IDumpStatMisc
                         }
                     }
 
-                    l.info(name + " reclaimed");
+                    l.debug(name + " reclaimed");
                     _threadNamePool.addLast(name);
                     _total--;
 
@@ -223,7 +223,7 @@ public class TC implements IDumpStatMisc
             //
             // ref1 http://www.javamex.com/tutorials/threads/priority_what.shtml
             // ref2 http://stackoverflow.com/questions/297804/thread-api-priority-translation-to-os-thread-priority
-            // ref3 http://www.akshaal.info/2008/04/javas-thread-priorities-in-linux.html
+            // ref3 http://www.akshaal.debug/2008/04/javas-thread-priorities-in-linux.html
             // ref4 http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
             //
             // -XX:ThreadPriorityPolicy=666 must be set on Linux. it's a hack.
@@ -339,7 +339,7 @@ public class TC implements IDumpStatMisc
      */
     private boolean park_(TCB tcb, Cat cat, long timeout)
     {
-        l.info("pause " + tcb._prio + '@' + cat + ' '
+        l.debug("pause " + tcb._prio + '@' + cat + ' '
                 + (timeout == FOREVER ? "forever" : timeout) + ": "
                 + tcb._pauseReason);
 
@@ -362,7 +362,7 @@ public class TC implements IDumpStatMisc
                 && _total - _paused.size() >= DaemonParam.TC_RECLAIM_HI_WATERMARK) {
             _pendingQuits = _total - _paused.size()
                     - DaemonParam.TC_RECLAIM_LO_WATERMARK;
-            l.info("time to reclaim. target: " + _pendingQuits);
+            l.debug("time to reclaim. target: " + _pendingQuits);
             for (int i = 0; i < _pendingQuits; i++) {
                 _sched.schedule(EV_QUIT, DaemonParam.TC_RECLAIM_DELAY);
             }
@@ -387,7 +387,7 @@ public class TC implements IDumpStatMisc
         if (!tcb._running) {
             tcb._running = true;
         } else if (tcb._abortCause != null) {
-            if (l.isInfoEnabled()) l.info("aborted due to " + tcb._abortCause);
+            if (l.isDebugEnabled()) l.debug("aborted due to " + tcb._abortCause);
             throw new ExAborted(tcb._abortCause);
         }
     }
@@ -419,7 +419,7 @@ public class TC implements IDumpStatMisc
         }
 
         if (!taskCompleted) {
-            l.info("timed out");
+            l.debug("timed out");
             throw new ExTimeout();
         }
     }
@@ -427,7 +427,7 @@ public class TC implements IDumpStatMisc
     TCB pseudoPauseImpl_(Token tk, String reason) throws ExAborted
     {
         TCB tcb = tcb();
-        l.info("p-pause " + tcb._prio + ' ' + reason);
+        l.debug("p-pause " + tcb._prio + ' ' + reason);
         prePause_(tcb, tk, reason);
         _l.unlock();
         return tcb;

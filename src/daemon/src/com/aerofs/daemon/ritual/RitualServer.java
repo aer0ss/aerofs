@@ -64,7 +64,7 @@ public class RitualServer
                 new InetSocketAddress(port) : new InetSocketAddress(host, port);
         bootstrap.bind(address);
 
-        l.info("The ritual has begun on " + address.getHostName() + ":" + address.getPort());
+        l.debug("The ritual has begun on " + address.getHostName() + ":" + address.getPort());
     }
 
     /**

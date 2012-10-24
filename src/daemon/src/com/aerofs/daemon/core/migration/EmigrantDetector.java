@@ -84,7 +84,7 @@ public class EmigrantDetector
 
         SID sidTo = EmigrantCreator.getEmigrantTargetSID(nameTo);
         assert sidTo != null : nameTo;
-        l.info("emigration detected " + oa.type() + " " + soid + "->" + sidTo);
+        l.debug("emigration detected " + oa.type() + " " + soid + "->" + sidTo);
 
         // download the store (i.e. their anchors) and its ancestors as necessary
         Queue<SID> sids = new ArrayDeque<SID>(sidsEmigrantTargetAncestor.size() + 1);
@@ -105,7 +105,7 @@ public class EmigrantDetector
         // to be moved as well.
         if (!oa.isDir()) {
             SOCID socidTo = new SOCID(sidxTo, soid.oid(), CID.META);
-            l.info("dl immigrant " + socidTo.soid());
+            l.debug("dl immigrant " + socidTo.soid());
             _dls.downloadSync_(socidTo, _factTo.create_(did), tk, socidFrom);
         } else {
             // Comment (A), referred to by ObjectDeletion.delete_().
@@ -132,7 +132,7 @@ public class EmigrantDetector
                 } catch (Exception e) {
                     // it might be a false alarm, as the child may have been downloaded and migrated
                     // before the downloadSync above started the download thread.
-                    l.info("emigration child dl " + socidChild + ", bug aerofs-165: " + Util.e(e));
+                    l.debug("emigration child dl " + socidChild + ", bug aerofs-165: " + Util.e(e));
                 }
             }
         }
@@ -162,7 +162,7 @@ public class EmigrantDetector
         if (sidxAnchor == null) return null;
 
         SOID soidAnchor = new SOID(sidxAnchor, SID.storeSID2anchorOID(sid));
-        l.info("download ancestor anchor " + soidAnchor);
+        l.debug("download ancestor anchor " + soidAnchor);
         ParentDependencyEdge dependency = new ParentDependencyEdge(socid, new SOCID(soidAnchor, CID.META));
         _dls.downloadSync_(dependency, _factTo.create_(did), tk);
 

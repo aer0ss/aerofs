@@ -128,7 +128,7 @@ class S3MagicChunk
             FileUpload upload = new FileUpload(_s3ChunkAccessor, executor, null, null, input, length);
             upload.setSkipEmpty(false);
             ContentHash hash = upload.uploadChunks();
-            l.info("magic hash: " + hash);
+            l.debug("magic hash: " + hash);
         } finally {
             executor.shutdown();
         }
