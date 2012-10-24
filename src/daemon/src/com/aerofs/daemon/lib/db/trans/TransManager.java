@@ -54,16 +54,8 @@ public class TransManager
         assertNoOngoingTransaction_("");
         _ongoing = _factTrans.create_(this);
         // TODO: (DF) remove when debugging this bug is done
-        // some users get assertion errors in TC.run, but constructing stack traces is expensive
-        // so only enable it for certain users
-        String userCRC = Util.crc32(_cfgLocalUser.get());
-        if (userCRC.equals("9bf60261")    // puredizzi@gmail.com
-            || userCRC.equals("498232b9") // myles.steinhauser@gmail.com
-            || userCRC.equals("3a1a17a")  // tobias@buro71a.de
-                ) {
-            _lastTransactionBeginStacktraceHolder = new Exception();
-            _lastTransactionBeginStacktraceHolder.fillInStackTrace();
-        }
+        _lastTransactionBeginStacktraceHolder = new Exception();
+        _lastTransactionBeginStacktraceHolder.fillInStackTrace();
         return _ongoing;
     }
 
