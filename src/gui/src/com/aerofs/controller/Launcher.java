@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
+
+import com.aerofs.lib.ex.ExAlreadyRunning;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.program.Program;
@@ -76,7 +78,10 @@ class Launcher
                     : "Sorry, an internal error happened, preventing " + S.PRODUCT + " to launch";
             reply.setStatus(Status.NOT_LAUNCHABLE);
             reply.setErrorMessage(msg);
-            SVClient.logSendDefectSyncNoCfgIgnoreError(true, "getInitialStatus", e, "unknown", _rtRoot);
+            if (!(e instanceof ExAlreadyRunning)) {
+                SVClient.logSendDefectSyncNoCfgIgnoreError(true, "getInitialStatus", e, "unknown",
+                        _rtRoot);
+            }
         }
 
         return reply.build();
@@ -131,13 +136,13 @@ class Launcher
         }
     }
 
-    private void checkNoOtherInstanceRunning() throws IOException, ExAborted
+    private void checkNoOtherInstanceRunning() throws IOException, ExAlreadyRunning
     {
         // make sure only one instance of the application is running
         try {
             _ss = new ServerSocket(Cfg.port(PortType.UI_SINGLETON), 0, C.LOCALHOST_ADDR);
         } catch (BindException e) {
-            throw new ExAborted(S.PRODUCT + " is already running.");
+            throw new ExAlreadyRunning();
         }
     }
 
