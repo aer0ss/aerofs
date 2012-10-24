@@ -15,6 +15,7 @@ import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
@@ -302,7 +303,7 @@ class Setup
         if (OSUtil.isLinux()) return;
 
         // TODO use real dependency injection
-        InjectableDriver dr = new InjectableDriver();
+        InjectableDriver dr = new InjectableDriver(new CfgLocalUser());
         dr.setFolderIcon(Cfg.absRootAnchor(), OSUtil.getIconPath(Icon.RootAnchor));
     }
 
@@ -318,7 +319,7 @@ class Setup
         CfgCoreDatabaseParams cfgCoreDBParams = new CfgCoreDatabaseParams(Cfg.db(), cfgBuildType);
         IDBCW dbcw = DBUtil.newDBCW(cfgCoreDBParams);
         dbcw.init_();
-        InjectableDriver dr = new InjectableDriver();
+        InjectableDriver dr = new InjectableDriver(new CfgLocalUser());
         try {
             Connection c = dbcw.getConnection();
             new CoreSchema(dbcw, dr).create_();

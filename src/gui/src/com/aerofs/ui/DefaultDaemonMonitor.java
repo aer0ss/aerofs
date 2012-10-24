@@ -12,6 +12,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.ex.ExUIMessage;
@@ -43,7 +44,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     private final FrequentDefectSender _fdsDeath = new FrequentDefectSender();
     private final FrequentDefectSender _fdsHeartbeatGone = new FrequentDefectSender();
     private final FrequentDefectSender _fdsRestartFail = new FrequentDefectSender();
-    private final InjectableDriver _driver = new InjectableDriver();
+    private final InjectableDriver _driver = new InjectableDriver(new CfgLocalUser());
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     /** waits until daemon starts and the key is set, or until timeout occurs
