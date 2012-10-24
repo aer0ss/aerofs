@@ -222,8 +222,7 @@ public class MobileService implements IMobileService
 
         public static boolean isEnabled()
         {
-            return Boolean.getBoolean(PROPERTY) && Cfg.staging();
-//            return Cfg.staging(a);
+            return Cfg.staging();
         }
 
         private final IIMCExecutor _imce;
