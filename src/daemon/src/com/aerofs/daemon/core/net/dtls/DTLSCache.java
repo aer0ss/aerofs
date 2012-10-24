@@ -73,7 +73,7 @@ class DTLSCache implements IDumpStatMisc
                 private void handleEvicted_(String type, PeerContext p,
                         Map<PeerContext, DTLSEntry> dm)
                 {
-                    l.info(p + " evicted. drop msg q: " + type);
+                    l.debug(p + " evicted. drop msg q: " + type);
 
                     DTLSEntry de = dm.remove(p);
                     if (de != null) {
@@ -101,7 +101,7 @@ class DTLSCache implements IDumpStatMisc
                         }
                     } finally {
                         _did2pcs.remove(d);
-                        l.info("evict d:" + d);
+                        l.debug("evict d:" + d);
                     }
                 }
             });
@@ -134,17 +134,17 @@ class DTLSCache implements IDumpStatMisc
 
         DTLSEntry entry = _frontlog.get(pc);
         if (null != entry) {
-            l.info("found ctx in frontlog");
+            l.debug("found ctx in frontlog");
             entryList.add(entry);
         }
 
         entry = _backlog.get(pc);
         if (null != entry) {
-            l.info("found ctx in backlog");
+            l.debug("found ctx in backlog");
             entryList.add(entry);
         }
 
-        if (entryList.isEmpty()) l.info("cant find ctx");
+        if (entryList.isEmpty()) l.debug("cant find ctx");
 
         return entryList;
     }
@@ -152,10 +152,10 @@ class DTLSCache implements IDumpStatMisc
     DTLSEntry createEntry_(PeerContext pc) throws ExDTLS
     {
         DTLSEngine engine = null;
-        l.info("create entry");
+        l.debug("create entry");
 
         if (null == _cliCtx) {
-            l.info("create cliCtx");
+            l.debug("create cliCtx");
             String privKey = SecUtil.exportPrivateKey(Cfg.privateKey());
             SSLCtx ctx = new SSLCtx();
             if (ctx.init(_isSender, _pathCACert, _pathCACert.length(), _pathDevCert,
@@ -194,7 +194,7 @@ class DTLSCache implements IDumpStatMisc
         assert _did2pcs.get(pc.did()).contains(pc);
 
         if (_backlog.get(pc) == entry) {
-            l.info("move ctx backlog -> frontlog");
+            l.debug("move ctx backlog -> frontlog");
             _backlog.remove(pc);
             _frontlog.put(pc, entry);
         } else {
@@ -205,10 +205,10 @@ class DTLSCache implements IDumpStatMisc
     void removeEntry_(PeerContext pc, DTLSEntry entry)
     {
         if (entry == _frontlog.get(pc)) {
-            l.info("Removing entry from main cache.");
+            l.debug("Removing entry from main cache.");
             _frontlog.remove(pc);
         } else {
-            l.info("Removing entry from the backlog.");
+            l.debug("Removing entry from the backlog.");
             _backlog.remove(pc);
         }
 
@@ -220,20 +220,20 @@ class DTLSCache implements IDumpStatMisc
         DTLSEntry entry = _frontlog.get(pc);
 
         if (null != entry) {
-            l.info("remove entry from frontlog");
+            l.debug("remove entry from frontlog");
             _frontlog.remove(pc);
         }
 
         entry = _backlog.get(pc);
         if (null != entry) {
-            l.info("remove entry from backlog");
+            l.debug("remove entry from backlog");
             _backlog.remove(pc);
         }
 
         removePeerContext_(pc);
 
         if (null == entry) {
-            l.info("removeEntries: cannot find any");
+            l.debug("removeEntries: cannot find any");
         }
     }
 
@@ -245,7 +245,7 @@ class DTLSCache implements IDumpStatMisc
         OutArg<Prio> outPrio = new OutArg<Prio>();
 
         while (!prioQueue.isEmpty_()) {
-            l.info("discard q'd msg");
+            l.debug("discard q'd msg");
             DTLSMessage<byte[]> msg = prioQueue.dequeue_(outPrio);
             msg.done_(e);
         }
@@ -266,13 +266,13 @@ class DTLSCache implements IDumpStatMisc
             // another thread is draining the entry. it's possible because
             // the call to entry.encrypt() below may block, and more draining
             // requests may come in while the thread is blocked.
-            l.info("someone else is draining");
+            l.debug("someone else is draining");
 
         } else {
             entry.setDraining_(true);
             try {
-                if (l.isInfoEnabled()) {
-                    l.info("draining q " + (sendQ.isEmpty_() ? "(empty)" : ""));
+                if (l.isDebugEnabled()) {
+                    l.debug("draining q " + (sendQ.isEmpty_() ? "(empty)" : ""));
                 }
 
                 OutArg<Prio> outPrio = new OutArg<Prio>();
@@ -295,7 +295,7 @@ class DTLSCache implements IDumpStatMisc
                         }
 
                     } else {
-                        l.info("Could not encrypt the msg");
+                        l.debug("Could not encrypt the msg");
                         break;
                     }
                 }
@@ -320,7 +320,7 @@ class DTLSCache implements IDumpStatMisc
             }
 
         } else if (updateLastHandshakeMessage == true) {
-            l.info("engine still in hs");
+            l.debug("engine still in hs");
             entry._lastHshakeMsgTime = now;
         }
     }

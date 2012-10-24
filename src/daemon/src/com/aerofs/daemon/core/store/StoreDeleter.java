@@ -162,7 +162,7 @@ public class StoreDeleter
     private void delete_(final SIndex sidx, Path path, PhysicalOp op, Trans t)
             throws SQLException, IOException, ExStreamInvalid
     {
-        Util.l(this).info("delete store " + sidx);
+        Util.l(this).debug("delete store " + sidx);
 
         // TODO: create IStoreDeletionListener with deleteStore_ method
         // register them with this class

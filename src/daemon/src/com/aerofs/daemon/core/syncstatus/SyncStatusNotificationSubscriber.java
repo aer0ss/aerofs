@@ -73,7 +73,7 @@ public class SyncStatusNotificationSubscriber
                 @Nullable final byte[] payload)
         {
             assert topic.equals(_topic);
-            l.info("notification received");
+            l.debug("notification received");
             runInCoreThread_(new AbstractEBSelfHandling()
             {
                 @Override

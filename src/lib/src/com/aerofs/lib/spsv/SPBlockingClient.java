@@ -51,7 +51,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
             super.signIn(_user, ByteString.copyFrom(Cfg.scrypted()));
         } catch (ExBadCredential e) {
             if (_bcl != null) {
-               l.info("ExBadCredential Caught, informing UI.");
+               l.debug("ExBadCredential Caught, informing UI.");
                _bcl.exceptionReceived();
             }
             throw e;

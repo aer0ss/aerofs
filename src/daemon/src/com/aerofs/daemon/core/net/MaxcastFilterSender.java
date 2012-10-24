@@ -21,7 +21,7 @@ public class MaxcastFilterSender {
     public int getNewMCastID_()
     {
         _lastMCasttID++;
-        if (l.isInfoEnabled()) l.info("generate new mcastid: " + _lastMCasttID);
+        if (l.isDebugEnabled()) l.debug("generate new mcastid: " + _lastMCasttID);
 
         return _lastMCasttID;
     }

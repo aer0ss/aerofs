@@ -63,7 +63,7 @@ class DTLSEntry
     byte[] encrypt(byte[] bs, PeerContext pc, Footer footer,
             OutArg<Boolean> hsSent) throws Exception
     {
-        l.info("enc msg " + bs.length);
+        l.debug("enc msg " + bs.length);
         DTLS_RETCODE rc = DTLS_RETCODE.DTLS_OK;
 
         if (null == _engine) {
@@ -78,13 +78,13 @@ class DTLSEntry
 
         if (DTLS_RETCODE.DTLS_NEEDREAD == rc
                 || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
-            l.info("eng ret need r/w, with msg " + outputLen[0]);
+            l.debug("eng ret need r/w, with msg " + outputLen[0]);
 
             if (outputLen[0] > 0) {
                 bsToSend[outputLen[0]] = footer.toByte();
                 byte[] temp =
                         Arrays.copyOf(bsToSend, outputLen[0] + Footer.SIZE);
-                l.info("hs: send msg down " + outputLen[0]);
+                l.debug("hs: send msg down " + outputLen[0]);
                 _layer.lower().sendUnicastDatagram_(temp, pc);
                 if (hsSent != null) hsSent.set(true);
             } else {
@@ -93,7 +93,7 @@ class DTLSEntry
             return null;
 
         } else if (DTLS_RETCODE.DTLS_OK == rc) {
-            l.info("eng enc'ed msg " + outputLen[0]);
+            l.debug("eng enc'ed msg " + outputLen[0]);
             bsToSend[outputLen[0]] = footer.toByte();
             return Arrays.copyOf(bsToSend, outputLen[0] + Footer.SIZE);
 
@@ -112,7 +112,7 @@ class DTLSEntry
             OutArg<Boolean> hsSent)
         throws Exception
     {
-        l.info("dec msg " + input.length);
+        l.debug("dec msg " + input.length);
 
         byte[] output = new byte[DTLS.BUF_SIZE]; // hardcoded number for now
         int[] outputLen = { output.length - Footer.SIZE };
@@ -120,7 +120,7 @@ class DTLSEntry
         DTLS_RETCODE rc = cryptImpl_(false, input, output, outputLen);
 
         if (DTLS_RETCODE.DTLS_NEEDREAD == rc || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
-            l.info("eng ret need r/w, drop packet & send msg " + outputLen[0]);
+            l.debug("eng ret need r/w, drop packet & send msg " + outputLen[0]);
 
             if (outputLen[0] > 0) {
                 output[outputLen[0]] = (byte) footer.ordinal();

@@ -17,7 +17,7 @@ public class AntiEntropy
 
     public void start(SIndex sidx, int seq)
     {
-        Util.l(this).info("start " + sidx + " seq " + seq);
+        Util.l(this).debug("start " + sidx + " seq " + seq);
         _sched.schedule(_factEv.create_(sidx, seq), 0);
     }
 }

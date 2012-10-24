@@ -62,7 +62,7 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
 
         Trans t = _tm.begin_();
         try {
-            l.info("join " + ev._path + " sid " + ev._sid);
+            l.debug("join " + ev._path + " sid " + ev._sid);
 
             SOID soidAnchor = new SOID(soidParent.sidx(), SID.storeSID2anchorOID(ev._sid));
 

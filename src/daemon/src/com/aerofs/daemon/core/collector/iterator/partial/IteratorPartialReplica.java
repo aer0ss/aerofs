@@ -82,10 +82,10 @@ class IteratorPartialReplica implements IIterator
                 if (_meta) {
                     _meta = false;
                     if (_s.isOverQuota_(0)) {
-                        l.info("over quota before non-meta. stop");
+                        l.debug("over quota before non-meta. stop");
                         return null;
                     } else {
-                        l.info("switch from meta to non-meta");
+                        l.debug("switch from meta to non-meta");
                         _dbiter.close_();
                         _dbiter = _csdb.getAllNonMetaCS_(_s.sidx(), null);
                         continue;
@@ -104,7 +104,7 @@ class IteratorPartialReplica implements IIterator
             } else if (_meta) {
                 return new OCIDAndCS(ret._ocid, DBCS2Meta(ret._cs));
             } else if (_s.isOverQuota_(0)) {
-                l.info("over quota during non-meta. stop");
+                l.debug("over quota during non-meta. stop");
                 return null;
             } else {
                 return ret;

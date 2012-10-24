@@ -90,7 +90,7 @@ public class SVClient
     {
         // don't archive logs for SP or staging
         if (!Cfg.useArchive()) {
-            l.info("log archive disabled");
+            l.debug("log archive disabled");
             return;
         }
 
@@ -110,7 +110,7 @@ public class SVClient
         }
 
         for (File fLog : fLogs) {
-            l.info("compressing " + fLog);
+            l.debug("compressing " + fLog);
             try {
                 // TODO the result may be too big to fit into memory
                 FileOutputStream os =
@@ -138,7 +138,7 @@ public class SVClient
         });
 
         for (File fGZLog : fGZLogs) {
-            l.info("uploading " + fGZLog);
+            l.debug("uploading " + fGZLog);
             try {
                 PBSVCall call =
                         PBSVCall.newBuilder()
@@ -210,11 +210,11 @@ public class SVClient
     public static void sendEventSync(PBSVEvent.Type type, @Nullable String desc)
     {
         if (Cfg.staging()) {
-            l.info("sv event sending disabled on staging");
+            l.debug("sv event sending disabled on staging");
             return;
         }
 
-        l.info("sending event " + type);
+        l.debug("sending event " + type);
 
         PBSVEvent.Builder bdEvent = PBSVEvent.newBuilder().setType(type);
         if (desc != null) bdEvent.setDesc(desc);
@@ -225,7 +225,7 @@ public class SVClient
         try {
             rpc(call);
         } catch (Exception e) {
-            l.info("cannot send event: " + e);
+            l.debug("cannot send event: " + e);
         }
     }
 
@@ -678,7 +678,7 @@ public class SVClient
                         files = new File[0];
                     }
 
-                    l.info("compressing " + files.length + " logs/db/hprof files");
+                    l.debug("compressing " + files.length + " logs/db/hprof files");
 
                     OutputStream os = new FileOutputStream(fZippedFiles);
                     try {
@@ -696,7 +696,7 @@ public class SVClient
                 .setHeader(header)
                 .setDefect(bdDefect).build();
 
-        l.info("sending to sv");
+        l.debug("sending to sv");
         Socket s = send(call, fZippedFiles.length());
         try {
             OutputStream os = s.getOutputStream();
@@ -714,7 +714,7 @@ public class SVClient
             FileUtil.deleteOrOnExit(fZippedFiles);
         }
 
-        l.info("sending defect done");
+        l.debug("sending defect done");
         setLastSentDefect(e.getMessage(), stackTrace);
 
         if (Cfg.inited()) archiveLogs();
@@ -724,7 +724,7 @@ public class SVClient
 
     public static void sendAnalytics(File db) throws Exception
     {
-        l.info("sending analytics");
+        l.debug("sending analytics");
 
         PBSVCall call = PBSVCall.newBuilder().setType(Type.ANALYTICS)
                 .setHeader(newHeader())
@@ -746,7 +746,7 @@ public class SVClient
             if (!s.isClosed()) s.close();
         }
 
-        l.info("sending analytics done");
+        l.debug("sending analytics done");
     }
 
     /**

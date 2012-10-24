@@ -100,7 +100,7 @@ public class ComputeHashCall
             }
         }
 
-        l.info("No matching version. Throwing NOT_FOUND");
+        l.debug("No matching version. Throwing NOT_FOUND");
         PBCore core = CoreUtil.newReply(msg.pb())
                 .setExceptionReply(Exceptions.toPB(new ExNotFound()))
                 .build();

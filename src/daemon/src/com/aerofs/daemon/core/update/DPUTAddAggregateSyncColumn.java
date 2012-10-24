@@ -111,7 +111,7 @@ public class DPUTAddAggregateSyncColumn implements IDaemonPostUpdateTask
                 bv.andInPlace(_mdb.getSyncStatus_(soid));
             }
 
-            l.info(soid + " => " + cv + " " + bv);
+            l.debug(soid + " => " + cv + " " + bv);
             return bv;
         } else {
             // files and anchors are treated similarly as this method is called for each store root

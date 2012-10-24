@@ -70,9 +70,9 @@ public class WindowsNotifier implements INotifier, JNotifyListener
 
     private static void log(String operation, String name, @Nullable String to)
     {
-        if (l.isInfoEnabled()) {
+        if (l.isDebugEnabled()) {
             String logStrTo = to == null ? "" : (" -> " + PathObfuscator.obfuscate(to));
-            l.info(operation + " " + PathObfuscator.obfuscate(name) + logStrTo);
+            l.debug(operation + " " + PathObfuscator.obfuscate(name) + logStrTo);
         }
     }
 

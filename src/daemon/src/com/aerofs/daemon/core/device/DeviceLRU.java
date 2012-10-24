@@ -39,7 +39,7 @@ public class DeviceLRU
                 @Override
                 public void evicted_(DID d, Object o)
                 {
-                    l.info("evict d:" + d);
+                    l.debug("evict d:" + d);
 
                     for (IDeviceEvictionListener l : listeners_) {
                         l.evicted_(d);

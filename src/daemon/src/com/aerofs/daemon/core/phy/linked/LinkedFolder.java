@@ -38,7 +38,7 @@ public class LinkedFolder implements IPhysicalFolder
     @Override
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("create " + this + " " + op);
+        if (l.isDebugEnabled()) l.debug("create " + this + " " + op);
 
         switch (op) {
         case APPLY:
@@ -66,7 +66,7 @@ public class LinkedFolder implements IPhysicalFolder
     public void move_(IPhysicalObject po, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("move " + this + " -> " + po);
+        if (l.isDebugEnabled()) l.debug("move " + this + " -> " + po);
 
         LinkedFolder lf = (LinkedFolder) po;
 
@@ -86,7 +86,7 @@ public class LinkedFolder implements IPhysicalFolder
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("delete " + this);
+        if (l.isDebugEnabled()) l.debug("delete " + this);
 
         switch (op) {
         case APPLY:

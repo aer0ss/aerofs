@@ -89,7 +89,7 @@ public class VersionUpdater
     private void updateImpl_(SOCKID k, boolean alias, Trans t)
         throws SQLException, IOException
     {
-        if (l.isInfoEnabled()) l.info("update " + k);
+        if (l.isDebugEnabled()) l.debug("update " + k);
         assert t != null;
 
         _nvc.updateMyVersion_(k, alias, t);

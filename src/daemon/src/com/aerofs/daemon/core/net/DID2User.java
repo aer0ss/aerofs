@@ -93,7 +93,7 @@ public class DID2User
     {
         assert getFromLocalNullable_(did) == null;
 
-        l.info("resolving user 4 " + did);
+        l.debug("resolving user 4 " + did);
 
         _nsl.sendUnicast_(did, sidx, CoreUtil.newCall(Type.NOP).build());
 

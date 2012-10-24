@@ -115,7 +115,7 @@ public class Hasher
                     delList.put(kidx, vBranch);
                 }
 
-                l.info("kidx: " + kidx + " vAddLocal: " + vAddLocal);
+                l.debug("kidx: " + kidx + " vAddLocal: " + vAddLocal);
             }
         }
 
@@ -130,21 +130,21 @@ public class Hasher
                     SOCKID kDel = new SOCKID(soid, CID.CONTENT, kidx);
                     Version vDel = en.getValue();
 
-                    l.info("Hash: Branch to be deleted " + kidx);
+                    l.debug("Hash: Branch to be deleted " + kidx);
                     _bd.deleteBranch_(kDel, vDel, true, t);
                 }
                 // See comments "@@" above.
                 Version vApply = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, kidxApply));
                 vAddLocal = vAddLocal.sub_(vApply);
 
-                l.info("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
+                l.debug("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
                 _nvc.addLocalVersion_(new SOCKID(soid, CID.CONTENT, kidxApply), vAddLocal, t);
                 t.commit_();
             } finally {
                 t.end_();
             }
         } else {
-            l.info("Hash: No branches with same hash found");
+            l.debug("Hash: No branches with same hash found");
         }
     }
 
@@ -342,7 +342,7 @@ public class Hasher
 
             outPos += hashSize;
             totalBytesRead += chunkBytes;
-            l.info("Hashed " + totalBytesRead + " bytes of " + fileLen);
+            l.debug("Hashed " + totalBytesRead + " bytes of " + fileLen);
         } while (totalBytesRead < fileLen);
 
         assert outPos == totalHashLength;
@@ -393,7 +393,7 @@ public class Hasher
     public ContentHash computeHashBlocking_(SOKID sokid)
             throws ExNotFound, SQLException, ExAborted, IOException, DigestException
     {
-        l.info("computeHashBlocking for " + sokid);
+        l.debug("computeHashBlocking for " + sokid);
 
         ContentHash h = _ds.getCAHash_(sokid);
         if (h != null) return h;

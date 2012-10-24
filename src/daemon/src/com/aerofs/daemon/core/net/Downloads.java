@@ -211,11 +211,11 @@ public class Downloads
         } else {
             final Token tk2 = tk == null ? _tc.acquire_(getCat(), "dl " + socid) : tk;
             if (tk2 == null) {
-                l.info("cat full 4 " + socid);
+                l.debug("cat full 4 " + socid);
                 return null;
             }
 
-            l.info(socid);
+            l.debug(socid);
 
             final Download dl = _factDownload.create_(socid, to, listener, tk2);
 

@@ -100,7 +100,7 @@ public class GCCSendContent
         } else {
             long newPrefixLen = vLocal.equals(vPrefix) ? prefixLen : 0;
 
-            l.info("recved prefix len " + prefixLen + " v "+ vPrefix + ". local " + vLocal +
+            l.debug("recved prefix len " + prefixLen + " v "+ vPrefix + ". local " + vLocal +
                     " newLen " + newPrefixLen);
 
             // because the original builders have built, we have
@@ -167,7 +167,7 @@ public class GCCSendContent
             }
 
             if (copied != len || wasContentModifiedSince_(k, v, mtime, len, pf)) {
-                l.info(k + " updated while being sent. nak");
+                l.debug(k + " updated while being sent. nak");
                 reply = CoreUtil.newReply(reply.getRpcid())
                         .setExceptionReply(Exceptions.toPB(new ExUpdateInProgress()))
                         .build();

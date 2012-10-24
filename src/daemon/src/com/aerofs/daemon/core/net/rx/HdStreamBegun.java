@@ -33,7 +33,7 @@ public class HdStreamBegun implements IEventHandler<EIStreamBegun>
     {
         SIndex sidx = _sid2sidx.getNullable_(ev._sid);
         if (sidx == null) {
-            l.info("no store " + ev._sid);
+            l.debug("no store " + ev._sid);
             return;
         } else {
             PeerContext pc = new PeerContext(ev._ep, sidx);

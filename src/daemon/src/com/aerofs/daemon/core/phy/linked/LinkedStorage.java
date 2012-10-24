@@ -156,7 +156,7 @@ public class LinkedStorage implements IPhysicalStorage
     public long apply_(IPhysicalPrefix prefix, IPhysicalFile file, boolean wasPresent, long mtime,
             Trans t) throws IOException, SQLException
     {
-        if (l.isInfoEnabled()) l.info("apply " + prefix + "->" + file);
+        if (l.isDebugEnabled()) l.debug("apply " + prefix + "->" + file);
 
         final LinkedFile f = (LinkedFile) file;
         final LinkedPrefix p = (LinkedPrefix) prefix;

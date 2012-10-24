@@ -100,19 +100,19 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         Store s = _f._sidx2s.getNullable_(_sidx);
 
         if (s == null) {
-            l.info(_sidx + " no longer exists. return");
+            l.debug(_sidx + " no longer exists. return");
             return false;
 
         } else if (_seq != s.getAntiEntropySeq_()) {
-            l.info(s + ": seq mismatch " + _seq + " v " + s.getAntiEntropySeq_() + ". return");
+            l.debug(s + ": seq mismatch " + _seq + " v " + s.getAntiEntropySeq_() + ". return");
             return false;
 
         } else if (!s.hasOnlinePotentialMemberDevices_()) {
-            l.info(s + ": no online devs. return");
+            l.debug(s + ": no online devs. return");
             return false;
 
         } else if (!_f._lss.isUp_()) {
-            l.info(s + ": link is down. skip");
+            l.debug(s + ": link is down. skip");
 
         } else {
             To to = _f._factTo.create_(_sidx, To.RANDCAST);

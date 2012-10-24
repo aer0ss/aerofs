@@ -121,7 +121,7 @@ public class Collector implements IDumpStatMisc
     public void add_(DID did, BFOID filter, Trans t) throws SQLException
     {
         if (_cfs.addDBFilter_(did, filter, t)) {
-            l.info("adding filter to " + did + " triggers collector 4 " + _s.sidx());
+            l.debug("adding filter to " + did + " triggers collector 4 " + _s.sidx());
             resetBackoffInterval_();
             if (started_()) _cfs.addCSFilter_(did, _occs._cs, filter);
             else start_(t);
@@ -137,7 +137,7 @@ public class Collector implements IDumpStatMisc
                     throws Exception
             {
                 if (_cfs.loadDBFilter_(did)) {
-                    l.info(did + " online triggers collector 4 " + _s.sidx());
+                    l.debug(did + " online triggers collector 4 " + _s.sidx());
                     resetBackoffInterval_();
                     if (started_()) _cfs.setCSFilterFromDB_(did, _occs._cs);
                     else start_(null);
@@ -201,7 +201,7 @@ public class Collector implements IDumpStatMisc
 
     private void scheduleBackoff_()
     {
-        l.info("schedule backoff " + _backoffScheduled + " in " + _backoffInterval);
+        l.debug("schedule backoff " + _backoffScheduled + " in " + _backoffInterval);
 
         if (_backoffScheduled) return;
         _backoffScheduled = true;
@@ -211,7 +211,7 @@ public class Collector implements IDumpStatMisc
             @Override
             public void handle_()
             {
-                l.info("backoff start " + _occs);
+                l.debug("backoff start " + _occs);
                 _backoffScheduled = false;
                 restart_();
             }
@@ -235,7 +235,7 @@ public class Collector implements IDumpStatMisc
             ioaIter.get().close_();
         }
 
-        l.info("collect " + _s.sidx() + " returns. occs = " + _occs);
+        l.debug("collect " + _s.sidx() + " returns. occs = " + _occs);
         attemptToStopAndFinalizeCollection_(t);
     }
 
@@ -279,7 +279,7 @@ public class Collector implements IDumpStatMisc
                 } else {
                     assert _occs._cs.compareTo(occs._cs) < 0;
                     if (!_cfs.deleteCSFilters_(_occs._cs.plusOne(), occs._cs)) {
-                        l.info("no filter left. stop");
+                        l.debug("no filter left. stop");
                         _occs = null;
                         break;
                     } else {
@@ -289,7 +289,7 @@ public class Collector implements IDumpStatMisc
 
             } else if (hasEntry) {
                 ioaIter.get().close_();
-                l.info("start over");
+                l.debug("start over");
                 ioaIter.set(_iterFactory.newIterator_(null));
                 assert _occs != null;
                 occs = ioaIter.get().next_(t);
@@ -299,7 +299,7 @@ public class Collector implements IDumpStatMisc
                     assert _occs._cs.compareTo(occs._cs) >= 0;
                     if (!_cfs.deleteCSFilters_(null, occs._cs) ||
                             !_cfs.deleteCSFilters_(_occs._cs.plusOne(), null)) {
-                        l.info("no filter left. stop");
+                        l.debug("no filter left. stop");
                         _occs = null;
                         break;
                     } else {
@@ -307,7 +307,7 @@ public class Collector implements IDumpStatMisc
                     }
 
                 } else {
-                    l.info("empty list. stop");
+                    l.debug("empty list. stop");
                     _cfs.deleteAllCSFilters_();
                     _occs = null;
                     break;
@@ -319,7 +319,7 @@ public class Collector implements IDumpStatMisc
                 // when the method is called), and 2) therefore it's a
                 // new iteration, and it returns nothing.
                 // in this case, we stop
-                l.info("empty list. stop");
+                l.debug("empty list. stop");
                 _cfs.deleteAllCSFilters_();
                 _occs = null;
                 break;
@@ -341,13 +341,13 @@ public class Collector implements IDumpStatMisc
         assert _downloads >= 0;
 
         if (!started_() && _downloads == 0) {
-            l.info("stop clct on " + _s.sidx());
+            l.debug("stop clct on " + _s.sidx());
             try {
                 _cfs.cleanUpDBFilters_(t);
             } catch (SQLException e) {
                 // filters may be failed to be removed from the db which is not
                 // a big deal
-                l.info("stop clct 4 " + _s.sidx() + ", ignored: " + Util.e(e));
+                l.debug("stop clct 4 " + _s.sidx() + ", ignored: " + Util.e(e));
             }
         }
     }
@@ -363,7 +363,7 @@ public class Collector implements IDumpStatMisc
         final Set<DID> dids = _cfs.getDevicesHavingComponent_(occs._ocid);
         if (dids.isEmpty()) return true;
 
-        l.info("clct " + _s.sidx() + occs + " " + dids);
+        l.debug("clct " + _s.sidx() + occs + " " + dids);
 
         final Token tk;
         if (_f._dls.isOngoing_(socid)) {
@@ -373,13 +373,13 @@ public class Collector implements IDumpStatMisc
             Cat cat = _f._dls.getCat();
             tk = _f._tokenManager.acquire_(cat, "collect " + _s.sidx() + occs._ocid);
             if (tk == null) {
-                l.info("request continuation");
+                l.debug("request continuation");
                 _f._tokenManager.addTokenReclamationListener_(cat, new ITokenReclamationListener()
                 {
                     @Override
                     public void tokenReclaimed_(Cat cat)
                     {
-                        l.info("start continuation");
+                        l.debug("start continuation");
                         _f._er.retry("continuation", new Callable<Void>()
                         {
                             @Override
@@ -442,7 +442,7 @@ public class Collector implements IDumpStatMisc
         @Override
         public void onGeneralError_(SOCID socid, Exception e)
         {
-            l.info("cdl " + socid + ": " + Util.e(e));
+            l.debug("cdl " + socid + ": " + Util.e(e));
             if (_tk != null) _tk.reclaim_();
 
             // For general errors, we want to re-run this collector.

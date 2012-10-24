@@ -166,7 +166,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public void installShellExtension(boolean silently) throws IOException, SecurityException
     {
-        l.info("Installing the Finder extension");
+        l.debug("Installing the Finder extension");
 
         // Check that the we didn't forget to ship the Finder extension with AeroFS
         File source = new File(AppRoot.abs() + "/" + FINDEREXT_BUNDLE);
@@ -184,7 +184,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         // TODO (GS): Remove the ownership test once we believe no one is running an older client
         if (!destination.exists() || getOwner(destination).equals("root")) {
             if (!silently) {
-                l.info("Creating the directories for the Finder extension");
+                l.debug("Creating the directories for the Finder extension");
                 ArrayList<String> commands = new ArrayList<String>();
                 commands.add("mkdir -p " + destination.getPath());
                 commands.add("chown $USER " + destination.getPath());
@@ -208,7 +208,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         Util.execForeground("ln", "-s", source.getAbsolutePath() + "/Contents",
                 FINDEREXT_DIR + "/Contents");
 
-        l.info("Restarting the Finder");
+        l.debug("Restarting the Finder");
         Util.execForeground("killall", "Finder");
 
         if (_shellextPort > 0) {
@@ -235,7 +235,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
             l.warn("Unable to launch Finder extension " + Util.e(e));
         }
 
-        l.info("Finder extension launched");
+        l.debug("Finder extension launched");
     }
 
     @Override

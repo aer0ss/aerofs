@@ -117,7 +117,7 @@ public class Download
         _ls.addListener_(listener);
 
         if (_f._tc.prio() != _prio) {
-            l.info("prio changed. take effect in the next round");
+            l.debug("prio changed. take effect in the next round");
         }
     }
 
@@ -287,16 +287,16 @@ public class Download
 
             } catch (ExNoResource e) {
                 reenqueue(started);
-                l.info(_socid + ": " + Util.e(e));
+                l.debug(_socid + ": " + Util.e(e));
                 _tk.sleep_(3 * C.SEC, "retry dl (no rsc)");
 
             } catch (ExNoComponentWithSpecifiedVersion e) {
                 reenqueue(started);
                 if (_f._nvc.getKMLVersion_(_socid).isZero_()) {
-                    l.info("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml = 0. done");
+                    l.debug("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml = 0. done");
                     return replier;
                 } else {
-                    l.info("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml != 0. retry");
+                    l.debug("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml != 0. retry");
                     avoidDevice_(replier, e);
                 }
 
@@ -332,7 +332,7 @@ public class Download
 
     private void onUpdateInProgress() throws ExNoResource, ExAborted
     {
-        l.info(_socid + ": update in prog. retry later");
+        l.debug(_socid + ": update in prog. retry later");
         // TODO exponential retry
         _tk.sleep_(3 * C.SEC, "retry dl (update in prog)");
     }
@@ -350,7 +350,7 @@ public class Download
             throws Exception
     {
         To to = e._did == null ? _f._factTo.create_(_src) : _f._factTo.create_(e._did);
-        l.info("download dependency " + dependency);
+        l.debug("download dependency " + dependency);
         try {
             _f._dls.downloadSync_(dependency, to, _tk);
         } catch (Exception e2) {
@@ -364,10 +364,10 @@ public class Download
             // file, but threw an exception for some reason instead of sending the file.
             // Instead we should catch ExNoComponentWithSpecifiedVersion, and only add the OCID to
             // _requested in that case.
-            if (e._ignoreError) l.info("dl dependency error, ignored: " + Util.e(e2));
+            if (e._ignoreError) l.debug("dl dependency error, ignored: " + Util.e(e2));
             else throw e2;
         }
-        l.info("dependency " + dependency + " solved");
+        l.debug("dependency " + dependency + " solved");
         assert dependency.dst.oid().equals(e._ocid.oid());
         _requested.add(e._ocid);
     }

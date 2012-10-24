@@ -91,7 +91,7 @@ public class RPC
         DigestedMessage reply = me._reply;
         assert reply != null;
 
-        l.info("got reply");
+        l.debug("got reply");
 
         if (to != null) to.add_(reply.did());
 
@@ -146,7 +146,7 @@ public class RPC
             me._reply = msg;
             return me._tcb.resume_();
         } else {
-            l.info("spurious reply " + rpcid);
+            l.debug("spurious reply " + rpcid);
             return false;
         }
     }

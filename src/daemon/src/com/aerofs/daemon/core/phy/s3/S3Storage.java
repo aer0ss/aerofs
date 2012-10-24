@@ -90,7 +90,7 @@ public class S3Storage implements IPhysicalStorage
         _fileFactory = fileFactory;
 
         InjectableFile s3Dir = _fileFactory.create(s3DirConfig.getS3Dir().getPath());
-        if (l.isInfoEnabled()) l.info("s3 dir: " + s3Dir);
+        if (l.isDebugEnabled()) l.debug("s3 dir: " + s3Dir);
         _prefixDir = _fileFactory.create(s3Dir, "prefix");
         _tempDir = _fileFactory.create(s3Dir, "tmp");
         _storageDir = _fileFactory.create(s3Dir, "storage");
@@ -368,7 +368,7 @@ public class S3Storage implements IPhysicalStorage
         {
             try {
                 if (_hash != null) return _hash;
-                l.info(">>> preparing prefix for " + _sockid);
+                l.debug(">>> preparing prefix for " + _sockid);
 
 //                FileUpload upload = new PrefixChunker(getFile().getImplementation(), tk);
                 FileUpload upload = new SimpleUpload(getFile().getImplementation(), tk);
@@ -383,7 +383,7 @@ public class S3Storage implements IPhysicalStorage
                     t.end_();
                 }
 
-                l.info("<<< done preparing prefix for " + _sockid);
+                l.debug("<<< done preparing prefix for " + _sockid);
             } catch (SQLException e) {
                 throw newIOException(e);
             }
@@ -551,9 +551,9 @@ public class S3Storage implements IPhysicalStorage
                 SOKID toObjId = to._sokid;
                 Path toPath = to._path;
 
-                if (l.isInfoEnabled()) {
-                    if (!fromObjId.equals(toObjId)) l.info(fromObjId + " -> " + toObjId);
-                    if (!fromPath.equals(toPath)) l.info(fromPath + " -> " + toPath);
+                if (l.isDebugEnabled()) {
+                    if (!fromObjId.equals(toObjId)) l.debug(fromObjId + " -> " + toObjId);
+                    if (!fromPath.equals(toPath)) l.debug(fromPath + " -> " + toPath);
                 }
 
                 S3FileInfo fromInfo = getFileInfo_(fromObjId);

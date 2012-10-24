@@ -118,11 +118,11 @@ public class LinuxNotifier implements INotifier, INotifyListener
         int watch_id = -1;
         synchronized (this) {
             try {
-                l.info("addWatchRecursively(" + dir + ")");
+                l.debug("addWatchRecursively(" + dir + ")");
                 watch_id = _jn.linux_addWatch(dir.getAbsolutePath(), MASK);
                 assert(watch_id != WATCH_ID_ROOT);
-                if (l.isInfoEnabled()) {
-                    l.info("watch id " + watch_id + ": " + dir.getAbsolutePath());
+                if (l.isDebugEnabled()) {
+                    l.debug("watch id " + watch_id + ": " + dir.getAbsolutePath());
                 }
                 LinuxINotifyWatch newWatch = new LinuxINotifyWatch(watch_id, name, parent);
                 // We may already have a watch set up on this folder.  If the path of the
@@ -133,8 +133,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 // but is unusual enough to merit its own log line.
                 // We make the first case here a logging no-op.
                 if (_watches.containsKey(watch_id)) {
-                    if (l.isInfoEnabled()) {
-                        l.info("duplicate watch id " + watch_id + " for " +
+                    if (l.isDebugEnabled()) {
+                        l.debug("duplicate watch id " + watch_id + " for " +
                                 dir.getAbsolutePath() + " and " +
                                 getWatchPath(watch_id).getAbsolutePath());
                     }
@@ -211,8 +211,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
     private synchronized void removeWatchRecursively(LinuxINotifyWatch watch)
             throws JNotifyException
     {
-        if (l.isInfoEnabled()) {
-            l.info("removeWatchRecursively( id=" + watch._watchId + ", path=" +
+        if (l.isDebugEnabled()) {
+            l.debug("removeWatchRecursively( id=" + watch._watchId + ", path=" +
                     getWatchPath(watch._watchId).getAbsolutePath() + ")" );
         }
         for(LinuxINotifyWatch child : watch._children) {
@@ -236,8 +236,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
         if (!_deletedAckPending.contains(watch._watchId)) {
             _deletedAckPending.add(watch._watchId);
         }
-        if (l.isInfoEnabled()) {
-            l.info("Removed watch " + watch._watchId + " on path "
+        if (l.isDebugEnabled()) {
+            l.debug("Removed watch " + watch._watchId + " on path "
                    + getWatchPath(watch._watchId).getAbsolutePath());
         }
     }
@@ -277,29 +277,29 @@ public class LinuxNotifier implements INotifier, INotifyListener
     {
         // Log the event.
         if (Util.test(mask, IN_CREATE)) {
-            l.info("inotify: IN_CREATE " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_CREATE " + name + ", " + id + ", " + mask);
         }
         if (Util.test(mask, IN_MODIFY)) {
-            l.info("inotify: IN_MODIFY " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_MODIFY " + name + ", " + id + ", " + mask);
         }
         if (Util.test(mask, IN_MOVED_TO)) {
-            l.info("inotify: IN_MOVED_TO " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_MOVED_TO " + name + ", " + id + ", " + mask);
         }
         if (Util.test(mask, IN_ATTRIB)) {
-            l.info("inotify: IN_ATTRIB " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_ATTRIB " + name + ", " + id + ", " + mask);
         }
         if (Util.test(mask, IN_DELETE)) {
-            l.info("inotify: IN_DELETE " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_DELETE " + name + ", " + id + ", " + mask);
         }
         if (Util.test(mask, IN_MOVED_FROM)) {
-            l.info("inotify: IN_MOVED_FROM " + name + ", " + id + ", " + mask);
+            l.debug("inotify: IN_MOVED_FROM " + name + ", " + id + ", " + mask);
         }
 
         // if an ID is present in _deletedAckPending, we have already requested that the
         // kernel stop sending us events associated with this ID (because the folder is no longer
         // present or no longer under the root anchor) and we should ignore any that do arrive.
         if (_deletedAckPending.contains(id)) {
-            l.info("inotify: got event for watch " + id + " pending deletion, ignoring");
+            l.debug("inotify: got event for watch " + id + " pending deletion, ignoring");
         } else {
             // Check if we need to handle an unwatching deferred from a previous event.
             if ( Util.test(_prevActionMask, IN_ISDIR) &&
@@ -313,8 +313,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
                     // It looks like this event is the matching MOVED_TO for the previous
                     // MOVED_FROM event.  We should just update the path associated with the
                     // appropriate watch.
-                    if (l.isInfoEnabled()) {
-                        l.info("Saw a move from " + getWatchPath(_prevActionId) + "/" +
+                    if (l.isDebugEnabled()) {
+                        l.debug("Saw a move from " + getWatchPath(_prevActionId) + "/" +
                                 _prevName + " to " + getWatchPath(id) + "/" + name);
                     }
                     LinuxINotifyWatch oldParent = _watches.get(_prevActionId);
@@ -332,7 +332,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                         // folder, then on its children, but a move happens before we can place
                         // the child watch.  In this case, thisWatch is null.  We'll add the watch
                         // down below.
-                        l.info("No old watch on " + name + " , guess we lost a race recently.");
+                        l.debug("No old watch on " + name + " , guess we lost a race recently.");
                     } else {
                         // Remove the watch from its former parent's child list
                         oldParent._children.remove(thisWatch);
@@ -349,7 +349,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                     // root anchor, and we should (recursively) unwatch the target of the previous
                     // event.
                     LinuxINotifyWatch oldParent = _watches.get(_prevActionId);
-                    l.info("Following up on previous event: removing watches");
+                    l.debug("Following up on previous event: removing watches");
                     for(LinuxINotifyWatch watch : oldParent._children) {
                         if (watch._name.equals(_prevName)) {
                             oldParent._children.remove(watch);
@@ -399,7 +399,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         // IN_IGNORED.  This is the kernel's acknowledgement and promise not to send any more
         // events associated with this inode/watch id (unless you inotify_add_watch() it again).
         if (Util.test(mask, IN_IGNORED)) {
-            l.info("inotify: IN_IGNORED watch id " + id + " removed by kernel.");
+            l.debug("inotify: IN_IGNORED watch id " + id + " removed by kernel.");
             LinuxINotifyWatch removedWatch = _watches.get(id);
             // We should never lose a watch we don't think we have.
             assert(removedWatch != null);
@@ -452,13 +452,13 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
     private void mightCreate(String path)
     {
-        if (l.isInfoEnabled()) l.info("mightCreate(" + obfuscate(path) + ")");
+        if (l.isDebugEnabled()) l.debug("mightCreate(" + obfuscate(path) + ")");
         _cq.enqueueBlocking(new EIMightCreateNotification(path), Linker.PRIO);
     }
 
     private void mightDelete(String path)
     {
-        if (l.isInfoEnabled()) l.info("mightDelete(" + obfuscate(path) + ")");
+        if (l.isDebugEnabled()) l.debug("mightDelete(" + obfuscate(path) + ")");
         _cq.enqueueBlocking(new EIMightDeleteNotification(path), Linker.PRIO);
     }
 

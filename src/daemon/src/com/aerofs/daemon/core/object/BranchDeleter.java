@@ -39,7 +39,7 @@ public class BranchDeleter
             boolean deleteVersionPermanently, Trans t)
         throws SQLException, IOException, ExNotFound
     {
-        l.info("delete branch " + k);
+        l.debug("delete branch " + k);
 
         // During aliasing the MASTER branch of the aliased object can be deleted.
 

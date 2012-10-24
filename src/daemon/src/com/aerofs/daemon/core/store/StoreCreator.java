@@ -76,7 +76,7 @@ public class StoreCreator
 
         SIndex sidx = _sid2sidx.getAbsent_(sid, t);
 
-        Util.l(this).info("create store " + sidx);
+        Util.l(this).debug("create store " + sidx);
 
         // create root directory; its parent is itself
         _mdb.createOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);

@@ -63,7 +63,7 @@ public class MapAlias2Target
         if (oidTarget == null) return soid;
 
         SOID soidTarget = new SOID(soid.sidx(), oidTarget);
-        l.info("dereferenced alias" + soid + "->" + soidTarget);
+        l.debug("dereferenced alias" + soid + "->" + soidTarget);
 
         return soidTarget;
     }

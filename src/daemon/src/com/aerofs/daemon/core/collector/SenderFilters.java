@@ -184,7 +184,7 @@ public class SenderFilters
             filterNew = new BFOID();
         }
 
-        if (l.isInfoEnabled()) l.info("update 4 " + _sidx + " " + did + " " + sfidxOld + " merge " +
+        if (l.isDebugEnabled()) l.debug("update 4 " + _sidx + " " + did + " " + sfidxOld + " merge " +
                 merge + " create " + create + " sfidxNew " + sfidxNew);
 
         Trans t = _tm.begin_();
@@ -192,7 +192,7 @@ public class SenderFilters
             if (merge) {
                 SenderFilterIndex sfidxPrev = _sfdb
                         .getSenderFilterPreviousIndex_(_sidx, sfidxOld);
-                l.info("merge 4 " + _sidx + " " + sfidxPrev + "<-" + sfidxOld);
+                l.debug("merge 4 " + _sidx + " " + sfidxPrev + "<-" + sfidxOld);
                 BFOID filterPrev = _sfdb.getSenderFilter_(_sidx, sfidxPrev);
                 BFOID filterOld = _sfdb.getSenderFilter_(_sidx, sfidxOld);
                 if (filterPrev.union_(filterOld)) {

@@ -31,7 +31,7 @@ public class HdMaxcastMessage implements IEventHandler<EIMaxcastMessage>
     {
         SIndex sidx = _sid2sidx.getNullable_(ev._sid);
         if (sidx == null) {
-            Util.l(this).info("no store " + ev._sid);
+            Util.l(this).debug("no store " + ev._sid);
         } else {
             try {
                 _stack.inputTop().maxcastMessageReceived_(sidx, ev._ep, ev.is());

@@ -116,7 +116,7 @@ public class CollectorFilters
         }
 
         if (changed) {
-            if (l.isInfoEnabled()) l.info("save db 4 " + _sidx + " " + did + " " + filterNew);
+            if (l.isDebugEnabled()) l.debug("save db 4 " + _sidx + " " + did + " " + filterNew);
 
             _cfdb.setCollectorFilter_(_sidx, did, filterNew, t);
 
@@ -168,7 +168,7 @@ public class CollectorFilters
                     dev.setDBFilter_(null);
                     // N.B. if the transaction is rolled back, the in-memory db
                     // filter becomes inconsistent with the db, which is fine
-                    l.info("delete cf from db " + _sidx + " " + dev._did);
+                    l.debug("delete cf from db " + _sidx + " " + dev._did);
                     _cfdb.deleteCollectorFilter_(_sidx, dev._did, t);
                 }
                 if (t == null) t2.commit_();
@@ -222,7 +222,7 @@ public class CollectorFilters
      */
     private @Nullable BFOID setCSFilter_(DeviceEntry dev, CollectorSeq cs, @Nonnull BFOID filter)
     {
-        l.info("set cs filter for " + _sidx + " " + dev._did + " cs " + cs);
+        l.debug("set cs filter for " + _sidx + " " + dev._did + " cs " + cs);
         filter.finalize_();
 
         dev._css.add(cs);
@@ -240,7 +240,7 @@ public class CollectorFilters
      */
     void addCSFilter_(DID did, CollectorSeq cs, BFOID filter)
     {
-        l.info("add cs filter to " + _sidx + " " + did + " cs " + cs);
+        l.debug("add cs filter to " + _sidx + " " + did + " cs " + cs);
         addCSFilter_(_did2dev.get(did), cs, filter);
     }
 
@@ -318,7 +318,7 @@ public class CollectorFilters
 
         for (Entry<CollectorSeq, Map<DID, BFOID>> en : sub.entrySet()) {
             for (DID did : en.getValue().keySet()) {
-                l.info("disposing " + _sidx + " " + en.getKey() + " " + did);
+                l.debug("disposing " + _sidx + " " + en.getKey() + " " + did);
                 DeviceEntry dev = _did2dev.get(did);
                 Util.verify(dev._css.remove(en.getKey()));
             }

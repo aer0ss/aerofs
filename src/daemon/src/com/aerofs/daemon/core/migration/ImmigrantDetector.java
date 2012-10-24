@@ -99,7 +99,7 @@ public class ImmigrantDetector
             Version vFrom = _nvc.getLocalVersion_(kFrom);
             ContentHash hFrom = _ds.getCAHash_(kFrom.sokid());
 
-            Util.l().info("migrate do " + kFrom);
+            Util.l().debug("migrate do " + kFrom);
 
             SOCKID kTo = new SOCKID(socidTo, kidx);
 

@@ -159,10 +159,10 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                          Lists.newArrayList(notification.getStatus()));
                 // skip pull on successful fast forward
                 if (fastForward) {
-                    l.info("successful fast forward from " + localEpoch + " to " + serverEpoch);
+                    l.debug("successful fast forward from " + localEpoch + " to " + serverEpoch);
                     return;
                 } else {
-                    l.info("pull required to go from " + localEpoch + " to " + serverEpoch);
+                    l.debug("pull required to go from " + localEpoch + " to " + serverEpoch);
                 }
             }
             schedulePull_();
@@ -335,7 +335,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
 
         while (more) {
             long localEpoch = _lsync.getPullEpoch_();
-            l.info("pull " + localEpoch);
+            l.debug("pull " + localEpoch);
 
             // NOTE: release the core lock during the RPC call
             GetSyncStatusReply reply = _ssc.getSyncStatus_(localEpoch);
@@ -351,7 +351,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                     continue;
                 }
                 // nothing new...
-                l.info("Nothing new in server reply: " + newEpoch + " vs " + localEpochAfterCall);
+                l.debug("Nothing new in server reply: " + newEpoch + " vs " + localEpochAfterCall);
                 return;
             }
 
@@ -391,7 +391,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
 
             DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
 
-            l.info("new status for : " + soid.toString());
+            l.debug("new status for : " + soid.toString());
 
             // compress the reply into a sync status bit vector
             BitVector bv = new BitVector(dids.size(), false);
@@ -401,7 +401,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                 if (idx == null) {
                     // new DID, register it with this store
                     idx = addDevice_(sidx, did);
-                    l.info("[" + sidx +  "] new DID : " + did.toStringFormal() + " -> " + idx);
+                    l.debug("[" + sidx +  "] new DID : " + did.toStringFormal() + " -> " + idx);
                 }
                 bv.set(idx, dstat.getIsSynced());
             }
@@ -550,12 +550,12 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
             List<ByteString> vhs = Lists.newArrayList();
             for (OID oid : e.getValue()) {
                 byte[] vh = getVersionHash_(new SOID(sidx, oid));
-                l.info(new SOID(sidx, oid).toString() + " : " + Util.hexEncode(vh));
+                l.debug(new SOID(sidx, oid).toString() + " : " + Util.hexEncode(vh));
                 oids.add(oid.toPB());
                 vhs.add(ByteString.copyFrom(vh));
             }
 
-            l.info("vh push: " + sidx + " " + oids.size());
+            l.debug("vh push: " + sidx + " " + oids.size());
             // only notify the server of the latest client epoch in the last chunk
             long clientEpoch = (++i == soids.size() ? nextEpoch : currentEpoch);
             _ssc.setVersionHash_(sid, oids, vhs, clientEpoch);
@@ -631,10 +631,10 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
     @Override
     public void onSignIn_(long clientEpoch) throws Exception
     {
-        l.info("connected: " + clientEpoch);
+        l.debug("connected: " + clientEpoch);
         long pushEpoch = _lsync.getPushEpoch_();
         if (clientEpoch < pushEpoch) {
-            l.info("rollback from " + pushEpoch);
+            l.debug("rollback from " + pushEpoch);
             // rollback push epoch to recover from server data loss
             setPushEpoch_(clientEpoch);
 
@@ -642,7 +642,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
             // NB: only a concern in case of truncated activity log, currently not implemented
 
             if (_scanInProgress) {
-                l.info("aborting in-progress scan");
+                l.debug("aborting in-progress scan");
                 // abort ongoing activity log scan (exp retry will kick in and on the next
                 // connection the push epoch will match the server epoch)
                 throw new ExAborted("Activity log scan aborted due to push epoch rollback");

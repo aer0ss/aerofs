@@ -83,7 +83,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         //
 
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
-//        l.info("ls:ifs:");
+//        l.debug("ls:ifs:");
         StringBuilder sb = new StringBuilder();
 
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
@@ -98,8 +98,8 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             boolean isLoopback = iface.isLoopback();
             boolean isVirtual = iface.isVirtual();
 
-//            if (l.isInfoEnabled()) {
-//                l.info(name + "(u:" + isUp + " l:" + isLoopback + " v:" + isVirtual + ")");
+//            if (l.isDebugEnabled()) {
+//                l.debug(name + "(u:" + isUp + " l:" + isLoopback + " v:" + isVirtual + ")");
 //            }
 
             sb.append(' ').append(iface.getName());
@@ -132,7 +132,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             }
         }
 
-        l.info(sb);
+        l.debug(sb);
 
         return ifaceBuilder.build();
     }

@@ -131,7 +131,7 @@ public class TokenManager implements IDumpStatMisc
                 Iterator<Token> iter = info._lo.iterator();
                 if (!iter.hasNext()) return null;
                 Token preempt = iter.next();
-                l.info(info._cat + " preempts " + preempt);
+                l.debug(info._cat + " preempts " + preempt);
                 preempt.reclaim_(false);
             }
         }

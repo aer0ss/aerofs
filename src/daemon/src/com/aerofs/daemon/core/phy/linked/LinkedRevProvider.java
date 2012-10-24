@@ -309,7 +309,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         }
 
         boolean tryDeleteOldRev(InjectableFile file) {
-            l.info("deleting " + file);
+            l.debug("deleting " + file);
             try {
                 // TODO: move to trash?
                 file.delete();
@@ -363,8 +363,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 // add in overhead
                 long space = _totalSize + (2 * C.KB * _fileCount);
                 long spaceLimit = getSpaceLimit();
-                l.info("space: " + Util.formatSize(space));
-                l.info("limit: " + Util.formatSize(spaceLimit));
+                l.debug("space: " + Util.formatSize(space));
+                l.debug("limit: " + Util.formatSize(spaceLimit));
                 if (space < spaceLimit) return;
 
                 ExternalSorter.Input<RevInfo> it = _sorter.sort();
@@ -395,7 +395,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     if (revInfo != null) {
                         _totalSize += revInfo._length;
                         if (_startTime.compareTo(revInfo._date) > 0) {
-                            l.info("Old file: " + revInfo);
+                            l.debug("Old file: " + revInfo);
                             _sorter.add(revInfo);
                         }
                     }

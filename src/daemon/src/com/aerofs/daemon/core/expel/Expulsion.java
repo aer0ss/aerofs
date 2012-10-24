@@ -146,7 +146,7 @@ public class Expulsion
 
         if (flagsNew == flagsOld) return;
 
-        l.info("set expulsion of " + soid + " with " + expelled);
+        l.debug("set expulsion of " + soid + " with " + expelled);
 
         if (expelled) _exdb.addExpelledObject_(soid, t);
         else _exdb.deleteExpelledObject_(soid, t);
