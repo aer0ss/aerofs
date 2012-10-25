@@ -1,30 +1,34 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
-import java.io.ByteArrayInputStream;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.id.DID;
+import java.io.ByteArrayInputStream;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Queue;
 
 public class IncomingStreams
 {
@@ -99,8 +103,8 @@ public class IncomingStreams
             iter.remove();
         }
 
-        IncomingStream value = new IncomingStream(pc);
-        _map.put(key, value);
+        IncomingStream stream = new IncomingStream(pc);
+        _map.put(key, stream);
     }
 
     // N.B. the caller must end the stream if timeout happens, otherwise
@@ -108,44 +112,44 @@ public class IncomingStreams
     public ByteArrayInputStream recvChunk_(StreamKey key, Token tk)
             throws ExTimeout, ExStreamInvalid, ExNoResource, ExAborted
     {
-        IncomingStream v = _map.get(key);
-        assert v != null : key;
-        assert v._tcb == null : v._tcb;
+        IncomingStream stream = _map.get(key);
+        assert stream != null : key;
+        assert stream._tcb == null : stream._tcb;
 
-        if (v._invalidationReason == null && v._chunks.isEmpty()) {
+        if (stream._invalidationReason == null && stream._chunks.isEmpty()) {
             // no chunk available. wait for one
-            v._tcb = TC.tcb();
+            stream._tcb = TC.tcb();
 
             try {
                 tk.pause_(Cfg.timeout(), "recvChunk " + key);
             } finally {
-                v._tcb = null;
+                stream._tcb = null;
             }
 
-            assert v._invalidationReason != null || !v._chunks.isEmpty();
+            assert stream._invalidationReason != null || !stream._chunks.isEmpty();
 
         }
 
-        if (v._invalidationReason != null) throw new ExStreamInvalid(v._invalidationReason);
+        if (stream._invalidationReason != null) throw new ExStreamInvalid(stream._invalidationReason);
 
-        return v._chunks.poll();
+        return stream._chunks.poll();
     }
 
-    private void resume_(IncomingStream v)
+    private void resume_(IncomingStream stream)
     {
-        if (v._tcb != null) v._tcb.resume_();
+        if (stream._tcb != null) stream._tcb.resume_();
     }
 
     private final FrequentDefectSender _fds = new FrequentDefectSender();
 
     public void processChunk_(StreamKey key, int seq, ByteArrayInputStream chunk)
     {
-        IncomingStream v = _map.get(key);
-        if (v == null) {
+        IncomingStream stream = _map.get(key);
+        if (stream == null) {
             l.debug("recv chunk after strm ends " + key);
 
-        } else if (seq != ++v._seq) {
-                _fds.logSendAsync("istrm " + key + " expect seq " + v._seq + " actual " + seq);
+        } else if (seq != ++stream._seq) {
+                _fds.logSendAsync("istrm " + stream._pc.ep().tp() + ":" + key + " expect seq " + stream._seq + " actual " + seq);
 
                 // notify the receiver
                 aborted_(key, InvalidationReason.OUT_OF_ORDER);
@@ -153,20 +157,20 @@ public class IncomingStreams
                 end_(key);
 
         } else {
-            v._chunks.add(chunk);
-            resume_(v);
+            stream._chunks.add(chunk);
+            resume_(stream);
         }
     }
 
     public void aborted_(StreamKey key, InvalidationReason reason)
     {
-        IncomingStream v = _map.get(key);
-        if (v == null) {
+        IncomingStream stream = _map.get(key);
+        if (stream == null) {
             l.debug("aborted after strm ends " + key);
 
         } else {
-            v._invalidationReason = reason;
-            resume_(v);
+            stream._invalidationReason = reason;
+            resume_(stream);
         }
     }
 
@@ -180,17 +184,17 @@ public class IncomingStreams
     //
     public void end_(StreamKey k)
     {
-        IncomingStream v = _map.remove(k);
-        if (v == null) {
+        IncomingStream stream = _map.remove(k);
+        if (stream == null) {
                 l.warn("end no strm. from finally of a failed block?");
                 return;
         }
 
         try {
-            _stack.output().endIncomingStream_(k._strid, v._pc);
+            _stack.output().endIncomingStream_(k._strid, stream._pc);
         } catch (Exception e) {
             l.warn("cannot end stream " + k + ", backlog it: " + Util.e(e));
-            _ended.put(k, v);
+            _ended.put(k, stream);
         }
     }
 }

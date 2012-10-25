@@ -32,8 +32,7 @@ class IncomingStream extends AbstractStream implements IIncomingStream
     private final UncancellableFuture<ImmutableList<Chunk>> NO_PENDING_RECV_CALL_FUTURE = makeRecvFuture();
     private final LinkedList<Chunk> _chunks = new LinkedList<Chunk>(); // protected by this
 
-    private UncancellableFuture<ImmutableList<Chunk>> _pendingRecvFuture = NO_PENDING_RECV_CALL_FUTURE; //
-    // protected by this
+    private UncancellableFuture<ImmutableList<Chunk>> _pendingRecvFuture = NO_PENDING_RECV_CALL_FUTURE; // protected by this
 
     private int _seqnum = 0;
 
