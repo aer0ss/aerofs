@@ -37,8 +37,6 @@ public class TransferStateAggregator
     private final Map<SOCID, Path> _dlMap = Maps.newHashMap();
     private final Map<SOCID, Path> _ulMap = Maps.newHashMap();
 
-    private final DirectoryService _ds;
-
     private static class Node
     {
         private String _name;
@@ -97,9 +95,8 @@ public class TransferStateAggregator
     }
 
     @Inject
-    public TransferStateAggregator(DirectoryService ds)
+    public TransferStateAggregator()
     {
-        _ds = ds;
         _root = new Node("", null);
     }
 
@@ -107,36 +104,39 @@ public class TransferStateAggregator
      * Update transfer state tree on download listener callback
      * @return actual state changes requiring notification
      */
-    public Map<Path, Integer> download_(SOCID socid, State state) {
+    public Map<Path, Integer> download_(SOCID socid, @Nullable Path path, State state) {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
 
-        Path path;
-        try {
-            path = _ds.resolveNullable_(socid.soid());
-        } catch (SQLException e) {
-            l.warn(Util.e(e));
-            return notify;
-        }
-        if (path == null) return notify;
+        /*
+         * NB: the path will only be null if the SOID does not exist. There cannot be an ongoing
+         * transfer unless it existed at some point in the past which means the only way to get a
+         * null path is for the SOID to be deleted as a result of:
+         *   - aliasing
+         *   - expulsion of an entire store
+         */
+
+        l.debug("dl: " + socid + " " + (path == null ? "(null)" : path) + " " + state);
 
         if (!_dlMap.containsKey(socid)) {
-            if (state instanceof Ongoing) {
-                // This is a new download
+            // new transfer
+            if (path != null && state instanceof Ongoing) {
+                // only set flag when the transfer actually starts
                 _dlMap.put(socid, path);
                 stateChanged_(path, Downloading, true, notify);
             }
         } else {
+            // existing transfer
             Path previousPath = _dlMap.get(socid);
-            if (previousPath != null && !path.equals(previousPath)) {
-                // The path has changed, must clear the Downloading flag for the previous path
+            if (path == null || state instanceof Ended) {
+                // The transfer finished or the SOID was deleted: clear flag
+                stateChanged_(previousPath, Downloading, false, notify);
+                _dlMap.remove(socid);
+            } else if (!path.equals(previousPath)) {
+                // The path has changed, must clear flag for previous path and set for the new one
                 stateChanged_(previousPath, Downloading, false, notify);
                 _dlMap.put(socid, path);
                 stateChanged_(path, Downloading, true, notify);
-            }
-            if (state instanceof Ended) {
-                stateChanged_(path, Downloading, false, notify);
-                _dlMap.remove(socid);
             }
         }
 
@@ -147,37 +147,41 @@ public class TransferStateAggregator
      * Update transfer state tree on upload listener callback
      * @return actual state changes requiring notification
      */
-    public Map<Path, Integer> upload_(SOCID socid, Value value) {
+    public Map<Path, Integer> upload_(SOCID socid, @Nullable Path path, Value value) {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
 
-        Path path;
-        try {
-            path = _ds.resolveNullable_(socid.soid());
-        } catch (SQLException e) {
-            l.warn(Util.e(e));
-            return notify;
-        }
-        if (path == null) return notify;
+        /*
+         * NB: the path will only be null if the SOID does not exist. There cannot be an ongoing
+         * transfer unless it existed at some point in the past which means the only way to get a
+         * null path is for the SOID to be deleted as a result of:
+         *   - aliasing
+         *   - expulsion of an entire store
+         */
+
+        l.debug("ul: " + socid + " " + (path == null ? "(null)" : path) + " "
+                + ((float)value._done / (float)value._total));
 
         if (!_ulMap.containsKey(socid)) {
-            if (value._total > 0 && value._done > 0 && value._done != value._total) {
-                // This is a new upload
+            // new transfer
+            if (path != null && value._total > 0 && value._done > 0
+                && value._done != value._total) {
+                // only set flag when the transfer actually starts
                 _ulMap.put(socid, path);
                 stateChanged_(path, Uploading, true, notify);
             }
         } else {
+            // existing transfer
             Path previousPath = _ulMap.get(socid);
-            if (previousPath != null && !path.equals(previousPath)) {
-                // The path has changed, must clear the Uploading flag for the previous path
+            if (path == null || value._done == value._total) {
+                // The transfer finished or the SOID was deleted: clear flag
+                stateChanged_(previousPath, Uploading, false, notify);
+                _ulMap.remove(socid);
+            } else if (!path.equals(previousPath)) {
+                // The path has changed, must clear flag for previous path and set for the new one
                 stateChanged_(previousPath, Uploading, false, notify);
                 _ulMap.put(socid, path);
                 stateChanged_(path, Uploading, true, notify);
-            }
-            if (value._done == value._total) {
-                // The upload finished
-                stateChanged_(path, Uploading, false, notify);
-                _ulMap.remove(socid);
             }
         }
 
@@ -241,5 +245,11 @@ public class TransferStateAggregator
             n = c;
         }
         return n;
+    }
+
+    public boolean hasOngoingTransfers_()
+    {
+        return _root.state() != NoTransfer ||
+                (_root._children != null && !_root._children.isEmpty());
     }
 }

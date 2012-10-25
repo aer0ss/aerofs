@@ -73,14 +73,13 @@ public class RitualNotificationServer implements IConnectionManager
         _uls.addListener_(new UploadStateListener(this, _ds, _tc));
 
         // Merged status notifier listens on all input sources
-        PathStatusNotifier sn = new PathStatusNotifier(this, _so);
+        PathStatusNotifier sn = new PathStatusNotifier(this, _ds, _so);
         _dls.addListener_(sn);
         _uls.addListener_(sn);
         _agss.addListener_(sn);
 
         // detect change of server availability to send CLEAR_CACHE message
-        _scs.addListener(new IServiceStatusListener()
-        {
+        _scs.addListener(new IServiceStatusListener() {
             @Override
             public boolean isAvailable(ImmutableMap<Server, Boolean> status)
             {
@@ -98,7 +97,7 @@ public class RitualNotificationServer implements IConnectionManager
                         .setType(Type.CLEAR_STATUS)
                         .build());
             }
-        });
+        }, Server.VERKEHR, Server.SYNCSTAT);
 
         SPBlockingClient.setListener(new DaemonBadCredentialListener(this));
 

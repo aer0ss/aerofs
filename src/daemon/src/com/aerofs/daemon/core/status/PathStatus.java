@@ -20,19 +20,20 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * This class aggregates different status indicators:
+ * The "path status" is a compact status indicator at path (file/directory) granularity, suitable
+ * for icon overlay and similar displays. It is obtained by aggregating the following indicators:
  *   - sync status (see {@link LocalSyncStatus}
  *   - transfer state (see {@link TransferStateAggregator}
  *   - server status (see {@link ServerConnectionStatus}
- * and condenses them into a single status suitable for icon overlays and similar user-friendly
- * information displays.
  */
 public class PathStatus
 {
@@ -62,31 +63,30 @@ public class PathStatus
     }
 
     /**
-     * Update aggregated upload state, derive required upload/download notifications and
-     * merge them with sync status
+     * Update aggregated upload state
+     * @return paths whose status was affected and their new aggregated transfer state
      */
-    public Map<Path, PBPathStatus> uploadNotifications_(SOCID socid, Value value)
+    public Map<Path, PBPathStatus> uploadNotifications_(SOCID socid, @Nullable Path path,
+            Value value)
     {
-        // Only care about content transfer
-        // NOTE: this also ensure that the object is not expelled
-        if (socid.cid().isMeta()) return Maps.newHashMap();
-
-        return transferNotifications_(_tsa.upload_(socid, value));
+        assert !socid.cid().isMeta();
+        return transferNotifications_(_tsa.upload_(socid, path, value));
     }
 
     /**
-     * Update aggregated download state, derive required upload/download notifications and
-     * merge them with sync status
+     * Update aggregated download state
+     * @return paths whose status was affected and their new aggregated transfer state
      */
-    public Map<Path, PBPathStatus> downloadNotifications_(SOCID socid, State state)
+    public Map<Path, PBPathStatus> downloadNotifications_(SOCID socid, @Nullable Path path,
+            State state)
     {
-        // Only care about content transfer
-        // NOTE: this also ensure that the object is not expelled
-        if (socid.cid().isMeta()) return Maps.newHashMap();
-
-        return transferNotifications_(_tsa.download_(socid, state));
+        assert !socid.cid().isMeta();
+        return transferNotifications_(_tsa.download_(socid, path, state));
     }
 
+    /**
+     * @return path whose status was affected and their new "path status"
+     */
     private Map<Path, PBPathStatus> transferNotifications_(Map<Path, Integer> transferNotifications)
     {
         Map<Path, PBPathStatus> notifications = Maps.newHashMap();

@@ -4,216 +4,219 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.net.IDownloadStateListener.Ended;
 import com.aerofs.daemon.core.net.IDownloadStateListener.Ongoing;
 import com.aerofs.daemon.core.net.IDownloadStateListener.Started;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.OID;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
-import static org.mockito.Mockito.mock;
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.Collection;
+
 import static com.aerofs.daemon.core.status.TransferStateAggregator.*;
 
-/**
- *
- */
+@RunWith(Parameterized.class)
 public class TestTransferStateAggregator extends AbstractTest
 {
-    // piece of shit @Mock / @InjectMocks are created after the @Before method...
-    Endpoint ep = mock(Endpoint.class);
-    DirectoryService ds = mock(DirectoryService.class);
-
-    MockDS mds;
-    TransferStateAggregator tsa;
-
-    private void startDownload(String path) throws Exception
-    {
-        SOID soid = ds.resolveThrows_(Path.fromString(path));
-        tsa.download_(new SOCID(soid, CID.CONTENT), Started.SINGLETON);
-        tsa.download_(new SOCID(soid, CID.CONTENT), new Ongoing(ep, 0, 100));
+    // parametrize test with default transfer direction
+    @Parameters public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+                {Uploading}, {Downloading}
+        });
     }
 
-    private void stopDownload(String path) throws Exception
-    {
-        SOID soid = ds.resolveThrows_(Path.fromString(path));
-        tsa.download_(new SOCID(soid, CID.CONTENT), Ended.SINGLETON_OKAY);
+    private final int direction;
+
+    private static int opposite(int direction) {
+        switch (direction) {
+        case Uploading: return Downloading;
+        case Downloading: return Uploading;
+        default: throw new IllegalArgumentException();
+        }
     }
 
-    private void startUpload(String path) throws Exception
+    public TestTransferStateAggregator(int direction)
     {
-        SOID soid = ds.resolveThrows_(Path.fromString(path));
-        tsa.upload_(new SOCID(soid, CID.CONTENT), new Value(1, 100));
+        this.direction = direction;
     }
 
-    private void stopUpload(String path) throws Exception
+    @Mock Trans t;
+    @Mock Endpoint ep;
+
+    @InjectMocks TransferStateAggregator tsa;
+
+    SOID createSOID() throws Exception
     {
-        SOID soid = ds.resolveThrows_(Path.fromString(path));
-        tsa.upload_(new SOCID(soid, CID.CONTENT), new Value(100, 100));
+        return new SOID(new SIndex(1), new OID(UniqueID.generate()));
     }
 
-    private void assertStateEquals(int state, String path)
+    void simulateTransferStart(int d, SOID soid, String p) throws Exception
     {
-        Assert.assertEquals(state, tsa.state_(Path.fromString(path)));
+        Path path = Path.fromString(p);
+        if (d == Downloading) {
+            tsa.download_(new SOCID(soid, CID.CONTENT), path, Started.SINGLETON);
+            tsa.download_(new SOCID(soid, CID.CONTENT), path, new Ongoing(ep, 1, 100));
+        } else if (d == Uploading) {
+            tsa.upload_(new SOCID(soid, CID.CONTENT), path, new Value(1, 100));
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    void simulateTransferProgress(int d, SOID soid, String p, int percent) throws Exception
+    {
+        Path path = Path.fromString(p);
+        assert percent > 0 && percent < 100;
+        if (d == Downloading) {
+            tsa.download_(new SOCID(soid, CID.CONTENT), path, new Ongoing(ep, percent, 100));
+        } else if (d == Uploading) {
+            tsa.upload_(new SOCID(soid, CID.CONTENT), path, new Value(percent, 100));
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    void simulateTransferEnd(int d, SOID soid, @Nullable String p) throws Exception
+    {
+        Path path = p == null ? null : Path.fromString(p);
+        if (d == Downloading) {
+            tsa.download_(new SOCID(soid, CID.CONTENT), path, Ended.SINGLETON_OKAY);
+        } else if (d == Uploading) {
+            tsa.upload_(new SOCID(soid, CID.CONTENT), path, new Value(100, 100));
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private void assertStateEquals(int state, String... pathList)
+    {
+        for (String path : pathList) {
+            Assert.assertEquals(state, tsa.state_(Path.fromString(path)));
+        }
+    }
+
+    private void assertNoOngoingTransfers() throws Exception
+    {
+        Assert.assertTrue(!tsa.hasOngoingTransfers_());
     }
 
     @Before
     public void setup() throws Exception
     {
-        mds = new MockDS(ds);
-        mds.root()
-                .dir("foo")
-                        .dir("bar")
-                                .file("hello").parent()
-                                .file("world").parent().parent().parent()
-                .dir("baz")
-                        .file("stuff").parent().parent()
-                .file("bla");
-
-        tsa = new TransferStateAggregator(ds);
-
-        assertStateEquals(NoTransfer, "");
-        assertStateEquals(NoTransfer, "foo");
-        assertStateEquals(NoTransfer, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(NoTransfer, "bla");
+        assertNoOngoingTransfers();
     }
 
     @After
     public void tearDown() throws Exception
     {
-        assertStateEquals(NoTransfer, "");
-        assertStateEquals(NoTransfer , "foo");
-        assertStateEquals(NoTransfer, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(NoTransfer, "bla");
+        assertNoOngoingTransfers();
     }
 
     @Test
-    public void shouldPropagateUpload() throws Exception
+    public void shouldPropagateTransfer() throws Exception
     {
-        startUpload("foo/bar/hello");
+        SOID o1 = createSOID();  // foo/bar/hello
+        simulateTransferStart(direction, o1, "foo/bar/hello");
+        assertStateEquals(direction, "", "foo", "foo/bar", "foo/bar/hello");
 
-        assertStateEquals(Uploading, "");
-        assertStateEquals(Uploading, "foo");
-        assertStateEquals(Uploading, "foo/bar");
-        assertStateEquals(Uploading, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(NoTransfer, "bla");
-
-        stopUpload("foo/bar/hello");
+        simulateTransferEnd(direction, o1, "foo/bar/hello");
     }
 
     @Test
-    public void shouldPropagateDownload() throws Exception
+    public void shouldCombineTransferStatusWhenPropagating() throws Exception
     {
-        startDownload("foo/bar/world");
-
-        assertStateEquals(Downloading, "");
-        assertStateEquals(Downloading, "foo");
-        assertStateEquals(Downloading, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(Downloading, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(NoTransfer, "bla");
-
-        stopDownload("foo/bar/world");
-    }
-
-    @Test
-    public void shouldCombineWhenPropagating() throws Exception
-    {
-        startDownload("foo/bar/world");
-        startUpload("baz/stuff");
+        SOID o1 = createSOID();  // foo/bar/world
+        SOID o2 = createSOID();  // baz/stuff
+        simulateTransferStart(direction, o1, "foo/bar/world");
+        simulateTransferStart(opposite(direction), o2, "baz/stuff");
 
         assertStateEquals(Downloading | Uploading, "");
-        assertStateEquals(Downloading, "foo");
-        assertStateEquals(Downloading, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(Downloading, "foo/bar/world");
-        assertStateEquals(Uploading, "baz");
-        assertStateEquals(Uploading, "baz/stuff");
-        assertStateEquals(NoTransfer, "bla");
+        assertStateEquals(direction, "foo", "foo/bar", "foo/bar/world");
+        assertStateEquals(opposite(direction), "baz", "baz/stuff");
 
-        stopUpload("baz/stuff");
+        simulateTransferEnd(opposite(direction), o2, "baz/stuff");
+        assertStateEquals(direction, "", "foo", "foo/bar", "foo/bar/world");
 
-        assertStateEquals(Downloading, "");
-        assertStateEquals(Downloading , "foo");
-        assertStateEquals(Downloading, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(Downloading, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(NoTransfer, "bla");
-
-        stopDownload("foo/bar/world");
+        simulateTransferEnd(direction, o1, "foo/bar/world");
     }
 
     @Test
-    public void shouldIgnoreBogusStop() throws Exception
+    public void shouldIgnoreBogusTransferEnd() throws Exception
     {
-        startDownload("bla");
+        SOID o1 = createSOID();  // bla
+        SOID o2 = createSOID();  // foo/bar/world
+        simulateTransferStart(direction, o1, "bla");
+        assertStateEquals(direction, "", "bla");
 
-        assertStateEquals(Downloading, "");
-        assertStateEquals(NoTransfer, "foo");
-        assertStateEquals(NoTransfer, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(Downloading, "bla");
+        simulateTransferEnd(opposite(direction), o2, "foo/bar/world");
+        assertStateEquals(direction, "", "bla");
 
-        stopUpload("foo/bar/world");
+        simulateTransferEnd(direction, o2, "foo/bar/world");
+        assertStateEquals(direction, "", "bla");
 
-        assertStateEquals(Downloading, "");
-        assertStateEquals(NoTransfer, "foo");
-        assertStateEquals(NoTransfer, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(Downloading, "bla");
+        simulateTransferEnd(opposite(direction), o1, "bla");
+        assertStateEquals(direction, "", "bla");
 
-        stopDownload("foo/bar/world");
+        simulateTransferEnd(direction, o1, "bla");
+    }
 
-        assertStateEquals(Downloading, "");
-        assertStateEquals(NoTransfer, "foo");
-        assertStateEquals(NoTransfer, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(Downloading, "bla");
+    @Test
+    public void shouldHandleRenameDuringTransfer() throws Exception
+    {
+        SOID o1 = createSOID();  // foo/bar/hello
+        simulateTransferStart(direction, o1, "foo/bar/hello");
+        assertStateEquals(direction, "", "foo", "foo/bar", "foo/bar/hello");
 
-        stopUpload("bla");
+        simulateTransferProgress(direction, o1, "baz/hello", 50);
+        assertStateEquals(direction, "", "baz", "baz/hello");
 
-        assertStateEquals(Downloading, "");
-        assertStateEquals(NoTransfer, "foo");
-        assertStateEquals(NoTransfer, "foo/bar");
-        assertStateEquals(NoTransfer, "foo/bar/hello");
-        assertStateEquals(NoTransfer, "foo/bar/world");
-        assertStateEquals(NoTransfer, "baz");
-        assertStateEquals(NoTransfer, "baz/stuff");
-        assertStateEquals(Downloading, "bla");
+        simulateTransferEnd(direction, o1, "baz/hello");
+    }
 
-        stopDownload("bla");
+    @Test
+    public void shouldHandleDeletionDuringTransfer() throws Exception
+    {
+        SOID o1 = createSOID();  // foo/bar/hello
+        simulateTransferStart(direction, o1, "foo/bar/hello");
+        assertStateEquals(direction, "", "foo", "foo/bar", "foo/bar/hello");
+
+        simulateTransferEnd(direction, o1, Util.join(C.TRASH, "deadbeef"));
+    }
+
+    /**
+     * OID can only deleted as a result of:
+     *   - aliasing
+     *   - expulsion of an entire store (the whole store is deleted and the DB is cleaned of all
+     *   references to it)
+     */
+    @Test
+    public void shouldHandleOIDDeletionDuringTransfer() throws Exception
+    {
+        SOID o1 = createSOID();  // foo/bar/hello
+        simulateTransferStart(direction, o1, "foo/bar/hello");
+        assertStateEquals(direction, "", "foo", "foo/bar", "foo/bar/hello");
+
+        simulateTransferEnd(direction, o1, null);
     }
 }

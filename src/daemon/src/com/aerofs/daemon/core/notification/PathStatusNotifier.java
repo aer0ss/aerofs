@@ -4,17 +4,23 @@
 
 package com.aerofs.daemon.core.notification;
 
+import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.IDownloadStateListener;
 import com.aerofs.daemon.core.net.IUploadStateListener;
 import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus.IListener;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
+import com.google.common.collect.Maps;
+import org.apache.log4j.Logger;
 
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -27,12 +33,16 @@ import java.util.Set;
  */
 public class PathStatusNotifier implements IListener, IDownloadStateListener, IUploadStateListener
 {
+    private static final Logger l = Util.l(PathStatusNotifier.class);
+
     private final PathStatus _so;
+    private final DirectoryService _ds;
     private final RitualNotificationServer _notifier;
 
-    public PathStatusNotifier(RitualNotificationServer notifier, PathStatus so)
+    public PathStatusNotifier(RitualNotificationServer notifier, DirectoryService ds, PathStatus so)
     {
         _so = so;
+        _ds = ds;
         _notifier = notifier;
     }
 
@@ -43,15 +53,38 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
     }
 
     @Override
-    public void stateChanged_(SOCID socid, State newState)
+    public void stateChanged_(SOCID socid, State state)
     {
-        notify_(_so.downloadNotifications_(socid, newState));
+        // Only care about content transfer
+        // NOTE: this also ensure that the object is not expelled
+        if (socid.cid().isMeta()) return;
+        try {
+            notify_(_so.downloadNotifications_(socid, _ds.resolveNullable_(socid.soid()), state));
+        } catch (SQLException e) {
+            /**
+             * We bury exceptions to comply with IDownloadStateListener interface
+             * TODO: send SV defect?
+             */
+            l.warn(Util.e(e));
+        }
     }
 
     @Override
     public void stateChanged_(Key key, Value value)
     {
-        notify_(_so.uploadNotifications_(key._socid, value));
+        SOCID socid = key._socid;
+        // Only care about content transfer
+        // NOTE: this also ensure that the object is not expelled
+        if (socid.cid().isMeta()) return;
+        try {
+            notify_(_so.uploadNotifications_(socid, _ds.resolveNullable_(socid.soid()), value));
+        } catch (SQLException e) {
+            /**
+             * We bury exceptions to comply with IUploadStateListener interface
+             * TODO: send SV defect?
+             */
+            l.warn(Util.e(e));
+        }
     }
 
     private void notify_(Map<Path, PBPathStatus> notifications)
