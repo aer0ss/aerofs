@@ -50,7 +50,6 @@ import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStore.SecretKeyEntry;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -62,7 +61,6 @@ import java.util.Map.Entry;
 
 public class MobileService implements IMobileService
 {
-    private static final Logger l = Util.l(MobileService.class);
     private static final Prio PRIO = Prio.LO;
 
     private static final byte[] MAGIC_BYTES = "MOBL".getBytes();
@@ -231,7 +229,7 @@ public class MobileService implements IMobileService
 
     public static class Factory implements ChannelPipelineFactory
     {
-        private static final String PROPERTY = "aerofs.mobile.enabled";
+        //private static final String PROPERTY = "aerofs.mobile.enabled";
 
         private static final int MAX_FRAME_LENGTH = 1 * C.MB;
         private static final int LENGTH_FIELD_SIZE = 4;

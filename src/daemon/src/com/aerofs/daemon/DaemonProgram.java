@@ -17,9 +17,6 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 
-import java.util.Collection;
-import java.util.Collections;
-
 public class DaemonProgram implements IProgram {
 
     private final IModule _fsi = new FSI();
