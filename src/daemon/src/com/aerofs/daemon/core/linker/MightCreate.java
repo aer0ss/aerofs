@@ -333,8 +333,8 @@ public class MightCreate
     private void renameConflictingLogicalObject_(@Nonnull OA oa, PathCombo pc, Trans t)
             throws Exception
     {
-        if (l.isDebugEnabled()) {
-            l.debug("rename conflict " + oa.soid() + ":" + pc);
+        if (l.isInfoEnabled()) {
+            l.info("rename conflict " + oa.soid() + ":" + pc);
         }
 
         // can't rename the root
@@ -355,8 +355,8 @@ public class MightCreate
             break;
         }
 
-        if (l.isDebugEnabled()) {
-            l.debug("move for confict " + oa.soid() + ":" + pc + "->" + obfuscate(name));
+        if (l.isInfoEnabled()) {
+            l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscate(name));
         }
 
         // rename the logical object
@@ -383,7 +383,7 @@ public class MightCreate
             SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
                     pcPhysical._path.last(), MAP, t);
             _a.incSaveCount();
-            l.debug("created " + newSOID + " " + pcPhysical);
+            l.info("created " + newSOID + " " + pcPhysical);
             return true;
         }
     }

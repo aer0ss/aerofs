@@ -260,8 +260,7 @@ public class AliasingMover
         assert _ds.getOA_(alias).isDir();
         assert _ds.getOA_(target).isDir();
 
-        Path targetPath = _ds.resolveNullable_(target);
-        assert targetPath != null;
+        Path targetPath = _ds.resolve_(target);
 
         // Files/dirs directly under the target dir will retain their names, whereas files/dirs
         // directly under the alias dir are renamed to avoid name conflict
