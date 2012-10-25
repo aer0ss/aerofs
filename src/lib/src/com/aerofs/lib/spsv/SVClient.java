@@ -317,7 +317,7 @@ public class SVClient
     }
 
     public static void logSendDefectSync(boolean automatic, String desc,
-            Throwable e) throws Exception
+            @Nullable Throwable e) throws Exception
     {
         logSendDefectSync(automatic, desc, e, null);
     }
