@@ -563,13 +563,25 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
 
                 try {
                     _cw.conn().sendPacket(xmsg);
-                } catch (XMPPException e1) {
-                    try {
-                        ccc.sendSignallingMessageFailed_(did, msg, e1);
-                    } catch (ExNoResource e2) {
-                        l.error("x: failed to handle error while sending packet");
-                        Util.fatal("shutdown due to err:" + e2 + " triggered by err:" + e1);
-                    }
+                } catch (XMPPException e) {
+                    notifySignallingClientOfError(e);
+                } catch (IllegalStateException e) {
+                    // NOTE: this can happen because smack considers it illegal to attempt to send
+                    // a packet if the channel is not connected. Since we may be notified of a
+                    // disconnection after actually enqueuing the packet to be sent, it's entirely
+                    // possible for this to occur
+
+                    notifySignallingClientOfError(e);
+                }
+            }
+
+            private void notifySignallingClientOfError(Exception e)
+            {
+                try {
+                    ccc.sendSignallingMessageFailed_(did, msg, e);
+                } catch (ExNoResource e2) {
+                    l.error("x: failed to handle error while sending packet");
+                    Util.fatal("shutdown due to err:" + e2 + " triggered by err:" + e);
                 }
             }
         }, Prio.HI);

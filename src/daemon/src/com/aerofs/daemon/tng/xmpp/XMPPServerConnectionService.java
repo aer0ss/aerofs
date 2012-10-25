@@ -155,10 +155,22 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
         return c;
     }
 
+    // FIXME (AG): does this actually have to be synchronized?
+    // _conn is volatile, so the reference is either valid or invalid (null). If it's valid,
+    // we should be able to call operations on it. sendPacket enqueues a packet onto Smack's
+    // internal "outgoing packet queue" where it's picked by by a thread for future processing
+    // This means that multiple threads can call sendPacket simultaneously.
     synchronized void sendMessage(Message msg)
             throws XMPPException
     {
-        getConn_().sendPacket(msg);
+        try {
+            getConn_().sendPacket(msg);
+        } catch (IllegalStateException e) {
+            // NOTE: this can happen because smack considers it illegal to attempt to send a packet
+            // if the channel is not connected. Since we may be notified of a disconnection after
+            // enqueing a packet to be sent, it's entirely possible for this to occur
+            throw new XMPPException(e);
+        }
     }
 
     synchronized void leaveRoom(MultiUserChat muc)
@@ -178,7 +190,6 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
 
         try {
             muc.join(user, null, history, SmackConfiguration.getPacketReplyTimeout());
-
         } catch (IllegalStateException e) {
             throw new XMPPException(e);
         }
