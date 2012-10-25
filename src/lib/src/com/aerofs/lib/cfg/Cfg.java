@@ -434,6 +434,14 @@ public class Cfg
         }
     }
 
+    /*
+     * jnorris:
+     *
+     * scrypted = scrypt( password | username )
+     * confdb[cred] = base64( AES_E[PBKDF2(PASSWD_PASSWD)]( scrypted | random ) )
+     *
+     */
+
     public static void readCreds() throws ExBadCredential, IOException
     {
         String cred = _db.getNullable(Key.CRED);

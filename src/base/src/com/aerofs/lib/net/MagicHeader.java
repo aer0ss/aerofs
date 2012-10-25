@@ -24,7 +24,7 @@ public class MagicHeader
 {
     static final Logger LOGGER = Loggers.getLogger(MagicHeader.class);
 
-    public static class BadMagicHeaderException extends IOException
+    public static class ExBadMagicHeader extends IOException
     {
         public static final long serialVersionUID = 1;
     }
@@ -103,7 +103,7 @@ public class MagicHeader
             ctx.getPipeline().remove(this);
             if (!isMatchingHeader(buffer)) {
                 buffer.readerIndex(readerIndex);
-                throw new BadMagicHeaderException();
+                throw new ExBadMagicHeader();
             }
 //            LOGGER.debug("read magic header {} v{}", StringUtils.encodeHex(_magic), _version);
 

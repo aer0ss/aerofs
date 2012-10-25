@@ -28,12 +28,13 @@ public class TraceHandler implements ChannelUpstreamHandler, ChannelDownstreamHa
     private long _sent;
     private long _received;
 
-    public void log(ChannelEvent e)
+    public void log(ChannelHandlerContext ctx, ChannelEvent e)
     {
         if (_logger.isInfoEnabled()) {
+            String prefix = ctx.getName() + ": ";
             String msg = e.toString();
             if (e instanceof ExceptionEvent) {
-                _logger.debug(msg, ((ExceptionEvent)e).getCause());
+                _logger.debug(prefix + msg, ((ExceptionEvent)e).getCause());
             } else {
                 if (e instanceof MessageEvent) {
                     MessageEvent event = (MessageEvent)e;
@@ -55,7 +56,7 @@ public class TraceHandler implements ChannelUpstreamHandler, ChannelDownstreamHa
                     ChannelStateEvent event = (ChannelStateEvent)e;
                     msg = event.getChannel() + " " + event.getState() + ": " + event.getValue();
                 }
-                _logger.debug(msg);
+                _logger.debug(prefix + msg);
             }
         }
     }
@@ -64,7 +65,7 @@ public class TraceHandler implements ChannelUpstreamHandler, ChannelDownstreamHa
     public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e)
             throws Exception
     {
-        log(e);
+        log(ctx, e);
         ctx.sendDownstream(e);
     }
 
@@ -72,7 +73,7 @@ public class TraceHandler implements ChannelUpstreamHandler, ChannelDownstreamHa
     public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e)
             throws Exception
     {
-        log(e);
+        log(ctx, e);
         ctx.sendUpstream(e);
     }
 }

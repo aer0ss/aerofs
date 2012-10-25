@@ -13,6 +13,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
@@ -41,7 +42,22 @@ import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
+import org.jboss.netty.handler.ssl.SslHandler;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStore.SecretKeyEntry;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Map.Entry;
 
 public class MobileService implements IMobileService
@@ -215,10 +231,13 @@ public class MobileService implements IMobileService
 
     public static class Factory implements ChannelPipelineFactory
     {
+        private static final String PROPERTY = "aerofs.mobile.enabled";
+
         private static final int MAX_FRAME_LENGTH = 1 * C.MB;
         private static final int LENGTH_FIELD_SIZE = 4;
 
-        private static final String PROPERTY = "aerofs.mobile.enabled";
+        private static final String KEYSTORE_TYPE = "JKS";
+        private static final String KEY_ALGORITHM = "SunX509";
 
         public static boolean isEnabled()
         {
@@ -226,11 +245,22 @@ public class MobileService implements IMobileService
         }
 
         private final IIMCExecutor _imce;
+        private final CfgKeyManagersProvider _cfgKeyManagersProvider;
+
+        private SSLContext _sslContext;
 
         @Inject
-        public Factory(CoreIMCExecutor cimce)
+        public Factory(
+                CoreIMCExecutor cimce,
+                CfgKeyManagersProvider cfgKeyManagersProvider)
         {
             _imce = cimce.imce();
+            _cfgKeyManagersProvider = cfgKeyManagersProvider;
+            try {
+                getSSLContext();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
@@ -241,9 +271,49 @@ public class MobileService implements IMobileService
             return pipeline;
         }
 
+        private synchronized SSLContext getSSLContext()
+                throws NoSuchAlgorithmException, KeyStoreException, IOException,
+                CertificateException, UnrecoverableKeyException, KeyManagementException
+        {
+            if (_sslContext == null) {
+                // akin to ClientSSLEngineFactory
+                char[] passwd = {};
+                PrivateKey privateKey = _cfgKeyManagersProvider.getPrivateKey();
+                X509Certificate cert = _cfgKeyManagersProvider.getCert();
+                Certificate[] chain = { cert };
+                KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+                keyStore.load(null, null);
+                keyStore.setKeyEntry("device", privateKey, passwd, chain);
+//                keyStore.setEntry("device", new KeyStore.PrivateKeyEntry(privateKey, chain), null);
+
+                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KEY_ALGORITHM);
+                keyManagerFactory.init(keyStore, passwd);
+
+                SSLContext context = SSLContext.getInstance("TLS");
+                context.init(keyManagerFactory.getKeyManagers(), null, null);
+
+                _sslContext = context;
+            }
+            return _sslContext;
+        }
+
+        private SslHandler createSslHandler()
+                throws Exception
+        {
+            SSLContext context = getSSLContext();
+            SSLEngine engine = context.createSSLEngine();
+            engine.setUseClientMode(false);
+            SslHandler handler = new SslHandler(engine);
+            handler.setCloseOnSSLException(true);
+            return handler;
+        }
+
         public void appendToPipeline(ChannelPipeline p)
+                throws Exception
         {
             MobileService mobileService = new MobileService(_imce);
+            SslHandler sslHandler = createSslHandler();
+            p.addLast("ssl", sslHandler);
             p.addLast("frameDecoder",
                     new LengthFieldBasedFrameDecoder(MAX_FRAME_LENGTH, 0, LENGTH_FIELD_SIZE, 0,
                             LENGTH_FIELD_SIZE));
