@@ -200,7 +200,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
                 if (type == RECVD_SYNACK && zi.getDestinationZephyrId() == ctx._loczid) {
                     ctx.setRemoteZid_(zi.getSourceZephyrId());
-                    retev = ackRemote(ctx);
+                    retev = finishhs(ctx, true);
                 } else {
                     retev = ignorehs(ctx, zi);
                 }
@@ -226,7 +226,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
             StateMachineEvent retev;
 
             if (type == RECVD_ACK && zi.getDestinationZephyrId() == ctx._loczid) {
-                retev = new StateMachineEvent(HANDSHAKE_COMPLETE);
+                retev = finishhs(ctx, false);
             } else {
                 retev = ignorehs(ctx, zi);
             }
@@ -474,6 +474,23 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
     private static StateMachineEvent ackRemote(ZephyrClientContext ctx)
     {
         ctx.sendack_();
+        return new StateMachineEvent(HANDSHAKE_COMPLETE);
+    }
+
+    /**
+     * Finish a handshake; this may involve no external action (you received an ACK), or, it
+     * may involve sending an ACK back (you received a SYNACK)
+     *
+     * @param ctx context object from which to retrieve the current state
+     * @param sendack true if an ACK should be sent; false for no handshake messages to be sent
+     * @return an event of {@link HANDSHAKE_COMPLETED} type
+     */
+    private static StateMachineEvent finishhs(ZephyrClientContext ctx, boolean sendack)
+    {
+        if (sendack) ctx.sendack_();
+
+        ZephyrClientContext.l.info(ctx + ": handshake completed");
+
         return new StateMachineEvent(HANDSHAKE_COMPLETE);
     }
 
