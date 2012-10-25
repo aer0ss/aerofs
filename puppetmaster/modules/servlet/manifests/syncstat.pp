@@ -5,8 +5,8 @@ class servlet::syncstat(
     $cacert_location
 ) {
     class{"servlet":
-        proxy_read_timeout => "300",
-        proxy_send_timeout => "300"
+        proxy_read_timeout => "60",
+        proxy_send_timeout => "60"
     }
 
     package{"aerofs-syncstat":
