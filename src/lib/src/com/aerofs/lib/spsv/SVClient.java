@@ -179,6 +179,25 @@ public class SVClient
         }
     }
 
+    private static void deleteOldHeapDumps()
+    {
+        File[] heapDumps = new File(Cfg.absRTRoot()).listFiles(
+                new FilenameFilter() {
+                @Override
+                public boolean accept(File arg0, String arg1) {
+                    return arg1.endsWith(C.HPROF_FILE_EXT);
+                }
+            });
+        if (heapDumps == null) {
+            l.error("rtRoot not found.");
+            return;
+        }
+        for (File heapDumpFile : heapDumps) {
+            l.debug("Deleting old heap dump: " + heapDumpFile);
+            heapDumpFile.delete();
+        }
+    }
+
     public static void sendEventAsync(PBSVEvent.Type type)
     {
         sendEventAsync(type, null);
@@ -717,7 +736,12 @@ public class SVClient
         l.debug("sending defect done");
         setLastSentDefect(e.getMessage(), stackTrace);
 
-        if (Cfg.inited()) archiveLogs();
+        if (Cfg.inited()) {
+            archiveLogs();
+            if (sendHeapDumps) {
+                deleteOldHeapDumps();
+            }
+        }
 
         if (e instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
     }
