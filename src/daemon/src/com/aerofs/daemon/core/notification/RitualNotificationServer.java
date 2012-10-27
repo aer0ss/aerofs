@@ -4,6 +4,9 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DownloadState;
 import com.aerofs.daemon.core.net.UploadState;
+import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
+import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;
+import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
 import com.aerofs.daemon.core.tc.TC;
@@ -16,7 +19,10 @@ import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.spsv.SPBlockingClient;
+import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.proto.RitualNotifications.PBPathStatusEvent;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import java.io.IOException;
@@ -25,6 +31,7 @@ import java.util.Map.Entry;
 
 import javax.inject.Inject;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.log4j.Logger;
 
 public class RitualNotificationServer implements IConnectionManager
@@ -45,10 +52,11 @@ public class RitualNotificationServer implements IConnectionManager
     private final AggregateSyncStatus _agss;
     private final DirectoryService _ds;
     private final TC _tc;
+    private final ServerConnectionStatus _scs;
 
     @Inject
     public RitualNotificationServer(CoreQueue cq, DownloadState dls, UploadState uls,
-            PathStatus so, AggregateSyncStatus agss,
+            PathStatus so, AggregateSyncStatus agss, ServerConnectionStatus scs,
             DirectoryService ds, TC tc)
     {
         _cq = cq;
@@ -58,6 +66,7 @@ public class RitualNotificationServer implements IConnectionManager
         _agss = agss;
         _ds = ds;
         _tc = tc;
+        _scs = scs;
     }
 
     public void init_() throws IOException
@@ -70,6 +79,28 @@ public class RitualNotificationServer implements IConnectionManager
         _dls.addListener_(sn);
         _uls.addListener_(sn);
         _agss.addListener_(sn);
+
+        // detect change of server availability to send CLEAR_CACHE message
+        _scs.addListener(new IServiceStatusListener()
+        {
+            @Override
+            public boolean isAvailable(ImmutableMap<Server, Boolean> status)
+            {
+                return status.get(Server.VERKEHR) && status.get(Server.SYNCSTAT);
+            }
+
+            @Override
+            public void available() {}
+
+            @Override
+            public void unavailable()
+            {
+                // sync status unavailable: must clear cache in GUI/shellext
+                sendEvent_(PBNotification.newBuilder()
+                        .setType(Type.CLEAR_STATUS)
+                        .build());
+            }
+        });
 
         SPBlockingClient.setListener(new DaemonBadCredentialListener(this));
 

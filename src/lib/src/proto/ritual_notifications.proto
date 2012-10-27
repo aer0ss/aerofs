@@ -13,6 +13,7 @@ message PBNotification {
         UPLOAD = 1;
         BAD_CREDENTIAL = 2;
         PATH_STATUS = 3;
+        CLEAR_STATUS = 4; // clear any cached path status
     }
 
     required Type type = 1;

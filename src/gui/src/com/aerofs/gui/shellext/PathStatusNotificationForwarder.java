@@ -31,6 +31,9 @@ public class PathStatusNotificationForwarder
                 case PATH_STATUS:
                     onStatusNotification_(pb.getPathStatus());
                     break;
+                case CLEAR_STATUS:
+                    _service.notifyClearCache();
+                    break;
                 default:
                     // no-op
                 }

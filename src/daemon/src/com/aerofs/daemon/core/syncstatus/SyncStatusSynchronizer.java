@@ -488,6 +488,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
     }
 
     private boolean _scanInProgress = false;
+    private boolean _abortScan = false;
     private void scanActivityLogInternal_() throws Exception
     {
         // avoid concurrent scans : this method is called with the core lock held
@@ -495,6 +496,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         // need an extra check to avoid concurrent scans.
         if (_scanInProgress) return;
         _scanInProgress = true;
+        _abortScan = false;
 
         try {
             // batch DB reads
@@ -504,6 +506,11 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
             while (!soids.isEmpty()) {
                 // push version hashes to server
                 pushVersionHashBatch_(soids, lastIndex, nextIndex);
+
+                // the scan may have been aborted while we released the core lock...
+                // even though the version hashes may have been successfully sent to the server
+                // we must not set the push epoch as it was rolled back by the sign-in handler
+                if (_abortScan) throw new ExAborted("Scan aborted");
 
                 // update push epoch
                 setPushEpoch_(nextIndex);
@@ -629,24 +636,28 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
      * Rollback push epoch in case of data loss on the server
      */
     @Override
-    public void onSignIn_(long clientEpoch) throws Exception
+    public void onSignIn_(long clientEpoch)
     {
         l.debug("connected: " + clientEpoch);
-        long pushEpoch = _lsync.getPushEpoch_();
-        if (clientEpoch < pushEpoch) {
-            l.debug("rollback from " + pushEpoch);
-            // rollback push epoch to recover from server data loss
-            setPushEpoch_(clientEpoch);
+        try {
+            long pushEpoch = _lsync.getPushEpoch_();
+            if (clientEpoch < pushEpoch) {
+                l.debug("rollback from " + pushEpoch);
+                // rollback push epoch to recover from server data loss
+                setPushEpoch_(clientEpoch);
 
-            // TODO: repopulate bootstrap if push epoch cannot be rolled back far enough
-            // NB: only a concern in case of truncated activity log, currently not implemented
+                // TODO: repopulate bootstrap if push epoch cannot be rolled back far enough
+                // NB: only a concern in case of truncated activity log, currently not implemented
 
-            if (_scanInProgress) {
-                l.debug("aborting in-progress scan");
-                // abort ongoing activity log scan (exp retry will kick in and on the next
-                // connection the push epoch will match the server epoch)
-                throw new ExAborted("Activity log scan aborted due to push epoch rollback");
+                if (_scanInProgress) {
+                    l.debug("aborting in-progress scan");
+                    // abort ongoing activity log scan (exp retry will kick in and on the next
+                    // connection the push epoch will match the server epoch)
+                    _abortScan = true;
+                }
             }
+        } catch (SQLException e) {
+            throw Util.fatal(e);
         }
     }
 }
