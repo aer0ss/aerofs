@@ -67,6 +67,11 @@ include common::logs
     Firewall {
       notify  => Exec['persist-firewall'],
     }
+
+    class{"collectd":
+        prefix => hiera("deployment_config")
+    }
+    include bucky
 }
 
 import "nodes/*.pp"
