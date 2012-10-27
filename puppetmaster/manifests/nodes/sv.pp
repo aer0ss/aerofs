@@ -10,4 +10,6 @@ node "sv.aerofs.com" inherits default {
     }
 
     include mailserver
+
+    class{"analytics":}
 }
