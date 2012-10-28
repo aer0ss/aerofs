@@ -6,3 +6,4 @@ build.properties
 out.*
 *.log
 /classes
+.gradle
