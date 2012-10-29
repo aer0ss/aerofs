@@ -59,8 +59,10 @@ public class SVServlet extends AeroServlet
 
     private void initmetrics_()
     {
-        GraphiteReporter.enable(2, MINUTES,
-                SV_METRICS_HOST_PARAMETER, Short.parseShort(SV_METRICS_PORT_PARAMETER));
+        String metricsHost = getServletContext().getInitParameter(SV_METRICS_HOST_PARAMETER);
+        Short metricsPort = Short.parseShort(
+                getServletContext().getInitParameter(SV_METRICS_PORT_PARAMETER));
+        GraphiteReporter.enable(2, MINUTES, metricsHost, metricsPort);
     }
 
     @Override
