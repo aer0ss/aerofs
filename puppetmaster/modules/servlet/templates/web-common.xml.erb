@@ -4,12 +4,25 @@
     <param-value>com.aerofs.l.AA</param-value>
   </context-param>
 
-  <!-- Default page to serve -->
+  <!-- default page to serve -->
   <welcome-file-list>
     <welcome-file>index.html</welcome-file>
   </welcome-file-list>
 
-  <!-- Databases -->
+  <!-- metrics -->
+
+  <context-param>
+      <param-name>aerofs.metrics.host</param-name>
+      <param-value><%= metrics["host"] %></param-value>
+  </context-param>
+
+  <context-param>
+      <param-name>aerofs.metrics.port</param-name>
+      <param-value><%= metrics["port"] %></param-value>
+  </context-param>
+
+  <!-- begin database definitions -->
+
   <% @databases.each do |database| -%>
 
   <context-param>
@@ -17,6 +30,8 @@
     <param-name><%= database["param_name"] %></param-name>
     <param-value>jdbc/<%= database["name"] %></param-value>
   </context-param>
+
+  <!-- jdbc resource -->
 
   <resource-ref>
     <description>
@@ -29,3 +44,5 @@
   </resource-ref>
 
   <% end -%>
+
+  <!-- end database definitions -->

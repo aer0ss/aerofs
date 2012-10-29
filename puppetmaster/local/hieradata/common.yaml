@@ -2,3 +2,9 @@
 
 # this is gibberish (obviously)
 fwknop_pass: "5555555555555555"
+
+deployment_config: "staging"
+
+metrics:
+    host: "metrics.aerofs.com"
+    port: 2003

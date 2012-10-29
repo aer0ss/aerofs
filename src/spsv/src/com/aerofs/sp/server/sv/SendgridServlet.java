@@ -24,7 +24,7 @@ import org.json.simple.parser.JSONParser;
 
 import com.aerofs.lib.spsv.sendgrid.Event;
 
-import static com.aerofs.servletlib.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
+import static com.aerofs.sp.server.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
 
 public class SendgridServlet extends AeroServlet {
 
