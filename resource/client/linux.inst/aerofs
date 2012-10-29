@@ -27,10 +27,6 @@ URL=https://cache.clientDOT_STAGING__TO_BE_REPLACED_BY_SED.aerofs.com/$PACKAGE_F
 DIST="$HOME/.aerofs-binDOT_STAGING__TO_BE_REPLACED_BY_SED"
 
 if [ ! -f "$DIST/aerofs.jar" ]; then
-    TMP_DIR=/tmp/aerofs-inst
-    rm -rf "$TMP_DIR"
-    mkdir -p "$TMP_DIR"
-
     which ps > /dev/null
     if [ $? != 0 ]; then
         echo Please install the procps package first by typing:
@@ -43,14 +39,17 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
         echo sudo apt-get install sharutils
         exit 1
     fi
-    uudecode -o /dev/stdout $0 | tar xzf - -C $TMP_DIR 2>/dev/null
-
     which java > /dev/null
     if [ $? != 0 ]; then
         echo Please install Java first by typing:
         echo sudo apt-get install default-jre
         exit 1
     fi
+
+    TMP_DIR=$(mktemp -d)
+    trap "rm -rf \"$TMP_DIR\"" EXIT
+
+    uudecode -o /dev/stdout $0 | tar xzf - -C $TMP_DIR 2>/dev/null
 
     if [ $PROG == gui ]; then
         echo "Launching graphical interface... (use aerofs-cli for command-line interface)"
