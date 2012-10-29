@@ -392,32 +392,6 @@ public class FileUtil
         if (!f.delete()) deleteOnExit(f);
     }
 
-    public interface IFileSystemWalker
-    {
-        void prefixWalk(File f);
-        void postfixWalk(File f);
-    }
-
-    public static abstract class AbstractFileSystemWalker implements IFileSystemWalker
-    {
-        @Override
-        public void prefixWalk(File f) {}
-
-        @Override
-        public void postfixWalk(File f) {}
-    }
-
-    public static void walk(File r, IFileSystemWalker walker) {
-        walker.prefixWalk(r);
-        File[] children = r.listFiles();
-        if (children != null) {
-            for (File c : children) {
-                walk(c, walker);
-            }
-        }
-        walker.postfixWalk(r);
-    }
-
     // TODO (MJ) The following *IfNotNFC(...) methods barely belong in this class.
     // Once we determine what we're doing about (and handle) Normalization for string compares,
     // they can be moved or removed and replace with definitive asserts.

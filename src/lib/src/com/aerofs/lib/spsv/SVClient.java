@@ -26,9 +26,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import com.aerofs.lib.ExitCode;
-import com.aerofs.lib.FileUtil.AbstractFileSystemWalker;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.AbstractExWirable;
 import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import com.aerofs.proto.Sv.PBSVEmail;
@@ -495,54 +492,6 @@ public class SVClient
     }
 
     /**
-     * Recursively list the contents of the APPROOT, complete with permissions and MD5
-     */
-    private static String appRootContents()
-    {
-        File appRoot = new File(AppRoot.abs());
-        // On windows approot is in a per-version subfolder, so get the content of the parent folder
-        if (OSUtil.isWindows()) appRoot = appRoot.getParentFile();
-        final StringBuilder bdAppRoot = new StringBuilder();
-        FileUtil.walk(appRoot, new AbstractFileSystemWalker() {
-            private int _indent = 0;
-            private static final String _noMD5 = "................................";
-
-            private String permissions(File f)
-            {
-                return (f.canRead() ? "r" : "-") + (f.canWrite() ? "w" : "-")
-                        + (f.canExecute() ? "x" : "-");
-            }
-
-            private String md5(File f)
-            {
-                try {
-                    return Util.hexEncode(SecUtil.hashMD5(f));
-                } catch (IOException e) {
-                    return _noMD5;
-                }
-            }
-
-            @Override
-            public void prefixWalk(File f)
-            {
-                for (int i = 0; i < _indent; ++i) bdAppRoot.append(" ");
-                bdAppRoot.append(permissions(f)).append(" ")
-                        .append((f.isFile() && f.canRead()) ? md5(f) : _noMD5).append(" ")
-                        .append(f.getName()).append("\n");
-
-                if (f.isDirectory()) ++_indent;
-            }
-
-            @Override
-            public void postfixWalk(File f)
-            {
-                if (f.isDirectory()) --_indent;
-            }
-        });
-        return bdAppRoot.toString();
-    }
-
-    /**
      * @param verbose false to collect as less data as possible
      * @param e may be null if no exception is available
      *
@@ -564,21 +513,12 @@ public class SVClient
             return;
         }
 
-        // Extra diagnostics for some hard to reproduce exceptions
-        boolean extraDaemonDiag = (e instanceof ExDaemonFailedToStart)
-                || (e instanceof UnsatisfiedLinkError);
-
         // always send non-automatic defects
         boolean isLastSent = automatic && isLastSentDefect(e.getMessage(), stackTrace);
         l.error((isLastSent ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(e));
         if (isLastSent) return;
 
         StringBuilder sbDesc = new StringBuilder();
-        if (extraDaemonDiag) {
-            // force verbose mode and add a keyword to the description for easy defect search
-            sbDesc.append("[DaemonDiag]: ");
-            verbose = true;
-        }
 
         if (desc != null) {
             sbDesc.append(desc);
@@ -650,24 +590,6 @@ public class SVClient
             }
             bdDefect.addJavaEnvName("df");
             bdDefect.addJavaEnvValue(df.get());
-
-            if (extraDaemonDiag) {
-                // list APPROOT contents (complete with perms and md5)
-                String s = "n/a";
-                try {
-                    s = appRootContents();
-                } catch (Exception e2) {
-                    l.warn("appRootContents failed: " + Util.e(e2));
-                }
-                bdDefect.addJavaEnvName("approot");
-                bdDefect.addJavaEnvValue(s);
-
-                if (e instanceof UnsatisfiedLinkError) {
-                    // TODO: try to diagnose driver dependency issues
-                    // the simplest way would be to try to LoadLibrary a bunch of potential system
-                    // libraries like msvcp100.dll and see if they all load
-                }
-            }
 
             // java env
             for (Entry<Object, Object> en : System.getProperties().entrySet()) {

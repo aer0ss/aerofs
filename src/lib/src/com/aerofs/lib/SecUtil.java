@@ -624,16 +624,8 @@ public class SecUtil
 
     public static byte[] hash(File f) throws IOException
     {
-        return hash(f, newMessageDigest());
-    }
+        MessageDigest md = newMessageDigest();
 
-    public static byte[] hashMD5(File f) throws IOException
-    {
-        return hash(f, newMessageDigestMD5());
-    }
-
-    public static byte[] hash(File f, MessageDigest md) throws IOException
-    {
         FileInputStream is = new FileInputStream(f);
         try {
             byte[] bs = new byte[Param.FILE_BUF_SIZE];
