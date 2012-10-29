@@ -58,6 +58,7 @@ node "z.arrowfs.org" inherits default {
     "verkehr port verkehr.aerofs.com 443",
     "zephyr port zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
+    "download-page url https://www.aerofs.com/download?a=WWtheWise\&b=0",
     # Staging
     "staging port staging.aerofs.com 443",
     "staging port staging.aerofs.com 80",
