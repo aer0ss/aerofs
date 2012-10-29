@@ -12,6 +12,6 @@ public class SVParam
 
     // metrics
 
-    public static final String SV_METRICS_HOST_PARAMETER = "aerofs.metrics.host";
-    public static final String SV_METRICS_PORT_PARAMETER = "aerofs.metrics.port";
+    public static final String SV_METRICS_HOST_PARAMETER = "metrics_host";
+    public static final String SV_METRICS_PORT_PARAMETER = "metrics_port";
 }

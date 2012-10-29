@@ -67,7 +67,8 @@ public class SVReactor
     private String _pathAnalytics;
     private final Map<ObfStackTrace, String> _retraceMap = Maps.newHashMap();
 
-    private final Meter _defectMeter = Metrics.newMeter(new MetricName("client", "defect", "all"), "defects", MINUTES);
+    private final Meter _defectMeter = Metrics.newMeter(new MetricName("client", "defect", "all"),
+            "defects", MINUTES);
 
     private static final RavenClient ravenClient =
             new RavenClient("https://79e419090a9049ba98e30674544cfc13:7de75d799f774a6ea8e8f75e9f7eb7ad@sentry.aerofs.com/3");

@@ -42,7 +42,7 @@ public class SVServlet extends AeroServlet
         try {
             _reactor.init_();
             initdb_();
-            initmetrics_();
+            initMetrics_();
         } catch (Exception e) {
             l.error("init: ", e);
             throw new ServletException(e);
@@ -57,7 +57,7 @@ public class SVServlet extends AeroServlet
         _conProvider.init_(svdbRef);
     }
 
-    private void initmetrics_()
+    private void initMetrics_()
     {
         String metricsHost = getServletContext().getInitParameter(SV_METRICS_HOST_PARAMETER);
         Short metricsPort = Short.parseShort(

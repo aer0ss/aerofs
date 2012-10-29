@@ -12,12 +12,12 @@
   <!-- metrics -->
 
   <context-param>
-      <param-name>aerofs.metrics.host</param-name>
+      <param-name>metrics_host</param-name>
       <param-value><%= scope.lookupvar("servlet::metrics")['host'] %></param-value>
   </context-param>
 
   <context-param>
-      <param-name>aerofs.metrics.port</param-name>
+      <param-name>metrics_port</param-name>
       <param-value><%= scope.lookupvar("servlet::metrics")['port'] %></param-value>
   </context-param>
 
