@@ -11,6 +11,13 @@ class Protobuf < Formula
     build 2334
   end
 
+  def patches
+    # Avoid generating code that will produce warnings when compiled.
+    # Patch taken from the upstream bug report:
+    # http://code.google.com/p/protobuf/issues/detail?id=266
+    DATA
+  end
+
   def install
     # Don't build in debug mode. See:
     # https://github.com/mxcl/homebrew/issues/9279
@@ -33,3 +40,70 @@ class Protobuf < Formula
     EOS
   end
 end
+__END__
+Index: src/google/protobuf/compiler/java/java_string_field.cc
+===================================================================
+--- a/src/google/protobuf/compiler/java/java_string_field.cc	(revision 381)
++++ b/src/google/protobuf/compiler/java/java_string_field.cc	(working copy)
+@@ -93,6 +93,8 @@
+ 
+   // For repated builders, one bit is used for whether the array is immutable.
+   (*variables)["get_mutable_bit_builder"] = GenerateGetBit(builderBitIndex);
++  (*variables)["get_mutable_bit_builder_from_local"] = 
++      GenerateGetBitFromLocal(builderBitIndex);
+   (*variables)["set_mutable_bit_builder"] = GenerateSetBit(builderBitIndex);
+   (*variables)["clear_mutable_bit_builder"] = GenerateClearBit(builderBitIndex);
+ 
+@@ -496,7 +498,7 @@
+   // list is immutable, we can just reuse it. If not, we make it immutable.
+ 
+   printer->Print(variables_,
+-    "if ($get_mutable_bit_builder$) {\n"
++    "if ($get_mutable_bit_builder_from_local$) {\n"
+     "  $name$_ = new com.google.protobuf.UnmodifiableLazyStringList(\n"
+     "      $name$_);\n"
+     "  $clear_mutable_bit_builder$;\n"
+Index: src/google/protobuf/compiler/java/java_primitive_field.cc
+===================================================================
+--- a/src/google/protobuf/compiler/java/java_primitive_field.cc	(revision 381)
++++ b/src/google/protobuf/compiler/java/java_primitive_field.cc	(working copy)
+@@ -205,6 +205,8 @@
+ 
+   // For repated builders, one bit is used for whether the array is immutable.
+   (*variables)["get_mutable_bit_builder"] = GenerateGetBit(builderBitIndex);
++  (*variables)["get_mutable_bit_builder_from_local"] = 
++      GenerateGetBitFromLocal(builderBitIndex);
+   (*variables)["set_mutable_bit_builder"] = GenerateSetBit(builderBitIndex);
+   (*variables)["clear_mutable_bit_builder"] = GenerateClearBit(builderBitIndex);
+ 
+@@ -606,7 +608,7 @@
+   // The code below ensures that the result has an immutable list. If our
+   // list is immutable, we can just reuse it. If not, we make it immutable.
+   printer->Print(variables_,
+-    "if ($get_mutable_bit_builder$) {\n"
++    "if ($get_mutable_bit_builder_from_local$) {\n"
+     "  $name$_ = java.util.Collections.unmodifiableList($name$_);\n"
+     "  $clear_mutable_bit_builder$;\n"
+     "}\n"
+Index: src/google/protobuf/compiler/java/java_message_field.cc
+===================================================================
+--- a/src/google/protobuf/compiler/java/java_message_field.cc	(revision 381)
++++ b/src/google/protobuf/compiler/java/java_message_field.cc	(working copy)
+@@ -81,6 +81,8 @@
+ 
+   // For repated builders, one bit is used for whether the array is immutable.
+   (*variables)["get_mutable_bit_builder"] = GenerateGetBit(builderBitIndex);
++  (*variables)["get_mutable_bit_builder_from_local"] = 
++      GenerateGetBitFromLocal(builderBitIndex);
+   (*variables)["set_mutable_bit_builder"] = GenerateSetBit(builderBitIndex);
+   (*variables)["clear_mutable_bit_builder"] = GenerateClearBit(builderBitIndex);
+ 
+@@ -815,7 +817,7 @@
+   // immutable list. If our list is immutable, we can just reuse it. If not,
+   // we make it immutable.
+   PrintNestedBuilderCondition(printer,
+-    "if ($get_mutable_bit_builder$) {\n"
++    "if ($get_mutable_bit_builder_from_local$) {\n"
+     "  $name$_ = java.util.Collections.unmodifiableList($name$_);\n"
+     "  $clear_mutable_bit_builder$;\n"
+     "}\n"
