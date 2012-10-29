@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param.SyncStat;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
@@ -20,7 +21,9 @@ import com.aerofs.lib.syncstat.SyncStatBlockingClient;
 import com.aerofs.proto.Syncstat.GetSyncStatusReply;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -34,6 +37,8 @@ import java.util.List;
  */
 public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 {
+    private static final Logger l = Util.l(SyncStatusConnection.class);
+
     private final TC _tc;
     private final CoreScheduler _sched;
     private final CfgLocalUser _user;
@@ -51,7 +56,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
          * hash push. The client should rollback its push epoch if the server epoch indicates data
          * loss.
          */
-        void onSignIn_(long clientEpoch) throws Exception;
+        void onSignIn_(long clientEpoch);
     }
 
     @Inject
@@ -78,47 +83,36 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      */
     private void ensureConnected_() throws Exception
     {
-        // Need the while loop because we're releasing the object's monitor while waiting for
-        // the sign-in handler to complete (in a core thread)
-        while (_client == null) {
-            try {
-                _client = _ssf.create(SyncStat.URL, _user.get());
-                final long epoch = _client.signInRemote();
+        if (_client != null) return;
 
-                /**
-                 * Some gymnastic must be done here:
-                 * The sign-in handler must be called with the core lock held because it needs to
-                 * read from, and possibly write to, the DB. However this method is called with the
-                 * core lock released to avoid network-related stalls so we schedule a core event
-                 * to call the handler and wait for its completion using wait/notify.
-                 */
-                final OutArg<Exception> ex = new OutArg<Exception>();
-                _sched.schedule(new AbstractEBSelfHandling() {
-                    @Override
-                    public void handle_()
-                    {
-                        synchronized (SyncStatusConnection.this) {
-                            try {
-                                _sih.onSignIn_(epoch);
-                            } catch (Exception e) {
-                                ex.set(e);
-                            }
-                            // notify the connection to keep going
-                            SyncStatusConnection.this.notify();
-                        }
-                    }
-                }, 0);
+        try {
+            SyncStatBlockingClient client = _ssf.create(SyncStat.URL, _user.get());
+            final long epoch = client.signInRemote();
 
-                // wait for the sign-in handler to complete
-                wait();
-                // rethrow any error from the sign-in handler
-                if (ex.get() != null) throw ex.get();
+            l.debug("sss signed-in");
 
-                _firstCall = true;
-            } catch (Exception e) {
-                _client = null;
-                throw e;
-            }
+            /**
+             * Schedule sign-in handler
+             * This method may modify the db if the last known client epoch returned by the sign-in
+             * call is lower than the push epoch (in which case a rollback is needed to recover from
+             * server-side data loss). It must therefore be called with the core lock held. Because
+             * the likelihood of such a rollback is very low, and because the rollback will abort
+             * any conflicting maintenance operation (e.g ongoing activity log scan), we do not need
+             * to wait for the event handler to complete.
+             */
+            _sched.schedule(new AbstractEBSelfHandling() {
+                @Override
+                public void handle_()
+                {
+                    _sih.onSignIn_(epoch);
+                }
+            }, 0);
+
+            _firstCall = true;
+            _client = client;
+        } catch (Exception e) {
+            _client = null;
+            throw e;
         }
     }
 

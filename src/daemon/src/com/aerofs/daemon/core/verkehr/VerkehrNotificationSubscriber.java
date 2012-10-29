@@ -92,10 +92,6 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
         @Override
         public void onConnected()
         {
-            // no need for explicit synchronization: the onConnected() and onDisconnected() callback
-            // cannot be called simultaneously
-            notifyConnected_();
-
             for (Entry<String, IVerkehrListener> sub : _subs.entrySet()) {
                 final String topic = sub.getKey();
                 final IVerkehrListener listener = sub.getValue();
@@ -115,6 +111,10 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
                     }
                 });
             }
+
+            // no need for explicit synchronization: the onConnected() and onDisconnected() callback
+            // cannot be called simultaneously
+            notifyConnected_();
         }
 
         @Override
