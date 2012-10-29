@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,6 +22,9 @@ import javax.mail.MessagingException;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.servletlib.db.IThreadLocalTransaction;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Meter;
+import com.yammer.metrics.core.MetricName;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -47,6 +51,7 @@ import java.util.concurrent.Future;
 
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_RECEIVER;
 import static com.aerofs.sp.server.SPSVParam.SV_NOTIFICATION_SENDER;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 
 public class SVReactor
@@ -62,6 +67,8 @@ public class SVReactor
     private String _pathArchive;
     private String _pathAnalytics;
     private final Map<ObfStackTrace, String> _retraceMap = Maps.newHashMap();
+
+    private final Meter _defectMeter = Metrics.newMeter(new MetricName("client", "defect", "all"), "defects", MINUTES);
 
     private static final RavenClient ravenClient =
             new RavenClient("https://79e419090a9049ba98e30674544cfc13:7de75d799f774a6ea8e8f75e9f7eb7ad@sentry.aerofs.com/3");
@@ -227,6 +234,9 @@ public class SVReactor
         throws ExProtocolError, IOException, MessagingException, SQLException
     {
         Util.checkPB(call.hasDefect(), PBSVDefect.class);
+
+        _defectMeter.mark();
+
         PBSVDefect defect = call.getDefect();
         PBSVHeader header = call.getHeader();
 

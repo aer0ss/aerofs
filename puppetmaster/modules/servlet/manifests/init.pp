@@ -39,6 +39,8 @@ class servlet (
         id       => "001",
     }
 
+    $metrics = hiera("metrics")
+
     include nginx
 
     file {"/etc/nginx/certs":

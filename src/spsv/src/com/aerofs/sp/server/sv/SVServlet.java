@@ -1,23 +1,25 @@
 package com.aerofs.sp.server.sv;
 
-import static com.aerofs.servletlib.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-
-import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-
-import org.apache.log4j.Logger;
-
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
+import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
+import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.AeroServlet;
+import com.yammer.metrics.reporting.GraphiteReporter;
+import org.apache.log4j.Logger;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.sql.SQLException;
+
+import static com.aerofs.sp.server.sv.SVParam.SV_DATABASE_REFERENCE_PARAMETER;
+import static com.aerofs.sp.server.sv.SVParam.SV_METRICS_HOST_PARAMETER;
+import static com.aerofs.sp.server.sv.SVParam.SV_METRICS_PORT_PARAMETER;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class SVServlet extends AeroServlet
 {
@@ -40,6 +42,7 @@ public class SVServlet extends AeroServlet
         try {
             _reactor.init_();
             initdb_();
+            initmetrics_();
         } catch (Exception e) {
             l.error("init: ", e);
             throw new ServletException(e);
@@ -52,6 +55,12 @@ public class SVServlet extends AeroServlet
         String svdbRef = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);
 
         _conProvider.init_(svdbRef);
+    }
+
+    private void initmetrics_()
+    {
+        GraphiteReporter.enable(2, MINUTES,
+                SV_METRICS_HOST_PARAMETER, Short.parseShort(SV_METRICS_PORT_PARAMETER));
     }
 
     @Override

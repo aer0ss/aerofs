@@ -1,18 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
   <component name="FacetManager">
-    <facet type="web" name="spsv servlet">
-      <configuration>
-        <descriptors>
-          <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/web.xml" />
-        </descriptors>
-        <webroots />
-        <sourceRoots>
-          <root url="file://$MODULE_DIR$/src" />
-        </sourceRoots>
-      </configuration>
-    </facet>
-    <facet type="web" name="Web">
+    <facet type="web" name="sp_staging">
       <configuration>
         <descriptors>
           <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sp_staging/web.xml" />
@@ -25,7 +14,7 @@
         </sourceRoots>
       </configuration>
     </facet>
-    <facet type="web" name="Web2">
+    <facet type="web" name="sv_prod">
       <configuration>
         <descriptors>
           <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sv_prod/web.xml" />
@@ -38,7 +27,7 @@
         </sourceRoots>
       </configuration>
     </facet>
-    <facet type="web" name="Web3">
+    <facet type="web" name="sp_prod">
       <configuration>
         <descriptors>
           <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sp_prod/web.xml" />
@@ -51,7 +40,7 @@
         </sourceRoots>
       </configuration>
     </facet>
-    <facet type="web" name="Web4">
+    <facet type="web" name="sv_staging">
       <configuration>
         <descriptors>
           <deploymentDescriptor name="web.xml" url="file://$MODULE_DIR$/resources/sv_staging/web.xml" />
@@ -82,6 +71,7 @@
     <orderEntry type="library" name="guava" level="project" />
     <orderEntry type="library" name="netty" level="project" />
     <orderEntry type="library" name="javamail" level="project" />
+    <orderEntry type="library" name="metrics" level="project" />
     <orderEntry type="library" name="mysql-connector" level="project" />
     <orderEntry type="module" module-name="lib" />
     <orderEntry type="module" module-name="servletlib" />
