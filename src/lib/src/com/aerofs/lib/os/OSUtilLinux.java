@@ -92,7 +92,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
         //
         // Now that we don't mistakenly mark folder on / as rootfs, we should be able to safely
         // drop rootfs from the list here.
-        String[] fss = new String[] { "EXT", "NFS", "BTRFS", "ECRYPTFS",
+        String[] fss = new String[] { "EXT", "NFS", "BTRFS", "ECRYPTFS", "VZFS",
                 "REISERFS", "ROOTFS", "XFS", "UFS", "CRYPT", "JFS", "SIMFS" };
         for (String fs : fss) if (type.startsWith(fs)) return true;
         return false;
