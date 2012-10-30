@@ -8,8 +8,6 @@
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <directory url="file://$PROJECT_DIR$/../../src/android/gen" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/../../src/libmobile/gen" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/../../src/androidlib/gen" includeSubdirectories="true" />
     </excludeFromCompile>
     <resourceExtensions />
     <wildcardResourcePatterns>
