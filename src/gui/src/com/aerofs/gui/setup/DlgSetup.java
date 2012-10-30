@@ -103,8 +103,6 @@ public class DlgSetup extends AeroFSTitleAreaDialog
 
     /**
      * Create contents of the dialog
-     *
-     * @param parent
      */
     @SuppressWarnings("all")
     @Override
@@ -128,6 +126,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                 false, 1, 1));
         _btnIsExistingUser.addSelectionListener(new SelectionAdapter()
         {
+            @Override
             public void widgetSelected(final SelectionEvent ev)
             {
                 boolean r = _btnIsExistingUser.getSelection();

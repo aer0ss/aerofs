@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param.SyncStat;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -23,7 +22,6 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
