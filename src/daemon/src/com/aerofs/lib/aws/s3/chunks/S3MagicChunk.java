@@ -39,6 +39,8 @@ class S3MagicChunk
         } catch (AmazonServiceException e) {
             if (e.getStatusCode() == 403 && "SignatureDoesNotMatch".equals(e.getErrorCode())) {
                 ExitCode.S3_BAD_CREDENTIALS.exit();
+            } else if (e.getStatusCode() == 403 && "InvalidAccessKeyId".equals(e.getErrorCode())) {
+                ExitCode.S3_BAD_CREDENTIALS.exit();
             } else {
                 throw new IOException(e);
             }
