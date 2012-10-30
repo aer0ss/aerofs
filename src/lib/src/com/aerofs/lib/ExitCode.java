@@ -24,7 +24,7 @@ public enum ExitCode
     // Exit codes that are expected during normal operations. _All_ of them should be handled
     // manually by DaemonMonitor.
 
-    SHUTDOWN_REQEUSTED(),
+    SHUTDOWN_REQUESTED(),
     RELOCATE_ROOT_ANCHOR(),
 
     // Incorrect S3 access key or secret key for accessing bucket.
@@ -33,6 +33,10 @@ public enum ExitCode
     // Java may have a limited encryption key length due to export restriction. See the users of
     // this enum for more information.
     S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED();
+
+    // Exit code when we try to relaunch the daemon while Windows is shutting down
+    // Windows will abort the process creation with this code
+    public static int WINDOWS_SHUTTING_DOWN = 0xC0000142;
 
     // The number that all the codes should be based on
     static int BASE = 66;

@@ -229,7 +229,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> shutdown() throws Exception
     {
         Util.l(this).warn("shutdown requested");
-        ExitCode.SHUTDOWN_REQEUSTED.exit();
+        ExitCode.SHUTDOWN_REQUESTED.exit();
 
         return createVoidReply();
     }

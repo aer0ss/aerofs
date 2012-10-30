@@ -91,6 +91,19 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 S.PRODUCT + " requires full strength AES-256 for a better margin" +
                                 " of safety. Contact us at " + SV.SUPPORT_EMAIL_ADDRESS +
                                 " for more questions.");
+                    } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
+                        /*
+                        We get this exit code on Windows in the following situation:
+                            1. Windows kills the daemon because the system is shutting down
+                            2. onDaemonDeath gets called with a normal exit code and tries to
+                               restart the daemon
+                            3. Windows block the new process creation and returns this special
+                               exit code.
+
+                            So we only get this exit code here, never in onDaemonDeath()
+                        */
+                        l.warn("Ignoring exit code " + WINDOWS_SHUTTING_DOWN
+                                + " - Windows is shutting down");
                     } else {
                         throw new IOException(getMessage(exitCode));
                     }
@@ -206,9 +219,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             return;
         }
 
-        if (exitCode == SHUTDOWN_REQEUSTED.getNumber()) {
+        if (exitCode == SHUTDOWN_REQUESTED.getNumber()) {
             l.warn("daemon receives shutdown request. shutdown UI now.");
-            SHUTDOWN_REQEUSTED.exit();
+            SHUTDOWN_REQUESTED.exit();
         }
 
         Util.startDaemonThread("onDaemonDeath", new Runnable () {
