@@ -134,8 +134,7 @@ public class TCTestSetup
     }
 
     public CoreDBCW _coreDBCW = new InMemorySQLiteDBCW().mockCoreDBCW();
-    public TransManager _transManager = new TransManager(new Trans.Factory(_coreDBCW),
-            _cfgLocalUser);
+    public TransManager _transManager = new TransManager(new Trans.Factory(_coreDBCW));
     public TokenManager _tokenManager = new TokenManager();
     public TC _tc = new TC();
     {

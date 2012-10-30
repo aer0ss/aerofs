@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import javax.inject.Inject;
 
 import com.aerofs.daemon.lib.db.ITransListener;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.google.common.collect.Lists;
 
 /* usage:
@@ -24,20 +22,17 @@ public class TransManager
 {
     private final Trans.Factory _factTrans;
     private final ArrayList<ITransListener> _listeners = Lists.newArrayList();
-    private final CfgLocalUser _cfgLocalUser;
 
     private Trans _ongoing; // for debugging
-    private Exception _lastTransactionBeginStacktraceHolder; // for debugging
 
     @Inject
-    public TransManager(Trans.Factory factTrans, CfgLocalUser cfgLocalUser)
+    public TransManager(Trans.Factory factTrans)
     {
         _factTrans = factTrans;
-        _cfgLocalUser = cfgLocalUser;
     }
 
     /**
-     * Unlink {@link Trans#addListener_(ITransListener), the listeners registered by this method
+     * Unlike {@link Trans#addListener_(ITransListener), the listeners registered by this method
      * live across transactions.
      */
     public void addListener_(ITransListener l)
@@ -51,28 +46,14 @@ public class TransManager
      */
     public Trans begin_()
     {
-        assertNoOngoingTransaction_("");
+        assertNoOngoingTransaction_();
         _ongoing = _factTrans.create_(this);
-        // TODO: (DF) remove when debugging this bug is done
-        _lastTransactionBeginStacktraceHolder = new Exception();
-        _lastTransactionBeginStacktraceHolder.fillInStackTrace();
         return _ongoing;
     }
 
-    public void assertNoOngoingTransaction_(String msg)
+    public void assertNoOngoingTransaction_()
     {
-        assert !hasOngoingTransaction_() : "ongoing trans leaked from:\n"
-                + (_lastTransactionBeginStacktraceHolder != null ?
-                           Util.stackTrace2string(_lastTransactionBeginStacktraceHolder) : "null")
-                + "\n" + msg;
-    }
-
-    /**
-     * @return true if there are transactions objects created but not end_()'ed.
-     */
-    public boolean hasOngoingTransaction_()
-    {
-        return _ongoing != null && !_ongoing.ended_();
+        assert _ongoing == null || _ongoing.ended_();
     }
 
     void committing_(Trans t) throws SQLException

@@ -52,7 +52,9 @@ public class Trans
     }
 
     /**
-     * the listeners are called in the reverse order of registration
+     * The listeners are called in the reverse order of registration. The lifespan of the listener
+     * is scoped in this transaction. To register listeners that live across all transactions,
+     * use {@link TransManager#addListener_}.
      */
     public void addListener_(ITransListener l)
     {
@@ -68,25 +70,37 @@ public class Trans
     {
         assert !_ended;
 
-        if (_commit) {
-            for (ITransListener l : _listeners) l.committing_(this);
-            _tm.committing_(this);
-
-            _f._dbcw.commit_();
-        } else {
-            _f._dbcw.abort_();
-        }
-
+        // set _ended *before* calling methods that may throw, so that
+        // TransManager#assertNoOngoingTransaction_() will not complain later if end_() throws.
         _ended = true;
 
-        // call the listeners in the reverse order of registration
-        if (_commit) {
-            for (int i = _listeners.size() - 1; i >= 0; i--) _listeners.get(i).committed_();
-            _tm.committed_();
-        } else {
-            for (int i = _listeners.size() - 1; i >= 0; i--) _listeners.get(i).aborted_();
-            _tm.aborted_();
+        if (_commit) executeCommit_();
+        else executeAbort_();
+    }
+
+    private void executeCommit_() throws SQLException
+    {
+        try {
+            for (ITransListener l : _listeners) l.committing_(this);
+            _tm.committing_(this);
+            _f._dbcw.commit_();
+        } catch (SQLException e) {
+            executeAbort_();
+            throw e;
         }
+
+        // N.B. code after _dbcw.commit() must not throw
+
+        for (int i = _listeners.size() - 1; i >= 0; i--) _listeners.get(i).committed_();
+        _tm.committed_();
+    }
+
+    private void executeAbort_()
+    {
+        _f._dbcw.abort_();
+
+        for (int i = _listeners.size() - 1; i >= 0; i--) _listeners.get(i).aborted_();
+        _tm.aborted_();
     }
 
     /**

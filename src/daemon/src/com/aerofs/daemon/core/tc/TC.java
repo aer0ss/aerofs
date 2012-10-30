@@ -200,7 +200,7 @@ public class TC implements IDumpStatMisc
 
                             _disp.dispatch_(ev, outPrio.get());
 
-                            _tm.assertNoOngoingTransaction_(ev.getClass().toString());
+                            _tm.assertNoOngoingTransaction_();
                         } catch (Throwable e) {
                             // fail fast
                             throw Util.fatal(e);
@@ -311,7 +311,7 @@ public class TC implements IDumpStatMisc
         assert !reason.isEmpty();
 
         // there mustn't be active transactions or iterators before going to sleep
-        _tm.assertNoOngoingTransaction_(reason);
+        _tm.assertNoOngoingTransaction_();
         DBIteratorMonitor.assertNoActiveIterators_();
 
         assert !_l.hasWaiters(tcb._cv);
@@ -381,7 +381,7 @@ public class TC implements IDumpStatMisc
         tcb._tk = null;    // not necessary. for debugging only
 
         // there mustn't be active transactions or iterators when coming back from sleep
-        _tm.assertNoOngoingTransaction_(tcb._pauseReason);
+        _tm.assertNoOngoingTransaction_();
         DBIteratorMonitor.assertNoActiveIterators_();
 
         if (!tcb._running) {
