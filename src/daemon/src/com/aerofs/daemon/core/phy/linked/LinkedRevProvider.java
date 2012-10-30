@@ -1,11 +1,8 @@
 package com.aerofs.daemon.core.phy.linked;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.nio.ByteBuffer;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,7 +13,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.Base64;
+import com.aerofs.lib.os.OSUtil;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
@@ -31,6 +29,8 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+
+import javax.annotation.Nullable;
 
 /**
  * Provider for backup revisions
@@ -52,7 +52,75 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
     static final Logger l = Util.l(LinkedRevProvider.class);
 
-    private static final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
+    // public for use in DPUTMigrateRevisionSuffixToBase64
+    public static class RevisionSuffix
+    {
+        // separates file name from encoded revision suffix
+        public static final char SEPARATOR = '.';
+
+        // KIndex + 2 timestamps
+        // Stupid Java provide size in bits but not in bytes... On the other hand the spec does
+        // ensure that long and int are 64bit and 32bit wide respectively
+        public static int DECODED_LENGTH = 2 * (Long.SIZE / 8) + (Integer.SIZE / 8);
+
+        public final KIndex _kidx;  // branch index
+        public final long _mtime;   // mtime of file moved to revision tree
+        public final long _rtime;   // time of movement to revision tree
+
+        private String encoded;     // cached url-safe base64 encoding
+
+        /**
+         * The mtime is used to offer a consistent timestamp in the UI for old and current versions.
+         * The rtime is used to differentiate between revisions of a file with the same mtime (this
+         * is necessary to avoid losing revision information on Unix devices and avoid no-sync on
+         * Windows ones (renaming fails when the target exists)).
+         */
+
+        public RevisionSuffix(KIndex kidx, long mtime, long rtime)
+        {
+            _kidx = kidx;
+            _mtime = mtime;
+            _rtime = rtime;
+        }
+
+        /**
+         * @param encoded url-safe base64 encoded suffix extracted from the name of a revision file
+         * @return decoded suffix, null if the suffix was not valid
+         */
+        public static @Nullable RevisionSuffix fromEncodedNullable(String encoded)
+        {
+            byte[] decoded;
+            try {
+                decoded = Base64.decode(encoded, Base64.URL_SAFE);
+            } catch (IOException e) {
+                return null;
+            }
+            if (decoded.length != DECODED_LENGTH) return null;
+            ByteBuffer buf = ByteBuffer.wrap(decoded);
+            KIndex kidx = new KIndex(buf.getInt());
+            long mtime = buf.getLong();
+            long rtime = buf.getLong();
+            return new RevisionSuffix(kidx, mtime, rtime);
+        }
+
+        public String encoded()
+        {
+            if (encoded == null) {
+                byte d[] = new byte[DECODED_LENGTH];
+                ByteBuffer buf = ByteBuffer.wrap(d);
+                buf.putInt(_kidx.getInt());
+                buf.putLong(_mtime);
+                buf.putLong(_rtime);
+                try {
+                    encoded = Base64.encodeBytes(d, Base64.URL_SAFE);
+                } catch (IOException e) {
+                    // the base64 encoder can only throw IOException when using the GZIP option...
+                    throw Util.fatal(e);
+                }
+            }
+            return encoded;
+        }
+    }
 
     class LinkedRevFile
     {
@@ -107,16 +175,19 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     }
 
     // called from LocalStorage
-    LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx)
-            throws IOException
+    LinkedRevFile newLocalRevFile_(Path path, String absPath, KIndex kidx) throws IOException
     {
-        long mtime = FileUtil.lastModified(new File(absPath));
-        String date = new SimpleDateFormat(DATE_FORMAT).format(new Date(mtime));
+        InjectableFile f = _factFile.create(absPath);
+        RevInfo rev = new RevInfo(Util.join(_pathBase, Util.join(path.removeLast().elements())),
+                f.getName(), kidx, f.lastModified(), f.getLengthOrZeroIfNotFile());
 
-        String pathRev = Util.join(_pathBase, Util.join(path.elements()));
-        pathRev += "-" + kidx + "_" + date;
-        // BUG: this may fail, e.g. if the file name is too long
-        return new LinkedRevFile(_factFile.create(pathRev), _factFile.create(absPath));
+        String pathRev = rev.getAbsolutePath();
+
+        if (OSUtil.isWindows() && pathRev.length() > 260) {
+            // TODO: shorten name, will break rev history but will keep sync working...
+        }
+
+        return new LinkedRevFile(_factFile.create(pathRev), f);
     }
 
     @Override
@@ -134,11 +205,11 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 String name = file.getName();
                 boolean dir = file.isDirectory();
                 if (!dir) {
-                    RevInfo info = RevInfo.fromFile(file);
+                    RevInfo info = RevInfo.fromRevisionFileNullable(file);
                     if (info == null) {
                         continue;
                     }
-                    name = info.baseName();
+                    name = info._name;
                 }
                 children.add(new Child(name, dir));
             }
@@ -166,13 +237,14 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 if (file.isDirectory()) {
                     continue;
                 }
-                RevInfo info = RevInfo.fromFile(file);
+                RevInfo info = RevInfo.fromRevisionFileNullable(file);
                 if (info == null) {
                     continue;
                 }
-                if (path.last().equals(info.baseName())) {
+                if (path.last().equals(info._name)) {
+                    // TODO: use the rtime (revision creation time) as sorting key
                     revisions.add(new Revision(Util.string2utf(info.index()),
-                                               info._date.getTime(),
+                                               info._suffix._mtime,
                                                info._length));
                 }
             }
@@ -186,9 +258,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     public RevInputStream getRevInputStream_(Path path, byte[] index)
             throws Exception
     {
-        String auxPath = Util.join(_pathBase,
-                                   Util.join(path.elements()))
-                         + "-" + Util.utf2string(index);
+        String auxPath = Util.join(_pathBase, Util.join(path.elements()))
+                + RevisionSuffix.SEPARATOR + Util.utf2string(index);
         InjectableFile file = _factFile.create(auxPath);
         if (!file.exists() || file.isDirectory())
             throw new ExNotFound("Invalid revision index");
@@ -376,7 +447,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                         if (needed <= 0) return;
                         RevInfo revInfo = it.next();
                         long length = revInfo._length;
-                        InjectableFile file = _factFile.create(revInfo._path);
+                        InjectableFile file = _factFile.create(revInfo.getAbsolutePath());
                         if (tryDeleteOldRev(file)) {
                             needed -= length;
                         }
@@ -387,14 +458,15 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 }
             }
 
-            private void walk(InjectableFile parent, InjectableFile file) throws InterruptedException, IOException {
+            private void walk(InjectableFile parent, InjectableFile file)
+                    throws InterruptedException, IOException {
                 checkInterrupted();
                 if (file.isFile()) {
                     ++_fileCount;
                     RevInfo revInfo = parse(parent, file);
                     if (revInfo != null) {
                         _totalSize += revInfo._length;
-                        if (_startTime.compareTo(revInfo._date) > 0) {
+                        if (_startTime.compareTo(new Date(revInfo._suffix._rtime)) > 0) {
                             l.debug("Old file: " + revInfo);
                             _sorter.add(revInfo);
                         }
@@ -425,7 +497,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
             private RevInfo parse(InjectableFile parent, InjectableFile file)
             {
-                return RevInfo.fromFile(file);
+                return RevInfo.fromRevisionFileNullable(file);
             }
         }
     }
@@ -433,80 +505,78 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     static class RevInfo implements Serializable
     {
         private static final long serialVersionUID = 1L;
-        private static final DateFormat _dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
         static final Comparator<RevInfo> CHRONOLOGICAL = new Comparator<RevInfo>() {
             @Override
             public int compare(RevInfo o1, RevInfo o2)
             {
-                return o1._date.compareTo(o2._date);
+                int r = Util.compare(o1._suffix._rtime, o2._suffix._rtime);
+                if (r == 0) r = Util.compare(o1._suffix._mtime, o2._suffix._mtime);
+                return r;
             }
         };
 
-        String _path;
-        int _baseNameIdx;
-        int _kidx;
-        Date _date;
-        long _length;
+        private final String _path;    // absolute path of directory in which revision file resides
+        final String _name;            // name of file to which revision is associated
+        final RevisionSuffix _suffix;  // decoded revision suffix
+        final long _length;            // length in bytes of revision file
 
         @Override
         public String toString()
         {
-            return _path;
-        }
-
-        private int indexSeparator() {
-            int pos2 = _path.length() - DATE_FORMAT.length() - 1;
-            assert(_path.charAt(pos2) == '_');
-            int pos1 = _path.lastIndexOf('-', pos2);
-            assert(pos1 > 0);
-            return pos1;
-        }
-
-        public String baseName() {
-            return _path.substring(_baseNameIdx, indexSeparator());
-        }
-
-        public String index() {
-            return _path.substring(indexSeparator() + 1);
+            return getAbsolutePath();
         }
 
         /**
-         * Extract revision information from an existing revision file.
+         * @return revision index (used to distinguish revisions and open a RevInputStream)
+         */
+        public String index()
+        {
+            return _suffix.encoded();
+        }
+
+        /**
+         * @return absolute path to the actual location of the revision file
+         */
+        public String getAbsolutePath()
+        {
+            return Util.join(_path, _name) + RevisionSuffix.SEPARATOR + index();
+        }
+
+        public RevInfo(String revBase, String name, KIndex kidx, long mtime, long length)
+        {
+            this(revBase, name, new RevisionSuffix(kidx, mtime, new Date().getTime()), length);
+        }
+
+        public RevInfo(String revBase, String name, RevisionSuffix suffix, long length)
+        {
+            _path = revBase;
+            _name = name;
+            _suffix = suffix;
+            _length = length;
+        }
+
+        /**
+         * Extract revision information from a file in the revision tree.
          *
          * The date and the index are derived from the file name.
          * The length is queried from the file system.
          *
          * NOTE: the file MUST exist until the end of the method and its name MUST match the format
          * produced by {@link LinkedRevProvider#newLocalRevFile_}
-         *
-         * @return an initialized RevInfo object or null for non-existing / invalid files
          */
-        public static RevInfo fromFile(InjectableFile file)
+        public static @Nullable RevInfo fromRevisionFileNullable(InjectableFile file)
         {
-            String name = file.getName();
-            if (name.length() < 3 + DATE_FORMAT.length()) return null;
-            int pos2 = name.length() - DATE_FORMAT.length() - 1;
-            if (name.charAt(pos2) != '_') return null;
-            int pos1 = name.lastIndexOf('-', pos2);
-            if (pos1 <= 0) return null;
-            int kidx = Integer.parseInt(name.substring(pos1 + 1, pos2));
-            Date date;
-            try {
-                date = _dateFormat.parse(name.substring(name.length() - DATE_FORMAT.length()));
-            } catch (ParseException e) {
-                l.warn("date parsing: " + Util.e(e, ParseException.class));
-                return null;
-            }
-
-            RevInfo revInfo = new RevInfo();
-            revInfo._path = file.getPath();
-            revInfo._baseNameIdx = revInfo._path.length() - name.length();
-            revInfo._kidx = kidx;
-            revInfo._date = date;
-            revInfo._length = file.getLengthOrZeroIfNotFile();
+            String revName = file.getName();
+            int pos = revName.lastIndexOf(RevisionSuffix.SEPARATOR);
+            if (pos <= 0) return null;
+            String path = file.getParent();
+            String name = revName.substring(0, pos);
+            RevisionSuffix suffix = RevisionSuffix.fromEncodedNullable(revName.substring(pos + 1));
+            if (suffix == null) return null;
+            long length = file.getLengthOrZeroIfNotFile();
             // Check for file disappearance while we where building the RevInfo (support-143)
-            return file.isFile() ? revInfo : null;
+            return file.isFile() ? new RevInfo(path, name, suffix, length) : null;
         }
     }
 }
