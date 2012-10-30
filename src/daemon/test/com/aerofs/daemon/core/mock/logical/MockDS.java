@@ -20,7 +20,6 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.C;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
