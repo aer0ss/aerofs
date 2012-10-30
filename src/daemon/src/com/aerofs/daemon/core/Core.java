@@ -166,16 +166,6 @@ public class Core implements IModule
 //                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), L.get().spDID()),
 //                        _tc.prio());
 //            }
-
-            // schedule analytics
-//              sched().schedule(new AbstractEBSelfHandling() {
-//                  @Override
-//                  public void handle_()
-//                  {
-//                      Analytics.run();
-//                      sched().schedule(this, DaemonParam.ANALYTICS_SAMPLE_INTERVAL);
-//                  }
-//              }, DaemonParam.ANALYTICS_SAMPLE_INTERVAL);
         }
     }
 }
