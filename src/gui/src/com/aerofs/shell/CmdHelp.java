@@ -51,7 +51,7 @@ public class CmdHelp<T> implements IShellCommand<T>
         hf.printWrapped(pw, LINE_WIDTH, INDENT_WIDTH, INDENT +
                 "Being a client program of " + S.PRODUCT + ", " + prog +
                 " requires a running " + S.PRODUCT + " CLI " +
-                "(aerofs-cli) or GUI (aerofs) proces to be fully functional. " +
+                "(aerofs-cli) or GUI (aerofs) process to be fully functional. " +
                 "Multiple " + prog + " instances may be executed at the same time.");
         pw.println();
 
