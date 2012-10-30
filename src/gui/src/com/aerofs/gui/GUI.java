@@ -125,6 +125,10 @@ public class GUI implements IUI {
             GUI.get().st().getMenu().enable();
         }
 
+        if (OSUtil.isLinux()) {
+            checkUbuntuTraySettings();
+        }
+
         // Offer to install the shell extension if it's not installed
         if (OSUtil.get().isShellExtensionAvailable() && !OSUtil.get().isShellExtensionInstalled()) {
             try {
@@ -750,5 +754,57 @@ public class GUI implements IUI {
     public void preSetupUpdateCheck_() throws Exception
     {
         new DlgPreSetupUpdateCheck(GUI.get().sh()).open();
+    }
+
+    /**
+     * On Ubuntu with Unity, tray icons are blacklisted by default.
+     * This method checks if aerofs is on the whitelist and adds it if necessary
+     * It will then prompt the user to log out and log back in
+     */
+    private void checkUbuntuTraySettings()
+    {
+        assert OSUtil.isLinux();
+        final String appName = "'swt'"; // This is how Ubuntu thinks AeroFS is named
+        final String pattern = ".*(" + appName + "|'all').*";
+
+        try {
+            String settings = getUbuntuTraySettings();
+            if (!settings.matches(pattern)) {
+                settings += (settings.isEmpty() ? "" : ", ") + appName;
+                OutArg<String> outArg = new OutArg<String>();
+                int retval = Util.execForeground(outArg, "gsettings", "set",
+                        "com.canonical.Unity.Panel", "systray-whitelist", "[" + settings + "]");
+                if (retval != 0) throw new IOException("gsettings returned " + outArg.get());
+
+                // Check if we match the settings now, otherwise something is wrong with our logic
+                // and there is no need to prompt the user to log out.
+                if (!getUbuntuTraySettings().matches(pattern)) throw new IOException("nothing written");
+
+                show(MessageType.INFO, S.PRODUCT + " has updated your system settings to allow " +
+                        "displaying the " + S.PRODUCT + " icon in the tray menu. If you don't see " +
+                        "the tray icon, please log out of your session and log back in.\n\n" +
+                        "Alternatively, you can use the 'aerofs-sh' command to use " + S.PRODUCT +
+                        " from the command line.");
+            }
+        } catch (IOException e) {
+            l.warn("gsettings failed: " + Util.e(e));
+        }
+    }
+
+    private String getUbuntuTraySettings() throws IOException
+    {
+        assert OSUtil.isLinux();
+
+        OutArg<String> outArg = new OutArg<String>();
+        Util.execForeground(outArg, "gsettings", "get", "com.canonical.Unity.Panel",
+                "systray-whitelist");
+        String result = outArg.get().trim();
+        if (result.startsWith("[") && result.endsWith("]")) {
+            return result.substring(1, result.length() - 1).trim();
+        } else if (result.equals("@as []")) { // empty array
+            return "";
+        } else {
+            throw new IOException("gsettings returned: " + result);
+        }
     }
 }
