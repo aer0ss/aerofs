@@ -83,7 +83,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 " the correct bucket name and AWS access and secret key.");
                     } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
                         throw new ExUIMessage(
-                                S.PRODUCT + " cloudn't launch due to issues with your " +
+                                S.PRODUCT + " couldn't launch due to issues with your " +
                                 S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
                                 " is provided by Oracle with limited" +
                                 " crypto key strength, please download the Unlimited Strength" +
