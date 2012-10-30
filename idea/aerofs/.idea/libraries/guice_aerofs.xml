@@ -6,8 +6,6 @@
     <JAVADOC>
       <root url="http://google-guice.googlecode.com/git/javadoc/" />
     </JAVADOC>
-    <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../resource/src/guice-3.0-src.zip!/guice-3.0-src/core/src" />
-    </SOURCES>
+    <SOURCES />
   </library>
 </component>

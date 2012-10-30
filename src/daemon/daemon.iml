@@ -8,12 +8,11 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="swiglibs" />
-    <orderEntry type="module" module-name="libjingle.binding" />
     <orderEntry type="module" module-name="lib" />
+    <orderEntry type="module" module-name="libjingle.binding" />
     <orderEntry type="module" module-name="zephyr" />
     <orderEntry type="module" module-name="verkehr" />
-    <orderEntry type="library" name="javax.inject" level="project" />
+    <orderEntry type="library" name="smack" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

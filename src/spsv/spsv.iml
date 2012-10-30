@@ -64,18 +64,8 @@
       <excludeFolder url="file://$MODULE_DIR$/user" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="library" name="servlet-2.5" level="project" />
-    <orderEntry type="library" name="log4j" level="project" />
-    <orderEntry type="library" name="protobuf" level="project" />
-    <orderEntry type="library" name="protobuf-format" level="project" />
-    <orderEntry type="library" name="guava" level="project" />
-    <orderEntry type="library" name="netty" level="project" />
-    <orderEntry type="library" name="javamail" level="project" />
-    <orderEntry type="library" name="metrics" level="project" />
-    <orderEntry type="library" name="mysql-connector" level="project" />
-    <orderEntry type="module" module-name="lib" />
     <orderEntry type="module" module-name="servletlib" />
-    <orderEntry type="module" module-name="verkehr" />
+    <orderEntry type="library" name="metrics" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

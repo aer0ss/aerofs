@@ -8,24 +8,9 @@
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="swiglibs" />
+    <orderEntry type="module" module-name="swiglibs" exported="" />
     <orderEntry type="module" module-name="base" exported="" />
-    <orderEntry type="library" exported="" name="guava" level="project" />
-    <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" name="log4j" level="project" />
-    <orderEntry type="library" exported="" name="aerofs-jnotify" level="project" />
-    <orderEntry type="library" exported="" name="guice-aerofs" level="project" />
-    <orderEntry type="library" exported="" name="jsr305" level="project" />
-    <orderEntry type="library" exported="" name="netty" level="project" />
-    <orderEntry type="library" exported="" name="protobuf" level="project" />
-    <orderEntry type="library" exported="" name="apache-codec" level="project" />
-    <orderEntry type="library" exported="" name="apache-lang" level="project" />
-    <orderEntry type="library" exported="" name="json" level="project" />
-    <orderEntry type="library" exported="" name="smack" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="mockito" level="project" />
-    <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="module-library" exported="">
       <library name="slf4j-log4j">
         <CLASSES>
@@ -39,6 +24,15 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="library" exported="" name="guice-aerofs" level="project" />
+    <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
+    <orderEntry type="library" exported="" name="apache-codec" level="project" />
+    <orderEntry type="library" exported="" name="apache-lang" level="project" />
+    <orderEntry type="library" exported="" name="json" level="project" />
+    <orderEntry type="library" exported="" name="aws" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
 

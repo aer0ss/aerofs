@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="aerofs-jnotify">
+  <library name="slf4j-api">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../approot/lib/aerofsjn.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../approot/lib/slf4j-api-1.6.6.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

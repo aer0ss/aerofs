@@ -6,16 +6,15 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="javax.inject" level="project" />
     <orderEntry type="library" exported="" name="jsr305" level="project" />
     <orderEntry type="library" exported="" name="guava" level="project" />
     <orderEntry type="library" exported="" name="netty" level="project" />
     <orderEntry type="library" exported="" name="protobuf" level="project" />
-    <orderEntry type="library" name="slf4j-simple" level="project" />
-    <orderEntry type="library" name="smack" level="project" />
+    <orderEntry type="library" exported="" name="slf4j-api" level="project" />
     <orderEntry type="library" scope="TEST" name="junit" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
 
