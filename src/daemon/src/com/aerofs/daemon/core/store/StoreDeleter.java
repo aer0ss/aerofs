@@ -72,15 +72,14 @@ public class StoreDeleter
         // operations to avoid concurrent modification exceptions
         ArrayList<SIndex> sidxChildren = Lists.newArrayList();
         ArrayList<Path> pathChildren = Lists.newArrayList();
-        Path pathNew = null;
+
+        final Path pathNew = _ds.resolve_(new SOID(sidx, OID.ROOT));
 
         for (SIndex sidxChild : _ss.getChildren_(sidx)) {
-            // figure out the old path for the child store
-            if (pathNew == null) pathNew = _ds.resolve_(new SOID(sidx, OID.ROOT));
-
             OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidxChild));
             Path pathNewChild = _ds.resolve_(new SOID(sidx, oidAnchor));
             Path pathOldChild = pathOld;
+
             for (int i = pathNew.elements().length; i < pathNewChild.elements().length; i++) {
                 // creating a new Path object on every iteration is a bit inefficient...
                 pathOldChild = pathOldChild.append(pathNewChild.elements()[i]);

@@ -26,6 +26,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.apache.log4j.Logger;
 
 public class Stores implements IStores
 {
@@ -43,6 +44,8 @@ public class Stores implements IStores
     private final Map<SIndex, SIndex> _s2parent = Maps.newHashMap();
 
     private SIndex _root;
+
+    private static final Logger l = Util.l(Stores.class);
 
     @Inject
     public void inject_(IStoreDatabase sdb, TransManager tm, StoreCreator sc, SIDMap sm,
@@ -120,7 +123,9 @@ public class Stores implements IStores
         preDelete_(sidx);
         Util.verify(_s2parent.remove(sidx) != null);
         _sidx2dbm.invalidateCache(sidx);
+
         _sdb.delete_(sidx, t);
+        l.debug("Store removed from parent: " + sidx);
 
         registerRollbackHandler_(t, new Callable<Void>() {
             @Override
@@ -182,16 +187,19 @@ public class Stores implements IStores
     }
 
     @Override
-    public SIndex getRoot_()
+    public @Nonnull SIndex getRoot_()
     {
+        assert _root != null;
         return _root;
     }
 
     @Override
-    public SIndex getParent_(SIndex sidx) throws SQLException
+    public @Nonnull SIndex getParent_(SIndex sidx) throws SQLException
     {
-        assert _s2parent.containsKey(sidx);
-        return _s2parent.get(sidx);
+        // Parent must contain key sidx
+        SIndex parent = _s2parent.get(sidx);
+        assert parent != null : sidx;
+        return parent;
     }
 
     @Override

@@ -8,6 +8,8 @@ import java.util.Map.Entry;
 
 import com.aerofs.lib.Util;
 
+import javax.annotation.Nullable;
+
 /**
  * hash is used to compare keys
  */
@@ -105,7 +107,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
     /**
      * @return null if no entry exists, OR if the value is null
      */
-    public V get_(K k)
+    public @Nullable V get_(K k)
     {
         assert k != null;
         if (_impl.containsKey(k)) {
