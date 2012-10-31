@@ -8,8 +8,8 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.common.collect.Lists;
+import com.google.common.collect.ObjectArrays;
 import com.google.inject.Inject;
-import org.apache.commons.lang.ArrayUtils;
 
 import javax.annotation.Nullable;
 
@@ -94,8 +94,8 @@ public class Trans
      */
     private void concatStackTrace(Throwable a, Throwable b)
     {
-        a.setStackTrace((StackTraceElement[])ArrayUtils.addAll(a.getStackTrace(),
-                                                               b.getStackTrace()));
+        a.setStackTrace(ObjectArrays.concat(
+                a.getStackTrace(), b.getStackTrace(), StackTraceElement.class));
     }
 
     /**

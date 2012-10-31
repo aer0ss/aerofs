@@ -1,7 +1,5 @@
 package com.aerofs.lib;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -412,7 +410,7 @@ public class BitVector implements Iterable<Boolean>
             @Override
             public void remove()
             {
-                throw new NotImplementedException();
+                throw new UnsupportedOperationException();
             }
         };
     }

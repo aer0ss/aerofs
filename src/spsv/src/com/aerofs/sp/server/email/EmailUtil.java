@@ -8,7 +8,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.spsv.SVClient;
 import org.apache.log4j.Logger;
 
-import static com.aerofs.sp.server.SPSVParam.*;
+import static com.aerofs.sp.server.SPParam.*;
 
 public class EmailUtil
 {

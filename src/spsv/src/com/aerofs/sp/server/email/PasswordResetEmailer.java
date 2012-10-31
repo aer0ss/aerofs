@@ -13,7 +13,7 @@ import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 import java.io.IOException;
 
-import static com.aerofs.sp.server.SPSVParam.*;
+import static com.aerofs.sp.server.SPParam.*;
 
 public class PasswordResetEmailer
 {

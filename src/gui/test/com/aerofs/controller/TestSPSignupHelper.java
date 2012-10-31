@@ -13,7 +13,7 @@ import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.sp.LocalSPServiceReactorCaller;
+import com.aerofs.sp.server.LocalSPServiceReactorCaller;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;

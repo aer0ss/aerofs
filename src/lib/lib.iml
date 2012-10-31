@@ -26,8 +26,6 @@
     </orderEntry>
     <orderEntry type="library" exported="" name="guice-aerofs" level="project" />
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
-    <orderEntry type="library" exported="" name="apache-codec" level="project" />
-    <orderEntry type="library" exported="" name="apache-lang" level="project" />
     <orderEntry type="library" exported="" name="json" level="project" />
     <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
