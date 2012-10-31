@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.ds.OA;
@@ -32,7 +33,7 @@ public interface IMetaDatabase
     /**
      * @return null if not found
      */
-    OID getChild_(SIndex sidx, OID parent, String name) throws SQLException;
+    @Nullable OID getChild_(SIndex sidx, OID parent, String name) throws SQLException;
 
     /**
      * the implementation must skip the root folder (e.g. OID.ROOT) and aliased
@@ -54,7 +55,7 @@ public interface IMetaDatabase
     /**
      * @return null if not found
      */
-    OA getOA_(SOID soid) throws SQLException;
+    @Nullable OA getOA_(SOID soid) throws SQLException;
 
     void setOAParentAndName_(SIndex sidx, OID oid, OID parent,
             String name, Trans t) throws SQLException, ExAlreadyExist;
@@ -63,7 +64,7 @@ public interface IMetaDatabase
 
     void setFID_(SOID soid, @Nullable FID fid, Trans t) throws SQLException;
 
-    SOID getSOID_(FID fid) throws SQLException;
+    @Nullable SOID getSOID_(FID fid) throws SQLException;
 
     void deleteOA_(SIndex sidx, OID alias, Trans t) throws SQLException;
 
@@ -76,19 +77,19 @@ public interface IMetaDatabase
 
     void setCAHash_(SOID soid, KIndex kidx, @Nullable ContentHash h, Trans t) throws SQLException;
 
-    ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
+    @Nullable ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;
 
     /**
      * @param sidx may be always null or always not null during a lifecycle of the daemon process.
      */
-    long getUsedSpace_(SIndex sidx) throws SQLException;
+    long getUsedSpace_(@Nullable SIndex sidx) throws SQLException;
 
     IDBIterator<SOKID> getNonMasterBranches_() throws SQLException;
 
     /**
      * Retrieve the sync status for an object
      */
-    BitVector getSyncStatus_(SOID soid) throws SQLException;
+    @Nonnull BitVector getSyncStatus_(SOID soid) throws SQLException;
 
     /**
      * Set the sync status for an object
@@ -98,7 +99,7 @@ public interface IMetaDatabase
     /**
      * Retrieve the aggregate sync status for an object
      */
-    CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException;
+    @Nonnull CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException;
 
     /**
      * Set the aggregate sync status for an object

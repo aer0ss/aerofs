@@ -100,21 +100,21 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         // TODO move deletion code for a table to the *Database class responsible for that table.
         Statement stmt = c().createStatement();
         try {
-            Util.verify(deleteTableForStore_(stmt, T_STORE, C_STORE_SIDX, sidx) == 1);
-            deleteTableForStore_(stmt, T_OA, C_OA_SIDX, sidx);
-            deleteTableForStore_(stmt, T_CA, C_CA_SIDX, sidx);
-            deleteTableForStore_(stmt, T_KWLG, C_KWLG_SIDX, sidx);
-            deleteTableForStore_(stmt, T_CF, C_CF_SIDX, sidx);
-            deleteTableForStore_(stmt, T_SF, C_SF_SIDX, sidx);
-            deleteTableForStore_(stmt, T_SD, C_SD_SIDX, sidx);
-            deleteTableForStore_(stmt, T_CS, C_CS_SIDX, sidx);
-            deleteTableForStore_(stmt, T_SSBS, C_SSBS_SIDX, sidx);
+            Util.verify(deleteRowsInTableForStore_(stmt, T_STORE, C_STORE_SIDX, sidx) == 1);
+            deleteRowsInTableForStore_(stmt, T_OA, C_OA_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_CA, C_CA_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_KWLG, C_KWLG_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_CF, C_CF_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_SF, C_SF_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_SD, C_SD_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_CS, C_CS_SIDX, sidx);
+            deleteRowsInTableForStore_(stmt, T_SSBS, C_SSBS_SIDX, sidx);
         } finally {
             DBUtil.close(stmt);
         }
     }
 
-    private int deleteTableForStore_(Statement stmt, String table, String column, SIndex sidx)
+    private int deleteRowsInTableForStore_(Statement stmt, String table, String column, SIndex sidx)
             throws SQLException
     {
         return stmt.executeUpdate("delete from " + table + " where " + column + "=" +

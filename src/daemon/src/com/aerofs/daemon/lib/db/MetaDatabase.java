@@ -12,8 +12,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.ds.CA;
@@ -35,6 +35,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
 /*
@@ -50,7 +51,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
     PreparedStatement _psGetChild;
     @Override
-    public OID getChild_(SIndex sidx, OID parent, String name)
+    public @Nullable OID getChild_(SIndex sidx, OID parent, String name)
             throws SQLException
     {
         assert parent != null;
@@ -310,7 +311,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psGetCA.setBytes(2, soid.oid().getBytes());
             ResultSet rs = _psGetCA.executeQuery();
             try {
-                SortedMap<KIndex, CA> cas = new TreeMap<KIndex, CA>();
+                SortedMap<KIndex, CA> cas = Maps.newTreeMap();
                 while (rs.next()) {
                     long len = rs.getLong(1);
                     KIndex kidx = new KIndex(rs.getInt(2));
@@ -333,7 +334,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
     private PreparedStatement _psGCAH;
     @Override
-    public ContentHash getCAHash_(SOID soid, KIndex kidx)
+    public @Nullable ContentHash getCAHash_(SOID soid, KIndex kidx)
             throws SQLException
     {
         try {
@@ -398,7 +399,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
     private PreparedStatement _psGetOA;
     @Override
-    public OA getOA_(SOID soid) throws SQLException
+    public @Nullable OA getOA_(SOID soid) throws SQLException
     {
         try {
             if (_psGetOA == null) _psGetOA = c().prepareStatement("select "
@@ -440,7 +441,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
     private PreparedStatement _psFID2SOID;
 
     @Override
-    public SOID getSOID_(FID fid) throws SQLException
+    public @Nullable SOID getSOID_(FID fid) throws SQLException
     {
         try {
             if (_psFID2SOID == null) _psFID2SOID = c().prepareStatement(
@@ -594,7 +595,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
     private PreparedStatementWrapper _pswGetSync = new PreparedStatementWrapper();
     @Override
-    public BitVector getSyncStatus_(SOID soid) throws SQLException
+    public @Nonnull BitVector getSyncStatus_(SOID soid) throws SQLException
     {
         byte[] d = getNullableBlob_(_pswGetSync, soid, C_OA_SYNC);
         return d != null ? new BitVector(8 * d.length, d) : new BitVector();
@@ -609,7 +610,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
     private PreparedStatementWrapper _pswGetAgSync = new PreparedStatementWrapper();
     @Override
-    public CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException
+    public @Nonnull CounterVector getAggregateSyncStatus_(SOID soid) throws SQLException
     {
         byte[] d = getNullableBlob_(_pswGetAgSync, soid, C_OA_AG_SYNC);
         return d != null ? CounterVector.fromByteArrayCompressed(d) : new CounterVector();
