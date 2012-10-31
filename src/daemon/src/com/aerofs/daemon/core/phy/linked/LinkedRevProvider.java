@@ -67,7 +67,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         public final long _mtime;   // mtime of file moved to revision tree
         public final long _rtime;   // time of movement to revision tree
 
-        private String encoded;     // cached url-safe base64 encoding
+        private @Nullable String encoded;  // cached url-safe base64 encoding
 
         /**
          * The mtime is used to offer a consistent timestamp in the UI for old and current versions.
@@ -463,7 +463,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 checkInterrupted();
                 if (file.isFile()) {
                     ++_fileCount;
-                    RevInfo revInfo = parse(parent, file);
+                    RevInfo revInfo = RevInfo.fromRevisionFileNullable(file);
                     if (revInfo != null) {
                         _totalSize += revInfo._length;
                         if (_startTime.compareTo(new Date(revInfo._suffix._rtime)) > 0) {
@@ -493,11 +493,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     _delayCount = 0;
                     TimeUnit.MILLISECONDS.sleep(_delayMillis);
                 }
-            }
-
-            private RevInfo parse(InjectableFile parent, InjectableFile file)
-            {
-                return RevInfo.fromRevisionFileNullable(file);
             }
         }
     }

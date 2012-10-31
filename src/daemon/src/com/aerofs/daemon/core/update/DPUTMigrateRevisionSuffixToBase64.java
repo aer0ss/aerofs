@@ -48,7 +48,12 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
         int posUnderscoreAfterHyphen = name.indexOf('_', posHyphen);
         if (posUnderscoreAfterHyphen < 0
                 || posUnderscoreAfterHyphen + DATE_FORMAT.length() > name.length()) return false;
-        int kidx = Integer.parseInt(name.substring(posHyphen + 1, posUnderscoreAfterHyphen));
+        int kidx;
+        try {
+            kidx = Integer.parseInt(name.substring(posHyphen + 1, posUnderscoreAfterHyphen));
+        } catch (NumberFormatException e) {
+            return false;
+        }
         long mtime;
         try {
             mtime = _dateFormat.parse(name.substring(posUnderscoreAfterHyphen + 1)).getTime();
