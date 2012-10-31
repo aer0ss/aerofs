@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionSuffix;
 import com.aerofs.lib.C.AuxFolder;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.os.OSUtil;
@@ -30,11 +31,11 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     private final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
     private final DateFormat _dateFormat = new SimpleDateFormat(DATE_FORMAT);
 
-    private final CfgAbsRootAnchor _absRootAnchor;
+    private final CfgAbsAuxRoot _absAuxRoot;
 
-    DPUTMigrateRevisionSuffixToBase64(CfgAbsRootAnchor absRootAnchor)
+    DPUTMigrateRevisionSuffixToBase64(CfgAbsAuxRoot absAuxRoot)
     {
-        _absRootAnchor = absRootAnchor;
+        _absAuxRoot = absAuxRoot;
     }
 
     /**
@@ -60,7 +61,7 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
         } catch (ParseException e) {
             return false;
         }
-        RevisionSuffix suffix = new RevisionSuffix(new KIndex(kidx), mtime, 0);
+        RevisionSuffix suffix = new RevisionSuffix(kidx, mtime, 0);
         try {
             String newName = name.substring(0, posHyphen)
                     + RevisionSuffix.SEPARATOR + suffix.encoded();
@@ -90,7 +91,6 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
     @Override
     public void run() throws Exception
     {
-        fixFolder(new File(Util.join(OSUtil.get().getAuxRoot(_absRootAnchor.get()),
-                                     AuxFolder.REVISION._name)));
+        fixFolder(new File(Util.join(_absAuxRoot.get(), AuxFolder.REVISION._name)));
     }
 }

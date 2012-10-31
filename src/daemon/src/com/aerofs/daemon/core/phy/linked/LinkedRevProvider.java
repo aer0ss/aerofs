@@ -53,8 +53,10 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     static final Logger l = Util.l(LinkedRevProvider.class);
 
     // public for use in DPUTMigrateRevisionSuffixToBase64
-    public static class RevisionSuffix
+    public static class RevisionSuffix implements Serializable
     {
+        private static final long serialVersionUID = 1L;
+
         // separates file name from encoded revision suffix
         public static final char SEPARATOR = '.';
 
@@ -63,7 +65,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         // ensure that long and int are 64bit and 32bit wide respectively
         public static int DECODED_LENGTH = 2 * (Long.SIZE / 8) + (Integer.SIZE / 8);
 
-        public final KIndex _kidx;  // branch index
+        public final int _kidx;     // branch index
         public final long _mtime;   // mtime of file moved to revision tree
         public final long _rtime;   // time of movement to revision tree
 
@@ -76,7 +78,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
          * Windows ones (renaming fails when the target exists)).
          */
 
-        public RevisionSuffix(KIndex kidx, long mtime, long rtime)
+        public RevisionSuffix(int kidx, long mtime, long rtime)
         {
             _kidx = kidx;
             _mtime = mtime;
@@ -97,7 +99,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             }
             if (decoded.length != DECODED_LENGTH) return null;
             ByteBuffer buf = ByteBuffer.wrap(decoded);
-            KIndex kidx = new KIndex(buf.getInt());
+            int kidx = buf.getInt();
             long mtime = buf.getLong();
             long rtime = buf.getLong();
             return new RevisionSuffix(kidx, mtime, rtime);
@@ -108,7 +110,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             if (encoded == null) {
                 byte d[] = new byte[DECODED_LENGTH];
                 ByteBuffer buf = ByteBuffer.wrap(d);
-                buf.putInt(_kidx.getInt());
+                buf.putInt(_kidx);
                 buf.putLong(_mtime);
                 buf.putLong(_rtime);
                 try {
@@ -179,7 +181,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     {
         InjectableFile f = _factFile.create(absPath);
         RevInfo rev = new RevInfo(Util.join(_pathBase, Util.join(path.removeLast().elements())),
-                f.getName(), kidx, f.lastModified(), f.getLengthOrZeroIfNotFile());
+                f.getName(), kidx.getInt(), f.lastModified(), f.getLengthOrZeroIfNotFile());
 
         String pathRev = rev.getAbsolutePath();
 
@@ -538,7 +540,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             return Util.join(_path, _name) + RevisionSuffix.SEPARATOR + index();
         }
 
-        public RevInfo(String revBase, String name, KIndex kidx, long mtime, long length)
+        public RevInfo(String revBase, String name, int kidx, long mtime, long length)
         {
             this(revBase, name, new RevisionSuffix(kidx, mtime, new Date().getTime()), length);
         }

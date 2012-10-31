@@ -9,7 +9,7 @@ import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -27,12 +27,12 @@ public class DaemonPostUpdateTasks
     private final IStoreDatabase _sdb;
     private final IMetaDatabase _mdb;
     private final MapSIndex2DeviceBitMap _sidx2dbm;
-    private final CfgAbsRootAnchor _absRootAnchor;
+    private final CfgAbsAuxRoot _absAuxRoot;
 
     @Inject
     public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, InjectableDriver dr,
             TransManager tm, IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm,
-            CfgAbsRootAnchor absRootAnchor)
+            CfgAbsAuxRoot absAuxRoot)
     {
         _cfgDB = cfgDB;
         _dbcw = dbcw;
@@ -41,7 +41,7 @@ public class DaemonPostUpdateTasks
         _sdb = sdb;
         _mdb = mdb;
         _sidx2dbm = sidx2dbm;
-        _absRootAnchor = absRootAnchor;
+        _absAuxRoot = absAuxRoot;
     }
 
     public void run() throws Exception
@@ -55,7 +55,7 @@ public class DaemonPostUpdateTasks
                 new DPUTAddAggregateSyncColumn(_dbcw, _tm, _sdb, _mdb, _sidx2dbm),
                 new DPUTMakeMTimesNaturalNumbersOnly(_dbcw),
                 new DPUTGetEncodingStats(_dbcw),
-                new DPUTMigrateRevisionSuffixToBase64(_absRootAnchor)
+                new DPUTMigrateRevisionSuffixToBase64(_absAuxRoot)
                 // new tasks go here
         };
 
