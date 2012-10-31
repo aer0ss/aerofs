@@ -4,8 +4,8 @@
 
 package com.aerofs.sv.server;
 
-import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;

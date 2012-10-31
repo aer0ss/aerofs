@@ -6,8 +6,8 @@ package com.aerofs.sp.server;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.servletlib.sp.user.AuthorizationLevel;
-import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.organization.OrganizationManagement;

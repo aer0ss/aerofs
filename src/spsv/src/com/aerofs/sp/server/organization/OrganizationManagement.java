@@ -10,9 +10,9 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
-import com.aerofs.servletlib.sp.organization.IOrganizationDatabase;
-import com.aerofs.servletlib.sp.organization.Organization;
-import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.user.UserManagement;
 import org.apache.log4j.Logger;
 

@@ -18,10 +18,10 @@
     </option>
     <envs />
     <patterns>
-      <pattern testClass="com.aerofs.sp.server.sp.TestSPACL" />
-      <pattern testClass="com.aerofs.sp.server.sp.TestSPCertifyDevice" />
+      <pattern testClass="com.aerofs.sp.server.TestSPACL" />
+      <pattern testClass="com.aerofs.sp.server.TestSPCertifyDevice" />
       <pattern testClass="com.aerofs.controller.TestSPSignupHelper" />
-      <pattern testClass="com.aerofs.sp.server.sp.TestSPUserManagement" />
+      <pattern testClass="com.aerofs.sp.server.TestSPUserManagement" />
     </patterns>
     <RunnerSettings RunnerId="Run" />
     <ConfigurationWrapper RunnerId="Run" />

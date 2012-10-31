@@ -8,7 +8,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
-import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.cert.Certificate;
 import com.aerofs.sp.server.cert.ICertificateGenerator;
 import org.junit.Before;

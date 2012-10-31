@@ -1,7 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.Util;
-import com.aerofs.servletlib.NoopConnectionListener;
+import com.aerofs.servlets.lib.NoopConnectionListener;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -16,14 +16,14 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Util.join;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ACK_TIMEOUT;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ADMIN_PORT_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_HOST_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_RECONNECT_DELAY;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_PORT_INIT_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_HOST_INIT_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISH_PORT_INIT_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_RECONNECT_DELAY;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.lang.Short.parseShort;
 

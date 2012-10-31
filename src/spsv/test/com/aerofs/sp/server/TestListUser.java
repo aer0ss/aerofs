@@ -5,13 +5,13 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.proto.Sp.PBUser;
-import com.aerofs.servletlib.db.SPDatabaseParams;
-import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.sp.SPDatabase;
-import com.aerofs.servletlib.sp.organization.Organization;
-import com.aerofs.servletlib.sp.user.AuthorizationLevel;
-import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.servlets.lib.db.SPDatabaseParams;
+import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.user.UserManagement.UserListAndQueryCount;
 import com.aerofs.testlib.AbstractTest;

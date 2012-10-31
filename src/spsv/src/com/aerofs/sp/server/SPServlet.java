@@ -7,18 +7,18 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.SPServiceReactor;
-import com.aerofs.servletlib.AeroServlet;
-import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.AeroServlet;
+import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
-import com.aerofs.servletlib.sp.DoPostDelegate;
-import com.aerofs.servletlib.sp.SPDatabase;
-import com.aerofs.servletlib.sp.SPParam;
-import com.aerofs.servletlib.sp.ThreadLocalHttpSessionUser;
+import com.aerofs.servlets.lib.DoPostDelegate;
+import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.SPParam;
+import com.aerofs.sp.server.lib.ThreadLocalHttpSessionUser;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.apache.log4j.Logger;
@@ -31,9 +31,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import static com.aerofs.servletlib.sp.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
-import static com.aerofs.servletlib.sp.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
+import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
 
 public class SPServlet extends AeroServlet
 {

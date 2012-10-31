@@ -16,8 +16,8 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVHeader;
 
-import com.aerofs.servletlib.db.AbstractSQLDatabase;
-import com.aerofs.servletlib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 
 public class SVDatabase extends AbstractSQLDatabase
 {

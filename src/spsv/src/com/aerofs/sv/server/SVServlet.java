@@ -3,9 +3,9 @@ package com.aerofs.sv.server;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVReply;
-import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.AeroServlet;
+import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.AeroServlet;
 import com.yammer.metrics.reporting.GraphiteReporter;
 import org.apache.log4j.Logger;
 

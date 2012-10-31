@@ -20,7 +20,7 @@ import javax.mail.MessagingException;
 
 import com.aerofs.lib.Param.SV;
 import com.aerofs.proto.Sv.PBSVEmail;
-import com.aerofs.servletlib.db.IThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;

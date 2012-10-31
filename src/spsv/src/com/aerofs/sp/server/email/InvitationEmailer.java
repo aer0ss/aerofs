@@ -12,7 +12,7 @@ import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
-import com.aerofs.servletlib.sp.SPParam;
+import com.aerofs.sp.server.lib.SPParam;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

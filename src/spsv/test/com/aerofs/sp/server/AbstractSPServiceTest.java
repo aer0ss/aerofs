@@ -1,11 +1,10 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.servletlib.MockSessionUserID;
-import com.aerofs.servletlib.db.SPDatabaseParams;
-import com.aerofs.servletlib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.sp.SPDatabase;
-import com.aerofs.sp.server.SPService;
+import com.aerofs.servlets.MockSessionUserID;
+import com.aerofs.servlets.lib.db.SPDatabaseParams;
+import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;

@@ -4,7 +4,7 @@
 
 package com.aerofs.sv.server;
 
-import com.aerofs.servletlib.db.DatabaseParameters;
+import com.aerofs.servlets.lib.db.DatabaseParameters;
 
 /**
  * SP database parameters for unit testing.

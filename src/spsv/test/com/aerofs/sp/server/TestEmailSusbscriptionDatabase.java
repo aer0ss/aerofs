@@ -16,11 +16,11 @@ import java.util.EnumSet;
 
 import com.aerofs.testlib.AbstractTest;
 
-import com.aerofs.servletlib.sp.IEmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.IEmailSubscriptionDatabase;
 
-import com.aerofs.servletlib.db.SPDatabaseParams;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.sp.SPDatabase;
+import com.aerofs.servlets.lib.db.SPDatabaseParams;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.SPDatabase;
 
 import java.util.Set;
 

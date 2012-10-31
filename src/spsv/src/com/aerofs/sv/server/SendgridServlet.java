@@ -14,9 +14,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.aerofs.lib.Util;
-import com.aerofs.servletlib.db.PooledSQLConnectionProvider;
-import com.aerofs.servletlib.db.SQLThreadLocalTransaction;
-import com.aerofs.servletlib.AeroServlet;
+import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.AeroServlet;
 
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;

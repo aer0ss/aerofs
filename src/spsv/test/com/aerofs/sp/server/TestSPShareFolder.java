@@ -8,8 +8,8 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
-import com.aerofs.servletlib.sp.user.AuthorizationLevel;
-import com.aerofs.servletlib.sp.user.User;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
