@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.syncstatus;
 
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +121,10 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         _sid2sidx = sid2sidx;
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
-        _enable = localUser.get().endsWith("@aerofs.com");
+
+        // TODO (MP) only enable for a subset (1/16) of users for now.
+        byte[] hashedLocalUser = SecUtil.hash(localUser.get().getBytes());
+        _enable = (hashedLocalUser[0] & 0xf0) == 0 || localUser.get().endsWith("@aerofs.com");
 
         _ssc.setSignInHandler(this);
 
