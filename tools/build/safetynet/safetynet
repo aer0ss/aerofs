@@ -105,6 +105,19 @@ function assert_clients_updated_and_launched() {
 
 ######################################################################
 #
+# Runs some basic SyncDET tests to ensure the core functionality of
+# the client works. Tests include syncing, sharing folders and sending
+# defect logs.
+#
+######################################################################
+function run_basic_tests() {
+    echo ">> running basic SyncDET tests"
+
+    "$SYNCDET" $SYNCDET_PARAMS -s "${SAFETYNET_SYNCDET_DEPLOY_DIR}/basic_tests.scn"
+}
+
+######################################################################
+#
 # Decreases the version number so that the clients will update again.
 # Used to ensure the new clients can update.
 #
@@ -130,6 +143,8 @@ backup_safetynet_clients
 ensure_clients_running
 notify_safetynet_clients_of_update
 assert_clients_updated_and_launched
+run_basic_tests
+
 decrease_clients_version_number         # We do these next few steps to check if
 ensure_clients_running                  # the updater for this release isn't broken.
 notify_safetynet_clients_of_update      # decrease_clients_version_number stops
