@@ -152,9 +152,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                 }
                 _compStack.layout();
 
-                if (r) {
-                    _txtUserID.setEnabled(true);
-                } else if (_forceInvite || _isTargetedInvite) {
+                if (!r && (_forceInvite || _isTargetedInvite)) {
                     _txtUserID.setEnabled(false);
                 } else {
                     _txtUserID.setEnabled(true);
@@ -194,19 +192,15 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                     if (!text.isEmpty()) resolveInvitationCode(text);
                 }
             });
-
-            _compSpinIC = new CompSpin(container, SWT.NONE);
-
-        } else {
-            _compSpinIC = new CompSpin(container, SWT.NONE);
         }
+
+        _compSpinIC = new CompSpin(container, SWT.NONE);
 
         if (GUIUtil.isWindowBuilderPro()) // $hide$
             new Label(container, SWT.NONE);
 
         final Label emailAddressLabel = new Label(container, SWT.NONE);
-        emailAddressLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER,
-                false, false, 1, 1));
+        emailAddressLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         emailAddressLabel.setText(S.SETUP_USER_ID + ":");
 
         _txtUserID = new Text(container, SWT.BORDER);
@@ -569,9 +563,6 @@ public class DlgSetup extends AeroFSTitleAreaDialog
 
         _compSpin.start();
 
-        _layoutStack.topControl = _compBlank;
-        _compStack.layout();
-
         GUI.get().safeAsyncExec(getShell(), new Runnable() {
             @Override
             public void run()
@@ -642,8 +633,6 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                     setStatus(msg, "");
 
                     _inProgress = false;
-                    _layoutStack.topControl = _compBlank;
-                    _compStack.layout();
 
                     getButton(IDialogConstants.OK_ID).setText("Try Again");
                     setDlgElementsState(true);
@@ -678,6 +667,15 @@ public class DlgSetup extends AeroFSTitleAreaDialog
         _txtPasswd2.setEnabled(b);
         _btnIsExistingUser.setEnabled(b);
         if (_txtIC != null) _txtIC.setEnabled(b);
+
+        if (!b) {
+            _layoutStack.topControl = _compBlank;
+        } else {
+            _layoutStack.topControl = _btnIsExistingUser.getSelection() ? _compForgotPassword
+                                                                        : _compTOS;
+        }
+        _compStack.layout();
+
     }
 
     public boolean isExistingUser()
