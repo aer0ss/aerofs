@@ -442,10 +442,4 @@ public class RitualService implements IRitualService
         return createVoidReply();
     }
 
-    @Override
-    public ListenableFuture<Void> testLogSendDefect() throws Exception
-    {
-        SVClient.logSendDefectSync(false, "testing sv defect reporting", null);
-        return createVoidReply();
-    }
 }
