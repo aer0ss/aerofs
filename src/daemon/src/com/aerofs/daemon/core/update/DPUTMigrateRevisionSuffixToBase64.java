@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.update;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.RevisionSuffix;
 import com.aerofs.lib.C.AuxFolder;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
@@ -30,6 +31,7 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
 {
     private final String DATE_FORMAT = "yyyyMMdd_HHmmss_SSS";
     private final DateFormat _dateFormat = new SimpleDateFormat(DATE_FORMAT);
+    private final FrequentDefectSender _fds = new FrequentDefectSender();
 
     private final CfgAbsAuxRoot _absAuxRoot;
 
@@ -67,7 +69,7 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
                     + RevisionSuffix.SEPARATOR + suffix.encoded();
             FileUtil.moveInSameFileSystem(f, new File(f.getParent(), newName));
         } catch (IOException e) {
-            SVClient.logSendDefectAsync(true, "Failed to fix revision: " + f.getAbsolutePath(), e);
+            _fds.logSendAsync("Failed to fix revision: " + f.getAbsolutePath(), e);
         }
         return true;
     }
@@ -79,8 +81,7 @@ public class DPUTMigrateRevisionSuffixToBase64 implements IDaemonPostUpdateTask
         for (File c : children) {
             if (c.isFile()) {
                 if (!fixFile(c)) {
-                    SVClient.logSendDefectAsync(true,
-                            "Invalid revision file: " + c.getAbsolutePath());
+                    _fds.logSendAsync("Invalid revision file: " + c.getAbsolutePath());
                 }
             } else if (c.isDirectory()) {
                 fixFolder(c);
