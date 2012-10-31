@@ -41,6 +41,8 @@ class S3MagicChunk
                 ExitCode.S3_BAD_CREDENTIALS.exit();
             } else if (e.getStatusCode() == 403 && "InvalidAccessKeyId".equals(e.getErrorCode())) {
                 ExitCode.S3_BAD_CREDENTIALS.exit();
+            } else if (e.getStatusCode() == 404 && "NoSuchBucket".equals(e.getErrorCode())) {
+                ExitCode.S3_BAD_CREDENTIALS.exit();
             } else {
                 throw new IOException(e);
             }

@@ -27,7 +27,7 @@ public enum ExitCode
     SHUTDOWN_REQUESTED(),
     RELOCATE_ROOT_ANCHOR(),
 
-    // Incorrect S3 access key or secret key for accessing bucket.
+    // Incorrect S3 access key, secret key, or bucket name for accessing bucket.
     S3_BAD_CREDENTIALS(),
 
     // Java may have a limited encryption key length due to export restriction. See the users of
