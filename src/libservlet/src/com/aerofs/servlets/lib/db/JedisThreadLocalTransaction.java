@@ -106,17 +106,6 @@ public class JedisThreadLocalTransaction
         }
     }
 
-    /**
-     * Call this function if the resource is broken in any way. One example use case is if clean up
-     * throws a jedis connection exception.
-     */
-    public void cleanUpBrokenResource() {
-        if (isInTransaction()) {
-            _jedisHolder.get().getConnection().returnBrokenResource();
-            _jedisHolder.remove();
-        }
-    }
-
     private static class JedisThreadLocalObjectHolder
     {
         private final JedisPooledConnection _connection;

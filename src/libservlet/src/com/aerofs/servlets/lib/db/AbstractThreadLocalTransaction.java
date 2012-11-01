@@ -22,7 +22,6 @@ public abstract class AbstractThreadLocalTransaction<T extends Throwable>
     {
         try {
             if (isInTransaction()) {
-                l.warn("Exception, shutting down connection and rolling back transaction");
                 rollback();
             }
         } catch (Throwable e) {

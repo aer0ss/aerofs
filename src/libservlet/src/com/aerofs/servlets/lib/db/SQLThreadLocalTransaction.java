@@ -109,8 +109,6 @@ public class SQLThreadLocalTransaction
     {
         assert isInTransaction();
 
-        l.warn("Rolling back transaction...");
-
         _connection.get().rollback();
         closeConnection();
     }
