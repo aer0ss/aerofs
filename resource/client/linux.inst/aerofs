@@ -56,6 +56,7 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
     fi
 
     TARGET="$TMP_DIR/target"
+    mv "$TMP_DIR/libswt$ARCH/libswt"*.so "$TMP_DIR"
     java -cp "$TMP_DIR/s$ARCH.jar":"$TMP_DIR" com.aerofs.downloader.Main $PROG $URL "$TARGET"
     if [ $? != 0 ]; then
         exit 1
