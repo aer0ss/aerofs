@@ -4,8 +4,11 @@
 
 package com.aerofs.servlets.lib.db;
 
+import com.aerofs.lib.Util;
+import org.apache.log4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
@@ -15,6 +18,8 @@ public class JedisThreadLocalTransaction
     extends AbstractThreadLocalTransaction<JedisException>
     implements IThreadLocalTransaction<JedisException>
 {
+    private static final Logger l = Util.l(JedisThreadLocalTransaction.class);
+
     private IPooledJedisConnectionProvider _provider;
 
     // The Jedis API requires that we hold on to the transaction object as well. Encapsulate all
@@ -82,7 +87,12 @@ public class JedisThreadLocalTransaction
 
         // Discard all redis commands issued after the multi call in the begin function of this
         // class.
-        _jedisHolder.get().getTransaction().discard();
+        try {
+            _jedisHolder.get().getTransaction().discard();
+        } catch (JedisDataException e) {
+            l.warn("Unable to discard Jedis transaction. Possible broken Jedis object.");
+        }
+
         closeConnection();
     }
 
