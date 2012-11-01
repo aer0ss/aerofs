@@ -1,34 +1,29 @@
 #!/usr/bin/ruby
 require "yaml"
+require "puppet"
+require "net/https"
+require "pry"
 
-class KickAll
+class Kick
+  attr_reader :update_status, :useful_logs
 
-  def initialize(hosts)
-    @hosts = hosts
+  def initialize(host)
+    @http = Net::HTTP.new(host,8139)
+    @http.use_ssl = true
+    @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    @http.read_timeout = 500
   end
 
   def run
-    kick_cmd = "puppet kick #{@hosts.join(" ")} --foreground --parallel 2"
-    puts kick_cmd
-    @output = `#{kick_cmd}`
+    response = @http.put("/production/run/deploy", '{}', {"Content-type" => "text/pson"})
+    @report = YAML.load(response.body)
+    if @report.ivars["status"] == "success" then
+      @logs = @report.ivars["options"][:report].logs
+      @update_status = @report.ivars["options"][:report].status
+      @useful_logs = @logs.select { |v| v.level == :err}
+    end
+    @report.ivars["status"]
   end
-
-  def response_codes
-    Hash[ finished_lines.map{ |l|
-      [l.split.first, l.split.last.to_i]
-    }]
-  end
-
-  def finished_lines
-    @output.select{ |l|
-      l.include? "finished"
-    }
-  end
-
-  def unsuccessful_hosts
-    response_codes.reject{ |k,v| v == 0 }.keys
-  end
-
 end
 
 # find all nodes that will be kicked
@@ -38,22 +33,43 @@ do_not_kick_nodes = YAML::load(File.open("/etc/puppet/do_not_kick.yaml"))
 
 # take difference of two arrays, unless do_not_kick_nodes is not an Array
 if do_not_kick_nodes.kind_of?(Array)
-    hosts_to_kick = nodes - do_not_kick_nodes
+  hosts_to_kick = nodes - do_not_kick_nodes
 else
-    hosts_to_kick = nodes
+  hosts_to_kick = nodes
 end
 
-3.times do
+# get rid of nils and sort
+hosts_to_kick = hosts_to_kick.compact.sort
 
-  kick_all = KickAll.new(hosts_to_kick)
-  kick_all.run
+puts "Preparing to kick the following hostnames:"
+hosts_to_kick.each{ |h| puts "\t#{h}" }
 
-  hosts_to_kick = kick_all.unsuccessful_hosts
-  break if hosts_to_kick.size == 0
+# keep a list of failed nodes
+failed_nodes = []
 
-  sleep 20
-
+# since this gets called from ant, we have to call $stdout.flush
+hosts_to_kick.each do |host|
+  k = Kick.new(host)
+  puts "Running puppet on #{host}"
+  $stdout.flush
+  kick_result = k.run
+  if kick_result == "running" then
+    puts "#{host} is already running, will try again"
+    $stdout.flush
+    # try again later
+    hosts_to_kick << host
+    next
+  end
+  if k.update_status == "failed" then
+    failed_nodes << host
+  end
+  puts "#{host} finished with status: #{k.update_status}"
+  puts k.useful_logs
+  $stdout.flush
 end
 
-puts "FAILED: Unable to kick #{hosts_to_kick.join(" ")}" if hosts_to_kick.size > 0
-exit hosts_to_kick.size == 0
+if failed_nodes.length > 0 then
+  puts "Failures: #{failed_nodes.length}"
+end
+
+exit failed_nodes.length
