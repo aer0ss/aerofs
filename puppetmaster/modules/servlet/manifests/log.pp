@@ -1,7 +1,9 @@
 define servlet::log(
-    $config_filename
+    $config_filename,
+    $log_level
 ) {
     $log_filename = $title
+
     file {$config_filename:
         ensure  => present,
         owner   => "tomcat6",
