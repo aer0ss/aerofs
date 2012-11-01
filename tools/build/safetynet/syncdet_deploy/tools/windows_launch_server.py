@@ -17,6 +17,7 @@
 import os
 import BaseHTTPServer
 import subprocess
+import urllib2
 
 class MyHTTPServer(BaseHTTPServer.HTTPServer):
     # Allows the server to be quickly restarted (won't wait for TCP port timeout)
@@ -25,23 +26,32 @@ class MyHTTPServer(BaseHTTPServer.HTTPServer):
 class WindowsAeroFSGUILauncher(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         try:
+            path = urllib2.unquote(self.path)
+
             # Since we are trying to launch AeroFS on Windows, do a sanity check.
-            if self.path.endswith("aerofs.exe"):
+            if path.endswith("aerofs.exe"):
                 # Since SyncDET runs under cygwin on Windows, we will assume the path
                 # is a cygwin path. We need to convert it.
 
                 # Strip the leading // that will exist due to there being a separator between
                 # the host and the path in the URL, as well as the path being absolute
-                aerofs_gui = self.path.strip().replace("//", "/")
+                path = path.strip().replace("//", "/")
 
                 # Convert the path from a cygwin path to a Windows path, if needed
-                aerofs_gui = aerofs_gui.replace("/cygdrive/c", "C:").replace("/", "\\")
+                aerofs_approot = os.path.dirname(path).replace("/cygdrive/c", "C:").replace("/", "\\")
+                program_name = os.path.basename(path)
 
                 # Start the Windows Command Prompt and use 'start' to asynchronously launch
                 # the aerofs GUI. Hide the stdout logging.
+                # NOTE: Be careful here, as the start command will take anything in quotes to be
+                # the title of the new command prompt to open. If the path contains spaces, then quoting
+                # it will not launch the correct program. Instead, we use the /D switch to set the
+                # working directory for the program. This way 'start' won't get confused about titles and
+                # we can successfully use paths with spaces!!
                 with open(os.devnull, 'w') as dev_null:
-                    subprocess.check_call(['cmd.exe', '/c', 'start', aerofs_gui], \
-                            stderr=subprocess.STDOUT, stdout=dev_null)
+                    cmd = "cmd.exe /c start /D\"{0}\" {1}".format(aerofs_approot, program_name)
+                    print "Executing command: {0}".format(cmd)
+                    subprocess.check_call(cmd, stderr=subprocess.STDOUT, stdout=dev_null)
 
                 # Respond
                 self.send_response(200)

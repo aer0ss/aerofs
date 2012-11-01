@@ -179,7 +179,7 @@ class _WindowsClient(_PackagedAeroFSClient):
         # The server must be run from the physical Windows machine
         # once it has been deployed via syncdet.
         try:
-            urllib2.urlopen("http://localhost:8000/{0}".format(aerofs_gui_path))
+            urllib2.urlopen("http://localhost:8000/{0}".format(urllib2.quote(aerofs_gui_path)))
         except urllib2.HTTPError as e:
             raise e
         except urllib2.URLError as e:

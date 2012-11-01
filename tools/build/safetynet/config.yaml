@@ -28,6 +28,14 @@ actors:
         details:
             os: OSX Snow Leopard 10.6.3
             java: Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-10M3811)
+    -
+        address: 192.168.1.17
+        login: Administrator
+        aero_app_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFSExec"
+        aero_rt_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFS"
+        details:
+            os: Windows XP SP3 Professional
+            java: Java(TM) SE Runtime Environment (build 1.7.0_04-b22)
 controller_address: # This config file is used as a template. When
                     # launching SafetyNet, this config file is copied and
                     # the controller_address field is populated with the
