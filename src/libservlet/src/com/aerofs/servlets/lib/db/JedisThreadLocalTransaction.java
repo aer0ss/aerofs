@@ -8,7 +8,6 @@ import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.Transaction;
-import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
 
 /**
@@ -89,7 +88,7 @@ public class JedisThreadLocalTransaction
         // class.
         try {
             _jedisHolder.get().getTransaction().discard();
-        } catch (JedisDataException e) {
+        } catch (JedisException e) {
             l.warn("Unable to discard Jedis transaction. Possible broken Jedis object.");
         }
 
