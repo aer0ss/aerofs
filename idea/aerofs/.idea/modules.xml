@@ -9,7 +9,7 @@
       <module fileurl="file://$PROJECT_DIR$/../../src/lib/lib.iml" filepath="$PROJECT_DIR$/../../src/lib/lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" filepath="$PROJECT_DIR$/../../src/libjingle.binding/libjingle.binding.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/libmobile/libmobile.iml" filepath="$PROJECT_DIR$/../../src/libmobile/libmobile.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../src/servletlib/servletlib.iml" filepath="$PROJECT_DIR$/../../src/servletlib/servletlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../src/libservlet/libservlet.iml" filepath="$PROJECT_DIR$/../../src/libservlet/libservlet.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/spsv/spsv.iml" filepath="$PROJECT_DIR$/../../src/spsv/spsv.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" filepath="$PROJECT_DIR$/../../src/swiglibs/swiglibs.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../src/syncstat/syncstat.iml" filepath="$PROJECT_DIR$/../../src/syncstat/syncstat.iml" />

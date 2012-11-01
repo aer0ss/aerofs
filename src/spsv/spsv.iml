@@ -64,7 +64,7 @@
       <excludeFolder url="file://$MODULE_DIR$/user" />
     </content>
     <orderEntry type="inheritedJdk" />
-    <orderEntry type="module" module-name="servletlib" />
+    <orderEntry type="module" module-name="libservlet" />
     <orderEntry type="library" name="metrics" level="project" />
     <orderEntry type="library" name="json" level="project" />
     <orderEntry type="library" name="apache-codec" level="project" />
