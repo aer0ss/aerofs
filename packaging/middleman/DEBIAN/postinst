@@ -3,8 +3,8 @@
 set -e -u
 
 # Permissions
-chmod +x /etc/init.d/middleman
+chmod +x /etc/init/middleman.conf
 
-gem install rdoc sinatra webrick parseconfig daemons
+gem install rdoc sinatra sinatra-contrib webrick parseconfig
 
 service middleman start
