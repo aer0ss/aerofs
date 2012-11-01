@@ -1,4 +1,5 @@
 #import <Cocoa/Cocoa.h>
+#import "AeroOverlayCache.h"
 
 @class AeroSocket;
 @class AeroOverlay;
@@ -23,15 +24,14 @@ typedef enum {
     Directory  = 1 << 1
 } PathFlag;
 
-@interface AeroFinderExt : NSObject {
+@interface AeroFinderExt : NSObject <AeroEvictionDelegate> {
 @private
     AeroSocket* socket;
     AeroOverlay* overlay;
     AeroContextMenu* contextMenu;
     NSString* rootAnchor;
     NSString* userId;
-    BOOL syncStatCached;
-    NSCache* statusCache;
+    AeroOverlayCache* statusCache;
 }
 
 @property (readonly) AeroOverlay* overlay;
@@ -53,6 +53,5 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 - (void)parseNotification:(ShellextNotification*)notification;
 - (void)onStatus:(PathStatusNotification*)notification;
 - (Overlay)overlayForPath:(NSString*)path;
-- (void)clearCache;
 
 @end

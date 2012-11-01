@@ -87,12 +87,19 @@ public class RitualNotificationServer implements IConnectionManager
             }
 
             @Override
-            public void available() {}
+            public void available() {
+                l.info("sss available");
+                // sync status back up: must clear cache in shellext to avoid false negatives
+                sendEvent_(PBNotification.newBuilder()
+                        .setType(Type.CLEAR_STATUS)
+                        .build());
+            }
 
             @Override
             public void unavailable()
             {
-                // sync status unavailable: must clear cache in GUI/shellext
+                l.info("sss unavailable");
+                // sync status down: must clear cache in shellext to avoid showing outdated status
                 sendEvent_(PBNotification.newBuilder()
                         .setType(Type.CLEAR_STATUS)
                         .build());

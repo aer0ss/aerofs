@@ -5,22 +5,10 @@
 #import "AeroOverlay.h"
 #import "AppleEventConstants.h"
 #import "../gen/Shellext.pb.h"
+#import "AeroOverlayCache.h"
 
 #define GUIPORT_DEFAULT 50195
 #define PROTOCOL_VERSION 4
-
-// use static NSNumber instances to reduce memory usage
-static NSNumber** _cacheValues = nil;
-
-static void initCacheValues()
-{
-    if (_cacheValues == nil) {
-        _cacheValues = malloc(OverlayCount * sizeof(NSNumber*));
-        for (int i = 0; i < OverlayCount; ++i) {
-            _cacheValues[i] = [NSNumber numberWithInt:i];
-        }
-    }
-}
 
 static Overlay overlayForStatus(PBPathStatus* status)
 {
@@ -39,6 +27,10 @@ static Overlay overlayForStatus(PBPathStatus* status)
 - (void)setRootAnchor:(NSString*) path;
 - (void)setUserId:(NSString*)user;
 - (void)onWakeFromSleep:(NSNotification*)notification;
+- (void)clearCache;
+- (void)evicted:(NSString*)path withValue:(int)value;
+- (void)refreshIconInFinder:(NSString*)path;
+- (void)refreshAllFinderWindows;
 @end
 
 @implementation AeroFinderExt
@@ -110,10 +102,8 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     overlay = [[AeroOverlay alloc] init];
     contextMenu = [[AeroContextMenu alloc] init];
 
-    initCacheValues();
-    syncStatCached = NO;
-    statusCache = [[NSCache alloc] init];
-    [statusCache setCountLimit:100000];
+    statusCache = [[AeroOverlayCache alloc] initWithLimit:100000];
+    [statusCache setDelegate:self];
 
     [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
                selector: @selector(onWakeFromSleep:)
@@ -184,13 +174,17 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     [socket sendMessage:call];
 }
 
+/**
+ * Lookup overlay in the cache and pull from the GUI on miss
+ */
 - (Overlay)overlayForPath:(NSString*)path
 {
     Overlay status = NONE;
-    NSNumber* val = [statusCache objectForKey:path];
-    if (val == nil) {
+    int val = [statusCache overlayForPath:path];
+    if (val == -1) {
+        //NSLog(@"overlay miss %@", path);
         // put placeholder in cache to avoid sending multiple requests to GUI
-        [statusCache setObject:_cacheValues[NONE] forKey:path];
+        [statusCache setOverlay:NONE forPath:path];
 
         // cache miss: fetch from GUI for next time...
         ShellextCall* call = [[[[ShellextCall builder]
@@ -200,13 +194,24 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
         [socket sendMessage:call];
         // TODO: direct communication to daemon to reduce latency?
     } else {
+        // TODO: clear placeholders after a cooldown period?
         // cache hit: convert integer to enum
-        status = (Overlay)[val intValue];
+        status = (Overlay)val;
     }
     if (![self shouldEnableTestingFeatures]) {
-        if (status != UPLOADING && status != DOWNLOADING) return NONE;
+        if (status != UPLOADING &&  status != DOWNLOADING) return NONE;
     }
     return status;
+}
+
+/**
+ * Called on eviction of a value from the cache
+ */
+- (void)evicted:(NSString*)path withValue:(int)value
+{
+    //NSLog(@"overlay eviction %@ %d", path, value);
+    // if the path is still visible, make sure it gets refreshed asap...
+    [self refreshIconInFinder:path];
 }
 
 - (BOOL)isUnderRootAnchor:(NSString*)path
@@ -291,7 +296,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
             break;
 
         case ShellextNotification_TypeClearStatusCache:
-            [statusCache removeAllObjects];
+            [self clearCache];
             break;
 
         default:
@@ -310,32 +315,52 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 
     PBPathStatus* status = notification.status;
 
-    if (status.sync == PBPathStatus_SyncUnknown) {
-        // sync status no longer reliable: need to clear cache
-        // use an extra boolean flag to avoid repeatedly clearing the cache when it does not contain
-        // sync status information
-        if (syncStatCached) {
-            [self clearCache];
-        }
-    } else {
-        syncStatCached = YES;
-    }
-
     Overlay o = overlayForStatus(status);
-    if (o != NONE) {
-        // To preserve locality, discard notifications for any path not yet requested by Finder
-        if ([statusCache objectForKey:notification.path] != nil) {
-            [statusCache setObject:_cacheValues[o] forKey:notification.path];
-        }
+    // To preserve locality, discard notifications for any path not yet requested by Finder
+    if ([statusCache overlayForPath:notification.path] != -1) {
+        [statusCache setOverlay:o forPath:notification.path];
+        //NSLog(@"overlay update %@ %d:%d %d", notification.path, status.sync, status.flags, o);
+        [self refreshIconInFinder:notification.path];
+    } else {
+        //NSLog(@"overlay discard %@ %d:%d %d", notification.path, status.sync, status.flags, o);
     }
-
-    //NSLog(@"Received status update %@ %d:%d %d", notification.path, status.sync, status.flags, o);
 }
 
+/**
+ * Get Finder to refresh icon overlay for a given path
+ */
+- (void)refreshIconInFinder:(NSString*)path
+{
+    // attempt 1 : [[NSWorkspace sharedWorkspace] noteFileSystemChanged:path]
+    // attempt 2 : AppleScript / Apple Events (tell application "Finder" to update ...)
+    // neither of which seem to make any difference
+
+    // attempt 3: aggressive display refresh of all windows
+    // works great, only concern is slightly degraded performance of Finder due to burst of refreshes
+    [self refreshAllFinderWindows];
+
+    // attempt 4 : dirty hack in the bowels of Finder ?
+}
+
+/**
+ * Get Finder to refresh all icon overlays (if any) [without enumerating cache contents...]
+ */
+- (void)refreshAllFinderWindows
+{
+    [[[NSApplication sharedApplication] windows] enumerateObjectsUsingBlock:^(id w, NSUInteger i, BOOL* b) {
+        [w display];
+    }];
+}
+
+/**
+ * Clear any cached data and refresh Finder windows
+ */
 -(void)clearCache
 {
-    syncStatCached = NO;
-    [statusCache removeAllObjects];
+    //NSLog(@"overlay clear");
+    [statusCache clear];
+    // make sure Finder discards all our icon overlays, the aggressive way
+    [self refreshAllFinderWindows];
 }
 
 - (void)onWakeFromSleep:(NSNotification*)notification

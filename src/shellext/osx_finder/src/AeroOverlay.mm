@@ -52,6 +52,8 @@
         return nil;
     }
 
+    //NSLog(@"overlay pull: %@ [%@]", path, [NSThread callStackSymbols]);
+
     AeroIconPair* result = nil;
     Overlay status = [[AeroFinderExt instance] overlayForPath:path];
     switch (status) {
@@ -63,7 +65,7 @@
         default: break;
     }
 
-    return flipped? [result flipped] : [result icon];
+    return flipped ? [result flipped] : [result icon];
 }
 
 @end

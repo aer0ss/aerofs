@@ -49,11 +49,11 @@
     <ClCompile Include="..\..\gen\shellext.pb.cc">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="OverlayCache.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\gen\path_status.pb.cc">
       <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\OverlayCache.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -99,11 +99,11 @@
     <ClInclude Include="string_helpers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverlayCache.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\gen\path_status.pb.h">
       <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\OverlayCache.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -145,7 +145,6 @@
     <None Include="OutSyncOverlay.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="ClassDiagram1.cd" />
     <None Include="ConflictOverlay.ico">
       <Filter>Resource Files</Filter>
     </None>

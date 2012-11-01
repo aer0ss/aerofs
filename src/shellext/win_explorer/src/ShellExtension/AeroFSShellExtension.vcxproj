@@ -100,7 +100,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -136,7 +136,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -170,7 +170,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -208,7 +208,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -244,6 +244,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\common\;..\..\3rdparty\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\..\gen\shellext.pb.cc">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -253,7 +257,12 @@
     </ClCompile>
     <ClCompile Include="AeroFSShellExtension.cpp" />
     <ClCompile Include="AeroSocket.cpp" />
-    <ClCompile Include="OverlayCache.cpp" />
+    <ClCompile Include="..\..\..\common\OverlayCache.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="OverlayIcons.cpp" />
     <ClCompile Include="ContextMenu.cpp" />
     <ClCompile Include="AsyncSocket.cpp" />
@@ -273,7 +282,7 @@
     <ClInclude Include="..\..\gen\shellext.pb.h" />
     <ClInclude Include="AeroFSShellExtension.h" />
     <ClInclude Include="AeroSocket.h" />
-    <ClInclude Include="OverlayCache.h" />
+    <ClInclude Include="..\..\..\common\OverlayCache.h" />
     <ClInclude Include="ISocketDelegate.h" />
     <ClInclude Include="logger.h" />
     <ClInclude Include="OverlayIcons.h" />
@@ -291,7 +300,6 @@
   <ItemGroup>
     <None Include="AeroFS.ico" />
     <None Include="AeroFSShellExtension.def" />
-    <None Include="ClassDiagram1.cd" />
     <None Include="ConflictOverlay.ico" />
     <None Include="ContextMenuAdmin.rgs" />
     <None Include="DownloadOverlay.ico" />
