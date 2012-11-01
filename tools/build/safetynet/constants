@@ -15,7 +15,7 @@
 # file if they weren't imported before.
 if [ x"${__SAFETYNET_CONSTANTS_INCLUDE__:-}" == x ] ; then readonly __SAFETYNET_CONSTANTS_INCLUDE__=true
 
-include include/common $1
+include include/common PROD
 
 readonly ERRSAFETYNET=30
 
@@ -55,11 +55,7 @@ function create_updated_config_file() {
 # Command server constants
 #
 ###############################################################################
-if is_prod ; then
-    readonly COMMAND_SERVER="sv.aerofs.com"
-else
-    readonly COMMAND_SERVER="ec2-50-17-173-65.compute-1.amazonaws.com"
-fi
+readonly COMMAND_SERVER="sv.aerofs.com"
 readonly SAFETYNET_CMD_TTL=1
 
 fi # endif

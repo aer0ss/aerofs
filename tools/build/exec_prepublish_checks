@@ -39,7 +39,7 @@ echo ">> execute pre-publish checks"
 # Only run SafetyNet when deploying PROD
 if is_prod ; then
     # Run SafetyNet
-    call safetynet/safetynet $MODE $RELEASE_VERSION
+    call safetynet/safetynet $RELEASE_VERSION
 fi
 
 exit 0

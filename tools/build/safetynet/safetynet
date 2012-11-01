@@ -1,18 +1,18 @@
 #!/bin/bash -e -u
 
-include safetynet/constants $1
+include safetynet/constants PROD
 
 ###############################################################################
 #
 # arguments and usage
 #
 ###############################################################################
-if [[ $# -ne 2 ]]; then
-    echo "usage: $0 [build mode] [release version]" >&2
+if [[ $# -ne 1 ]]; then
+    echo "usage: $0 [release version]" >&2
     echo " " >&2
     echo "[release version]: major.minor.build" >&2
     echo " " >&2
-    echo "example: PROD 0.4.98" >&2
+    echo "example: 0.4.98" >&2
     exit $ERRBADARGS
 fi
 
@@ -20,7 +20,7 @@ SAFETYNET_CONFIG_PATH=''
 create_updated_config_file SAFETYNET_CONFIG_PATH
 readonly SAFETYNET_CONFIG_PATH
 
-readonly RELEASE_VERSION="$2"
+readonly RELEASE_VERSION="$1"
 readonly SYNCDET_PARAMS="--config=$SAFETYNET_CONFIG_PATH $SAFETYNET_SYNCDET_DEPLOY_DIR ${GIT_ROOT}/syncdet_test"
 
 ######################################################################

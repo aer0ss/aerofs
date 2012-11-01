@@ -1,6 +1,6 @@
 #!/bin/bash -e -u
 
-include safetynet/constants $1
+include safetynet/constants PROD
 
 ######################################################################
 #
