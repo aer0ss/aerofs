@@ -4,7 +4,7 @@ option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "common.proto";
 
-service SyncStatService {
+service SyncStatusService {
     // Sets the message type used when errors occur.
     rpc __error__(Void) returns(PBException);
 
@@ -88,7 +88,7 @@ message GetSyncStatusReply {
         required bool is_synced = 2;
     }
 
-    message SyncStatus {
+    message DevicesSyncStatus {
         required bytes sid = 1;
         required bytes oid = 2;
         repeated DeviceSyncStatus devices = 3;
@@ -101,5 +101,5 @@ message GetSyncStatusReply {
 
     required uint64 server_epoch = 1;
     required bool more = 2;
-    repeated SyncStatus sync_statuses = 3;
+    repeated DevicesSyncStatus sync_statuses = 3;
 }

@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.IDownloadStateListener.Ended;
 import com.aerofs.daemon.core.net.IDownloadStateListener.Ongoing;
 import com.aerofs.daemon.core.net.IDownloadStateListener.State;
@@ -18,7 +17,6 @@ import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
-import java.sql.SQLException;
 import java.util.Map;
 
 /**

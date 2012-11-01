@@ -40,9 +40,9 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DevicesSyncStatus;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -446,7 +446,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         GetSyncStatusReply reply = GetSyncStatusReply.newBuilder()
                 .setServerEpoch(43)
                 .setMore(false)
-                .addSyncStatuses(SyncStatus.newBuilder()
+                .addSyncStatuses(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_f1.sidx()).toPB())
                         .setOid(o_f1.oid().toPB())
                         .addDevices(
@@ -454,7 +454,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
                         .addDevices(
                                 DeviceSyncStatus.newBuilder().setDid(d1.toPB()).setIsSynced(true))
                         .build())
-                .addSyncStatuses(SyncStatus.newBuilder()
+                .addSyncStatuses(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_d2.sidx()).toPB())
                         .setOid(o_d2.oid().toPB())
                         .addDevices(DeviceSyncStatus.newBuilder()
@@ -464,7 +464,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
                                 .setDid(d1.toPB())
                                 .setIsSynced(true))
                         .build())
-                .addSyncStatuses(SyncStatus.newBuilder()
+                .addSyncStatuses(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_f232.sidx()).toPB())
                         .setOid(o_f232.oid().toPB())
                         .addDevices(DeviceSyncStatus.newBuilder()
@@ -506,7 +506,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         GetSyncStatusReply reply = GetSyncStatusReply.newBuilder()
                 .setServerEpoch(45)
                 .setMore(true)
-                .addSyncStatuses(SyncStatus.newBuilder()
+                .addSyncStatuses(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_f22.sidx()).toPB())
                         .setOid(o_f22.oid().toPB())
                         .addDevices(
@@ -520,7 +520,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         reply = GetSyncStatusReply.newBuilder()
                 .setServerEpoch(46)
                 .setMore(false)
-                .addSyncStatuses(SyncStatus.newBuilder()
+                .addSyncStatuses(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_d231.sidx()).toPB())
                         .setOid(o_d231.oid().toPB())
                         .addDevices(DeviceSyncStatus.newBuilder()
@@ -562,7 +562,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
         sync.notificationReceived_(PBSyncStatNotification.newBuilder()
                 .setSsEpoch(43)
-                .setStatus(SyncStatus.newBuilder()
+                .setStatus(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_f1.sidx()).toPB())
                         .setOid(o_f1.oid().toPB())
                         .addDevices(
@@ -578,7 +578,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
         sync.notificationReceived_(PBSyncStatNotification.newBuilder()
                 .setSsEpoch(44)
-                .setStatus(SyncStatus.newBuilder()
+                .setStatus(DevicesSyncStatus.newBuilder()
                         .setSid(sm.get_(o_f1.sidx()).toPB())
                         .setOid(o_f1.oid().toPB())
                         .addDevices(DeviceSyncStatus.newBuilder()

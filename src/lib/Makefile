@@ -8,7 +8,7 @@ all: gen_rpc_service \
 	ritual.gen_proto \
 	sp.gen_proto \
 	sv.gen_proto \
-	syncstat.gen_proto \
+	sync_status.gen_proto \
 
 include ../lib/Makefile.common
 

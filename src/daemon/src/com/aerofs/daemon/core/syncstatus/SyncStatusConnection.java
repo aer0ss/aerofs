@@ -16,8 +16,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.syncstat.SyncStatBlockingClient;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply;
+import com.aerofs.lib.syncstat.SyncStatusBlockingClient;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
@@ -40,12 +40,12 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     private final TC _tc;
     private final CoreScheduler _sched;
     private final CfgLocalUser _user;
-    private final SyncStatBlockingClient.Factory _ssf;
+    private final SyncStatusBlockingClient.Factory _ssf;
     private ISignInHandler _sih;
 
     // fields protected by synchronized (this)
     private boolean _firstCall;
-    private SyncStatBlockingClient _client;
+    private SyncStatusBlockingClient _client;
 
     public interface ISignInHandler
     {
@@ -59,7 +59,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 
     @Inject
     SyncStatusConnection(CfgLocalUser user, TC tc, CoreScheduler sched,
-            SyncStatBlockingClient.Factory ssf)
+            SyncStatusBlockingClient.Factory ssf)
     {
         _tc = tc;
         _ssf = ssf;
@@ -84,7 +84,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
         if (_client != null) return;
 
         try {
-            SyncStatBlockingClient client = _ssf.create(SyncStat.URL, _user.get());
+            SyncStatusBlockingClient client = _ssf.create(SyncStat.URL, _user.get());
             final long epoch = client.signInRemote();
 
             l.debug("sss signed-in");

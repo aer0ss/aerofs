@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.syncstatus;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +29,9 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply.DeviceSyncStatus;
-import com.aerofs.proto.Syncstat.GetSyncStatusReply.SyncStatus;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
+import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DevicesSyncStatus;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -369,12 +368,12 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
      * @param newPullEpoch new value of pull epoch after update
      * @param syncStatusList list of SyncStatus protobuf to received from server
      */
-    private void updateDB(long newPullEpoch, Iterable<SyncStatus> syncStatusList)
+    private void updateDB(long newPullEpoch, Iterable<DevicesSyncStatus> syncStatusList)
             throws SQLException {
         Map<SOID, BitVector> update = Maps.newHashMap();
         // Must perform this computation outside of the update transaction
         // to avoid problems when registering a new DID
-        for (SyncStatus ostat : syncStatusList) {
+        for (DevicesSyncStatus ostat : syncStatusList) {
             // TODO(huguesb): group entries by sid in the reply to reduce number of lookups?
             SID sid = new SID(ostat.getSid());
             SIndex sidx = _sid2sidx.getNullable_(sid);

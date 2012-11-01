@@ -1,17 +1,21 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.lib.syncstat;
 
-import com.aerofs.proto.Syncstat.SyncSignInReply;
+import com.aerofs.proto.SyncStatus.SyncSignInReply;
 
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.proto.Syncstat.SyncStatServiceStub;
+import com.aerofs.proto.SyncStatus.SyncStatusServiceStub;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
-public class SyncStatClient extends SyncStatServiceStub {
+public class SyncStatusClient extends SyncStatusServiceStub {
 
     private final String _user;
 
-    SyncStatClient(SyncStatServiceStubCallbacks callbacks, String user)
+    SyncStatusClient(SyncStatusServiceStubCallbacks callbacks, String user)
     {
         super(callbacks);
         _user = user;

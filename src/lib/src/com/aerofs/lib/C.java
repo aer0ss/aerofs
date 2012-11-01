@@ -102,8 +102,8 @@ public class C
 
     // Make sure to update development.ini and production.ini in src/web and tools/sp_runner.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 12;
-    public static final int SS_PROTOCOL_VERSION         = 4;
+    public static final int SP_PROTOCOL_VERSION         = 13;
+    public static final int SS_PROTOCOL_VERSION         = 5;
 
     public static final byte[] ROOT_SID_SALT       = new byte[]
         { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };

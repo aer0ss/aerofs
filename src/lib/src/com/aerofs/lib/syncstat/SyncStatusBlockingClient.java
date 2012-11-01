@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.lib.syncstat;
 
 import java.net.URL;
@@ -7,12 +11,12 @@ import org.apache.log4j.Logger;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.proto.Syncstat.SyncStatServiceBlockingStub;
-import com.aerofs.proto.Syncstat.SyncStatServiceStub.SyncStatServiceStubCallbacks;
+import com.aerofs.proto.SyncStatus.SyncStatusServiceBlockingStub;
+import com.aerofs.proto.SyncStatus.SyncStatusServiceStub.SyncStatusServiceStubCallbacks;
 import com.google.protobuf.ByteString;
 
-public class SyncStatBlockingClient extends SyncStatServiceBlockingStub {
-    private static final Logger l = Util.l(SyncStatBlockingClient.class);
+public class SyncStatusBlockingClient extends SyncStatusServiceBlockingStub {
+    private static final Logger l = Util.l(SyncStatusBlockingClient.class);
 
     private final String _user;
 
@@ -21,13 +25,13 @@ public class SyncStatBlockingClient extends SyncStatServiceBlockingStub {
      */
     public static class Factory
     {
-        public SyncStatBlockingClient create(URL url, String user)
+        public SyncStatusBlockingClient create(URL url, String user)
         {
-            return new SyncStatBlockingClient(new SyncStatClientHandler(url), user);
+            return new SyncStatusBlockingClient(new SyncStatusClientHandler(url), user);
         }
     }
 
-    SyncStatBlockingClient(SyncStatServiceStubCallbacks callbacks, String user)
+    SyncStatusBlockingClient(SyncStatusServiceStubCallbacks callbacks, String user)
     {
         super(callbacks);
         _user = user;

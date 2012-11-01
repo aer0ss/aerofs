@@ -24,17 +24,17 @@
 
   <!-- initialization listener -->
   <listener>
-    <listener-class>com.aerofs.syncstat.server.SyncStatLifecycleListener</listener-class>
+    <listener-class>com.aerofs.syncstat.server.SyncStatusLifecycleListener</listener-class>
   </listener>
 
   <!-- servlets -->
   <servlet>
-    <servlet-name>ServletSyncStat</servlet-name>
-    <servlet-class>com.aerofs.syncstat.server.SyncStatServlet</servlet-class>
+    <servlet-name>ServletSyncStatus</servlet-name>
+    <servlet-class>com.aerofs.syncstat.server.SyncStatusServlet</servlet-class>
   </servlet>
 
   <!-- url mapping -->
   <servlet-mapping>
-    <servlet-name>ServletSyncStat</servlet-name>
+    <servlet-name>ServletSyncStatus</servlet-name>
     <url-pattern>/syncstat</url-pattern>
   </servlet-mapping>

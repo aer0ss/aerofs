@@ -4,9 +4,6 @@
 
 package com.aerofs.servlets.lib.db;
 
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -16,8 +13,6 @@ public class SQLThreadLocalTransaction
         IDatabaseConnectionProvider<Connection>,
         IThreadLocalTransaction<SQLException>
 {
-    private static final Logger l = Util.l(SQLThreadLocalTransaction.class);
-
     private IDatabaseConnectionProvider<Connection> _provider;
     private ThreadLocal<Connection> _connection = new ThreadLocal<Connection>();
 

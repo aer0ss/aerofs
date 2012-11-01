@@ -10,10 +10,6 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
 
 import java.io.File;
 import java.io.IOException;
