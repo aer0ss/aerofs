@@ -11,8 +11,12 @@ listen=<%= listen %>
 report=true
 # run once a day - we use kick if we need to update something
 runinterval=86400
+# If we can't get a new config, fail rather than use a cache
+# This guarantees a safe state
 usecacheonfailure=false
 
 [master]
 reports=tagmail
+# Don't use local caches, always recompile the catalog before giving it to an agent
+# This is probably a good idea because we deploy via puppet
 ignorecache=true
