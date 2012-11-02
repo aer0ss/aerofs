@@ -97,6 +97,8 @@ public class LocalSyncStatus
 
         /**
          * Aggregate status within a store
+         *
+         * NOTE: called at most once per object
          */
         public void mergeDevices_(DeviceBitMap dbm, BitVector status);
 

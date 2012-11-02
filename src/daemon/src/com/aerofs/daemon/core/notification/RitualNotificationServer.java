@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.daemon.core.CoreQueue;
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DownloadState;
 import com.aerofs.daemon.core.net.UploadState;
@@ -9,7 +10,10 @@ import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatus
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus;
+import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
+import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer.IListener;
 import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.lib.TCPProactorMT;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnection;
@@ -18,6 +22,7 @@ import com.aerofs.daemon.transport.lib.TCPProactorMT.IConnector;
 import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.spsv.SPBlockingClient;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
@@ -26,6 +31,7 @@ import com.google.common.collect.HashBiMap;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -44,23 +50,27 @@ public class RitualNotificationServer implements IConnectionManager
     private final BiMap<InetSocketAddress, ReactorConnector> _map = HashBiMap.create();
 
     private final CoreQueue _cq;
+    private final CoreScheduler _sched;
     private final DownloadState _dls;
     private final UploadState _uls;
     private final PathStatus _so;
+    private final SyncStatusSynchronizer _sss;
     private final AggregateSyncStatus _agss;
     private final DirectoryService _ds;
     private final TC _tc;
     private final ServerConnectionStatus _scs;
 
     @Inject
-    public RitualNotificationServer(CoreQueue cq, DownloadState dls, UploadState uls,
-            PathStatus so, AggregateSyncStatus agss, ServerConnectionStatus scs,
-            DirectoryService ds, TC tc)
+    public RitualNotificationServer(CoreQueue cq, CoreScheduler sched, TC tc, DirectoryService ds,
+            DownloadState dls, UploadState uls, PathStatus so, ServerConnectionStatus scs,
+            SyncStatusSynchronizer sss, AggregateSyncStatus agss)
     {
         _cq = cq;
+        _sched = sched;
         _dls = dls;
         _uls = uls;
         _so = so;
+        _sss = sss;
         _agss = agss;
         _ds = ds;
         _tc = tc;
@@ -78,6 +88,16 @@ public class RitualNotificationServer implements IConnectionManager
         _uls.addListener_(sn);
         _agss.addListener_(sn);
 
+        // detect apparition of new device in a store to send CLEAR_CACHE message
+        _sss.addListener_(new IListener()
+        {
+            @Override
+            public void devicesChanged(Set<SIndex> stores)
+            {
+                clearStatusCache_();
+            }
+        });
+
         // detect change of server availability to send CLEAR_CACHE message
         _scs.addListener(new IServiceStatusListener() {
             @Override
@@ -90,9 +110,8 @@ public class RitualNotificationServer implements IConnectionManager
             public void available() {
                 l.info("sss available");
                 // sync status back up: must clear cache in shellext to avoid false negatives
-                sendEvent_(PBNotification.newBuilder()
-                        .setType(Type.CLEAR_STATUS)
-                        .build());
+                // this callback is never called with the core lock held, must schedule...
+                scheduleClearStatusCache();
             }
 
             @Override
@@ -100,9 +119,8 @@ public class RitualNotificationServer implements IConnectionManager
             {
                 l.info("sss unavailable");
                 // sync status down: must clear cache in shellext to avoid showing outdated status
-                sendEvent_(PBNotification.newBuilder()
-                        .setType(Type.CLEAR_STATUS)
-                        .build());
+                // this callback is never called with the core lock held, must schedule...
+                scheduleClearStatusCache();
             }
         }, Server.VERKEHR, Server.SYNCSTAT);
 
@@ -179,6 +197,27 @@ public class RitualNotificationServer implements IConnectionManager
             sendImpl(to, pbs);
             cr._snapshotSent = true;
         }
+    }
+
+    private void scheduleClearStatusCache()
+    {
+        // this is kinda retarted but due to the snapshot logic notifications can only be sent from
+        // a core thread, even though other synchronization is used
+        // TODO: investigate a refactoring that removes this requirement
+        _sched.schedule(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_()
+            {
+                clearStatusCache_();
+            }
+        }, 0);
+    }
+
+    private void clearStatusCache_()
+    {
+        sendEvent_(PBNotification.newBuilder()
+                .setType(Type.CLEAR_STATUS)
+                .build());
     }
 
     void sendEvent_(PBNotification pb)

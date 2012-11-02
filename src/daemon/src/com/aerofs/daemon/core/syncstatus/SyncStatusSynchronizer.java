@@ -101,6 +101,13 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
     private final boolean _enable;
     private boolean _startupDone;
 
+    public static interface IListener
+    {
+        void devicesChanged(Set<SIndex> stores);
+    }
+
+    private final List<IListener> _listeners = Lists.newArrayList();
+
     @Inject
     public SyncStatusSynchronizer(CoreQueue q, CoreScheduler sched, TC tc, TransManager tm,
             LocalSyncStatus lsync, DirectoryService ds, SyncStatusConnection ssc,
@@ -140,6 +147,11 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         // 1) process items in the bootstrap table, if any
         // 2) process items in the activity log left by a previous run
         scheduleStartup();
+    }
+
+    public void addListener_(IListener listener)
+    {
+        _listeners.add(listener);
     }
 
     /**
@@ -205,9 +217,10 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
     {
         final int BOOTSTRAP_BATCH_MAX_SIZE = 100;
         Map<SIndex, Set<OID>> batch = Maps.newHashMap();
+        int oidCounter = 0;
         IDBIterator<SOID> soids = _lsync.getBootstrapSOIDs_();
         try {
-            while (soids.next_() && batch.size() < BOOTSTRAP_BATCH_MAX_SIZE) {
+            while (soids.next_() && ++oidCounter < BOOTSTRAP_BATCH_MAX_SIZE) {
                 SOID soid = soids.get_();
                 Set<OID> oids = batch.get(soid.sidx());
                 if (oids == null) {
@@ -311,22 +324,6 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
     }
 
     /**
-     * Wrap LocalSyncStatus.addDevice_ in a transaction
-     */
-    private int addDevice_(SIndex sidx, DID did) throws SQLException
-    {
-        int idx;
-        Trans t = _tm.begin_();
-        try {
-            idx = _sidx2dbm.addDevice_(sidx, did, t);
-            t.commit_();
-        } finally {
-            t.end_();
-        }
-        return idx;
-    }
-
-    /**
      * Make the actual GetSyncStatus call to the sync status server and update local DB accordingly.
      */
     private void pullSyncStatus_() throws Exception
@@ -370,58 +367,64 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
      */
     private void updateDB(long newPullEpoch, Iterable<DevicesSyncStatus> syncStatusList)
             throws SQLException {
-        Map<SOID, BitVector> update = Maps.newHashMap();
-        // Must perform this computation outside of the update transaction
-        // to avoid problems when registering a new DID
-        for (DevicesSyncStatus ostat : syncStatusList) {
-            // TODO(huguesb): group entries by sid in the reply to reduce number of lookups?
-            SID sid = new SID(ostat.getSid());
-            SIndex sidx = _sid2sidx.getNullable_(sid);
-            if (sidx == null) {
-                l.warn("unknown SID : " + sid.toStringFormal());
-                continue;
-            }
-
-            SOID soid = new SOID(sidx, new OID(ostat.getOid()));
-
-            // ignore missing SOIDs
-            // NOTE: expelled SOIDs are still updated. This is required to keep sync status
-            // consistent upon readmission in case the only version available from online peers
-            // is the same as the last local version before expulsion
-            // TODO(huguesb): keep store-level count of new out_sync objects?
-            OA oa = _ds.getOANullable_(soid);
-            if (oa == null) continue;
-
-            DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
-
-            l.debug("new status for : " + soid.toString());
-
-            // compress the reply into a sync status bit vector
-            BitVector bv = new BitVector(dids.size(), false);
-            for (DeviceSyncStatus dstat : ostat.getDevicesList()) {
-                DID did = new DID(dstat.getDid());
-                Integer idx = dids.get(did);
-                if (idx == null) {
-                    // new DID, register it with this store
-                    idx = addDevice_(sidx, did);
-                    l.debug("[" + sidx +  "] new DID : " + did.toStringFormal() + " -> " + idx);
-                }
-                bv.set(idx, dstat.getIsSynced());
-            }
-            update.put(soid,  bv);
-        }
+        Set<SIndex> stores = Sets.newHashSet();
 
         Trans t = _tm.begin_();
         try {
-            // set the new sync status vector for the updated objects
-            for (Entry<SOID, BitVector> e : update.entrySet()) {
-                _ds.setSyncStatus_(e.getKey(), e.getValue(), t);
+            for (DevicesSyncStatus ostat : syncStatusList) {
+                // TODO(huguesb): group entries by sid in the reply to reduce number of lookups?
+                SID sid = new SID(ostat.getSid());
+                SIndex sidx = _sid2sidx.getNullable_(sid);
+                if (sidx == null) {
+                    l.warn("unknown SID : " + sid.toStringFormal());
+                    continue;
+                }
+
+                SOID soid = new SOID(sidx, new OID(ostat.getOid()));
+
+                // ignore missing SOIDs
+                // NOTE: expelled SOIDs are still updated. This is required to keep sync status
+                // consistent upon readmission in case the only version available from online peers
+                // is the same as the last local version before expulsion
+                // TODO(huguesb): keep store-level count of new out_sync objects?
+                OA oa = _ds.getOANullable_(soid);
+                if (oa == null) continue;
+
+                DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
+
+                //l.debug("new status for : " + soid.toString());
+
+                // compress the reply into a sync status bit vector
+                // NOTE: any device not mentioned in the message should remain unchanged so we need
+                // to fetch the current (raw) sync status and modify it
+                BitVector bv = _ds.getRawSyncStatus_(soid);
+
+                for (DeviceSyncStatus dstat : ostat.getDevicesList()) {
+                    DID did = new DID(dstat.getDid());
+                    Integer idx = dids.get(did);
+                    if (idx == null) {
+                        // new DID, register it with this store
+                        stores.add(sidx);
+                        idx = _sidx2dbm.addDevice_(sidx, did, t);
+                        l.debug("[" + sidx +  "] new DID : " + did.toStringFormal() + " -> " + idx);
+                    }
+                    bv.set(idx, dstat.getIsSynced());
+                }
+
+                // set the new sync status vector
+                _ds.setSyncStatus_(soid, bv, t);
             }
+
             // update epoch to avoid re-downloading the information
             _lsync.setPullEpoch_(newPullEpoch, t);
             t.commit_();
         } finally {
             t.end_();
+        }
+
+        if (!stores.isEmpty()) {
+            // make sure all syncstatus-related caching is invalidated when new DIDs are registered
+            for (IListener l : _listeners) l.devicesChanged(stores);
         }
     }
 

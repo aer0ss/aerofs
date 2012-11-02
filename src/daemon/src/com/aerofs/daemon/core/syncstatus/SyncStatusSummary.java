@@ -49,7 +49,7 @@ public class SyncStatusSummary implements IAggregatedStatus
                 allInSync &= s;
             } else {
                 Boolean b = otherUsers.get(owner);
-                otherUsers.put(owner, s | (b != null ? b : false));
+                otherUsers.put(owner, (b != null ? b | s : s));
             }
         }
 
@@ -63,7 +63,8 @@ public class SyncStatusSummary implements IAggregatedStatus
     public void mergeStore_(IAggregatedStatus aggregated)
     {
         SyncStatusSummary o = (SyncStatusSummary)aggregated;
-        atLeastOneInSync |= o.atLeastOneInSync;
+        // aggregation accross children is always AND (take worst)
+        atLeastOneInSync &= o.atLeastOneInSync;
         allInSync &= o.allInSync;
     }
 
@@ -73,8 +74,8 @@ public class SyncStatusSummary implements IAggregatedStatus
         try {
             owner = _udn.getDeviceOwnerNullable_(did);
         } catch (Exception e) {
-            Util.l(this).warn("", e);
+            Util.l(this).warn("owner lookup failed: " + did, e);
         }
-        return owner == null ? _user.get() : owner;
+        return owner == null ? "(Unknown)" : owner;
     }
 }

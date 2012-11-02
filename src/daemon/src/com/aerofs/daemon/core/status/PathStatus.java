@@ -18,6 +18,7 @@ import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.PathStatus.PBPathStatus;
+import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -115,18 +116,16 @@ public class PathStatus
     /**
      * @return server-status-aware protobuf-encoded sync status summary
      */
-    private PBPathStatus.Sync getSyncStatus_(Path path) {
+    private Sync getSyncStatus_(Path path) {
         return _scs.isConnected(Server.VERKEHR, Server.SYNCSTAT)
                 ? getSyncStatusSummary_(path)
-                : PBPathStatus.Sync.UNKNOWN;
+                : Sync.UNKNOWN;
     }
 
     /**
      * @return protobuf-encoded sync status summary
-     *
-     * TODO: What summary for file not shared with any other device? (currently appear as in sync)
      */
-    private PBPathStatus.Sync getSyncStatusSummary_(Path path)
+    private Sync getSyncStatusSummary_(Path path)
     {
         SyncStatusSummary s = new SyncStatusSummary(_udn, _user);
         try {
@@ -134,12 +133,13 @@ public class PathStatus
         } catch (SQLException e) {
             throw Util.fatal(e);
         } catch (ExExpelled e) {
-            return PBPathStatus.Sync.OUT_SYNC;
+            return Sync.OUT_SYNC;
         } catch (ExNotFound e) {
-            return PBPathStatus.Sync.UNKNOWN;
+            return Sync.UNKNOWN;
         }
-        if (s.allInSync) return PBPathStatus.Sync.IN_SYNC;
-        if (s.atLeastOneInSync) return PBPathStatus.Sync.PARTIAL_SYNC;
-        return PBPathStatus.Sync.OUT_SYNC;
+        // NOTE: files only present on the local device are considered out of sync
+        if (!s.atLeastOneInSync) return Sync.OUT_SYNC;
+        if (s.allInSync) return Sync.IN_SYNC;
+        return Sync.PARTIAL_SYNC;
     }
 }
