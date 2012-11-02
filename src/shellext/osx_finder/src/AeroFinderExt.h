@@ -14,6 +14,7 @@ typedef enum {
     IN_SYNC,
     DOWNLOADING,
     UPLOADING,
+    CONFLICT,
 
     OverlayCount
 } Overlay;
@@ -52,6 +53,7 @@ OSErr AeroLoadHandler(const AppleEvent* ev, AppleEvent* reply, long refcon);
 - (void)showShareFolderDialog:(id)sender;
 - (void)showSyncStatusDialog:(id)sender;
 - (void)showVersionHistoryDialog:(id)sender;
+- (void)showConflictResolutionDialog:(id)sender;
 - (void)sendGreeting;
 - (void)parseNotification:(ShellextNotification*)notification;
 - (void)onStatus:(PathStatusNotification*)notification;

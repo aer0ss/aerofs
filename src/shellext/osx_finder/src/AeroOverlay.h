@@ -12,6 +12,7 @@
     AeroIconPair* isIcon;
     AeroIconPair* psIcon;
     AeroIconPair* osIcon;
+    AeroIconPair* cfIcon;
 }
 
 -(NSImage*) iconForPath:(NSString*)path flipped:(BOOL)flipped;

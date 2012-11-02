@@ -17,9 +17,11 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -151,8 +153,9 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                 SOID csoid = new SOID(sidx, coid);
                 if (!coa.isExpelled()) {
                     BitVector cbv = _ds.getSyncStatus_(csoid);
-                    if (coa.isDir())
+                    if (coa.isDir()) {
                         cbv.andInPlace(getAggregateSyncStatusVector_(csoid));
+                    }
                     for (int i = cbv.findFirstSetBit(); i != -1; i = cbv.findNextSetBit(i + 1)) {
                         cv.inc(i);
                     }
@@ -333,13 +336,14 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     }
 
     /**
-     * Called from DirectoryService when an object is modified (change in the CA table)
+     * Called from DirectoryService when a CA is created
      */
     @Override
-    public void objectContentModified_(SOID soid, Path path, boolean firstBranchCreated, Trans t)
-            throws SQLException
+    public void objectContentCreated_(SOKID sokid, Path path, Trans t) throws SQLException
     {
-        if (!firstBranchCreated) return;
+        // sync status is not interested in conflict branches
+        SOID soid = sokid.soid();
+        if (!sokid.kidx().equals(KIndex.MASTER)) return;
 
         BitVector status = _ds.getRawSyncStatus_(soid);
         if (status.isEmpty()) return;
@@ -357,6 +361,14 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         SOID parent = new SOID(soid.sidx(), oa.parent());
         updateRecursively_(parent, status, status, 0, path.removeLast(), t);
     }
+
+    @Override
+    public void objectContentModified_(SOKID sokid, Path path, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectContentDeleted_(SOKID sokid, Path path, Trans t) throws SQLException
+    {}
 
     /**
      * Called from DirectoryService when an object is expelled

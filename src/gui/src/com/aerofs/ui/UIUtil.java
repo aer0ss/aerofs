@@ -1,10 +1,8 @@
 package com.aerofs.ui;
 
 import com.aerofs.gui.GUI;
-import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
-import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
@@ -349,35 +347,5 @@ public class UIUtil
         if (postLaunch != null) {
             UI.get().asyncExec(postLaunch);
         }
-    }
-
-    /**
-     * This method can be run in a non-UI thread
-     */
-    public static void showSyncStatus(final Path path)
-    {
-        GUI.get().asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                new DlgSyncStatus(GUI.get().sh(), path).openDialog();
-            }
-        });
-    }
-
-    /**
-     * This method can be run in a non-UI thread
-     */
-    public static void showVersionHistory(final Path path)
-    {
-        GUI.get().asyncExec(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                new DlgHistory(GUI.get().sh(), path).openDialog();
-            }
-        });
     }
 }

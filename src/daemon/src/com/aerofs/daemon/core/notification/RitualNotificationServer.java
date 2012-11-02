@@ -30,6 +30,7 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.sql.SQLException;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -59,11 +60,12 @@ public class RitualNotificationServer implements IConnectionManager
     private final DirectoryService _ds;
     private final TC _tc;
     private final ServerConnectionStatus _scs;
+    private final ConflictState _cl;
 
     @Inject
     public RitualNotificationServer(CoreQueue cq, CoreScheduler sched, TC tc, DirectoryService ds,
             DownloadState dls, UploadState uls, PathStatus so, ServerConnectionStatus scs,
-            SyncStatusSynchronizer sss, AggregateSyncStatus agss)
+            SyncStatusSynchronizer sss, AggregateSyncStatus agss, ConflictState cl)
     {
         _cq = cq;
         _sched = sched;
@@ -75,6 +77,7 @@ public class RitualNotificationServer implements IConnectionManager
         _ds = ds;
         _tc = tc;
         _scs = scs;
+        _cl = cl;
     }
 
     public void init_() throws IOException
@@ -83,14 +86,26 @@ public class RitualNotificationServer implements IConnectionManager
         _uls.addListener_(new UploadStateListener(this, _ds, _tc));
 
         // Merged status notifier listens on all input sources
-        PathStatusNotifier sn = new PathStatusNotifier(this, _ds, _so);
+        final PathStatusNotifier sn = new PathStatusNotifier(this, _ds, _so);
         _dls.addListener_(sn);
         _uls.addListener_(sn);
         _agss.addListener_(sn);
+        _cl.addListener_(sn);
+
+        _sched.schedule(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_()
+            {
+                try {
+                    _cl.sendSnapshot_(sn);
+                } catch (SQLException e) {
+                    l.warn("Failed to send conflict snapshot", e);
+                }
+            }
+        }, 0);
 
         // detect apparition of new device in a store to send CLEAR_CACHE message
-        _sss.addListener_(new IListener()
-        {
+        _sss.addListener_(new IListener() {
             @Override
             public void devicesChanged(Set<SIndex> stores)
             {

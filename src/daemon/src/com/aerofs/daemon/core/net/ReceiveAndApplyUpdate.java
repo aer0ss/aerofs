@@ -751,7 +751,7 @@ public class ReceiveAndApplyUpdate
             _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
 
             if (!wasPresent) {
-                if (k.kidx() != KIndex.MASTER) {
+                if (!k.kidx().equals(KIndex.MASTER)) {
                     // record creation of conflict branch here instead of in DirectoryService
                     // Aliasing and Migration may recreate them and we only want to record each
                     // conflict once

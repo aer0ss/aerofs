@@ -11,10 +11,9 @@
 #include "string_helpers.h"
 #include "../../gen/shellext.pb.h"
 
-#define GUIPORT_DEFAULT 50195
-#define GUIPORT_OFFSET 2
+#include "../../../common/common.h"
+
 #define DELAY_BEFORE_CONNECTION_RETRY 2000 // milliseconds
-#define PROTOCOL_VERSION 4
 #define OVERLAY_CACHE_SIZE_LIMIT 10000 // max number of path for which overlay state is cached
 
 AeroFSShellExtension _instance;
@@ -91,15 +90,16 @@ void AeroFSShellExtension::reconnect()
  */
 bool AeroFSShellExtension::isUnderRootAnchor(const std::wstring& path)
 {
-	if (path.empty()
+	std::wstring lpath = lowercase(path);
+	if (lpath.empty()
 			|| m_rootAnchor.empty()
-			|| path.length() < m_rootAnchor.length()) {
+			|| lpath.length() < m_rootAnchor.length()) {
 		return false;
 	}
 
 	// Check that path starts with root anchor
-	return str_starts_with(lowercase(path), m_rootAnchor) &&
-		(path.length() == m_rootAnchor.length() || path.at(m_rootAnchor.length()) == '\\');
+	return str_starts_with(lpath, m_rootAnchor) &&
+		(lpath.length() == m_rootAnchor.length() || lpath.at(m_rootAnchor.length()) == '\\');
 }
 
 /**
@@ -157,8 +157,11 @@ void AeroFSShellExtension::parseNotification(const ShellextNotification& notific
 }
 
 static int overlayForStatus(const PBPathStatus& status) {
+	// temporary states (Upload/Download) take precedence over potentially long-lasting ones
 	if (status.flags() & PBPathStatus_Flag_DOWNLOADING)	return O_Downloading;
 	if (status.flags() & PBPathStatus_Flag_UPLOADING)	return O_Uploading;
+	// conflict state takes precedence over sync status
+	if (status.flags() & PBPathStatus_Flag_CONFLICT)	return O_Conflict;
 	switch (status.sync()) {
 		case PBPathStatus_Sync_OUT_SYNC:				return O_OutSync;
 		case PBPathStatus_Sync_PARTIAL_SYNC:			return O_PartialSync;
@@ -173,7 +176,7 @@ static int overlayForStatus(const PBPathStatus& status) {
  *
  * The caller is responsible for checking that \a path is under the root anchor
  */
-Overlay AeroFSShellExtension::overlay(std::wstring& path)
+Overlay AeroFSShellExtension::overlay(const std::wstring& path)
 {
 	if (!isUnderRootAnchor(path)) return O_None;
 
@@ -198,7 +201,7 @@ Overlay AeroFSShellExtension::overlay(std::wstring& path)
 	}
 
 	if (!shouldEnableTestingFeatures()) {
-		if (status != O_Downloading && status != O_Uploading) return O_None;
+		if (status != O_Downloading && status != O_Uploading && status != O_Conflict) return O_None;
 	}
 	return (Overlay)status;
 }
@@ -226,12 +229,14 @@ void AeroFSShellExtension::onPathStatusNotification(const PathStatusNotification
 		return;
 	}
 
-	DEBUG_LOG("Received status update for " << path << " "
-		<< status.sync() << ":" << status.flags());
-
 	// TODO: use RTROOT-relative path as cache key to save memory
 	int oldOverlay = m_cache->value(path, -1);
 	int newOverlay = overlayForStatus(status);
+
+	DEBUG_LOG("Received status update for " << path << " "
+		<< status.sync() << ":" << status.flags()
+		<< "[ " << oldOverlay << " -> " << newOverlay << "]");
+
 	if (oldOverlay != -1 && newOverlay != oldOverlay) {
 		// update cache
 		m_cache->insert(path, newOverlay);
@@ -301,6 +306,15 @@ void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_SHARE_FOLDER);
 	call.mutable_share_folder()->set_path(narrow(path.c_str()));
+
+	m_socket->sendMessage(call);
+}
+
+void AeroFSShellExtension::showConflictResolutionDialog(const std::wstring& path)
+{
+	ShellextCall call;
+	call.set_type(ShellextCall_Type_CONFLICT_RESOLUTION);
+	call.mutable_conflict_resolution()->set_path(narrow(path.c_str()));
 
 	m_socket->sendMessage(call);
 }

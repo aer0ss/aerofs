@@ -31,6 +31,7 @@
 
     dlIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"DownloadBadge" ofType:@"icns"]];
     ulIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"UploadBadge" ofType:@"icns"]];
+    cfIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"ConflictBadge" ofType:@"icns"]];
 
     isIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"InSyncBadge" ofType:@"icns"]];
     psIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"PartialSyncBadge" ofType:@"icns"]];
@@ -62,6 +63,7 @@
         case OUT_SYNC:      result = osIcon; break;
         case DOWNLOADING:   result = dlIcon; break;
         case UPLOADING:     result = ulIcon; break;
+        case CONFLICT:      result = cfIcon; break;
         default: break;
     }
 

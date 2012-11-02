@@ -69,6 +69,7 @@ private:
 		SyncStatusMenuId,
 		VersionHistoryMenuId,
 		ShareFolderMenuId,
+		ConflictResolutionMenuId,
 		AeroFSMenuId  // this should always be the last item of this enum. (see comment in QueryContextMenu)
 	} MenuId;
 

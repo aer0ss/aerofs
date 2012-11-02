@@ -131,15 +131,23 @@ HRESULT ContextMenu::QueryContextMenu(HMENU hmenu, UINT position, UINT idCmdFirs
 	}
 
 	int entryCount = 0;
+	int pflags = m_instance->pathFlags(m_path);
+
 	HMENU submenu = CreatePopupMenu();
+
+	if (!(pflags & Directory) && m_instance->overlay(m_path) == O_Conflict) {
+		AppendMenu(submenu, MF_STRING, idCmdFirst + ConflictResolutionMenuId, L"Resolve Conflict...");
+		++entryCount;
+	}
+
 	if (m_instance->shouldEnableTestingFeatures()) {
 		AppendMenu(submenu, MF_STRING, idCmdFirst + SyncStatusMenuId, L"Sync Status...");
 		++entryCount;
 	}
+
 	AppendMenu(submenu, MF_STRING, idCmdFirst + VersionHistoryMenuId, L"Version History...");
 	++entryCount;
 
-	int pflags = m_instance->pathFlags(m_path);
 	if ((pflags & Directory) && !(pflags & RootAnchor)) {
 		AppendMenu(submenu, MF_STRING, idCmdFirst + ShareFolderMenuId, L"Share Folder...");
 		++entryCount;
@@ -183,7 +191,9 @@ HRESULT ContextMenu::InvokeCommand(LPCMINVOKECOMMANDINFO pInfo)
 	}
 
 	switch ((MenuId) LOWORD(pInfo->lpVerb)) {
-
+	case ConflictResolutionMenuId:
+		m_instance->showConflictResolutionDialog(m_path);
+		return S_OK;
 	case SyncStatusMenuId:
 		m_instance->showSyncStatusDialog(m_path);
 		return S_OK;

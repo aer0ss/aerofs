@@ -32,19 +32,19 @@ import java.util.Set;
  * The "path status" is a compact status indicator at path (file/directory) granularity, suitable
  * for icon overlay and similar displays. It is obtained by aggregating the following indicators:
  *   - sync status (see {@link LocalSyncStatus}
- *   - transfer state (see {@link TransferStateAggregator}
+ *   - transfer state (see {@link PathFlagAggregator}
  *   - server status (see {@link ServerConnectionStatus}
  */
 public class PathStatus
 {
     private final LocalSyncStatus _lsync;
-    private final TransferStateAggregator _tsa;
+    private final PathFlagAggregator _tsa;
     private final ServerConnectionStatus _scs;
     private final UserAndDeviceNames _udn;
     private final CfgLocalUser _user;
 
     @Inject
-    public PathStatus(LocalSyncStatus lsync, TransferStateAggregator tsa,
+    public PathStatus(LocalSyncStatus lsync, PathFlagAggregator tsa,
             ServerConnectionStatus scs, UserAndDeviceNames udn, CfgLocalUser user)
     {
         _lsync = lsync;
@@ -64,33 +64,33 @@ public class PathStatus
 
     /**
      * Update aggregated upload state
-     * @return paths whose status was affected and their new aggregated transfer state
+     * @return paths whose status was affected and their new aggregated status
      */
-    public Map<Path, PBPathStatus> uploadNotifications_(SOCID socid, @Nullable Path path,
-            Value value)
+    public Map<Path, PBPathStatus> setUploadState_(SOCID socid, @Nullable Path path, Value value)
     {
         assert !socid.cid().isMeta();
-        return transferNotifications_(_tsa.upload_(socid, path, value));
+        return notificationsForFlagChanges_(
+                _tsa.changeFlagsOnUploadNotification_(socid, path, value));
     }
 
     /**
      * Update aggregated download state
-     * @return paths whose status was affected and their new aggregated transfer state
+     * @return paths whose status was affected and their new aggregated status
      */
-    public Map<Path, PBPathStatus> downloadNotifications_(SOCID socid, @Nullable Path path,
-            State state)
+    public Map<Path, PBPathStatus> setDownloadState_(SOCID socid, @Nullable Path path, State state)
     {
         assert !socid.cid().isMeta();
-        return transferNotifications_(_tsa.download_(socid, path, state));
+        return notificationsForFlagChanges_(
+                _tsa.changeFlagsOnDownloadNotification_(socid, path, state));
     }
 
     /**
      * @return path whose status was affected and their new "path status"
      */
-    private Map<Path, PBPathStatus> transferNotifications_(Map<Path, Integer> transferNotifications)
+    private Map<Path, PBPathStatus> notificationsForFlagChanges_(Map<Path, Integer> flagChanges)
     {
         Map<Path, PBPathStatus> notifications = Maps.newHashMap();
-        for (Entry<Path, Integer> e : transferNotifications.entrySet()) {
+        for (Entry<Path, Integer> e : flagChanges.entrySet()) {
             Path path = e.getKey();
             notifications.put(path, PBPathStatus.newBuilder()
                     .setSync(getSyncStatus_(path))
@@ -103,13 +103,26 @@ public class PathStatus
     /**
      * Merge sync status notifications with upload/download state
      */
-    public Map<Path, PBPathStatus> syncStatusNotifications_(Set<Path> syncStatusNotifications)
+    public Map<Path, PBPathStatus> notificationsForSyncStatusChanges_(Set<Path> syncStatusChanges)
     {
         Map<Path, PBPathStatus> notifications = Maps.newHashMap();
-        for (Path path : syncStatusNotifications) {
+        for (Path path : syncStatusChanges) {
             notifications.put(path, getStatus_(path));
         }
         return notifications;
+    }
+
+    /**
+     * Update aggregated status flags
+     * @return paths whose status was affected and their new aggregated status
+     */
+    public Map<Path, PBPathStatus> setConflictState_(Map<Path, Boolean> conflictChanges)
+    {
+        Map<Path, Integer> flagChanges = Maps.newHashMap();
+        for (Entry<Path, Boolean> e : conflictChanges.entrySet()) {
+            _tsa.changeFlagsOnConflictNotification_(e.getKey(), e.getValue(), flagChanges);
+        }
+        return notificationsForFlagChanges_(flagChanges);
     }
 
     /**

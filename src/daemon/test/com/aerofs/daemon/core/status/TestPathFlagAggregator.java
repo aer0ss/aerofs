@@ -34,10 +34,10 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.aerofs.daemon.core.status.TransferStateAggregator.*;
+import static com.aerofs.daemon.core.status.PathFlagAggregator.*;
 
 @RunWith(Parameterized.class)
-public class TestTransferStateAggregator extends AbstractTest
+public class TestPathFlagAggregator extends AbstractTest
 {
     // parametrize test with default transfer direction
     @Parameters public static Collection<Object[]> data() {
@@ -56,7 +56,7 @@ public class TestTransferStateAggregator extends AbstractTest
         }
     }
 
-    public TestTransferStateAggregator(int direction)
+    public TestPathFlagAggregator(int direction)
     {
         this.direction = direction;
     }
@@ -64,7 +64,7 @@ public class TestTransferStateAggregator extends AbstractTest
     @Mock Trans t;
     @Mock Endpoint ep;
 
-    @InjectMocks TransferStateAggregator tsa;
+    @InjectMocks PathFlagAggregator tsa;
 
     SOID createSOID() throws Exception
     {
@@ -75,10 +75,13 @@ public class TestTransferStateAggregator extends AbstractTest
     {
         Path path = Path.fromString(p);
         if (d == Downloading) {
-            tsa.download_(new SOCID(soid, CID.CONTENT), path, Started.SINGLETON);
-            tsa.download_(new SOCID(soid, CID.CONTENT), path, new Ongoing(ep, 1, 100));
+            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    Started.SINGLETON);
+            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    new Ongoing(ep, 1, 100));
         } else if (d == Uploading) {
-            tsa.upload_(new SOCID(soid, CID.CONTENT), path, new Value(1, 100));
+            tsa.changeFlagsOnUploadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    new Value(1, 100));
         } else {
             throw new IllegalArgumentException();
         }
@@ -89,9 +92,11 @@ public class TestTransferStateAggregator extends AbstractTest
         Path path = Path.fromString(p);
         assert percent > 0 && percent < 100;
         if (d == Downloading) {
-            tsa.download_(new SOCID(soid, CID.CONTENT), path, new Ongoing(ep, percent, 100));
+            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    new Ongoing(ep, percent, 100));
         } else if (d == Uploading) {
-            tsa.upload_(new SOCID(soid, CID.CONTENT), path, new Value(percent, 100));
+            tsa.changeFlagsOnUploadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    new Value(percent, 100));
         } else {
             throw new IllegalArgumentException();
         }
@@ -101,9 +106,11 @@ public class TestTransferStateAggregator extends AbstractTest
     {
         Path path = p == null ? null : Path.fromString(p);
         if (d == Downloading) {
-            tsa.download_(new SOCID(soid, CID.CONTENT), path, Ended.SINGLETON_OKAY);
+            tsa.changeFlagsOnDownloadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    Ended.SINGLETON_OKAY);
         } else if (d == Uploading) {
-            tsa.upload_(new SOCID(soid, CID.CONTENT), path, new Value(100, 100));
+            tsa.changeFlagsOnUploadNotification_(new SOCID(soid, CID.CONTENT), path,
+                    new Value(100, 100));
         } else {
             throw new IllegalArgumentException();
         }

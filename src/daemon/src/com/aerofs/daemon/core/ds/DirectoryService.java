@@ -73,10 +73,14 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException;
         void objectMoved_(SOID obj, OID parentFrom, OID parentTo,
                 Path pathFrom, Path pathTo, Trans t) throws SQLException;
-        void objectContentModified_(SOID obj, Path path, boolean firstBranchAdded, Trans t)
-                throws SQLException;
+
+        void objectContentCreated_(SOKID obj, Path path, Trans t) throws SQLException;
+        void objectContentDeleted_(SOKID obj, Path path, Trans t) throws SQLException;
+        void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException;
+
         void objectExpelled_(SOID obj, Trans t) throws SQLException;
         void objectAdmitted_(SOID obj, Trans t) throws SQLException;
+
         void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus, Trans t)
                 throws SQLException;
 
@@ -379,14 +383,12 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
-        boolean first = kidx.equals(KIndex.MASTER);
-
         _mdb.createCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
         Path path = resolve_(soid);
         for (IDirectoryServiceListener listener : _listeners) {
-            listener.objectContentModified_(soid, path, first, t);
+            listener.objectContentCreated_(new SOKID(soid, kidx), path, t);
         }
     }
 
@@ -394,6 +396,11 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     {
         _mdb.deleteCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
+
+        Path path = resolve_(soid);
+        for (IDirectoryServiceListener listener : _listeners) {
+            listener.objectContentDeleted_(new SOKID(soid, kidx), path, t);
+        }
     }
 
     /**
@@ -641,7 +648,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 
         Path path = resolve_(oa);
         for (IDirectoryServiceListener listener : _listeners) {
-            listener.objectContentModified_(sokid.soid(), path, false, t);
+            listener.objectContentModified_(sokid, path, t);
         }
     }
 

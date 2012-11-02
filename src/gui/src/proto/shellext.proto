@@ -20,6 +20,7 @@ message ShellextCall {
         SHARE_FOLDER = 1;
         SYNC_STATUS = 2;
         VERSION_HISTORY = 3;
+        CONFLICT_RESOLUTION = 5;
 
         // Data queries (answer comes through notifications)
         GET_PATH_STATUS = 4;
@@ -31,6 +32,7 @@ message ShellextCall {
     optional SyncStatusCall sync_status = 4;
     optional VersionHistoryCall version_history = 5;
     optional GetPathStatusCall get_path_status = 6;
+    optional ConflictResolutionCall conflict_resolution = 7;
 }
 
 message GreetingCall {
@@ -48,6 +50,11 @@ message SyncStatusCall {
 }
 
 message VersionHistoryCall {
+    // absolute path to the file / folder
+    required string path = 1;
+}
+
+message ConflictResolutionCall {
     // absolute path to the file / folder
     required string path = 1;
 }

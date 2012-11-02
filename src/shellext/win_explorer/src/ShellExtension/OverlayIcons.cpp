@@ -51,7 +51,7 @@ template <class T> HRESULT OverlayBase<T>::IsMemberOf(PCWSTR pwszPath, DWORD dwA
 	std::wstring path(pwszPath);
 	Overlay status = m_instance->overlay(path);
 	if (status == overlayType()) {
-		INFO_LOG("overlay: " << path << " " << overlayType());
+		DEBUG_LOG("overlay: " << path << " " << overlayType());
 		return S_OK;
 	}
 

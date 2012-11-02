@@ -20,16 +20,32 @@ import javax.annotation.Nullable;
 import java.util.Map;
 
 /**
- * Maintains an in-memory tree of paths involved in upload/download to allow efficient upwards
+ * Maintains an in-memory tree of paths for with status flags are set to allow efficient upwards
  * propagation of state change (instead of slow downward aggregation at lookup time).
+ *
+ * The flags aggregated in this structure are exactly those supported by PBPathStatus:
+ *   - Uploading
+ *   - Downloading
+ *   - Conflict
+ *
+ * In the beginning all was fine and dandy but then it was decided to backtrack and not aggregate
+ * the conflict status. The current solution is somewhat unpleasant to some (and extremely elegant
+ * to others but that's another story) as it uses a mask to restrict upward propagation to a subset
+ * of flags. This was chosen because splitting the flag data in separate classes would result in
+ * a significantly more bloated design.
  */
-public class TransferStateAggregator
+public class PathFlagAggregator
 {
-    private final static Logger l = Util.l(TransferStateAggregator.class);
+    private final static Logger l = Util.l(PathFlagAggregator.class);
 
-    public final static int NoTransfer  = 0;
+    public final static int NoFlag = 0;
     public final static int Uploading   = PBPathStatus.Flag.UPLOADING_VALUE;
     public final static int Downloading = PBPathStatus.Flag.DOWNLOADING_VALUE;
+    public final static int Conflict    = PBPathStatus.Flag.CONFLICT_VALUE;
+
+    // Conflict flag is currently not propagated but changing that is as simple as OR'ing it to
+    // this fancy propagation mask
+    public final static int PropagationMask = Uploading | Downloading;
 
     private final Node _root;
     private final Map<SOCID, Path> _dlMap = Maps.newHashMap();
@@ -38,8 +54,8 @@ public class TransferStateAggregator
     private static class Node
     {
         private String _name;
-        private int _ownState;
-        private int _childrenState;
+        private int _ownState = NoFlag;
+        private int _childrenState = NoFlag;
 
         private Node _parent;
         private Map<String, Node> _children;
@@ -74,7 +90,7 @@ public class TransferStateAggregator
             // propagate state change upwards if needed
             if (_parent != null) {
                 // auto-removal of nodes who no longer carry any useful state
-                if (currentState == NoTransfer && (_children == null || _children.isEmpty())) {
+                if (currentState == NoFlag && (_children == null || _children.isEmpty())) {
                     _parent._children.remove(_name);
                 }
                 return 1 + _parent.updateChildrenStatus();
@@ -86,23 +102,24 @@ public class TransferStateAggregator
             int previousState = _ownState | _childrenState;
             _childrenState = 0;
             for (Node c : _children.values()) {
-                _childrenState |= c.state();
+                _childrenState |= c.state() & PropagationMask;
             }
             return propagateUpwards(previousState);
         }
     }
 
     @Inject
-    public TransferStateAggregator()
+    public PathFlagAggregator()
     {
         _root = new Node("", null);
     }
 
     /**
-     * Update transfer state tree on download listener callback
+     * Update flag tree on download listener callback
      * @return actual state changes requiring notification
      */
-    public Map<Path, Integer> download_(SOCID socid, @Nullable Path path, State state)
+    public Map<Path, Integer> changeFlagsOnDownloadNotification_(SOCID socid, @Nullable Path path,
+            State state)
     {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
@@ -115,8 +132,9 @@ public class TransferStateAggregator
          *   - expulsion of an entire store
          */
 
-        l.debug("dl: " + socid + " " + path + " " + state);
+        if (l.isDebugEnabled()) l.debug("dl: " + socid + " " + path + " " + state);
 
+        // TODO: refactor to share code with between ul and dl
         if (!_dlMap.containsKey(socid)) {
             // new transfer
             if (path != null && state instanceof Ongoing) {
@@ -143,10 +161,11 @@ public class TransferStateAggregator
     }
 
     /**
-     * Update transfer state tree on upload listener callback
+     * Update flag tree on upload listener callback
      * @return actual state changes requiring notification
      */
-    public Map<Path, Integer> upload_(SOCID socid, @Nullable Path path, Value value) {
+    public Map<Path, Integer> changeFlagsOnUploadNotification_(SOCID socid, @Nullable Path path,
+            Value value) {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
 
@@ -158,9 +177,12 @@ public class TransferStateAggregator
          *   - expulsion of an entire store
          */
 
-        l.debug("ul: " + socid + " " + (path == null ? "(null)" : path) + " "
-                + ((float)value._done / (float)value._total));
+        if (l.isDebugEnabled()) {
+            l.debug("ul: " + socid + " " + (path == null ? "(null)" : path) + " "
+                    + ((float)value._done / (float)value._total));
+        }
 
+        // TODO: refactor to share code with between ul and dl
         if (!_ulMap.containsKey(socid)) {
             // new transfer
             if (path != null && value._total > 0 && value._done > 0
@@ -188,12 +210,24 @@ public class TransferStateAggregator
     }
 
     /**
+     * Update flag tree on creation or deletion of conflict branch
+     * @param path affected path
+     * @param hasConflict whether the given path has existing conflict branches
+     * @param notify map of state changes (out arg, to avoid cumbersome merge when batching changes)
+     */
+    public void changeFlagsOnConflictNotification_(Path path, boolean hasConflict,
+            Map<Path, Integer> notify)
+    {
+        stateChanged_(path, Conflict, hasConflict, notify);
+    }
+
+    /**
      * @return the aggregate transfer state for a given {@code path}
      */
     public int state_(Path path)
     {
         Node n = node_(path, false);
-        return n != null ? n.state() : NoTransfer;
+        return n != null ? n.state() : NoFlag;
     }
 
     /**
@@ -248,7 +282,7 @@ public class TransferStateAggregator
 
     public boolean hasOngoingTransfers_()
     {
-        return _root.state() != NoTransfer ||
+        return _root.state() != NoFlag ||
                 (_root._children != null && !_root._children.isEmpty());
     }
 }

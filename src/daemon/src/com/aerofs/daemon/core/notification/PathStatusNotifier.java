@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.notification;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.IDownloadStateListener;
 import com.aerofs.daemon.core.net.IUploadStateListener;
+import com.aerofs.daemon.core.notification.ConflictState.IConflictStateListener;
 import com.aerofs.daemon.core.status.PathStatus;
 import com.aerofs.daemon.core.syncstatus.AggregateSyncStatus.IListener;
 import com.aerofs.lib.Path;
@@ -29,17 +30,18 @@ import java.util.Set;
  *
  * See {@link PathStatus}
  */
-public class PathStatusNotifier implements IListener, IDownloadStateListener, IUploadStateListener
+public class PathStatusNotifier implements IListener, IDownloadStateListener, IUploadStateListener,
+        IConflictStateListener
 {
     private static final Logger l = Util.l(PathStatusNotifier.class);
 
-    private final PathStatus _so;
+    private final PathStatus _ps;
     private final DirectoryService _ds;
     private final RitualNotificationServer _notifier;
 
-    public PathStatusNotifier(RitualNotificationServer notifier, DirectoryService ds, PathStatus so)
+    public PathStatusNotifier(RitualNotificationServer notifier, DirectoryService ds, PathStatus ps)
     {
-        _so = so;
+        _ps = ps;
         _ds = ds;
         _notifier = notifier;
     }
@@ -47,7 +49,7 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
     @Override
     public void syncStatusChanged_(Set<Path> changes)
     {
-        notify_(_so.syncStatusNotifications_(changes));
+        notify_(_ps.notificationsForSyncStatusChanges_(changes));
     }
 
     @Override
@@ -57,11 +59,11 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
         // NOTE: this also ensure that the object is not expelled
         if (socid.cid().isMeta()) return;
         try {
-            notify_(_so.downloadNotifications_(socid, _ds.resolveNullable_(socid.soid()), state));
+            notify_(_ps.setDownloadState_(socid, _ds.resolveNullable_(socid.soid()), state));
         } catch (SQLException e) {
             /**
              * We bury exceptions to comply with IDownloadStateListener interface
-             * TODO: send SV defect?
+             * This is safe because upper layers can deal with a temporary inconsistency
              */
             l.warn(Util.e(e));
         }
@@ -75,11 +77,11 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
         // NOTE: this also ensure that the object is not expelled
         if (socid.cid().isMeta()) return;
         try {
-            notify_(_so.uploadNotifications_(socid, _ds.resolveNullable_(socid.soid()), value));
+            notify_(_ps.setUploadState_(socid, _ds.resolveNullable_(socid.soid()), value));
         } catch (SQLException e) {
             /**
              * We bury exceptions to comply with IUploadStateListener interface
-             * TODO: send SV defect?
+             * This is safe because upper layers can deal with a temporary inconsistency
              */
             l.warn(Util.e(e));
         }
@@ -96,5 +98,11 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
                 .setType(Type.PATH_STATUS)
                 .setPathStatus(bd)
                 .build());
+    }
+
+    @Override
+    public void branchesChanged_(Map<Path, Boolean> conflicts)
+    {
+        notify_(_ps.setConflictState_(conflicts));
     }
 }

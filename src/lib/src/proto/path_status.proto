@@ -21,6 +21,7 @@ message PBPathStatus {
     enum Flag {
         DOWNLOADING = 1;            // (this file|a file under this folder) is being downloaded
         UPLOADING   = 2;            // (this file|a file under this folder) is being uploaded
+        CONFLICT    = 4;            // (this file|a file under this folder) has a conflict
     }
 
     required Sync sync = 1;

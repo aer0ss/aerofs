@@ -29,6 +29,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -81,11 +82,13 @@ public class ActivityLog implements IDirectoryServiceListener
                     final Map<SOID, ActivityEntry> map = Maps.newTreeMap();
                     t.addListener_(new AbstractTransListener() {
                         private boolean _activitiesAdded = false;
+
                         @Override
                         public void committing_(Trans t) throws SQLException
                         {
                             _activitiesAdded = ActivityLog.this.committing_(map, t);
                         }
+
                         @Override
                         public void committed_() {
                             // we can't start the scan before the transaction is committed
@@ -187,10 +190,27 @@ public class ActivityLog implements IDirectoryServiceListener
     }
 
     @Override
-    public void objectContentModified_(SOID soid, Path path, boolean firstBranchCreated, Trans t)
-            throws SQLException
+    public void objectContentCreated_(SOKID sokid, Path path, Trans t) throws SQLException
     {
-        setEntryFields_(soid, MODIFICATION_VALUE, path, t);
+        // TODO(huguesb): handle conflict branches properly in activity log
+        // NOTE: ww says it's not worth the engineering effort at this time (11/12)
+        setEntryFields_(sokid.soid(), MODIFICATION_VALUE, path, t);
+    }
+
+    @Override
+    public void objectContentModified_(SOKID sokid, Path path, Trans t) throws SQLException
+    {
+        // TODO(huguesb): handle conflict branches properly in activity log
+        // NOTE: ww says it's not worth the engineering effort at this time (11/12)
+        setEntryFields_(sokid.soid(), MODIFICATION_VALUE, path, t);
+    }
+
+    @Override
+    public void objectContentDeleted_(SOKID sokid, Path path, Trans t) throws SQLException
+    {
+        // TODO(huguesb): handle conflict branches properly in activity log
+        // NOTE: ww says it's not worth the engineering effort at this time (11/12)
+        setEntryFields_(sokid.soid(), MODIFICATION_VALUE, path, t);
     }
 
     @Override
@@ -212,7 +232,8 @@ public class ActivityLog implements IDirectoryServiceListener
         en._dids.addAll(vLocalAdded.getAll_().keySet());
     }
 
-    private boolean committing_(Map<SOID, ActivityEntry> map, Trans t) throws SQLException
+    private boolean committing_(Map<SOID, ActivityEntry> map, Trans t)
+            throws SQLException
     {
         int activitiesAdded = 0;
         for (Entry<SOID, ActivityEntry> en : map.entrySet()) {

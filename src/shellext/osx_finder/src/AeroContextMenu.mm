@@ -53,7 +53,18 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
             NSMenu* submenu = [[[NSMenu alloc] init] autorelease];
 
             int idx = 0;
+            if (!(flags & Directory) && [[AeroFinderExt instance] overlayForPath:path] == CONFLICT) {
+                NSMenuItem* conflict = [submenu insertItemWithTitle:NSLocalizedString(@"Resolve Conflict...", @"Context menu")
+                                                             action:@selector(showConflictResolutionDialog:)
+                                                      keyEquivalent:@""
+                                                            atIndex:idx];
+                [conflict setTarget: [AeroFinderExt instance]];
+                [conflict setRepresentedObject:path];
+                ++idx;
+            }
+
             if ([[AeroFinderExt instance] shouldEnableTestingFeatures]) {
+
                 NSMenuItem* syncstat = [submenu insertItemWithTitle:NSLocalizedString(@"Sync Status...", @"Context menu")
                                                              action:@selector(showSyncStatusDialog:)
                                                       keyEquivalent:@""
@@ -62,6 +73,7 @@ NSURL* urlOfFirstNodeInVector(TFENodeVector* nodeVec);
                 [syncstat setRepresentedObject:path];
                 ++idx;
             }
+
             NSMenuItem* history = [submenu insertItemWithTitle:NSLocalizedString(@"Version History...", @"Context menu")
                                                          action:@selector(showVersionHistoryDialog:)
                                                   keyEquivalent:@""

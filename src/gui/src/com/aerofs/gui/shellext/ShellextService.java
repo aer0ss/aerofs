@@ -40,7 +40,7 @@ public class ShellextService
      * Used to make sure we are communicating with the right version of the shell extension
      * Bump this number every time shellext.proto changes
      */
-    private final static int PROTOCOL_VERSION = 4;
+    private final static int PROTOCOL_VERSION = 5;
 
     public static ShellextService get()
     {
@@ -130,6 +130,10 @@ public class ShellextService
             assert (call.hasGetPathStatus());
             getStatus(call.getGetPathStatus().getPath());
             break;
+        case CONFLICT_RESOLUTION:
+            assert (call.hasConflictResolution());
+            conflictResolution(call.getConflictResolution().getPath());
+            break;
         default:
             throw new ExProtocolError(ShellextCall.Type.class);
         }
@@ -172,7 +176,7 @@ public class ShellextService
             return;
         }
 
-        UIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.showSyncStatus(Path.fromAbsoluteString(absRootAnchor, absPath));
     }
 
     private void versionHistory(final String absPath)
@@ -183,7 +187,18 @@ public class ShellextService
             return;
         }
 
-        UIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
+        GUIUtil.showVersionHistory(Path.fromAbsoluteString(absRootAnchor, absPath));
+    }
+
+    private void conflictResolution(final String absPath)
+    {
+        String absRootAnchor = Cfg.absRootAnchor();
+        if (!Path.isUnder(absRootAnchor, absPath)) {
+            l.warn("shellext provided an external path " + absPath);
+            return;
+        }
+
+        GUIUtil.showConflictResolutionDialog(Path.fromAbsoluteString(absRootAnchor, absPath));
     }
 
     private void getStatus(final String absPath)

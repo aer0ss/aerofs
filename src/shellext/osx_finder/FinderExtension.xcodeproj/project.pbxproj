@@ -38,6 +38,7 @@
 		F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6C /* Path_status.pb.m */; };
 		F341E7741612683D0055FC6F /* AeroOverlayCache.mm in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6E /* AeroOverlayCache.mm */; };
 		F341E7741612683D0055FC72 /* OverlayCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC71 /* OverlayCache.cpp */; };
+		F3DC484E164982AE00D66E1E /* ConflictBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F3DC484D164982AE00D66E1E /* ConflictBadge.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -124,6 +125,7 @@
 		F341E7741612683D0055FC70 /* AeroOverlayCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroOverlayCache.h; path = src/AeroOverlayCache.h; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC71 /* OverlayCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OverlayCache.cpp; path = ../common/OverlayCache.cpp; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC73 /* OverlayCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OverlayCache.h; path = ../common/OverlayCache.h; sourceTree = SOURCE_ROOT; };
+		F3DC484D164982AE00D66E1E /* ConflictBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = ConflictBadge.icns; path = images/ConflictBadge.icns; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -266,6 +268,7 @@
 		16978F8C144E3B1B00F92021 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				F3DC484D164982AE00D66E1E /* ConflictBadge.icns */,
 				F341E76F1612683D0055FC67 /* InSyncBadge.icns */,
 				F341E7701612683D0055FC67 /* OutSyncBadge.icns */,
 				F341E7711612683D0055FC67 /* PartialSyncBadge.icns */,
@@ -405,6 +408,7 @@
 				F341E7721612683D0055FC67 /* InSyncBadge.icns in Resources */,
 				F341E7731612683D0055FC67 /* OutSyncBadge.icns in Resources */,
 				F341E7741612683D0055FC67 /* PartialSyncBadge.icns in Resources */,
+				F3DC484E164982AE00D66E1E /* ConflictBadge.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

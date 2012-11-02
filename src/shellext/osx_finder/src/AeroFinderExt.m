@@ -7,17 +7,19 @@
 #import "../gen/Shellext.pb.h"
 #import "AeroOverlayCache.h"
 
-#define GUIPORT_DEFAULT 50195
-#define PROTOCOL_VERSION 4
+#import  "../../common/common.h"
 
 static Overlay overlayForStatus(PBPathStatus* status)
 {
-    if (status.flags & PBPathStatus_FlagDownloading)   return DOWNLOADING;
-    if (status.flags & PBPathStatus_FlagUploading)     return UPLOADING;
+    // temporary states (Upload/Download) take precedence over potentially long-lasting ones
+    if (status.flags & PBPathStatus_FlagDownloading)    return DOWNLOADING;
+    if (status.flags & PBPathStatus_FlagUploading)      return UPLOADING;
+    // conflict state takes precedence over sync status
+    if (status.flags & PBPathStatus_FlagConflict)       return CONFLICT;
     switch (status.sync) {
-        case PBPathStatus_SyncInSync:               return IN_SYNC;
-        case PBPathStatus_SyncPartialSync:          return PARTIAL_SYNC;
-        case PBPathStatus_SyncOutSync:              return OUT_SYNC;
+        case PBPathStatus_SyncInSync:                   return IN_SYNC;
+        case PBPathStatus_SyncPartialSync:              return PARTIAL_SYNC;
+        case PBPathStatus_SyncOutSync:                  return OUT_SYNC;
         default: break;
     }
     return NONE;
@@ -165,6 +167,21 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     [socket sendMessage: builder.build];
 }
 
+/**
+ * Implementation of the "Resolve conflict" context menu item
+ * The sender must set its represented object to the path of the file
+ */
+- (void)showConflictResolutionDialog:(id)sender
+{
+    NSString* path = [sender representedObject];
+
+    ShellextCall_Builder* builder = [ShellextCall builder];
+    builder.type = ShellextCall_TypeConflictResolution;
+    builder.conflictResolution = [[[ConflictResolutionCall builder] setPath:path] build];
+
+    [socket sendMessage: builder.build];
+}
+
 - (void)sendGreeting
 {
     ShellextCall* call = [[[[ShellextCall builder]
@@ -200,7 +217,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
         status = (Overlay)val;
     }
     if (![self shouldEnableTestingFeatures]) {
-        if (status != UPLOADING &&  status != DOWNLOADING) return NONE;
+        if (status != UPLOADING && status != DOWNLOADING && status != CONFLICT) return NONE;
     }
     return status;
 }

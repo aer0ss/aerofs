@@ -57,17 +57,6 @@ protected:
 };
 
 class
-	__declspec(uuid("882108B0-26E6-4926-BC70-EA1D738D5DEB"))
-	__declspec(novtable)
-ConflictOverlay : public OverlayBase<ConflictOverlay>
-{
-public:
-	static wchar_t* name();
-	Overlay overlayType() const;
-	int overlayIcon() const;
-};
-
-class
 	__declspec(uuid("882108B1-26E6-4926-BC70-EA1D738D5DEB"))
 	__declspec(novtable)
 DownloadOverlay : public OverlayBase<DownloadOverlay>
@@ -122,8 +111,20 @@ public:
 	int overlayIcon() const;
 };
 
+class
+	__declspec(uuid("882108B6-26E6-4926-BC70-EA1D738D5DEB"))
+	__declspec(novtable)
+ConflictOverlay : public OverlayBase<ConflictOverlay>
+{
+public:
+	static wchar_t* name();
+	Overlay overlayType() const;
+	int overlayIcon() const;
+};
+
 OBJECT_ENTRY_AUTO(__uuidof(DownloadOverlay), DownloadOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(UploadOverlay), UploadOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(InSyncOverlay), InSyncOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(PartialSyncOverlay), PartialSyncOverlay)
 OBJECT_ENTRY_AUTO(__uuidof(OutSyncOverlay), OutSyncOverlay)
+OBJECT_ENTRY_AUTO(__uuidof(ConflictOverlay), ConflictOverlay)

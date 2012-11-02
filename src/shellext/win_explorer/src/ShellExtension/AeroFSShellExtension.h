@@ -53,8 +53,9 @@ public:
 	void showSyncStatusDialog(const std::wstring& path);
 	void showVersionHistoryDialog(const std::wstring& path);
 	void showShareFolderDialog(const std::wstring& path);
+	void showConflictResolutionDialog(const std::wstring& path);
 	void sendGreeting();
-	Overlay overlay(std::wstring& path);
+	Overlay overlay(const std::wstring& path);
 
 	static AeroFSShellExtension* instance();
 

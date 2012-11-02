@@ -2,8 +2,11 @@ package com.aerofs.gui;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.gui.diagnosis.DlgDiagnosis;
+import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.sharing.DlgCreateSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
+import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
@@ -297,6 +300,52 @@ public class GUIUtil
                 } else {
                     new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
                 }
+            }
+        });
+    }
+
+    /**
+     * This method can be run in a non-UI thread
+     */
+    public static void showSyncStatus(final Path path)
+    {
+        GUI.get().asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                new DlgSyncStatus(GUI.get().sh(), path).openDialog();
+            }
+        });
+    }
+
+    /**
+     * This method can be run in a non-UI thread
+     */
+    public static void showVersionHistory(final Path path)
+    {
+        GUI.get().asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                new DlgHistory(GUI.get().sh(), path).openDialog();
+            }
+        });
+    }
+
+    /**
+     * This method can be run in a non-UI thread
+     */
+    public static void showConflictResolutionDialog(final Path path)
+    {
+        // TODO: simpler dialog for resolving conflict of a single file
+        GUI.get().asyncExec(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                new DlgDiagnosis(GUI.get().sh(), false).openDialog();
             }
         });
     }
