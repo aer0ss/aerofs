@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.Set;
 
 import com.aerofs.lib.ex.collector.AbstractExPermanentError;
+import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
@@ -52,7 +53,7 @@ public class Collector implements IDumpStatMisc
 {
     private static final Logger l = Util.l(Collector.class);
 
-    private final Store _s;
+    private final SIndex _sidx;
     private final CollectorFilters _cfs;
     private final IIteratorFactory _iterFactory;
     private int _startSeq;
@@ -103,11 +104,11 @@ public class Collector implements IDumpStatMisc
     private Collector(Factory f, Store s)
     {
         _f = f;
-        _s = s;
+        _sidx = s.sidx();
         // TODO use injection
-        _cfs = new CollectorFilters(f._cfdb, f._tm, s.sidx());
+        _cfs = new CollectorFilters(f._cfdb, f._tm, _sidx);
         _iterFactory = Cfg.isFullReplica() ?
-                new IteratorFactoryFullReplica(f._csdb, f._nvc, f._ds, s.sidx()) :
+                new IteratorFactoryFullReplica(f._csdb, f._nvc, f._ds, _sidx) :
                 new IteratorFactoryPartialReplica(f._csdb, f._nvc, f._ds, s);
         resetBackoffInterval_();
     }
@@ -121,7 +122,7 @@ public class Collector implements IDumpStatMisc
     public void add_(DID did, BFOID filter, Trans t) throws SQLException
     {
         if (_cfs.addDBFilter_(did, filter, t)) {
-            l.debug("adding filter to " + did + " triggers collector 4 " + _s.sidx());
+            l.debug("adding filter to " + did + " triggers collector 4 " + _sidx);
             resetBackoffInterval_();
             if (started_()) _cfs.addCSFilter_(did, _occs._cs, filter);
             else start_(t);
@@ -137,7 +138,7 @@ public class Collector implements IDumpStatMisc
                     throws Exception
             {
                 if (_cfs.loadDBFilter_(did)) {
-                    l.debug(did + " online triggers collector 4 " + _s.sidx());
+                    l.debug(did + " online triggers collector 4 " + _sidx);
                     resetBackoffInterval_();
                     if (started_()) _cfs.setCSFilterFromDB_(did, _occs._cs);
                     else start_(null);
@@ -235,7 +236,7 @@ public class Collector implements IDumpStatMisc
             ioaIter.get().close_();
         }
 
-        l.debug("collect " + _s.sidx() + " returns. occs = " + _occs);
+        l.debug("collect " + _sidx + " returns. occs = " + _occs);
         attemptToStopAndFinalizeCollection_(t);
     }
 
@@ -257,7 +258,7 @@ public class Collector implements IDumpStatMisc
                     // (i.e. case 1 above), we need to check again whether the component should be
                     // skipped since its state might have been changed after the last iteration
                     // and before this one.
-                    SOCID socid = new SOCID(_s.sidx(), _occs._ocid);
+                    SOCID socid = new SOCID(_sidx, _occs._ocid);
                     shouldCollect = !Common.shouldSkip_(_f._nvc, _f._ds, socid);
                 } else {
                     shouldCollect = true;
@@ -341,13 +342,13 @@ public class Collector implements IDumpStatMisc
         assert _downloads >= 0;
 
         if (!started_() && _downloads == 0) {
-            l.debug("stop clct on " + _s.sidx());
+            l.debug("stop clct on " + _sidx);
             try {
                 _cfs.cleanUpDBFilters_(t);
             } catch (SQLException e) {
                 // filters may be failed to be removed from the db which is not
                 // a big deal
-                l.debug("stop clct 4 " + _s.sidx() + ", ignored: " + Util.e(e));
+                l.debug("stop clct 4 " + _sidx + ", ignored: " + Util.e(e));
             }
         }
     }
@@ -359,11 +360,11 @@ public class Collector implements IDumpStatMisc
     {
         assert started_();
 
-        SOCID socid = new SOCID(_s.sidx(), occs._ocid.oid(), occs._ocid.cid());
+        SOCID socid = new SOCID(_sidx, occs._ocid.oid(), occs._ocid.cid());
         final Set<DID> dids = _cfs.getDevicesHavingComponent_(occs._ocid);
         if (dids.isEmpty()) return true;
 
-        l.debug("clct " + _s.sidx() + occs + " " + dids);
+        l.debug("clct " + _sidx + occs + " " + dids);
 
         final Token tk;
         if (_f._dls.isOngoing_(socid)) {
@@ -371,7 +372,7 @@ public class Collector implements IDumpStatMisc
             tk = null;
         } else {
             Cat cat = _f._dls.getCat();
-            tk = _f._tokenManager.acquire_(cat, "collect " + _s.sidx() + occs._ocid);
+            tk = _f._tokenManager.acquire_(cat, "collect " + _sidx + occs._ocid);
             if (tk == null) {
                 l.debug("request continuation");
                 _f._tokenManager.addTokenReclamationListener_(cat, new ITokenReclamationListener()
@@ -435,7 +436,6 @@ public class Collector implements IDumpStatMisc
         public void okay_(SOCID socid, DID from)
         {
             if (_tk != null) _tk.reclaim_();
-            _s.downloaded_(socid);
             postDownloadCompletionTask();
         }
 
@@ -522,6 +522,6 @@ public class Collector implements IDumpStatMisc
     public String toString()
     {
         return "C["+ Joiner.on(' ').useForNull("null")
-                .join(_s.sidx(), _occs, _downloads, _startSeq, _backoffScheduled) + "]";
+                .join(_sidx, _occs, _downloads, _startSeq, _backoffScheduled) + "]";
     }
 }
