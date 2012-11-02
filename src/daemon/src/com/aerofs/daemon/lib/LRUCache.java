@@ -107,7 +107,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
     /**
      * @return null if no entry exists, OR if the value is null
      */
-    public @Nullable V get_(K k)
+    @Nullable public V get_(K k)
     {
         assert k != null;
         if (_impl.containsKey(k)) {
@@ -146,7 +146,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
     /**
      * remove the entry if it exists. Otherwise does nothing and returns null
      */
-    public V invalidate_(K k)
+    @Nullable public V invalidate_(K k)
     {
         assert k != null;
         return _impl.remove(k);
@@ -162,7 +162,6 @@ public class LRUCache<K, V> implements IDumpStatMisc
 
     /**
      * caller must guarantee the entry exists. Otherwise, use invalidate_
-     * @param k
      */
     public void remove_(K k)
     {

@@ -62,7 +62,7 @@ public class MapSIndex2Store
         assert !_sidx2s.containsKey(sidx);
 
         Store s = _factStore.create_(sidx);
-        assert s.sidx().equals(sidx);
+        assert s.sidx().equals(sidx) : s.sidx() + "!=" + sidx;
 
         Util.verify(_sidx2s.put(sidx, s) == null);
     }

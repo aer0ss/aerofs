@@ -18,7 +18,7 @@ import static com.aerofs.lib.db.CoreSchema.C_D2U_USER;
 import static com.aerofs.lib.db.CoreSchema.T_D2U;
 
 /**
- * When possible, use the MapAlias2Target class which provides a high-level wrapper around this
+ * When possible, use the DID2User class which provides a high-level wrapper around this
  * low-level class.
  */
 public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatabase

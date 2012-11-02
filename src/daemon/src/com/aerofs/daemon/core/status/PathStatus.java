@@ -21,7 +21,6 @@ import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.aerofs.proto.PathStatus.PBPathStatus.Sync;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
