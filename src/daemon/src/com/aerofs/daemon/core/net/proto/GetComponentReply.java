@@ -80,18 +80,6 @@ public class GetComponentReply
         }
     }
 
-    public void extractAnyExceptionFromReply_(DigestedMessage msg)
-            throws AbstractExWirable
-    {
-        if (msg.pb().hasExceptionReply()) {
-            // End the stream in case there is an exception. This can not be
-            // executed in a finally block because the stream will be ended
-            // even if there is no exception.
-            if (msg.streamKey() != null) _iss.end_(msg.streamKey());
-            throw Exceptions.fromPB(msg.pb().getExceptionReply());
-        }
-    }
-
     /**
      * @param msg the message sent in response to GetComponentCall
      * @param requested see Download._requested for more information
@@ -100,6 +88,8 @@ public class GetComponentReply
             throws Exception
     {
         try {
+            if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
+
             Util.checkPB(msg.pb().hasGetComReply(), PBGetComReply.class);
             doProcessReply_(socid, msg, requested, tk);
         } finally {

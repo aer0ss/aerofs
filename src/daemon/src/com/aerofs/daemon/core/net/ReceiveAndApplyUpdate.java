@@ -367,7 +367,6 @@ public class ReceiveAndApplyUpdate
             hRemote, vApply);
     }
 
-
     /**
      * @param oidParent is assumed to be a target object (i.e. not in the alias table)
      * @return true if a name conflict was detected and oids were aliased.

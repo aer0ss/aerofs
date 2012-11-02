@@ -227,7 +227,6 @@ public class Download
                 _f._dlstate.started_(_socid);
                 DigestedMessage msg = _f._gcc.remoteRequestComponent_(_socid, _src, _tk);
                 replier = msg.did();
-                _f._gcr.extractAnyExceptionFromReply_(msg);
 
                 // TODO (MJ) I have a dream, that we can separate the exceptions thrown during
                 // requesting, from those that happen on this local device when processing the reply
