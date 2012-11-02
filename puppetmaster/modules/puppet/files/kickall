@@ -60,7 +60,7 @@ hosts_to_kick.each do |host|
     hosts_to_kick << host
     next
   end
-  if k.update_status == "failed" then
+  if k.update_status == "failed" or k.useful_logs.length > 0 then
     failed_nodes << host
   end
   puts "#{host} finished with status: #{k.update_status}"
