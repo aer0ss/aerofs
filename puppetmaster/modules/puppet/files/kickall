@@ -15,7 +15,14 @@ class Kick
   end
 
   def run
-    response = @http.put("/production/run/deploy", '{}', {"Content-type" => "text/pson"})
+    begin
+      response = @http.put("/production/run/deploy", '{}', {"Content-type" => "text/pson"})
+    rescue Exception => e
+      puts e
+      @update_status = "failed"
+      @useful_logs = []
+      return
+    end
     @report = YAML.load(response.body)
     if @report.ivars["status"] == "success" then
       @logs = @report.ivars["options"][:report].logs
