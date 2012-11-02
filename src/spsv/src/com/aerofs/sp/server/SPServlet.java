@@ -141,7 +141,7 @@ public class SPServlet extends AeroServlet
     {
         String inviteCountStr = req.getParameter("inviteCount");
 
-        int inviteCount = 0;
+        int inviteCount;
         try {
             inviteCount = Integer.parseInt(inviteCountStr);
         } catch(NumberFormatException e) {
