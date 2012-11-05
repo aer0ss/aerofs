@@ -45,7 +45,7 @@ public class Param
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both
         // UI and processes can access them.
-        public static final int DAEMON_POST_UPDATE_TASKS = 8;
+        public static final int DAEMON_POST_UPDATE_TASKS = 9;
         public static final int UI_POST_UPDATE_TASKS = 0;
     }
 

@@ -213,6 +213,7 @@ public class ShellextService
                     public void onFailure(Throwable throwable)
                     {
                         l.warn("sync status overview fetch (for shellext) failed ", throwable);
+                        // TODO: break connection? send clear cache? retry?
                     }
                 });
     }

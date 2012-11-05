@@ -136,4 +136,11 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
         assert false : ("Method not implemented");
         return false;
     }
+
+    @Override
+    public boolean tableExists(String tableName) throws SQLException
+    {
+        assert false : ("Method not implemented");
+        return false;
+    }
 }

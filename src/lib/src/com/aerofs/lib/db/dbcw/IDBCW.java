@@ -89,4 +89,11 @@ public interface IDBCW
      * @return whether the given column exists in the given table
      */
     public boolean columnExists(String table, String column) throws SQLException;
+
+    /**
+     * Check whether a table exists
+     * @param tableName Name of table to look for
+     * @return whether the given table exists in the DB
+     */
+    public boolean tableExists(String tableName) throws SQLException;
 }

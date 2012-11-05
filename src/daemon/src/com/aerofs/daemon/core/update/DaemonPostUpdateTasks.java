@@ -55,7 +55,8 @@ public class DaemonPostUpdateTasks
                 new DPUTAddAggregateSyncColumn(_dbcw, _tm, _sdb, _mdb, _sidx2dbm),
                 new DPUTMakeMTimesNaturalNumbersOnly(_dbcw),
                 new DPUTGetEncodingStats(_dbcw),
-                new DPUTMigrateRevisionSuffixToBase64(_absAuxRoot)
+                new DPUTMigrateRevisionSuffixToBase64(_absAuxRoot),
+                new DPUTResetSyncStatus(_dbcw)
                 // new tasks go here
         };
 
