@@ -89,7 +89,7 @@ public class JedisThreadLocalTransaction
         try {
             _jedisHolder.get().getTransaction().discard();
         } catch (JedisException e) {
-            l.warn("Unable to discard Jedis transaction. Possible broken Jedis object.");
+            l.error("Unable to discard Jedis transaction. Possible broken Jedis object.");
         }
 
         closeConnection();
