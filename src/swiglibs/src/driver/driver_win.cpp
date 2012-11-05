@@ -19,12 +19,20 @@ int getFidLength()
     return sizeof(DWORD) * 2;
 }
 
+// Forces Unicode paths (with extended length).  See the notes on lpFileName at
+// http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx
+static tstring getPrefixedPath(tstring path)
+{
+    return tstring(_T("\\\\?\\")) + path;
+}
+
 int getFid(JNIEnv * j, jstring jpath, void * buffer)
 {
     tstring path;
     if (!AeroFS::jstr2tstr(&path, j, jpath)) return DRIVER_FAILURE;
+    tstring long_path = getPrefixedPath(path);
 
-    HANDLE h = CreateFile(path.c_str(),
+    HANDLE h = CreateFile(long_path.c_str(),
         0,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
         0,
@@ -75,9 +83,10 @@ int getFileSystemType(JNIEnv * j, jstring jpath, void * buf, int bufLen)
         FWARN("jstr2tstr failed");
         return DRIVER_FAILURE;
     }
+    tstring long_path = getPrefixedPath(path);
 
     TCHAR root[MAX_PATH + 1];
-    if (!GetVolumePathName(path.c_str(), root, MAX_PATH + 1)) {
+    if (!GetVolumePathName(long_path.c_str(), root, MAX_PATH + 1)) {
         FWARN("GVPN: " << GetLastError());
         return DRIVER_FAILURE;
     }

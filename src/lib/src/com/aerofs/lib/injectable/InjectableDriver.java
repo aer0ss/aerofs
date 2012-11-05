@@ -53,6 +53,7 @@ public class InjectableDriver
 
     /**
      * @return null on OS-specific files
+     * N.B. Windows requires path to be an absolute path
      */
     public @Nullable FIDAndType getFIDAndType(String path)
             throws IOException, ExNotFound
@@ -66,6 +67,7 @@ public class InjectableDriver
 
     /**
      * @return null on OS-specific files
+     * N.B. Windows requires path to be an absolute path
      */
     public @Nullable FID getFID(String path) throws IOException
     {
