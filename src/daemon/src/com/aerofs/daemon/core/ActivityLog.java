@@ -16,6 +16,7 @@ import javax.inject.Inject;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
@@ -171,6 +172,18 @@ public class ActivityLog implements IDirectoryServiceListener
     public void objectDeleted_(SOID soid, OID parent, Path path, Trans t) throws SQLException
     {
         setEntryFields_(soid, DELETION_VALUE, path, t);
+    }
+
+    @Override
+    public void objectObliterated_(OA oa, BitVector bv, Path path, Trans t) throws SQLException
+    {
+        SOID soid = oa.soid();
+        Map<SOID, ActivityEntry> map = _tlMap.get(t);
+        ActivityEntry en = map.get(soid);
+        if (en != null && en._type == CREATION_VALUE) {
+            // temporary object created by aliasing, only live within transaction context
+            map.remove(soid);
+        }
     }
 
     @Override
