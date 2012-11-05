@@ -75,6 +75,14 @@ public class DirectoryService implements IDumpStatMisc
         void objectAdmitted_(SOID obj, Trans t) throws SQLException;
         void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus, Trans t)
                 throws SQLException;
+
+        /**
+         * Called from deleteOA_ *after* the object is removed from the DB
+         * This is necessary to properly cleanup temporary objects created by Aliasing
+         *
+         * IMPORTANT: hold on to the returned OA, the OID is *gone* from the DB
+         */
+        void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t) throws SQLException;
     }
 
     public void addListener_(IDirectoryServiceListener listener)
@@ -677,9 +685,40 @@ public class DirectoryService implements IDumpStatMisc
      */
     public void deleteOA_(SOID soid, Trans t) throws SQLException
     {
+        // need to preserve the OA for the listener callback
+        OA oa = getOA_(soid);
+        Path path = null;
+        BitVector bv = null;
+        if (!oa.isExpelled()) {
+            path = resolve_(oa);
+            // NOTE: if the object is temporary it only lives during the transaction and may not
+            // have sync status so this should not be needed. However Mark tells me it is possible
+            // for both objects to be locally present (and thus have sync status) before aliasing
+            // kicks in so we need to play safe...
+            bv = getSyncStatus_(soid);
+            if (oa.isDir()) {
+                // one does not simply delete an OA with existing children
+                try {
+                    int n = getChildren_(soid).size();
+                    assert n == 0 : soid + " " + n;
+                } catch (ExNotDir e) {
+                    assert false : soid;
+                } catch (ExNotFound e) {
+                    assert false : soid;
+                }
+            }
+        }
+
         _mdb.deleteOA_(soid.sidx(), soid.oid(), t);
         _cacheDS.invalidateAll_();
         _cacheOA.invalidateAll_();
+
+        // must call after removing the OA so that syncable child count is accurate
+        if (!oa.isExpelled()) {
+            for (IDirectoryServiceListener listener : _listeners) {
+                listener.objectObliterated_(oa, bv, path, t);
+            }
+        }
     }
 
     public String generateNameConflictFileName_(@Nonnull Path pParent, String name)

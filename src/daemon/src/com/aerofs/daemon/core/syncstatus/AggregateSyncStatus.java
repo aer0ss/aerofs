@@ -18,6 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.OID;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -120,6 +121,37 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     };
 
     /**
+     * Local consistency-check of aggregate sync status
+     *
+     * Compares the result of upward incremental update to downward aggregation.
+     *
+     */
+    private void checkAggregateConsistency(SOID soid, CounterVector expected) throws SQLException
+    {
+        SIndex sidx = soid.sidx();
+        CounterVector cv = new CounterVector();
+        try {
+            for (OID coid : _ds.getChildren_(soid)) {
+                OA coa = _ds.getOA_(new SOID(soid.sidx(), coid));
+                SOID csoid = new SOID(sidx, coid);
+                if (!coa.isExpelled()) {
+                    BitVector cbv = _ds.getSyncStatus_(csoid);
+                    if (coa.isDir())
+                        cbv.andInPlace(getAggregateSyncStatusVector_(csoid));
+                    for (int i = cbv.findFirstSetBit(); i != -1; i = cbv.findNextSetBit(i + 1)) {
+                        cv.inc(i);
+                    }
+                }
+            }
+        } catch (ExNotDir e) {
+            assert false : soid;
+        } catch (ExNotFound e) {
+            assert false : soid;
+        }
+        assert cv.equals(expected) : soid + " " + cv + " != " + expected;
+    }
+
+    /**
      * Recursively update aggregate sync status of parent
      * @param parent directory whose aggregate sync status is to be updated
      * @param diffStatus sync status change of children (1 : status changed, 0: status unchanged)
@@ -184,6 +216,10 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             l.debug(" -> " + parentAggregate);
         }
 
+        // when tracking elusive bugs, you may uncomment the line below to enforce aggressive
+        // consistency-checking
+        //checkAggregateConsistency(parent, parentAggregate);
+
         _ds.setAggregateSyncStatus_(parent, parentAggregate, t);
 
         // derive new aggregte sync status vector for parent
@@ -239,6 +275,18 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         if (l.isDebugEnabled()) l.debug("deleted " + soid + " " + parent);
 
         updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parent), pathFrom, t);
+    }
+
+    /**
+     * Called from DirectoryService when an existing object is *removed from the DB*
+     */
+    @Override
+    public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t)
+            throws SQLException
+    {
+        if (l.isDebugEnabled()) l.debug("obliterated " + oa.soid() + " " + oa.parent());
+
+        updateParentAggregateOnDeletion_(new SOID(oa.soid().sidx(), oa.parent()), bv, pathFrom, t);
     }
 
     /**
@@ -376,7 +424,11 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         if (oa.isDir()) {
             oldStatus.andInPlace(getAggregateSyncStatusVector_(soid));
         }
+        updateParentAggregateOnDeletion_(parent, oldStatus, path, t);
+    }
 
+    private void updateParentAggregateOnDeletion_(SOID parent, BitVector oldStatus, Path path,
+            Trans t) throws SQLException {
         /*
          * Do not send notifications for deleted path
          *  - the physical object is deleted so the notification is pointless
