@@ -75,6 +75,8 @@ public interface IMetaDatabase
     void setCA_(SOID soid, KIndex kidx, long len, long mtime, ContentHash h, Trans t)
             throws SQLException;
 
+    void deleteOAsAndCAsForStore_(SIndex sidx, Trans t) throws SQLException;
+
     void setCAHash_(SOID soid, KIndex kidx, @Nullable ContentHash h, Trans t) throws SQLException;
 
     @Nullable ContentHash getCAHash_(SOID soid, KIndex kidx) throws SQLException;

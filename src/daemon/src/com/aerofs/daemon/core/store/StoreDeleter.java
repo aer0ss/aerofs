@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -11,15 +12,12 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
-import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -32,26 +30,21 @@ import com.aerofs.lib.id.SOKID;
 
 public class StoreDeleter
 {
-    private final NativeVersionControl _nvc;
-    private final ImmigrantVersionControl _ivc;
     private final IPhysicalStorage _ps;
     private final IStores _ss;
     private final DirectoryService _ds;
-    private final IPulledDeviceDatabase _pddb;
-
     private final IMapSIndex2SID _sidx2sid;
+    private final StoreDeletionNotifier _notifier;
 
     @Inject
-    public StoreDeleter(IPhysicalStorage ps, NativeVersionControl nvc, ImmigrantVersionControl ivc,
-            DirectoryService ds, IPulledDeviceDatabase pddb, IMapSIndex2SID sidx2sid, IStores ss)
+    public StoreDeleter(IPhysicalStorage ps, DirectoryService ds, IMapSIndex2SID sidx2sid,
+            IStores ss, StoreDeletionNotifier notifier)
     {
         _ss = ss;
         _ps = ps;
-        _nvc = nvc;
-        _ivc = ivc;
         _ds = ds;
-        _pddb = pddb;
         _sidx2sid = sidx2sid;
+        _notifier = notifier;
     }
 
     /**
@@ -163,21 +156,10 @@ public class StoreDeleter
     {
         Util.l(this).debug("delete store " + sidx);
 
-        // TODO: create IStoreDeletionListener with deleteStore_ method
-        // register them with this class
-        // Iterate over all here.
-
+        // MJ thinks (but is unsure whether) we have to do physical store deletion first, before
+        // notifying other listeners of the deletion
         _ps.deleteStore_(sidx, path, op, t);
-        _nvc.deleteStore_(sidx, t);
-        _ivc.deleteStore_(sidx, t);
 
-        // If Store s is re-admitted, we need to "forget" which DIDs have been
-        // pulled for filters, so that files can be downloaded again in the
-        // Collector algorithm. The following deletion could go in store
-        // creation, but we optimize for DB space and delete the contents here
-        // as all files in the store are necessarily expelled.
-        _pddb.deleteStore_(sidx, t);
-
-        _ss.delete_(sidx, t);
+        _notifier.notifyListeners_(sidx, t);
     }
 }

@@ -159,4 +159,11 @@ public class CollectorSequenceDatabase extends AbstractDatabase
             throw e;
         }
     }
+
+    @Override
+    public void deleteCSsForStore_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        StoreDatabase.deleteRowsInTableForStore_(T_CS, C_CS_SIDX, sidx, c(), t);
+    }
 }

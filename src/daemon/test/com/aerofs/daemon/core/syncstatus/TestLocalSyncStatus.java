@@ -7,6 +7,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.lib.id.UniqueID;
@@ -56,6 +57,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock IStores stores;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock AggregateSyncStatus assc;
+    @Mock StoreDeletionNotifier sdn;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
@@ -82,8 +84,8 @@ public class TestLocalSyncStatus extends AbstractTest
         when(tm.begin_()).thenReturn(t);
 
         DirectoryService r = new DirectoryService();
-        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm);
-        lsync = new LocalSyncStatus(r, stores, ssdb, sidx2sid, sidx2dbm, assc);
+        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, sdn);
+        lsync = new LocalSyncStatus(r, stores, ssdb, sidx2sid, sidx2dbm, assc, sdn);
     }
 
     @After

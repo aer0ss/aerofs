@@ -15,6 +15,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.lib.db.*;
@@ -82,8 +83,9 @@ public class TestAliasing extends AbstractTest
     private final MapAlias2Target alias2target = new MapAlias2Target(aldb);
     private final ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(dbcw.mockCoreDBCW());
     private final IMapSIndex2SID sidx2sid = new SIDMap(sdb);
+    private final StoreDeletionNotifier sdn = mock(StoreDeletionNotifier.class);
     private final NativeVersionControl nvc = new NativeVersionControl(nvdb, csdb, alias2target,
-            cfgLocalDID, tlva, alog);
+            cfgLocalDID, tlva, alog, sdn);
     private final PrefixVersionControl pvc = mock(PrefixVersionControl.class);
 
     private final IPhysicalStorage ps = mock(IPhysicalStorage.class);
@@ -126,7 +128,7 @@ public class TestAliasing extends AbstractTest
     public void setUp() throws Exception
     {
         DirectoryService realDS = new DirectoryService();
-        realDS.inject_(ps, mdb, alias2target, mock(IStores.class), tm, sidx2sid, sid2sidx);
+        realDS.inject_(ps, mdb, alias2target, mock(IStores.class), tm, sidx2sid, sid2sidx, sdn);
         ds = spy(realDS);
 
         AliasingMover almv = new AliasingMover(ds, hasher, om, pvc, nvc, bd);

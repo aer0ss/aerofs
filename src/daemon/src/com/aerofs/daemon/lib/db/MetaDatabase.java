@@ -35,6 +35,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 
@@ -520,11 +521,11 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
     public IDBIterator<SOKID> getNonMasterBranches_()
         throws SQLException
     {
-        Statement ps = null;
+        Statement s = null;
         try {
             // this method is not called requently so we don't prepare the stmt
-            ps = c().createStatement();
-            ResultSet rs = ps.executeQuery("select "
+            s = c().createStatement();
+            ResultSet rs = s.executeQuery("select "
                     + C_CA_SIDX + "," + C_CA_OID + "," + C_CA_KIDX +
                     " from " + T_CA +
                     " where " + C_CA_KIDX + "!=" + KIndex.MASTER);
@@ -532,7 +533,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             return new DBIterNonMasterBranches(rs);
 
         } catch (SQLException e) {
-            DBUtil.close(ps);
+            DBUtil.close(s);
             throw e;
         }
     }
@@ -702,5 +703,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             psw.set(null);
             throw e;
         }
+    }
+
+    @Override
+    public void deleteOAsAndCAsForStore_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        StoreDatabase.deleteRowsInTablesForStore_(
+                ImmutableMap.of(T_OA, C_OA_SIDX, T_CA, C_CA_SIDX), sidx, c(), t);
     }
 }

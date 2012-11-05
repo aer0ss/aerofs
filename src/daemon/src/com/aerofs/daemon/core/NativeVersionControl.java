@@ -38,9 +38,9 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     @Inject
     public NativeVersionControl(INativeVersionDatabase nvdb, ICollectorSequenceDatabase csdb,
             MapAlias2Target alias2target, CfgLocalDID cfgLocalDID, TransLocalVersionAssistant tlva,
-            ActivityLog al)
+            ActivityLog al, StoreDeletionNotifier sdn)
     {
-        super(nvdb, cfgLocalDID, tlva);
+        super(nvdb, cfgLocalDID, tlva, sdn);
         _nvdb = nvdb;
         _csdb = csdb;
         _alias2target = alias2target;

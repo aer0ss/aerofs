@@ -23,11 +23,6 @@ public interface IStores
     /**
      * @pre the store is present locally
      */
-    void delete_(SIndex sidx, Trans t) throws SQLException;
-
-    /**
-     * @pre the store is present locally
-     */
     void setParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 
     /**

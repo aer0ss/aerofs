@@ -3,8 +3,8 @@ package com.aerofs.daemon.lib.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
+import com.aerofs.daemon.core.store.IStoreDeletionListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
@@ -16,12 +16,14 @@ import static com.aerofs.lib.db.CoreSchema.T_PD;
 import static com.aerofs.lib.db.CoreSchema.C_PD_SIDX;
 import static com.aerofs.lib.db.CoreSchema.C_PD_DID;
 
-public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDeviceDatabase
+public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDeviceDatabase,
+        IStoreDeletionListener
 {
     @Inject
-    public PulledDeviceDatabase(CoreDBCW dbcw)
+    public PulledDeviceDatabase(CoreDBCW dbcw, StoreDeletionNotifier storeDeletionNotifier)
     {
         super(dbcw.get());
+        storeDeletionNotifier.addListener_(this);
     }
 
     private PreparedStatement _psPDContains;
@@ -79,12 +81,21 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
     @Override
     public void deleteStore_(SIndex sidx, Trans t) throws SQLException
     {
-        Statement stmt = c().createStatement();
-        try {
-            stmt.executeUpdate("delete from " + T_PD + " where " + C_PD_SIDX +
-                    "=" + sidx.getInt());
-        } finally {
-            DBUtil.close(stmt);
-        }
+        StoreDatabase.deleteRowsInTableForStore_(T_PD, C_PD_SIDX, sidx, c(), t);
+    }
+
+
+    /**
+     * If a store is re-admitted, we need to "forget" which DIDs have been
+     * pulled for filters, so that files can be downloaded again in the
+     * Collector algorithm. The following deletion could go in store
+     * creation, but we optimize for DB space and delete the contents here
+     * as all files in the store are necessarily expelled.
+     */
+    @Override
+    public void onStoreDeletion_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        deleteStore_(sidx, t);
     }
 }

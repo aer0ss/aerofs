@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import org.junit.Before;
@@ -29,6 +30,7 @@ import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.syncstatus.LocalSyncStatus;
 import com.aerofs.daemon.lib.db.IPulledDeviceDatabase;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
@@ -41,13 +43,11 @@ import com.aerofs.testlib.AbstractTest;
 
 public class TestStoreDeleter extends AbstractTest
 {
-    @Mock NativeVersionControl nvc;
-    @Mock ImmigrantVersionControl ivc;
     @Mock DirectoryService ds;
     @Mock IPhysicalStorage ps;
     @Mock IStores ss;
     @Mock IMapSIndex2SID sidx2sid;
-    @Mock IPulledDeviceDatabase pddb;
+    @Mock StoreDeletionNotifier notifier;
     @Mock Trans t;
 
     @InjectMocks StoreDeleter sd;
@@ -215,10 +215,7 @@ public class TestStoreDeleter extends AbstractTest
 
     private void verifyStoreDeletion(SIndex sidx) throws SQLException, IOException
     {
-        verify(ss).delete_(sidx, t);
-        verify(nvc).deleteStore_(sidx, t);
-        verify(ivc).deleteStore_(sidx, t);
-        verify(pddb).deleteStore_(sidx, t);
         verify(ps).deleteStore_(eq(sidx), any(Path.class), any(PhysicalOp.class), eq(t));
+        verify(notifier).notifyListeners_(sidx, t);
     }
 }

@@ -26,9 +26,9 @@ import static com.aerofs.lib.db.CoreSchema.C_IK_IMM_TICK;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.db.AbstractDBIterator;
@@ -39,6 +39,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
@@ -110,14 +111,10 @@ public class ImmigrantVersionDatabase
     }
 
     @Override
-    public void deleteTicksFromStore_(SIndex sidx, Trans t) throws SQLException
+    public void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException
     {
-        Statement stmt = c().createStatement();
-        try {
-            stmt.executeUpdate("delete from " + T_IV + " where " + C_IV_SIDX + "=" + sidx.getInt());
-        } finally {
-            DBUtil.close(stmt);
-        }
+        StoreDatabase.deleteRowsInTablesForStore_(
+                ImmutableMap.of(T_IV, C_IV_SIDX, T_IK, C_IK_SIDX), sidx, c(), t);
     }
 
     private PreparedStatement _psAddIMMVer;
@@ -160,14 +157,13 @@ public class ImmigrantVersionDatabase
         @Override
         public ImmigrantTickRow get_() throws SQLException
         {
-            ImmigrantTickRow tr = new ImmigrantTickRow(
+            return new ImmigrantTickRow(
                                         new OID(_rs.getBytes(1)),
                                         new CID(_rs.getInt(2)),
                                         new DID(_rs.getBytes(3)),
                                         new Tick(_rs.getLong(4)),
                                         new Tick(_rs.getLong(5))
                                         );
-            return tr;
         }
     }
 

@@ -65,4 +65,6 @@ public interface ISenderFilterDatabase
             throws SQLException;
 
     int getSenderDeviceIndexCount_(SIndex sidx, SenderFilterIndex sfidx) throws SQLException;
+
+    void deleteSenderFiltersAndDevicesForStore_(SIndex sidx, Trans t) throws SQLException;
 }

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.proto;
 
+import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +42,8 @@ public class TestGetVersCall extends AbstractTest
     @Mock Metrics m;
     @Mock OutgoingStreams oss;
     @Mock MapSIndex2Store sidx2s;
-    @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.mockCoreDBCW());
+    @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.mockCoreDBCW(),
+            mock(StoreDeletionNotifier.class));
 
     // System Under Test
     @InjectMocks private GetVersCall gvc;

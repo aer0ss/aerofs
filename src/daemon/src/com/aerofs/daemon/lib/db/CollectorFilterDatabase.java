@@ -5,6 +5,7 @@ import static com.aerofs.lib.db.CoreSchema.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.DBUtil;
@@ -93,5 +94,12 @@ public class CollectorFilterDatabase extends AbstractDatabase implements ICollec
             _psDCF = null;
             throw e;
         }
+    }
+
+    @Override
+    public void deleteCollectorFiltersForStore_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        StoreDatabase.deleteRowsInTableForStore_(T_CF, C_CF_SIDX, sidx, c(), t);
     }
 }

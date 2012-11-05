@@ -199,4 +199,11 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
         }
         ps.executeBatch();
     }
+
+    @Override
+    public void deleteBootstrapSOIDsForStore_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        StoreDatabase.deleteRowsInTableForStore_(T_SSBS, C_SSBS_SIDX, sidx, c(), t);
+    }
 }

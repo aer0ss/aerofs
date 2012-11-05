@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
+import com.aerofs.daemon.core.store.IStoreDeletionListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -42,7 +43,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 
-public class DirectoryService implements IDumpStatMisc
+public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 {
     private static final Logger l = Util.l(DirectoryService.class);
 
@@ -92,7 +93,8 @@ public class DirectoryService implements IDumpStatMisc
 
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
-            IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx)
+            IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
+            StoreDeletionNotifier storeDeletionNotifier)
     {
         _ps = ps;
         _mdb = mdb;
@@ -103,6 +105,8 @@ public class DirectoryService implements IDumpStatMisc
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
+
+        storeDeletionNotifier.addListener_(this);
     }
 
     public Set<OID> getChildren_(SOID soid)
@@ -643,7 +647,7 @@ public class DirectoryService implements IDumpStatMisc
         return ret;
     }
 
-    public void setCAHash_(SOKID sokid, ContentHash h, Trans t) throws SQLException
+    public void setCAHash_(SOKID sokid, @Nonnull ContentHash h, Trans t) throws SQLException
     {
         assert h != null;
 
@@ -802,5 +806,14 @@ public class DirectoryService implements IDumpStatMisc
             throws SQLException
     {
         _mdb.setAggregateSyncStatus_(soid, agstat, t);
+    }
+
+    @Override
+    public void onStoreDeletion_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        _mdb.deleteOAsAndCAsForStore_(sidx, t);
+        _cacheDS.invalidateAll_();
+        _cacheOA.invalidateAll_();
     }
 }

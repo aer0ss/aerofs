@@ -32,9 +32,9 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
 
     @Inject
     public ImmigrantVersionControl(IImmigrantVersionDatabase ivdb, CfgLocalDID cfgLocalDID,
-            TransLocalVersionAssistant tlva)
+            TransLocalVersionAssistant tlva, StoreDeletionNotifier sdn)
     {
-        super(ivdb, cfgLocalDID, tlva);
+        super(ivdb, cfgLocalDID, tlva, sdn);
         _ivdb = ivdb;
     }
 

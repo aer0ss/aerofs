@@ -5,11 +5,11 @@ import static com.aerofs.lib.db.CoreSchema.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
@@ -24,6 +24,7 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
@@ -95,15 +96,11 @@ public class NativeVersionDatabase
     }
 
     @Override
-    public void deleteTicksFromStore_(SIndex sidx, Trans t) throws SQLException
+    public void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException
     {
-        Statement stmt = c().createStatement();
-        try {
-            stmt.executeUpdate("delete from " + T_VER + " where " + C_VER_SIDX + "=" + sidx.getInt());
-            stmt.executeUpdate("delete from " + T_MAXTICK + " where " + C_MAXTICK_SIDX + "=" + sidx.getInt());
-        } finally {
-            DBUtil.close(stmt);
-        }
+        StoreDatabase.deleteRowsInTablesForStore_(
+                ImmutableMap.of(T_VER, C_VER_SIDX, T_MAXTICK, C_MAXTICK_SIDX, T_KWLG, C_KWLG_SIDX),
+                sidx, c(), t);
     }
 
     @Override

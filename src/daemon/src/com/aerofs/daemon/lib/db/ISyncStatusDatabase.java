@@ -4,6 +4,7 @@ import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 
 /**
@@ -19,7 +20,8 @@ import com.aerofs.lib.id.SOID;
  * NOTE: Whenever possible, use {@link com.aerofs.daemon.core.syncstatus.LocalSyncStatus} instead of
  * this class.
  */
-public interface ISyncStatusDatabase {
+public interface ISyncStatusDatabase
+{
 
     /**
      * The local sync status pull epoch is the epoch of the last update received from
@@ -81,4 +83,6 @@ public interface ISyncStatusDatabase {
      * @throws SQLException
      */
     void removeBootstrapSOID_(SOID soid, Trans t) throws SQLException;
+
+    void deleteBootstrapSOIDsForStore_(SIndex sidx, Trans t) throws SQLException;
 }

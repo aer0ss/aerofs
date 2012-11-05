@@ -219,4 +219,14 @@ public class SenderFilters
             _filterLast = filterNew;
         }
     }
+
+    public void deletePersistentData_(Trans t)
+            throws SQLException
+    {
+        _sfdb.deleteSenderFiltersAndDevicesForStore_(_sidx, t);
+
+        // TODO (MJ) after this action the object is effectively unusable.  I could add a boolean
+        // and assert no methods are called after deletePersistentData_?
+        // I really wish Java had destructors...
+    }
 }

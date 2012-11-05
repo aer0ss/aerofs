@@ -362,4 +362,10 @@ public class CollectorFilters
         return ret;
     }
 
+    void deletePersistentData_(Trans t)
+            throws SQLException
+    {
+        _cfdb.deleteCollectorFiltersForStore_(_sidx, t);
+    }
+
 }

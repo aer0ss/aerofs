@@ -28,7 +28,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
-public class Stores implements IStores
+public class Stores implements IStores, IStoreDeletionListener
 {
     private IStoreDatabase _sdb;
     private TransManager _tm;
@@ -50,7 +50,7 @@ public class Stores implements IStores
     @Inject
     public void inject_(IStoreDatabase sdb, TransManager tm, StoreCreator sc, SIDMap sm,
             MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, MapSIndex2DeviceBitMap sidx2dbm,
-            DirectoryService ds, DevicePresence dp)
+            DirectoryService ds, DevicePresence dp, StoreDeletionNotifier storeDeletionNotifier)
     {
         _sdb = sdb;
         _tm = tm;
@@ -61,6 +61,8 @@ public class Stores implements IStores
         _sidx2dbm = sidx2dbm;
         _ds = ds;
         _dp = dp;
+
+        storeDeletionNotifier.addListener_(this);
     }
 
     public void init_() throws SQLException, ExAlreadyExist, IOException
@@ -118,13 +120,25 @@ public class Stores implements IStores
     }
 
     @Override
-    public void delete_(final SIndex sidx, Trans t) throws SQLException
+    public void onStoreDeletion_(final SIndex sidx, Trans t) throws SQLException
     {
+        // Grab a reference to the Store object before preDelete_ removes in-memory references to it
+        Store s = _sidx2s.get_(sidx);
+
         preDelete_(sidx);
         Util.verify(_s2parent.remove(sidx) != null);
-        _sidx2dbm.invalidateCache(sidx);
 
+        s.deletePersistentData_(t);
+
+        // TODO (MJ) this is an odd place to invalidate the cache for sidx2dbm, especially since
+        // it's the only reference to that class in Stores.java. The only reason for this coupling
+        // is that the DeviceBitMap is in the StoreDatabase. A cleaner/less coupled design would
+        // use a separate table for the DeviceBitMaps, from the StoreDatabase, and then
+        // MapSIndex2DeviceBitMap would "own" that database.
+        _sidx2dbm.invalidateCache(sidx);
+        // The following deletes the parent and DeviceBitMap for a store.
         _sdb.delete_(sidx, t);
+
         l.debug("Store removed from parent: " + sidx);
 
         registerRollbackHandler_(t, new Callable<Void>() {

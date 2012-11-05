@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.AntiEntropy;
@@ -35,6 +36,13 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     private final Collector _collector;
     private final SenderFilters _senderFilters;
+
+    // For debugging.
+    // The idea is that when this.deletePersistentData_ is called, this object
+    // is effectively unusable, so no callers should invoke any of its methods (except toString
+    // which is harmless).  If anyone knows of a design pattern that would better fit this model
+    // please change it!
+    private boolean _isDeleted;
 
     public static class Factory
     {
@@ -85,26 +93,31 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _senderFilters = _f._factSF.create_(sidx);
         _opms = _f._dp.getOPMStore_(sidx);
         if (!Cfg.isFullReplica()) computeUsedSpace_();
+        _isDeleted = false;
     }
 
     public Collector collector()
     {
+        assert !_isDeleted;
         return _collector;
     }
 
     public SenderFilters senderFilters()
     {
+        assert !_isDeleted;
         return _senderFilters;
     }
 
     public SIndex sidx()
     {
+        assert !_isDeleted;
         return _sidx;
     }
 
     @Override
     public int compareTo(Store o)
     {
+        assert !_isDeleted;
         return _sidx.compareTo(o._sidx);
     }
 
@@ -117,12 +130,14 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     @Override
     public boolean equals(Object o)
     {
+        assert !_isDeleted;
         return this == o || (o != null && _sidx.equals(((Store) o)._sidx));
     }
 
     @Override
     public int hashCode()
     {
+        assert !_isDeleted;
         return _sidx.hashCode();
     }
 
@@ -131,6 +146,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public Map<DID, Device> getOnlinePotentialMemberDevices_()
     {
+        assert !_isDeleted;
         if (_opms == null) return Collections.emptyMap();
         else return _opms.getAll_();
     }
@@ -147,17 +163,20 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public void setOPMStore_(OPMStore opms)
     {
+        assert !_isDeleted;
         _opms = opms;
     }
 
     private void computeUsedSpace_() throws SQLException
     {
+        assert !_isDeleted;
         assert !Cfg.isFullReplica();
         _used = _f._mdb.getUsedSpace_(_sidx);
     }
 
     public boolean isOverQuota_(long extra)
     {
+        assert !_isDeleted;
         assert Cfg.isFullReplica() : "change this";
         return false; //_quota - _used - extra <= 0;
     }
@@ -172,6 +191,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
 
     public int getAntiEntropySeq_()
     {
+        assert !_isDeleted;
         return _antiEntropySeq;
     }
 
@@ -186,6 +206,19 @@ public class Store implements Comparable<Store>, IDumpStatMisc
      */
     public void startAntiEntropy_()
     {
+        assert !_isDeleted;
         _f._ae.start(_sidx, ++_antiEntropySeq);
+    }
+
+
+    public void deletePersistentData_(Trans t)
+            throws SQLException
+    {
+        assert !_isDeleted;
+        _collector.deletePersistentData_(t);
+        _senderFilters.deletePersistentData_(t);
+
+        // This Store object is effectively unusable now.
+        _isDeleted = true;
     }
 }

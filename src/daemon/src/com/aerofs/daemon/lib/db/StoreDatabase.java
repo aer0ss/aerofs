@@ -2,17 +2,21 @@ package com.aerofs.daemon.lib.db;
 
 import static com.aerofs.lib.db.CoreSchema.*;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
@@ -97,28 +101,8 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
     @Override
     public void delete_(SIndex sidx, Trans t) throws SQLException
     {
-        // TODO move deletion code for a table to the *Database class responsible for that table.
-        Statement stmt = c().createStatement();
-        try {
-            Util.verify(deleteRowsInTableForStore_(stmt, T_STORE, C_STORE_SIDX, sidx) == 1);
-            deleteRowsInTableForStore_(stmt, T_OA, C_OA_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_CA, C_CA_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_KWLG, C_KWLG_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_CF, C_CF_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_SF, C_SF_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_SD, C_SD_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_CS, C_CS_SIDX, sidx);
-            deleteRowsInTableForStore_(stmt, T_SSBS, C_SSBS_SIDX, sidx);
-        } finally {
-            DBUtil.close(stmt);
-        }
-    }
-
-    private int deleteRowsInTableForStore_(Statement stmt, String table, String column, SIndex sidx)
-            throws SQLException
-    {
-        return stmt.executeUpdate("delete from " + table + " where " + column + "=" +
-                sidx.getInt());
+        int rowsChanged = deleteRowsInTableForStore_(T_STORE, C_STORE_SIDX, sidx, c(), t);
+        assert rowsChanged == 1 : rowsChanged;
     }
 
     private PreparedStatement _psGetDeviceList;
@@ -147,8 +131,8 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             throw e;
         }
     }
-
     private PreparedStatement _psSetDeviceList;
+
     @Override
     public void setDeviceMapping_(SIndex sidx, byte raw[], Trans t) throws SQLException
     {
@@ -168,6 +152,43 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             _psSetDeviceList = null;
             throw e;
         }
+    }
+
+    /**
+     * During store deletion, many databases must delete all rows in one or more tables for a given
+     * store index. This static method helps avoid code duplication. An alternative is that each
+     * database would extend a base class that provides such a method.
+     * @param tables2columns a map of (table, sidx column) name pairs for those databases that
+     *                       must delete data from multiple tables
+     * @return the number of rows deleted across all tables
+     */
+    public static int deleteRowsInTablesForStore_(Map<String, String> tables2columns, SIndex sidx,
+            Connection c, Trans t)
+            throws SQLException
+    {
+        Statement stmt = c.createStatement();
+        try {
+            int rowsChanged = 0;
+
+            for (Entry<String, String> t2c : tables2columns.entrySet()) {
+                rowsChanged += stmt.executeUpdate("delete from " + t2c.getKey() + " where "
+                        + t2c.getValue() + "=" + sidx.getInt());
+            }
+            return rowsChanged;
+        } finally {
+            DBUtil.close(stmt);
+        }
+    }
+
+    /**
+     * See deleteRowsInTablesForStore_. This method is for those databases with only one table
+     * with store-related data to delete
+     */
+    public static int deleteRowsInTableForStore_(String tableName, String sidxColumnName,
+            SIndex sidx, Connection c, Trans t)
+            throws SQLException
+    {
+        return deleteRowsInTablesForStore_(ImmutableMap.of(tableName, sidxColumnName), sidx, c, t);
     }
 
 }

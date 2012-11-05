@@ -5,6 +5,7 @@ import static com.aerofs.lib.db.CoreSchema.*;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
@@ -13,8 +14,10 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class SenderFilterDatabase extends AbstractDatabase implements ISenderFilterDatabase
@@ -160,7 +163,7 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
 
     private PreparedStatement _psGSFGI;
     @Override
-    public SenderFilterIndex getSenderFilterGreatestIndex_(SIndex sidx)
+    public @Nonnull SenderFilterIndex getSenderFilterGreatestIndex_(SIndex sidx)
         throws SQLException
     {
         try {
@@ -262,5 +265,13 @@ public class SenderFilterDatabase extends AbstractDatabase implements ISenderFil
             _psSSDI = null;
             throw e;
         }
+    }
+
+    @Override
+    public void deleteSenderFiltersAndDevicesForStore_(SIndex sidx, Trans t)
+            throws SQLException
+    {
+        StoreDatabase.deleteRowsInTablesForStore_(
+                ImmutableMap.of(T_SF, C_SF_SIDX, T_SD, C_SD_SIDX), sidx, c(), t);
     }
 }

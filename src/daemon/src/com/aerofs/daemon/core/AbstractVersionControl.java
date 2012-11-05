@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.daemon.core.store.IStoreDeletionListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.apache.log4j.Logger;
 
@@ -26,6 +27,7 @@ import javax.annotation.Nonnull;
  * @param <E> specializes AbstractVersionControl for Native or ImmigrantTickRows
  */
 public abstract class AbstractVersionControl<E extends AbstractTickRow>
+        implements IStoreDeletionListener
 {
     private static final Logger l = Util.l(AbstractVersionControl.class);
 
@@ -35,11 +37,12 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
     protected Tick _maxTick;
 
     protected AbstractVersionControl(IVersionDatabase<E> vdb, CfgLocalDID cfgLocalDID,
-            TransLocalVersionAssistant tlva)
+            TransLocalVersionAssistant tlva, StoreDeletionNotifier storeDeletionNotifier)
     {
         _vdb = vdb;
         _cfgLocalDID = cfgLocalDID;
         _tlva = tlva;
+        storeDeletionNotifier.addListener_(this);
     }
 
     public void init_() throws SQLException
@@ -76,18 +79,19 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
      * Deletes all version records for store s, after having backed up
      * the ticks for *this* DID
      */
-    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
+    @Override
+    public void onStoreDeletion_(SIndex sidx, Trans t) throws SQLException
     {
         l.debug("Delete store " + sidx + " and backup max ticks");
         IDBIterator<E> iter = getMaxTicks_(sidx, _cfgLocalDID.get(), Tick.ZERO);
         try {
             _vdb.addBackupTicks_(sidx, iter, t);
         } finally {
-            assert !iter.closed_();
+            assert !iter.closed_() : sidx;
             iter.close_();
         }
 
-        _vdb.deleteTicksFromStore_(sidx, t);
+        _vdb.deleteTicksAndKnowledgeForStore_(sidx, t);
         _tlva.get(t).storeDeleted_(sidx);
     }
 

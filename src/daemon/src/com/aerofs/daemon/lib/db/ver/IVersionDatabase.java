@@ -53,7 +53,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
      */
     @Nonnull Set<DID> getAllVersionDIDs_(SIndex sidx) throws SQLException;
 
-    void deleteTicksFromStore_(SIndex sidx, Trans t) throws SQLException;
+    void deleteTicksAndKnowledgeForStore_(SIndex sidx, Trans t) throws SQLException;
 
 
     /* ======================= BACKUP TICKS ==================================

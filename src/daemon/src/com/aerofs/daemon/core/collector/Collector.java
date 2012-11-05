@@ -524,4 +524,20 @@ public class Collector implements IDumpStatMisc
         return "C["+ Joiner.on(' ').useForNull("null")
                 .join(_sidx, _occs, _downloads, _startSeq, _backoffScheduled) + "]";
     }
+
+    public void deletePersistentData_(Trans t)
+            throws SQLException
+    {
+        assert !started_();
+
+        // N.B. it is safe to have downloads happening when deleting persistent collector
+        // data for this store. If a store is deleted (along w its persistent data) it is very
+        // difficult/impossible to kill all existing downloads immediately.  So the downloads in
+        // other threads will realize the store has been deleted, and the file/folder discarded.
+
+        _cfs.deletePersistentData_(t);
+        // TODO (MJ) this is the only place Collector touches the csdb. Thus it seems hacky that the
+        // Collector is responsible for "owning" the CSDB.
+        _f._csdb.deleteCSsForStore_(_sidx, t);
+    }
 }

@@ -18,4 +18,6 @@ public interface ICollectorFilterDatabase
      * @return null if not found
      */
     @Nullable BFOID getCollectorFilter_(SIndex sidx, DID did) throws SQLException;
+
+    void deleteCollectorFiltersForStore_(SIndex sidx, Trans t) throws SQLException;
 }
