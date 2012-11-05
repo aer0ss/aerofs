@@ -61,7 +61,7 @@ class redis {
     line{ "redis.conf3":
         ensure => present,
         file => "/etc/redis/redis.conf",
-        line => "save 60 100",
+        line => "save 600 100",
         require => Package["aerofs-redis-server"]
     }
     line{ "redis.conf4":
