@@ -1,7 +1,7 @@
 <component name="libraryTable">
-  <library name="smack">
+  <library name="smack-android">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../approot/lib/smack.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../src/android/libs/asmack.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
