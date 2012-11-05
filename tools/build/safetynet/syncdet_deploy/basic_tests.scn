@@ -5,10 +5,12 @@
 # The collection of SyncDET tests to run
 # We test:
 #       - basic syncing functionality
+#       - SP and sharing
 #
 :scn,nofail tests
     :serial
         basic_group()
+        core.sharing.acl.should_propagate_shared_folder
 
 :serial
     safetynet.manage.ensure_clients_running
