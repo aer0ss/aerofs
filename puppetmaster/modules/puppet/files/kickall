@@ -3,6 +3,9 @@ require "yaml"
 require "puppet"
 require "net/https"
 require "pry"
+require 'thread'
+
+NUMBER_OF_THREADS = 2
 
 class Kick
   attr_reader :update_status, :useful_logs
@@ -33,9 +36,9 @@ class Kick
   end
 end
 
+
 # find all nodes that will be kicked
 nodes = YAML::load(File.open("/etc/puppet/nodes.yaml"))
-
 do_not_kick_nodes = YAML::load(File.open("/etc/puppet/do_not_kick.yaml"))
 
 # take difference of two arrays, unless do_not_kick_nodes is not an Array
@@ -51,32 +54,47 @@ hosts_to_kick = hosts_to_kick.compact.sort
 puts "Preparing to kick the following hostnames:"
 hosts_to_kick.each{ |h| puts "\t#{h}" }
 
-# keep a list of failed nodes
-failed_nodes = []
 
-# since this gets called from ant, we have to call $stdout.flush
-hosts_to_kick.each do |host|
-  k = Kick.new(host)
-  puts "Running puppet on #{host}"
-  $stdout.flush
-  kick_result = k.run
-  if kick_result == "running" then
-    puts "#{host} is already running, will try again"
-    $stdout.flush
-    # try again later
-    hosts_to_kick << host
-    next
+host_queue = Queue.new
+# keep a list of failed nodes (A Queue is synchronized so we'll use that)
+failed_nodes = Queue.new
+hosts_to_kick.each { |h| host_queue << h }
+threads = []
+
+number_of_threads.times do
+  threads << Thread.new do
+    while true do
+      begin
+        # Pop from queue with non_block => true (that rhymes)
+        host = host_queue.pop(true)
+      rescue ThreadError
+        # ThreadError means our queue is empty
+        break
+      end
+      k = Kick.new(host)
+      puts "Running puppet on #{host}"
+      $stdout.flush
+      kick_result = k.run
+      if kick_result == "running" then
+        puts "#{host} is already running, will try again"
+        $stdout.flush
+        # try again later
+        host_queue << host
+      end
+      if k.update_status == "failed" or k.useful_logs.length > 0 then
+        failed_nodes << host
+      end
+      puts "#{host} finished with status: #{k.update_status}"
+      puts k.useful_logs
+      $stdout.flush
+    end
   end
-  if k.update_status == "failed" or k.useful_logs.length > 0 then
-    failed_nodes << host
-  end
-  puts "#{host} finished with status: #{k.update_status}"
-  puts k.useful_logs
-  $stdout.flush
 end
 
-if failed_nodes.length > 0 then
-  puts "Failures: #{failed_nodes.length}"
+threads.each { |t| t.join }
+
+if failed_nodes.size > 0 then
+  puts "Failures: #{failed_nodes.size}"
 end
 
-exit failed_nodes.length
+exit failed_nodes.size
