@@ -42,6 +42,10 @@ public class DlgJoinSharedFolder extends AeroFSDialog
     private Button _btnCancel;
     private Composite composite;
 
+    private final String INVITATION_CODE_ERROR = "This invitation code was meant for a different " +
+            "email address.\nPlease ask the person sharing with you to invite you using your " +
+            Cfg.user() + " email address.";
+
     public DlgJoinSharedFolder(Shell parent)
     {
         super(parent, "Join a Shared Folder", false, false);
@@ -116,7 +120,22 @@ public class DlgJoinSharedFolder extends AeroFSDialog
     {
         if (code == null) code = _txtIC.getText();
 
-        boolean ready = (CodeType.SHARE_FOLDER == InvitationCode.getType(code));
+        CodeType ct = InvitationCode.getType(code);
+        boolean ready;
+
+        switch (ct) {
+        case BATCH_SIGNUP:
+        case TARGETED_SIGNUP:
+            ready = false;
+            UI.get().show(MessageType.WARN, INVITATION_CODE_ERROR);
+            break;
+        case SHARE_FOLDER:
+            ready = true;
+            break;
+        default:
+            ready = false;
+            break;
+        }
         _btnJoin.setEnabled(ready);
     }
 
