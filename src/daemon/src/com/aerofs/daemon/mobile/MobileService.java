@@ -232,11 +232,14 @@ public class MobileService implements IMobileService
         private static final int MAX_FRAME_LENGTH = 1 * C.MB;
         private static final int LENGTH_FIELD_SIZE = 4;
 
-        private static final String KEYSTORE_TYPE = "JKS";
-        private static final String KEY_ALGORITHM = "SunX509";
+        private static final String JKS = "JKS";
+        private static final String SUNX509 = "SunX509";
+        private static final String TLS = "TLS";
+        private static final String DEVICE = "device";
 
         public static boolean isEnabled()
         {
+//            return Boolean.getBoolean(PROPERTY) && Cfg.staging();
             return Cfg.staging();
         }
 
@@ -267,28 +270,34 @@ public class MobileService implements IMobileService
             return pipeline;
         }
 
+        private SSLContext createSslContext()
+                throws CertificateException, IOException, KeyStoreException,
+                NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException
+        {
+            // akin to ClientSSLEngineFactory
+            char[] passwd = {};
+            PrivateKey privateKey = _cfgKeyManagersProvider.getPrivateKey();
+            X509Certificate cert = _cfgKeyManagersProvider.getCert();
+            Certificate[] chain = { cert };
+
+            KeyStore keyStore = KeyStore.getInstance(JKS);
+            keyStore.load(null, null);
+            keyStore.setKeyEntry(DEVICE, privateKey, passwd, chain);
+
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(SUNX509);
+            keyManagerFactory.init(keyStore, passwd);
+
+            SSLContext context = SSLContext.getInstance(TLS);
+            context.init(keyManagerFactory.getKeyManagers(), null, null);
+            return context;
+        }
+
         private synchronized SSLContext getSSLContext()
                 throws NoSuchAlgorithmException, KeyStoreException, IOException,
                 CertificateException, UnrecoverableKeyException, KeyManagementException
         {
             if (_sslContext == null) {
-                // akin to ClientSSLEngineFactory
-                char[] passwd = {};
-                PrivateKey privateKey = _cfgKeyManagersProvider.getPrivateKey();
-                X509Certificate cert = _cfgKeyManagersProvider.getCert();
-                Certificate[] chain = { cert };
-                KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-                keyStore.load(null, null);
-                keyStore.setKeyEntry("device", privateKey, passwd, chain);
-//                keyStore.setEntry("device", new KeyStore.PrivateKeyEntry(privateKey, chain), null);
-
-                KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KEY_ALGORITHM);
-                keyManagerFactory.init(keyStore, passwd);
-
-                SSLContext context = SSLContext.getInstance("TLS");
-                context.init(keyManagerFactory.getKeyManagers(), null, null);
-
-                _sslContext = context;
+                _sslContext = createSslContext();
             }
             return _sslContext;
         }
