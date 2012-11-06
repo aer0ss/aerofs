@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 // we don't use OutputStream to avoid confusion with java.io.OutputStream
 //
-public final class OutgoingStreams
+public class OutgoingStreams
 {
     private static final Logger l = Util.l(OutgoingStreams.class);
 
