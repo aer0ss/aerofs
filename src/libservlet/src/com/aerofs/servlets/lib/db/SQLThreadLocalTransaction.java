@@ -109,6 +109,9 @@ public class SQLThreadLocalTransaction
     {
         assert isInTransaction();
 
+        // Log the rollback (do not throw) and close the connection so that the error that caused
+        // the rollback and be propagated back to the caller, and so the connection is properly
+        // cleaned up by the pooling mechanism.
         try {
             _connection.get().rollback();
         } catch (SQLException e) {
