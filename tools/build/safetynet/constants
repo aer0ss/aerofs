@@ -32,23 +32,9 @@ readonly SAFETYNET_INSTALLER_BUCKET="s3://nocache.client.safetynet.aerofs.com"
 #
 ###############################################################################
 readonly SYNCDET="${GIT_ROOT}/../syncdet/syncdet.py"
-readonly SAFETYNET_CONFIG_PATH_TEMPLATE="${BUILD_SCRIPT_DIR}/safetynet/config.yaml"
+readonly SAFETYNET_CONFIG_PATH="${BUILD_SCRIPT_DIR}/safetynet/config.yaml"
 readonly SAFETYNET_SYNCDET_DEPLOY_DIR="${BUILD_SCRIPT_DIR}/safetynet/syncdet_deploy"
-
-###############################################################################
-#
-# Create a replica of the SyncDET config file with the updated ip address of the
-# controller. This file will be deleted on exit.
-#
-# @param $1 The variable that will hold the resulting config file path
-#
-###############################################################################
-function create_updated_config_file() {
-    local local_UPDATED_CONFIG="$(mktemp -t syncdet_config)"
-    trap "rm \"$local_UPDATED_CONFIG\"" EXIT
-    "${BUILD_SCRIPT_DIR}/safetynet/update_syncdet_ip.py" "$SAFETYNET_CONFIG_PATH_TEMPLATE" "$local_UPDATED_CONFIG"
-    eval "$1='$local_UPDATED_CONFIG'"
-}
+readonly SYNCDET_PARAMS="--config=$SAFETYNET_CONFIG_PATH $SAFETYNET_SYNCDET_DEPLOY_DIR ${GIT_ROOT}/syncdet_test"
 
 ###############################################################################
 #
