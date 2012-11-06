@@ -117,7 +117,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onUnicastDatagramReceived_(RawMessage r, PeerContext pc)
     {
-        if (l.isDebugEnabled()) l.debug("onUnicastDatagramReceived " + pc);
+        if (l.isTraceEnabled()) l.trace("onUnicastDatagramReceived " + pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.UNICAST_RECV, r._is);
@@ -128,7 +128,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamBegun_(StreamID streamId, RawMessage r, PeerContext pc)
     {
-        if (l.isDebugEnabled()) l.debug("onStreamBegun " + streamId + " " + pc);
+        if (l.isTraceEnabled()) l.trace("onStreamBegun " + streamId + " " + pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.STREAM_BEGUN, r._is, streamId, 0);
@@ -139,7 +139,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamChunkReceived_(StreamID streamId, int seq, RawMessage r, PeerContext pc)
     {
-        if (l.isDebugEnabled()) l.debug("onStreamChunkReceived " + streamId + " " + seq + " " + pc);
+        if (l.isTraceEnabled()) l.trace("onStreamChunkReceived " + streamId + " " + seq + " " + pc);
 
         DTLSMessage<ByteArrayInputStream> dtlsMessage =
                 _f._factMsgBIS.create_(Type.CHUNK_RECV, r._is, streamId, seq);
@@ -150,7 +150,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void onStreamAborted_(StreamID streamId, Endpoint ep, InvalidationReason reason)
     {
-        if (l.isDebugEnabled()) l.debug("onStreamAborted " + ep + " " + streamId + " " + reason);
+        if (l.isTraceEnabled()) l.trace("onStreamAborted " + ep + " " + streamId + " " + reason);
 
         _upper.onStreamAborted_(streamId, ep, reason);
     }
@@ -158,7 +158,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     @Override
     public void sessionEnded_(Endpoint ep, boolean outbound, boolean inbound)
     {
-        if (l.isDebugEnabled()) l.debug("sessionEnded " + ep + " inbound " + inbound);
+        if (l.isTraceEnabled()) l.trace("sessionEnded " + ep + " inbound " + inbound);
         _upper.sessionEnded_(ep, outbound, inbound);
 
         // TODO discard all contexts belonging to this session. Note: be very
@@ -170,7 +170,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
             throws Exception
     {
-        if (l.isDebugEnabled()) l.debug("sendUnicastDatagram " + pc);
+        if (l.isTraceEnabled()) l.trace("sendUnicastDatagram " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_UNICAST, bs);
 
@@ -181,7 +181,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        if (l.isDebugEnabled()) l.debug("beginOutgoingStream " + streamId.toString() + " " + pc);
+        if (l.isTraceEnabled()) l.trace("beginOutgoingStream " + streamId.toString() + " " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.BEGIN_STREAM, bs, streamId, 0, tk);
 
@@ -194,7 +194,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        if (l.isDebugEnabled()) l.debug("sendOutgoingStreamChunk " + streamId + " " + seq + " " + pc);
+        if (l.isTraceEnabled()) l.trace("sendOutgoingStreamChunk " + streamId + " " + seq + " " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.SEND_CHUNK, bs, streamId, seq, tk);
 
@@ -207,7 +207,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void endOutgoingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        if (l.isDebugEnabled()) l.debug("endOutgoingStream " + streamId + " " + pc);
+        if (l.isTraceEnabled()) l.trace("endOutgoingStream " + streamId + " " + pc);
 
         _lower.endOutgoingStream_(streamId, pc);
     }
@@ -216,7 +216,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        if (l.isDebugEnabled()) l.debug("abortOutgoingStream " + streamId + " " + pc);
+        if (l.isTraceEnabled()) l.trace("abortOutgoingStream " + streamId + " " + pc);
 
         _lower.abortOutgoingStream_(streamId, reason, pc);
     }
@@ -237,7 +237,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void endIncomingStream_(StreamID streamId, PeerContext pc)
             throws ExNoResource, ExAborted
     {
-        if (l.isDebugEnabled()) l.debug("endIncomingStream " + streamId + " " + pc);
+        if (l.isTraceEnabled()) l.trace("endIncomingStream " + streamId + " " + pc);
 
         _lower.endIncomingStream_(streamId, pc);
     }
@@ -249,7 +249,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             throws ExDTLS
     {
         if (entry._user != null) {
-            l.debug("deliver msg " + is.available());
+            l.trace("deliver msg " + is.available());
             pc.setUser(entry._user);
             sendToUpperLayer_(msg._type, msg._sid, msg._seq, is, wirelen, pc);
 
@@ -323,7 +323,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                      msg._type + " " + msg._sid + " " + msg._seq + " " + msg._tk);
 
             Footer f = Footer.values()[footer];
-            l.debug("recv " + f);
+            l.trace("recv " + f);
 
             switch (f) {
                 case OUT_NEW: {
@@ -366,7 +366,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                         _lower.sendUnicastDatagram_(out, pc);
 
                     } else {
-                        l.debug("svr: found entries for cli");
+                        l.trace("svr: found entries for cli");
 
                         for (DTLSEntry entry : entries) {
 
@@ -516,7 +516,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         entry._sendQ.enqueue_(USERID_MSG, Prio.HI);
 
         try {
-            l.debug("send " + Footer.OUT_NEW);
+            l.trace("send " + Footer.OUT_NEW);
             byte[] encryptedBS = entry.encrypt(HS_KICKOFF_BYTES, pc,
                     Footer.OUT_NEW, null);
             assert encryptedBS == null; // should not return anything here
@@ -542,18 +542,18 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             // We only start the Profiler for the first message to kick off a handshake
             msg.getProfiler().start();
 
-            l.debug("cli: enqueue msg for later");
+            l.trace("cli: enqueue msg for later");
             entry._sendQ.enqueue_(msg, _f._tc.prio());
 
         } else {
-            l.debug("send " + Footer.OUT_OLD);
+            l.trace("send " + Footer.OUT_OLD);
 
             for (DTLSEntry entry : entries) {
                 PrioQueue<DTLSMessage<byte[]>> sendQ = entry._sendQ;
 
                 byte[] bs = msg._msg;
                 if (sendQ.isEmpty_()) {
-                    l.debug("q empty");
+                    l.trace("q empty");
 
                     OutArg<Boolean> hsSent = new OutArg<Boolean>(false);
 
@@ -579,7 +579,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
                         } else {
 
-                            l.debug("cli: enqueue msg for later");
+                            l.trace("cli: enqueue msg for later");
                             sendQ.enqueue_(msg, _f._tc.prio());
 
                             // handshake has been sent through this engine,

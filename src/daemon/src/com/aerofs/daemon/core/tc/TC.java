@@ -223,7 +223,7 @@ public class TC implements IDumpStatMisc
             //
             // ref1 http://www.javamex.com/tutorials/threads/priority_what.shtml
             // ref2 http://stackoverflow.com/questions/297804/thread-api-priority-translation-to-os-thread-priority
-            // ref3 http://www.akshaal.debug/2008/04/javas-thread-priorities-in-linux.html
+            // ref3 http://www.akshaal.info/2008/04/javas-thread-priorities-in-linux.html
             // ref4 http://tech.stolsvik.com/2010/01/linux-java-thread-priorities-workaround.html
             //
             // -XX:ThreadPriorityPolicy=666 must be set on Linux. it's a hack.

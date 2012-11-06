@@ -272,8 +272,8 @@ public class TCPProactorMT
                 _bytesrx.addAndGet(wirelen);
                 p._bytesrx += wirelen;
 
-                if (l.isDebugEnabled()) {
-                    l.debug("recv fin:" + getTransferString_(s, true) + " b:" + wirelen);
+                if (l.isTraceEnabled()) {
+                    l.trace("recv fin:" + getTransferString_(s, true) + " b:" + wirelen);
                 }
 
                 // process_ the message
@@ -359,8 +359,8 @@ public class TCPProactorMT
             bytesSent = Util.writeMessage(out, _magic, bss);
             _bytestx.addAndGet(bytesSent);
         }
-        if (l.isDebugEnabled()) {
-            l.debug("send fin:" + getTransferString_(s, false) + " b:" + bytesSent + " t:" +
+        if (l.isTraceEnabled()) {
+            l.trace("send fin:" + getTransferString_(s, false) + " b:" + bytesSent + " t:" +
                     (System.currentTimeMillis() - sendBegin));
         }
 
@@ -427,10 +427,10 @@ public class TCPProactorMT
 
             OutArg<Prio> outPrio = new OutArg<Prio>();
             while (true) {
-                l.debug("wait evsend");
+                l.trace("wait evsend");
                 long evwtbeg = System.currentTimeMillis();
                 EvSend ev = (EvSend) p._sendq.dequeue(outPrio);
-                l.debug("ev wt t:" + (System.currentTimeMillis() - evwtbeg));
+                l.trace("ev wt t:" + (System.currentTimeMillis() - evwtbeg));
 
                 if (ev == EV_CLOSE) break;
 

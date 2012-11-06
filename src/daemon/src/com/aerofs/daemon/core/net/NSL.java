@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.CoreUtil;
@@ -163,7 +167,7 @@ public class NSL
             // request issued for the first message, the second message will be
             // queued up until handshake times out at the client side.
             //
-            l.debug("mc " + sidx + " -> sp");
+            l.info("mc " + sidx + " -> sp");
             sendUnicast_(L.get().spDID(), type, rpcid, sidx, bs);
         }
     }

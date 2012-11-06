@@ -186,7 +186,7 @@ public class Outgoing
             throws Exception
     {
         if (!done_) {
-            l.debug("o not done: pause");
+            l.trace("o not done: pause");
 
             assert tcb_ == null;
             tcb_ = TC.tcb();
