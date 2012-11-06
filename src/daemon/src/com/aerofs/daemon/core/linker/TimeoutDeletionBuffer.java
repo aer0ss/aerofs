@@ -230,7 +230,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                 private void reschedule_()
                 {
                     if (!_deletionScheduled) {
-                        l.debug("Scheduling a consecutive deletion");
+                        l.info("Scheduling a consecutive deletion");
                         _sched.schedule(this, TIMEOUT);
                         _deletionScheduled = true;
                     }
@@ -281,7 +281,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                         // it will mark a deletion in the TimeoutDeletionBuffer,
                         // but the OA for this path will already be null (because by this point,
                         // the OA has been merged to the target's already).
-                        l.debug("aliased " + soid);
+                        l.info("aliased " + soid);
                         assert _ds.hasAliasedOA_(soid);
                     } else {
                         l.warn("delete " + soid + " " + PathObfuscator.obfuscate(

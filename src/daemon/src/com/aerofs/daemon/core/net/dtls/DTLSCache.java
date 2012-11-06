@@ -128,18 +128,18 @@ class DTLSCache implements IDumpStatMisc
 
         DTLSEntry entry = _frontlog.get(ep);
         if (null != entry) {
-            l.debug("found ctx in frontlog");
+            l.trace("found ctx in frontlog");
             entryList.add(entry);
         }
 
         entry = _backlog.get(ep);
         if (null != entry) {
-            l.debug("found ctx in backlog");
+            l.trace("found ctx in backlog");
             entryList.add(entry);
         }
 
         if (entryList.isEmpty()) {
-            l.debug("cant find ctx");
+            l.info("cant find ctx");
         }
 
         return entryList;

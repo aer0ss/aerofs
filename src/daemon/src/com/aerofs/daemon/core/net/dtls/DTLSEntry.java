@@ -67,7 +67,7 @@ class DTLSEntry
     byte[] encrypt(byte[] bs, PeerContext pc, Footer footer, @Nullable OutArg<Boolean> hsSent)
             throws Exception
     {
-        l.debug("enc msg " + bs.length);
+        l.trace("enc msg " + bs.length);
 
         if (null == _engine) {
             l.warn("can't get/create eng. eng is null");
@@ -81,13 +81,13 @@ class DTLSEntry
 
         if (DTLS_RETCODE.DTLS_NEEDREAD == rc
                 || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
-            l.debug("eng ret need r/w, with msg " + outputLen[0]);
+            l.trace("eng ret need r/w, with msg " + outputLen[0]);
 
             if (outputLen[0] > 0) {
                 bsToSend[outputLen[0]] = footer.toByte();
                 byte[] temp =
                         Arrays.copyOf(bsToSend, outputLen[0] + Footer.SIZE);
-                l.debug("hs: send msg down " + outputLen[0]);
+                l.trace("hs: send msg down " + outputLen[0]);
                 _layer.lower().sendUnicastDatagram_(temp, pc);
                 if (hsSent != null) hsSent.set(true);
             } else {
@@ -96,7 +96,7 @@ class DTLSEntry
             return null;
 
         } else if (DTLS_RETCODE.DTLS_OK == rc) {
-            l.debug("eng enc'ed msg " + outputLen[0]);
+            l.trace("eng enc'ed msg " + outputLen[0]);
             bsToSend[outputLen[0]] = footer.toByte();
             return Arrays.copyOf(bsToSend, outputLen[0] + Footer.SIZE);
 
@@ -115,7 +115,7 @@ class DTLSEntry
             @Nonnull OutArg<Boolean> hsSent)
         throws Exception
     {
-        l.debug("dec msg " + input.length);
+        l.trace("dec msg " + input.length);
 
         byte[] output = new byte[DTLS.BUF_SIZE]; // hardcoded number for now
         int[] outputLen = { output.length - Footer.SIZE };
@@ -123,7 +123,7 @@ class DTLSEntry
         DTLS_RETCODE rc = cryptImpl_(false, input, output, outputLen);
 
         if (DTLS_RETCODE.DTLS_NEEDREAD == rc || DTLS_RETCODE.DTLS_NEEDWRITE == rc) {
-            l.debug("eng ret need r/w, drop packet & send msg " + outputLen[0]);
+            l.trace("eng ret need r/w, drop packet & send msg " + outputLen[0]);
 
             if (outputLen[0] > 0) {
                 output[outputLen[0]] = (byte) footer.ordinal();
@@ -146,7 +146,7 @@ class DTLSEntry
     private DTLS_RETCODE cryptImpl_(boolean encrypt, byte[] input, byte[] output,
           int[] outputLen)
     {
-        l.debug("cryptImpl_: input length: " + input.length);
+        l.trace("cryptImpl_: input length: " + input.length);
         return encrypt ?
               _engine.encrypt(input, output, input.length, outputLen) :
               _engine.decrypt(input, output, input.length, outputLen);

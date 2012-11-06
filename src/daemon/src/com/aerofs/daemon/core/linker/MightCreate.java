@@ -110,7 +110,7 @@ public class MightCreate
         // OS-specific files should be ignored
         if (fnt == null) return Result.IGNORED;
 
-        if (l.isDebugEnabled()) l.debug(pcPhysical + ":" + fnt._fid);
+        if (l.isInfoEnabled()) l.info(pcPhysical + ":" + fnt._fid);
 
         // TODO acl checking
 
@@ -176,7 +176,7 @@ public class MightCreate
                 // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
                 // Linux. In either case, we assign the logical object with a random FID and proceed
                 // to the condition determination code.
-                l.debug("set random fid for " + soid);
+                l.info("set random fid for " + soid);
                 assignRandomFID_(soid, t);
                 cond = null;
             }
@@ -299,7 +299,7 @@ public class MightCreate
             }
 
             // move the logical object
-            l.debug("move " + soid + ":" + obfuscate(pLogical) + "->" + obfuscate(pPhysical));
+            l.info("move " + soid + ":" + obfuscate(pLogical) + "->" + obfuscate(pPhysical));
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
@@ -314,7 +314,7 @@ public class MightCreate
     private void replaceFID_(SOID soid, PathCombo pc, boolean dir, FID fid, Trans t)
             throws Exception
     {
-        l.debug("replace " + soid + ":" + pc);
+        l.info("replace " + soid + ":" + pc);
 
         // update the FID of that object
         _ds.setFID_(soid, fid, t);
@@ -408,7 +408,7 @@ public class MightCreate
         }
 
         if (modified) {
-            l.debug("modify " + soid);
+            l.info("modify " + soid);
             _vu.update_(new SOCKID(soid, CID.CONTENT), t);
             _a.incSaveCount();
         }

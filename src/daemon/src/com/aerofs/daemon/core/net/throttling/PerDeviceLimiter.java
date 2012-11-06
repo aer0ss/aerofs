@@ -23,7 +23,7 @@ public class PerDeviceLimiter extends AbstractLimiter
         _nextLimiter = nextLevel;
         _name = name;
 
-        l.debug("construct " + _name + ": " + this);
+        l.trace("construct " + _name + ": " + this);
     }
 
     /**
@@ -32,7 +32,7 @@ public class PerDeviceLimiter extends AbstractLimiter
     @Override
     protected void indicateTokensNeeded_(Outgoing o)
     {
-        l.debug(name() + ": nd tok");
+        l.trace(name() + ": nd tok");
         o.setTokensNeeded();
     }
 
@@ -45,8 +45,8 @@ public class PerDeviceLimiter extends AbstractLimiter
         throws Exception
     {
         if (l.isDebugEnabled()) {
-            l.debug(name() + ": o route lower:" + _nextLimiter.name());
-            l.debug(printstat_());
+            l.trace(name() + ": o route lower:" + _nextLimiter.name());
+            l.trace(printstat_());
         }
 
         _nextLimiter.processOutgoing_(o, p);

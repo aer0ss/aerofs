@@ -109,7 +109,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
             lim = _deviceQ.get(d);
         }
 
-        l.debug(name() + ": o route:" + lim.name());
+        l.trace(name() + ": o route:" + lim.name());
 
         lim.processOutgoing_(o, p);
     }
@@ -123,9 +123,9 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
         throws Exception
     {
         if (l.isDebugEnabled()) {
-            l.debug(name() + ": msg route lower: t:" + Outgoing.toStringType(o.getType()) +
+            l.trace(name() + ": msg route lower: t:" + Outgoing.toStringType(o.getType()) +
                 " b:" + o.getLength());
-            l.debug(printstat_());
+            l.trace(printstat_());
         }
 
         switch (o.getType()) {
@@ -149,7 +149,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
 
         ILimiter lim = _deviceQ.get(d);
         if (lim != null) {
-            l.debug(name()+ ": pbl route:" + lim.name());
+            l.trace(name()+ ": pbl route:" + lim.name());
             lim.processControlLimit_(d, pbl);
         } else {
             lim = new PerDeviceLimiter(_f._sched, this, _PER_DEVICE_LIMITER_PREFIX + "/" + d,
@@ -177,7 +177,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     public void sendUnicastDatagram_(byte[] bs, PeerContext pc)
         throws Exception
     {
-        l.debug("send datagram " + pc);
+        l.trace("send datagram " + pc);
 
         Outgoing o = new Outgoing(_f._tc, bs, pc);
         process_(o, _f._tc.prio());
@@ -187,7 +187,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
         throws Exception
     {
-        l.debug("begin outgoing stream:" + streamId.toString() + " " + pc);
+        l.trace("begin outgoing stream:" + streamId.toString() + " " + pc);
 
         Outgoing o = new Outgoing(_f._tc, bs, pc, streamId, 0, tk);
         process_(o, _f._tc.prio());
@@ -200,7 +200,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     public void sendOutgoingStreamChunk_(StreamID streamId, int seq, byte[] bs, PeerContext pc, Token tk)
         throws Exception
     {
-        l.debug("send outgoing chunk stream:" + streamId + " " + seq + " " + pc);
+        l.trace("send outgoing chunk stream:" + streamId + " " + seq + " " + pc);
 
         Outgoing o = new Outgoing(_f._tc, bs, pc, streamId, seq, tk);
         process_(o, _f._tc.prio());
@@ -214,7 +214,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     public void endOutgoingStream_(StreamID streamId, PeerContext pc)
         throws ExNoResource, ExAborted
     {
-        l.debug("end outgoing stream:" + streamId + " " + pc);
+        l.trace("end outgoing stream:" + streamId + " " + pc);
 
         _lower.endOutgoingStream_(streamId, pc);
     }
@@ -223,7 +223,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     public void endIncomingStream_(StreamID streamId, PeerContext pc)
         throws ExNoResource, ExAborted
     {
-        l.debug("end incoming stream:" + streamId + " " + pc);
+        l.trace("end incoming stream:" + streamId + " " + pc);
 
         _lower.endIncomingStream_(streamId, pc);
     }
@@ -232,7 +232,7 @@ public class GlobalLimiter extends AbstractLimiter implements IUnicastOutputLaye
     public void abortOutgoingStream_(StreamID streamId, InvalidationReason reason, PeerContext pc)
         throws ExNoResource, ExAborted
     {
-        l.debug("abort outgoing stream:" + streamId + " " + pc);
+        l.trace("abort outgoing stream:" + streamId + " " + pc);
 
         _lower.abortOutgoingStream_(streamId, reason, pc);
     }

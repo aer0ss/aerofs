@@ -89,7 +89,7 @@ public class GetComponentCall
         // Several of the version control and physical storage classes require a branch, not socid.
         // We know that downloads will only ever act on the master branch.
         SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
-        l.debug("send for " + socid);
+        l.info("req gcc for " + socid);
 
         Version vLocal = _nvc.getLocalVersion_(sockid);
 
