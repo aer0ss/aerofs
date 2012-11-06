@@ -16,12 +16,7 @@ if [[ $# -ne 1 ]]; then
     exit $ERRBADARGS
 fi
 
-SAFETYNET_CONFIG_PATH=''
-create_updated_config_file SAFETYNET_CONFIG_PATH
-readonly SAFETYNET_CONFIG_PATH
-
 readonly RELEASE_VERSION="$1"
-readonly SYNCDET_PARAMS="--config=$SAFETYNET_CONFIG_PATH $SAFETYNET_SYNCDET_DEPLOY_DIR ${GIT_ROOT}/syncdet_test"
 
 ######################################################################
 #
