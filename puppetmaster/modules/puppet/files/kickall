@@ -61,7 +61,7 @@ failed_nodes = Queue.new
 hosts_to_kick.each { |h| host_queue << h }
 threads = []
 
-number_of_threads.times do
+NUMBER_OF_THREADS.times do
   threads << Thread.new do
     while true do
       begin
