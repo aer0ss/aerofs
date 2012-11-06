@@ -185,4 +185,10 @@ class IncomingStream extends AbstractStream implements IIncomingStream
 
         return ++_seqnum;
     }
+
+    @Override
+    public String toString()
+    {
+        return "->[" + super.toString() + "]";
+    }
 }

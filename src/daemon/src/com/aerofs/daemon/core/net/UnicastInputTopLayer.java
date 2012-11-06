@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.CoreDeviceLRU;
@@ -193,7 +197,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _f._iss.begun_(key, pc);
 
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            _f._nsl.recvUnicast_(pc.ep(), pb, key._strid);
+            _f._nsl.recvUnicast_(pc.ep(), pb, key._strmid);
 
             DigestedMessage msg = new DigestedMessage(pb, r._is, pc.sidx(), pc.ep(), key,
                     pc.user());

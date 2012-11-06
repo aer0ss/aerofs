@@ -9,18 +9,21 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.EmigrantDetector;
-import com.aerofs.daemon.core.net.*;
+import com.aerofs.daemon.core.net.DigestedMessage;
+import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.net.ReceiveAndApplyUpdate;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.*;
-
-import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.Role;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -36,30 +39,30 @@ public class GetComponentReply
 {
     private static final Logger l = Util.l(GetComponentReply.class);
 
+    private final TransManager _tm;
     private final DirectoryService _ds;
+    private final IncomingStreams _iss;
     private final ReceiveAndApplyUpdate _ru;
+    private final MetaDiff _mdiff;
     private final Aliasing _al;
     private final MapAlias2Target _a2t;
     private final LocalACL _lacl;
-    private final IncomingStreams _iss;
     private final EmigrantDetector _emd;
-    private final TransManager _tm;
-    private final MetaDiff _mdiff;
 
     @Inject
-    public GetComponentReply(DirectoryService ds, LocalACL lacl, ReceiveAndApplyUpdate ru,
-            Aliasing al, MetaDiff mdiff, IncomingStreams iss,
-            EmigrantDetector emd, MapAlias2Target a2t, TransManager tm)
+    public GetComponentReply(TransManager tm, DirectoryService ds, IncomingStreams iss,
+            ReceiveAndApplyUpdate ru, MetaDiff mdiff, Aliasing al, MapAlias2Target a2t,
+            LocalACL lacl, EmigrantDetector emd)
     {
-        _ds = ds;
-        _ru = ru;
-        _al = al;
-        _lacl = lacl;
-        _iss = iss;
-        _emd = emd;
         _tm = tm;
-        _a2t = a2t;
+        _ds = ds;
+        _iss = iss;
+        _ru = ru;
         _mdiff = mdiff;
+        _al = al;
+        _a2t = a2t;
+        _lacl = lacl;
+        _emd = emd;
     }
 
     public static OA.Type fromPB(PBMeta.Type type)
@@ -67,7 +70,7 @@ public class GetComponentReply
         return OA.Type.valueOf(type.ordinal());
     }
 
-    static enum CIDType {
+    private static enum CIDType {
         META,
         CONTENT,
         OTHER;
@@ -89,7 +92,6 @@ public class GetComponentReply
     {
         try {
             if (msg.pb().hasExceptionReply()) throw Exceptions.fromPB(msg.pb().getExceptionReply());
-
             Util.checkPB(msg.pb().hasGetComReply(), PBGetComReply.class);
             doProcessReply_(socid, msg, requested, tk);
         } finally {

@@ -30,56 +30,63 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 
-public class IncomingStreams
+public final class IncomingStreams
 {
     private static final Logger l = Util.l(IncomingStreams.class);
 
-    public static class StreamKey implements Comparable<StreamKey>
+    public final static class StreamKey implements Comparable<StreamKey>
     {
         final DID _did;
-        final StreamID _strid;
+        final StreamID _strmid;
 
-        public StreamKey(DID sender, StreamID strid)
+        public StreamKey(DID sender, StreamID strmid)
         {
             _did = sender;
-            _strid = strid;
+            _strmid = strmid;
         }
 
         @Override
-        public int compareTo(StreamKey k)
+        public int compareTo(StreamKey key)
         {
-            int ret = _did.compareTo(k._did);
-            return ret != 0 ? ret : _strid.compareTo(k._strid);
+            int ret = _did.compareTo(key._did);
+            return ret != 0 ? ret : _strmid.compareTo(key._strmid);
         }
 
         @Override
         public String toString()
         {
-            return _did + ":" + _strid;
+            return _did + ":" + _strmid;
         }
     }
 
-    private static class IncomingStream
+    private final static class IncomingStream
     {
         final PeerContext _pc;
         final Queue<ByteArrayInputStream> _chunks = Lists.newLinkedList();
         TCB _tcb;
         InvalidationReason _invalidationReason;
         int _seq; // the last seq received. see IUnicastOutputLayer.sendOutgoingStreamChunk comment
+        public int _seqMismatchChunkCount;
 
         IncomingStream(PeerContext pc)
         {
             _pc = pc;
         }
+
+        @Override
+        public String toString()
+        {
+            return "istrm " + _pc.tp() + ":" + _pc.did() + " seq:" + _seq;
+        }
     }
 
+    private final FrequentDefectSender _fds = new FrequentDefectSender();
     private final Map<StreamKey, IncomingStream> _map = Maps.newTreeMap();
 
     // streams that are ended but failed to call endIncomingStream_.
     // new streams are not allowed to create until all ended streams are gone.
     // the size of this list is bounded by Categories.
     private final Map<StreamKey, IncomingStream> _ended = Maps.newTreeMap();
-
     private final UnicastInputOutputStack _stack;
 
     @Inject
@@ -99,12 +106,14 @@ public class IncomingStreams
         Iterator<Entry<StreamKey, IncomingStream>> iter = _ended.entrySet().iterator();
         while (iter.hasNext()) {
             Entry<StreamKey, IncomingStream> en = iter.next();
-            _stack.output().endIncomingStream_(en.getKey()._strid, en.getValue()._pc);
+            _stack.output().endIncomingStream_(en.getKey()._strmid, en.getValue()._pc);
             iter.remove();
         }
 
         IncomingStream stream = new IncomingStream(pc);
         _map.put(key, stream);
+
+        l.info("create " + stream + ":" + key);
     }
 
     // N.B. the caller must end the stream if timeout happens, otherwise
@@ -127,10 +136,11 @@ public class IncomingStreams
             }
 
             assert stream._invalidationReason != null || !stream._chunks.isEmpty();
-
         }
 
-        if (stream._invalidationReason != null) throw new ExStreamInvalid(stream._invalidationReason);
+        if (stream._invalidationReason != null) {
+            throw new ExStreamInvalid(stream._invalidationReason);
+        }
 
         return stream._chunks.poll();
     }
@@ -140,22 +150,22 @@ public class IncomingStreams
         if (stream._tcb != null) stream._tcb.resume_();
     }
 
-    private final FrequentDefectSender _fds = new FrequentDefectSender();
-
     public void processChunk_(StreamKey key, int seq, ByteArrayInputStream chunk)
     {
         IncomingStream stream = _map.get(key);
         if (stream == null) {
-            l.debug("recv chunk after strm ends " + key);
-
+            l.warn("recv chunk after end " + stream + ":" + key);
         } else if (seq != ++stream._seq) {
-                _fds.logSendAsync("istrm " + stream._pc.ep().tp() + ":" + key + " expect seq " + stream._seq + " actual " + seq);
+            stream._seqMismatchChunkCount++; // [puzzled] this should happen only once, no?
 
-                // notify the receiver
-                aborted_(key, InvalidationReason.OUT_OF_ORDER);
-                // notify lower layers
-                end_(key);
-
+            if (stream._invalidationReason == null) { // not aborted
+                _fds.logSendAsync("istrm " + stream._pc.tp() +
+                        ":" + key + " expect seq " + stream._seq + " actual " + seq);
+                aborted_(key, InvalidationReason.OUT_OF_ORDER); // notify receiver
+                end_(key); // notify lower layers
+            } else {
+                l.warn("istrm " + stream + " recv chunk after abort seq:" + seq);
+            }
         } else {
             stream._chunks.add(chunk);
             resume_(stream);
@@ -164,11 +174,14 @@ public class IncomingStreams
 
     public void aborted_(StreamKey key, InvalidationReason reason)
     {
+        assert reason != null;
+
         IncomingStream stream = _map.get(key);
         if (stream == null) {
-            l.debug("aborted after strm ends " + key);
-
+            l.warn("abort " + stream + " key:" + key + " after stream end");
         } else {
+            l.warn("abort " + stream + " key:" + key + " rsn:" + reason);
+
             stream._invalidationReason = reason;
             resume_(stream);
         }
@@ -182,19 +195,22 @@ public class IncomingStreams
     // immediately tells the sender to abort, rather than of doing so on
     // receiving the next chunk.
     //
-    public void end_(StreamKey k)
+    public void end_(StreamKey key)
     {
-        IncomingStream stream = _map.remove(k);
+        IncomingStream stream = _map.remove(key);
         if (stream == null) {
-                l.warn("end no strm. from finally of a failed block?");
-                return;
+            l.warn("end called but no stream key:" + key);
+            return;
         }
 
         try {
-            _stack.output().endIncomingStream_(k._strid, stream._pc);
+            l.info("end" + stream + " key:" + key);
+
+            _stack.output().endIncomingStream_(key._strmid, stream._pc);
         } catch (Exception e) {
-            l.warn("cannot end stream " + k + ", backlog it: " + Util.e(e));
-            _ended.put(k, stream);
+            l.warn("cannot end " + stream + " key:" + key + ", backlog it: " + Util.e(e));
+
+            _ended.put(key, stream);
         }
     }
 }

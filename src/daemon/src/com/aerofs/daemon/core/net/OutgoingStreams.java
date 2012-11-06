@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import java.util.Iterator;
@@ -14,16 +18,19 @@ import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 // we don't use OutputStream to avoid confusion with java.io.OutputStream
 //
-public class OutgoingStreams {
+public final class OutgoingStreams
+{
+    private static final Logger l = Util.l(OutgoingStreams.class);
 
-    public class OutgoingStream {
-
+    public final class OutgoingStream
+    {
         private final PeerContext _pc;
         private final Token _tk;
-        private StreamID _strid;
+        private StreamID _strmid;
         private int _seq;
         private InvalidationReason _invalidationReason;
 
@@ -35,22 +42,23 @@ public class OutgoingStreams {
 
         public void sendChunk_(byte[] bs) throws Exception
         {
-            if (_strid == null) {
-                _strid = nextID_();
-                _stack.output().beginOutgoingStream_(_strid, bs, _pc, _tk);
+            if (_strmid == null) {
+                _strmid = nextID_();
+                _stack.output().beginOutgoingStream_(_strmid, bs, _pc, _tk);
             } else {
-                _stack.output().sendOutgoingStreamChunk_(_strid, ++_seq, bs, _pc, _tk);
+                _stack.output().sendOutgoingStreamChunk_(_strmid, ++_seq, bs, _pc, _tk);
             }
         }
 
         public void abort_(InvalidationReason reason)
         {
-            if (_strid != null) {
+            l.warn("abort " + this);
+
+            if (_strmid != null) {
                 try {
-                    _stack.output().abortOutgoingStream_(_strid, reason, _pc);
+                    _stack.output().abortOutgoingStream_(_strmid, reason, _pc);
                 } catch (Exception e) {
-                    Util.l(this).warn("cannot abort " + _strid + ". backlogged: " +
-                            Util.l(e));
+                    l.warn("fail abort " + this + ". backlogged: " + Util.e(e));
                     _invalidationReason = reason;
                     _aborted.add(this);
                 }
@@ -59,15 +67,22 @@ public class OutgoingStreams {
 
         public void end_()
         {
-            if (_strid != null) {
+            l.info("end " + this);
+
+            if (_strmid != null) {
                 try {
-                    _stack.output().endOutgoingStream_(_strid, _pc);
+                    _stack.output().endOutgoingStream_(_strmid, _pc);
                 } catch (Exception e) {
-                    Util.l(this).warn("cannot end " + _strid + ". backlogged: " +
-                            Util.l(e));
+                    l.warn("fail end " + this + ". backlogged: " + Util.e(e));
                     _ended.add(this);
                 }
             }
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ostrm " + _pc.tp() + ":" + _pc.did() + ":" + _strmid + " seq:" + _seq;
         }
     }
 
@@ -103,17 +118,19 @@ public class OutgoingStreams {
         Iterator<OutgoingStream> iter = _aborted.iterator();
         while (iter.hasNext()) {
             OutgoingStream os = iter.next();
-            _stack.output().abortOutgoingStream_(os._strid, os._invalidationReason, os._pc);
+            _stack.output().abortOutgoingStream_(os._strmid, os._invalidationReason, os._pc);
             iter.remove();
         }
 
         iter = _ended.iterator();
         while (iter.hasNext()) {
             OutgoingStream os = iter.next();
-            _stack.output().endOutgoingStream_(os._strid, os._pc);
+            _stack.output().endOutgoingStream_(os._strmid, os._pc);
             iter.remove();
         }
 
-        return new OutgoingStream(new PeerContext(ep, sidx), tk);
+        OutgoingStream stream = new OutgoingStream(new PeerContext(ep, sidx), tk);
+        l.info("create " + stream);
+        return stream;
     }
 }

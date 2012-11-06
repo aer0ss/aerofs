@@ -233,4 +233,9 @@ class OutgoingStream extends AbstractStream implements IOutgoingStream
                 .build();
     }
 
+    @Override
+    public String toString()
+    {
+        return "<-[" + super.toString() + "]";
+    }
 }

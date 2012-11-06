@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import java.io.IOException;
@@ -6,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.net.To.Factory;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.net.dependence.NameConflictDependencyEdge;
@@ -18,7 +23,12 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.ex.*;
+import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExNoAvailDevice;
+import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.lib.ex.ExOutOfSpace;
+import com.aerofs.lib.ex.ExUpdateInProgress;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Maps;
@@ -70,30 +80,29 @@ public class Download
     public static class Factory
     {
         private final TC _tc;
-        private final DownloadState _dlstate;
-        private final MapSIndex2Store _sidx2s;
         private final DirectoryService _ds;
+        private final NativeVersionControl _nvc;
+        private final MapSIndex2Store _sidx2s;
         private final Downloads _dls;
+        private final DownloadState _dlstate;
         private final GetComponentCall _gcc;
         private final GetComponentReply _gcr;
-        private final NativeVersionControl _nvc;
         private final To.Factory _factTo;
 
         @Inject
-        public Factory(NativeVersionControl nvc, GetComponentCall gcc, GetComponentReply gcr,
-                Downloads dls, DirectoryService ds, DownloadState dlstate, TC tc, To.Factory factTo,
-                MapSIndex2Store sidx2s)
+        public Factory(TC tc, DirectoryService ds, NativeVersionControl nvc, MapSIndex2Store sidx2s,
+                Downloads dls, DownloadState dlstate, GetComponentCall gcc, GetComponentReply gcr,
+                To.Factory factTo)
         {
-
+            _tc = tc;
+            _ds = ds;
             _nvc = nvc;
+            _sidx2s = sidx2s;
+            _dls = dls;
+            _dlstate = dlstate;
             _gcc = gcc;
             _gcr = gcr;
-            _dls = dls;
-            _ds = ds;
-            _dlstate = dlstate;
-            _tc = tc;
             _factTo = factTo;
-            _sidx2s = sidx2s;
         }
 
         Download create_(SOCID socid, To src, IDownloadCompletionListener listener, Token tk)
@@ -207,7 +216,7 @@ public class Download
 
             _f._tc.setPrio(_prio);
 
-            DID replier = null;
+            @Nullable DID replier = null;
             boolean started = false;
             try {
                 // Check for dependency and expulsion. Even though GetComponentReply will check
@@ -225,18 +234,18 @@ public class Download
 
                 started = true;
                 _f._dlstate.started_(_socid);
+
                 DigestedMessage msg = _f._gcc.remoteRequestComponent_(_socid, _src, _tk);
                 replier = msg.did();
 
-                // TODO (MJ) I have a dream, that we can separate the exceptions thrown during
-                // requesting, from those that happen on this local device when processing the reply
+                // TODO (MJ) I have a dream: that we can distinguish between locally vs. remotely
+                // generated exceptions
                 _f._gcr.processReply_(_socid, msg, _requested, _tk);
 
                 // If there are more KMLs for _socid, the Collector algorithm will ensure a new
                 // Download object is created to resolve the KMLs
                 // TODO (MJ) see if any DownloadState code can be simplified.
                 return replier;
-
             } catch (ExAborted e) {
                 throw e;
 
