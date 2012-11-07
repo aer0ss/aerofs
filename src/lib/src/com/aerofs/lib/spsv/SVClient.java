@@ -580,6 +580,11 @@ public class SVClient
                 }
             }
 
+            try {
+                bdDefect.addJavaEnvName("os full name");
+                bdDefect.addJavaEnvValue(OSUtil.get().getFullOSName());
+            } catch (Throwable t) {} // ignored
+
             // "df" result
             OutArg<String> df = new OutArg<String>();
             df.set("n/a");

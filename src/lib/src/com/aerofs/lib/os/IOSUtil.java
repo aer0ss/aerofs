@@ -10,6 +10,16 @@ public interface IOSUtil
 {
     OSFamily getOSFamily();
 
+    /**
+     * @return Full OS name, including the version name
+     * Examples:
+     *  - on windows: "Windows XP", "Windows 2003", "Windows 7", etc...
+     *  - on osx: "Mac OS X 10.6.8", "Mac OS X 10.8.2", etc...
+     *  - on linux: there is no standard way to get the distro name, so we try to read /etc/*release.
+     *  If that fails, we will simply return "Linux", otherwise "Ubuntu 11.10", etc..
+     */
+    String getFullOSName();
+
     String getDefaultRTRoot();
 
     // we don't use System.loadLibrary() directly as it doesn't work well on Windows
