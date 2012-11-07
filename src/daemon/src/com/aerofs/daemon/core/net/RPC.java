@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.device.DevicePresence;
@@ -25,6 +29,7 @@ import javax.annotation.Nullable;
 import java.net.NetworkInterface;
 import java.util.Map;
 
+import static com.aerofs.daemon.core.CoreUtil.typeString;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -111,8 +116,8 @@ public class RPC
                 ep = _nsl.send_(to, sidx, call);
                 return recvReply_(call.getRpcid(), to, tk, reason);
             } catch (ExTimeout e) {
+                l.warn(ep + " " + typeString(call) + " timeout. pulse and try next");
                 if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
-                l.warn(ep + " timeout. try next");
             }
         }
     }
