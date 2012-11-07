@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.To.Factory;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge;
 import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.net.dependence.NameConflictDependencyEdge;

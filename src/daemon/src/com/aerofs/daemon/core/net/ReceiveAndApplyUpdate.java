@@ -390,6 +390,8 @@ public class ReceiveAndApplyUpdate
         assert !_a2t.isAliased_(soidParent) : soidParent;
         assert !_a2t.isAliased_(soid) : soid;
 
+        assert !soid.equals(soidParent) : soid;
+
         // The parent must exist locally, otherwise this SOID depends on the parent
         if (!_ds.hasOA_(soidParent)) {
             throw new ExDependsOn(new OCID(oidParent, CID.META), did, DependencyType.PARENT, false);

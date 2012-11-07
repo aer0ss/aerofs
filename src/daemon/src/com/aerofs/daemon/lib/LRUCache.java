@@ -51,7 +51,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
          * @return null to indicate that the value is a null-value if cacheNull
          * is supported, or the value doesn't exist otherwise
          */
-        V read_(K key) throws SQLException;
+        @Nullable V read_(K key) throws SQLException;
     }
 
     private final Impl _impl;
@@ -88,7 +88,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
 
     }
 
-    public V get_(K k, IDataReader<K, V> reader) throws SQLException
+    @Nullable public V get_(K k, IDataReader<K, V> reader) throws SQLException
     {
         assert k != null;
         if (_impl.containsKey(k)) {

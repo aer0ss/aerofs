@@ -114,7 +114,9 @@ public class DirectoryService implements IDumpStatMisc
 
     public OID getChild_(SIndex sidx, OID parent, String name) throws SQLException
     {
-        return _mdb.getChild_(sidx, parent, name);
+        OID child = _mdb.getChild_(sidx, parent, name);
+        assert !parent.equals(child) : child;
+        return child;
     }
 
     private final IDataReader<Path, SOID> _readerDS =
@@ -173,12 +175,12 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * @return null if not found
      */
-    public @Nullable SOID resolveNullable_(Path path) throws SQLException
+    @Nullable public SOID resolveNullable_(Path path) throws SQLException
     {
         return _cacheDS.get_(path, _readerDS);
     }
 
-    public SOID resolveThrows_(Path path)
+    @Nonnull public SOID resolveThrows_(Path path)
         throws SQLException, ExNotFound
     {
         SOID soid = resolveNullable_(path);
@@ -186,14 +188,14 @@ public class DirectoryService implements IDumpStatMisc
         return soid;
     }
 
-    public Path resolveThrows_(SOID soid) throws SQLException, ExNotFound
+    @Nonnull public Path resolveThrows_(SOID soid) throws SQLException, ExNotFound
     {
         Path ret = resolveNullable_(soid);
         if (ret == null) throw new ExNotFound();
         return ret;
     }
 
-    public @Nonnull Path resolve_(SOID soid) throws SQLException
+    @Nonnull public Path resolve_(SOID soid) throws SQLException
     {
         Path ret = resolveNullable_(soid);
         assert ret != null : soid;
@@ -204,7 +206,7 @@ public class DirectoryService implements IDumpStatMisc
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return null if not found
      */
-    public @Nullable Path resolveNullable_(SOID soid) throws SQLException
+    @Nullable public Path resolveNullable_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);
         return oa == null ? null : resolve_(oa);
@@ -214,7 +216,7 @@ public class DirectoryService implements IDumpStatMisc
      * N.B. an anchor has the same path as the root folder of its anchored store
      * @return unlike other versions of resolve(), it never returns null
      */
-    public @Nonnull Path resolve_(@Nonnull OA oa) throws SQLException
+    @Nonnull public Path resolve_(@Nonnull OA oa) throws SQLException
     {
         List<String> elems = Lists.newArrayListWithCapacity(16);
         while (true) {
@@ -254,7 +256,7 @@ public class DirectoryService implements IDumpStatMisc
         return new SOID(sidxAnchor, oidAnchor);
     }
 
-    public OA getOAThrows_(SOID soid)
+    @Nonnull public OA getOAThrows_(SOID soid)
         throws ExNotFound, SQLException
     {
         OA oa = getOANullable_(soid);
@@ -281,7 +283,7 @@ public class DirectoryService implements IDumpStatMisc
     private final IDataReader<SOID, OA> _readerOA =
         new IDataReader<SOID, OA>() {
             @Override
-            public OA read_(SOID soid) throws SQLException
+            @Nullable public OA read_(SOID soid) throws SQLException
             {
                 OA oa = _mdb.getOA_(soid);
                 if (oa == null) return null;
@@ -303,12 +305,12 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * @return null if not found.
      */
-    public @Nullable OA getOANullable_(SOID soid) throws SQLException
+    @Nullable public OA getOANullable_(SOID soid) throws SQLException
     {
         return _cacheOA.get_(soid, _readerOA);
     }
 
-    public @Nonnull OA getOA_(SOID soid) throws SQLException
+    @Nonnull public OA getOA_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);
         assert oa != null : soid;
@@ -318,7 +320,7 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * @return returns object attribute including aliased ones.
      */
-    public @Nullable OA getAliasedOANullable_(SOID soid) throws SQLException
+    @Nullable public OA getAliasedOANullable_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);
         if (oa != null) return oa;
@@ -652,7 +654,7 @@ public class DirectoryService implements IDumpStatMisc
     /**
      * @return null if not found
      */
-    public @Nullable SOID getSOIDNullable_(FID fid) throws SQLException
+    @Nullable public SOID getSOIDNullable_(FID fid) throws SQLException
     {
         return _mdb.getSOID_(fid);
     }
