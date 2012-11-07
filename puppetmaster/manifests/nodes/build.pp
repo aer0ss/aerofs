@@ -11,7 +11,7 @@ node "build.arrowfs.org" inherits default {
             "mono-devel",
             "lftp",
         ]:
-            ensure => installed,
+            ensure => latest,
     }
 
     mkfs::create{ "ext4 /dev/xvdf":

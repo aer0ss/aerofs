@@ -2,7 +2,7 @@ class collectd(
     $prefix
 ) {
     package{"collectd":
-        ensure => installed
+        ensure => latest
     }
 
     service{"collectd":

@@ -16,7 +16,7 @@ class servlet::sv(
         ]
     }
     package{"proguard":
-        ensure => installed,
+        ensure => latest,
     }
 
     file {"/var/svlogs_prod":

@@ -38,7 +38,7 @@
 class fwknop($key) {
 
     package { 'fwknop-server':
-        ensure => installed,
+        ensure => latest,
     }
 
     file { '/etc/fwknop/access.conf':

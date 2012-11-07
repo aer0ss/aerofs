@@ -38,16 +38,16 @@
 class tomcat6 {
 
     package { "tomcat6":
-       ensure => installed,
+       ensure => latest,
     }
 
     package { "tomcat6-admin":
-        ensure  => installed,
+        ensure  => latest,
         require => Package["tomcat6"],
     }
 
     package { "libmysql-java":
-        ensure => installed,
+        ensure => latest,
     }
 
     service { "tomcat6":

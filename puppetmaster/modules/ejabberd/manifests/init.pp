@@ -2,7 +2,7 @@ class ejabberd(
     $mysql_password,
 ) {
     package { "ejabberd":
-        ensure => installed
+        ensure => "2.1.10-2ubuntu1"
     }
 
     service { "ejabberd":
@@ -66,7 +66,8 @@ class ejabberd(
         source => "puppet:///modules/ejabberd/ejabberd_check",
         mode   => "755",
         owner  => "root",
-        group  => "root"
+        group  => "root",
+        require => Package["ejabberd"]
     }
 
     cron { "ejabberd_check":

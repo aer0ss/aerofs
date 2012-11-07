@@ -1,9 +1,9 @@
 class bucky {
     package{"python-pip":
-        ensure => installed
+        ensure => latest
     }
     package{"bucky":
-        ensure => installed,
+        ensure => latest,
         provider => "pip",
         require => Package["python-pip"]
     }

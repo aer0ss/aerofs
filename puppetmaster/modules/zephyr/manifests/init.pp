@@ -1,6 +1,6 @@
 class zephyr {
     package{"aerofs-zephyr":
-        ensure => installed,
+        ensure => latest,
         require => Apt::Source["aerofs"],
     }
 }

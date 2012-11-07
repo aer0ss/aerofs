@@ -35,7 +35,7 @@ class redis {
 
     # Until redis 2.6 is rolled out publicly, we have to use our own build.
     package{"aerofs-redis-server":
-        ensure => installed,
+        ensure => latest,
         require => [
             Apt::Source["aerofs"]
         ]

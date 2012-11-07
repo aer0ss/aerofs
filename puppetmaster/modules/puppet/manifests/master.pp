@@ -3,7 +3,7 @@ class puppet::master inherits puppet {
   include puppet::master::config
 
   package { "puppetmaster" :
-    ensure => installed,
+    ensure => latest,
   }
 
   service { "puppetmaster" :
