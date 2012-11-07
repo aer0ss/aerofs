@@ -73,6 +73,12 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     }
 
     @Override
+    public String getFullOSName()
+    {
+        return System.getProperty("os.name") + " " + System.getProperty("os.version");
+    }
+
+    @Override
     public void addToFavorite(String path) throws IOException
     {
         remFromFavorite(path);

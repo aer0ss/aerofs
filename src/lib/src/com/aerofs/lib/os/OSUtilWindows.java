@@ -38,6 +38,12 @@ public class OSUtilWindows implements IOSUtil
     }
 
     @Override
+    public String getFullOSName()
+    {
+        return System.getProperty("os.name");
+    }
+
+    @Override
     public void loadLibrary(String library)
     {
         // we don't use PATH or -Djava.library.path on Windows
