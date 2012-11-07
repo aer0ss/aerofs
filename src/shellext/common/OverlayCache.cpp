@@ -134,7 +134,7 @@ public:
 
     inline size_t operator () (const std::wstring& s) const
     {
-        return MurmurHash3_x86_32(s.data(), s.length() * sizeof(wchar_t), m_seed);
+        return MurmurHash3_x86_32(s.data(), int(s.length() * sizeof(wchar_t)), m_seed);
     }
 };
 

@@ -2,21 +2,65 @@
 
 #include <string>
 #include <algorithm>
+#include <windows.h>
+#include <sstream>
 
 // Convert between string and wstring
 // We need these because protobuf only supports string
-inline std::wstring to_wstring(const std::string& s)
+// and uses UTF-8 as its encoding, but Windows only
+// supports Unicode in paths with UTF-16
+inline std::wstring widen(const std::string& utf8s)
 {
-    std::wstring result(s.begin(), s.end());
-    result.assign(s.begin(), s.end());
-    return result;
+    std::wstring utf16s(L"");
+    int size_needed = MultiByteToWideChar(CP_UTF8, // Codepage
+            0,                          // Flags
+            utf8s.c_str(),              // UTF8 string data
+            -1,                         // # of characters, or -1 if null-terminated
+            NULL,                       // outarg UTF16 data (null to query size)
+            0);                         // characters available at UTF16 data pointer
+    if (size_needed == 0) {
+        // Something went wrong.
+        return utf16s;
+    }
+    wchar_t* buffer = new wchar_t[size_needed];
+    int size = MultiByteToWideChar(CP_UTF8, // Codepage
+            0,                          // Flags
+            utf8s.c_str(),              // UTF8 string data
+            -1,                         // # of characters, or -1 if null-terminated
+            buffer,                     // outarg UTF16 data
+            size_needed);               // characters available at UTF16 data pointer
+    utf16s.assign(buffer);
+    delete [] buffer;
+    return utf16s;
 }
 
-inline std::string to_string(const std::wstring& ws)
+inline std::string narrow(const std::wstring& utf16s)
 {
-    std::string result(ws.begin(), ws.end());
-    result.assign(ws.begin(), ws.end());
-    return result;
+    std::string utf8s("");
+    int size_needed = WideCharToMultiByte(CP_UTF8, // Codepage
+            0,                          // Flags
+            utf16s.c_str(),             // UTF16 string data
+            -1,                         // # of characters, or -1 if null-terminated
+            NULL,                       // outarg UTF8 data
+            0,                          // bytes available at UTF8 data pointer
+            NULL,                       // default char (must be NULL)
+            NULL);                      // default char used (must be NULL)
+    if (size_needed == 0) {
+        // Something went wrong.
+        return utf8s;
+    }
+    char* buffer = new char[size_needed];
+    int size = WideCharToMultiByte(CP_UTF8, // Codepage
+            0,                          // Flags
+            utf16s.c_str(),             // UTF16 string data
+            -1,                         // # of characters, or -1 if null-terminated
+            buffer,                     // outarg UTF8 data
+            size_needed,                // bytes available at UTF8 data pointer
+            NULL,                       // default char (must be NULL)
+            NULL);                      // default char used (must be NULL)
+    utf8s.assign(buffer);
+    delete [] buffer;
+    return utf8s;
 }
 
 inline std::wstring lowercase(const std::wstring& s)
@@ -67,4 +111,16 @@ inline bool str_ends_with(const std::wstring& str, const std::wstring& suffix)
     } else {
         return false;
     }
+}
+
+/**
+  * Encodes the bytes in a string as their hex equivalents.  Useful for debugging
+  * issues with encodings and paths.
+  */
+inline std::string hexencode(std::string arg) {
+	std::stringstream ss;
+	for (int i = 0 ; i < arg.size() ;i++) {
+		ss << std::hex << (unsigned int)((unsigned char)arg[i]);
+	}
+	return ss.str();
 }

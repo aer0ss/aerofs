@@ -91,8 +91,8 @@ void AeroFSShellExtension::reconnect()
  */
 bool AeroFSShellExtension::isUnderRootAnchor(const std::wstring& path)
 {
-	if (path.empty() || path.length() >= MAX_PATH
-			|| m_rootAnchor.empty() || m_rootAnchor.length() >= MAX_PATH
+	if (path.empty()
+			|| m_rootAnchor.empty()
 			|| path.length() < m_rootAnchor.length()) {
 		return false;
 	}
@@ -121,7 +121,10 @@ int AeroFSShellExtension::pathFlags(const std::wstring& path) const
 	if (lowercase(path) == m_rootAnchor) {
 		flags |= RootAnchor;
 	}
-	if (PathIsDirectory(path.c_str())) {
+	std::wstring long_path = std::wstring(L"\\\\?\\") + path;
+	DWORD attributes = GetFileAttributes(long_path.c_str());
+	if (attributes != INVALID_FILE_ATTRIBUTES
+			&& (attributes & FILE_ATTRIBUTE_DIRECTORY)) {
 		flags |= Directory;
 	}
 	return flags;
@@ -185,7 +188,7 @@ Overlay AeroFSShellExtension::overlay(std::wstring& path)
 		// query GUI for sync status
 		ShellextCall call;
 		call.set_type(ShellextCall_Type_GET_PATH_STATUS);
-		call.mutable_get_path_status()->set_path(to_string(path));
+		call.mutable_get_path_status()->set_path(narrow(path));
 
 		m_socket->sendMessage(call);
 
@@ -197,13 +200,13 @@ Overlay AeroFSShellExtension::overlay(std::wstring& path)
 	if (!shouldEnableTestingFeatures()) {
 		if (status != O_Downloading && status != O_Uploading) return O_None;
 	}
-
 	return (Overlay)status;
 }
 
  void AeroFSShellExtension::evicted(const std::wstring& key, int value) const {
 	SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATH | SHCNF_FLUSHNOWAIT, key.c_str(), NULL);
  }
+
 
 /**
  * Process notifications from the GUI about file status changes
@@ -216,7 +219,7 @@ void AeroFSShellExtension::onPathStatusNotification(const PathStatusNotification
 	}
 
 	PBPathStatus status = fstatus.status();
-	const std::wstring path = lowercase(to_wstring(fstatus.path()));
+	const std::wstring path = lowercase(widen(fstatus.path()));
 
 	if (!isUnderRootAnchor(path)) {
 		INFO_LOG("Received a status update for path outside root anchor");
@@ -242,7 +245,7 @@ Called by the GUI to set where the root anchor is.
 */
 void AeroFSShellExtension::setRootAnchor(const std::string& path)
 {
-	std::wstring p = lowercase(to_wstring(path));
+	std::wstring p = lowercase(widen(path));
 
 	assert(p.length() > 0 && p.length() < MAX_PATH);
 
@@ -260,7 +263,7 @@ void AeroFSShellExtension::setRootAnchor(const std::string& path)
 
 void AeroFSShellExtension::setUserId(const std::string& user)
 {
-	m_userId = to_wstring(user);
+	m_userId = widen(user);
 }
 
 /**
@@ -279,7 +282,7 @@ void AeroFSShellExtension::showSyncStatusDialog(const std::wstring& path)
 {
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_SYNC_STATUS);
-	call.mutable_sync_status()->set_path(to_string(path.c_str()));
+	call.mutable_sync_status()->set_path(narrow(path.c_str()));
 
 	m_socket->sendMessage(call);
 }
@@ -288,7 +291,7 @@ void AeroFSShellExtension::showVersionHistoryDialog(const std::wstring& path)
 {
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_VERSION_HISTORY);
-	call.mutable_version_history()->set_path(to_string(path.c_str()));
+	call.mutable_version_history()->set_path(narrow(path.c_str()));
 
 	m_socket->sendMessage(call);
 }
@@ -297,7 +300,7 @@ void AeroFSShellExtension::showShareFolderDialog(const std::wstring& path)
 {
 	ShellextCall call;
 	call.set_type(ShellextCall_Type_SHARE_FOLDER);
-	call.mutable_share_folder()->set_path(to_string(path.c_str()));
+	call.mutable_share_folder()->set_path(narrow(path.c_str()));
 
 	m_socket->sendMessage(call);
 }
