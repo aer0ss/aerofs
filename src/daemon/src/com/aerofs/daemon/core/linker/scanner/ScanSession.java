@@ -24,8 +24,8 @@ import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Iterator;
@@ -83,7 +83,7 @@ class ScanSession
     // set of absolute paths to the "root" folders of the scan session
     private Set<String> _absPaths;
 
-    // list of path combos that represent all the paths in _absPaths
+    // set of path combos that represent all the paths in _absPaths
     private LinkedHashSet<PathCombo> _sortedPCRoots;
 
     // true iff subfolders should be scanned recursively
@@ -99,7 +99,7 @@ class ScanSession
 
     // Don't use java.util.Stack as it's backed by Vector which is synchronized. We don't need
     // synchronization here. A null stack indicates that scan_() has never been called.
-    private @Nullable LinkedList<PathCombo> _stack;
+    private @Nullable Deque<PathCombo> _stack;
 
     // For debugging only
     private boolean _done;
@@ -165,7 +165,7 @@ class ScanSession
                 int potentialUpdates = 0;
                 long start = System.currentTimeMillis();
                 while (!_stack.isEmpty()) {
-                    potentialUpdates += scan_(_stack.removeLast(), t);
+                    potentialUpdates += scan_(_stack.pop(), t);
 
                     if (potentialUpdates > CONTINUATION_UPDATES_THRESHOLD) {
                         l.info("exceed updates thres. " + potentialUpdates);
@@ -176,7 +176,7 @@ class ScanSession
                         break;
                     }
 
-                    // If we have any remaining elements in absPaths that weren't touched
+                    // If we have any remaining elements in sortedPCRoots that weren't touched
                     // by the DFS add them into the stack.
                     addRootPathComboToStack_();
                 }
@@ -222,7 +222,7 @@ class ScanSession
             if (_f._factFile.create(pcRoot._absPath).isDirectory()) {
                 // The order of scan is the natural order of the list, as required by the
                 // constructor.
-                _stack.addFirst(pcRoot);
+                _stack.addLast(pcRoot);
                 iter.remove();
                 break;
             } else {
@@ -279,7 +279,7 @@ class ScanSession
             if (res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER)) {
                 // recurse down if it's a newly created folder, or it's an existing folder and the
                 // recursive bit is set
-                _stack.addLast(pcChild);
+                _stack.push(pcChild);
 
                 // remove the child node in the traversal from the list of _sortedPCRoots
                 // _sortedPCRoots will eventually contain all the paths that were modified but not
