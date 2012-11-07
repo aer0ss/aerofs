@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.proto.PathStatus.PBPathStatus;
+import com.aerofs.proto.PathStatus.PBPathStatus.Flag;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -39,9 +39,9 @@ public class PathFlagAggregator
     private final static Logger l = Util.l(PathFlagAggregator.class);
 
     public final static int NoFlag = 0;
-    public final static int Uploading   = PBPathStatus.Flag.UPLOADING_VALUE;
-    public final static int Downloading = PBPathStatus.Flag.DOWNLOADING_VALUE;
-    public final static int Conflict    = PBPathStatus.Flag.CONFLICT_VALUE;
+    public final static int Uploading   = Flag.UPLOADING_VALUE;
+    public final static int Downloading = Flag.DOWNLOADING_VALUE;
+    public final static int Conflict    = Flag.CONFLICT_VALUE;
 
     // Conflict flag is currently not propagated but changing that is as simple as OR'ing it to
     // this fancy propagation mask
@@ -50,6 +50,10 @@ public class PathFlagAggregator
     private final Node _root;
     private final Map<SOCID, Path> _dlMap = Maps.newHashMap();
     private final Map<SOCID, Path> _ulMap = Maps.newHashMap();
+
+    // for each flag, number of nodes on which it is explicitely set (as opposed to propagate from
+    // some of its children)
+    private final Map<Flag, Integer> _counters = Maps.newEnumMap(Flag.class);
 
     private static class Node
     {
@@ -112,6 +116,10 @@ public class PathFlagAggregator
     public PathFlagAggregator()
     {
         _root = new Node("", null);
+
+        _counters.put(Flag.valueOf(Downloading), 0);
+        _counters.put(Flag.valueOf(Uploading), 0);
+        _counters.put(Flag.valueOf(Conflict), 0);
     }
 
     /**
@@ -231,16 +239,41 @@ public class PathFlagAggregator
     }
 
     /**
+     * @return number of nodes for which a given flag is explicitely set
+     */
+    public int nodesWithFlag_(int flag)
+    {
+        // make sure we're only testing one flag (must be a power of 2)
+        assert (flag & (flag - 1)) == 0 : flag;
+        return _counters.get(Flag.valueOf(flag));
+    }
+
+    /**
      * React to a state change
      * @param path Path of object whose state changed
-     * @param state transfer type (Uploading or Downloading)
-     * @param start whether the state change is the start of a transfer
+     * @param flag flag to set/reset
+     * @param set new value of the given flag
      * @param notify all state changes after upward propagation as a map(path->newState)
      */
-    private void stateChanged_(Path path, int state, boolean start, Map<Path, Integer> notify)
+    private void stateChanged_(Path path, int flag, boolean set, Map<Path, Integer> notify)
     {
+        // make sure we're only setting flags one at a time (so flag must be a power of 2)
+        assert (flag & (flag - 1)) == 0 : path + " " + flag;
+
+        // update node and propagate state change up the object tree
         Node n = node_(path, true);
-        int d = n.setState(start ? n._ownState | state : n._ownState & (~state));
+        int oldState = n._ownState;
+        int d = n.setState(set ? n._ownState | flag : n._ownState & (~flag));
+
+        // update counters
+        if (n._ownState != oldState) {
+            // make only one flag got changed
+            assert (n._ownState ^ oldState) == flag;
+            Flag f = Flag.valueOf(flag);
+            _counters.put(f, _counters.get(f) + (set ? 1 : -1));
+        }
+
+        // populate notification map
         while (d > 0) {
             notify.put(path, n.state());
             // break now to avoid an assert failure in Path in case we reached the root

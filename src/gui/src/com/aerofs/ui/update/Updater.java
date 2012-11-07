@@ -16,6 +16,7 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 
 import com.aerofs.controller.ControllerService;
+import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.lib.*;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerNotifications.Type;
@@ -228,7 +229,7 @@ public abstract class Updater
                 setUpdateStatus(Status.LATEST, -1);
 
                 if (UI.isGUI() && GUI.get().st() != null) {
-                    GUI.get().st().getIcon().showNotification(false);
+                    GUI.get().st().getIcon().showNotification(NotificationReason.UPDATE, false);
                 }
 
                 ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
@@ -506,7 +507,7 @@ public abstract class Updater
         }
 
         if (UI.isGUI() && GUI.get().st() != null) {
-            GUI.get().st().getIcon().showNotification(true);
+            GUI.get().st().getIcon().showNotification(NotificationReason.UPDATE, true);
         }
     }
 

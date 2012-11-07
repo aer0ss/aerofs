@@ -348,4 +348,26 @@ public class UIUtil
             UI.get().asyncExec(postLaunch);
         }
     }
+
+    /**
+     * Prettify a count-prefixed label
+     * @param count Number of items associated with the label
+     * @param singular Label to use in case the number of items is exactly 1
+     * @param plural Label suffix to use in case the numbers of items is different from 1
+     *
+     * Examples:
+     *
+     * prettyLabelWithCount(0, "A foo", "bar") -> "No bar"
+     * prettyLabelWithCount(1, "A foo", "bar") -> "A foo"
+     * prettyLabelWithCount(2, "A foo", "bar") -> "Two bar"
+     * prettyLabelWithCount(11, "A foo", "bar") -> "11 bar"
+     */
+    public static String prettyLabelWithCount(int count, String singular, String plural)
+    {
+        assert count >= 0;
+        final String[] NUMBERS = {"No", "", "Two", "Three", "Four", "Five",
+                "Six", "Seven", "Eight", "Nine", "Ten" };
+        if (count == 1) return singular;
+        return (count <= NUMBERS.length ? NUMBERS[count] : count) + " " + plural;
+    }
 }

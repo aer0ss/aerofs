@@ -14,6 +14,7 @@ message PBNotification {
         BAD_CREDENTIAL = 2;
         PATH_STATUS = 3;
         CLEAR_STATUS = 4; // clear any cached path status
+        CONFLICT_COUNT = 5;  // number of files with conflicts changed
     }
 
     required Type type = 1;
@@ -21,6 +22,7 @@ message PBNotification {
     optional PBDownloadEvent download = 2;
     optional PBUploadEvent upload = 3;
     optional PBPathStatusEvent path_status = 4;
+    optional int32 conflict_count = 5; // number of files with existing conflicts
 }
 
 // TODO change to PBUpload/DownloadNotification?

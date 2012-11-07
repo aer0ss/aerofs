@@ -24,16 +24,18 @@ class EISendSnapshot extends AbstractEBSelfHandling
     private final InetSocketAddress _to;
     private final DownloadState _dls;
     private final UploadState _uls;
+    private final PathStatusNotifier _psn;
     private final DirectoryService _ds;
     private final TC _tc;
 
     EISendSnapshot(TC tc, RitualNotificationServer notifier, InetSocketAddress to,
-            DownloadState dls, UploadState uls, DirectoryService ds)
+            DownloadState dls, UploadState uls, PathStatusNotifier psn, DirectoryService ds)
     {
         _notifier = notifier;
         _to = to;
         _dls = dls;
         _uls = uls;
+        _psn = psn;
         _ds = ds;
         _tc = tc;
     }
@@ -55,6 +57,7 @@ class EISendSnapshot extends AbstractEBSelfHandling
         }
 
         _notifier.sendSnapshot_(_to, pbs);
+        _psn.sendConflictCount_();
     }
 
 }

@@ -100,6 +100,15 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
                 .build());
     }
 
+    // public for use in EISendSnapshot
+    public void sendConflictCount_()
+    {
+        _notifier.sendEvent_(PBNotification.newBuilder()
+                .setType(Type.CONFLICT_COUNT)
+                .setConflictCount(_ps.conflictCount_())
+                .build());
+    }
+
     @Override
     public void branchesChanged_(Map<Path, Boolean> conflicts)
     {
