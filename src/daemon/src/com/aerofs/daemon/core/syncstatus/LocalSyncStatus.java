@@ -103,6 +103,13 @@ public class LocalSyncStatus
         public void mergeDevices_(DeviceBitMap dbm, BitVector status);
 
         /**
+         * Aggregate status of underlying store
+         *
+         * NOTE: only called when aggregating status of a store anchor
+         */
+        public void mergeRoot_(IAggregatedStatus aggregatedStatus);
+
+        /**
          * Aggregate status of child store
          *
          * NOTE: only called when the object for which sync status is being aggregated
@@ -130,6 +137,12 @@ public class LocalSyncStatus
             for (int i = 0; i < dbm.size(); ++i) {
                 d.put(dbm.get(i), status.test(i));
             }
+        }
+
+        @Override
+        public void mergeRoot_(IAggregatedStatus aggregated)
+        {
+            mergeStore_(aggregated);
         }
 
         @Override
@@ -169,15 +182,17 @@ public class LocalSyncStatus
             // aggregate stores strictly under this directory
             aggregateDescendants_(soid, aggregated);
         } else if (oa.isAnchor()) {
+            // TODO: anchor should hava atLeastOneInSync set for summary aggregate even when no
+            // peers are around
             SOID root = _ds.followAnchorThrows_(oa);
 
             // aggregate root of this store
             IAggregatedStatus saggregate = aggregated.create();
             aggregateWithinStore_(root, true, saggregate);
-            aggregated.mergeStore_(saggregate);
+            aggregated.mergeRoot_(saggregate);
 
             // aggregate child stores strictly under the root of this store
-            aggregateDescendants_(soid, aggregated);
+            aggregateDescendants_(root, aggregated);
         }
     }
 

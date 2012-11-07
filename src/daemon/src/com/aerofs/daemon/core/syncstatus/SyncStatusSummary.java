@@ -60,6 +60,16 @@ public class SyncStatusSummary implements IAggregatedStatus
     }
 
     @Override
+    public void mergeRoot_(IAggregatedStatus aggregated)
+    {
+        SyncStatusSummary o = (SyncStatusSummary)aggregated;
+        // although we're aggregating store contents, it's still referring to the same top-level
+        // object, hence the use of OR (as in mergeDevices_) instead of AND (as in mergeStore_)
+        atLeastOneInSync |= o.atLeastOneInSync;
+        allInSync &= o.allInSync;
+    }
+
+    @Override
     public void mergeStore_(IAggregatedStatus aggregated)
     {
         SyncStatusSummary o = (SyncStatusSummary)aggregated;
