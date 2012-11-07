@@ -15,4 +15,4 @@ if [ x"$1" == x ]; then
     exit 1
 fi
 
-wget --timeout=1 --no-cache -q -O /dev/null "$1"
+wget --timeout=3 --no-cache -q -O /dev/null "$1"
