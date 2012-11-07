@@ -106,7 +106,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
 
     private @Nonnull FID getFIDFromFilesystem_(InjectableFile f) throws IOException
     {
-        FID fid = _dr.getFID(f.getPath());
+        FID fid = _dr.getFID(f.getAbsolutePath());
         if (fid == null) throw new IOException("OS-specific file");
         return fid;
     }
