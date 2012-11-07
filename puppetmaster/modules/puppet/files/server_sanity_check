@@ -1,0 +1,36 @@
+#!/bin/bash
+
+SUCCESS=TRUE
+
+url()
+{
+    echo "Verifying $1"
+    wget --timeout=1 --no-cache -q -O /dev/null $1
+    if [ $? != 0 ]; then
+        echo "Failure with url: $1"
+        SUCCESS=FALSE
+    fi
+}
+
+port()
+{
+    echo "Verifying port $2 on $1"
+    nc -z $1 $2 > /dev/null
+    if [ $? != 0 ]; then
+        echo "Failure with port $2 on $1"
+        SUCCESS=FALSE
+    fi
+}
+
+port verkehr.aerofs.com 443
+port x.aerofs.com 443
+port zephyr.aerofs.com 443
+url https://sp.aerofs.com/sp
+url https://sv.aerofs.com/sv_beta/sv
+url https://sss.aerofs.com/syncstat
+
+if [ $SUCCESS == TRUE ]; then
+    exit 0
+else
+    exit 1
+fi

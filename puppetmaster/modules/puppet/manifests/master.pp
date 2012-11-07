@@ -16,6 +16,11 @@ class puppet::master inherits puppet {
     source => "puppet:///modules/puppet/kickall",
   }
 
+  file { "/usr/local/bin/server_sanity_check":
+    mode => 755,
+    source => "puppet:///modules/puppet/server_sanity_check",
+  }
+
   file { "/etc/puppet/nodes.yaml":
     mode => 666,
     content => template("puppet/nodes.yaml.erb")

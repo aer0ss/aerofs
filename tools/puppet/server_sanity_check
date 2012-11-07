@@ -16,7 +16,6 @@ if [ x"$PUPPET_MASTER" == x ]; then
     exit 3
 fi
 
-ssh ${PUPPET_MASTER} -C "echo `date` >> /var/log/aerofs/kickall.log"
-ssh ${PUPPET_MASTER} -C "kickall | tee -a /var/log/aerofs/kickall.log"
+ssh ${PUPPET_MASTER} -C "server_sanity_check"
 
 exit 0
