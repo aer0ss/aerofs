@@ -16,6 +16,8 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVHeader;
 
+import static com.aerofs.sv.server.SVSchema.*;
+
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 
@@ -26,9 +28,9 @@ public class SVDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
-    static final String C_HDRS = SVSchema.C_HDR_TS + "," + SVSchema.C_HDR_VER + "," +
-            SVSchema.C_HDR_USER + "," + SVSchema.C_HDR_DID + "," + SVSchema.C_HDR_APPROOT +
-            "," + SVSchema.C_HDR_RTROOT + "," + SVSchema.C_HDR_CLIENT;
+    static final String C_HDRS = C_HDR_TS + "," + C_HDR_VER + "," +
+            C_HDR_USER + "," + C_HDR_DID + "," + C_HDR_APPROOT +
+            "," + C_HDR_RTROOT + "," + C_HDR_CLIENT;
     static final String C_HDR_VALUES = "?,?,?,?,?,?,?";
 
     /**
@@ -54,9 +56,9 @@ public class SVDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement psAddDefect = getConnection().prepareStatement(
-                "insert into " + SVSchema.T_DEF + "(" + C_HDRS + "," + SVSchema.C_DEF_AUTO +
-                        "," + SVSchema.C_DEF_DESC + "," + SVSchema.C_DEF_CFG + "," +
-                        SVSchema.C_DEF_JAVA_ENV +
+                "insert into " + T_DEF + "(" + C_HDRS + "," + C_DEF_AUTO +
+                        "," + C_DEF_DESC + "," + C_DEF_CFG + "," +
+                        C_DEF_JAVA_ENV +
                         ") values (" + C_HDR_VALUES + ",?,?,?,?)",
                 PreparedStatement.RETURN_GENERATED_KEYS);
 
@@ -86,8 +88,8 @@ public class SVDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement psAddEvent = getConnection().prepareStatement(
-                "insert into " + SVSchema.T_EV + "(" + C_HDRS + "," + SVSchema.C_EV_TYPE +
-                        "," + SVSchema.C_EV_DESC + ") values (" + C_HDR_VALUES + ",?,?)",
+                "insert into " + T_EV + "(" + C_HDRS + "," + C_EV_TYPE +
+                        "," + C_EV_DESC + ") values (" + C_HDR_VALUES + ",?,?)",
                 PreparedStatement.RETURN_GENERATED_KEYS);
 
         setHeader(psAddEvent, header, client);
@@ -118,7 +120,7 @@ public class SVDatabase extends AbstractSQLDatabase
     {
         PreparedStatement psAddEmailEvent = getConnection().prepareStatement(
                 DBUtil.insert(
-                        SVSchema.T_EE, SVSchema.C_EE_EMAIL, SVSchema.C_EE_EVENT, SVSchema.C_EE_DESC, SVSchema.C_EE_CATEGORY, SVSchema.C_EE_TS),
+                        T_EE, C_EE_EMAIL, C_EE_EVENT, C_EE_DESC, C_EE_CATEGORY, C_EE_TS),
                 PreparedStatement.RETURN_GENERATED_KEYS);
 
         psAddEmailEvent.setString(1, ee._email);
@@ -146,13 +148,13 @@ public class SVDatabase extends AbstractSQLDatabase
         throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectFromWhere(SVSchema.T_EE,
-                                SVSchema.C_EE_ID+"=?",
-                                SVSchema.C_EE_EMAIL,
-                                SVSchema.C_EE_EVENT,
-                                SVSchema.C_EE_DESC,
-                                SVSchema.C_EE_CATEGORY,
-                                SVSchema.C_EE_TS)
+                        DBUtil.selectFromWhere(T_EE,
+                                C_EE_ID+"=?",
+                                C_EE_EMAIL,
+                                C_EE_EVENT,
+                                C_EE_DESC,
+                                C_EE_CATEGORY,
+                                C_EE_TS)
                                 );
 
         ps.setInt(1, eventId);
