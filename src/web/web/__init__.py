@@ -48,11 +48,18 @@ def main(global_config, **settings):
     config.add_static_view(static_prefix, 'aerofs_web.layout:static/', cache_max_age=3600)
     config.add_route('homepage', '/')
 
+    config.scan()
+    # Config commiting. Pyramid does some great config conflict detection. This conflict detection is
+    # limited to configuration changes between commits. Since some of the default configuration is
+    # overridden in modules, we have to commit the default configuration before including the modules.
+    # otherwise we get a ConfigurationConflictError.
+    # See http://pyramid.readthedocs.org/en/latest/narr/advconfig.html for more details.
+    config.commit()
+
     # Import routes from modules
     for module in dir(modules):
         if not builtinfunc.match(module):
             config.include(modulePackageName + module)
             config.scan(package=modulePackageName + module)
 
-    config.scan()
     return config.make_wsgi_app()
