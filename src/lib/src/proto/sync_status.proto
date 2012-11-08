@@ -47,6 +47,7 @@ service SyncStatusService {
      * Throws:
      *   ExNoPerm if the user has not yet signed in.
      *   ExFormatError if the cookie DID is malformed.
+     *   ExBadArgs if you have called get syncstatus with the same epoch too many consecutive times.
      */
     rpc GetSyncStatus(GetSyncStatusCall) returns(GetSyncStatusReply);
 }
