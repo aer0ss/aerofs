@@ -376,7 +376,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                 SID sid = new SID(ostat.getSid());
                 SIndex sidx = _sid2sidx.getNullable_(sid);
                 if (sidx == null) {
-                    l.warn("unknown SID : " + sid.toStringFormal());
+                    l.warn("unknown SID: " + sid.toStringFormal());
                     continue;
                 }
 
@@ -388,16 +388,20 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                 // is the same as the last local version before expulsion
                 // TODO(huguesb): keep store-level count of new out_sync objects?
                 OA oa = _ds.getOANullable_(soid);
-                if (oa == null) continue;
+                if (oa == null) {
+                    l.warn("unknown OID: " + soid.sidx() + "<" + soid.oid().toStringFormal() + ">");
+                    continue;
+                }
 
                 DeviceBitMap dids = _sidx2dbm.getDeviceMapping_(sidx);
-
-                //l.debug("new status for : " + soid.toString());
 
                 // compress the reply into a sync status bit vector
                 // NOTE: any device not mentioned in the message should remain unchanged so we need
                 // to fetch the current (raw) sync status and modify it
                 BitVector bv = _ds.getRawSyncStatus_(soid);
+
+                l.debug("new status for : " + soid.toString() + " " + ostat.getDevicesCount()
+                        + " [" + bv + "]");
 
                 for (DeviceSyncStatus dstat : ostat.getDevicesList()) {
                     DID did = new DID(dstat.getDid());
@@ -410,6 +414,8 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                     }
                     bv.set(idx, dstat.getIsSynced());
                 }
+
+                l.debug(" -> " + bv);
 
                 // set the new sync status vector
                 _ds.setSyncStatus_(soid, bv, t);
