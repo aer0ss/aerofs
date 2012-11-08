@@ -39,7 +39,7 @@ public class DependencyEdge extends DirectedEdge<SOCID>
     @Override
     public String toString()
     {
-        return _src + "==" + type() + "==>" + dst;
+        return _src + "=" + type().ordinal() + "=>" + dst;
     }
 
 }

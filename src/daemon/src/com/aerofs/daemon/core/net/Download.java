@@ -370,7 +370,7 @@ public class Download
             throws Exception
     {
         To to = e._did == null ? _f._factTo.create_(_src) : _f._factTo.create_(e._did);
-        l.info("download dependency " + dependency);
+        l.info("dl dep " + dependency);
         try {
             _f._dls.downloadSync_(dependency, to, _tk);
         } catch (Exception e2) {
@@ -384,10 +384,10 @@ public class Download
             // file, but threw an exception for some reason instead of sending the file.
             // Instead we should catch ExNoComponentWithSpecifiedVersion, and only add the OCID to
             // _requested in that case.
-            if (e._ignoreError) l.info("dl dependency error, ignored: " + Util.e(e2));
+            if (e._ignoreError) l.info("dl dep error, ignored: " + Util.e(e2));
             else throw e2;
         }
-        l.info("dependency " + dependency + " solved");
+        l.info("dep " + dependency + " solved");
         assert dependency.dst.oid().equals(e._ocid.oid());
         _requested.add(e._ocid);
     }
