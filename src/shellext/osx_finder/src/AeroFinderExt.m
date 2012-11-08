@@ -30,6 +30,7 @@ static Overlay overlayForStatus(PBPathStatus* status)
 - (void)clearCache;
 - (void)evicted:(NSString*)path withValue:(int)value;
 - (void)refreshIconInFinder:(NSString*)path;
+- (void)scheduleRefreshAllFinderWindows;
 - (void)refreshAllFinderWindows;
 @end
 
@@ -337,10 +338,38 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
 
     // attempt 3: aggressive display refresh of all windows
     // works great, only concern is slightly degraded performance of Finder due to burst of refreshes
-    [self refreshAllFinderWindows];
+    [self scheduleRefreshAllFinderWindows];
 
     // attempt 4 : dirty hack in the bowels of Finder ?
 }
+
+/**
+ * Too avoiding degradation of Finder performance due to aggressive refreshes when receiving a flood of status
+ * updates we use NSTimer to schedule the refresh in the future and implement rate-limiting by dropping incoming
+ * refresh requests until a timer exists (they are effectively "merged" when the timer fires and causes a refresh)
+ */
+- (void)scheduleRefreshAllFinderWindows
+{
+    // incoming refresh, no worries...
+    if (refreshTimer != nil) return;
+
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    NSTimeInterval elapsed = now - lastRefreshTime;
+
+    // more than 1s elapsed since last refresh, can afford direct refresh
+    if (elapsed > 1) {
+        [self refreshAllFinderWindows];
+        return;
+    }
+
+    // single shot timer with 500ms delay (docs says to expect a resolution no finer than ~50-100ms)
+    refreshTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
+                                                    target:self
+                                                  selector:@selector(refreshAllFinderWindows)
+                                                  userInfo:nil
+                                                   repeats:NO];
+}
+
 
 /**
  * Get Finder to refresh all icon overlays (if any) [without enumerating cache contents...]
@@ -350,6 +379,9 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     [[[NSApplication sharedApplication] windows] enumerateObjectsUsingBlock:^(id w, NSUInteger i, BOOL* b) {
         [w display];
     }];
+
+    lastRefreshTime = [NSDate timeIntervalSinceReferenceDate];
+    refreshTimer = nil;
 }
 
 /**

@@ -32,6 +32,9 @@ typedef enum {
     NSString* rootAnchor;
     NSString* userId;
     AeroOverlayCache* statusCache;
+
+    NSTimer* refreshTimer;
+    NSTimeInterval lastRefreshTime;
 }
 
 @property (readonly) AeroOverlay* overlay;
