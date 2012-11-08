@@ -518,7 +518,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
     }
 
     @Override
-    public IDBIterator<SOKID> getNonMasterBranches_()
+    public IDBIterator<SOKID> getAllNonMasterBranches_()
         throws SQLException
     {
         Statement s = null;

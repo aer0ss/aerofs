@@ -1,11 +1,10 @@
 package com.aerofs.shell;
 
+import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.fsi.AeroFile;
+import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-
-import java.util.List;
 
 public class CmdMv implements IShellCommand<ShProgram>
 {
@@ -15,12 +14,10 @@ public class CmdMv implements IShellCommand<ShProgram>
     {
         if (cl.getArgs().length != 2) throw new ExBadArgs();
 
-        List<String> to = s.d().buildPathElemList_(cl.getArgs()[1]);
-        if (to.size() < 1) throw new ExBadArgs("incorrect destination path");
-        String toName = to.remove(to.size() - 1);
+        PBPath to = s.d().buildPath_(cl.getArgs()[1]);
+        if (new Path(to).isEmpty()) throw new ExBadArgs("incorrect destination path");
 
-        new AeroFile(s.d().getFSIClient_(), s.d().buildPath_(cl.getArgs()[0]))
-                .move_(ShProgram.buildPath_(to), toName);
+        s.d().getRitualClient_().moveObject(s.d().buildPath_(cl.getArgs()[0]), to);
     }
 
     @Override

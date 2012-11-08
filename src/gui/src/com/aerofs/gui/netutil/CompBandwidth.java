@@ -1,5 +1,8 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.proto.Ritual.TransportFloodQueryReply;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.layout.GridLayout;
 
@@ -10,13 +13,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.id.DID;
-import com.aerofs.proto.Fsi.PBFSICall;
-import com.aerofs.proto.Fsi.PBTransportFloodCall;
-import com.aerofs.proto.Fsi.PBFSICall.Type;
-import com.aerofs.proto.Fsi.PBTransportFloodQueryCall;
-import com.aerofs.proto.Fsi.PBTransportFloodQueryReply;
 import com.aerofs.ui.UIParam;
 
 import org.eclipse.swt.widgets.Label;
@@ -114,22 +111,24 @@ public class CompBandwidth extends Composite {
             @Override
             public void run()
             {
-                FSIClient fsi = FSIClient.newConnection();
+                RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 _compPing.suspend();
                 try {
                     try {
-                        thdRun(_compUploadStatus, true, fsi);
+                        thdRun(_compUploadStatus, true, ritual);
                     } catch (Exception e) {
                         _compUploadStatus.done(e, 0, 0);
                     }
 
                     try {
-                        thdRun(_compDownloadStatus, false, fsi);
+                        thdRun(_compDownloadStatus, false, ritual);
                     } catch (Exception e) {
                         _compDownloadStatus.done(e, 0, 0);
                     }
 
                 } finally {
+                    ritual.close();
+
                     // re-enable the start button
                     GUI.get().safeAsyncExec(CompBandwidth.this, new Runnable() {
                         @Override
@@ -142,7 +141,6 @@ public class CompBandwidth extends Composite {
                     });
 
                     _compPing.resume();
-                    fsi.close_();
                 }
             }
         };
@@ -159,7 +157,7 @@ public class CompBandwidth extends Composite {
     private static final long RPC_INTERVAL = 1 * C.SEC;
     private final Label label;
 
-    private void thdRun(CompBandwidthStatus comp, boolean send, FSIClient fsi)
+    private void thdRun(CompBandwidthStatus comp, boolean send, RitualBlockingClient ritual)
         throws Exception
     {
         int seqStart = Util.rand().nextInt();
@@ -182,7 +180,8 @@ public class CompBandwidth extends Composite {
             switch (state) {
             case INIT:
                 comp.init();
-                rpcFlood(fsi, send, seqStart, seqEnd);
+                ritual.transportFlood(_did.toPB(), send, seqStart, seqEnd,
+                        UIParam.TRANSPORT_FLOOD_DURATION, _sname);
                 lastRpc = now;
                 state = State.QUERY_START;
                 timeoutStart = now;
@@ -190,7 +189,7 @@ public class CompBandwidth extends Composite {
 
             case QUERY_START:
                 if (now - lastRpc > RPC_INTERVAL) {
-                    rpcFloodQuery(fsi, seqStart, timeStart, bytesStart);
+                    rpcFloodQuery(ritual, seqStart, timeStart, bytesStart);
                     lastRpc = now;
                     if (timeStart.get() == C.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
                         if (now - timeoutStart > Cfg.timeout()) throw new ExTimeout();
@@ -205,7 +204,7 @@ public class CompBandwidth extends Composite {
 
             case QUERY_END:
                 if (now - lastRpc > RPC_INTERVAL) {
-                    rpcFloodQuery(fsi, seqEnd, timeEnd, bytesEnd);
+                    rpcFloodQuery(ritual, seqEnd, timeEnd, bytesEnd);
                     lastRpc = now;
                     if (timeEnd.get() == C.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
                         if (now - timeoutStart > Cfg.timeout()) throw new ExTimeout();
@@ -240,29 +239,10 @@ public class CompBandwidth extends Composite {
         if (_stop) comp.reset();
     }
 
-    private void rpcFlood(FSIClient fsi, boolean send, int seqStart, int seqEnd) throws Exception
+    private void rpcFloodQuery(RitualBlockingClient ritual, int seq, OutArg<Long> time,
+            OutArg<Long> bytes) throws Exception
     {
-        PBFSICall.Builder call = PBFSICall.newBuilder()
-            .setType(Type.TRANSPORT_FLOOD)
-            .setTransportFlood(PBTransportFloodCall.newBuilder()
-                    .setDeviceId(_did.toPB())
-                    .setSend(send)
-                    .setSeqStart(seqStart)
-                    .setSeqEnd(seqEnd)
-                    .setDuration(UIParam.TRANSPORT_FLOOD_DURATION)
-                    .setSname(_sname));
-        fsi.rpc_(call);
-    }
-
-    private void rpcFloodQuery(FSIClient fsi, int seq, OutArg<Long> time, OutArg<Long> bytes)
-        throws Exception
-    {
-        PBFSICall.Builder call = PBFSICall.newBuilder()
-            .setType(Type.TRANSPORT_FLOOD_QUERY)
-            .setTransportFloodQuery(PBTransportFloodQueryCall.newBuilder()
-                    .setDeviceId(_did.toPB())
-                    .setSeq(seq));
-        PBTransportFloodQueryReply reply = fsi.rpc_(call).getTransportFloodQuery();
+        TransportFloodQueryReply reply = ritual.transportFloodQuery(_did.toPB(), seq);
         time.set(reply.getTime());
         bytes.set(reply.getBytes());
     }

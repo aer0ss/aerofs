@@ -9,8 +9,7 @@ public class EIMoveObject extends AbstractEIFS
     public final Path _toParent;
     public final String _toName;
 
-    public EIMoveObject(String user, Path from, Path toParent, String toName,
-            IIMCExecutor imce)
+    public EIMoveObject(String user, IIMCExecutor imce, Path from, Path toParent, String toName)
     {
         super(user, imce);
         _from = from;

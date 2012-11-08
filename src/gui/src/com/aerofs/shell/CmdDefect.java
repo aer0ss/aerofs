@@ -10,7 +10,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.fsi.FSIUtil;
+import com.aerofs.InternalDiagnostics;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI.MessageType;
@@ -37,7 +37,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
         String daemonStatus;
         if (dumpDaemonStatus) {
             try {
-                daemonStatus = FSIUtil.dumpFullDaemonStatus(ritual);
+                daemonStatus = InternalDiagnostics.dumpFullDaemonStatus(ritual);
             } catch (Exception e) {
                 daemonStatus = "(cannot dump daemon status: " + Util.e(e) + ")";
             }

@@ -9,6 +9,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -16,15 +17,15 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.lib.fsi.FSIClient;
-import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import static com.aerofs.lib.ExitCode.*;
 
@@ -111,27 +112,21 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 }
             }
 
+            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
-                FSIClient fsi = FSIClient.newConnection();
-                try {
-                    l.info("set daemon key");
-
-                    FSIUtil.setDaemonPrivateKey_(Cfg.privateKey(), fsi);
-
-                    l.warn("daemon started");
-
-                    break;
-
-                } finally {
-                    fsi.close_();
-                }
-
+                l.info("set daemon key");
+                ritual.setPrivateKey(
+                        ByteString.copyFrom(SecUtil.encodePrivateKey(Cfg.privateKey())));
+                l.warn("daemon started");
+                break;
             } catch (Exception e) {
                 l.info("pinging deamon failed: " + e);
                 if (--retries == 0) {
                     l.error("pinging daemon took too long. give up");
                     throw new ExTimeout();
                 }
+            } finally {
+                ritual.close();
             }
 
             l.info("sleep for " + UIParam.DAEMON_CONNECTION_RETRY_INTERVAL + " ms");

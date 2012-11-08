@@ -8,8 +8,9 @@ import com.aerofs.gui.history.HistoryModel.IDecisionMaker.Answer;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Util.FileName;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -37,6 +38,7 @@ public class HistoryModel
 {
     private static final Logger l = Util.l(HistoryModel.class);
 
+    private final String _user;
     private RitualBlockingClient _ritual;
     private final RitualBlockingClient.Factory _factory;
 
@@ -103,12 +105,14 @@ public class HistoryModel
 
     public HistoryModel()
     {
+        _user = Cfg.user();
         _factory = new RitualBlockingClient.Factory();
         _ritual = _factory.create();
     }
 
-    public HistoryModel(RitualBlockingClient.Factory factory)
+    public HistoryModel(CfgLocalUser user, RitualBlockingClient.Factory factory)
     {
+        _user = user.get();
         _factory = factory;
         _ritual = _factory.create();
     }
@@ -190,8 +194,7 @@ public class HistoryModel
 
             if (parent == null || !parent.isDeleted) {
                 // TODO(huguesb): do we really need to pass user ids through Ritual?
-                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(Cfg.user(),
-                        path.toPB());
+                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(_user, path.toPB());
                 assert ca != null;
                 for (int i = 0; i < ca.getChildrenNameCount(); i++) {
                     String name = ca.getChildrenName(i);
@@ -270,7 +273,7 @@ public class HistoryModel
      */
     private File getRestoredFile(String absPath, String name)
     {
-        FileName fn = Util.splitFileName(name);
+        FileName fn = FileName.fromBaseName(name);
         String restoredName = fn.base + " - restored" + fn.extension;
 
         File dst = new File(Util.join(absPath, restoredName));

@@ -2,7 +2,6 @@ package com.aerofs.shell;
 
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
@@ -108,7 +107,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         // print path
         String str;
         if (debug) {
-            str = FSIUtil.toString(ev.getPath());
+            str = new Path(ev.getPath()).toString();
         } else {
             Path path = new Path(ev.getPath());
             str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);
@@ -136,7 +135,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
         // print path
         String str;
         if (debug) {
-            str = FSIUtil.toString(ev.getPath());
+            str = new Path(ev.getPath()).toString();
         } else {
             Path path = new Path(ev.getPath());
             str = UIUtil.getUserFriendlyPath(ev.getSocid(), ev.getPath(), path);

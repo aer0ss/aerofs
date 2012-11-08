@@ -1,30 +1,31 @@
 package com.aerofs.shell;
 
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFile;
-import com.aerofs.lib.fsi.AeroFile;
+import com.aerofs.proto.Common.PBPath;
+import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
 public class CmdRm implements IShellCommand<ShProgram>
 {
     @Override
-    public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl)
-            throws Exception
+    public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
         if (cl.getArgs().length == 0) throw new ExBadArgs();
 
         for (String arg : cl.getArgs()) {
-            AeroFile f = new AeroFile(s.d().getFSIClient_(), s.d().buildPath_(arg));
-            if (f.isDir_()) {
-                if (cl.hasOption('r')) {
-                    f.delete_();
-                } else {
-                    throw new ExNotFile();
-                }
-            } else {
-                f.delete_();
-            }
+            PBPath path = s.d().buildPath_(arg);
+
+            PBObjectAttributes attr = s.d().getRitualClient_()
+                    .getObjectAttributes(Cfg.user(), path)
+                    .getObjectAttributes();
+
+            if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();
+
+            s.d().getRitualClient_().deleteObject(path);
         }
     }
 

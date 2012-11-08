@@ -12,12 +12,14 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDumpStat;
+import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
+import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.admin.EIListRevChildren;
 import com.aerofs.daemon.event.admin.EIListRevHistory;
@@ -25,23 +27,33 @@ import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
+import com.aerofs.daemon.event.admin.EISetPrivateKey;
+import com.aerofs.daemon.event.admin.EITransportFlood;
+import com.aerofs.daemon.event.admin.EITransportFloodQuery;
+import com.aerofs.daemon.event.admin.EITransportPing;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.admin.EISetExpelled;
+import com.aerofs.daemon.event.fs.EICreateObject;
+import com.aerofs.daemon.event.fs.EIDeleteBranch;
+import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
+import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
-import com.aerofs.daemon.fsi.FSIFile;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Role;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SID;
 import com.aerofs.proto.Common;
@@ -50,6 +62,7 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Ritual.DumpStatsReply;
+import com.aerofs.proto.Ritual.ExportConflictReply;
 import com.aerofs.proto.Ritual.ExportFileReply;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetACLReply;
@@ -59,6 +72,7 @@ import com.aerofs.proto.Ritual.GetObjectAttributesReply;
 import com.aerofs.proto.Ritual.GetPathStatusReply;
 import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.IRitualService;
+import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListExcludedFoldersReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
@@ -69,10 +83,14 @@ import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.ShareFolderReply;
 import com.aerofs.proto.Ritual.TestGetObjectIdentifierReply;
 import com.aerofs.sv.client.SVClient;
+import com.aerofs.proto.Ritual.TransportFloodQueryReply;
+import com.aerofs.proto.Ritual.TransportPingReply;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+
+import javax.annotation.Nullable;
 
 /**
  * For simplicity, the RPC plugin generates only a future-based interface. Users of the RPC plugin
@@ -148,7 +166,8 @@ public class RitualService implements IRitualService
             for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
                 bd.addBranch(PBBranch.newBuilder()
                         .setKidx(en.getKey().getInt())
-                        .setLength(en.getValue().length()));
+                        .setLength(en.getValue().length())
+                        .setMtime(en.getValue().mtime()));
             }
             break;
         default: assert false;
@@ -226,11 +245,81 @@ public class RitualService implements IRitualService
     }
 
     @Override
+    public ListenableFuture<Void> createObject(PBPath path, Boolean dir) throws Exception
+    {
+        EICreateObject ev = new EICreateObject(Cfg.user(), Core.imce(), new Path(path), dir);
+        ev.execute(PRIO);
+        if (ev._exist) throw new ExAlreadyExist();
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> deleteObject(PBPath path) throws Exception
+    {
+        EIDeleteObject ev = new EIDeleteObject(Cfg.user(), Core.imce(), new Path(path));
+        ev.execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> moveObject(PBPath pathFrom, PBPath pathTo) throws Exception
+    {
+        Path to = new Path(pathTo);
+        EIMoveObject ev = new EIMoveObject(Cfg.user(), Core.imce(),
+                new Path(pathFrom), to.removeLast(), to.last());
+        ev.execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<Void> shutdown() throws Exception
     {
         Util.l(this).warn("shutdown requested");
         ExitCode.SHUTDOWN_REQUESTED.exit();
 
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<TransportPingReply> transportPing(ByteString deviceId, Integer seqPrev,
+            Integer seqNext, Boolean forceNext, Boolean ignoreOffline)
+            throws Exception
+    {
+        EITransportPing ev = new EITransportPing(new DID(deviceId),
+                seqPrev, seqNext, forceNext, ignoreOffline);
+        ev.execute(PRIO);
+
+        TransportPingReply.Builder bd = TransportPingReply.newBuilder();
+        if (ev.rtt() != null) bd.setRtt(ev.rtt());
+        return createReply(bd.build());
+    }
+
+    @Override
+    public ListenableFuture<Void> transportFlood(ByteString deviceId, Boolean send,
+            Integer seqStart, Integer seqEnd, Long duration, @Nullable String sname)
+            throws Exception
+    {
+        EITransportFlood ev = new EITransportFlood(new DID(deviceId),
+                send, seqStart, seqEnd, duration, sname);
+        ev.execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<TransportFloodQueryReply> transportFloodQuery(ByteString deviceId,
+            Integer seq)
+            throws Exception
+    {
+        EITransportFloodQuery ev = new EITransportFloodQuery(new DID(deviceId), seq);
+        ev.execute(PRIO);
+        return createReply(TransportFloodQueryReply.newBuilder()
+                .setBytes(ev.bytes_()).setTime(ev.time_()).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> setPrivateKey(ByteString key) throws Exception
+    {
+        new EISetPrivateKey(SecUtil.decodePrivateKey(key.toByteArray())).execute(PRIO);
         return createVoidReply();
     }
 
@@ -286,6 +375,8 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> updateACL(String user, PBPath path, List<PBSubjectRolePair> srps)
             throws Exception
     {
+        // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
+        // Ritual client but it will become a major security issue if/when Ritual is open-sourced
         Map<String, Role> map = Maps.newTreeMap();
         for (PBSubjectRolePair srp : srps) map.put(srp.getSubject(), Role.fromPB(srp.getRole()));
 
@@ -298,6 +389,8 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> deleteACL(String user, PBPath path, List<String> subjects)
             throws Exception
     {
+        // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
+        // Ritual client but it will become a major security issue if/when Ritual is open-sourced
         EIDeleteACL ev = new EIDeleteACL(user, new Path(path), subjects, Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
@@ -330,6 +423,34 @@ public class RitualService implements IRitualService
         ev.execute(PRIO);
         return createReply(ExportRevisionReply.newBuilder()
                 .setDest(ev._dst.getAbsolutePath()).build());
+    }
+
+    @Override
+    public ListenableFuture<ListConflictsReply> listConflicts() throws Exception
+    {
+        EIListConflicts ev = new EIListConflicts(Core.imce());
+        ev.execute(PRIO);
+        return createReply(ListConflictsReply.newBuilder()
+                .addAllConflict(ev._pathList).build());
+    }
+
+    @Override
+    public ListenableFuture<ExportConflictReply> exportConflict(PBPath path, Integer kindex)
+            throws Exception
+    {
+        EIExportConflict ev = new EIExportConflict(Core.imce(), new Path(path), new KIndex(kindex));
+        ev.execute(PRIO);
+        return createReply(ExportConflictReply.newBuilder()
+                .setDest(ev._dst.getAbsolutePath()).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> deleteConflict(PBPath path, Integer kindex) throws Exception
+    {
+        EIDeleteBranch ev = new EIDeleteBranch(Cfg.user(), Core.imce(),
+                new Path(path), new KIndex(kindex));
+        ev.execute(PRIO);
+        return createVoidReply();
     }
 
     @Override
@@ -397,7 +518,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> reloadConfig() throws Exception
     {
-        new EIReloadConfig().execute(FSIFile.PRIO);
+        new EIReloadConfig().execute(PRIO);
         return createVoidReply();
     }
 

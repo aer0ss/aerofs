@@ -11,11 +11,8 @@ service RitualService {
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
 
-    // Dump daemon statistics (for internal use only)
-    rpc DumpStats(DumpStatsCall) returns(DumpStatsReply);
-
-    // Test if the daemon is responsive
-    rpc Heartbeat(Void) returns(Void);
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Object management (abstracting away storage backend)
 
     // Return the attribute of a given file or folder.
     // Throw NOT_FOUND if the object doesn't exist
@@ -25,6 +22,17 @@ service RitualService {
     // Throw NOT_FOUND if the parent path doesn't exist
     // Throw NOT_DIR if the parent path is not a folder
     rpc GetChildrenAttributes(GetChildrenAttributesCall) returns(GetChildrenAttributesReply);
+
+    // Export a file to a local path
+    rpc ExportFile(ExportFileCall) returns(ExportFileReply);
+
+    rpc CreateObject(CreateObjectCall) returns(Void);
+    rpc DeleteObject(DeleteObjectCall) returns(Void);
+    rpc MoveObject(MoveObjectCall) returns(Void);
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Sharing
 
     // Share a specified folder, and optionally specify the list of users and their roles to be
     // added the the shared folder. The user that calls this method is always added as an owner of
@@ -43,6 +51,10 @@ service RitualService {
     // Throw ALREADY_EXIST if the specified path already exists.
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
 
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Expulsion (aka Selective Sync)
+
     // Excluding a folder deletes the folder and its content from the local system and stops
     // receiving updates from other peers for this folder. Note that excluding a folder is a local
     // operation and does not affect other peers. This method is a nop if the folder is already
@@ -55,11 +67,13 @@ service RitualService {
     // Return a list of excluded folders
     rpc ListExcludedFolders(Void) returns(ListExcludedFoldersReply);
 
-    // Export a file to a local path
-    rpc ExportFile(ExportFileCall) returns(ExportFileReply);
 
-    // Shutdown the Daemon process. It is used by AeroFS GUI and CLI when quitting.
-    rpc Shutdown(Void) returns(Void);
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // ACL
+
+    // Get the list of users and their roles for a shared folder. The local user is always included
+    // in the list.
+    rpc GetACL(GetACLCall) returns(GetACLReply);
 
     // Set users and their roles for a shared folder.
     // Throw NOT_SHARED if called on a unshared folder
@@ -69,20 +83,19 @@ service RitualService {
     // Throw NOT_SHARED if called on a unshared folder
     rpc DeleteACL(DeleteACLCall) returns(Void);
 
-    // Moves AeroFS folder to a new location
-    rpc Relocate(RelocateCall) returns(Void);
 
-    // Get the list of users and their roles for a shared folder. The local user is always included
-    // in the list.
-    rpc GetACL(GetACLCall) returns(GetACLReply);
-
-    rpc ReloadConfig(Void) returns(Void);
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Syncing control
 
     // Pause syncing activities, no matter how many times ResumeSyncing has been called before.
     rpc PauseSyncing(Void) returns(Void);
 
     // Resume syncing activities, no matter how many times PauseSyncing has been called before.
     rpc ResumeSyncing(Void) returns(Void);
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Activity / Status informations
 
     // Get the list of recent activities. This method may block for an extended period of time when
     // fetching information from remote servers.
@@ -94,7 +107,8 @@ service RitualService {
     // Get status summary (shellext-ready) for a list of files
     rpc GetPathStatus(GetPathStatusCall) returns(GetPathStatusReply);
 
-    ////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     // Revision History
 
     rpc ListRevChildren(ListRevChildrenCall) returns(ListRevChildrenReply);
@@ -103,13 +117,63 @@ service RitualService {
 
     rpc ExportRevision(ExportRevisionCall) returns(ExportRevisionReply);
 
-    ////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Conflict Resolution
+
+    rpc ListConflicts(Void) returns(ListConflictsReply);
+
+    rpc ExportConflict(ExportConflictCall) returns(ExportConflictReply);
+
+    rpc DeleteConflict(DeleteConflictCall) returns(Void);
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Misc
+
+    // Test if the daemon is responsive
+    rpc Heartbeat(Void) returns(Void);
+
+    // Moves AeroFS folder to a new location
+    rpc Relocate(RelocateCall) returns(Void);
+
+    rpc ReloadConfig(Void) returns(Void);
+
+    // Shutdown the Daemon process. It is used by AeroFS GUI and CLI when quitting.
+    rpc Shutdown(Void) returns(Void);
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Public/Private separation line
+    // Above: public API, considered fit for an eventual public release
+    // Below: private API, for internal use only or otherwise unfit for public release (e.g. WIP)
+    //
+    // TODO: Split logically-related calls into separate services?
+    // TODO: Move the private API to a separate proto file
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Misc internal methods
+
+    rpc SetPrivateKey(SetPrivateKeyCall) returns(Void);
+
+    rpc TransportPing(TransportPingCall) returns(TransportPingReply);
+    rpc TransportFlood(TransportFloodCall) returns(Void);
+    rpc TransportFloodQuery(TransportFloodQueryCall) returns(TransportFloodQueryReply);
+
+    // Dump daemon statistics (for internal use only)
+    rpc DumpStats(DumpStatsCall) returns(DumpStatsReply);
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     // Methods for debugging purposes only.
 
     // Log stack traces of all the threads. See LOG_THREADS in cmd.proto for detail.
     rpc LogThreads(Void) returns(Void);
 
-    ////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     // Methods for testing purposes only.
 
     // Return SOID of the object. Throw NOT_FOUND if the object doesn't exists
@@ -123,6 +187,20 @@ service RitualService {
 
     // Send a defect log to SV
     rpc TestLogSendDefect(Void) returns(Void);
+}
+
+message CreateObjectCall {
+    required PBPath path = 1;
+    required bool dir = 2;
+}
+
+message DeleteObjectCall {
+    required PBPath path = 1;
+}
+
+message MoveObjectCall {
+    required PBPath pathFrom = 1;
+    required PBPath pathTo = 2;
 }
 
 message DumpStatsCall {
@@ -209,6 +287,33 @@ message ExportFileReply {
     // specifies the path to the temporary file.
     // This is necessary to avoid privilege escalation through the daemon.
     required string dest = 1;
+}
+
+message ListConflictsReply {
+    message ConflictedPath {
+        required PBPath path = 1;
+        required int32 branch_count = 2;
+    }
+
+    // list of path with conflict branches
+    repeated ConflictedPath conflict = 1;
+}
+
+message ExportConflictCall {
+    required PBPath path = 1;
+    required int32 kidx = 2;
+}
+
+message ExportConflictReply {
+    // The daemon exports the file to a temporary file on the local filesystem. This field
+    // specifies the path to the temporary file.
+    // This is necessary to avoid privilege escalation through the daemon.
+    required string dest = 1;
+}
+
+message DeleteConflictCall {
+    required PBPath path = 1;
+    required int32 kidx = 2;
 }
 
 message GetACLCall {
@@ -329,6 +434,44 @@ message GetPathStatusReply {
     repeated PBPathStatus status = 2;
 }
 
+
+message SetPrivateKeyCall {
+    required bytes key = 1;
+}
+
+message TransportPingCall {
+    // see IEOTransportPing for details
+    required bytes device_id = 1;
+    required uint32 seq_prev = 2;
+    required uint32 seq_next = 3;
+    required bool force_next = 4;
+    required bool ignore_offline = 5;
+}
+
+message TransportPingReply {
+    optional uint64 rtt = 1;
+}
+
+message TransportFloodCall {
+    required bytes device_id = 1;
+    required bool send = 2;
+    required uint32 seq_start = 3;
+    required uint32 seq_end = 4;
+    required uint64 duration = 5;
+    optional string sname = 6;      // required if !send
+}
+
+message TransportFloodQueryCall {
+    required bytes device_id = 1;
+    required uint32 seq = 2;
+}
+
+message TransportFloodQueryReply {
+    // time == TRANSPORT_DIAGNOSIS_STATE_PENDING if pending
+    required uint64 time = 1;
+    required uint64 bytes = 2;
+}
+
 message PBObjectAttributes {
     enum Type {
         FILE = 0;
@@ -358,6 +501,9 @@ message PBBranch {
 
     // content length. see ContentAttr.length() for details
     required uint64 length = 2;
+
+    // last modification of the conflict file
+    required uint64 mtime = 3;
 }
 
 // Describes one child of a folder in the history tree

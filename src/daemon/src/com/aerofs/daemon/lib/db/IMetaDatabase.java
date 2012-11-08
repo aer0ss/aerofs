@@ -86,7 +86,7 @@ public interface IMetaDatabase
      */
     long getUsedSpace_(@Nullable SIndex sidx) throws SQLException;
 
-    IDBIterator<SOKID> getNonMasterBranches_() throws SQLException;
+    IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException;
 
     /**
      * Retrieve the sync status for an object

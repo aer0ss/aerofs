@@ -36,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import com.aerofs.lib.FileUtil.FileName;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Category;
 import org.apache.log4j.ConsoleAppender;
@@ -988,38 +989,6 @@ public abstract class Util
         }
     }
 
-    public static class FileName
-    {
-        public String base;
-        public String extension;
-    }
-    /**
-     * Splits a file name into name and extension
-     * Ensures that the name part is not empty
-     * This is important to correctly append information to the name
-     * e.g: so that a file named ".test" gets renamed to ".test (2)" rather than " (2).test"
-     *
-     * Sample output:
-     * given "abc.def", returns "abc" and ".def"
-     * given "abcdef", returns "abcdef" and ""
-     * given ".def", returns ".def" and ""
-     */
-    public static FileName splitFileName(String name)
-    {
-        FileName result = new FileName();
-
-        int dot = name.lastIndexOf('.');
-        if  (dot < 1) {
-            result.base = name;
-            result.extension = "";
-        } else {
-            result.base = name.substring(0, dot);
-            result.extension = name.substring(dot);
-        }
-
-        return result;
-    }
-
     private static final Pattern NEXT_NAME_PATTERN =
         Pattern.compile("(.*)\\(([0-9]+)\\)$");
 
@@ -1067,7 +1036,7 @@ public abstract class Util
      */
     public static String newNextFileName(String name)
     {
-        FileName file = splitFileName(name);
+        FileName file = FileName.fromBaseName(name);
 
         // find the pattern of "(N)" at the end of the main part
         Matcher m = NEXT_NAME_PATTERN.matcher(file.base);

@@ -1,6 +1,5 @@
 package com.aerofs.gui.diagnosis;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,8 +7,13 @@ import java.util.List;
 import java.util.Map;
 
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util.FileName;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.proto.Ritual.ListConflictsReply;
+import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
+import com.aerofs.proto.Ritual.PBBranch;
+import com.aerofs.proto.Ritual.PBObjectAttributes;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Listener;
@@ -43,42 +47,48 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
-import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.fsi.FSIClient;
-import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Fsi.PBDeleteBranchCall;
-import com.aerofs.proto.Fsi.PBFSICall;
-import com.aerofs.proto.Fsi.PBFSICall.Type;
-import com.aerofs.proto.Fsi.PBListConflictsReply;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.events.SelectionAdapter;
 
-public class CompConflictFiles extends Composite {
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-    private static class Entry {
-        final PBPath _path;
+public class CompConflictFiles extends Composite
+{
+    private static class Entry
+    {
+        private final Path _path;
         final int _kidx;
-        final String _fspath;
-        //final List<String> _editors;
+        final long _length;
+        final long _mtime;
 
-        private Entry(PBPath path, String fspath, List<String> editors,
-                int kidx)
+        private @Nullable String _export;
+
+        private Entry(Path path, int kidx, long length, long mtime)
         {
             _path = path;
-            _fspath = fspath;
-            //_editors = editors;
             _kidx = kidx;
+            _length = length;
+            _mtime = mtime;
+        }
+
+        @Nonnull String getExportedFilePath(RitualBlockingClient c) throws Exception
+        {
+            if (_export != null) return _export;
+
+            _export = c.exportConflict(_path.toPB(), _kidx).getDest();
+            assert _export != null : _path + " " + _kidx;
+            return _export;
         }
     }
 
-    private class ContentProvider implements IStructuredContentProvider {
-
+    private class ContentProvider implements IStructuredContentProvider
+    {
         @Override
         public void dispose()
         {
@@ -112,7 +122,7 @@ public class CompConflictFiles extends Composite {
 
             switch (columnIndex) {
             case 0:
-                return GUIUtil.shortenText(_gc, FSIUtil.toString(en._path),
+                return GUIUtil.shortenText(_gc, en._path.toStringFormal(),
                         _table.getClientArea().width, false);
             default:
                 return "";
@@ -126,8 +136,7 @@ public class CompConflictFiles extends Composite {
             if (element instanceof String) return Images.get(Images.ICON_ERROR);
 
             Entry en = (Entry) element;
-            Path path = new Path(en._path);
-            return Images.getFileIcon(path.last(), _iconCache);
+            return Images.getFileIcon(en._path.last(), _iconCache);
         }
 
         @Override
@@ -150,7 +159,8 @@ public class CompConflictFiles extends Composite {
     private Button _btnDelete;
     private final boolean _showSystemFiles;
     private Button _btnOpenConflict;
-    final private InjectableFile.Factory _factFile = new InjectableFile.Factory();
+    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
+    private final RitualBlockingClient.Factory _factRitual = new RitualBlockingClient.Factory();
 
     static {
         // needed for DriverConstants etc
@@ -191,7 +201,7 @@ public class CompConflictFiles extends Composite {
                     if (count++ != 0) {
                         sb.append(OSUtil.isWindows() ? "\r\n" : "\n");
                     }
-                    sb.append(FSIUtil.toString(en._path));
+                    sb.append(en._path.toStringFormal());
                 }
 
                 if (count == 0) return;
@@ -367,7 +377,7 @@ public class CompConflictFiles extends Composite {
 
     private void selectionChanged()
     {
-        ArrayList<Entry> sels = getSelectedEntries();
+        List<Entry> sels = getSelectedEntries();
 
         _btnSaveAs.setEnabled(sels.size() > 0);
         _btnOpenLocal.setEnabled(sels.size() > 0);
@@ -378,7 +388,7 @@ public class CompConflictFiles extends Composite {
     private void openLocal() throws Exception
     {
         for (Entry en : getSelectedEntries()) {
-            String path = (new Path(en._path)).toAbsoluteString(Cfg.absRootAnchor());
+            String path = en._path.toAbsoluteString(Cfg.absRootAnchor());
             if (!Program.launch(path)) {
                 throw new Exception(S.FILE_OPEN_FAIL);
             }
@@ -387,52 +397,56 @@ public class CompConflictFiles extends Composite {
 
     private void openConflict() throws Exception
     {
-        for (Entry en : getSelectedEntries()) {
-            FileName file = Util.splitFileName(FSIUtil.getLast(en._path));
-            InjectableFile fTmp = _factFile.createTempFile(
-                    file.base + " (CONFLICT COPY. READ-ONLY) ", file.extension);
-            _factFile.create(en._fspath).copy(fTmp, false, false);
-            if (!Program.launch(fTmp.getPath())) {
-                throw new Exception(S.FILE_OPEN_FAIL);
+        RitualBlockingClient ritual = _factRitual.create();
+
+        try {
+            for (Entry en : getSelectedEntries()) {
+                if (!Program.launch(en.getExportedFilePath(ritual))) {
+                    throw new Exception(S.FILE_OPEN_FAIL);
+                }
             }
+        } finally {
+            ritual.close();
         }
     }
 
-    private void saveAs() throws IOException
+    private void saveAs() throws Exception
     {
-        for (Entry en : getSelectedEntries()) {
-            FileDialog dlg = new FileDialog(_shell, SWT.SHEET | SWT.SAVE);
-            dlg.setFileName(FSIUtil.getLast(en._path));
-            dlg.setOverwrite(true);
-            String path = dlg.open();
-            if (path == null) break;
+        RitualBlockingClient ritual = _factRitual.create();
 
-            InjectableFile fSrc = _factFile.create(en._fspath);
-            InjectableFile fDest = _factFile.create(path);
-            fSrc.copy(fDest, false, false);
+        try {
+            for (Entry en : getSelectedEntries()) {
+                FileDialog dlg = new FileDialog(_shell, SWT.SHEET | SWT.SAVE);
+                dlg.setFileName(en._path.last());
+                dlg.setOverwrite(true);
+                String path = dlg.open();
+                if (path == null) break;
+
+                InjectableFile fSrc = _factFile.create(en.getExportedFilePath(ritual));
+                InjectableFile fDest = _factFile.create(path);
+                fSrc.copy(fDest, false, false);
+            }
+        } finally {
+            ritual.close();
         }
     }
 
     private void deleteConflict() throws Exception
     {
-        FSIClient fsi = FSIClient.newConnection();
+        RitualBlockingClient ritual = _factRitual.create();
+
         try {
             for (Entry en : getSelectedEntries()) {
-                fsi.rpc_(PBFSICall.newBuilder()
-                        .setType(Type.DELETE_BRANCH)
-                        .setDeleteBranch(PBDeleteBranchCall.newBuilder()
-                                .setPath(en._path)
-                                .setKidx(en._kidx))
-                        .build());
+                ritual.deleteConflict(en._path.toPB(), en._kidx);
                 removeEntry(en);
             }
+            selectionChanged();
         } finally {
-            fsi.close_();
+            ritual.close();
         }
-        selectionChanged();
     }
 
-    ArrayList<Entry> getSelectedEntries()
+    List<Entry> getSelectedEntries()
     {
         IStructuredSelection sel = ((IStructuredSelection) _tv.getSelection());
 
@@ -454,16 +468,15 @@ public class CompConflictFiles extends Composite {
             @Override
             public void run()
             {
-                final InOutArg<Integer> count = new InOutArg<Integer>(0);
                 Exception ex = null;
-                FSIClient fsi = FSIClient.newConnection();
+                RitualBlockingClient ritual = _factRitual.create();
                 try {
-                    thdSearch(fsi, count);
+                    populateConflictList(ritual);
                 } catch (Exception e) {
                     Util.l(CompConflictFiles.class).warn("search 4 conflict: " + Util.e(e));
                     ex = e;
                 } finally {
-                    fsi.close_();
+                    ritual.close();
                 }
 
                 final Exception exFinal = ex;
@@ -484,21 +497,25 @@ public class CompConflictFiles extends Composite {
         thd.start();
     }
 
-    private void thdSearch(FSIClient fsi, final InOutArg<Integer> count) throws Exception
-        {
-            PBListConflictsReply reply = fsi.rpc_(PBFSICall.newBuilder()
-                    .setType(Type.LIST_CONFLICTS).build()).getListConflicts();
-            int cnt = reply.getPathCount();
-            for (int i = 0; i < cnt; i++) {
-                PBPath path = reply.getPath(i);
-                if (!_showSystemFiles && UIUtil.isSystemFile(path)) {
-                    continue;
-                }
-                addEntry(new Entry(path, reply.getFsPath(i),
-                        reply.getEditors(i).getEditorList(), reply.getKidx(i)));
-                count.set(count.get() + 1);
+    private void populateConflictList(RitualBlockingClient ritual) throws Exception
+    {
+        ListConflictsReply reply = ritual.listConflicts();
+        // TODO: Redesign the whole conflict UI
+        for (ConflictedPath conflict : reply.getConflictList()) {
+            if (!_showSystemFiles && UIUtil.isSystemFile(conflict.getPath())) {
+                continue;
+            }
+            PBObjectAttributes attr = ritual.getObjectAttributes(Cfg.user(), conflict.getPath())
+                    .getObjectAttributes();
+
+            for (PBBranch b : attr.getBranchList()) {
+                if (b.getKidx() == KIndex.MASTER.getInt()) continue;
+
+                addEntry(new Entry(new Path(conflict.getPath()), b.getKidx(), b.getLength(),
+                        b.getMtime()));
             }
         }
+    }
 
     /**
      * this method may be called in non-UI threads

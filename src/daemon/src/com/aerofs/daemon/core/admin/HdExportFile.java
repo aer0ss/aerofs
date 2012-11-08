@@ -21,6 +21,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.id.SOID;
 import com.google.common.io.ByteStreams;
 
+// TODO: refactor to share code with other HdExport* classes
 public class HdExportFile extends AbstractHdIMC<EIExportFile>
 {
     private final DirectoryService _ds;

@@ -45,7 +45,6 @@ import java.util.Map;
 public class DlgSyncStatus extends AeroFSDialog
 {
     private static final Logger l = Util.l(DlgSyncStatus.class);
-    private final RitualBlockingClient _ritual;
     private final Path _path;
     private final Map<Program, Image> _iconCache = Maps.newHashMap();
 
@@ -53,7 +52,6 @@ public class DlgSyncStatus extends AeroFSDialog
     {
         super(parent, "Sync status", false, true);
         _path = path;
-        _ritual = RitualClientFactory.newBlockingClient();
     }
 
     Image getPathIcon(Path p)
@@ -163,10 +161,13 @@ public class DlgSyncStatus extends AeroFSDialog
         c.setLayout(listLayout);
 
         GetSyncStatusReply reply = null;
+        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            reply = _ritual.getSyncStatus(_path.toPB());
+            reply = ritual.getSyncStatus(_path.toPB());
         } catch (Exception e) {
             l.warn(e);
+        } finally {
+            ritual.close();
         }
 
         // do not show sync status when servers are known to be down or when daemon is dead

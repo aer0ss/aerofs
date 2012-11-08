@@ -10,7 +10,6 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -29,7 +28,6 @@ public class ShProgram implements IProgram, ICallback<ShProgram>
 
     private static final String PROG = L.get().productUnixName() + "-sh";
     private List<String> _pwd;
-    private FSIClient _fsi;
     private RitualBlockingClient _ritual;
     private SPBlockingClient _sp;
     private long _spRenewal;
@@ -62,15 +60,6 @@ public class ShProgram implements IProgram, ICallback<ShProgram>
         // But because this call can hang if a channel isn't closed or someone might forget to
         // call it, it's just safer to call System.exit()
         System.exit(0);
-    }
-
-    public FSIClient getFSIClient_()
-    {
-        if (_fsi == null) {
-            _fsi = FSIClient.newConnection();
-        }
-
-        return _fsi;
     }
 
     public RitualBlockingClient getRitualClient_()

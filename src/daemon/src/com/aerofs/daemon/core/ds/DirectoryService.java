@@ -24,6 +24,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
@@ -742,6 +743,12 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
             name = Util.newNextFileName(name);
         } while (resolveNullable_(pParent.append(name)) != null);
         return name;
+    }
+
+    public IDBIterator<SOKID> getAllNonMasterBranches_() throws SQLException
+    {
+        // TODO: if performance becomes a concern, add an index to the CA table
+        return _mdb.getAllNonMasterBranches_();
     }
 
     /**

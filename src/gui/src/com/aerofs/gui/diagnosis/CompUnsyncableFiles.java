@@ -41,7 +41,6 @@ import com.aerofs.gui.Images;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtilWindows;
@@ -364,19 +363,14 @@ public class CompUnsyncableFiles extends Composite {
             @Override
             public void run()
             {
-                final InOutArg<Integer> count = new InOutArg<Integer>(0);
                 Exception ex = null;
-                FSIClient fsi = FSIClient.newConnection();
                 try {
-                    thdSearch(fsi, count);
+                    populateUnsyncableFilesList();
                 } catch (Exception e) {
                     Util.l(CompUnsyncableFiles.class).warn("search 4 unsyncables: " +
                             Util.e(e));
                     ex = e;
-                } finally {
-                    fsi.close_();
                 }
-
                 final Exception exFinal = ex;
                 GUI.get().safeAsyncExec(_shell, new Runnable() {
                     @Override
@@ -395,9 +389,10 @@ public class CompUnsyncableFiles extends Composite {
         thd.start();
     }
 
-    private void thdSearch(FSIClient fsi, final InOutArg<Integer> count) throws Exception
+    private void populateUnsyncableFilesList() throws Exception
     {
         if (!OSUtil.isWindows()) {
+            final InOutArg<Integer> count = new InOutArg<Integer>(0);
             listSpecialFilesRecursive(Cfg.absRootAnchor(),
                     new IListSpecialFileCallback() {
                 @Override

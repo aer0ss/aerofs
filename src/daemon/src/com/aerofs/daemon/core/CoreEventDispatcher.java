@@ -4,6 +4,7 @@ import javax.inject.Inject;
 
 import com.aerofs.daemon.core.admin.HdDeleteACL;
 import com.aerofs.daemon.core.admin.HdDumpStat;
+import com.aerofs.daemon.core.admin.HdExportConflict;
 import com.aerofs.daemon.core.admin.HdExportFile;
 import com.aerofs.daemon.core.admin.HdExportRevision;
 import com.aerofs.daemon.core.admin.HdGetACL;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.core.admin.HdListRevHistory;
 import com.aerofs.daemon.core.admin.HdPauseOrResumeSyncing;
 import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
-import com.aerofs.daemon.core.admin.HdSaveRevision;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
 import com.aerofs.daemon.core.admin.HdSetPrivateKey;
@@ -46,6 +46,7 @@ import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDumpStat;
+import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
@@ -60,7 +61,6 @@ import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
-import com.aerofs.daemon.event.admin.EISaveRevision;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.admin.EISetExpelled;
 import com.aerofs.daemon.event.admin.EISetPrivateKey;
@@ -111,8 +111,8 @@ public class CoreEventDispatcher extends EventDispatcher
             HdSessionEnded hdSessionEnded,
             HdTransportMetricsUpdated hdTransportMetricsUpdated,
             HdPresence hdPresence,
-            HdSaveRevision hdSaveRevision,
             HdListConflicts hdListConflicts,
+            HdExportConflict hdExportConflict,
             HdTransportFloodQuery hdTransportFloodQuery,
             HdTransportFlood hdTransportFlood,
             HdSetPrivateKey hdSetPrivateKey,
@@ -167,7 +167,7 @@ public class CoreEventDispatcher extends EventDispatcher
             .setHandler_(EITransportFlood.class, hdTransportFlood)
             .setHandler_(EITransportFloodQuery.class, hdTransportFloodQuery)
             .setHandler_(EIListConflicts.class, hdListConflicts)
-            .setHandler_(EISaveRevision.class, hdSaveRevision)
+            .setHandler_(EIExportConflict.class, hdExportConflict)
             .setHandler_(EISetExpelled.class, hdSetExpelled)
             .setHandler_(EIListExpelledObjects.class, hdListExpelledObjects)
             .setHandler_(EIPauseOrResumeSyncing.class, hdPauseOrResumeSyncing)

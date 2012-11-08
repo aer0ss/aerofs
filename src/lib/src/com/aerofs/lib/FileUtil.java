@@ -21,6 +21,41 @@ import java.util.Set;
 
 public class FileUtil
 {
+    public static class FileName
+    {
+        public String base;
+        public String extension;
+
+        private FileName() {}
+
+        /**
+         * Splits a file name into name and extension
+         * Ensures that the name part is not empty
+         * This is important to correctly append information to the name
+         * e.g: so that a file named ".test" gets renamed to ".test (2)" rather than " (2).test"
+         *
+         * Sample output:
+         * given "abc.def", returns "abc" and ".def"
+         * given "abcdef", returns "abcdef" and ""
+         * given ".def", returns ".def" and ""
+         */
+        public static FileName fromBaseName(String name)
+        {
+            FileName result = new FileName();
+
+            int dot = name.lastIndexOf('.');
+            if  (dot < 1) {
+                result.base = name;
+                result.extension = "";
+            } else {
+                result.base = name.substring(0, dot);
+                result.extension = name.substring(dot);
+            }
+
+            return result;
+        }
+    }
+
     private FileUtil() {}
 
     private static Set<String> _filesToDelete = Sets.newLinkedHashSet();

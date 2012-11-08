@@ -4,7 +4,7 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.lib.Util.FileName;
+import com.aerofs.lib.FileUtil.FileName;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -17,37 +17,37 @@ public class TestUtil
         FileName result;
 
         // standard case
-        result = Util.splitFileName("abc.def");
+        result = FileName.fromBaseName("abc.def");
         assertEquals(result.base, "abc");
         assertEquals(result.extension, ".def");
 
         // no extension
-        result = Util.splitFileName("abcdef");
+        result = FileName.fromBaseName("abcdef");
         assertEquals(result.base, "abcdef");
         assertEquals(result.extension, "");
 
         // no name (.file)
-        result = Util.splitFileName(".def");
+        result = FileName.fromBaseName(".def");
         assertEquals(result.base, ".def");
         assertEquals(result.extension, "");
 
         // corner case: just a dot
-        result = Util.splitFileName(".");
+        result = FileName.fromBaseName(".");
         assertEquals(result.base, ".");
         assertEquals(result.extension, "");
 
         // corner case: empty name
-        result = Util.splitFileName("");
+        result = FileName.fromBaseName("");
         assertEquals(result.base, "");
         assertEquals(result.extension, "");
 
         // several dots in name
-        result = Util.splitFileName("ab.cd.ef");
+        result = FileName.fromBaseName("ab.cd.ef");
         assertEquals(result.base, "ab.cd");
         assertEquals(result.extension, ".ef");
 
         // counter-intuitive result, but technically correct
-        result = Util.splitFileName("..abc");
+        result = FileName.fromBaseName("..abc");
         assertEquals(result.base, ".");
         assertEquals(result.extension, ".abc");
     }

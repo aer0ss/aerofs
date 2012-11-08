@@ -2,7 +2,6 @@ all: gen_rpc_service \
 	common.gen_proto \
 	files.gen_proto \
 	path_status.gen_proto \
-	fsi.gen_proto \
 	mobile.gen_proto \
 	ritual_notifications.gen_proto \
 	ritual.gen_proto \

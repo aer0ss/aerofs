@@ -10,7 +10,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Util.FileName;
+import com.aerofs.lib.FileUtil.FileName;
 import com.google.inject.Inject;
 
 public class HdExportRevision extends AbstractHdIMC<EIExportRevision> {
@@ -27,7 +27,7 @@ public class HdExportRevision extends AbstractHdIMC<EIExportRevision> {
     {
         // Create a temp file that has the same extension has the original file
         // This is important so that we can open the temp file using the appropriate program
-        FileName file = Util.splitFileName(ev._path.last());
+        FileName file = FileName.fromBaseName(ev._path.last());
         File dst = FileUtil.createTempFile(file.base, file.extension, null, true);
 
         FileOutputStream os = new FileOutputStream(dst);

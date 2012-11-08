@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.InternalDiagnostics;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -13,7 +14,6 @@ import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.sv.client.SVClient;
 import org.eclipse.swt.layout.GridLayout;
@@ -126,7 +126,7 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog {
                 RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 try {
                     SVClient.logSendDefectSync(false, "network diagnosis results",
-                            new Exception(), FSIUtil.dumpFullDaemonStatus(ritual));
+                            new Exception(), InternalDiagnostics.dumpFullDaemonStatus(ritual));
                 } finally {
                     ritual.close();
                 }

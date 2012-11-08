@@ -2,7 +2,6 @@ package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
-import com.aerofs.daemon.fsi.FSI;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
@@ -18,8 +17,6 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 
 public class DaemonProgram implements IProgram {
-
-    private final IModule _fsi = new FSI();
     private final RitualServer _ritual = new RitualServer();
 
     @Override
@@ -31,10 +28,8 @@ public class DaemonProgram implements IProgram {
         Daemon daemon = inject_();
 
         daemon.init_();
-        _fsi.init_();
 
         daemon.start_();
-        _fsi.start_();
 
         _ritual.start_();
 

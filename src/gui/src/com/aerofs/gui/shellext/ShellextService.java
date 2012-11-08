@@ -34,7 +34,7 @@ public class ShellextService
 
     private final ShellextServer _server;
     private static ShellextService _instance = null;
-    private RitualClient _ritual;
+    private RitualClient _ritual = null;
 
     /**
      * Used to make sure we are communicating with the right version of the shell extension
@@ -52,7 +52,6 @@ public class ShellextService
     {
         new PathStatusNotificationForwarder(this);
         _server = new ShellextServer(Cfg.port(Cfg.PortType.UI));
-        _ritual = RitualClientFactory.newClient();
     }
 
     public void start_()
@@ -198,6 +197,10 @@ public class ShellextService
         final List<PBPath> pbPaths = Lists.newArrayList(
                 Path.fromAbsoluteString(absRoot, absPath).toPB());
 
+        if (_ritual == null) {
+            _ritual = RitualClientFactory.newClient();
+        }
+
         // make asynchronous ritual call and send shellext notifications when reply received
         Futures.addCallback(_ritual.getPathStatus(pbPaths),
                 new FutureCallback<GetPathStatusReply>()
@@ -213,7 +216,8 @@ public class ShellextService
                     public void onFailure(Throwable throwable)
                     {
                         l.warn("sync status overview fetch (for shellext) failed ", throwable);
-                        // TODO: break connection? send clear cache? retry?
+                        _ritual = null;
+                        // TODO: send clear cache? retry?
                     }
                 });
     }

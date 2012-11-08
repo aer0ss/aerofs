@@ -6,6 +6,7 @@ package com.aerofs.gui.history;
 
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.when;
  */
 public class TestHistoryModel extends AbstractTest
 {
+    @Mock CfgLocalUser user;
     @Mock RitualBlockingClient ritual;
     @Mock RitualBlockingClient.Factory factory;
 
@@ -47,9 +49,10 @@ public class TestHistoryModel extends AbstractTest
     @Before
     public void setup() throws Exception
     {
+        when(user.get()).thenReturn("foo@bar.baz");
         when(factory.create()).thenReturn(ritual);
 
-        model = new HistoryModel(factory);
+        model = new HistoryModel(user, factory);
     }
 
     @After
@@ -110,70 +113,52 @@ public class TestHistoryModel extends AbstractTest
                                 .setExcluded(true)
                                 .addBranch(PBBranch.newBuilder()
                                         .setKidx(KIndex.MASTER.getInt())
+                                        .setMtime(0)
                                         .setLength(0)))
                         .addChildrenName("d-expelled")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.FOLDER)
-                                .setExcluded(true)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(true))
                         .addChildrenName("a-expelled")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.SHARED_FOLDER)
-                                .setExcluded(true)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(true))
                         .addChildrenName("f")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.FILE)
                                 .setExcluded(false)
                                 .addBranch(PBBranch.newBuilder()
                                         .setKidx(KIndex.MASTER.getInt())
+                                        .setMtime(0)
                                         .setLength(0)))
                         .addChildrenName("d")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.FOLDER)
-                                .setExcluded(false)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(false))
                         .addChildrenName("a")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.SHARED_FOLDER)
-                                .setExcluded(false)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(false))
                         .addChildrenName("d0")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.FILE)
                                 .setExcluded(false)
                                 .addBranch(PBBranch.newBuilder()
                                         .setKidx(KIndex.MASTER.getInt())
+                                        .setMtime(0)
                                         .setLength(0)))
                         .addChildrenName("d1")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.FOLDER)
-                                .setExcluded(false)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(false))
                         .addChildrenName("foo")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.SHARED_FOLDER)
-                                .setExcluded(false)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(false))
                         .addChildrenName("bar")
                         .addChildrenAttributes(PBObjectAttributes.newBuilder()
                                 .setType(Type.FOLDER)
-                                .setExcluded(false)
-                                .addBranch(PBBranch.newBuilder()
-                                        .setKidx(KIndex.MASTER.getInt())
-                                        .setLength(0)))
+                                .setExcluded(false))
                         .build());
 
         Assert.assertEquals(11, model.rowCount(null));

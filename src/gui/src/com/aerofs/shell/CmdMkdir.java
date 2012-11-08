@@ -1,7 +1,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.fsi.AeroFile;
+import com.aerofs.proto.Common.PBPath;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -14,8 +14,8 @@ public class CmdMkdir implements IShellCommand<ShProgram>
         if (cl.getArgs().length == 0) throw new ExBadArgs();
 
         for (String arg : cl.getArgs()) {
-            AeroFile f = new AeroFile(s.d().getFSIClient_(), s.d().buildPath_(arg));
-            f.mkdir_(true);
+            PBPath path = s.d().buildPath_(arg);
+            s.d().getRitualClient_().createObject(path, true);
         }
     }
 
