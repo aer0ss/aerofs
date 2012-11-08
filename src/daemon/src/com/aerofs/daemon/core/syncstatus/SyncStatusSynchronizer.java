@@ -130,7 +130,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
 
         // TODO (MP) only enable for a subset (1/16) of users for now.
         byte[] hashedLocalUser = SecUtil.hash(localUser.get().getBytes());
-        _enable = (hashedLocalUser[0] & 0xf0) <= 1 || localUser.get().endsWith("@aerofs.com");
+        _enable = (hashedLocalUser[0] & 0xf0) <= 4 || localUser.get().endsWith("@aerofs.com");
 
         _ssc.setSignInHandler(this);
 
