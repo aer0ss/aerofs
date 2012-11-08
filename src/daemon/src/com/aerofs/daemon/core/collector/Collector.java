@@ -528,16 +528,17 @@ public class Collector implements IDumpStatMisc
     public void deletePersistentData_(Trans t)
             throws SQLException
     {
-        assert !started_();
+        // N.B. it is safe to have downloads happening, and a collection loop running when deleting
+        // persistent collector data for this store.
+        // If a store is deleted (along w its persistent data) it is very difficult/impossible to
+        // kill all existing downloads immediately.  So the downloads in other threads will realize
+        // the store has been deleted, and the file/folder discarded.
+        // If a collection was running, when that thread context switches back in, all of the
+        // collector sequences will have been deleted, so the collector will soon wrap up and stop
 
-        // N.B. it is safe to have downloads happening when deleting persistent collector
-        // data for this store. If a store is deleted (along w its persistent data) it is very
-        // difficult/impossible to kill all existing downloads immediately.  So the downloads in
-        // other threads will realize the store has been deleted, and the file/folder discarded.
-
-        _cfs.deletePersistentData_(t);
         // TODO (MJ) this is the only place Collector touches the csdb. Thus it seems hacky that the
         // Collector is responsible for "owning" the CSDB.
         _f._csdb.deleteCSsForStore_(_sidx, t);
+        _cfs.deletePersistentData_(t);
     }
 }
