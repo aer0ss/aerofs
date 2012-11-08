@@ -61,9 +61,19 @@ std::wstring ContextMenu::getPathFromDataObject(IDataObject* pdtobj) const
 	pdtobj->GetData(&etc, &stg);
 	HDROP hdrop = (HDROP) GlobalLock(stg.hGlobal);
 
-	wchar_t buf[MAX_PATH];
-	int success = DragQueryFile(hdrop, 0, buf, MAX_PATH);
-	std::wstring path = success ? std::wstring(buf) : L"";
+	// MSDN on DragQueryFile:
+	// If the index value is between zero and the total number of dropped
+	// files, and the lpszFile buffer address is NULL, the return value is the
+	// required size, in characters, of the buffer, not including the
+	// terminating null character.
+	int needed = DragQueryFile(hdrop, 0, 0, 0) + 1;
+	std::wstring path = L"";
+	wchar_t* buf = new wchar_t[needed];
+	if (buf) {
+		int success = DragQueryFile(hdrop, 0, buf, needed);
+		path = success ? std::wstring(buf) : L"";
+		delete [] buf;
+	}
 
 	GlobalUnlock (stg.hGlobal);
 	ReleaseStgMedium (&stg);
@@ -78,9 +88,21 @@ Returns: the path of the folder the user right-clicked on, or an empty string in
 */
 std::wstring ContextMenu::getPathFromPidl(PCIDLIST_ABSOLUTE pidlFolder) const
 {
+	// MAX_PATH here is okay, and our only choice if we support WinXP
+	// SHGetPathFromIDListEx() was added in Vista
 	wchar_t buf[MAX_PATH];
 	BOOL success = SHGetPathFromIDList(pidlFolder, buf);
 	return success ? std::wstring(buf) : L"";
+	/*
+	 * N.B. (DF): if we drop support for Windows XP, use:
+	int bufSize = 65535;
+	wchar_t* buf = new wchar_t[bufSize + 1];
+	if (!buf) return L"";
+	BOOL success = SHGetPathFromIDListEx(pidlFolder, buf, bufSize, 0);
+	std::wstring path = success ? std::wstring(buf) : L"";
+	delete [] buf;
+	return path;
+	*/
 }
 
 /**
