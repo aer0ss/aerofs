@@ -43,9 +43,9 @@ public class PooledSQLConnectionProvider implements IDatabaseConnectionProvider<
         catch (NamingException e) {
             // Turn NamingExceptions into ExDbInternals to prevent everyone from needing to throw
             // naming exceptions.
-            throw new ExDbInternal();
+            throw new ExDbInternal(e);
         } catch (SQLException e) {
-            throw new ExDbInternal();
+            throw new ExDbInternal(e);
         }
     }
 }
