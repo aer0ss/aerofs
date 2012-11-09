@@ -53,8 +53,8 @@ version=$(get_version_number aerofs-$debname $mode)
 
 if [ $? -ne 0 ]
 then
-    echo "Unable to pull current version number. (Is this a new package?)"
-    exit 1
+    # Default version for new packages.
+    version=1.0.0
 fi
 
 # Create the required control file with new build version to build the debian package.

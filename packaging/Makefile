@@ -21,6 +21,7 @@ PACKAGES= \
 	vmhost \
 	web \
 	zephyr \
+	servlet-tools \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
