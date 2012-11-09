@@ -56,7 +56,8 @@ public class DaemonPostUpdateTasks
                 new DPUTMakeMTimesNaturalNumbersOnly(_dbcw),
                 new DPUTGetEncodingStats(_dbcw),
                 new DPUTMigrateRevisionSuffixToBase64(_absAuxRoot),
-                new DPUTResetSyncStatus(_dbcw)
+                null,                           // used to be DPUTResetSyncStatus
+                new DPUTResetSyncStatus(_dbcw)  // new run to account for change in vh computation
                 // new tasks go here
         };
 

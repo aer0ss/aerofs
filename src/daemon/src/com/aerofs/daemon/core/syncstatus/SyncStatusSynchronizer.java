@@ -25,9 +25,11 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
@@ -612,17 +614,22 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
      */
     private byte[] getVersionHash_(SOID soid) throws SQLException
     {
-        // aggregate all versions for both meta and content components
+        // aggregate MASTER versions for both meta and content components
+        // we intentionally do NOT take conflict branches into account as:
+        //   * the sync status could appear as out-of-sync between two users with the exact same
+        //   MASTER branch which would go against user expectations
+        //   * there is no easy way to take conflict branches that does not leave room for
+        //   inconsistent results
 
         // Map needs to be sorted for deterministic version hash computation
         SortedMap<DID, TickPair> aggregated = Maps.newTreeMap();
 
-        Version vm = _nvc.getAllLocalVersions_(new SOCID(soid, CID.META));
+        Version vm = _nvc.getLocalVersion_(new SOCKID(soid, CID.META, KIndex.MASTER));
         for (Entry<DID, Tick> e : vm.getAll_().entrySet()) {
             aggregated.put(e.getKey(), new TickPair(e.getValue()));
         }
 
-        Version vc = _nvc.getAllLocalVersions_(new SOCID(soid, CID.CONTENT));
+        Version vc = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, KIndex.MASTER));
         for (Entry<DID, Tick> e : vc.getAll_().entrySet()) {
             TickPair tp = aggregated.get(e.getKey());
             if (tp == null) {
