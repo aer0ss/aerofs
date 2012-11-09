@@ -11,6 +11,7 @@ import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
@@ -42,7 +43,6 @@ import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
-import com.aerofs.proto.Sp.SetUnsubscribeEmailCall;
 import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.proto.Sp.SignUpCall;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
@@ -180,7 +180,14 @@ class SPService implements ISPService
             _db.setUserName(_sessionUser.getUser(), userFirstName, userLastName);
         }
         if (deviceId != null) {
-            _db.setDeviceName(_sessionUser.getUser(), new DID(deviceId), deviceName);
+            while (true) {
+                try {
+                    _db.setDeviceInfo(new DID(deviceId), deviceName);
+                    break;
+                } catch (ExDeviceNameAlreadyExist e) {
+                    deviceName = Util.newDeviceName(deviceName);
+                }
+            }
         }
 
         _transaction.commit();
@@ -451,7 +458,16 @@ class SPService implements ISPService
                         user + " != " + dr.getOwnerID());
             }
         } else {
-            _db.addDevice(new DeviceRow(did, UNKNOWN_NAME, user));
+            String deviceName = UNKNOWN_NAME;
+            while (true) {
+                try {
+                    _db.addDevice(new DeviceRow(did, deviceName, user));
+                    break;
+                } catch (ExDeviceNameAlreadyExist e) {
+                    deviceName = Util.newDeviceName(deviceName);
+                }
+            }
+
         }
 
         // Verify the device ID and user ID matches what is specified in CSR.

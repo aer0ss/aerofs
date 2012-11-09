@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.TimeZone;
 
 import com.aerofs.lib.spsv.Base62CodeGenerator;
+import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
 import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
 
 import java.util.Calendar;
@@ -82,6 +83,11 @@ public class SPDatabase
     private static void checkDuplicateKey(SQLException e) throws ExAlreadyExist
     {
         if (e.getMessage().startsWith("Duplicate entry")) throw new ExAlreadyExist(e);
+    }
+
+    private static void checkDuplicateDeviceName(SQLException e) throws ExDeviceNameAlreadyExist
+    {
+        if (e.getMessage().contains(SPSchema.CO_DEVICE_NAME_OWNER)) throw new ExDeviceNameAlreadyExist();
     }
 
     private static void checkOrganizationKeyConstraint(SQLException e, String orgId)
@@ -914,17 +920,20 @@ public class SPDatabase
         return result;
     }
 
-    public void setDeviceName(String user, DID did, String deviceName)
-            throws SQLException
+    public void setDeviceInfo(DID did, String deviceName)
+            throws SQLException, ExDeviceNameAlreadyExist
     {
-        PreparedStatement psSDN = getConnection().prepareStatement("replace into " + SPSchema.T_DEVICE + "("
-                + SPSchema.C_DEVICE_NAME + "," + SPSchema.C_DEVICE_ID + "," + SPSchema.C_DEVICE_OWNER_ID +
-                ") values (?,?,?)");
+        try {
+            PreparedStatement psSDI = getConnection().prepareStatement("update " + SPSchema.T_DEVICE +
+                    " set " + SPSchema.C_DEVICE_NAME + "=? where " + SPSchema.C_DEVICE_ID + "=?");
 
-        psSDN.setString(1, deviceName.trim());
-        psSDN.setString(2, did.toStringFormal());
-        psSDN.setString(3, user);
-        Util.verify(psSDN.executeUpdate() == 1);
+            psSDI.setString(1, deviceName.trim());
+            psSDI.setString(2, did.toStringFormal());
+            Util.verify(psSDI.executeUpdate() == 1);
+        } catch (SQLException e) {
+            checkDuplicateDeviceName(e);
+            throw e;
+        }
     }
 
     public void setAuthorizationLevel(String userID, AuthorizationLevel authLevel)
@@ -1359,6 +1368,7 @@ public class SPDatabase
             psAddDev.executeUpdate();
         } catch (SQLException e) {
             checkDuplicateKey(e);
+            checkDuplicateDeviceName(e);
             throw e;
         }
     }

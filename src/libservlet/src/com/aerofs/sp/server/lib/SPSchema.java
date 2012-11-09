@@ -29,6 +29,7 @@ final class SPSchema
     static final String C_DEVICE_ID                     = "d_id";
     static final String C_DEVICE_NAME                   = "d_name";
     static final String C_DEVICE_OWNER_ID               = "d_owner_id";
+    static final String CO_DEVICE_NAME_OWNER            = "d_name_owner";
 
     // TODO rename TI BI and FI to reflect new table/column names
     static final String T_TI                            = "sp_signup_code";

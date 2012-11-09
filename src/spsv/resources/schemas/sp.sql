@@ -53,6 +53,7 @@ CREATE TABLE `sp_device` (
   `d_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `d_name` VARCHAR(320) NOT NULL,
   PRIMARY KEY (`d_id`),
+  CONSTRAINT `d_name_owner` UNIQUE (`d_owner_id`, `d_name`),
   CONSTRAINT `d_owner_foreign` FOREIGN KEY (`d_owner_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 

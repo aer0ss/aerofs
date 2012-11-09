@@ -1001,6 +1001,35 @@ public abstract class Util
         Pattern.compile("(.*)\\(([0-9]+)\\)$");
 
     /**
+     * Use to generate the next device name by incrementing the version number of name.
+     * Given a name, it returns "<name>  (<next_ver>)"
+     *
+     * e.g.: given "macbook pro" -> "macbook pro (2)"
+     *       given "myponey (3)" -> "myponey (4)"
+     *
+     * @param name String that needs to be incremented.
+     */
+    public static String newDeviceName(String name)
+    {
+        Matcher m = NEXT_NAME_PATTERN.matcher(name);
+        String prefix;
+        int num;
+        if (m.find()) {
+            prefix = m.group(1);
+            try {
+                num = Integer.valueOf(m.group(2)) + 1;
+            } catch (NumberFormatException e) {
+                prefix  = name + " ";
+                num = 2;
+            }
+        } else {
+            prefix  = name + " ";
+            num = 2;
+        }
+        return prefix + "(" + num + ")";
+    }
+
+    /**
      * given "abc.def", returns "abc (2).def";
      * given "abc (5).def", returns "abc (6).def"
      * given ".def", returns ".def (2)"
