@@ -8,6 +8,12 @@ BASE_CI_URL = "https://ci.local:8543"
 
 current_sha = subprocess.check_output("git log --pretty='%H' -n 1", shell=True).strip()
 
+git_status = subprocess.check_output("git status --porcelain", shell=True).strip()
+
+if git_status != "":
+    print "Working directory is not clean. Please stash changes before deploying."
+    exit(1)
+
 print "Current commit: {0}".format(current_sha)
 sys.stdout.flush()
 
