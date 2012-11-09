@@ -9,9 +9,6 @@ public class CoreUtil
 {
     public static final int NOT_RPC = PBCore.getDefaultInstance().getRpcid();
 
-//    private static final boolean OBFUSCATED = !"REPLY".equals(PBCore.Type.REPLY.name());
-    private static final boolean OBFUSCATED = true;
-
     private static int s_id = 0;
 
     private static int nextRPCID_()
@@ -45,16 +42,12 @@ public class CoreUtil
 
     private static String typeString(PBCore.Type type)
     {
-        String str = Integer.toString(type.getNumber());
-        if (!OBFUSCATED) str += '(' + type.name() + ')';
-        return str;
+        return Integer.toString(type.getNumber());
     }
 
     private static String exceptionTypeString(PBException.Type type)
     {
-        String str = Integer.toString(type.getNumber());
-        if (!OBFUSCATED) str += '(' + type.name() + ')';
-        return str;
+        return Integer.toString(type.getNumber());
     }
 
     public static String typeString(PBCore pb)
