@@ -1,4 +1,4 @@
-package com.aerofs.lib.spsv;
+package com.aerofs.sp.client;
 
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import java.net.URL;

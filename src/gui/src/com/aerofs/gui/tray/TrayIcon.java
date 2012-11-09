@@ -1,7 +1,7 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;

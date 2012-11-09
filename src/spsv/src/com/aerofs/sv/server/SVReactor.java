@@ -35,7 +35,7 @@ import com.aerofs.sv.server.raven.RavenClient;
 import com.aerofs.sv.server.raven.RavenTrace;
 import com.aerofs.sv.server.raven.RavenTraceElement;
 import com.aerofs.sv.server.raven.RavenUtils;
-import com.aerofs.lib.spsv.sendgrid.EmailCategory;
+import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVEvent;
@@ -94,7 +94,7 @@ public class SVReactor
                 defect(call, is, client);
                 break;
             case GZIPPED_LOG:
-                gzippedLog(call, is, client);
+                gzippedLog(call, is);
                 break;
             case EVENT:
                 event(call, client);
@@ -135,16 +135,14 @@ public class SVReactor
     {
         Util.checkPB(call.hasEmail(), PBSVEmail.class);
 
-        PBSVEmail emailContents = call.getEmail();
-        Future<Void> f = EmailSender.sendEmail(emailContents.getFrom(), emailContents.getFromName(),
-                emailContents.getTo(),
-                emailContents.hasReplyTo() ? emailContents.getReplyTo() : null,
-                emailContents.getSubject(), emailContents.getTextBody(),
-                emailContents.hasHtmlBody() ? emailContents.getHtmlBody() : null,
-                emailContents.getUsingSendgrid(),
-                emailContents.hasCategory() ? EmailCategory.valueOf(emailContents.getCategory()) :
-                                              null);
-
+        PBSVEmail email = call.getEmail();
+        Future<Void> f = EmailSender.sendEmail(email.getFrom(), email.getFromName(),
+                email.getTo(),
+                email.hasReplyTo() ? email.getReplyTo() : null,
+                email.getSubject(), email.getTextBody(),
+                email.hasHtmlBody() ? email.getHtmlBody() : null,
+                email.getUsingSendgrid(),
+                email.hasCategory() ? EmailCategory.valueOf(email.getCategory()) : null);
         try {
             f.get(); //block under email either sends or fails
         } catch (Exception e) {
@@ -155,7 +153,7 @@ public class SVReactor
     }
 
 
-    private void gzippedLog(PBSVCall call, InputStream is, String client)
+    private void gzippedLog(PBSVCall call, InputStream is)
         throws ExProtocolError, IOException
     {
         Util.checkPB(call.hasGzippedLog(), PBSVGzippedLog.class);

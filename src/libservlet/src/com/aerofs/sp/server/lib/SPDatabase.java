@@ -5,9 +5,9 @@ import java.util.EnumSet;
 
 import java.util.TimeZone;
 
-import com.aerofs.lib.spsv.Base62CodeGenerator;
 import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
+import com.aerofs.sp.common.Base62CodeGenerator;
+import com.aerofs.sp.common.SubscriptionCategory;
 
 import java.util.Calendar;
 
@@ -24,7 +24,7 @@ import com.aerofs.lib.Base64;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionParams;
+import com.aerofs.sp.common.SubscriptionParams;
 import com.aerofs.proto.Common.PBRole;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;

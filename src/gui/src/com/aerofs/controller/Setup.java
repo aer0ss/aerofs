@@ -44,10 +44,10 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.InvitationCode;
-import com.aerofs.lib.spsv.SPBlockingClient;
-import com.aerofs.lib.spsv.SPClientFactory;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sp.common.InvitationCode;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sv;
 import com.aerofs.ui.UI;
@@ -253,9 +253,9 @@ class Setup
             UI.dm().stopIgnoreException();
             if (!(e instanceof ExBadCredential)) { // Don't send SV defect for bad credentials
                 if (Cfg.inited()) {
-                    SVClient.logSendDefectSyncIgnoreError(true, "setup", e);
+                    SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
                 } else {
-                    SVClient.logSendDefectSyncNoCfgIgnoreError(true, "setup", e, userId, _rtRoot);
+                    SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
                 }
             }
 

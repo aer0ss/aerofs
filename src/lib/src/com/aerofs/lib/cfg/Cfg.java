@@ -12,7 +12,9 @@ import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
+import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
 import java.io.*;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -21,6 +23,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -29,6 +32,8 @@ import java.util.Scanner;
  */
 public class Cfg
 {
+
+
     public static enum PortType {
         FSI,
         RITUAL_NOTIFICATION,
@@ -466,5 +471,25 @@ public class Cfg
             }
         }
         return _cert;
+    }
+
+    @Nonnull public static Map<Key, String> dumpDb()
+    {
+        assert inited();
+
+        Map<Key, String> contents = Maps.newTreeMap();
+        for (Key key : Key.values()) {
+            // skip sensitive fields
+            if (key == Key.CRED ||
+                    key.keyString().startsWith("s3_") ||
+                    key.keyString().startsWith("mysql_")) {
+                continue;
+            }
+
+            String value = db().getNullable(key);
+            if (value != null && !value.equals(key.defaultValue())) contents.put(key, value);
+        }
+
+        return contents;
     }
 }

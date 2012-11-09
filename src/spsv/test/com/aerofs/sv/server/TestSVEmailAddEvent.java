@@ -7,7 +7,7 @@ package com.aerofs.sv.server;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
-import com.aerofs.lib.spsv.sendgrid.Event;
+import com.aerofs.sv.common.Event;
 
 import java.sql.SQLException;
 

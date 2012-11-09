@@ -1,4 +1,4 @@
-package com.aerofs.lib.spsv;
+package com.aerofs.sp.client;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

@@ -9,7 +9,7 @@ import com.aerofs.lib.Role;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;
 

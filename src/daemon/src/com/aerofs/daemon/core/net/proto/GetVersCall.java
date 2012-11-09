@@ -19,7 +19,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 

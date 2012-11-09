@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.aerofs.lib.spsv.sendgrid.Event;
+import com.aerofs.sv.common.Event;
 
 public class SendgridServlet extends AeroServlet {
 

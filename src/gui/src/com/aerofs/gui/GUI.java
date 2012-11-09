@@ -13,7 +13,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;

@@ -29,7 +29,7 @@ import java.sql.SQLException;
 
 import org.junit.Test;
 
-import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
+import com.aerofs.sp.common.SubscriptionCategory;
 
 
 public class TestEmailSusbscriptionDatabase extends AbstractTest

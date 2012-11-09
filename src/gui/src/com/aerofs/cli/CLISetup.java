@@ -19,7 +19,7 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sv;

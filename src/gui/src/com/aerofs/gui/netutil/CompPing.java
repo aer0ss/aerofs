@@ -17,7 +17,7 @@ import com.aerofs.lib.fsi.FSIClient;
 import com.aerofs.lib.fsi.FSIUtil;
 import com.aerofs.lib.fsi.FSIUtil.IPingCallback;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UIParam;
 
 import org.eclipse.swt.widgets.Label;

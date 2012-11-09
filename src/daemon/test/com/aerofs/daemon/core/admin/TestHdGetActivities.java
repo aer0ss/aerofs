@@ -46,7 +46,7 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.spsv.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.Builder;

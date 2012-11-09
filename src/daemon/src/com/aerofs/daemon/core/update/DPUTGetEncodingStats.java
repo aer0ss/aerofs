@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -71,7 +71,7 @@ public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
                     "null name count: " + nullNameCount + "\n" +
                     "unknown   count: " + unknownCount + "\n" +
                     "total     count: " + totalCount;
-            SVClient.logSendDefectNoLogsIgnoreErrors(true, desc, null);
+            SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, desc, null);
         }
     }
 }

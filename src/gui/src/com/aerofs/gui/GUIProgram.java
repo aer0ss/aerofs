@@ -10,7 +10,7 @@ import com.aerofs.lib.IProgram;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.widgets.MessageBox;

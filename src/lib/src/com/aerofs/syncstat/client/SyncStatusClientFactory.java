@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.syncstat;
+package com.aerofs.syncstat.client;
 
 import java.net.URL;
 

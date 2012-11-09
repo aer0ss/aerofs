@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.spsv;
+package com.aerofs.sp.common;
 
 import com.aerofs.lib.SecUtil;
 

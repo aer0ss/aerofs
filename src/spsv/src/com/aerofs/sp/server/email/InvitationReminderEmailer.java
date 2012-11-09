@@ -11,8 +11,8 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
-import com.aerofs.lib.spsv.SVClient;
-import com.aerofs.lib.spsv.sendgrid.EmailCategory;
+import com.aerofs.sv.client.SVClient;
+import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.SPParam;
 

@@ -1,4 +1,4 @@
-package com.aerofs.lib.spsv.sendgrid;
+package com.aerofs.sp.common;
 
 public enum SubscriptionCategory
 {

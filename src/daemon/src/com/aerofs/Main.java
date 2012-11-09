@@ -19,7 +19,7 @@ import com.aerofs.lib.IProgram.ExProgramNotFound;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 
 
 public class Main {
@@ -144,10 +144,10 @@ public class Main {
                 System.out.println("failed in main(): " + Util.e(e)); // l.error does not work here.
             }
             if (Cfg.inited()) {
-                SVClient.logSendDefectSyncIgnoreError(true, "failed in main()", e);
+                SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
             } else {
-                SVClient.logSendDefectSyncNoCfgIgnoreError(true, "failed in main()", e,
-                        "unknown", rtRoot);
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "failed in main()", e, "unknown",
+                        rtRoot);
             }
 
             ExitCode.FAIL_TO_LAUNCH.exit();

@@ -13,8 +13,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.lib.spsv.SPBlockingClient;
-import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;

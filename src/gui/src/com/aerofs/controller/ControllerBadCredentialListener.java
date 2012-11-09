@@ -4,9 +4,8 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.controller.ControllerService;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.spsv.IBadCredentialListener;
+import com.aerofs.sp.client.IBadCredentialListener;
 import com.aerofs.proto.ControllerNotifications.Type;
 import org.apache.log4j.Logger;
 

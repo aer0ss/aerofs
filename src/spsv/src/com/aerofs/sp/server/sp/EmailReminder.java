@@ -10,7 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
+import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.lib.IEmailSubscriptionDatabase;

@@ -5,10 +5,10 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.spsv.Base62CodeGenerator;
-import com.aerofs.lib.spsv.InvitationCode;
-import com.aerofs.lib.spsv.InvitationCode.CodeType;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
+import com.aerofs.sp.common.Base62CodeGenerator;
+import com.aerofs.sp.common.InvitationCode;
+import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.IUserSearchDatabase;
@@ -199,7 +199,7 @@ public class UserManagement
     }
 
     public void sendPasswordResetEmail(String user_email)
-            throws SQLException, ExNotFound, IOException, MessagingException
+            throws SQLException, IOException, MessagingException
     {
         User user;
         try {

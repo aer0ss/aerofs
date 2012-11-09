@@ -4,10 +4,10 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.lib.spsv.InvitationCode;
-import com.aerofs.lib.spsv.InvitationCode.CodeType;
-import com.aerofs.lib.spsv.SPBlockingClient;
-import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.sp.common.InvitationCode;
+import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;

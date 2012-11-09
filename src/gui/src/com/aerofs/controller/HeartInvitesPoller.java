@@ -5,8 +5,8 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.spsv.SPBlockingClient;
-import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 
 /**
  * This class periodically polls the server to query folderless invites quota

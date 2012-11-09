@@ -1,7 +1,7 @@
 package com.aerofs.gui.shellext;
 
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBPath;

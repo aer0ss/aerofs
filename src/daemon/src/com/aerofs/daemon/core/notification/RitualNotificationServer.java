@@ -23,7 +23,7 @@ import com.aerofs.daemon.transport.lib.TCPProactorMT.IReactor;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.spsv.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.google.common.collect.BiMap;

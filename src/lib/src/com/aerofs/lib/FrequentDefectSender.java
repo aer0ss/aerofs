@@ -2,7 +2,7 @@ package com.aerofs.lib;
 
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 
 public class FrequentDefectSender
 {

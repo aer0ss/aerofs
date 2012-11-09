@@ -3,7 +3,7 @@ package com.aerofs.sp.server.lib;
 import java.util.Set;
 
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
+import com.aerofs.sp.common.SubscriptionCategory;
 
 import java.sql.SQLException;
 

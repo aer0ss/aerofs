@@ -1,6 +1,6 @@
 package com.aerofs.sp.server.email;
 
-import com.aerofs.lib.spsv.sendgrid.SubscriptionParams;
+import com.aerofs.sp.common.SubscriptionParams;
 
 import java.io.IOException;
 

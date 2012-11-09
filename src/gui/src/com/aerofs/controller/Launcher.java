@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.sql.SQLException;
 
 import com.aerofs.lib.ex.ExAlreadyRunning;
+import com.aerofs.ui.logs.LogArchiver;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.program.Program;
@@ -28,7 +29,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
 import com.aerofs.proto.Sv.PBSVEvent;
@@ -36,6 +37,8 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.update.PostUpdate;
 import com.aerofs.ui.update.uput.UIPostUpdateTasks;
+
+import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 
 class Launcher
 {
@@ -79,7 +82,7 @@ class Launcher
             reply.setStatus(Status.NOT_LAUNCHABLE);
             reply.setErrorMessage(msg);
             if (!(e instanceof ExAlreadyRunning)) {
-                SVClient.logSendDefectSyncNoCfgIgnoreError(true, "getInitialStatus", e, "unknown",
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "getInitialStatus", e, "unknown",
                         _rtRoot);
             }
         }
@@ -97,7 +100,7 @@ class Launcher
     {
         if (!Cfg.inited()) return false;
 
-        return !new File(Util.join(Cfg.absRTRoot(), C.SETTING_UP)).exists();
+        return !new File(Util.join(absRTRoot(), C.SETTING_UP)).exists();
     }
 
     private boolean needsLogin()
@@ -122,7 +125,7 @@ class Launcher
         }
 
         if (msg != null) {
-            SVClient.logSendDefectSyncNoCfgIgnoreError(true, msg, null, "unknown", "unknwon");
+            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, "unknown", "unknwon");
             throw new ExAborted(msg);
         }
 
@@ -254,7 +257,7 @@ class Launcher
         long now = System.currentTimeMillis();
         if (now - Cfg.db().getLong(Key.LAST_LOG_CLEANING) > 1 * C.WEEK) {
             String logs[] = { "cc.log", "gc.log", "dc.log", "lj.log" };
-            for (String log : logs) s_factFile.create(Cfg.absRTRoot(), log).deleteOrOnExit();
+            for (String log : logs) s_factFile.create(absRTRoot(), log).deleteOrOnExit();
             try {
                 Cfg.db().set(Key.LAST_LOG_CLEANING, now);
             } catch (SQLException e) {
@@ -265,6 +268,10 @@ class Launcher
 
     private void startWorkerThreads()
     {
+        if (Cfg.useArchive()) {
+            new LogArchiver(absRTRoot()).start();
+        }
+
         try {
             // start shell extension first so it is available as early as possible
             ShellextService.get().start_();

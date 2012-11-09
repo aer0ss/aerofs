@@ -4,7 +4,7 @@ import java.sql.Connection;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.spsv.sendgrid.Event;
+import com.aerofs.sv.common.Event;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

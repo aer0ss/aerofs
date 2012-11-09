@@ -2,7 +2,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.S;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionParams;
+import com.aerofs.sp.common.SubscriptionParams;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

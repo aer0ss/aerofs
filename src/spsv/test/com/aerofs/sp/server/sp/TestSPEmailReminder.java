@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.spsv.sendgrid.SubscriptionCategory;
+import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
@@ -35,8 +35,8 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.spsv.InvitationCode;
-import com.aerofs.lib.spsv.InvitationCode.CodeType;
+import com.aerofs.sp.common.InvitationCode;
+import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.testlib.AbstractTest;
 import org.mockito.verification.VerificationMode;

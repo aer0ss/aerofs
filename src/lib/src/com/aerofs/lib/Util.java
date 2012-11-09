@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -58,12 +59,15 @@ import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
 import com.google.protobuf.GeneratedMessageLite;
 
 import javax.annotation.Nonnull;
+
+import static com.aerofs.lib.FileUtil.deleteOrOnExit;
+import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 
 public abstract class Util
 {
@@ -94,7 +98,7 @@ public abstract class Util
     public static Error fatal(final Throwable e) throws Error
     {
         l.fatal("FATAL:" + Util.e(e));
-        SVClient.logSendDefectNoLogsIgnoreErrors(true, "FATAL:", e);
+        SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
         ExitCode.FATAL_ERROR.exit();
         throw new Error(e);
     }
@@ -850,9 +854,9 @@ public abstract class Util
                     @Override
                     public void uncaughtException(Thread t, Throwable e)
                     {
-                        SVClient.logSendDefectSyncIgnoreError(true,
+                        SVClient.logSendDefectSyncIgnoreErrors(true,
                                 "uncaught exception from " + t.getName() +
-                                ". program exits now.", e);
+                                        ". program exits now.", e);
                         // must abort the process as the abnormal thread can
                         // no longer run properly
                         fatal(e);
@@ -963,6 +967,25 @@ public abstract class Util
             if (comp != 0) return comp;
         }
         return 0;
+    }
+
+    public static void deleteOldHeapDumps()
+    {
+        File[] heapDumps = new File(absRTRoot()).listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File arg0, String arg1) {
+                    return arg1.endsWith(C.HPROF_FILE_EXT);
+                }
+            });
+        if (heapDumps == null) {
+            l().error("rtRoot not found.");
+            return;
+        }
+        for (File heapDumpFile : heapDumps) {
+            l().debug("Deleting old heap dump: " + heapDumpFile);
+            deleteOrOnExit(heapDumpFile);
+            heapDumpFile.delete();
+        }
     }
 
     public static class FileName

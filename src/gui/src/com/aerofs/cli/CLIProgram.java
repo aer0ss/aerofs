@@ -4,7 +4,7 @@ import com.aerofs.controller.ControllerBadCredentialListener;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.spsv.SPBlockingClient;
+import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.ui.UI;
 
 public class CLIProgram implements IProgram {

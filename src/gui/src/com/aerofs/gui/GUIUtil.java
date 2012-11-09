@@ -34,7 +34,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv;
 import com.swtdesigner.SWTResourceManager;
 

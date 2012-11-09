@@ -10,7 +10,7 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 
 import java.io.File;
 import java.io.IOException;
@@ -69,7 +69,7 @@ public class RootAnchorUtil
             if (!supported) {
                 String r = remote.get() != null && remote.get() ? "remote " : "";
                 // sync instead of async to make sure we get it
-                SVClient.logSendDefectSyncNoCfgIgnoreError(true, "unsupported fs: " + r + type,
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
                         null, "n/a", rtRoot);
 
                 throw new ExBadArgs(S.PRODUCT + " doesn't support " + r + type +

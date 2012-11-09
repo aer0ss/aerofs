@@ -6,7 +6,7 @@ package com.aerofs.sv.server;
 
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.spsv.sendgrid.EmailCategory;
+import com.aerofs.sv.common.EmailCategory;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;

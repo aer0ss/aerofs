@@ -1,4 +1,4 @@
-package com.aerofs.lib.spsv;
+package com.aerofs.sp.common;
 
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;

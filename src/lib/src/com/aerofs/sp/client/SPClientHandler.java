@@ -1,4 +1,4 @@
-package com.aerofs.lib.spsv;
+package com.aerofs.sp.client;
 
 import java.net.URL;
 

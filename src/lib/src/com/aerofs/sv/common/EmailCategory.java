@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.spsv.sendgrid;
+package com.aerofs.sv.common;
 
 /**
  * The email Category for the given email (e.g. a password reset email, an invite email,

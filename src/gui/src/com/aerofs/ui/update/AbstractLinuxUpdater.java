@@ -10,8 +10,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.l.L;
-import com.aerofs.lib.spsv.SPBlockingClient;
-import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 

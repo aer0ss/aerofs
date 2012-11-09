@@ -1,6 +1,6 @@
 package com.aerofs.sv.server;
 
-import com.aerofs.lib.spsv.sendgrid.Event;
+import com.aerofs.sv.common.Event;
 
 public class EmailEvent
 {

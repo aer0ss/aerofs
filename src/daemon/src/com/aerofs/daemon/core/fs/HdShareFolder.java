@@ -42,8 +42,8 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.spsv.SPBlockingClient;
-import com.aerofs.lib.spsv.SPClientFactory;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.inject.Inject;
 

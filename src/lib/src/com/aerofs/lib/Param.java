@@ -102,6 +102,9 @@ public class Param
             DOWNLOAD_BASE = "https://cache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com",
             NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com",
             SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
+
+        public static final long CONNECT_TIMEOUT = 1 * C.MIN;
+        public static final long READ_TIMEOUT = 30 * C.SEC;
     }
 
     public static class SP

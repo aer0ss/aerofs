@@ -5,7 +5,7 @@ import com.aerofs.daemon.lib.db.CoreDatabaseDumper;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.spsv.SVClient;
+import com.aerofs.sv.client.SVClient;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;

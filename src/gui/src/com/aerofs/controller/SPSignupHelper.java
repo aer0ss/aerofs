@@ -10,7 +10,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.spsv.InvitationCode;
+import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;

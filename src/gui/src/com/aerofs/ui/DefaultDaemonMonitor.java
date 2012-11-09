@@ -23,7 +23,6 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.apache.log4j.Logger;
@@ -183,24 +182,6 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     stopIgnoreException();
                 }
             }));
-        }
-
-        // start the log archiver
-        if (Cfg.useArchive() && _firstStart) {
-            Thread thd = new Thread(new Runnable() {
-                @Override
-                public void run()
-                {
-                    Util.sleepUninterruptable(UIParam.DM_LOG_ARCHIVE_STARTUP_DELAY);
-                    while (true) {
-                        SVClient.archiveLogsAsync();
-                        Util.sleepUninterruptable(UIParam.DM_LOG_ARCHIVE_INTERVAL);
-                    }
-
-                }
-            }, "dm.logArchiver");
-            thd.setDaemon(true);
-            thd.start();
         }
 
         _firstStart = false;
