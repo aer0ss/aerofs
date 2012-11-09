@@ -322,7 +322,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     }
 
     /**
-     * @return returns object attribute including aliased ones.
+     * @return object attribute including aliased ones.
      */
     @Nullable public OA getAliasedOANullable_(SOID soid) throws SQLException
     {

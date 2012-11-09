@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.net;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -218,18 +219,7 @@ public class Download
             @Nullable DID replier = null;
             boolean started = false;
             try {
-                // Check for dependency and expulsion. Even though GetComponentReply will check
-                // again, we do it here to avoid useless round-trips with remote peers when
-                // possible.
-                if (!_socid.cid().isMeta()) {
-                    OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
-                    if (oa == null) {
-                        throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null,
-                                DependencyType.UNSPECIFIED, false);
-                    } else if (oa.isExpelled()) {
-                        throw new ExAborted(_socid + " is expelled");
-                    }
-                }
+                throwIfContentIsMissingMetaOrExpelled();
 
                 started = true;
                 _f._dlstate.started_(_socid);
@@ -297,13 +287,11 @@ public class Download
 
             } catch (ExNoComponentWithSpecifiedVersion e) {
                 reenqueue(started);
-                if (_f._nvc.getKMLVersion_(_socid).isZero_()) {
-                    l.info("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml = 0. done");
-                    return replier;
-                } else {
-                    l.info("recv " + ExNoComponentWithSpecifiedVersion.class + " & kml != 0. retry");
-                    avoidDevice_(replier, e);
+                if (l.isInfoEnabled()) {
+                    l.info(_socid + ":recv " + ExNoComponentWithSpecifiedVersion.class + " & "
+                            + "kml = " + _f._nvc.getKMLVersion_(_socid));
                 }
+                avoidDevice_(replier, e);
 
             } catch (ExUpdateInProgress e) {
                 reenqueue(started);
@@ -336,6 +324,24 @@ public class Download
                 reenqueue(started);
                 onGeneralException(e, replier);
             }
+        }
+    }
+
+    /**
+     * Check for content->meta dependency and expulsion. Even though GetComponentReply will check
+     * again, we do it here to avoid useless round-trips with remote peers when possible.
+     */
+    private void throwIfContentIsMissingMetaOrExpelled()
+            throws SQLException, ExDependsOn, ExAborted
+    {
+        if (_socid.cid().isMeta()) return;
+
+        final OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
+        if (oa == null) {
+            throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null,
+                    DependencyType.UNSPECIFIED, false);
+        } else if (oa.isExpelled()) {
+            throw new ExAborted(_socid + " is expelled");
         }
     }
 
