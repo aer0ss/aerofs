@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="guice-aerofs">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../approot/lib/guice-aerofs.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib/guice-aerofs.jar!/" />
     </CLASSES>
     <JAVADOC>
       <root url="http://google-guice.googlecode.com/git/javadoc/" />
