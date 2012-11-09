@@ -88,11 +88,9 @@ public class SPServlet extends AeroServlet
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
         erConProvider.init_(dbResourceName);
 
-        SQLThreadLocalTransaction erTrans = new SQLThreadLocalTransaction(erConProvider);
-        SPDatabase erDB = new SPDatabase(erTrans);
         InvitationReminderEmailer.Factory emailReminderFactory = new Factory();
 
-        EmailReminder er = new EmailReminder(erDB, erTrans, emailReminderFactory);
+        EmailReminder er = new EmailReminder(_db, _spTrans, emailReminderFactory);
         er.start();
     }
 

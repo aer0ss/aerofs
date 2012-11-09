@@ -5,13 +5,17 @@
 package com.aerofs.sp.server.sp;
 
 import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Set;
 
 import com.aerofs.lib.Param.SV;
@@ -23,7 +27,7 @@ import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
-import org.junit.After;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -35,6 +39,7 @@ import com.aerofs.lib.spsv.InvitationCode;
 import com.aerofs.lib.spsv.InvitationCode.CodeType;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.testlib.AbstractTest;
+import org.mockito.verification.VerificationMode;
 
 public class TestSPEmailReminder extends AbstractTest {
 
@@ -46,51 +51,58 @@ public class TestSPEmailReminder extends AbstractTest {
     @Spy protected SPDatabase _db = new SPDatabase(_transaction);
     @InjectMocks private EmailReminder er;
 
-    public static final long TWO_DAYS = 2 * C.DAY;
-    public static final long THREE_DAYS = 3 * C.DAY;
+    private static final String ORG = "sperdefault";
 
-    public static final String ORG = "default";
+    private static final int TWO_DAYS_INT = 2;
+    private static final long TWO_DAYS_IN_MILLISEC = TWO_DAYS_INT * C.DAY;
+    private Set<String> _twoDayUsers;
+    private static final int NUM_TWO_DAY_USERS = 150;
+    private static final String TWO_DAY_USERS_PREFIX = "two";
 
-    public static final String[] TWO_DAY_USERS = {
-        "two_user1@aerofs.com",
-        "two_user2@aerofs.com",
-        "two_user3@aerofs.com"
-        };
+    private static final int THREE_DAYS_INT = 3;
+    private static final long THREE_DAYS_IN_MILLISEC = THREE_DAYS_INT * C.DAY;
+    private Set<String> _threeDayUsers;
+    private static final int NUM_THREE_DAY_USERS = 10;
+    private static final String THREE_DAY_USERS_PREFIX = "three";
 
-    public static final String[] THREE_DAY_USERS = {
-        "three_user1@aerofs.com",
-        "three_user2@aerofs.com",
-        "three_user3@aerofs.com"
-    };
+    private static final String USERS_SUFFIX = "@aerofs.com";
 
-
+    private static final int NUM_USERS_TO_RETURN_IN_SET = 100;
 
     @Before
     public void setupTestSpEmailReminder()
             throws Exception
     {
+
         when(_emailFactory.createReminderEmail(anyString(), anyString(), anyString(),
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
         Log.info("initialize database");
         LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
+
         _transaction.begin();
         Log.info("add default organization");
         _db.addOrganization(new Organization(ORG, "", "", true));
-        setupTargetedSignupCodes(TWO_DAY_USERS, TWO_DAYS);
-        setupTargetedSignupCodes(THREE_DAY_USERS, THREE_DAYS);
 
-    }
-
-    @After
-    public void tearDown() throws Exception
-    {
+        _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
+        _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
+                                    THREE_DAY_USERS_PREFIX);
         _transaction.commit();
+
     }
-    private void setupTargetedSignupCodes(String[] users, long age)
+
+    private Set<String> setupUsers(final int count, final long age,
+                            final String prefix)
             throws Exception
     {
+        Set<String> users = Sets.newHashSetWithExpectedSize(count);
+
+        //setup user email addresses
+        for (int i = 0; i < count; i ++) {
+            users.add(prefix + i + USERS_SUFFIX);
+        }
+
         for (String user: users) {
             Log.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
@@ -107,42 +119,67 @@ public class TestSPEmailReminder extends AbstractTest {
             assertNotNull(_db.getTargetedSignUp(signupCode));
         }
 
-
+        return users;
     }
+
     @Test
-    public void shouldEmailRemindersOnlyOnce()
+    public void shouldReturnCorrectUserSetWhenCheckingNonSignedUpUsers()
         throws Exception
     {
 
+        int offset = 0;
 
-        Set<String> users = _db.getUsersNotSignedUpAfterXDays(2);
-        assert users.size() == TWO_DAY_USERS.length;
+        Set<String> users;
 
-        for (String user : TWO_DAY_USERS) {
-            assertTrue(users.contains(user));
-        }
+        do {
+            _transaction.begin();
+            users = _db.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT,
+                                                                  NUM_USERS_TO_RETURN_IN_SET,
+                                                                  offset);
+            _transaction.commit();
 
-        //try and send two emails to the same set of users, shouldn't work
-        er.sendEmails(users);
-        er.sendEmails(users);
+            // assert that the returned set of users is a subset of the full set of two-day users
+            assertTrue(Sets.difference(users, _twoDayUsers).isEmpty());
+
+            offset += users.size();
+
+        } while (!users.isEmpty());
+
+        assertEquals(offset, _twoDayUsers.size());
+
+    }
+
+    @Test
+    public void shouldEmailRemindersOnlyOnceInAFourtyEightHourPeriod()
+        throws Exception
+    {
+
+        final int[] interval = { 2 };
+        // try and send two emails to the same set of user.
+        // remind should send emails the first time, and should simply
+        // return the second time.
+
+        er.remind(interval);
+        er.remind(interval);
 
         //verify that a user only would have one email sent to them
-        for (String user: TWO_DAY_USERS) {
-            String blobId = _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-            verify(_emailFactory).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),
-                    eq(SPParam.SP_EMAIL_NAME), eq(user), anyString(), eq(blobId));
+        verifyEmailRemindersForUsers(_twoDayUsers, times(1));
 
-        }
+        //verify that we don't email other users (e.g. users we emailed three days ago)
+        verifyEmailRemindersForUsers(_threeDayUsers, never());
+    }
 
-        //verify that we don't return other users (e.g. users we emailed three days ago)
-        for (String user : THREE_DAY_USERS) {
-            String blobId = _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-            verify(_emailFactory, times(0)).createReminderEmail(
-                    eq(SV.SUPPORT_EMAIL_ADDRESS),
-                    eq(SPParam.SP_EMAIL_NAME),
-                    eq(user),
-                    anyString(),
-                    eq(blobId));
+    private void verifyEmailRemindersForUsers(Set<String> users, VerificationMode mode)
+            throws SQLException, IOException
+    {
+        for (String user: users) {
+            _transaction.begin();
+            String tokenId = _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+            _transaction.commit();
+
+            verify(_emailFactory, mode).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),
+                    eq(SPParam.SP_EMAIL_NAME), eq(user), anyString(), eq(tokenId));
+
         }
 
     }

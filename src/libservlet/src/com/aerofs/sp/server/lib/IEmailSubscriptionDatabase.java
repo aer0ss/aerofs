@@ -35,11 +35,19 @@ public interface IEmailSubscriptionDatabase
     void removeEmailSubscription(String tokenId) throws SQLException;
 
     /**
-     * get token id associated with email and category
+     * get the unsubscribtion token id associated with email and category. This is a unique
+     * id associated with an email and a subscription category, used to handle unsubscribe requests
+     * from a particular category
      */
     String getTokenId(String email, SubscriptionCategory sc) throws SQLException;
 
 
+    /**
+     * Used to retrieve a folder invitation code to use in the email reminders
+     * We don't care which code it is, so long as it can be used to sign up
+     */
+
+    String getOnePendingFolderInvitationCode(String to) throws SQLException;
     /**
      * get the email associated with the subscription token id
      */
@@ -55,8 +63,13 @@ public interface IEmailSubscriptionDatabase
     void setLastEmailTime(String email, SubscriptionCategory category,
             long lastEmailTime) throws SQLException;
 
-    Set<String> getUsersNotSignedUpAfterXDays(final int days) throws SQLException;
+    /**
+     * Get (maxUsers) who have not signed up after (days) days offset by offset rows
+     */
+    Set<String> getUsersNotSignedUpAfterXDays(final int days, int maxUsers, int offset)
+            throws SQLException;
 
-    int getDaysFromLastEmail(final String email, final SubscriptionCategory category)
+
+    int getHoursSinceLastEmail(final String email, final SubscriptionCategory category)
             throws SQLException;
 }

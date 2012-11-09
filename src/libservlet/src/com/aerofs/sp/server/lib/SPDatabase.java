@@ -1227,10 +1227,8 @@ public class SPDatabase
         }
     }
 
-    /**
-     * Used to retrieve a folder invitation code to use in the email reminders
-     * We don't care which code it is, so long as it can be used to sign up
-     */
+
+    @Override
     public String getOnePendingFolderInvitationCode(String to)
             throws SQLException
     {
@@ -2252,7 +2250,8 @@ public class SPDatabase
     }
 
     @Override
-    public Set<String> getUsersNotSignedUpAfterXDays(final int days)
+    public Set<String> getUsersNotSignedUpAfterXDays(final int days, final int maxUsers,
+                                                     final int offset)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
@@ -2261,13 +2260,16 @@ public class SPDatabase
                         " left join " + SPSchema.T_USER + " on " + SPSchema.C_USER_ID + "=" +
                                 SPSchema.C_TI_TO +
                         " where " + SPSchema.C_USER_ID + " is null " +
-                            "and DATEDIFF(CURRENT_DATE(),DATE(" + SPSchema.C_TI_TS +")) =?");
+                        " and DATEDIFF(CURRENT_DATE(),DATE(" + SPSchema.C_TI_TS +")) =?" +
+                        " limit ? offset ?");
 
         ps.setInt(1, days);
+        ps.setInt(2, maxUsers);
+        ps.setInt(3, offset);
 
         ResultSet rs = ps.executeQuery();
         try {
-            HashSet<String> users = new HashSet<String>();
+            Set<String> users = Sets.newHashSetWithExpectedSize(maxUsers);
             while (rs.next()) users.add(rs.getString(1));
             return users;
         } finally {
@@ -2276,14 +2278,14 @@ public class SPDatabase
     }
 
     @Override
-    public synchronized int getDaysFromLastEmail(final String email,
+    public synchronized int getHoursSinceLastEmail(final String email,
             final SubscriptionCategory category)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
                        DBUtil.selectFromWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=? and " +
-                               SPSchema.C_ES_SUBSCRIPTION + "=?",
-                                "DATEDIFF(CURRENT_DATE()," + SPSchema.C_ES_LAST_EMAILED + ")"));
+                         SPSchema.C_ES_SUBSCRIPTION + "=?",
+                         "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + SPSchema.C_ES_LAST_EMAILED + "))"));
 
         ps.setString(1, email);
         ps.setInt(2, category.getCategoryID());
