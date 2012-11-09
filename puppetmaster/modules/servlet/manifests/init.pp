@@ -30,6 +30,11 @@ class servlet (
         $proxy_send_timeout = "60"
     ) {
 
+    package{"aerofs-servlet-tools":
+        ensure => latest,
+        require => Apt::Source["aerofs"],
+    }
+
     include tomcat6
 
     $tomcat6_user = hiera("tomcat6_manager")
