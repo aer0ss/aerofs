@@ -37,6 +37,7 @@ import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
@@ -240,7 +241,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         // SyncStatusSynchronizer calls this to compute the version hash of an object
         // these tests do not care about the actual value of the version vector, just that it
         // isn't null (the default of Mockito, which causes NPE...)
-        when(nvc.getAllLocalVersions_(any(SOCID.class))).thenReturn(new Version());
+        when(nvc.getLocalVersion_(any(SOCKID.class))).thenReturn(new Version());
 
         when(tm.begin_()).thenReturn(t);
 
