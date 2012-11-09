@@ -62,7 +62,7 @@ public class FSCK
 
             if (!okay.get()) {
                 SVClient.logSendDefectSync(true, "fsck found inconsistency. see logs for detail",
-                        new Exception());
+                        new Exception(), null);
             }
 
         } else if ("attr".equals(tableName)) {

@@ -12,7 +12,6 @@ message PBSVCall {
         DEFECT = 0;
         EVENT = 1;
         GZIPPED_LOG = 4;
-        ANALYTICS = 5;
         EMAIL = 6;
     }
 
@@ -22,7 +21,6 @@ message PBSVCall {
     optional PBSVDefect defect = 3;
     optional PBSVGzippedLog gzipped_log = 5;
     optional PBSVEvent event = 6;
-    optional PBSVAnalytics analytics = 7;
     optional PBSVEmail email = 8;
 }
 
@@ -109,12 +107,6 @@ message PBSVEvent {
 
     required Type type = 1;
     optional string desc = 2;
-}
-
-message PBSVAnalytics {
-    required uint64 db_dump_len = 1;
-
-    // followed by a gzipped db dump
 }
 
 message PBSVEmail {

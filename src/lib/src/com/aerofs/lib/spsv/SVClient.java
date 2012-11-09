@@ -44,7 +44,6 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.proto.Sv.PBSVAnalytics;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
 import com.aerofs.proto.Sv.PBSVDefect;
@@ -54,9 +53,6 @@ import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.proto.Sv.PBSVReply;
 import com.google.common.collect.Maps;
 
-/**
- * DO NOT use this class or its functions in daemon
- */
 public class SVClient
 {
     private static final Logger l = Util.l(SVClient.class);
@@ -109,9 +105,7 @@ public class SVClient
         for (File fLog : fLogs) {
             l.debug("compressing " + fLog);
             try {
-                // TODO the result may be too big to fit into memory
-                FileOutputStream os =
-                        new FileOutputStream(fLog.getPath() + ".gz");
+                FileOutputStream os = new FileOutputStream(fLog.getPath() + ".gz");
                 try {
                     compressSlowly(fLog, os);
                 } finally {
@@ -264,22 +258,13 @@ public class SVClient
 
     public static void logSendDefectAsync(boolean automatic, String desc)
     {
-        logSendDefectAsyncImpl(automatic, desc, null);
+        logSendDefectAsync(automatic, desc, null);
     }
 
     /*
      * @param e may be null if stack trace is not needed
      */
-    public static void logSendDefectAsync(boolean automatic, String desc, @Nonnull Throwable e)
-    {
-        logSendDefectAsyncImpl(automatic, desc, e);
-    }
-
-    /**
-     * send the defect and then archive logs. exit the program if the error
-     * is OutOfMemory
-     */
-    private static void logSendDefectAsyncImpl(final boolean automatic, final String desc,
+    public static void logSendDefectAsync(final boolean automatic, final String desc,
             @Nullable final Throwable e)
     {
         // create the header here so that we can get accurate creation time
@@ -301,25 +286,6 @@ public class SVClient
         // avoid quitting the program while sending defects
         thd.setDaemon(false);
         thd.start();
-    }
-
-    public static void logSendDefectSyncNoCfg(boolean automatic,
-            String context, Throwable e, String user, String rtRoot)
-        throws IOException
-    {
-        try {
-            doLogSendDefect(automatic, context, e, newHeader(user, null, rtRoot),
-                    Collections.<Key, String>emptyMap(), rtRoot, null, true, true, false, false);
-            // it may throw out of memory error
-        } catch (Throwable e1) {
-            throw new IOException(e1);
-        }
-    }
-
-    public static void logSendDefectSync(boolean automatic, String desc,
-            @Nullable Throwable e) throws Exception
-    {
-        logSendDefectSync(automatic, desc, e, null);
     }
 
     public static void logSendDefectNoLogsIgnoreErrors(boolean automatic,
@@ -371,24 +337,13 @@ public class SVClient
         });
     }
 
-    public static void logSendDefectAsyncNoCfg(final boolean automatic,
-            final String context, final Throwable e, final String user,
-            final String rtRoot)
-    {
-        Util.startDaemonThread("send-defect", new Runnable() {
-            @Override
-            public void run()
-            {
-                logSendDefectSyncNoCfgIgnoreError(automatic, context, e, user, rtRoot);
-            }
-        });
-    }
-
     public static void logSendDefectSyncNoCfgIgnoreError(boolean automatic,
             String context, Throwable e, String user, String rtRoot)
     {
         try {
-            logSendDefectSyncNoCfg(automatic, context, e, user, rtRoot);
+            doLogSendDefect(automatic, context, e, newHeader(user, null, rtRoot),
+                    Collections.<Key, String>emptyMap(), rtRoot, null, true, true, false, false);
+            // it may throw out of memory error
         } catch (Throwable e2) {
             l.error("can't send defect sync: ", e2);
         }
@@ -398,7 +353,7 @@ public class SVClient
             String context, Throwable e)
     {
         try {
-            logSendDefectSync(automatic, context, e);
+            logSendDefectSync(automatic, context, e, null);
         } catch (Throwable e2) {
             l.error("can't send defect sync: ", e2);
         }
@@ -671,33 +626,6 @@ public class SVClient
         }
 
         if (e instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
-    }
-
-    public static void sendAnalytics(File db) throws Exception
-    {
-        l.debug("sending analytics");
-
-        PBSVCall call = PBSVCall.newBuilder().setType(Type.ANALYTICS)
-                .setHeader(newHeader())
-                .setAnalytics(PBSVAnalytics.newBuilder()
-                        .setDbDumpLen(db.length()))
-                .build();
-
-        Socket s = send(call, db.length());
-        try {
-            OutputStream os = s.getOutputStream();
-            InputStream is = new FileInputStream(db);
-            try {
-                Util.copy(is, os);
-            } finally {
-                is.close();
-            }
-            recv(s);
-        } finally {
-            if (!s.isClosed()) s.close();
-        }
-
-        l.debug("sending analytics done");
     }
 
     /**

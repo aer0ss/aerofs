@@ -9,9 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,7 +36,6 @@ import com.aerofs.sv.server.raven.RavenTrace;
 import com.aerofs.sv.server.raven.RavenTraceElement;
 import com.aerofs.sv.server.raven.RavenUtils;
 import com.aerofs.lib.spsv.sendgrid.EmailCategory;
-import com.aerofs.proto.Sv.PBSVAnalytics;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVDefect;
 import com.aerofs.proto.Sv.PBSVEvent;
@@ -64,7 +61,6 @@ public class SVReactor
 
     private String _pathDefect;
     private String _pathArchive;
-    private String _pathAnalytics;
     private final Map<ObfStackTrace, String> _retraceMap = Maps.newHashMap();
 
     private final Meter _defectMeter = Metrics.newMeter(new MetricName("client", "defect", "all"),
@@ -83,7 +79,6 @@ public class SVReactor
     {
         _pathDefect = "/var/svlogs_prod/defect";
         _pathArchive = "/var/svlogs_prod/archived";
-        _pathAnalytics = "/var/svlogs_prod/analytics";
     }
 
     // @param client is for tracing only
@@ -100,9 +95,6 @@ public class SVReactor
                 break;
             case GZIPPED_LOG:
                 gzippedLog(call, is, client);
-                break;
-            case ANALYTICS:
-                analytics(call, is, client);
                 break;
             case EVENT:
                 event(call, client);
@@ -189,35 +181,6 @@ public class SVReactor
             while ((len = is.read(bs)) > 0) { zlogos.write(bs, 0, len); }
         } finally {
             zlogos.close();
-        }
-    }
-
-    private void analytics(PBSVCall call, InputStream is, String client)
-        throws ExProtocolError, IOException
-    {
-        Util.checkPB(call.hasAnalytics(), PBSVAnalytics.class);
-        //PBSVAnalytics analytics = call.getAnalytics();
-        PBSVHeader header = call.getHeader();
-
-        // create the directory
-        String pathDir = _pathAnalytics + File.separator + header.getUser();
-        File parent = new File(pathDir);
-        if (!parent.exists()) {
-            if (!parent.mkdirs()) {
-                throw new IOException("cannot create " + parent.getAbsolutePath());
-            }
-        }
-
-        // save the dump
-        String did = Util.hexEncode(header.getDeviceId().toByteArray());
-        String path = pathDir + File.separator + did + ".db." +
-                new SimpleDateFormat("yyyyMMdd.HHmmss").format(new Date()) + ".gz";
-
-        FileOutputStream os = new FileOutputStream(path);
-        try {
-                Util.copy(is, os);
-        } finally {
-            os.close();
         }
     }
 
