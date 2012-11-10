@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.aerofs.l.L;
+import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -149,19 +150,20 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     }
 
     @Override
+    public String getFileSystemType(String path, OutArg<Boolean> remote) throws IOException
+    {
+        OutArg<String> output = new OutArg<String>();
+        Util.execForeground(output, "stat", "-f", "--format=%T", path);
+        String fstype = output.get().trim();
+        remote.set(fstype.equals("nfs"));
+        return fstype;
+    }
+
+    @Override
     public boolean isFileSystemTypeSupported(String type, Boolean remote)
     {
-        // we allow rootfs but it's risky to use it as it's based on RAM and
-        // every time the computer reboots folders disappear. If the user
-        // then creates an empty AeroFS folder all of his libraries will be
-        // deleted.
-        //
-        // http://www.kernel.org/doc/Documentation/filesystems/ramfs-rootfs-initramfs.txt
-        //
-        // Now that we don't mistakenly mark folder on / as rootfs, we should be able to safely
-        // drop rootfs from the list here.
         String[] fss = new String[] { "EXT", "NFS", "BTRFS", "ECRYPTFS", "VZFS",
-                "REISERFS", "ROOTFS", "XFS", "UFS", "CRYPT", "JFS", "SIMFS" };
+                "REISER", "XFS", "UFS", "CRYPT", "JFS", "SIMFS" };
         for (String fs : fss) if (type.startsWith(fs)) return true;
         return false;
     }

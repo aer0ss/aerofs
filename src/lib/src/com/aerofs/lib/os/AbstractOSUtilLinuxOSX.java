@@ -79,23 +79,6 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
     }
 
     @Override
-    public String getFileSystemType(String path, OutArg<Boolean> remote)
-            throws IOException
-    {
-        byte[] buffer = new byte[256]; // I doubt any filesystem has a name longer than 256 chars
-        int rc = Driver.getFileSystemType(null, path, buffer, buffer.length);
-        // not using switch/case because we don't want to statically import Driver's constants
-        if (rc == Driver.FS_LOCAL) {
-            remote.set(false);
-        } else if (rc == Driver.FS_REMOTE) {
-            remote.set(true);
-        } else {
-            throw new IOException("Couldn't get filesystem type: " + path + ". Error code: " + rc);
-        }
-        return Util.cstring2string(buffer, false);
-    }
-
-    @Override
     public boolean isInSameFileSystem(String p1, String p2) throws IOException
     {
         int bufferlen = Driver.getMountIdLength();
