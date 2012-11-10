@@ -496,6 +496,9 @@ public class Collector implements IDumpStatMisc
                 scheduleBackoff_();
             }
 
+            l.debug("cdl "+ socid + " didsWPerm " + didsWithPermanentErrors
+                    + " didsWOPerm " + didsWithoutPermanentErrors);
+
             postDownloadCompletionTask();
         }
 

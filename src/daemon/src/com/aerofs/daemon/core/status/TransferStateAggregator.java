@@ -102,7 +102,8 @@ public class TransferStateAggregator
      * Update transfer state tree on download listener callback
      * @return actual state changes requiring notification
      */
-    public Map<Path, Integer> download_(SOCID socid, @Nullable Path path, State state) {
+    public Map<Path, Integer> download_(SOCID socid, @Nullable Path path, State state)
+    {
         // list of affected path
         Map<Path, Integer> notify = Maps.newHashMap();
 
@@ -114,7 +115,7 @@ public class TransferStateAggregator
          *   - expulsion of an entire store
          */
 
-        l.debug("dl: " + socid + " " + (path == null ? "(null)" : path) + " " + state);
+        l.debug("dl: " + socid + " " + path + " " + state);
 
         if (!_dlMap.containsKey(socid)) {
             // new transfer

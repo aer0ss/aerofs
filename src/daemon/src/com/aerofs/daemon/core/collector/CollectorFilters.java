@@ -365,6 +365,8 @@ public class CollectorFilters
     void deletePersistentData_(Trans t)
             throws SQLException
     {
+        // TODO (MJ) should I be calling deleteAllCSFilters_() to ensure proper termination
+        // of the collector object?
         _cfdb.deleteCollectorFiltersForStore_(_sidx, t);
     }
 
