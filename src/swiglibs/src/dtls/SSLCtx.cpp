@@ -22,19 +22,19 @@ SSLCtx::~SSLCtx() {
 
 int SSLCtx::generate_cookie(SSL *ssl, unsigned char *cookie, unsigned int *cookie_len)
 {
-	FINFO( "" );
+	FDEBUG( "" );
 	*cookie_len = 32;
 	return 1;
 }
 
 int SSLCtx::verify_cookie(SSL *ssl, unsigned char *cookie, unsigned int cookie_len)
 {
-	FINFO( "" );
+	FDEBUG( "" );
 	return 1;
 }
 int SSLCtx::init(bool isclient, char *cafile, int cafilesize, char *cert, int certsize, char *rsaprivkey, int rsaprivkeyLen)
 {
-	FINFO( " certsize = " << certsize << " cafilesize = " << cafilesize << " rsaprivkeyLen = " << rsaprivkeyLen );
+	FDEBUG( " certsize = " << certsize << " cafilesize = " << cafilesize << " rsaprivkeyLen = " << rsaprivkeyLen );
 
     char capath[FILENAME_MAX];
 	char certpath[FILENAME_MAX];
@@ -45,13 +45,13 @@ int SSLCtx::init(bool isclient, char *cafile, int cafilesize, char *cert, int ce
 	certpath[certsize] = 0;
     capath[cafilesize] = 0;
 
-	FINFO( " certpath = " << certpath << " capath = " << capath );
+	FDEBUG( " certpath = " << certpath << " capath = " << capath );
 
 	OpenSSL_add_ssl_algorithms();
 	SSL_load_error_strings();
 	ERR_load_SSL_strings();
 
-	FINFO( " Using DTLSv1 " );
+	FDEBUG( " Using DTLSv1 " );
 	if (isclient) _ctx = SSL_CTX_new(DTLSv1_client_method());
 	else		  _ctx = SSL_CTX_new(DTLSv1_server_method());
 
@@ -131,14 +131,14 @@ int SSLCtx::init(bool isclient, char *cafile, int cafilesize, char *cert, int ce
 	SSL_CTX_set_read_ahead(_ctx, 1); // Required for DTLS, "1" is from examples, not sure what it does
 
 	//TODO: need CRL verification here
-	FINFO( " SUCCESS " );
+	FDEBUG( " SUCCESS " );
 	return 0;
 }
 
 int SSLCtx::verify_callback( int ok , X509_STORE_CTX *store)
 {
 
-	FINFO("");
+	FDEBUG("");
 	//TODO: perform verifications as per example in snmp
 
 	char data[256];

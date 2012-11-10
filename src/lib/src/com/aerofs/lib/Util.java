@@ -1236,6 +1236,9 @@ public abstract class Util
         case Level.WARN_INT:
             Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LWARN);
             break;
+        case Level.DEBUG_INT:
+            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LDEBUG);
+            break;
         case Level.INFO_INT:
         default:
             Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LINFO);
