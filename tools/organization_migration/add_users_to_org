@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # collect mysql db information (don't take these as arguments for security)
     # use production database settings as the default
-    defaultHost = 'sp.mysql.aws.aerofs.com' # must be run from reloadedsp due to firewall settings
+    defaultHost = 'sp.mysql.aws.aerofs.com' # must be run from sp due to firewall settings
     defaultDatabase = 'aerofs_sp'
     defaultUser = 'aerofs_spsv'
 
