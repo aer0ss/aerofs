@@ -8,3 +8,7 @@ tomcat6_manager:
 mysql_password: "testpw1"
 
 mysql_endpoint: "ci-sp.mysql.aws.aerofs.com"
+
+analytics_mysql:
+    user: "supportanalytics"
+    password: "password"
