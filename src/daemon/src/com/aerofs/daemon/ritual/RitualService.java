@@ -27,7 +27,6 @@ import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
-import com.aerofs.daemon.event.admin.EISetPrivateKey;
 import com.aerofs.daemon.event.admin.EITransportFlood;
 import com.aerofs.daemon.event.admin.EITransportFloodQuery;
 import com.aerofs.daemon.event.admin.EITransportPing;
@@ -314,13 +313,6 @@ public class RitualService implements IRitualService
         ev.execute(PRIO);
         return createReply(TransportFloodQueryReply.newBuilder()
                 .setBytes(ev.bytes_()).setTime(ev.time_()).build());
-    }
-
-    @Override
-    public ListenableFuture<Void> setPrivateKey(ByteString key) throws Exception
-    {
-        new EISetPrivateKey(SecUtil.decodePrivateKey(key.toByteArray())).execute(PRIO);
-        return createVoidReply();
     }
 
     /**

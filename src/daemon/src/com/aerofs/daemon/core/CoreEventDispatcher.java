@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
 import com.aerofs.daemon.core.admin.HdUpdateACL;
 import com.aerofs.daemon.core.admin.HdSetExpelled;
-import com.aerofs.daemon.core.admin.HdSetPrivateKey;
 import com.aerofs.daemon.core.admin.HdTransportFlood;
 import com.aerofs.daemon.core.admin.HdTransportFloodQuery;
 import com.aerofs.daemon.core.admin.HdTransportPing;
@@ -63,7 +62,6 @@ import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
 import com.aerofs.daemon.event.admin.EIUpdateACL;
 import com.aerofs.daemon.event.admin.EISetExpelled;
-import com.aerofs.daemon.event.admin.EISetPrivateKey;
 import com.aerofs.daemon.event.admin.EITransportFlood;
 import com.aerofs.daemon.event.admin.EITransportFloodQuery;
 import com.aerofs.daemon.event.admin.EITransportPing;
@@ -115,7 +113,6 @@ public class CoreEventDispatcher extends EventDispatcher
             HdExportConflict hdExportConflict,
             HdTransportFloodQuery hdTransportFloodQuery,
             HdTransportFlood hdTransportFlood,
-            HdSetPrivateKey hdSetPrivateKey,
             HdTransportPing hdTransportPing,
             HdDumpStat hdDumpStat,
             HdReloadConfig hdReloadConfig,
@@ -159,7 +156,6 @@ public class CoreEventDispatcher extends EventDispatcher
             // admin events
             .setHandler_(EIReloadConfig.class, hdReloadConfig)
             .setHandler_(EIDumpStat.class, hdDumpStat)
-            .setHandler_(EISetPrivateKey.class, hdSetPrivateKey)
             .setHandler_(EIShareFolder.class, hdShareFolder)
             .setHandler_(EIJoinSharedFolder.class, hdJoinSharedFolder)
             .setHandler_(EIListSharedFolders.class, hdListSharedFolders)
