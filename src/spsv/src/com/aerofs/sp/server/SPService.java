@@ -475,8 +475,8 @@ class SPService implements ISPService
         String cname = csr.getSubjectName().getCommonName();
 
         if (!cname.equals(SecUtil.getCertificateCName(user, did))) {
-            throw new ExBadArgs("cname doesn't match: hash(" + user +
-                    " + " + did.toStringFormal() + ") != " + cname);
+            throw new ExBadArgs("cname doesn't match: hash(" + user + " + " +
+                    did.toStringFormal() + ") != " + cname);
         }
 
         Certificate cert = _certificateGenerator.createCertificate(user, did, csr);

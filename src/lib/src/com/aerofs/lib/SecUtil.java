@@ -107,27 +107,7 @@ public class SecUtil
             factory.getKeySpec(privKey,
                 PKCS8EncodedKeySpec.class);
         return specPrivate.getEncoded();
-
-//        X509EncodedKeySpec spec =
-//          (X509EncodedKeySpec) factory.getKeySpec(privKey,
-//                  X509EncodedKeySpec.class);
-//        byte[] bs = spec.getEncoded();
     }
-
-
-//  private static PublicKey decodePublicKey(byte[] bs)
-//      throws GeneralSecurityException
-//  {
-//      KeyFactory factory = KeyFactory.getInstance("RSA");
-//      X509EncodedKeySpec specPublic = new X509EncodedKeySpec(bs);
-//      return factory.generatePublic(specPublic);
-//  }
-//
-//
-//  X509EncodedKeySpec specPublic =
-//          (X509EncodedKeySpec) factory.getKeySpec(kp.getPublic(),
-//                  X509EncodedKeySpec.class);
-//  byte[] bsPubic = specPublic.getEncoded();
 
     public static byte[] encryptChallenge(byte[] plainText, PublicKey publicKey)
         throws GeneralSecurityException
@@ -209,8 +189,7 @@ public class SecUtil
         throws ExBadCredential
     {
         try {
-            return decodePrivateKey(decryptPBEwithAES(encryptedKey, passwd,
-                    false));
+            return decodePrivateKey(decryptPBEwithAES(encryptedKey, passwd, false));
         } catch (GeneralSecurityException e) {
             throw new ExBadCredential(e);
         }
