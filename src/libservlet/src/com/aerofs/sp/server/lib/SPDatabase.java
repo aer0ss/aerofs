@@ -82,12 +82,12 @@ public class SPDatabase
     // TODO use DBCW.throwOnConstraintViolation() instead
     private static void checkDuplicateKey(SQLException e) throws ExAlreadyExist
     {
-        if (e.getMessage().startsWith("Duplicate entry")) throw new ExAlreadyExist(e);
-    }
-
-    private static void checkDuplicateDeviceName(SQLException e) throws ExDeviceNameAlreadyExist
-    {
-        if (e.getMessage().contains(SPSchema.CO_DEVICE_NAME_OWNER)) throw new ExDeviceNameAlreadyExist();
+        if (e.getMessage().startsWith("Duplicate entry")) {
+            if (e.getMessage().contains(SPSchema.CO_DEVICE_NAME_OWNER))
+                throw new ExDeviceNameAlreadyExist();
+            else
+                throw new ExAlreadyExist(e);
+        }
     }
 
     private static void checkOrganizationKeyConstraint(SQLException e, String orgId)
@@ -921,7 +921,7 @@ public class SPDatabase
     }
 
     public void setDeviceInfo(DID did, String deviceName)
-            throws SQLException, ExDeviceNameAlreadyExist
+            throws SQLException, ExAlreadyExist
     {
         try {
             PreparedStatement psSDI = getConnection().prepareStatement("update " + SPSchema.T_DEVICE +
@@ -931,7 +931,7 @@ public class SPDatabase
             psSDI.setString(2, did.toStringFormal());
             Util.verify(psSDI.executeUpdate() == 1);
         } catch (SQLException e) {
-            checkDuplicateDeviceName(e);
+            checkDuplicateKey(e);
             throw e;
         }
     }
@@ -1366,7 +1366,6 @@ public class SPDatabase
             psAddDev.executeUpdate();
         } catch (SQLException e) {
             checkDuplicateKey(e);
-            checkDuplicateDeviceName(e);
             throw e;
         }
     }
