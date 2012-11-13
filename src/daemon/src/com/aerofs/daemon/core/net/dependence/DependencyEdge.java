@@ -29,7 +29,7 @@ public class DependencyEdge extends DirectedEdge<SOCID>
 
     /**
      * @return the DependencyType associated with this object
-     * Subclasses should override this method; it is away to avoid using instanceOf
+     * Subclasses should override this method; it is an approach to avoid instanceOf
      */
     public DependencyType type()
     {

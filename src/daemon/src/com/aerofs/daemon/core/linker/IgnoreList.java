@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.linker;
 import java.util.Set;
 
 import com.aerofs.lib.C;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 
 /**
  * N.B. ignored files will NOT be backed up when their parent folders are deleted by remote peers
@@ -15,12 +15,12 @@ public class IgnoreList
 
     IgnoreList()
     {
-        _set = Sets.newHashSet();
-        _set.add("Icon\r");
-        _set.add(".DS_Store");
-        _set.add("desktop.ini");
-        _set.add("Thumbs.db");
-        _set.add(C.SHARED_FOLDER_TAG);
+        _set = ImmutableSet.of(
+                "Icon\r",
+                ".DS_Store",
+                "desktop.ini",
+                "Thumbs.db",
+                C.SHARED_FOLDER_TAG);
     }
 
     /**

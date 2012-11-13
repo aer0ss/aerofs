@@ -35,7 +35,7 @@ public class MightDelete
         SOID soid = _ds.resolveNullable_(pcPhysical._path);
         if (soid == null) return;
 
-        if (!shouldNotDelete(_ds.getOANullable_(soid))) delBuffer.add_(soid);
+        if (!shouldNotDelete(_ds.getOA_(soid))) delBuffer.add_(soid);
 
         // Do not do anything that may throw after delBuffer.add_() above. Or you have to undo the
         // operation by calling remove_() on exceptions. See comments in add_().
