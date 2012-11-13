@@ -56,7 +56,6 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

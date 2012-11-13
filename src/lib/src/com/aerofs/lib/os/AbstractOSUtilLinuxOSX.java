@@ -9,7 +9,6 @@ import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;

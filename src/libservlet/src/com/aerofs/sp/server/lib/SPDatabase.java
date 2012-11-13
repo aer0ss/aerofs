@@ -3,7 +3,6 @@ package com.aerofs.sp.server.lib;
 import java.util.Arrays;
 import java.util.EnumSet;
 
-import java.util.HashSet;
 import java.util.TimeZone;
 
 import com.aerofs.lib.spsv.Base62CodeGenerator;

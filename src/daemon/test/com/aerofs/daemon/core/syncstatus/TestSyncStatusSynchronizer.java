@@ -36,7 +36,6 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
