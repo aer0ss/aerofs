@@ -129,9 +129,9 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
 
-        // TODO (MP) only enable for a subset (5/16) of users for now.
+        // TODO (MP) only enable for a subset (8/16=1/2) of users for now.
         byte[] hashedLocalUser = SecUtil.hash(localUser.get().getBytes());
-        _enable = (hashedLocalUser[0] & 0xf0) <= 4 || localUser.get().endsWith("@aerofs.com");
+        _enable = (hashedLocalUser[0] & 0xf0) <= 7 || localUser.get().endsWith("@aerofs.com");
 
         _ssc.setSignInHandler(this);
 
