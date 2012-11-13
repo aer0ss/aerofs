@@ -53,27 +53,29 @@ public class InjectableDriver
 
     /**
      * @return null on OS-specific files
-     * N.B. Windows requires path to be an absolute path
      */
-    public @Nullable FIDAndType getFIDAndType(String path)
+    public @Nullable FIDAndType getFIDAndType(String absPath)
             throws IOException, ExNotFound
     {
+        File f = new File(absPath);
+        assert f.isAbsolute() : absPath;
         byte[] bs = new byte[getFIDLength()];
-        int ret = Driver.getFid(null, path, bs);
-        if (ret == DRIVER_FAILURE) throwNotFoundOrIOException(path);
+        int ret = Driver.getFid(null, absPath, bs);
+        if (ret == DRIVER_FAILURE) throwNotFoundOrIOException(absPath);
         if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FIDAndType(new FID(bs), ret == GETFID_DIR);
     }
 
     /**
      * @return null on OS-specific files
-     * N.B. Windows requires path to be an absolute path
      */
-    public @Nullable FID getFID(String path) throws IOException
+    public @Nullable FID getFID(String absPath) throws IOException
     {
+        File f = new File(absPath);
+        assert f.isAbsolute() : absPath;
         byte[] bs = new byte[getFIDLength()];
-        int ret = Driver.getFid(null, path, bs);
-        if (ret == DRIVER_FAILURE) throwIOException(path);
+        int ret = Driver.getFid(null, absPath, bs);
+        if (ret == DRIVER_FAILURE) throwIOException(absPath);
         if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FID(bs);
     }

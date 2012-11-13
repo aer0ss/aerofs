@@ -19,10 +19,50 @@ int getFidLength()
     return sizeof(DWORD) * 2;
 }
 
-// Forces Unicode paths (with extended length).  See the notes on lpFileName at
-// http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx
+// On Win32, the standard path parsing routines only allow paths up to 260
+// characters.  Some more creative users have files that would wind up with
+// longer paths than that, at which point getFid would return failure, but
+// Java's File class would remain functional, leading to some interesting
+// failure modes and no-sync bugs.  However, the Windows shell itself is not
+// particularly good at handling such files - Explorer can't open or delete
+// these files, and gives an impressively unhelpful error message when you try.
+// This is a somewhat poor user experience.  That said:
+//   - users syncing files in this manner are probably doing so from other
+//     machines (where long paths are fine)
+//   - if they're not, they are probably using special tools that better handle
+//     such paths, and may already be aware of this limitation
+//
+// Now, before we say "well, we just won't support syncing such files" we
+// should consider the implications for our different situation.  Since we
+// don't have a server-side copy, users may be expecting this syncing behavior
+// to back up their files.  Since they probably can't easily use these files on
+// their Windows systems anyway, it makes some sense to sync them for backup
+// regardless.
+//
+// Furthermore, unlike other FS restrictions, we can't just forbid long paths
+// from entering the AeroFS system.  A perfectly-acceptable path on one system
+// might be too long (>260 chars) on another, given different lengths of root
+// anchor.  So if we really want to not sync these files to Windows machines,
+// we're going to have to implement some "what can be recreated locally?"
+// logic.
+//
+// At present, we simply sync these files to all systems and have a bit of bad
+// UX for users with this corner case.
+//
+// In the future, we might want to either:
+//   - Sync the files to all systems, but keep them hidden in the auxroot named
+//     something safe.  (Would need implementation of an external folder for
+//     storing content outside the root anchor.)
+//   - Don't sync the file as soon as we realize that the object can't be
+//     safely replicated on the local system.  This might be a bad UX when the
+//     user thinks *all* their files are backed up, but discovers that deep
+//     paths are not.  And if we do this, we might want to relax our constraints
+//     on what is admitted to the logical filesystem, and simply implement device-
+//     local constraints on what is replicated on the physical filesystem.
 static tstring getPrefixedPath(tstring path)
 {
+    // Forces Unicode paths (with extended length).  See the notes on lpFileName at
+    // http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx
     return tstring(_T("\\\\?\\")) + path;
 }
 
@@ -85,6 +125,8 @@ int getFileSystemType(JNIEnv * j, jstring jpath, void * buf, int bufLen)
     }
     tstring long_path = getPrefixedPath(path);
 
+    // MAX_PATH is fine here, since it's the path to the drive root (which
+    // is quite unlikely to be farther in than MAX_PATH)
     TCHAR root[MAX_PATH + 1];
     if (!GetVolumePathName(long_path.c_str(), root, MAX_PATH + 1)) {
         FWARN("GVPN: " << GetLastError());
@@ -229,6 +271,8 @@ static int killProcessIfDaemon(DWORD pid)
         return -1;
     }
 
+    // Use of MAX_PATH is okay here - Windows will have issues launching
+    // processes that are farther down the fs tree than MAX_PATH.
     TCHAR processName[MAX_PATH];
     if (!GetModuleBaseName(hProcess, hMod, processName, sizeof(processName) / sizeof(TCHAR))) {
         CloseHandle(hProcess);
