@@ -34,6 +34,9 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
     // And inject a certificate as well.
     @Mock Certificate certificate;
 
+    // Add inject to a second certificate.
+    @Mock Certificate certificate2;
+
     // Private static finals.
     protected static final String RETURNED_CERT = "returned_cert";
     protected static final String TEST_1_USER = "test1@aerofs.com";
@@ -59,16 +62,7 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
         db.addUser(User.createMockForID(TEST_2_USER));
         _transaction.commit();
 
-        // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
-        when(certificateGenerator.createCertificate(anyString(), any(DID.class),
-                any(PKCS10.class))).thenReturn(certificate);
-
-        when(certificate.toString()).thenReturn(RETURNED_CERT);
-        when(certificate.getSerial()).thenReturn(++_lastSerialNumber);
-
-        // Just need some time in the future - say, one year.
-        when(certificate.getExpireTs()).thenReturn(new Timestamp(System.currentTimeMillis() +
-                1000L*60L*60L*24L*365L));
+        mockCertificate(certificate);
 
         // Set up test user and create pub/priv key pair.
         sessionUser.setUser(TEST_1_USER);
@@ -79,6 +73,20 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
 
         _publicKey = publicKey.get();
         _privateKey = privateKey.get();
+    }
+
+    public void mockCertificate(Certificate cert) throws Exception
+    {
+        // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
+        when(certificateGenerator.createCertificate(anyString(), any(DID.class),
+                any(PKCS10.class))).thenReturn(cert);
+
+        when(cert.toString()).thenReturn(RETURNED_CERT);
+        when(cert.getSerial()).thenReturn(++_lastSerialNumber);
+
+        // Just need some time in the future - say, one year.
+        when(cert.getExpireTs()).thenReturn(new Timestamp(System.currentTimeMillis() +
+                1000L*60L*60L*24L*365L));
     }
 
     protected long getLastSerialNumber()

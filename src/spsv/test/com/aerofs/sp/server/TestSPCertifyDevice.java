@@ -8,9 +8,12 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UniqueID;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
-
+import java.util.Set;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -106,5 +109,40 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
             _transaction.handleException();
             throw e;
         }
+    }
+
+    @Test
+    public void shouldCreateCertificateForTwoDevicesWithSameName()
+        throws Exception
+    {
+        // Certify device1
+        DID did1 = _did;
+        byte[] csr1 = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, did1).getEncoded();
+        String cert1;
+        cert1 = service.certifyDevice(did1.toPB(), ByteString.copyFrom(csr1),false).get().getCert();
+        assertTrue(cert1.equals(RETURNED_CERT));
+
+        // Modify certificate returned for device2 to be certificate2
+        mockCertificate(certificate2);
+
+        // Certify device2
+        DID did2 = getNextDID(Sets.newHashSet(_did));
+        byte[] csr2 = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, did2).getEncoded();
+        String cert2;
+        cert2 = service.certifyDevice(did2.toPB(), ByteString.copyFrom(csr2),false).get().getCert();
+        assertTrue(cert2.equals(RETURNED_CERT));
+    }
+
+    /**
+     * @param dids Set of DIDs that we want to skip.
+     * @return a new DID not part of the set {@code dids}
+     */
+    private DID getNextDID(Set<DID> dids)
+    {
+        DID did = new DID(UniqueID.generate());
+        while (dids.contains(did)) {
+            did = new DID(UniqueID.generate());
+        }
+        return did;
     }
 }
