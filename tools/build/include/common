@@ -108,6 +108,7 @@ readonly WINDOWS_PACKAGER_DIR="${RELEASE_NSIS_DIR}/packager"
 ###############################################################################
 readonly MAP_SERVER="sv.aerofs.com"
 readonly MAP_SERVER_LOGIN="maps@${MAP_SERVER}"
+readonly ROCKLOG_SERVER="rocklog.aerofs.com"
 readonly MAP_FILES_DIR="/maps"
 
 ###############################################################################

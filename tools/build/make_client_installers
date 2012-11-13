@@ -73,6 +73,7 @@ function upload_map_file_to_map_server() {
     echo ">> uploading ProGuard map to map server"
 
     kscp "${LOCAL_RELEASE_DIR}/aerofs.map" $MAP_SERVER_LOGIN:"${MAP_FILES_DIR}/${RELEASE_FILE_NAME}.map"
+    scp "${LOCAL_RELEASE_DIR}/aerofs.map" $ROCKLOG_SERVER:"${MAP_FILES_DIR}/${RELEASE_FILE_NAME}.map"
 }
 
 ###############################################################################
