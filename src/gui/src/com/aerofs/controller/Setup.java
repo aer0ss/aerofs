@@ -156,6 +156,8 @@ class Setup
                 assert !lastName.isEmpty();
             }
 
+            userId = userId.toLowerCase();
+
             l.info("userId:" + userId + " returning:" + returning);
             RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, true);
 

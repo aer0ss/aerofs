@@ -552,7 +552,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
     {
         _inProgress = true;
 
-        final String userID = _txtUserID.getText().toLowerCase().trim();
+        final String userID = _txtUserID.getText().trim();
         final char[] passwd = _txtPasswd.getText().toCharArray();
         final String firstName = _txtFirstName.getText().trim();
         final String lastName = _txtLastName.getText().trim();
