@@ -212,8 +212,8 @@ public class UserManagement
         String token = Base62CodeGenerator.newRandomBase62String(SPParam
                 .PASSWORD_RESET_TOKEN_LENGTH);
         _db.addPasswordResetToken(user._id, token);
-        _passwordResetEmailer.sendPasswordResetEmail(user_email,token);
-        l.info("Password Reset Email sent to " + user_email);
+        _passwordResetEmailer.sendPasswordResetEmail(user._id, token);
+        l.info("Password Reset Email sent to " + user._id);
     }
 
     public void resetPassword(String password_reset_token, ByteString new_credentials)
