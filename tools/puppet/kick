@@ -27,5 +27,3 @@ if [ x"$TTL" == x ]; then
 fi
 
 ssh ${PUPPET_MASTER} -C "puppet kick ${PUPPET_AGENT} --foreground"
-
-exit 0
