@@ -122,6 +122,7 @@ public class SPDatabase
         PreparedStatement psGU = getConnection().prepareStatement("select " + SPSchema.C_USER_FIRST_NAME
                 + "," + SPSchema.C_USER_LAST_NAME + "," + SPSchema.C_USER_CREDS + "," + SPSchema.C_FINALIZED + ","
                 + SPSchema.C_USER_VERIFIED + "," + SPSchema.C_USER_ORG_ID + "," + SPSchema.C_USER_AUTHORIZATION_LEVEL
+                + "," + SPSchema.C_USER_ID
                 + " from " + SPSchema.T_USER + " where " + SPSchema.C_USER_ID + "=?");
         psGU.setString(1, id);
         ResultSet rs = psGU.executeQuery();
@@ -133,8 +134,9 @@ public class SPDatabase
                 boolean finalized = rs.getBoolean(4);
                 boolean verified = rs.getBoolean(5);
                 String orgId = rs.getString(6);
+                String dbId = rs.getString(7);
                 AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(7));
-                User u = new User(id, firstName, lastName, creds, finalized, verified, orgId,
+                User u = new User(dbId, firstName, lastName, creds, finalized, verified, orgId,
                         level);
                 assert !rs.next();
                 return u;
@@ -1995,6 +1997,7 @@ public class SPDatabase
     {
         PreparedStatement psGetOrganization = getConnection().prepareStatement("select " +
                 SPSchema.C_ORG_NAME + "," + SPSchema.C_ORG_ALLOWED_DOMAIN + "," + SPSchema.C_ORG_OPEN_SHARING +
+                "," + SPSchema.C_ORG_ID +
                 " from " + SPSchema.T_ORGANIZATION + " where " + SPSchema.C_ORG_ID + "=?");
 
         psGetOrganization.setString(1, orgId);
@@ -2004,7 +2007,8 @@ public class SPDatabase
                 String name = rs.getString(1);
                 String domain = rs.getString(2);
                 boolean shareExternally = rs.getBoolean(3);
-                Organization org = new Organization(orgId, name, domain, shareExternally);
+                String dbOrgId = rs.getString(4);
+                Organization org = new Organization(dbOrgId, name, domain, shareExternally);
                 assert !rs.next();
                 return org;
             } else {
