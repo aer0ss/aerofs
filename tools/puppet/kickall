@@ -17,6 +17,4 @@ if [ x"$PUPPET_MASTER" == x ]; then
 fi
 
 ssh ${PUPPET_MASTER} -C "echo `date` >> /var/log/aerofs/kickall.log"
-ssh ${PUPPET_MASTER} -C "kickall | tee -a /var/log/aerofs/kickall.log"
-
-exit 0
+ssh ${PUPPET_MASTER} -C "set -o pipefail; kickall | tee -a /var/log/aerofs/kickall.log"
