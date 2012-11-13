@@ -92,8 +92,8 @@ public class SPDatabase
     private static void checkOrganizationKeyConstraint(SQLException e, String orgId)
             throws ExNotFound
     {
-        if (e.getMessage().startsWith("Cannot add or update a child row: a foreign key" +
-                " constraint fails")) {
+        if (e.getMessage().startsWith(
+                "Cannot add or update a child row: a foreign key" + " constraint fails")) {
             throw new ExNotFound("Organization " + orgId + " does not exist.");
         }
     }
@@ -134,9 +134,9 @@ public class SPDatabase
                 boolean finalized = rs.getBoolean(4);
                 boolean verified = rs.getBoolean(5);
                 String orgId = rs.getString(6);
-                String dbId = rs.getString(7);
                 AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(7));
-                User u = new User(dbId, firstName, lastName, creds, finalized, verified, orgId,
+                String userId = rs.getString(8);
+                User u = new User(userId, firstName, lastName, creds, finalized, verified, orgId,
                         level);
                 assert !rs.next();
                 return u;
@@ -174,10 +174,12 @@ public class SPDatabase
     public List<PBUser> listUsers(String orgId, int offset, int maxResults)
             throws SQLException
     {
-        PreparedStatement psLU = getConnection().prepareStatement("select " + SPSchema.C_USER_ID + "," +
-                SPSchema.C_USER_FIRST_NAME + "," + SPSchema.C_USER_LAST_NAME + " from " + SPSchema.T_USER +
-                " where " + SPSchema.C_USER_ORG_ID + "=? " + " order by " +
-                SPSchema.C_USER_ID + " limit ? offset ?");
+        PreparedStatement psLU = getConnection().prepareStatement(
+                "select " + SPSchema.C_USER_ID + "," +
+                        SPSchema.C_USER_FIRST_NAME + "," + SPSchema.C_USER_LAST_NAME + " from " +
+                        SPSchema.T_USER +
+                        " where " + SPSchema.C_USER_ORG_ID + "=? " + " order by " +
+                        SPSchema.C_USER_ID + " limit ? offset ?");
 
         psLU.setString(1, orgId);
         psLU.setInt(2, maxResults);
@@ -735,8 +737,9 @@ public class SPDatabase
             byte[] new_credentials)
             throws ExNoPerm, SQLException
     {
-        PreparedStatement psTASUC = getConnection().prepareCall("update " + SPSchema.T_USER + " set " + SPSchema.C_USER_CREDS +
-                "=? where " + SPSchema.C_USER_ID + "=? AND " + SPSchema.C_USER_CREDS + "=?");
+        PreparedStatement psTASUC = getConnection().prepareCall(
+                "update " + SPSchema.T_USER + " set " + SPSchema.C_USER_CREDS +
+                        "=? where " + SPSchema.C_USER_ID + "=? AND " + SPSchema.C_USER_CREDS + "=?");
 
         psTASUC.setString(1, Base64.encodeBytes(new_credentials));
         psTASUC.setString(2, userID);
@@ -808,10 +811,11 @@ public class SPDatabase
         result.add(user);
 
         PreparedStatement psGSUS = getConnection().prepareStatement(
-                "select distinct t1." + SPSchema.C_AC_USER_ID +  " from " + SPSchema.T_AC + " t1 join " + SPSchema.T_AC +
-                " t2 on t1." + SPSchema.C_AC_STORE_ID +  " = t2." + SPSchema.C_AC_STORE_ID + " where t2." +
-                SPSchema.C_AC_USER_ID + " = ?"
-        );
+                "select distinct t1." + SPSchema.C_AC_USER_ID + " from " + SPSchema.T_AC +
+                        " t1 join " + SPSchema.T_AC +
+                        " t2 on t1." + SPSchema.C_AC_STORE_ID + " = t2." + SPSchema.C_AC_STORE_ID +
+                        " where t2." +
+                        SPSchema.C_AC_USER_ID + " = ?");
 
         psGSUS.setString(1, user);
 
