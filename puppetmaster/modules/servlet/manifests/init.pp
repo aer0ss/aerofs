@@ -83,7 +83,7 @@ class servlet (
         ssl_cert             => '/etc/nginx/certs/ssl.cert',
         ssl_key              => '/etc/nginx/certs/ssl.key',
         proxy                => 'http://127.0.0.1:8080',
-        client_max_body_size => '1024m',
+        client_max_body_size => '4096m',
         proxy_read_timeout   => $proxy_read_timeout,
         proxy_send_timeout   => $proxy_send_timeout,
         ensure               => present,
