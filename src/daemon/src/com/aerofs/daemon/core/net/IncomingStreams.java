@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
@@ -81,6 +82,7 @@ public final class IncomingStreams
     }
 
     private final FrequentDefectSender _fds = new FrequentDefectSender();
+    private final List<IIncomingStreamChunkListener> _listenerList = Lists.newLinkedList();
     private final Map<StreamKey, IncomingStream> _map = Maps.newTreeMap();
 
     // streams that are ended but failed to call endIncomingStream_.
@@ -93,6 +95,11 @@ public final class IncomingStreams
     public IncomingStreams(UnicastInputOutputStack stack)
     {
         _stack = stack;
+    }
+
+    public void addListener_(IIncomingStreamChunkListener listener)
+    {
+        _listenerList.add(listener);
     }
 
     public void begun_(StreamKey key, PeerContext pc)
@@ -142,6 +149,10 @@ public final class IncomingStreams
             throw new ExStreamInvalid(stream._invalidationReason);
         }
 
+        for (IIncomingStreamChunkListener listener : _listenerList) {
+            listener.onChunkProcessed_(key._did, key._strmid);
+        }
+
         return stream._chunks.poll();
     }
 
@@ -168,6 +179,9 @@ public final class IncomingStreams
             }
         } else {
             stream._chunks.add(chunk);
+            for (IIncomingStreamChunkListener listener : _listenerList) {
+                listener.onChunkReceived_(key._did, key._strmid);
+            }
             resume_(stream);
         }
     }
@@ -183,6 +197,10 @@ public final class IncomingStreams
             l.warn("abort " + stream + " key:" + key + " rsn:" + reason);
 
             stream._invalidationReason = reason;
+            for (IIncomingStreamChunkListener listener : _listenerList) {
+                listener.onStreamInvalidated_(key._did, key._strmid);
+            }
+
             resume_(stream);
         }
     }

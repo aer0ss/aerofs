@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.daemon.core.CoreDeviceLRU;
@@ -16,9 +20,11 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
 import com.aerofs.lib.ex.ExLimitMonitor;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 import javax.annotation.Nonnull;
@@ -28,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -55,8 +62,9 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         public long rollingBw = 0; // bytes/sec
         public long bytesIn = 0; // bytes
         public long firstLimitLess = 0;
+        public boolean paused = false;
         @Nonnull
-        PeerContext lastPeerContext = null; // FIXME: this is a hack!!!
+        PeerContext lastPeerContext; // FIXME: this is a hack!!!
     }
 
     // FIXME: HACK HACK HACK
@@ -239,9 +247,12 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private void respondToTimeout()
     {
+        // Maintains a list of paused devices. These devices do not get considered
+        // in the bandwidth total because they are always throttled.
+        List<TransmitInfo> pausedDevices = Lists.newLinkedList();
+
         // FIXME: this isn't the most performant approach in which to find out which people have used the most bandwidth...
         // FIXME: look at google-collections and figure out what is the best approach
-
         TreeSet<Map.Entry<DID, TransmitInfo>> bwhogs = createOrderedByBwMap();
         _totalBw = 0;
         for (Map.Entry<DID, TransmitInfo> tme : _transmitMap.entrySet()) {
@@ -257,13 +268,37 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
             ti.bytesIn = 0;
 
-            if (ti.rollingBw > _MIN_TRANSFER_LEVEL) {
+            if (ti.paused) {
+                // Since we cut the bandwidth for paused devices to a fixed amount
+                // we do not need to consider their current bandwidths when
+                // reducing
+                pausedDevices.add(ti);
+            } else if (ti.rollingBw > _MIN_TRANSFER_LEVEL) {
                 _totalBw += ti.rollingBw;
                 bwhogs.add(tme);
             }
         }
 
         logsysbw();
+
+        // Send small, fixed-sized bandwidth allocations to paused devices.
+        // We can't send a bandwidth allocation of 0 because the sender will
+        // never be able to request more bandwidth (the timeout on the sender
+        // will be indefinite, so no more messages will be sent). Too small,
+        // and we'll be waiting days. Too large, and pausing will not have the
+        // desired effect.
+        for (TransmitInfo ti : pausedDevices) {
+            if (l.isTraceEnabled()) {
+                l.trace(ti.lastPeerContext.did() + " is paused");
+            }
+
+            try {
+                sendalloc(_MIN_TRANSFER_LEVEL, ti.lastPeerContext);
+            } catch (Exception e) {
+                l.error("ignore e:" + e.getClass() + " did:" + ti.lastPeerContext.did()
+                        + " while perf lim");
+            }
+        }
 
         if (_totalBw > _availBwHiLvl) {
             l.trace("tbw > abw[h]: perf lim");
@@ -313,7 +348,13 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             l.trace("ubw < abw[l]");
 
             try {
-                long newbw = ti.rollingBw + (_availBwLoLvl - _totalBw);
+                final long newbw;
+                if (ti.paused) {
+                    newbw = _MIN_TRANSFER_LEVEL;
+                    l.info(pc.did().toString() + " requested bw but is paused");
+                } else {
+                    newbw = ti.rollingBw + (_availBwLoLvl - _totalBw);
+                }
                 sendalloc(newbw, pc);
             } catch (Exception e) {
                 l.error("ignore e:" + e.getClass() +
@@ -401,6 +442,30 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             _availBwLoLvl = _MIN_DL_BW;
             _availBwHiLvl = _availBwLoLvl + _MAX_BW_OVERAGE;
         }
+    }
+
+    public void pauseDevice_(DID did) throws ExNotFound
+    {
+        if (!_transmitMap.containsKey(did)) {
+            throw new ExNotFound(did.toString() + " not found in LimitMonitor. no pause");
+        }
+
+        TransmitInfo ti = _transmitMap.get(did);
+        assert !ti.paused;
+        ti.paused = true;
+        l.info("incoming traffic for " + did + " paused");
+    }
+
+    public void resumeDevice_(DID did) throws ExNotFound
+    {
+        if (!_transmitMap.containsKey(did)) {
+            throw new ExNotFound(did.toString() + " not found in LimitMonitor. no resume");
+        }
+
+        TransmitInfo ti = _transmitMap.get(did);
+        assert ti.paused;
+        ti.paused = false;
+        l.info("incoming traffic for " + did + " resumed");
     }
 
     //

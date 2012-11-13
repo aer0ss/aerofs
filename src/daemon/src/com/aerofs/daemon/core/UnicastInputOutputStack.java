@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.daemon.core.net.*;
 import com.aerofs.daemon.core.net.dtls.DTLSLayer;
 import com.aerofs.daemon.core.net.throttling.GlobalLimiter;
+import com.aerofs.daemon.core.net.throttling.IncomingStreamsThrottler;
 import com.aerofs.daemon.core.net.throttling.LimitMonitor;
 import com.google.inject.Inject;
 
@@ -16,6 +17,8 @@ public class UnicastInputOutputStack
     private LimitMonitor.Factory _factLimitMonitor;
     private DTLSLayer.Factory _factDTLS;
 
+    private IncomingStreamsThrottler _incomingStreamsThrottler;
+
     private IUnicastInputLayer _unicastInputBottom;
     private IUnicastOutputLayer _unicastOutputTop;
     private UnicastInputTopLayer _unicastInputTop;
@@ -23,13 +26,15 @@ public class UnicastInputOutputStack
     @Inject
     public void inject_(UnicastOutputBottomLayer.Factory factOutputBottom,
             UnicastInputTopLayer.Factory factInputTop, DTLSLayer.Factory factDTLS,
-            GlobalLimiter.Factory factGlobalLimiter, LimitMonitor.Factory factLimitMonitor)
+            GlobalLimiter.Factory factGlobalLimiter, LimitMonitor.Factory factLimitMonitor,
+            IncomingStreamsThrottler incomingStreamsThrottler)
     {
         _factInputTop = factInputTop;
         _factOutputBottom = factOutputBottom;
         _factGlobalLimiter = factGlobalLimiter;
         _factLimitMonitor = factLimitMonitor;
         _factDTLS = factDTLS;
+        _incomingStreamsThrottler = incomingStreamsThrottler;
     }
 
     public UnicastInputTopLayer inputTop()
@@ -63,5 +68,7 @@ public class UnicastInputOutputStack
         _unicastInputTop = unicastInputTop;
         _unicastInputBottom = limitMonitor;
         _unicastOutputTop = dtls;
+
+        _incomingStreamsThrottler.setLimitMonitor_(limitMonitor);
     }
 }

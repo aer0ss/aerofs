@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.daemon.lib.Prio;

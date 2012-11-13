@@ -72,6 +72,10 @@ public class CfgDatabase
         MAX_DOWN_RATE_LIMITED("max_down_rate_limited", 51200),
         MAX_UP_RATE_LIMITED("max_up_rate_limited", 10240),
 
+        // Watermarks for IncomingStream chunks present in the core. Unit is chunk count.
+        LOW_CHUNK_WATERMARK("low_chunk_watermark", 128),
+        HIGH_CHUNK_WATERMARK("high_chunk_watermark", 640),
+
         // Config for Categories (see Cat.java)
         MAX_CLIENT_STACKS("max_client_stacks", 5),
         MAX_SERVER_STACKS("max_server_stacks", 20),
