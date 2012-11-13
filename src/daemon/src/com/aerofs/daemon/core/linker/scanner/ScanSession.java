@@ -17,6 +17,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -80,10 +81,7 @@ class ScanSession
 
     private final Factory _f;
 
-    // set of absolute paths to the "root" folders of the scan session
-    private Set<String> _absPaths;
-
-    // set of path combos that represent all the paths in _absPaths
+    // set of path combos that represent all "root" folders of the scan session ({@code absPaths})
     private LinkedHashSet<PathCombo> _sortedPCRoots;
 
     // true iff subfolders should be scanned recursively
@@ -113,9 +111,8 @@ class ScanSession
     private ScanSession(Factory f, Set<String> absPaths, boolean recursive)
     {
         _f = f;
-        _absPaths = absPaths;
 
-        List<PathCombo> sortedAbsPaths = Lists.newArrayList();
+        List<PathCombo> sortedAbsPaths = Lists.newArrayListWithCapacity(absPaths.size());
         for (String absPath : absPaths) {
             PathCombo pc = new PathCombo(_f._cfgAbsRootAnchor, absPath);
             sortedAbsPaths.add(pc);
@@ -143,22 +140,22 @@ class ScanSession
         // can't be called if this scan session is done.
         assert !_done;
 
-        ////////
         // Initialization
-
         if (_stack == null) {
             if (l.isInfoEnabled()) {
-                l.info(PathObfuscator.obfuscate(_absPaths)+ " " + _recursive);
+                String obfuscatedPaths = Joiner.on(", ").join(_sortedPCRoots);
+                l.info("[" + obfuscatedPaths + "] " + _recursive);
             }
             _stack = Lists.newLinkedList();
-            addRootPathComboToStack_();
         } else {
             l.info("cont.");
         }
 
-        ////////
-        // Scan recursively. Stop and request for continuation if needed.
+        // If we timed out the previous run or this is our first run
+        // make sure remaining paths in sortedPCRoots gets processed.
+        if (_stack.isEmpty()) addRootPathComboToStack_();
 
+        // Scan recursively. Stop and request for continuation if needed.
         try {
             Trans t = _f._tm.begin_();
             try {
@@ -177,8 +174,8 @@ class ScanSession
                     }
 
                     // If we have any remaining elements in sortedPCRoots that weren't touched
-                    // by the DFS add them into the stack.
-                    addRootPathComboToStack_();
+                    // by the DFS add them into the stack once we are done scanning one subtree.
+                    if (_stack.isEmpty()) addRootPathComboToStack_();
                 }
                 t.commit_();
             } finally {
@@ -198,10 +195,9 @@ class ScanSession
         // Finalization. No actual file operation is allowed beyond this point. All operations
         // should have been done in the above transaction.
 
-        if (!_stack.isEmpty()) {
+        if (!_stack.isEmpty() || !_sortedPCRoots.isEmpty()) {
             l.info("cont. pending");
             return false;
-
         } else {
             // Release all SOIDs which were held during the scan (permitting their deletion to
             // be scheduled). If an SOID was removed from the deletion buffer during the scan,
@@ -222,11 +218,11 @@ class ScanSession
             if (_f._factFile.create(pcRoot._absPath).isDirectory()) {
                 // The order of scan is the natural order of the list, as required by the
                 // constructor.
-                _stack.addLast(pcRoot);
+                _stack.push(pcRoot);
                 iter.remove();
                 break;
             } else {
-                /* Comment (A), referred to by the constructor, TestScanSession, MightCreate
+                /* Comment (A), referred to by the constructor, TestScanSession_Misc, MightCreate
                 *
                 * Skip a root folder if it's missing or no longer a directory. This is to
                 * prevent infinite scans on such events. However, we throw and in turn retry

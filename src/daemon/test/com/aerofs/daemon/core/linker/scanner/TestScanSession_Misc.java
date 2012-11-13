@@ -1,51 +1,46 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.linker.scanner;
 
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.linker.IDeletionBuffer;
-import com.aerofs.daemon.core.linker.MightCreate;
 import com.aerofs.daemon.core.linker.PathCombo;
-import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
 import com.aerofs.daemon.core.mock.logical.*;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Path;
-import com.aerofs.testlib.AbstractTest;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
-import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
 
-import com.google.common.collect.Sets;
-import org.junit.Before;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Set;
 import static org.mockito.Mockito.*;
 
-public class TestScanSession extends AbstractTest
+/**
+ * Miscellanous functionality tests for ScanSession.
+ */
+public class TestScanSession_Misc extends AbstractTestScanSession
 {
-    @Mock DirectoryService ds;
-    @Mock MightCreate mc;
-    @Mock TransManager tm;
-    @Mock TimeoutDeletionBuffer delBuffer;
-    @Mock Holder h;
-    @Mock InjectableFile.Factory factFile;
-    @Mock CfgAbsRootAnchor cfgAbsRootAnchor;
 
-    @InjectMocks ScanSession.Factory factSS;
+    public TestScanSession_Misc()
+    {
+        super(Util.join("foo", "bar"));
+    }
 
-    MockPhysicalDir phyRoot =
-            new MockPhysicalDir("foo",
+    @Override
+    protected MockPhysicalDir createMockPhysicalFileSystem()
+    {
+        return new MockPhysicalDir("foo",
                 new MockPhysicalDir("bar",
                     new MockPhysicalFile("f1"),
                     new MockPhysicalDir("d2",
@@ -56,9 +51,12 @@ public class TestScanSession extends AbstractTest
                     new MockPhysicalDir("a3")
                 )
             );
+    }
 
-    MockRoot logicRoot =
-            new MockRoot(
+    @Override
+    protected MockRoot createMockLogicalFileSystem()
+    {
+        return new MockRoot(
                 new MockFile("f1", 2),
                 new MockDir("d2",
                     new MockFile("f2.1"),
@@ -67,37 +65,29 @@ public class TestScanSession extends AbstractTest
                 ),
                 new MockAnchor("a3", true)  // an expelled anchor
             );
+    }
 
-    private final static String pRoot = Util.join("foo", "bar");
-
-    @Before
-    public void setup() throws Exception
+    @Override
+    protected void mockMightCreate() throws Exception
     {
-        phyRoot.mock(factFile, null);
-        logicRoot.mock(ds, null, null);
-
-        when(tm.begin_()).then(RETURNS_MOCKS);
-        when(cfgAbsRootAnchor.get()).thenReturn(pRoot);
-        when(delBuffer.newHolder()).thenReturn(h);
-
         when(mc.mightCreate_(any(PathCombo.class), any(IDeletionBuffer.class), any(Trans.class)))
-            .then(new Answer<Result>()
-            {
-                @Override
-                public Result answer(InvocationOnMock invocation)
-                        throws Throwable
+                .then(new Answer<Result>()
                 {
-                    PathCombo pc = (PathCombo) invocation.getArguments()[0];
+                    @Override
+                    public Result answer(InvocationOnMock invocation)
+                            throws Throwable
+                    {
+                        PathCombo pc = (PathCombo) invocation.getArguments()[0];
 
-                    // pc might be null when the test code redefines mightCreate()'s mocking
-                    // behavior.
-                    if (pc == null) return null;
+                        // pc might be null when the test code redefines mightCreate()'s mocking
+                        // behavior.
+                        if (pc == null) return null;
 
-                    String path = pc._absPath;
-                    return factFile.create(path).isDirectory() ? Result.EXISTING_FOLDER :
-                        Result.FILE;
-                }
-            });
+                        String path = pc._absPath;
+                        return factFile.create(path).isDirectory() ? Result.EXISTING_FOLDER :
+                                Result.FILE;
+                    }
+                });
     }
 
     @Test
@@ -105,9 +95,7 @@ public class TestScanSession extends AbstractTest
     {
         String p1 = Util.join(pRoot, "d2", "d2.2");
         String p2 = Util.join(pRoot, "d2", "d2.3");
-        HashSet<String> paths = new HashSet<String>();
-        paths.add(p1);
-        paths.add(p2);
+        Set<String> paths = ImmutableSet.of(p1, p2);
         factSS.create_(paths, false).scan_();
 
         verify(factFile.create(p1)).list();
@@ -210,10 +198,7 @@ public class TestScanSession extends AbstractTest
         // Act as if none of these folders are available in the database.
         doNothing().when(delBuffer).remove_(any(SOID.class));
 
-        String p = Util.join(pRoot, "d2");
-        HashSet<String> paths = Sets.newHashSet();
-        paths.add(p);
-        paths.add(pRoot);
+        Set<String> paths = ImmutableSet.of(Util.join(pRoot, "d2"), pRoot);
 
         factSS.create_(paths, true).scan_();
         verify(h, times(5)).hold_(any(SOID.class));
@@ -248,9 +233,7 @@ public class TestScanSession extends AbstractTest
                 }
             });
 
-        HashSet<String> paths = Sets.newHashSet();
-        paths.add(pRoot);
-        paths.add(Util.join(pRoot, "d2"));
+        Set<String> paths = ImmutableSet.of(pRoot, Util.join(pRoot, "d2"));
 
         factSS.create_(paths, false).scan_();
         verify(h, times(5)).hold_(any(SOID.class));
