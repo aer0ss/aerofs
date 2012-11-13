@@ -27,6 +27,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import com.aerofs.lib.ExitCode;
 import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.spsv.sendgrid.EmailCategory;
 import com.aerofs.proto.Sv.PBSVEmail;
 import org.apache.log4j.Logger;
@@ -472,6 +473,11 @@ public class SVClient
         boolean isLastSent = automatic && isLastSentDefect(e.getMessage(), stackTrace);
         l.error((isLastSent ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(e));
         if (isLastSent) return;
+
+        // Send the defect to RockLog
+        if (header.getUser().endsWith("@aerofs.com")) {
+            RockLog.newDefect("svclient.test").setMsg(desc).setEx(e).send();
+        }
 
         StringBuilder sbDesc = new StringBuilder();
 
