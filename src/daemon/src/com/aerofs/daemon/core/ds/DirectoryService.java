@@ -9,6 +9,7 @@ import java.util.Set;
 
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -53,6 +54,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
     private IStores _ss;
+    private IgnoreList _il;
 
     private DBCache<Path, SOID> _cacheDS;
     private DBCache<SOID, OA> _cacheOA;
@@ -94,7 +96,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
             IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
-            StoreDeletionNotifier storeDeletionNotifier)
+            IgnoreList il, StoreDeletionNotifier storeDeletionNotifier)
     {
         _ps = ps;
         _mdb = mdb;
@@ -102,6 +104,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
         _ss = ss;
+        _il = il;
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
@@ -349,6 +352,9 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         assert oaParent.isDir();
         FileUtil.logIfNotNFC(name, new SOID(sidx, oid).toString());
 
+        // The linker should have prevented this OA from being created
+        assert !_il.isIgnored_(name) : name;
+
         _mdb.createOA_(sidx, oid, oidParent, name, type, flags, t);
 
         _cacheOA.invalidate_(soid);
@@ -421,6 +427,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 
         // verify the encoding of "name" is NFC
         FileUtil.logIfNotNFC(name, oa + " " + oaParent);
+
+        assert !_il.isIgnored_(name) : oa + " -> " + name;
 
         Path pathFrom = resolve_(oa);
         Path pathTo = resolve_(oaParent).append(name);
