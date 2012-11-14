@@ -423,9 +423,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
                     assert !rs.next();
 
-                    SortedMap<KIndex, CA> cas = type == OA.Type.FILE ? getCAs_(soid) : null;
+                    switch(type) {
+                    case FILE:
+                        return OA.createFile(soid, parent, name, getCAs_(soid), flags, fid);
+                    default:
+                        return OA.createNonFile(soid, parent, name, type, flags, fid);
+                    }
 
-                    return new OA(soid, parent, name, type, cas, flags, fid);
                 } else {
                     return null;
                 }

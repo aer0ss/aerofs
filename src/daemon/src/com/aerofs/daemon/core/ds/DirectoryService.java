@@ -318,6 +318,10 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         return _cacheOA.get_(soid, _readerOA);
     }
 
+    /**
+     * TODO (MJ) OA's are stale after performing any directory service write for oa.soid(), but
+     * there is no safety check to warn devs of this fact.
+     */
     @Nonnull public OA getOA_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);
@@ -343,15 +347,17 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     public void createOA_(OA.Type type, SIndex sidx, OID oid, OID oidParent, String name, int flags,
             Trans t) throws ExAlreadyExist, ExNotFound, SQLException
     {
-        SOID soid = new SOID(sidx, oid);
-        if (l.isDebugEnabled()) l.debug(soid + ": create " + oidParent + "/" + name);
-
         assert !oid.equals(oidParent) : "s " + sidx + " o " + oid + " p " + oidParent;
 
-        OA oaParent = getOAThrows_(new SOID(sidx, oidParent));
+        final SOID soid = new SOID(sidx, oid);
+        final SOID soidParent = new SOID(sidx, oidParent);
+
+        if (l.isDebugEnabled()) l.debug(soid + ": create " + oidParent + "/" + name);
+
+        OA oaParent = getOAThrows_(soidParent);
 
         assert oaParent.isDir();
-        FileUtil.logIfNotNFC(name, new SOID(sidx, oid).toString());
+        FileUtil.logIfNotNFC(name, soid.toString());
 
         // The linker should have prevented this OA from being created
         assert !_il.isIgnored_(name) : name;
@@ -363,7 +369,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         // all the children under the path need to be invalidated.
         _cacheDS.invalidateAll_();
 
-        if (!isTrashOrDeleted_(new SOID(sidx, oidParent))) {
+        if (!isTrashOrDeleted_(soidParent)) {
             Path path = resolve_(oaParent).append(name);
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectCreated_(soid, oaParent.soid().oid(), path, t);

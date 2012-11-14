@@ -1,4 +1,3 @@
-
 package com.aerofs.daemon.core.ds;
 
 import java.util.SortedMap;
@@ -11,6 +10,7 @@ import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.ImmutableSortedMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,26 +54,38 @@ public class OA
     private final OID _parent;
     private final String _name;
     private final Type _type;
-    private final FID _fid;
+    @Nullable private final FID _fid;
     private IPhysicalFolder _pf;
     private int _flags;
 
     // Sorted map of KIndices and corresponding CAs.
     // Useful for iterating over KIndices in sorted order.
-    private final SortedMap<KIndex, CA> _cas;
+    @Nullable private final ImmutableSortedMap<KIndex, CA> _cas;
 
     // use "R" instead of an empty string as Path mandates non-empty path elements
     public static final String ROOT_DIR_NAME = "R";
 
+    @Nonnull public static OA createFile(SOID soid, OID parent, String name,
+            SortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
+    {
+        return new OA(soid, parent, name, Type.FILE, ImmutableSortedMap.copyOfSorted(cas),
+                flags, fid);
+    }
+
+    @Nonnull public static OA createNonFile(SOID soid, OID parent, String name, Type type,
+            int flags, @Nullable FID fid)
+    {
+        assert !type.equals(Type.FILE) : type + " " + soid;
+        return new OA(soid, parent, name, type, null, flags, fid);
+    }
+
     /**
-     * @param cas list of content attributes. null iff the object is a
+     * @param cas map of content attributes. null iff the object is a
      * directory or an anchor
      */
-    public OA(SOID soid, OID parent, String name, Type type, SortedMap<KIndex, CA> cas, int flags,
-            FID fid)
+    private OA(SOID soid, OID parent, String name, Type type,
+            @Nullable ImmutableSortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
     {
-        assert (type == Type.FILE) == (cas != null);
-
         _soid = soid;
         _parent = parent;
         _name = name;
@@ -81,6 +93,9 @@ public class OA
         _cas = cas;
         _flags = flags;
         _fid = fid;
+
+        // TODO Can't assert validity of FIDs at construction time for files or folders
+        //assertValidityOfFID();
     }
 
     @Override
@@ -93,20 +108,20 @@ public class OA
     /**
      * @return the attribute of the master branch, null if not present
      */
-    public @Nullable CA caMasterNullable()
+    @Nullable public CA caMasterNullable()
     {
         assert isFile();
         return caNullable(KIndex.MASTER);
     }
 
-    public @Nonnull CA caMasterThrows() throws ExNotFound
+    @Nonnull public CA caMasterThrows() throws ExNotFound
     {
         CA ca = caMasterNullable();
         if (ca == null) throw new ExNotFound(_soid + " master branch");
         return ca;
     }
 
-    public @Nonnull CA caMaster()
+    @Nonnull public CA caMaster()
     {
         CA ca = caMasterNullable();
         assert ca != null;
@@ -116,20 +131,21 @@ public class OA
     /**
      * @return the attribute of the branch, null if not present
      */
-    public @Nullable CA caNullable(KIndex kidx)
+    @Nullable public CA caNullable(KIndex kidx)
     {
         assert isFile();
+        assert _cas != null : this;
         return _cas.get(kidx);
     }
 
-    public @Nonnull CA caThrows(KIndex kidx) throws ExNotFound
+    @Nonnull public CA caThrows(KIndex kidx) throws ExNotFound
     {
         CA ca = caNullable(kidx);
         if (ca == null) throw new ExNotFound(_soid + " branch " + kidx);
         return ca;
     }
 
-    public @Nonnull CA ca(KIndex kidx)
+    @Nonnull public CA ca(KIndex kidx)
     {
         CA ca = caNullable(kidx);
         assert ca != null;
@@ -141,14 +157,15 @@ public class OA
      *         Useful for iterating over KIndices in sorted order.
      *         Empty if no branch is present.
      */
-    public SortedMap<KIndex, CA> cas(boolean assertConsistency)
+    @Nonnull public SortedMap<KIndex, CA> cas(boolean assertConsistency)
     {
         assert isFile();
+        assert _cas != null : this;
         if (assertConsistency) assert !isExpelled() || _cas.isEmpty() : _soid + " " + _cas.size();
         return _cas;
     }
 
-    public SortedMap<KIndex, CA> cas()
+    @Nonnull public SortedMap<KIndex, CA> cas()
     {
         return cas(true);
     }
@@ -211,17 +228,21 @@ public class OA
         _flags = flags;
     }
 
-    /**
-     * @return may be null if it's not a linked file or it's not present
-     */
-    public @Nullable FID fid()
+    private void assertValidityOfFID()
     {
         if (isFile()) {
             assert (_fid == null) == cas().isEmpty() : soid() + " " + _fid + " " + cas();
         } else {
             assert (_fid == null) == isExpelled() : soid() + " " + _fid + " " + isExpelled();
         }
+    }
 
+    /**
+     * @return may be null if it's not a linked file or it's not present
+     */
+    @Nullable public FID fid()
+    {
+        assertValidityOfFID();
         return _fid;
     }
 
