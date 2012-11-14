@@ -24,6 +24,8 @@ import org.mockito.stubbing.Answer;
 
 import java.util.Collections;
 import java.util.Set;
+
+import static junit.framework.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -255,5 +257,11 @@ public class TestScanSession_Misc extends AbstractTestScanSession
     public void shouldNotCrashOnExpelledAnchorAsParent() throws Exception
     {
         factSS.create_(Collections.singleton(Util.join(pRoot, "a3")), false).scan_();
+    }
+
+    @Test
+    public void shouldNotInfiniteLoopIfBatchContainsNonDirs() throws Exception
+    {
+        assertTrue(factSS.create_(Collections.singleton(Util.join(pRoot, "f1")), false).scan_());
     }
 }
