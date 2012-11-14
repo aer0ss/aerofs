@@ -3,6 +3,7 @@ package com.aerofs.gui.sharing;
 import java.util.Collection;
 import java.util.List;
 
+import com.aerofs.lib.acl.Role;
 import com.aerofs.ui.UIUtil;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -26,9 +27,8 @@ import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Role;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;

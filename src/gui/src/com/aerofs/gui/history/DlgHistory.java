@@ -526,7 +526,7 @@ public class DlgHistory extends AeroFSDialog
     private boolean fillVersionTable(Table revTable, ModelIndex index, Label status)
     {
         Path path = _model.getPath(index);
-        status.setText("Version history of " + Util.q(path.last()));
+        status.setText("Version history of " + Util.quote(path.last()));
 
         List<HistoryModel.Version> versions = _model.versions(index);
         revTable.removeAll();
@@ -653,8 +653,8 @@ public class DlgHistory extends AeroFSDialog
 
             Label label = new Label(shell, SWT.WRAP);
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-            label.setText("Restoring " + Util.q(_model.getPath(_base).last()) +
-                    (_inPlace ? "" : "\nto " + Util.q(_dest)));
+            label.setText("Restoring " + Util.quote(_model.getPath(_base).last()) +
+                    (_inPlace ? "" : "\nto " + Util.quote(_dest)));
 
             shell.addListener(SWT.Show, new Listener()
             {

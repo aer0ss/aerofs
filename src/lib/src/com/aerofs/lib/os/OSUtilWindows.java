@@ -58,7 +58,7 @@ public class OSUtilWindows implements IOSUtil
     {
         try {
             OutArg<String> out = new OutArg<String>();
-            int exit = Util.execForeground(out, "reg", "query",
+            int exit = SystemUtil.execForeground(out, "reg", "query",
                     "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
                     "/v", "Personal");
             if (exit != 0) throw new IOException("exit code " + exit + ": " + out.get());
@@ -87,10 +87,9 @@ public class OSUtilWindows implements IOSUtil
     public void addToFavorite(String path) throws IOException
     {
         if (!OSUtil.isWindowsXP()) {
-            Util.execBackground(AppRoot.abs() + File.separator + "shortcut.exe",
+            SystemUtil.execBackground(AppRoot.abs() + File.separator + "shortcut.exe",
                     "/F:\"" + System.getProperty("user.home") + File.separator +
-                    "Links" + File.separator + "AeroFS.lnk" + "\"",
-                    "/A:C",
+                            "Links" + File.separator + "AeroFS.lnk" + "\"", "/A:C",
                     "/I:\"" + OSUtil.getIconPath(Icon.WinLibraryFolder) + "\"",
                     "/T:\"" + path + "\"");
         }
@@ -117,7 +116,7 @@ public class OSUtilWindows implements IOSUtil
         // attrib doesn't return error even if the file doesn't exist
         if (!f.exists()) throw new IOException("file not found");
 
-        Util.execForeground("attrib", system ? "+S" : "-S", hidden ? "+H" : "-H",
+        SystemUtil.execForeground("attrib", system ? "+S" : "-S", hidden ? "+H" : "-H",
                 f.getAbsolutePath());
     }
 
@@ -312,7 +311,7 @@ public class OSUtilWindows implements IOSUtil
         System.arraycopy(arr, 0, arr2, 1, arr.length);
 
         try {
-            Util.execBackground(arr2);
+            SystemUtil.execBackground(arr2);
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }

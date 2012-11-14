@@ -10,6 +10,8 @@ import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -27,7 +29,7 @@ import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
-import static com.aerofs.lib.ExitCode.*;
+import static com.aerofs.lib.SystemUtil.ExitCode.*;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -65,7 +67,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
         Process proc;
         try {
-            proc = Util.execBackground(aerofsd, Cfg.absRTRoot());
+            proc = SystemUtil.execBackground(aerofsd, Cfg.absRTRoot());
         } catch (Exception e) {
             throw new ExDaemonFailedToStart(e);
         }
@@ -130,7 +132,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             }
 
             l.info("sleep for " + UIParam.DAEMON_CONNECTION_RETRY_INTERVAL + " ms");
-            Util.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+            ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
         }
 
         return proc;
@@ -200,15 +202,16 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             SHUTDOWN_REQUESTED.exit();
         }
 
-        Util.startDaemonThread("onDaemonDeath", new Runnable () {
+        ThreadUtil.startDaemonThread("onDaemonDeath", new Runnable()
+        {
             @Override
             public void run()
             {
                 // wait so that the daemon.log sent along the defect will
                 // contain the lines logged right before the death.
-                Util.sleepUninterruptable(5 * C.SEC);
-                _fdsDeath.logSendAsync("daemon died" + (exitCode == null ? "" :
-                        ": " + getMessage(exitCode)));
+                ThreadUtil.sleepUninterruptable(5 * C.SEC);
+                _fdsDeath.logSendAsync(
+                        "daemon died" + (exitCode == null ? "" : ": " + getMessage(exitCode)));
             }
         });
     }
@@ -231,7 +234,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             // do not restart the daemon
             if (_stopping) {
                 l.info("pause a bit as we're stopping");
-                Util.sleepUninterruptable(UIParam.DM_RESTART_MONITORING_INTERVAL);
+                ThreadUtil.sleepUninterruptable(UIParam.DM_RESTART_MONITORING_INTERVAL);
                 continue;
             }
 
@@ -247,7 +250,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 }
 
                 l.warn("restart in " + UIParam.DM_RESTART_INTERVAL);
-                Util.sleepUninterruptable(UIParam.DM_RESTART_INTERVAL);
+                ThreadUtil.sleepUninterruptable(UIParam.DM_RESTART_INTERVAL);
             }
         }
     }
@@ -317,7 +320,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                     int code = proc.waitFor();
                     onDaemonDeath(code);
                 } catch (InterruptedException e) {
-                    Util.fatal(e);
+                    SystemUtil.fatal(e);
                 }
             } else {
                 onDaemonDeath(null);

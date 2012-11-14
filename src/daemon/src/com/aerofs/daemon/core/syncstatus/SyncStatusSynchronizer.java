@@ -23,6 +23,7 @@ import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.BitVector;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.KIndex;
@@ -675,7 +676,7 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                 }
             }
         } catch (SQLException e) {
-            throw Util.fatal(e);
+            throw SystemUtil.fatal(e);
         }
     }
 }

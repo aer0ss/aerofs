@@ -47,8 +47,9 @@ abstract class AbstractLinuxUpdater extends Updater
             String userId = System.getenv("USER");
             if (userId == null) userId = "null";
 
-            Util.execBackground("/bin/bash", upFile.getAbsolutePath(), appRoot + File.separator,
-                    Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, instfile), newVer, userId,
+            SystemUtil.execBackground("/bin/bash", upFile.getAbsolutePath(),
+                    appRoot + File.separator, Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, instfile),
+                    newVer, userId,
                     //need to pass in username
                     UI.isGUI() ? "1" : "0" // run GUI on startup? or cli?
             );
@@ -78,7 +79,7 @@ abstract class AbstractLinuxUpdater extends Updater
                     String deviceName = sp.getPreferences(Cfg.did().toPB()).getDeviceName();
 
                     final String subject = "[Action Required] Update " + S.PRODUCT +
-                                " on " + Util.q(deviceName);
+                                " on " + Util.quote(deviceName);
 
                     final String body = "Hello,\n\n" + text +
                                         "\n\n" +

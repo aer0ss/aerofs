@@ -9,6 +9,7 @@ import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -465,7 +466,8 @@ public class GUI implements IUI
      */
     public void unsafeWork(final ISWTWorker worker)
     {
-        Util.startDaemonThread("GUI worker", new Runnable() {
+        ThreadUtil.startDaemonThread("GUI worker", new Runnable()
+        {
             @Override
             public void run()
             {
@@ -477,7 +479,8 @@ public class GUI implements IUI
                 }
 
                 final Exception e2 = e1;
-                asyncExec(new Runnable() {
+                asyncExec(new Runnable()
+                {
                     @Override
                     public void run()
                     {

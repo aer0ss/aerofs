@@ -34,7 +34,7 @@ public class DelayedRunner {
                     @Override
                     public void run()
                     {
-                        Util.sleepUninterruptable(delay);
+                        ThreadUtil.sleepUninterruptable(delay);
                         runner.execute();
                     }
                 }, "delayed_runner." + name).start();

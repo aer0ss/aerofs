@@ -15,6 +15,7 @@ import com.aerofs.lib.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExFormatError;
@@ -303,7 +304,7 @@ final class XMPPMulticast
                             //   messages. Receiving online, offline messages
                             //   is very different than offline, online
 
-                            Util.fatal(e);
+                            SystemUtil.fatal(e);
                         }
                     }
                 });
@@ -629,7 +630,7 @@ final class XMPPMulticast
 
             os.close();
         } catch (IOException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
 
         return bos.toString();

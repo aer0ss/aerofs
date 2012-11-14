@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.SID;
@@ -56,7 +57,7 @@ public class SharedFolderTagFileAndIcon
                 try {
                     deleteTagFileAndIconImp(path);
                 } catch (IOException e) {
-                    Util.fatal("unrecoverable: " + Util.e(e));
+                    SystemUtil.fatal("unrecoverable: " + Util.e(e));
                 }
             }
         });
@@ -78,7 +79,7 @@ public class SharedFolderTagFileAndIcon
                 try {
                     addTagFileAndIconImpl(sidx, path);
                 } catch (Exception e) {
-                    Util.fatal("unrecoverable: " + Util.e(e));
+                    SystemUtil.fatal("unrecoverable: " + Util.e(e));
                 }
             }
         });

@@ -17,9 +17,11 @@ import com.aerofs.j.XmppMain;
 import com.aerofs.j.XmppSocket_CloseEventSlot;
 import com.aerofs.j.XmppSocket_ErrorSlot;
 import com.aerofs.l.L;
-import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExJingle;
@@ -43,7 +45,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
         try {
             temputf8 = ljlogpath.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
-            Util.fatal("cannot convert path:" + ljlogpath + " to UTF-8");
+            SystemUtil.fatal("cannot convert path:" + ljlogpath + " to UTF-8");
         }
 
         ljlogpathutf8 = temputf8; // this ridiculous indirection is done to keep the compiler happy
@@ -160,7 +162,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
     private void thdLoop_()
     {
         synchronized (_cvLinkState) {
-            while (!_linkUp) { Util.waitUninterruptable(_cvLinkState); }
+            while (!_linkUp) { ThreadUtil.waitUninterruptable(_cvLinkState); }
         }
 
 
@@ -204,7 +206,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
             _callHandler.wake_();
         }
 
-        Util.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
+        ThreadUtil.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
         l.info("attempt connect");
     }
 
@@ -296,7 +298,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
             //
             // wake up either the call finishes or main quits
             //
-            Util.waitUninterruptable(this, DaemonParam.Jingle.CALL_TIMEOUT);
+            ThreadUtil.waitUninterruptable(this, DaemonParam.Jingle.CALL_TIMEOUT);
 
             if (!_wake) ExitCode.JINGLE_CALL_TOO_LONG.exit();
         }

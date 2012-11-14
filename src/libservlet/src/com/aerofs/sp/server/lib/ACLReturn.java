@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.id.SID;
 
 import java.util.List;

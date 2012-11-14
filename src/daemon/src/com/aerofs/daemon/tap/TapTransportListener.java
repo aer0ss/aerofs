@@ -9,7 +9,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.ITransportListener;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.proto.Tap;
@@ -53,7 +53,7 @@ public class TapTransportListener implements ITransportListener
             is.read(bytes);
             event.setPayload(ByteString.copyFrom(bytes));
         } catch (IOException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
 
         _eventQueue.offer(event.build());
@@ -104,7 +104,7 @@ public class TapTransportListener implements ITransportListener
             is.read(bytes);
             event.setPayload(ByteString.copyFrom(bytes));
         } catch (IOException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
 
         _eventQueue.offer(event.build());
@@ -116,7 +116,7 @@ public class TapTransportListener implements ITransportListener
         try {
             _incomingStreams.addStream(stream.getDid_(), stream);
         } catch (ExStreamAlreadyExists e) {
-            Util.fatal(e.getMessage());
+            SystemUtil.fatal(e.getMessage());
         }
 
         Tap.TransportEvent.Builder event = Tap.TransportEvent.newBuilder();

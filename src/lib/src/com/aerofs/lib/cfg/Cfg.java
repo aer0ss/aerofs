@@ -5,6 +5,7 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -408,7 +409,7 @@ public class Cfg
                     PASSWD_RANDOM_BYTES);
             return scrypted;
         } catch (GeneralSecurityException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
             // keep compiler happy
             return null;
         }
@@ -434,7 +435,7 @@ public class Cfg
                     false);
             return Base64.encodeBytes(encrypt);
         } catch (GeneralSecurityException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
             return null;
         }
     }

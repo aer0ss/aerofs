@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;

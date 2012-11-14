@@ -11,6 +11,7 @@ import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.l.L;
 import com.aerofs.lib.C;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.DID;
@@ -225,7 +226,7 @@ class Multicast implements IMaxcast
                 l.error("thdRecv(): " + Util.e(e, SocketException.class));
                 if (!s.isClosed()) {
                     l.info("retry in " + DaemonParam.TCP.RETRY_INTERVAL + " ms");
-                    Util.sleepUninterruptable(DaemonParam.TCP.RETRY_INTERVAL);
+                    ThreadUtil.sleepUninterruptable(DaemonParam.TCP.RETRY_INTERVAL);
                 } else {
                     l.info("socket closed by lsc; exit");
                     return;

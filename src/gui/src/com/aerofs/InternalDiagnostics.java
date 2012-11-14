@@ -5,6 +5,7 @@
 package com.aerofs;
 
 import com.aerofs.lib.JsonFormat;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
@@ -57,7 +58,7 @@ public class InternalDiagnostics
         while (true) {
 
             while (cb.toSuspend() && !cb.toStop()) {
-                Util.sleepUninterruptable(1 * C.SEC);
+                ThreadUtil.sleepUninterruptable(1 * C.SEC);
             }
 
             if (cb.toStop()) break;
@@ -130,7 +131,7 @@ public class InternalDiagnostics
 
             cb.update(offline, rtt, samples);
 
-            if (sleep) Util.sleepUninterruptable(1 * C.SEC);
+            if (sleep) ThreadUtil.sleepUninterruptable(1 * C.SEC);
         }
     }
 

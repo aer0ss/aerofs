@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.tng.base.http.ProxyAwareSocketFactory;
 import com.aerofs.lib.Param;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.DID;
@@ -281,7 +282,7 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
             {
                 if (initialDelay) {
                     l.info("reconnect in " + Param.EXP_RETRY_MIN_DEFAULT);
-                    Util.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
+                    ThreadUtil.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
                 }
 
                 try {

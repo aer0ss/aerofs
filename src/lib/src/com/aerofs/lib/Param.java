@@ -119,7 +119,7 @@ public class Param
                 // allowing users to deploy their own sp war's (e.g. /yuriSP/sp, /weihanSP/sp, etc.)
                 url = new URL(L.get().spUrl() + "/sp");
             } catch (MalformedURLException e) {
-                Util.fatal(e);
+                SystemUtil.fatal(e);
                 url = null;
             }
             URL = url;
@@ -144,7 +144,7 @@ public class Param
                         "https://sss-staging.aerofs.com/syncstat" :
                         "https://" + L.get().ssHost() + "/syncstat");
             } catch (MalformedURLException e) {
-                Util.fatal(e);
+                SystemUtil.fatal(e);
                 url = null;
             }
             URL = url;

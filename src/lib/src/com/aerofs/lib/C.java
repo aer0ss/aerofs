@@ -131,7 +131,7 @@ public class C
             // numeric address differently
             ia = InetAddress.getByName("127.0.0.1");
         } catch (Exception e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
             ia = null;
         }
         LOCALHOST_ADDR = ia;

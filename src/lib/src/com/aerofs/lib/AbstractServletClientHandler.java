@@ -1,4 +1,4 @@
-package com.aerofs.lib.servlet;
+package com.aerofs.lib;
 
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.async.UncancellableFuture;

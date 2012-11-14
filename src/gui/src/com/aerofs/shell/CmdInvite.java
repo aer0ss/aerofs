@@ -3,8 +3,8 @@ package com.aerofs.shell;
 import java.util.Collections;
 
 import com.aerofs.gui.sharing.CompInviteUsers;
-import com.aerofs.lib.Role;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;

@@ -3,7 +3,7 @@ package com.aerofs.shell;
 import java.util.List;
 
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBSubjectRolePair;

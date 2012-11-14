@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.acl.ExConcurrentACLUpdate;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.acl.Role;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.Role;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SOID;

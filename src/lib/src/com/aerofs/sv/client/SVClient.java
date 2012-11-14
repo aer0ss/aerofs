@@ -3,8 +3,9 @@ package com.aerofs.sv.client;
 import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
-import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -46,7 +47,7 @@ import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
 import static com.aerofs.lib.Util.join;
-import static com.aerofs.lib.Util.startDaemonThread;
+import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 import static com.aerofs.lib.cfg.CfgDatabase.Key.ROOT;
 
@@ -448,7 +449,7 @@ public final class SVClient
             OutArg<String> uname = new OutArg<String>();
             uname.set("n/a");
             try {
-                Util.execForeground(uname, "uname", "-a");
+                SystemUtil.execForeground(uname, "uname", "-a");
             } catch (IOException e) {
                 // ignored
             }
@@ -459,7 +460,7 @@ public final class SVClient
             OutArg<String> fileRes = new OutArg<String>();
             fileRes.set("n/a");
             try {
-                Util.execForeground(fileRes, "file", "-L", "/bin/ls");
+                SystemUtil.execForeground(fileRes, "file", "-L", "/bin/ls");
             } catch (IOException e) {
                 //ignored
             }
@@ -489,7 +490,7 @@ public final class SVClient
             OutArg<String> df = new OutArg<String>();
             df.set("n/a");
             try {
-                Util.execForeground(df, "df");
+                SystemUtil.execForeground(df, "df");
             } catch (Exception e) {
                 // ignored
             }

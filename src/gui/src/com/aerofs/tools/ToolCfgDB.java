@@ -44,7 +44,7 @@ public class ToolCfgDB implements ITool {
             for (Key key : Key.values()) {
                 String value = db.getNullable(key);
                 if (value != null && !value.equals(key.defaultValue())) {
-                    System.out.println(key.keyString() + " = " + Util.q(value));
+                    System.out.println(key.keyString() + " = " + Util.quote(value));
                 }
             }
 

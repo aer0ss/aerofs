@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.net.link;
 
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
@@ -177,11 +178,13 @@ public abstract class AbstractLinkStateService implements ILinkStateService
     @Override
     public final void start_()
     {
-        Util.startDaemonThread("lss", new Runnable() {
+        ThreadUtil.startDaemonThread("lss", new Runnable()
+        {
             @Override
             public void run()
             {
-                Runnable runCheckLinkState = new Runnable() {
+                Runnable runCheckLinkState = new Runnable()
+                {
                     @Override
                     public void run()
                     {
@@ -210,7 +213,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                     if (OSUtil.isWindows()) l.warn("check link state");
                     execute(runCheckLinkState);
                     if (Driver.waitForNetworkInterfaceChange() != DriverConstants.DRIVER_SUCCESS) {
-                        Util.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
+                        ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
                     }
                 }
             }

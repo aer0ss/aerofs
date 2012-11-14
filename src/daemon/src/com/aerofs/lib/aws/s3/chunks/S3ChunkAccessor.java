@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.crypto.SecretKey;
 
-import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;

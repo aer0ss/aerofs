@@ -6,6 +6,7 @@ import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -55,16 +56,18 @@ class OSXUpdater extends Updater
             */
 
             if (hasPermissions) {
-                Util.execBackground("/bin/bash", upFile.getAbsolutePath(),
-                        packageRoot.getAbsolutePath(), Util.join(Cfg.absRTRoot(), "update",
-                        installerFilename), newVersion, System.getenv("USER"));
+                SystemUtil.execBackground("/bin/bash", upFile.getAbsolutePath(),
+                        packageRoot.getAbsolutePath(),
+                        Util.join(Cfg.absRTRoot(), "update", installerFilename), newVersion,
+                        System.getenv("USER"));
 
                 System.exit(0);
             } else {
                 //the update must be executed as the user who originally copied AeroFS into
                 // the /Applications folder
                 OutArg<String> username = new OutArg<String>();
-                Util.execForeground(username, "stat", "-f", "%Su", packageRoot.getAbsolutePath());
+                SystemUtil.execForeground(username, "stat", "-f", "%Su",
+                        packageRoot.getAbsolutePath());
 
                 UI.get().show(MessageType.WARN, S.PRODUCT +
                                                 " updates can only be applied from the account which" +

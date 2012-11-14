@@ -7,6 +7,7 @@ package com.aerofs.shell;
 import com.aerofs.cli.CLI;
 import com.aerofs.lib.C;
 import com.aerofs.lib.S;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
@@ -61,7 +62,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
     private static void logThreads(RitualBlockingClient ritual, Logger l)
     {
         for (int i = 0; i < 20; i++) {
-            Util.sleepUninterruptable(1 * C.SEC);
+            ThreadUtil.sleepUninterruptable(1 * C.SEC);
             Util.logAllThreadStackTraces();
             try {
                 ritual.logThreads();

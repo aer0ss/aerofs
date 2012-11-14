@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
+import com.aerofs.lib.ThreadUtil;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -134,7 +135,8 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
 
     private void refreshQuota()
     {
-        Util.startDaemonThread("refresh-quota", new Runnable() {
+        ThreadUtil.startDaemonThread("refresh-quota", new Runnable()
+        {
             @Override
             public void run()
             {
@@ -143,7 +145,8 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
                     sp.signInRemote();
                     Cfg.db().set(Key.FOLDERLESS_INVITES, sp.getHeartInvitesQuota().getCount());
 
-                    GUI.get().safeAsyncExec(getShell(), new Runnable() {
+                    GUI.get().safeAsyncExec(getShell(), new Runnable()
+                    {
                         @Override
                         public void run()
                         {

@@ -7,6 +7,8 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoResource;
@@ -167,7 +169,8 @@ public class TCPProactorMT
                     l.debug("not accepting, discard accepted socket");
                     s.close();
                     synchronized (_resumeAcceptSynchronizer) {
-                        while (_acceptPaused) Util.waitUninterruptable(_resumeAcceptSynchronizer);
+                        while (_acceptPaused) ThreadUtil.waitUninterruptable(
+                                _resumeAcceptSynchronizer);
                     }
                 } else {
                     InetSocketAddress remaddr = getaddr(s, false);
@@ -501,7 +504,7 @@ public class TCPProactorMT
                 try {
                     p._sendq.enqueueThrows_(EV_CLOSE, Prio.HI);
                 } catch (ExNoResource e) {
-                    Util.fatal(e);
+                    SystemUtil.fatal(e);
                 }
 
                 if (p._discarded) return;

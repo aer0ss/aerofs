@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -153,7 +154,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     public String getFileSystemType(String path, OutArg<Boolean> remote) throws IOException
     {
         OutArg<String> output = new OutArg<String>();
-        Util.execForeground(output, "stat", "-f", "--format=%T", path);
+        SystemUtil.execForeground(output, "stat", "-f", "--format=%T", path);
         String fstype = output.get().trim();
         remote.set(fstype.equals("nfs"));
         return fstype;
@@ -214,7 +215,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
             // TODO (GS): On KDE, should use dolphin
             // Or better yet: we should expose an option so that our linux friends can specify their
             // favorite file manager.
-            Util.execBackground("nautilus", path);
+            SystemUtil.execBackground("nautilus", path);
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }

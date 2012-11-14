@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class FileUtil
+public abstract class FileUtil
 {
     public static class FileName
     {
@@ -56,9 +56,12 @@ public class FileUtil
         }
     }
 
-    private FileUtil() {}
+    private FileUtil()
+    {
+        // private to enforce uninstantiability
+    }
 
-    private static Set<String> _filesToDelete = Sets.newLinkedHashSet();
+    private static Set<File> _filesToDelete = Sets.newLinkedHashSet();
     private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     /**
@@ -89,12 +92,12 @@ public class FileUtil
      */
     private static synchronized void deleteFiles()
     {
-        Collection<String> toDelete = _filesToDelete;
+        Collection<File> toDelete = _filesToDelete;
         _filesToDelete = null;
-        List<String> files = Lists.newArrayList(toDelete);
+        List<File> files = Lists.newArrayList(toDelete);
         Collections.reverse(files);
-        for (String path : files) {
-            new File(path).delete();
+        for (File file : files) {
+            file.delete();
         }
     }
 
@@ -109,7 +112,7 @@ public class FileUtil
                 }
             }, "file-deleter"));
         }
-        _filesToDelete.add(file.getPath());
+        _filesToDelete.add(file);
     }
 
     public static synchronized void noDeleteOnExit(File file)
@@ -258,7 +261,7 @@ public class FileUtil
 
     /**
      * @return the mtime of a file, if the mtime is negative then return 0.
-     * @throw IOException if {@code f} is not a file or doesn't exist.
+     * @throws IOException if {@code f} is not a file or doesn't exist.
      */
     public static long lastModified(File f) throws IOException
     {
@@ -435,6 +438,7 @@ public class FileUtil
         reportIfNotNFC(name, extraLogs, true);
     }
 
+    @SuppressWarnings("unused")
     public static void assertIfNotNFC(String name, String extraLogs)
     {
         reportIfNotNFC(name, extraLogs, false);

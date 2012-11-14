@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.SystemUtil;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.linker.IgnoreList;
@@ -198,8 +199,9 @@ public class LinkedStorage implements IPhysicalStorage
                 try {
                     rh.rollback_();
                 } catch (IOException e) {
-                    Util.fatal("db/fs inconsistent on " + (f.isDirectory() ? "dir " : "file ") +
-                            f.getAbsolutePath() + ": " + Util.e(e));
+                    SystemUtil.fatal(
+                            "db/fs inconsistent on " + (f.isDirectory() ? "dir " : "file ") +
+                                    f.getAbsolutePath() + ": " + Util.e(e));
                 }
             }
         });

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.aerofs.lib.SystemUtil;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -40,10 +41,10 @@ public class S3Accessor
 
         try {
             //sanity testing:
-            if (false == _s3.doesBucketExist(_bucketId)) Util.fatal("Bucket does not exist");
+            if (false == _s3.doesBucketExist(_bucketId)) SystemUtil.fatal("Bucket does not exist");
 
         } catch (AmazonClientException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
     }
 

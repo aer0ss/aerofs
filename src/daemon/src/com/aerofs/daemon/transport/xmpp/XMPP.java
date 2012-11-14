@@ -33,6 +33,8 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientManager;
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFormatError;
@@ -581,7 +583,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
                     ccc.sendSignallingMessageFailed_(did, msg, e);
                 } catch (ExNoResource e2) {
                     l.error("x: failed to handle error while sending packet");
-                    Util.fatal("shutdown due to err:" + e2 + " triggered by err:" + e);
+                    SystemUtil.fatal("shutdown due to err:" + e2 + " triggered by err:" + e);
                 }
             }
         }, Prio.HI);
@@ -626,7 +628,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
                     // processing this event we cannot reschedule it (because event
                     // ordering is extremely important)
 
-                    Util.fatal(e);
+                    SystemUtil.fatal(e);
                 }
             }
         };
@@ -708,7 +710,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
                                 //   messages. Receiving online, offline messages
                                 //   is very different than offline, online
 
-                                Util.fatal(e);
+                                SystemUtil.fatal(e);
                             }
                         }
                     }
@@ -738,7 +740,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
                     // processing this event we cannot reschedule it (because event
                     // ordering is extremely important)
 
-                    Util.fatal(e);
+                    SystemUtil.fatal(e);
                 }
             }
         }, Prio.HI);
@@ -774,12 +776,12 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
                         int MAX = 50, counter = 0;
                         while(counter < MAX) {
                             Util.logAllThreadStackTraces();
-                            Util.sleepUninterruptable(period);
+                            ThreadUtil.sleepUninterruptable(period);
                             counter++;
                         }
                     }
                 };
-                Util.startDaemonThread("sampler", runnable);
+                ThreadUtil.startDaemonThread("sampler", runnable);
             }
 
             _sched.schedule(ev, 0);
@@ -1083,7 +1085,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             outLen.set(len + HEADER_LEN);
 
         } catch (IOException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
 
         return bos.toString();

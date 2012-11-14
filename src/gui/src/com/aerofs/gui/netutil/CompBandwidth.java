@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Ritual.TransportFloodQueryReply;
@@ -232,7 +233,7 @@ public class CompBandwidth extends Composite {
                 assert false;
             }
 
-            Util.sleepUninterruptable(100);
+            ThreadUtil.sleepUninterruptable(100);
         }
 
         // stop requested

@@ -1,6 +1,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.ControllerProto.ControllerServiceReactor;
 import com.aerofs.proto.ControllerNotifications.Type;
@@ -118,7 +119,7 @@ public class ControllerProgram implements IProgram, IViewNotifier
         try {
             _queue.put(call);
         } catch (InterruptedException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
     }
 

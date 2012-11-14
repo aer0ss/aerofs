@@ -5,7 +5,8 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
 
-public class Profiler {
+public class Profiler
+{
     private static final Logger l = Util.l(Profiler.class);
 
     private boolean _started;

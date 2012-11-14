@@ -6,6 +6,7 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBPath;
@@ -18,9 +19,9 @@ import org.eclipse.swt.widgets.ScrollBar;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
@@ -200,7 +201,7 @@ public class CompActivityLog extends Composite
         _compSpin.start();
         _lblStatus.setText("");
 
-        Util.startDaemonThread("userlist-async-load", new Runnable()
+        ThreadUtil.startDaemonThread("userlist-async-load", new Runnable()
         {
             @Override
             public void run()

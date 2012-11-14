@@ -79,7 +79,7 @@ public abstract class Updater
             }
         }
 
-        Util.fatal("Unsupported OS Family or arch");
+        SystemUtil.fatal("Unsupported OS Family or arch");
 
         return null;
     }
@@ -214,7 +214,7 @@ public abstract class Updater
      */
     public void start()
     {
-        Util.startDaemonThread("autoupdate-worker", new Runnable()
+        ThreadUtil.startDaemonThread("autoupdate-worker", new Runnable()
         {
             @Override
             public void run()
@@ -231,11 +231,11 @@ public abstract class Updater
                     GUI.get().st().getIcon().showNotification(false);
                 }
 
-                Util.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
+                ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INITIAL_DELAY);
 
                 while (true) {
                     checkForUpdate(false);
-                    Util.sleepUninterruptable(UIParam.UPDATE_CHECKER_INTERVAL);
+                    ThreadUtil.sleepUninterruptable(UIParam.UPDATE_CHECKER_INTERVAL);
                 }
             }
         });

@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.Image;
 
 import com.aerofs.gui.Images;
 import com.aerofs.l.L;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 
 class IconLabelProvider extends ColumnLabelProvider
 {

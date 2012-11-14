@@ -18,6 +18,7 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterSender;
 import com.aerofs.l.L;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.DID;
@@ -86,7 +87,7 @@ public class NSL
         l.debug(type + ',' + rpcid + " -> " + ep);
         if (bs.length > _m.getMaxUnicastSize_()) {
             // unicast messages shall never exceeds the limit
-            Util.fatal("uc too large " + bs.length);
+            SystemUtil.fatal("uc too large " + bs.length);
         }
 
         PeerContext pc = new PeerContext(ep, sidx);

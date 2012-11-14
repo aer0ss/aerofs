@@ -46,7 +46,7 @@ public enum AuthorizationLevel
 
     /**
      * @return true if 'this' dominates the authorization level of {@code level}
-     * N.B. this is duplicated from com.aerofs.lib.Role
+     * N.B. this is duplicated from com.aerofs.lib.acl.Role
      */
     public boolean dominates(@Nonnull AuthorizationLevel level)
     {

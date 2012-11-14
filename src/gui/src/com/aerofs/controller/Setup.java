@@ -15,6 +15,7 @@ import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil.Icon;
@@ -271,7 +272,7 @@ class Setup
     private void runNonEssential(final String userId, final DID did, final String deviceName,
             final boolean returning, final SPBlockingClient sp)
     {
-        Util.startDaemonThread("setup-non-essential", new Runnable()
+        ThreadUtil.startDaemonThread("setup-non-essential", new Runnable()
         {
             @Override
             public void run()

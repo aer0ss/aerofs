@@ -10,6 +10,7 @@ import com.aerofs.gui.transfers.DlgTransfers;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -437,7 +438,8 @@ public class CompPreferences extends Composite
 
         _compSpin.start();
 
-        Util.startDaemonThread("update-names", new Runnable() {
+        ThreadUtil.startDaemonThread("update-names", new Runnable()
+        {
             @Override
             public void run()
             {
@@ -453,15 +455,17 @@ public class CompPreferences extends Composite
                 }
 
                 final Exception eFinal = e;
-                GUI.get().safeAsyncExec(CompPreferences.this, new Runnable() {
+                GUI.get().safeAsyncExec(CompPreferences.this, new Runnable()
+                {
                     @Override
                     public void run()
                     {
                         _compSpin.stop();
 
                         if (eFinal != null) {
-                            GUI.get().show(getShell(), MessageType.ERROR,
-                                    "Couldn't update the name " + UIUtil.e2msg(eFinal));
+                            GUI.get()
+                                    .show(getShell(), MessageType.ERROR,
+                                            "Couldn't update the name " + UIUtil.e2msg(eFinal));
                         } else {
                             _firstName = _txtFirstName.getText();
                             _lastName = _txtLastName.getText();

@@ -6,9 +6,9 @@ import javax.annotation.Nullable;
 
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;

@@ -24,7 +24,7 @@ public class CmdHelp<T> implements IShellCommand<T>
         } else for (String arg : cl.getArgs()) {
             IShellCommand<T> cmd = s.getCommands_().get(arg);
             if (cmd == null) {
-                throw new ExBadArgs("command " + Util.q(arg) + " not found");
+                throw new ExBadArgs("command " + Util.quote(arg) + " not found");
             }
             s.usage(cmd);
         }

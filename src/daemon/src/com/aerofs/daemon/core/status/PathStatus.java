@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.syncstatus.LocalSyncStatus;
 import com.aerofs.daemon.core.syncstatus.SyncStatusSummary;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFound;
@@ -130,7 +130,7 @@ public class PathStatus
         try {
             _lsync.aggregateAcrossStores_(path, s);
         } catch (SQLException e) {
-            throw Util.fatal(e);
+            throw SystemUtil.fatal(e);
         } catch (ExExpelled e) {
             return Sync.OUT_SYNC;
         } catch (ExNotFound e) {

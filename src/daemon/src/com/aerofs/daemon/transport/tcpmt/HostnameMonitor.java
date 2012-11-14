@@ -2,6 +2,7 @@ package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -61,7 +62,7 @@ class HostnameMonitor {
         while (true) {
             synchronized (this) {
                 if (!_notified) {
-                    Util.waitUninterruptable(this, DaemonParam.TCP.RETRY_INTERVAL);
+                    ThreadUtil.waitUninterruptable(this, DaemonParam.TCP.RETRY_INTERVAL);
                 }
                 _notified = false;
 
@@ -77,7 +78,7 @@ class HostnameMonitor {
             long delay = DaemonParam.HOSTNAME_MONITOR_MIN_DELAY + _lastRound -
                 System.currentTimeMillis();
 
-            if (delay > 0) Util.sleepUninterruptable(delay);
+            if (delay > 0) ThreadUtil.sleepUninterruptable(delay);
 
             _lastRound = System.currentTimeMillis();
 

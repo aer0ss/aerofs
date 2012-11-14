@@ -4,7 +4,7 @@ import java.sql.Driver;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.UniqueID;
 
 public class MySQLDBCW extends AbstractDBCW implements IDBCW
@@ -20,7 +20,7 @@ public class MySQLDBCW extends AbstractDBCW implements IDBCW
             String ns = "com.mysql.jdbc.exceptions.jdbc4.";
             _clsConstraintViolationEx = Class.forName(ns + "MySQLIntegrityConstraintViolationException");
         } catch (ClassNotFoundException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
             throw new RuntimeException(e);
         }
     }

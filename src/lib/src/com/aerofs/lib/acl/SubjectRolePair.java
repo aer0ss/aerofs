@@ -1,11 +1,11 @@
-package com.aerofs.lib;
+package com.aerofs.lib.acl;
 
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 
 import javax.annotation.Nullable;
 
-public class SubjectRolePair
+public final class SubjectRolePair
 {
     public final String _subject;
     public final Role _role;

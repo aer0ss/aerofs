@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib;
+package com.aerofs.lib.acl;
 
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Convenience methods to manipulate collections of {@link SubjectRolePair}
+ * Convenience methods to manipulate collections of {@link com.aerofs.lib.acl.SubjectRolePair}
  */
-public class SubjectRolePairs
+public final class SubjectRolePairs
 {
     public static List<SubjectRolePair> listFromPB(List<PBSubjectRolePair> pbl) throws ExBadArgs
     {

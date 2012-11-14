@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -258,7 +259,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
         } catch (Throwable e) {
             // Native threads may ignore exceptions; we reraise them here
             // to make sure unhandled errors do indeed propagate.
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
     }
 
@@ -441,7 +442,8 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
         // In the meantime, it's easier to just abort the daemon and start over.
         if (Util.test(mask, IN_Q_OVERFLOW)) {
-            Util.fatal("inotify event queue overflowed; aborting to regain a consistent state");
+            SystemUtil.fatal(
+                    "inotify event queue overflowed; aborting to regain a consistent state");
         }
 
         _prevActionId = id;

@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 
 public class SQLiteDBCW extends AbstractDBCW implements IDBCW
 {
@@ -22,7 +22,7 @@ public class SQLiteDBCW extends AbstractDBCW implements IDBCW
         try {
             Class.forName("org.sqlite.JDBC").asSubclass(Driver.class);
         } catch (ClassNotFoundException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
     }
 

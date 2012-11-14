@@ -3,9 +3,9 @@ package com.aerofs.daemon.event.fs;
 import java.util.Map;
 
 import com.aerofs.daemon.core.Core;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Role;
 
 public class EIShareFolder extends AbstractEIFS
 {

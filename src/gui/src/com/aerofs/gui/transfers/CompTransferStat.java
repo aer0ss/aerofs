@@ -1,5 +1,6 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.lib.ThreadUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.PaintEvent;
@@ -130,7 +131,7 @@ public class CompTransferStat extends Composite {
                 }
             });
 
-            Util.sleepUninterruptable(GUIParam.STAT_UPDATE_INTERVAL);
+            ThreadUtil.sleepUninterruptable(GUIParam.STAT_UPDATE_INTERVAL);
         }
     }
 

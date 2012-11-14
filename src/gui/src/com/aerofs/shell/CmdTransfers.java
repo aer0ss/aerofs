@@ -1,7 +1,7 @@
 package com.aerofs.shell;
 
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;
@@ -44,7 +44,7 @@ public class CmdTransfers implements IShellCommand<ShProgram>
 
         rnc.start();
 
-        Util.sleepUninterruptable(Long.MAX_VALUE);
+        ThreadUtil.sleepUninterruptable(Long.MAX_VALUE);
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -102,7 +103,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
                 ritual.heartbeat();
                 break;
             } catch (Exception e) {
-                Util.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+                ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
             } finally {
                 ritual.close();
             }

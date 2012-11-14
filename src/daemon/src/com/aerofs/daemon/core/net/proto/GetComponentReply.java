@@ -16,7 +16,8 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.OCID;
@@ -227,7 +228,7 @@ public class GetComponentReply
             cr = _ru.computeCausalityForContent_(socid.soid(), vRemote, msg, tk);
             break;
         default:
-            throw Util.fatal("not implemented");
+            throw SystemUtil.fatal("not implemented");
         }
 
         if (cr == null) return;

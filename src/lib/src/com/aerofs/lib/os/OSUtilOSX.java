@@ -59,7 +59,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         result.add(cmd.toString());
 
         String[] cmdsArray = result.toArray(new String[result.size()]);
-        int r = Util.execForeground(cmdsArray);
+        int r = SystemUtil.execForeground(cmdsArray);
         if (r != 0) {
             l.warn("User denied authorization to run privileged command (return code: " + r + ")");
             throw new SecurityException("Authorization denied");
@@ -82,13 +82,13 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     public void addToFavorite(String path) throws IOException
     {
         remFromFavorite(path);
-        Util.execBackground(AppRoot.abs().concat("/osxtools"), "shortcut", "add", path);
+        SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "shortcut", "add", path);
     }
 
     @Override
     public void remFromFavorite(String path) throws IOException
     {
-        Util.execBackground(AppRoot.abs().concat("/osxtools"), "shortcut", "rem", path);
+        SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "shortcut", "rem", path);
     }
 
     @Override
@@ -149,7 +149,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     private String getOwner(File file) throws IOException
     {
         OutArg<String> result = new OutArg<String>();
-        Util.execForeground(result, "/bin/sh", "-c",
+        SystemUtil.execForeground(result, "/bin/sh", "-c",
                 "ls -l " + file.getParent() + " | grep " + file.getName() + " | awk '{print $3}'");
         return result.get().trim();
     }
@@ -206,16 +206,16 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         // Let's try to remove it and recreate it as a symlink
 
         OutArg<String> result = new OutArg<String>();
-        int retVal = Util.execForeground(result, "rm", "-rf", FINDEREXT_DIR + "/Contents");
+        int retVal = SystemUtil.execForeground(result, "rm", "-rf", FINDEREXT_DIR + "/Contents");
         if (retVal != 0) {
             throw new IOException("Failed to remove old Finder extension:\n" + result.get());
         }
 
-        Util.execForeground("ln", "-s", source.getAbsolutePath() + "/Contents",
+        SystemUtil.execForeground("ln", "-s", source.getAbsolutePath() + "/Contents",
                 FINDEREXT_DIR + "/Contents");
 
         l.debug("Restarting the Finder");
-        Util.execForeground("killall", "Finder");
+        SystemUtil.execForeground("killall", "Finder");
 
         if (_shellextPort > 0) {
             startShellExtension(_shellextPort);
@@ -235,7 +235,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         }
 
         try {
-            Util.execBackground(FINDEREXT_DIR + "/Contents/Resources/finder_inject",
+            SystemUtil.execBackground(FINDEREXT_DIR + "/Contents/Resources/finder_inject",
                     Integer.toString(port));
         } catch (IOException e) {
             l.warn("Unable to launch Finder extension " + Util.e(e));
@@ -248,7 +248,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     public void showInFolder(String path)
     {
         try {
-            Util.execBackground("open", "-R", path);
+            SystemUtil.execBackground("open", "-R", path);
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }

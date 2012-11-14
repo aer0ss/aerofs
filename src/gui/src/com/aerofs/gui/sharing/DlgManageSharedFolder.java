@@ -25,7 +25,7 @@ public class DlgManageSharedFolder extends AeroFSDialog
      */
     public DlgManageSharedFolder(Shell parent, Path path)
     {
-        super(parent, "Manage Shared Folder " + Util.q(path.last()), false, true);
+        super(parent, "Manage Shared Folder " + Util.quote(path.last()), false, true);
         _path = path;
     }
 

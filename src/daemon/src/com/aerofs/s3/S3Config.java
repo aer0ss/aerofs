@@ -7,7 +7,7 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.SecretKey;
 
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.google.inject.Inject;
 
@@ -102,7 +102,7 @@ public class S3Config
             public char[] getPassword() {
                 String pass = System.getenv(S3_ENC_PASS_VAR);
                 if (pass == null || pass.isEmpty()) {
-                    Util.fatal("environment variable " + S3_ENC_PASS_VAR + " must be set");
+                    SystemUtil.fatal("environment variable " + S3_ENC_PASS_VAR + " must be set");
                 }
                 return pass.toCharArray();
             }

@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
 
-import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonServiceException;

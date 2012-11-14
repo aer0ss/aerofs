@@ -62,7 +62,7 @@ public class TestSenderFilters extends AbstractTest
         OID [] oids = new OID[] { new OID(UniqueID.generate()),
                                   new OID(UniqueID.generate()) };
 
-        // Insert oids into the System Under Test
+        // Insert oids into the SystemUtil Under Test
         for (OID oid: oids) {
             sf.objectUpdated_(oid, t);
         }

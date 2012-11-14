@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import org.apache.log4j.Logger;
 
@@ -72,7 +73,7 @@ abstract class AbstractDBCW implements IDBCW
         try {
             _c.rollback();
         } catch (SQLException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
     }
 

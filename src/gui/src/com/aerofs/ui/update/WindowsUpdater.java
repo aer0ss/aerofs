@@ -3,6 +3,7 @@ package com.aerofs.ui.update;
 import java.io.IOException;
 
 import com.aerofs.lib.C;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.client.SVClient;
@@ -36,7 +37,8 @@ class WindowsUpdater extends Updater
                     }
                 });
 
-                Util.execBackground(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installerFilename), "/S");
+                SystemUtil.execBackground(
+                        Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installerFilename), "/S");
                 System.exit(0);
             } catch (IOException e) {
                 l.warn("update: " + e);

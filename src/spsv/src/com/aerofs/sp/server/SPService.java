@@ -3,8 +3,8 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.C;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.SubjectRolePair;
-import com.aerofs.lib.SubjectRolePairs;
+import com.aerofs.lib.acl.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.async.UncancellableFuture;
@@ -861,7 +861,7 @@ class SPService implements ISPService
             throws ExAlreadyExist
     {
         if (!Util.isValidEmailAddress(userId)) {
-            l.warn(Util.q(userId) + " invalid user id format");
+            l.warn(Util.quote(userId) + " invalid user id format");
             throw new ExAlreadyExist();
         }
     }

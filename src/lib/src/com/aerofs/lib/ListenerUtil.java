@@ -7,10 +7,26 @@ package com.aerofs.lib;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Set;
 
-public class ListenerUtil
+public abstract class ListenerUtil
 {
-    private ListenerUtil() {}
+    private ListenerUtil()
+    {
+        // private to enforce uninstantiability
+    }
+
+    public static <T> void addListener_(Set<T> ls, T l)
+    {
+        if (Param.STRICT_LISTENERS) Util.verify(ls.add(l));
+        else ls.add(l);
+    }
+
+    public static <T> void removeListener_(Set<T> ls, T l)
+    {
+        if (Param.STRICT_LISTENERS) Util.verify(ls.remove(l));
+        else ls.remove(l);
+    }
 
     private static class Multiplexor<T> implements InvocationHandler
     {

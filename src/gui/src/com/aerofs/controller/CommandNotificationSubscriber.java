@@ -5,6 +5,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.lib.C;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -155,7 +156,7 @@ public final class CommandNotificationSubscriber
             // approach has an undesired side effect: processing of other command types are also
             // blocked. If it becomes a problem, we can work around by, e.g., having a dedicated
             // request queue for LOG_THREADS, or by changing the semantics of the command.
-            Util.sleepUninterruptable(5 * C.SEC);
+            ThreadUtil.sleepUninterruptable(5 * C.SEC);
 
             // Log threads for the current process
             Util.logAllThreadStackTraces();

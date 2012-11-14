@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.PathObfuscator;
 import com.aerofs.lib.Param;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableSystem;
 import com.google.common.collect.Maps;
@@ -284,7 +285,7 @@ public class ScanSessionQueue implements IDumpStatMisc
             return true;
 
         } catch (Exception e) {
-            Util.fatalOnUncheckedException(e);
+            SystemUtil.fatalOnUncheckedException(e);
             onException(e, tk, pk);
             return true;
         }

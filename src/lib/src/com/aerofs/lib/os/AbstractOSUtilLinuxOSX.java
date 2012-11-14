@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
 
@@ -124,7 +125,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
             arguments = keepMTime ? "-fpPR" : "-fPR";
         }
 
-        int exitCode = Util.execForeground("cp", arguments, absFromPath, absToPath);
+        int exitCode = SystemUtil.execForeground("cp", arguments, absFromPath, absToPath);
         if (exitCode != 0) {
             throw new IOException("cp " + absFromPath + " to " + absToPath + "failed with exit " +
                     "code: " + exitCode);

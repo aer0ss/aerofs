@@ -199,7 +199,7 @@ public class CLISetup
                 String root = RootAnchorUtil.adjustRootAnchor(input);
                 if (!input.equals(root)) {
                     cli.confirm(MessageType.INFO,
-                            "The path has been adjusted to " + Util.q(root) + ".");
+                            "The path has been adjusted to " + Util.quote(root) + ".");
                 }
                 anchorRoot = root;
             }
@@ -245,7 +245,7 @@ public class CLISetup
         cli.notify(MessageType.INFO,
                 "+-------------------------------------------------+\n" +
                 "| You can now access " + S.PRODUCT + " functions through the |\n" +
-                "| " + Util.q("aerofs-sh") + " command while aerofs-cli is running |\n" +
+                "| " + Util.quote("aerofs-sh") + " command while aerofs-cli is running |\n" +
                 "+-------------------------------------------------+");
     }
 

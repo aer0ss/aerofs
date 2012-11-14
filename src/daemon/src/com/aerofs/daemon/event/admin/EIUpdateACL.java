@@ -5,7 +5,7 @@ import java.util.Map;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 
 public class EIUpdateACL extends AbstractEBIMC
 {

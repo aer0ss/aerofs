@@ -2,6 +2,7 @@ package com.aerofs.controller;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SP;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -15,12 +16,14 @@ public class HeartInvitesPoller
 {
     void start()
     {
-        Util.startDaemonThread("heart-poller", new Runnable() {
+        ThreadUtil.startDaemonThread("heart-poller", new Runnable()
+        {
             @Override
-            public void run() {
+            public void run()
+            {
                 while (true) {
                     poll();
-                    Util.sleepUninterruptable(12 * C.HOUR);
+                    ThreadUtil.sleepUninterruptable(12 * C.HOUR);
                 }
             }
         });

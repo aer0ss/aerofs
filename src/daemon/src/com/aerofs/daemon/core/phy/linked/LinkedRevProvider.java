@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.aerofs.lib.Base64;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;
 import org.apache.log4j.Logger;
 
@@ -117,7 +119,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     encoded = Base64.encodeBytes(d, Base64.URL_SAFE);
                 } catch (IOException e) {
                     // the base64 encoder can only throw IOException when using the GZIP option...
-                    throw Util.fatal(e);
+                    throw SystemUtil.fatal(e);
                 }
             }
             return encoded;
@@ -289,7 +291,8 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         public synchronized void start()
         {
             if (_thread != null) return;
-            _thread = Util.startDaemonThread("rev-cleaner", new Runnable() {
+            _thread = ThreadUtil.startDaemonThread("rev-cleaner", new Runnable()
+            {
                 @Override
                 public void run()
                 {

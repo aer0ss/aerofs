@@ -10,7 +10,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;

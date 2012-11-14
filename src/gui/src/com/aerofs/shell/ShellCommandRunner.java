@@ -171,7 +171,7 @@ public class ShellCommandRunner<T>
     private void handleCommandException_(IShellCommand<T> cmd, Throwable e)
     {
         _err.println(cmd.getName() + ": " + UIUtil.e2msgNoBracket(e));
-        _err.println("Type " + Util.q("help " + cmd.getName()) + " for usage");
+        _err.println("Type " + Util.quote("help " + cmd.getName()) + " for usage");
     }
 
     private void handleGeneralException_(IShellCommand<T> cmd, Throwable e)

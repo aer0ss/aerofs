@@ -19,6 +19,7 @@ import com.aerofs.daemon.lib.db.IStoreDatabase.StoreRow;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.SID;
@@ -194,7 +195,7 @@ public class Stores implements IStores, IStoreDeletionListener
                     callable.call();
                 } catch (Exception e) {
                     // we can't recover from the erorr
-                    Util.fatal(e);
+                    SystemUtil.fatal(e);
                 }
             }
         });

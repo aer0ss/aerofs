@@ -51,7 +51,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.scrypt.Scrypt;
 import com.google.common.io.ByteStreams;
 
-public class SecUtil
+public abstract class SecUtil
 {
     private static final int KEY_STRENGTH = 2048;
     private static final String ORGANIZATION_UNIT = "na";
@@ -68,8 +68,13 @@ public class SecUtil
         try {
             s_rand = SecureRandom.getInstance("SHA1PRNG");
         } catch (NoSuchAlgorithmException e) {
-            throw Util.fatal(e);
+            throw SystemUtil.fatal(e);
         }
+    }
+
+    private SecUtil()
+    {
+        // private to enforce uninstantiability
     }
 
     private static int MAX_PLAIN_TEXT_SIZE = 117;
@@ -588,7 +593,7 @@ public class SecUtil
         try {
             return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            throw Util.fatal(e);
+            throw SystemUtil.fatal(e);
         }
     }
 
@@ -597,7 +602,7 @@ public class SecUtil
         try {
             return MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            throw Util.fatal(e);
+            throw SystemUtil.fatal(e);
         }
     }
 
@@ -669,7 +674,7 @@ public class SecUtil
                 N, r, p, scrypted, scrypted.length);
 
         // sanity checks
-        if (rc != 0) Util.fatal("scr rc != 0");
+        if (rc != 0) SystemUtil.fatal("scr rc != 0");
 
         return scrypted;
     }

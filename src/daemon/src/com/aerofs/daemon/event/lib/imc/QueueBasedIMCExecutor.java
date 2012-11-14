@@ -3,7 +3,7 @@ package com.aerofs.daemon.event.lib.imc;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ex.ExNoResource;
 
 public class QueueBasedIMCExecutor implements IIMCExecutor {
@@ -45,7 +45,7 @@ public class QueueBasedIMCExecutor implements IIMCExecutor {
             // enqueuing must be done while holding the lock  otherwise we might
             // miss notify();
             _q.enqueueBlocking(ev, prio);
-            Util.waitUninterruptable(ev);
+            ThreadUtil.waitUninterruptable(ev);
         }
     }
 }

@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import javax.mail.MessagingException;
 
 import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.yammer.metrics.Metrics;
@@ -347,7 +348,7 @@ public class SVReactor
                 }
 
                 //yuris note: please make sure that the "proguard" package is installed
-                Util.execForeground(retracedEx, "java", "-jar", "/usr/share/java/retrace.jar",
+                SystemUtil.execForeground(retracedEx, "java", "-jar", "/usr/share/java/retrace.jar",
                         "/maps/aerofs-" + version + "-prod.map", f.getAbsolutePath());
 
                 FileUtil.deleteOrOnExit(f);

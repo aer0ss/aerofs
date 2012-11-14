@@ -23,6 +23,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -359,7 +360,7 @@ public class Download
 
     private void onGeneralException(Exception e, DID replier)
     {
-        if (e instanceof RuntimeException) Util.fatal(e);
+        if (e instanceof RuntimeException) SystemUtil.fatal(e);
 
         // RTN: retry now
         l.warn(_socid + ": " + Util.e(e) + " " + replier + " RTN");

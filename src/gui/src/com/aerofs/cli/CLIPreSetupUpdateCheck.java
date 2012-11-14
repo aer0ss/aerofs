@@ -28,7 +28,7 @@ class CLIPreSetupUpdateCheck
         if (Versions.compare(Cfg.ver(), Updater.getServerVersion()) != CompareResult.NO_CHANGE) {
             System.out.println("A new update is found for " + S.PRODUCT +
                     ". Please " + (OSUtil.isLinux() ?
-                        Util.q("rm -rf " + AppRoot.abs()) :
+                        Util.quote("rm -rf " + AppRoot.abs()) :
                         "reinstall")
                     + " and run " + S.PRODUCT + " again.");
             System.exit(0);

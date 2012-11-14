@@ -310,7 +310,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         // show the destination paths for brief mode
         Path path = brief && movement ? ar._pathTo : ar._path;
         assert !path.isEmpty();
-        sb.append(Util.q(path.last()));
+        sb.append(Util.quote(path.last()));
 
         if (!brief && movement) {
             assert ar._pathTo != null;
@@ -319,7 +319,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
 
             if (sameParent) {
                 // the parents are the same
-                sb.append(Util.q(ar._pathTo.last()));
+                sb.append(Util.quote(ar._pathTo.last()));
             } else {
                 // the parents are different
                 int len = ar._pathTo.elements().length;

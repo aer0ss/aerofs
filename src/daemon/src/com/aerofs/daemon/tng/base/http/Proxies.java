@@ -50,7 +50,7 @@ public abstract class Proxies
             // Iterate over the list of proxies and select the first HTTP proxy
             for (Proxy systemProxy : proxies) {
                 if (systemProxy.type() == Type.HTTP) {
-                    assert systemProxy.address() instanceof InetSocketAddress : "System proxy address is not an inet address";
+                    assert systemProxy.address() instanceof InetSocketAddress : "SystemUtil proxy address is not an inet address";
 
                     // For some reason, the Proxy returned by the ProxySelector is not resolved,
                     // and any connection to the Proxy's address will result in an UnknownHostException

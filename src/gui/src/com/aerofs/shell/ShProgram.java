@@ -58,7 +58,7 @@ public class ShProgram implements IProgram, ICallback<ShProgram>
         // If we want the program to exit when it returns from main(), then we'd have to call
         // releaseExternalResources() on Netty's channel factory inside RitualClientFactory.
         // But because this call can hang if a channel isn't closed or someone might forget to
-        // call it, it's just safer to call System.exit()
+        // call it, it's just safer to call SystemUtil.exit()
         System.exit(0);
     }
 

@@ -35,7 +35,7 @@ import com.aerofs.proto.Common.PBException.Type;
  *
  * The last exception contains all the previous stack traces in the chain, such that
  *
- *      System.out.println(e3.getRemoteStackTrace());
+ *      SystemUtil.out.println(e3.getRemoteStackTrace());
  *
  * would print:
  *

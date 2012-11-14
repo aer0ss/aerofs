@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
@@ -238,7 +238,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
         // this method shouldn't get called if the device is offline on all the
         // transport. this may not be a valid assumption because the daemon
         // might contact an offline peer, but so far so good
-        Util.fatal("see comment");
+        SystemUtil.fatal("see comment");
         return null;
     }
 

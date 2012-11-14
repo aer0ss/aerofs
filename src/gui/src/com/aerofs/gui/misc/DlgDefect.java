@@ -1,5 +1,6 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.shell.CmdDefect;
@@ -11,7 +12,6 @@ import org.eclipse.swt.widgets.Shell;
 import com.aerofs.gui.AeroFSJFaceDialog;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 
 import org.eclipse.swt.events.SelectionAdapter;
@@ -92,7 +92,7 @@ public class DlgDefect extends AeroFSJFaceDialog {
             final String msg = _txt.getText();
             final boolean dumpDaemonStatus = _sendDiagnosticData.getSelection();
 
-            Util.startDaemonThread("defect-sender", new Runnable()
+            ThreadUtil.startDaemonThread("defect-sender", new Runnable()
             {
                 @Override
                 public void run()

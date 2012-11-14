@@ -2,6 +2,7 @@ package com.aerofs.gui.tray;
 
 import java.util.concurrent.Callable;
 
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -44,14 +45,17 @@ public class PauseOrResumeSyncing
         _paused = true;
         final int seq = ++_pauseSeq;
 
-        Util.startDaemonThread("resume-syncing", new Runnable() {
+        ThreadUtil.startDaemonThread("resume-syncing", new Runnable()
+        {
             @Override
             public void run()
             {
-                Util.sleepUninterruptable(timeout);
-                Util.exponentialRetry("resume-syncing", new Callable<Void>() {
+                ThreadUtil.sleepUninterruptable(timeout);
+                Util.exponentialRetry("resume-syncing", new Callable<Void>()
+                {
                     @Override
-                    public Void call() throws Exception
+                    public Void call()
+                            throws Exception
                     {
                         synchronized (PauseOrResumeSyncing.this) {
                             // no-op if another pause timeout has been scheduled or syncing has been

@@ -5,8 +5,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
 
-import com.aerofs.lib.Role;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.acl.SubjectRolePair;
 
 /**
  * TODO use StyleCellLabelProvider to display subject (in black) + role (in grey) in a single cell.

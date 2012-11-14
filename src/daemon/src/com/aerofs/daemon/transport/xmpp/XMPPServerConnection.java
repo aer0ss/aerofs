@@ -10,6 +10,7 @@ import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import org.apache.log4j.Logger;
@@ -126,7 +127,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                 {
                     if (initialDelay) {
                         l.info("reconnect in " + Param.EXP_RETRY_MIN_DEFAULT);
-                        Util.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
+                        ThreadUtil.sleepUninterruptable(Param.EXP_RETRY_MIN_DEFAULT);
                     }
                     l.info("connecting");
 

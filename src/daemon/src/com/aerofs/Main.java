@@ -6,7 +6,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.ExitCode;
+import com.aerofs.lib.SystemUtil.ExitCode;
+import com.aerofs.lib.SystemUtil;
 import org.apache.log4j.Logger;
 
 import com.google.inject.CreationException;
@@ -103,7 +104,7 @@ public class Main {
             // I don't know how to output to system.log on mac/linux. so use
             // the command line as a quick/dirty approach
             try {
-                Util.execForeground("logger", msg);
+                SystemUtil.execForeground("logger", msg);
             } catch (Exception e2) {
                 // ignored
             }
@@ -125,7 +126,7 @@ public class Main {
                     + AppRoot.abs() + " - " + Util.e(e));
         }
 
-        Util.setDefaultUncaughtExceptionHandler();
+        SystemUtil.setDefaultUncaughtExceptionHandler();
 
         try {
             launchProgram(rtRoot, prog, appArgs);

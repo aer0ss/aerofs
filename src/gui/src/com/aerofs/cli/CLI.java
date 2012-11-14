@@ -2,7 +2,8 @@ package com.aerofs.cli;
 
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -77,7 +78,7 @@ public class CLI implements IUI {
         _rtRoot = rtRoot;
         _thd = Thread.currentThread();
 
-        Util.startDaemonThread("cli-timed-exec", new Runnable()
+        ThreadUtil.startDaemonThread("cli-timed-exec", new Runnable()
         {
             @Override
             public void run()
@@ -86,7 +87,7 @@ public class CLI implements IUI {
                     try {
                         asyncExec(_dq.take()._runnable);
                     } catch (InterruptedException e) {
-                        Util.fatal(e);
+                        SystemUtil.fatal(e);
                     }
                 }
             }
@@ -318,7 +319,7 @@ public class CLI implements IUI {
         while (true) {
             ExecEntry ee;
             synchronized (_execs) {
-                while (_execs.isEmpty()) { Util.waitUninterruptable(_execs); }
+                while (_execs.isEmpty()) { ThreadUtil.waitUninterruptable(_execs); }
                 ee = _execs.removeFirst();
             }
 
@@ -352,7 +353,7 @@ public class CLI implements IUI {
             }
 
             synchronized (ee) {
-                while (!ee._done) { Util.waitUninterruptable(ee); }
+                while (!ee._done) { ThreadUtil.waitUninterruptable(ee); }
             }
         }
     }
@@ -453,7 +454,7 @@ public class CLI implements IUI {
                 UI.controller().updateStoredPassword(Cfg.user(), passwd);
                 break;
             } catch (ExBadCredential ebc) {
-                Util.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
+                ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                 show(MessageType.WARN, S.BAD_CREDENTIAL_CAP);
             } catch (Exception e) {
                 show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " + UIUtil.e2msg

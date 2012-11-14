@@ -13,7 +13,7 @@ import org.apache.log4j.spi.ThrowableRenderer;
 /**
  * Helpers for dealing with log4j
  */
-class LogUtil
+abstract class LogUtil
 {
     private static final String[] PKG_SUFFIXES = new String[] {
         "com.aerofs.daemon.core.",
@@ -26,7 +26,10 @@ class LogUtil
         "@",
     };
 
-    private LogUtil() {}
+    private LogUtil()
+    {
+        // private to enforce uninstantiability
+    }
 
     static Layout newPatternLayout(String pattern)
     {

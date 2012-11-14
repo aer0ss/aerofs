@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
+import com.aerofs.lib.SystemUtil;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
@@ -21,7 +22,6 @@ import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.l.L;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExFormatError;
@@ -111,7 +111,7 @@ public class Core implements IModule
                 try {
                     initCore_();
                 } catch (Exception e) {
-                    Util.fatal(e);
+                    SystemUtil.fatal(e);
                 }
             }
         }, 0);

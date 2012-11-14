@@ -1,5 +1,6 @@
 package com.aerofs.gui.password;
 
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.ui.IUI.MessageType;
@@ -128,7 +129,7 @@ public class DlgLogin extends AeroFSJFaceDialog {
                     try {
                         UI.controller().updateStoredPassword(Cfg.user(), passwd);
                     } catch (Exception e) {
-                        Util.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
+                        ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                         throw e;
                     }
                 }

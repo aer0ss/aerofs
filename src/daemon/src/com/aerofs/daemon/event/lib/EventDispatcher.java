@@ -6,7 +6,7 @@ import java.util.Map;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 
 public class EventDispatcher {
 
@@ -38,7 +38,7 @@ public class EventDispatcher {
             if (hd != null) {
                 ((IEventHandler<IEvent>) hd).handle_(ev, prio);
             } else {
-                Util.fatal("unsupported event " + ev.getClass());
+                SystemUtil.fatal("unsupported event " + ev.getClass());
             }
         }
     }

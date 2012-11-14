@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;

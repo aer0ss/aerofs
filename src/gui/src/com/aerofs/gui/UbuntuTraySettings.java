@@ -6,6 +6,7 @@ package com.aerofs.gui;
 
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
@@ -31,7 +32,7 @@ public class UbuntuTraySettings
             if (!settings.matches(pattern)) {
                 settings += (settings.isEmpty() ? "" : ", ") + appName;
                 OutArg<String> outArg = new OutArg<String>();
-                int retval = Util.execForeground(outArg, "gsettings", "set",
+                int retval = SystemUtil.execForeground(outArg, "gsettings", "set",
                         "com.canonical.Unity.Panel", "systray-whitelist", "[" + settings + "]");
                 if (retval != 0) throw new IOException("gsettings returned " + outArg.get());
 
@@ -60,7 +61,7 @@ public class UbuntuTraySettings
         assert OSUtil.isLinux();
 
         OutArg<String> outArg = new OutArg<String>();
-        Util.execForeground(outArg, "gsettings", "get", "com.canonical.Unity.Panel",
+        SystemUtil.execForeground(outArg, "gsettings", "get", "com.canonical.Unity.Panel",
                 "systray-whitelist");
         String result = outArg.get().trim();
         if (result.startsWith("[") && result.endsWith("]")) {

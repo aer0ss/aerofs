@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.lib.Role;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
 

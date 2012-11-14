@@ -5,7 +5,7 @@
 package com.aerofs.sp.common;
 
 import com.aerofs.l.L;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,7 +23,7 @@ public class SubscriptionParams
         try {
             url = new URL("https://" + L.get().webHost() + "/unsubscribe?" + UNSUB_TOKEN + "=");
         } catch (MalformedURLException e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
             url = null;
         }
         UNSUBSCRIPTION_URL = url;

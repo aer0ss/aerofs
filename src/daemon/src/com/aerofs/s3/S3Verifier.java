@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 
+import com.aerofs.lib.SystemUtil;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -53,7 +54,7 @@ public class S3Verifier
                 }
                 ContentHash hash = hs.getHashAttrib();
                 if (!hash.equals(chunk)) {
-                    Util.fatal(">>>>>Hashed " + hash + " expected " + chunk);
+                    SystemUtil.fatal(">>>>>Hashed " + hash + " expected " + chunk);
                 }
             }
         } finally {

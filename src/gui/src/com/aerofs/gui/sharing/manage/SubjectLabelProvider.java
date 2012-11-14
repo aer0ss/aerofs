@@ -1,7 +1,7 @@
 package com.aerofs.gui.sharing.manage;
 
 import org.eclipse.jface.viewers.ColumnLabelProvider;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.Cfg;
 
 /**

@@ -1,7 +1,7 @@
 package com.aerofs.l;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 
 import java.io.File;
 import java.util.Scanner;
@@ -30,7 +30,7 @@ public class L
         ILabeling l = getLabelingFromFile();
         if (l == null) l = getLabeling("AA");
         if (l == null) l = getLabeling("CC");
-        if (l == null) Util.fatal("no labeling");
+        if (l == null) SystemUtil.fatal("no labeling");
         set(l);
     }
 

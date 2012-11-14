@@ -121,7 +121,7 @@ public class InvitationEmailer
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
             String nameOrEmail = fromPerson.isEmpty() ? from : fromPerson;
-            email.addSection(nameOrEmail + " wants to share " + Util.q(folderName) + " with you.",
+            email.addSection(nameOrEmail + " wants to share " + Util.quote(folderName) + " with you.",
                     HEADER_SIZE.H1, body);
 
             email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team", Email.DEFAULT_PS);

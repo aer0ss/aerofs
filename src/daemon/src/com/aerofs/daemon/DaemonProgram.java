@@ -4,6 +4,7 @@ import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -36,7 +37,7 @@ public class DaemonProgram implements IProgram {
         Util.l().error("daemon main thread halted");
 
         // I don't understand why mac needs this
-        if (OSUtil.get().getOSFamily() == OSFamily.OSX) Util.halt();
+        if (OSUtil.get().getOSFamily() == OSFamily.OSX) SystemUtil.halt();
     }
 
     private Daemon inject_()

@@ -4,6 +4,7 @@ import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.Param.SP;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -202,7 +203,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
 
                     // Join the folders in a separate thread
                     final List<PBFolderInvitation> invitations = invs;
-                    Util.startDaemonThread("join-shared-folders", new Runnable()
+                    ThreadUtil.startDaemonThread("join-shared-folders", new Runnable()
                     {
                         @Override
                         public void run()

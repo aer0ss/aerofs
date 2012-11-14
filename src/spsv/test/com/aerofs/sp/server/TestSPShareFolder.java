@@ -5,7 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;

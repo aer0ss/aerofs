@@ -5,6 +5,7 @@ import java.util.EnumSet;
 
 import java.util.TimeZone;
 
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -14,8 +15,7 @@ import java.util.Calendar;
 import com.aerofs.lib.db.DBUtil;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.Role;
-import com.aerofs.lib.SubjectRolePair;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;

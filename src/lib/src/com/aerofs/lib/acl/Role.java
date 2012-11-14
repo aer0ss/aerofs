@@ -1,4 +1,4 @@
-package com.aerofs.lib;
+package com.aerofs.lib.acl;
 
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.proto.Common.PBRole;

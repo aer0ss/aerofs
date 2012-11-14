@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

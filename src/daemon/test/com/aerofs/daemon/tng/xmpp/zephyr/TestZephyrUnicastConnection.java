@@ -79,7 +79,7 @@ public class TestZephyrUnicastConnection extends AbstractTest
         pipeline = new StrictChannelPipeline();
         executor = new ImmediateInlineExecutor();
 
-        // Installed to catch System.exit() for Util.fatal()
+        // Installed to catch SystemUtil.exit() for Util.fatal()
         System.setSecurityManager(new NoExitSecurityManager());
     }
 

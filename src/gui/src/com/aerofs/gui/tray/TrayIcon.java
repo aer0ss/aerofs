@@ -1,6 +1,8 @@
 package com.aerofs.gui.tray;
 
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
@@ -37,7 +39,7 @@ public class TrayIcon
         _st = st;
         Tray tray = GUI.get().disp().getSystemTray();
         if (tray == null) {
-            Util.fatal("System tray not found");
+            SystemUtil.fatal("SystemUtil tray not found");
         }
 
         _ti = new TrayItem(tray, SWT.NONE);
@@ -110,7 +112,7 @@ public class TrayIcon
             public void run()
             {
                 while (!_done) {
-                    Util.sleepUninterruptable(L.get().trayIconAnimationFrameInterval());
+                    ThreadUtil.sleepUninterruptable(L.get().trayIconAnimationFrameInterval());
 
                     GUI.get().safeExec(_ti, new Runnable() {
                         @Override

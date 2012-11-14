@@ -3,6 +3,8 @@ package com.aerofs.lib.aws.common;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
@@ -46,13 +48,13 @@ public class AWSRetry
                 try {
                     long delay = retry.delayMillisBeforeRetry(e);
                     l.warn("retry in " + delay + ": " + e);
-                    Util.sleepUninterruptable(delay);
+                    ThreadUtil.sleepUninterruptable(delay);
                 } catch (AmazonServiceException e2) {
                     l.warn(e2);
                     throw new IOException(e2);
                 }
             } catch (AmazonClientException e) {
-                Util.fatal(e);
+                SystemUtil.fatal(e);
             } catch (IOException e) {
                 l.warn(e);
                 throw e;

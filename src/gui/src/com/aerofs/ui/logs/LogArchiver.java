@@ -20,8 +20,8 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
-import static com.aerofs.lib.Util.sleepUninterruptable;
-import static com.aerofs.lib.Util.startDaemonThread;
+import static com.aerofs.lib.ThreadUtil.sleepUninterruptable;
+import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.ui.UIParam.DM_LOG_ARCHIVE_INTERVAL;
 import static com.aerofs.ui.UIParam.DM_LOG_ARCHIVE_STARTUP_DELAY;
 

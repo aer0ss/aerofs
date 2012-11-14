@@ -1,7 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.C;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;

@@ -11,6 +11,8 @@ import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -24,7 +26,6 @@ import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.Role;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
@@ -240,7 +241,7 @@ public class GetComponentCall
                     msg.pb().getGetComCall().getPrefixLength(),
                     new Version(msg.pb().getGetComCall().getPrefixVersion()));
         } else {
-            Util.fatal("unsupported CID: " + k.cid());
+            SystemUtil.fatal("unsupported CID: " + k.cid());
         }
     }
 

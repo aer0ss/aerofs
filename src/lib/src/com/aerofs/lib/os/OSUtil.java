@@ -4,11 +4,11 @@ import java.io.IOException;
 
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.sv.client.SVClient;
 
-public class OSUtil
+public abstract class OSUtil
 {
     public static enum OSFamily {
         WINDOWS,
@@ -58,10 +58,10 @@ public class OSUtil
                 // bitness.  /bin/ls may be a symlink to /usr/bin/ls, see
                 // http://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge
                 String path = "/bin/ls";
-                int result = Util.execForegroundNoLogging(commandOutput, "file", "-L", path);
+                int result = SystemUtil.execForegroundNoLogging(commandOutput, "file", "-L", path);
                 if (result != 0) {
-                    Util.fatal("arch detect, error code " + result
-                            + ": could not read '" + path + "'");
+                    SystemUtil.fatal(
+                            "arch detect, error code " + result + ": could not read '" + path + "'");
                 }
 
                 if (commandOutput.get().contains("64")) arch = OSArch.X86_64;
@@ -79,6 +79,11 @@ public class OSUtil
             _os = null;
             _arch = null;
         }
+    }
+
+    private OSUtil()
+    {
+        // private to enforce uninstantiability
     }
 
     // return null if the system is not supported

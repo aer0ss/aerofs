@@ -15,8 +15,13 @@ import com.aerofs.sv.client.SVClient;
 import java.io.File;
 import java.io.IOException;
 
-public class RootAnchorUtil
+public abstract class RootAnchorUtil
 {
+    private RootAnchorUtil()
+    {
+        // private to enforce uninstantiability
+    }
+
     /**
      * Test if a given anchor root is valid. Use the format of 'e.getMessage() + ". More message."'
      * to display the exception thrown by this method.

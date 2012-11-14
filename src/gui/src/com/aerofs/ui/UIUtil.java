@@ -264,10 +264,10 @@ public class UIUtil
 
                 if (OSUtil.isOSX()) {
                     // Launch AeroFS on startup
-                    Util.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",
+                    SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",
                             AppRoot.abs().replace("Contents/Resources/Java", ""));
 
-                    Util.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "add",
+                    SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "add",
                             AppRoot.abs().replace("Contents/Resources/Java", ""));
                 }
 

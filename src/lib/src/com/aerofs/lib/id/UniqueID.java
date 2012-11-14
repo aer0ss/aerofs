@@ -3,6 +3,7 @@ package com.aerofs.lib.id;
 import java.util.Arrays;
 import java.util.UUID;
 
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.IBFKey;
 import com.aerofs.lib.ex.ExFormatError;
@@ -114,7 +115,7 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
         try {
             return hexDecode(str);
         } catch (ExFormatError e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
             return null;
         }
     }

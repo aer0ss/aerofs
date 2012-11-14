@@ -422,7 +422,7 @@ public class ReceiveAndApplyUpdate
             return resolveNameConflict_(did, soid, oidParent, meta, wasPresent, metaDiff, t,
                     noNewVersion, vRemote, soidMsg, requested, cr);
         } catch (ExNotDir e) {
-            Util.fatal(e);
+            SystemUtil.fatal(e);
         }
 
         return false;

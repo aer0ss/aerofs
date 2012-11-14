@@ -7,6 +7,7 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.C;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
@@ -69,7 +70,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
                             .setType(PBTransportDiagnosis.Type.FLOOD_DISCARD))
                     .build().writeDelimitedTo(os);
             } catch (IOException e) {
-                Util.fatal(e);
+                SystemUtil.fatal(e);
             }
 
             byte[] padding = new byte[DaemonParam.TRANSPORT_FLOOD_MESSAGE_SIZE -
@@ -94,7 +95,7 @@ public class HdTransportFlood extends AbstractHdIMC<EOTransportFlood>
                                     .setSeq(seq)))
                     .build().writeDelimitedTo(os);
             } catch (IOException e) {
-                Util.fatal(e);
+                SystemUtil.fatal(e);
             }
 
             return new byte[][] { os.toByteArray(), _bssDiscard[1] };

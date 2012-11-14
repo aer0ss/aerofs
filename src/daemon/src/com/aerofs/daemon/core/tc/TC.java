@@ -11,6 +11,8 @@ import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -203,7 +205,7 @@ public class TC implements IDumpStatMisc
                             _tm.assertNoOngoingTransaction_();
                         } catch (Throwable e) {
                             // fail fast
-                            throw Util.fatal(e);
+                            throw SystemUtil.fatal(e);
                         }
                     }
 
@@ -348,7 +350,7 @@ public class TC implements IDumpStatMisc
             try {
                 ret = tcb._cv.await(timeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                throw Util.fatal(e);
+                throw SystemUtil.fatal(e);
             }
         }
 
@@ -437,7 +439,7 @@ public class TC implements IDumpStatMisc
     {
         TCB tcb = tk.pseudoPause_("sleep: " + reason);
         try {
-            Util.sleepUninterruptable(timeout);
+            ThreadUtil.sleepUninterruptable(timeout);
         } finally {
             tcb.pseudoResumed_();
         }

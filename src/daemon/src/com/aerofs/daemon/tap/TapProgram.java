@@ -7,6 +7,7 @@ package com.aerofs.daemon.tap;
 import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
 import com.aerofs.lib.C;
 import com.aerofs.lib.IProgram;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FutureUtil;
 import com.aerofs.proto.Tap;
@@ -112,7 +113,7 @@ public class TapProgram implements IProgram
                 @Override
                 public void onFailure(Throwable throwable)
                 {
-                    Util.fatal(throwable);
+                    SystemUtil.fatal(throwable);
                 }
             });
         }

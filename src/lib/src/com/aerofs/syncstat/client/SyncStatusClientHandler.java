@@ -8,7 +8,7 @@ import java.net.URL;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.lib.servlet.AbstractServletClientHandler;
+import com.aerofs.lib.AbstractServletClientHandler;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.SyncStatus.SyncStatusServiceStub.SyncStatusServiceStubCallbacks;
 

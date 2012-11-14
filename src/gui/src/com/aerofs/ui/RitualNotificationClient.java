@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
+
+import com.aerofs.lib.ThreadUtil;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -41,7 +43,8 @@ public class RitualNotificationClient
         assert !_stopping;
         _started = true;
 
-        Util.startDaemonThread("rnc", new Runnable() {
+        ThreadUtil.startDaemonThread("rnc", new Runnable()
+        {
             @Override
             public void run()
             {
@@ -55,7 +58,7 @@ public class RitualNotificationClient
                     if (_stopping) break;
 
                     l.info("reconnect in " + UIParam.DAEMON_CONNECTION_RETRY_INTERVAL + " ms");
-                    Util.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
+                    ThreadUtil.sleepUninterruptable(UIParam.DAEMON_CONNECTION_RETRY_INTERVAL);
                 }
             }
         });

@@ -4,7 +4,7 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.Util;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.Exceptions;
@@ -96,7 +96,7 @@ public class ControllerService implements IControllerService
             throws Exception
     {
         final UncancellableFuture<Common.Void> reply = UncancellableFuture.create();
-        Util.startDaemonThread("launcher-worker", new Runnable()
+        ThreadUtil.startDaemonThread("launcher-worker", new Runnable()
         {
             @Override
             public void run()

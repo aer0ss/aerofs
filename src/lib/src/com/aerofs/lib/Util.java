@@ -1,6 +1,5 @@
 package com.aerofs.lib;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -30,8 +29,6 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
@@ -60,7 +57,6 @@ import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
 import com.google.protobuf.GeneratedMessageLite;
@@ -76,13 +72,6 @@ public abstract class Util
     private static final String PROP_RTROOT = "aerofs.rtroot";
     private static final String PROP_APP = "aerofs.app";
     private static final String LOG4J_PROPERTIES_FILE = "aerofs-log4j.properties";
-    private static final int INITIAL_ENUMERATION_ARRAY_SIZE = 30;
-
-    static
-    {
-        //noinspection ConstantConditions
-        assert INITIAL_ENUMERATION_ARRAY_SIZE > 0;
-    }
 
     private static final Logger l = l(Util.class);
 
@@ -91,51 +80,11 @@ public abstract class Util
         // private to enforce uninstantiability for this class
     }
 
-    /**
-     * Send a defect report and crash the daemon. Some callers need to throw the returned value
-     * only to suppress compiler warnings, whereas other callers require this method to declare
-     * "throws Error" for the same lame purpose.
-     */
-    public static Error fatal(final Throwable e) throws Error
-    {
-        l.fatal("FATAL:" + Util.e(e));
-        SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
-        ExitCode.FATAL_ERROR.exit();
-        throw new Error(e);
-    }
-
-    /**
-     * See {@link Util#fatal(Throwable)}
-     */
-    public static Error fatal(String str) throws Error
-    {
-        return fatal(new Exception(str));
-    }
-
-    /**
-     * Call fatal() if {@code e} is an unchecked exception. Alternatively, we can throw the same
-     * {@code e} back to the caller. But unfortunately, some frameworks, noticeably netty, will not
-     * crash the process.
-     *
-     * NOTICE: you should call this method whenever you do "catch (Exception e)" or
-     * "catch (Throwable e)".
-     */
-    public static void fatalOnUncheckedException(Throwable e) throws Error
-    {
-        if (e instanceof RuntimeException || e instanceof Error) fatal(e);
-    }
-
-    public static <T> void addListener_(Set<T> ls, T l)
-    {
-        if (Param.STRICT_LISTENERS) Util.verify(ls.add(l));
-        else ls.add(l);
-    }
-
-    public static <T> void removeListener_(Set<T> ls, T l)
-    {
-        if (Param.STRICT_LISTENERS) Util.verify(ls.remove(l));
-        else ls.remove(l);
-    }
+    //-------------------------------------------------------------------------
+    //
+    // END LOGGING UTILITIES (FIXME AG: MOVE INTO LOGUTIL)
+    //
+    //-------------------------------------------------------------------------
 
     /**
      * @param app the log file will be named "<app>.log"
@@ -217,34 +166,6 @@ public abstract class Util
         }
     }
 
-    public static void sleepUninterruptable(long ms)
-    {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-            fatal(e);
-        }
-    }
-
-    public static void waitUninterruptable(Object obj, long ms)
-    {
-        try {
-            obj.wait(ms);
-        } catch (InterruptedException e) {
-            fatal(e);
-        }
-    }
-
-    public static void waitUninterruptable(Object obj)
-    {
-        waitUninterruptable(obj, 0);
-    }
-
-    public static String q(Object o)
-    {
-        return "\"" + o + "\"";
-    }
-
     // these methods may have high overhead and is only suitable for occasional
     // uses. cache the objects for frequent logging
     //
@@ -256,55 +177,6 @@ public abstract class Util
     public static Logger l(Class<?> c)
     {
         return LogUtil.getLogger(c);
-    }
-
-    public static Thread startDaemonThread(String name, Runnable run)
-    {
-        if (l.isDebugEnabled()) l.debug("startDaemonThread: " + name);
-        Thread thd = new Thread(run);
-        thd.setName(name);
-        thd.setDaemon(true);
-        thd.start();
-        return thd;
-    }
-
-    private static ThreadGroup getRootThreadGroup()
-    {
-        ThreadGroup group = Thread.currentThread().getThreadGroup();
-        while(group.getParent() != null) {
-            group = group.getParent();
-        }
-
-        return group;
-    }
-
-    private static Thread[] getAllThreads()
-    {
-        return getAllChildThreads(getRootThreadGroup());
-    }
-
-    private static Thread[] getAllChildThreads(ThreadGroup group)
-    {
-        int enumeratedGroups;
-        int arraySize = INITIAL_ENUMERATION_ARRAY_SIZE;
-        Thread[] threads;
-        do {
-
-            //
-            // we have to do this because of the contract provided by ThreadGroup.enumerate
-            // basically, we can't know the number of threads a-priori so we can't appropriately
-            // size the array. The best we can do is pick a number and use it. If the array is too
-            // small ThreadGroup.enumerate will silently drop the remaining threads. The only way
-            // to detect this is to check if the number of enumerated threads is _exactly_
-            // equal to the size of the array
-            //
-
-            arraySize = arraySize * 2;
-            threads = new Thread[arraySize];
-            enumeratedGroups = group.enumerate(threads, true);
-        } while (enumeratedGroups == arraySize);
-
-        return threads;
     }
 
     private static String convertStackTraceToString(StackTraceElement[] stackTrace)
@@ -344,29 +216,61 @@ public abstract class Util
     public static void logAllThreadStackTraces()
     {
         l().warn("==== BEGIN STACKS ====\n" +
-                getAllThreadStackTraces(getAllThreads()) +
+                getAllThreadStackTraces(ThreadUtil.getAllThreads()) +
                 "\n==== END STACKS ====");
     }
 
-    public static ThreadFactory threadGroupFactory(ThreadGroup group)
-    {
-        return threadGroupFactory(group, Integer.MIN_VALUE);
+    private static Set<Class<?>> s_excludes = new HashSet<Class<?>>();
+    static {
+        s_excludes.add(ExTimeout.class);
+        s_excludes.add(ExAborted.class);
+        s_excludes.add(ExNoAvailDevice.class);
     }
 
-    public static ThreadFactory threadGroupFactory(final ThreadGroup group, final int priority)
+    private static Class<?>[] s_excludeBases = new Class<?>[] {
+        SocketException.class,
+    };
+
+    static boolean shouldPrintStackTrace(Throwable e, Class<?> ...excludes)
     {
-        ThreadFactory factory = new ThreadFactory() {
-            private final AtomicInteger threadNumber = new AtomicInteger(1);
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(group, r,
-                                      group.getName() + '-' + threadNumber.getAndIncrement(),
-                                      0);
-                if (priority != Integer.MIN_VALUE) t.setPriority(priority);
-                return t;
-            }
-        };
-        return factory;
+        for (Class<?> exclude : excludes) {
+            if (exclude.isInstance(e)) return false;
+        }
+        if (s_excludes.contains(e.getClass())) return false;
+        for (Class<?> excludeBase : s_excludeBases) {
+            if (excludeBase.isInstance(e)) return false;
+        }
+        return true;
+    }
+
+    // avoid stack printing for non-error native exceptions
+    // this method is for logging only. Use CLIUtil.e2msg() for UI messages
+    public static String e(Throwable e, Class<?> ... excludes)
+    {
+        if (shouldPrintStackTrace(e, excludes)) {
+            return stackTrace2string(e);
+        } else {
+            return e.getClass().getName() + ": " + e.getMessage();
+        }
+    }
+
+    public static String stackTrace2string(Throwable e)
+    {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw, false);
+        AbstractExWirable.printStackTrace(e, pw);
+        return sw.toString();
+    }
+
+    //-------------------------------------------------------------------------
+    //
+    // END LOGGING UTILITIES (FIXME AG: MOVE INTO LOGUTIL)
+    //
+    //-------------------------------------------------------------------------
+
+    public static String quote(Object o)
+    {
+        return "\"" + o + "\"";
     }
 
     public static <T extends Comparable<T>> int compare(T[] a, T[] b)
@@ -420,7 +324,7 @@ public abstract class Util
 
     public static void unimplemented(String what)
     {
-        fatal("to be implemented: " + what);
+        SystemUtil.fatal("to be implemented: " + what);
     }
 
     public static String format(long l)
@@ -576,50 +480,6 @@ public abstract class Util
         for (T t : src) dst.add(t);
     }
 
-    private static Set<Class<?>> s_excludes = new HashSet<Class<?>>();
-    static {
-        s_excludes.add(ExTimeout.class);
-        s_excludes.add(ExAborted.class);
-        s_excludes.add(ExNoAvailDevice.class);
-    }
-
-    private static Class<?>[] s_excludeBases = new Class<?>[] {
-        SocketException.class,
-    };
-
-    static boolean shouldPrintStackTrace(Throwable e, Class<?> ...excludes)
-    {
-        for (Class<?> exclude : excludes) {
-            if (exclude.isInstance(e)) return false;
-        }
-        if (s_excludes.contains(e.getClass())) return false;
-        for (Class<?> excludeBase : s_excludeBases) {
-            if (excludeBase.isInstance(e)) return false;
-        }
-        return true;
-    }
-
-    // avoid stack printing for non-error native exceptions
-    // this method is for logging only. Use CLIUtil.e2msg() for UI messages
-    public static String e(Throwable e, Class<?> ... excludes)
-    {
-        if (shouldPrintStackTrace(e, excludes)) {
-            return stackTrace2string(e);
-        } else {
-            return e.getClass().getName() + ": " + e.getMessage();
-        }
-    }
-
-
-
-    public static String stackTrace2string(Throwable e)
-    {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw, false);
-        AbstractExWirable.printStackTrace(e, pw);
-        return sw.toString();
-    }
-
     public static byte[] toByteArray(long l)
     {
         return ByteBuffer.allocate(8).putLong(l).array();
@@ -708,67 +568,6 @@ public abstract class Util
         return true;
     }
 
-    public static int execForeground(String ...cmds) throws IOException
-    {
-        return execForeground(null, cmds);
-    }
-
-    public static int execForegroundNoLogging(OutArg<String> output, String ... cmds)
-            throws IOException
-    {
-        return execForeground(false, output, cmds);
-    }
-
-    public static int execForeground(OutArg<String> output, String ... cmds) throws IOException
-    {
-        return execForeground(true, output, cmds);
-    }
-
-    /**
-     * @return the process's exit code
-     */
-    private static int execForeground(boolean logging, OutArg<String> output, String ... cmds)
-            throws IOException
-    {
-        ProcessBuilder pb = new ProcessBuilder(cmds);
-        if (logging) l.debug("execForeground: " + pb.command());
-        pb.redirectErrorStream(true);
-
-        Process proc = pb.start();
-
-        InputStream is = new BufferedInputStream(proc.getInputStream());
-        StringBuilder sb = output == null ? null : new StringBuilder();
-        byte[] bs = new byte[1024];
-        while (true) {
-            int read = is.read(bs);
-            if (read == -1) break;
-            String temp = new String(bs, 0, read);
-            if (output != null) sb.append(temp);
-            if (logging) l.debug("command '" + cmds[0] + "' output:\n" + temp);
-        }
-
-        if (output != null) output.set(sb.toString());
-
-        try {
-            return proc.waitFor();
-        } catch (InterruptedException e) {
-            Util.fatal(e);
-            return 0;
-        }
-    }
-
-    public static Process execBackground(String ... cmds) throws IOException
-    {
-        ProcessBuilder pb = new ProcessBuilder(cmds);
-        l.debug("execBackground: " + pb.command());
-
-        Process proc = pb.start();
-        proc.getInputStream().close();
-        proc.getOutputStream().close();
-        proc.getErrorStream().close();
-        return proc;
-    }
-
     public static void checkPB(boolean has, Class<?> c) throws ExProtocolError
     {
         if (!has) throw new ExProtocolError(c);
@@ -846,24 +645,6 @@ public abstract class Util
         }
 
         return sb.toString();
-    }
-
-    public static void setDefaultUncaughtExceptionHandler()
-    {
-        Thread.setDefaultUncaughtExceptionHandler(
-                new Thread.UncaughtExceptionHandler() {
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e)
-                    {
-                        SVClient.logSendDefectSyncIgnoreErrors(true,
-                                "uncaught exception from " + t.getName() +
-                                        ". program exits now.", e);
-                        // must abort the process as the abnormal thread can
-                        // no longer run properly
-                        fatal(e);
-                    }
-                }
-            );
     }
 
     private static final String BRANCH_STR = "-ConflictBranch-";
@@ -1092,7 +873,7 @@ public abstract class Util
         try {
             return URLEncoder.encode(str, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw fatal(e);
+            throw SystemUtil.fatal(e);
         }
     }
 
@@ -1103,7 +884,7 @@ public abstract class Util
         try {
             pb.writeDelimitedTo(os);
         } catch (IOException e) {
-            fatal(e);
+            SystemUtil.fatal(e);
         }
         return os;
     }
@@ -1111,12 +892,6 @@ public abstract class Util
     public static Category l()
     {
         return l;
-    }
-
-    public static void halt()
-    {
-        Integer i = new Integer(0);
-        synchronized (i) { Util.waitUninterruptable(i); }
     }
 
     /**
@@ -1135,7 +910,8 @@ public abstract class Util
     public static void exponentialRetryNewThread(final String name, final Callable<Void> call,
             final Class<?> ... excludes)
     {
-        startDaemonThread("expo.retry." + name, new Runnable() {
+        ThreadUtil.startDaemonThread("expo.retry." + name, new Runnable()
+        {
             @Override
             public void run()
             {
@@ -1161,7 +937,7 @@ public abstract class Util
 
             } catch (Exception e) {
                 l.warn(name + ". expo wait " + interval + ": " + e(e, excludes));
-                sleepUninterruptable(interval);
+                ThreadUtil.sleepUninterruptable(interval);
                 interval = Math.min(interval * 2, Param.EXP_RETRY_MAX_DEFFAULT);
             }
         }

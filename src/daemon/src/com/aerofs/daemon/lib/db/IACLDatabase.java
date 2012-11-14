@@ -1,7 +1,7 @@
 package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Role;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
 

@@ -22,7 +22,7 @@ public interface IOSUtil
 
     String getDefaultRTRoot();
 
-    // we don't use System.loadLibrary() directly as it doesn't work well on Windows
+    // we don't use SystemUtil.loadLibrary() directly as it doesn't work well on Windows
     void loadLibrary(String library);
 
     /**
