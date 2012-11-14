@@ -44,6 +44,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.spsv.SVClient;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -441,4 +442,10 @@ public class RitualService implements IRitualService
         return createVoidReply();
     }
 
+    @Override
+    public ListenableFuture<Void> testLogSendDefect() throws Exception
+    {
+        SVClient.logSendDefectSync(false, "testing sv defect reporting", null, null);
+        return createVoidReply();
+    }
 }

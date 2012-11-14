@@ -120,6 +120,9 @@ service RitualService {
 
     // Start the linker. No-op if the linker is running.
     rpc TestResumeLinker(Void) returns(Void);
+
+    // Send a defect log to SV
+    rpc TestLogSendDefect(Void) returns(Void);
 }
 
 message DumpStatsCall {

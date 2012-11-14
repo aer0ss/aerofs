@@ -1,5 +1,6 @@
 # Runs some basic tests to ensure core AeroFS functionality is working
 
+:include ../../../../syncdet_test/servers/test_servers_group.scn
 :include ../../../../syncdet_test/core/basic/test_basic_group.scn
 
 # The collection of SyncDET tests to run
@@ -9,6 +10,7 @@
 #
 :scn,nofail tests
     :serial
+        servers_group()
         basic_group()
         core.sharing.acl.should_propagate_shared_folder
 
