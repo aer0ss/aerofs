@@ -4,6 +4,7 @@ import java.sql.SQLException;
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -57,6 +58,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock IStores stores;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock AggregateSyncStatus assc;
+    @Mock IgnoreList il;
     @Mock StoreDeletionNotifier sdn;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
@@ -84,7 +86,7 @@ public class TestLocalSyncStatus extends AbstractTest
         when(tm.begin_()).thenReturn(t);
 
         DirectoryService r = new DirectoryService();
-        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, sdn);
+        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, il, sdn);
         lsync = new LocalSyncStatus(r, stores, ssdb, sidx2sid, sidx2dbm, assc, sdn);
     }
 
