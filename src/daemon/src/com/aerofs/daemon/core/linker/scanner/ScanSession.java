@@ -233,7 +233,9 @@ class ScanSession
                 * deletion of the logical object corresponding to A. This is because the
                 * logical object is already in the deletion buffer when A is being scanned.
                 */
-                l.warn("root " + PathObfuscator.obfuscate(pcRoot._absPath) + " no longer a dir. skip");
+                l.warn("root " + PathObfuscator.obfuscate(pcRoot._absPath)
+                        + " no longer a dir. skip");
+                iter.remove();
             }
         }
     }
@@ -272,6 +274,7 @@ class ScanSession
         for (String nameChild : nameChildren) {
             PathCombo pcChild = pcParent.append(nameChild);
             MightCreate.Result res = _f._mc.mightCreate_(pcChild, _f._delBuffer, t);
+
             if (res == NEW_OR_REPLACED_FOLDER || (_recursive && res == EXISTING_FOLDER)) {
                 // recurse down if it's a newly created folder, or it's an existing folder and the
                 // recursive bit is set
