@@ -110,6 +110,22 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                     l.warn("Path list updated by transaction:");
                     for (Path p : set) {
                         l.warn("  " + p);
+
+                        // aggressive consistency checking
+                        // need to be done at the end of the transaction to avoid false positives
+                        // due to two step updates (e.g move is delete+create)
+                        // TODO: disable once we're confident all bugs have been squashed
+                        // (this completely destroys the performance benefits of maintanining
+                        // aggregated status as it essentially recomputes it...)
+                        try {
+                            SOID soid = _ds.resolveNullable_(p);
+                            if (soid == null) continue;
+                            OA oa = _ds.getOA_(soid);
+                            if (!oa.isDir()) return;
+                            checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
+                        } catch (SQLException e) {
+                            // bury exception
+                        }
                     }
                     for (IListener listener : _listeners) {
                         listener.syncStatusChanged_(set);
@@ -124,7 +140,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
      * Local consistency-check of aggregate sync status
      *
      * Compares the result of upward incremental update to downward aggregation.
-     *
      */
     private void checkAggregateConsistency(SOID soid, CounterVector expected) throws SQLException
     {
