@@ -7,8 +7,6 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.store.Stores;
-import com.aerofs.daemon.core.syncstatus.SyncStatusConnection;
-import com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
@@ -78,7 +76,6 @@ public class CoreModule extends AbstractModule
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(ISyncStatusDatabase.class).to(SyncStatusDatabase.class);
-        bind(SyncStatusConnection.ISignInHandler.class).to(SyncStatusSynchronizer.class);
     }
 
     @Provides

@@ -19,13 +19,13 @@ import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
+import com.aerofs.daemon.core.syncstatus.SyncStatusConnection.ExSignIn;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
@@ -83,7 +83,7 @@ import com.google.inject.Inject;
  *  transmitted to the sync status server and pulling the server for new information (to account
  *  for dropped verkher notifications).
  */
-public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandler
+public class SyncStatusSynchronizer
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
@@ -133,8 +133,6 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         // TODO (MP) only enable for a subset (12/16=3/4) of users for now.
         byte[] hashedLocalUser = SecUtil.hash(localUser.get().getBytes());
         _enable = (hashedLocalUser[0] & 0xf0) <= 11 || localUser.get().endsWith("@aerofs.com");
-
-        _ssc.setSignInHandler(this);
 
         // only schedule new scans once the startup sequence is over
         al.addListener_(new IActivityLogListener()
@@ -253,7 +251,19 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         Map<SIndex, Set<OID>> batch = getBootstrapBatch_();
         while (!batch.isEmpty()) {
             // push version hashes to server
-            pushVersionHashBatch_(batch, 0L, 0L);
+            try {
+                pushVersionHashBatch_(batch, 0L, 0L);
+            } catch (ExSignIn e) {
+                // TODO: if bootstrap table is repopulated due to rollback + truncated activity log
+                // we'll need to restart the bootstrap from scratch instead of resending the current
+                // batch
+                // NOTE: no need to explicitely schedule an activity log scan as bootstrap only
+                // happen in th startup sequence which always ends by an activity log scan
+                onSignIn_(e._epoch);
+
+                // immediately retry making the call now that we're signed-in
+                continue;
+            }
 
             // remove SOIDs whose hashes were pushed from the bootstrap table
             Trans t = _tm.begin_();
@@ -339,8 +349,18 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
             long localEpoch = _lsync.getPullEpoch_();
             l.debug("pull " + localEpoch);
 
-            // NOTE: release the core lock during the RPC call
-            GetSyncStatusReply reply = _ssc.getSyncStatus_(localEpoch);
+            GetSyncStatusReply reply;
+            try {
+                // NOTE: release the core lock during the RPC call
+                reply = _ssc.getSyncStatus_(localEpoch);
+            } catch (ExSignIn e) {
+                if (onSignIn_(e._epoch)) {
+                    // need to schedule a new scan to resend vh after epoch rollback
+                    scanActivityLog_();
+                }
+                // immediately retry making the call now that we're signed-in
+                continue;
+            }
 
             if (reply == null) return;
 
@@ -510,27 +530,44 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
         // need an extra check to avoid concurrent scans.
         if (_scanInProgress) return;
         _scanInProgress = true;
-        _abortScan = false;
 
         try {
-            // batch DB reads
-            long lastIndex = _lsync.getPushEpoch_();
+            long lastIndex;
+            long nextIndex = _lsync.getPushEpoch_();
             Map<SIndex, Set<OID>> soids = Maps.newHashMap();
-            long nextIndex = getModifiedObjectBatch_(lastIndex, soids);
-            while (!soids.isEmpty()) {
-                // push version hashes to server
-                pushVersionHashBatch_(soids, lastIndex, nextIndex);
+            while (true) {
+                // batch DB reads
+                lastIndex = nextIndex;
+                nextIndex = getModifiedObjectBatch_(lastIndex, soids);
 
-                // the scan may have been aborted while we released the core lock...
-                // even though the version hashes may have been successfully sent to the server
-                // we must not set the push epoch as it was rolled back by the sign-in handler
-                if (_abortScan) throw new ExAborted("Scan aborted");
+                // reached end of activity log
+                if (soids.isEmpty()) break;
+
+                try {
+                    // push version hashes to server
+                    pushVersionHashBatch_(soids, lastIndex, nextIndex);
+
+                    // another RPC got an ExSignIn exception while we were waiting and the push
+                    // epoch was rolled back, we need to restart from the rollback point
+                    if (_abortScan) {
+                        _abortScan = false;
+                        nextIndex = _lsync.getPushEpoch_();
+                        continue;
+                    }
+                } catch (ExSignIn e) {
+                    // restart scan in case of push epoch rollback
+                    if (onSignIn_(e._epoch)) {
+                        _abortScan = false;
+                        nextIndex = _lsync.getPushEpoch_();
+                    } else {
+                        nextIndex = lastIndex;
+                    }
+                    // immediately retry making the call now that we're signed-in
+                    continue;
+                }
 
                 // update push epoch
                 setPushEpoch_(nextIndex);
-
-                // batch DB reads
-                nextIndex = getModifiedObjectBatch_(nextIndex, soids);
             }
         } finally {
             _scanInProgress = false;
@@ -653,12 +690,29 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
 
     /**
      * Rollback push epoch in case of data loss on the server
+     *
+     * @return whether the push epoch was rolled back
      */
-    @Override
-    public void onSignIn_(long clientEpoch)
+    public boolean onSignIn_(long clientEpoch)
     {
         l.debug("connected: " + clientEpoch);
         try {
+            /**
+             * Always reset the pull epoch on sign-in to prevent server-side data loss from causing
+             * client side data loss.
+             *
+             * Resetting the epoch ensures that the first getSyncStatus will fetch the last epoch
+             * from the server which is crucial to avoid accidentally discarding notifications after
+             * server-side data loss.
+             */
+            Trans t = _tm.begin_();
+            try {
+                _lsync.setPullEpoch_(0L, t);
+                t.commit_();
+            } finally {
+                t.end_();
+            }
+
             long pushEpoch = _lsync.getPushEpoch_();
             if (clientEpoch < pushEpoch) {
                 l.debug("rollback from " + pushEpoch);
@@ -668,13 +722,12 @@ public class SyncStatusSynchronizer implements SyncStatusConnection.ISignInHandl
                 // TODO: repopulate bootstrap if push epoch cannot be rolled back far enough
                 // NB: only a concern in case of truncated activity log, currently not implemented
 
-                if (_scanInProgress) {
-                    l.debug("aborting in-progress scan");
-                    // abort ongoing activity log scan (exp retry will kick in and on the next
-                    // connection the push epoch will match the server epoch)
-                    _abortScan = true;
-                }
+                if (_scanInProgress) _abortScan = true;
+
+                return true;
             }
+
+            return false;
         } catch (SQLException e) {
             throw SystemUtil.fatal(e);
         }
