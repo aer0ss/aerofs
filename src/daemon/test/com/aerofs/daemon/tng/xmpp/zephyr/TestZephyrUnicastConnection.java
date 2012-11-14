@@ -423,7 +423,7 @@ public class TestZephyrUnicastConnection extends AbstractTest
         assertThrows(recvFuture, IOException.class, "Test fail");
     }
 
-    @Test
+    @Ignore @Test
     public void shouldFailOnDoubleBind() throws Exception
     {
         final OutArg<Channel> outChannel = new OutArg<Channel>();
