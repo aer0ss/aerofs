@@ -20,7 +20,7 @@ DTLSEngine::~DTLSEngine()
 {
 	//Do not need to free _bio_read, _bio_write, SSL_free should take care of it for us
 
-	FINFO (" _ssl = " << _ssl);
+	FDEBUG (" _ssl = " << _ssl);
 	SSL_shutdown(_ssl);
 	if (_ssl) SSL_free(_ssl);
 }
@@ -47,9 +47,9 @@ DTLSEngine::~DTLSEngine()
 
 DTLSEngine::DTLS_RETCODE DTLSEngine::init(bool isclient, SSLCtx *sslctx)
 {
-	FINFO ( "(isclient = " << isclient << ")" );
+	FDEBUG ( "(isclient = " << isclient << ")" );
 	//initialize OpenSSL
-	FINFO ( " initialize OpenSSL" );
+	FDEBUG ( " initialize OpenSSL" );
 	OpenSSL_add_ssl_algorithms();
 	SSL_load_error_strings();
 
@@ -101,7 +101,7 @@ DTLSEngine::DTLS_RETCODE DTLSEngine::init(bool isclient, SSLCtx *sslctx)
 
 void DTLSEngine::seed_prng(int size)
 {
-	FINFO ( "(size = " << size << ")" );
+	FDEBUG ( "(size = " << size << ")" );
 
 #ifdef _WIN32
 	BYTE *buf = new BYTE[size]; //(BYTE*)malloc(size * sizeof(BYTE));
@@ -132,7 +132,7 @@ void DTLSEngine::seed_prng(int size)
 
 void DTLSEngine::hshake_done()
 {
-    FINFO("");
+    FDEBUG("");
 
     _hshakeDone = true;
     SSL_set_info_callback(_ssl, 0);
@@ -154,27 +154,27 @@ void DTLSEngine::hshake_done()
 DTLSEngine::DTLS_RETCODE DTLSEngine::encrypt(const void * input, void * output,
         int inlen, int * outsize)
 {
-	FINFO ("(inlen = " << inlen << ", outsize = " << *outsize << ", _ssl = " << _ssl << ")");
+	FDEBUG ("(inlen = " << inlen << ", outsize = " << *outsize << ", _ssl = " << _ssl << ")");
 
 	DTLS_RETCODE ret = DTLS_OK;
 	int rc = 0;
 
 	//write the plaintext message to SSL
 	rc = SSL_write(_ssl, input, inlen);
-	FINFO ( " SSL_write rc = " << rc );
+	FDEBUG ( " SSL_write rc = " << rc );
 
 	if (-1 == rc) {
 		int errnum = SSL_get_error(_ssl, rc);
 		char errlog[256];
-		FINFO (" SSL_write returned " << ERR_error_string(ERR_get_error(), errlog));
+		FDEBUG (" SSL_write returned " << ERR_error_string(ERR_get_error(), errlog));
 
 		if (errnum == SSL_ERROR_WANT_READ) {
-			FINFO ( " errnum = SSL_ERROR_WANT_READ" );
+			FDEBUG ( " errnum = SSL_ERROR_WANT_READ" );
 			ret = DTLS_NEEDREAD; // need to re-try writing the data to SSL
 			read_from_ssl(output, outsize);
 
 		} else if (errnum == SSL_ERROR_WANT_WRITE) {
-			FINFO ( " errnum = SSL_ERROR_WANT_WRITE" );
+			FDEBUG ( " errnum = SSL_ERROR_WANT_WRITE" );
 			ret = DTLS_NEEDWRITE;
 			read_from_ssl(output, outsize);
 			//todo: ssl wants to write
@@ -192,7 +192,7 @@ DTLSEngine::DTLS_RETCODE DTLSEngine::encrypt(const void * input, void * output,
 DTLSEngine::DTLS_RETCODE DTLSEngine::decrypt(const void * input, void * output,
         int inlen, int * outsize)
 {
-	FINFO ( " ( inlen = " << inlen << ", outsize = " << *outsize << ", _ssl = "
+	FDEBUG ( " ( inlen = " << inlen << ", outsize = " << *outsize << ", _ssl = "
 	        << _ssl << ")" );
 
 	DTLS_RETCODE ret = DTLS_ERROR;
@@ -203,27 +203,27 @@ DTLSEngine::DTLS_RETCODE DTLSEngine::decrypt(const void * input, void * output,
 
 	//read the decrypted message from BIO
 	rc = SSL_read(_ssl, output, *outsize);
-	FINFO ( " SSL_read returned rc = " << rc );
+	FDEBUG ( " SSL_read returned rc = " << rc );
 
 	/* if the rc == -1, no actual bytes were written to the output buffer / outsize */
 	if (-1 == rc) {
 		int errnum = SSL_get_error(_ssl, rc);
 
 		if (errnum == SSL_ERROR_WANT_READ) {
-			FINFO ( "errnum = SSL_ERROR_WANT_READ" );
+			FDEBUG ( "errnum = SSL_ERROR_WANT_READ" );
 			ret = DTLS_NEEDREAD;
 			read_from_ssl(output, outsize);
 
 			/*if (*outsize <= 0) {
-				FINFO ( "SSL session needs to renegotiate -- call SSL_clear()" );
+				FDEBUG ( "SSL session needs to renegotiate -- call SSL_clear()" );
 				SSL_clear(_ssl);
-				FINFO ( "Retrying SSL_read" );
+				FDEBUG ( "Retrying SSL_read" );
 				*outsize = SSL_read(_ssl, output, *outsize);
-				FINFO ( "SSL_read returned outsize = " << *outsize );
+				FDEBUG ( "SSL_read returned outsize = " << *outsize );
 
 			}*/
 		} else if (errnum == SSL_ERROR_WANT_WRITE) {
-			FINFO ( "errnum = SSL_ERROR_WANT_WRITE" );
+			FDEBUG ( "errnum = SSL_ERROR_WANT_WRITE" );
 			ret = DTLS_NEEDWRITE;
 			read_from_ssl(output, outsize);
 		} else {
@@ -249,13 +249,13 @@ DTLSEngine::DTLS_RETCODE DTLSEngine::decrypt(const void * input, void * output,
  */
 void DTLSEngine::read_from_ssl(void *output, int *outsize)
 {
-	FINFO ("output buffer size = " << *outsize);
+	FDEBUG ("output buffer size = " << *outsize);
 
 	*outsize = BIO_read(_bio_write, output, *outsize);
 	if (*outsize <= 0) {
-		FINFO (" BIO_read returned " << *outsize);
+		FDEBUG (" BIO_read returned " << *outsize);
 	} else {
-		FINFO (" BIO_read returned buffer of size " << *outsize);
+		FDEBUG (" BIO_read returned buffer of size " << *outsize);
 	}
 }
 
@@ -263,7 +263,7 @@ void DTLSEngine::read_from_ssl(void *output, int *outsize)
 void DTLSEngine::ssl_msg_callback(int write_p, int version, int content_type,
         const void *buf, size_t len, SSL *ssl, void *arg)
 {
-	FINFO ( " obj " << ssl <<
+	FDEBUG ( " obj " << ssl <<
 			  " state: " << SSL_state_string_long(ssl)<<
 			  " in_hshake: " << ssl->in_handshake <<
 			  " recv(0)/sent(1)?" << write_p <<
@@ -284,25 +284,25 @@ void DTLSEngine::ssl_info_callback(const SSL* s, int __where, int ret)
 
 	if (__where & SSL_CB_LOOP)
 	{
-			FINFO ( str << SSL_state_string_long(s) );
+			FDEBUG ( str << SSL_state_string_long(s) );
 	}
 	else if (__where & SSL_CB_ALERT)
 	{
 			str = (__where & SSL_CB_READ) ? " read " : " write ";
-			FINFO ( " SSL3 alert" << str << SSL_alert_type_string_long(ret) << ": " << SSL_alert_desc_string_long(ret) );
+			FDEBUG ( " SSL3 alert" << str << SSL_alert_type_string_long(ret) << ": " << SSL_alert_desc_string_long(ret) );
 	}
 	else if (__where & SSL_CB_EXIT)
 	{
 		if (ret == 0)
 		{
-            FINFO( str << "failed in "<< SSL_state_string_long(s) );
+            FDEBUG( str << "failed in "<< SSL_state_string_long(s) );
 		}
 		else if (ret < 0)
 		{
-			FINFO( str << "error in " << SSL_state_string_long(s) );
+			FDEBUG( str << "error in " << SSL_state_string_long(s) );
 		}
 	} else {
-		FINFO ( str << SSL_state_string_long(s) );
+		FDEBUG ( str << SSL_state_string_long(s) );
 	}
 
 	DTLSEngine * engine = (DTLSEngine *) s->msg_callback_arg;

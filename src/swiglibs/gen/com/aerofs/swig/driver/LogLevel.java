@@ -9,6 +9,7 @@
 package com.aerofs.swig.driver;
 
 public final class LogLevel {
+  public final static LogLevel LDEBUG = new LogLevel("LDEBUG", DriverJNI.LDEBUG_get());
   public final static LogLevel LINFO = new LogLevel("LINFO");
   public final static LogLevel LWARN = new LogLevel("LWARN");
   public final static LogLevel LERROR = new LogLevel("LERROR");
@@ -47,7 +48,7 @@ public final class LogLevel {
     swigNext = this.swigValue+1;
   }
 
-  private static LogLevel[] swigValues = { LINFO, LWARN, LERROR };
+  private static LogLevel[] swigValues = { LDEBUG, LINFO, LWARN, LERROR };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

@@ -17,10 +17,10 @@ using namespace std;
 #include <windows.h>
 #endif
 
-enum LogLevel { LINFO, LWARN, LERROR };
+enum LogLevel { LDEBUG = 0, LINFO, LWARN, LERROR };
 
 #ifndef SWIG
-
+#define FDEBUG(x)   do { if (l.loglevel() <= LDEBUG) l.debug() << __FUNCTION__ << x << l; } while (0)
 #define FINFO(x)    do { if (l.loglevel() <= LINFO)  l.info()  << __FUNCTION__ << x << l; } while (0)
 #define FWARN(x)    do { if (l.loglevel() <= LWARN)  l.warn()  << __FUNCTION__ << x << l; } while (0)
 #define FERROR(x)   do { if (l.loglevel() <= LERROR) l.error() << __FUNCTION__ << x << l; } while (0)
@@ -45,7 +45,7 @@ private:
     tofstream _f;
     int _cnt;
     tstring _path;
-	LogLevel _loglevel;
+    LogLevel _loglevel;
 
 
 #ifdef _WIN32
@@ -259,6 +259,10 @@ public:
         return _f.good();
     }
 
+    tostream & debug()
+    {
+        return log() << "G ";
+    }
     tostream & error()
     {
         return log() << "R ";
