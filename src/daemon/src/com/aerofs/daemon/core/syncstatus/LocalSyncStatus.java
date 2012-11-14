@@ -185,7 +185,7 @@ public class LocalSyncStatus implements IStoreDeletionListener
             // aggregate stores strictly under this directory
             aggregateDescendants_(soid, aggregated);
         } else if (oa.isAnchor()) {
-            // TODO: anchor should hava atLeastOneInSync set for summary aggregate even when no
+            // TODO: anchor should have atLeastOneInSync set for summary aggregate even when no
             // peers are around
             SOID root = _ds.followAnchorThrows_(oa);
 
