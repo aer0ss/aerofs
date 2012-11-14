@@ -314,8 +314,8 @@ public final class SVClient
     {
         try {
             logSendDefectSync(automatic, context, cause, null);
-        } catch (Exception e) {
-            l.error("can't send defect err:", e);
+        } catch (Throwable t) {
+            l.error("can't send defect err:", t);
         }
     }
 
@@ -334,8 +334,8 @@ public final class SVClient
                     false,
                     false,
                     false);
-        } catch (Exception e) {
-            l.error("can't send defect err:", e);
+        } catch (Throwable t) {
+            l.error("can't send defect err:", t);
         }
     }
 
@@ -354,8 +354,8 @@ public final class SVClient
                     true,
                     false,
                     false);
-        } catch (Exception e) {
-            l.error("can't send defect err:", e);
+        } catch (Throwable t) {
+            l.error("can't send defect err:", t);
         }
     }
 
