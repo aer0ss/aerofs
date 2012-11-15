@@ -38,6 +38,7 @@ public class CfgDatabase
         USER_ID("user_id", null),
         DEVICE_ID("device_id", null),
         CRED("cred", null),
+        MULTIUSER("multiuser", false),
 
         // Absolute path to Root Anchor. N.B. must not use canonical paths so users can use symbolic
         // links as root anchor and repoint to different paths later.

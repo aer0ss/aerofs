@@ -12,7 +12,6 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.Path;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

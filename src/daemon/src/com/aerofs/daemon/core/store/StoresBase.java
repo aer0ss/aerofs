@@ -1,23 +1,14 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.store;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.Callable;
-
-import javax.annotation.Nonnull;
-import javax.inject.Inject;
 
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase.StoreRow;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -26,11 +17,43 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
-public class Stores implements IStores, IStoreDeletionListener
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
+/**
+ * This class provide base functions for MultiuserStores and SingleuserStores. The store-to-parent
+ * mapping maintained in this class is not useful for multi-user systems, but kept in this base
+ * class for simplicity in implementation.
+ */
+public class StoresBase implements IStoreDeletionListener
 {
+    public static interface IStoresBaseOperator
+    {
+        /**
+         * This method is called after the StoresBase class is reset. See reset_().
+         */
+        void postReset_();
+
+        /**
+         * This method is called after the store is added and all the data structures in related
+         * classes have been updated.
+         */
+        void postAdd_(SIndex sidx, Trans t);
+
+        /**
+         * This method is called after the store is deleted and all the data structures in related
+         * classes have been updated.
+         */
+        void postDelete_(SIndex sidx);
+    }
+
     private IStoreDatabase _sdb;
-    private TransManager _tm;
-    private StoreCreator _sc;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;
     private MapSIndex2DeviceBitMap _sidx2dbm;
@@ -39,100 +62,82 @@ public class Stores implements IStores, IStoreDeletionListener
     // map: sidx -> parent sidx for locally present stores
     private final Map<SIndex, SIndex> _s2parent = Maps.newHashMap();
 
-    private SIndex _root;
+    private static final Logger l = Util.l(StoresBase.class);
+    private IStoresBaseOperator _operator;
 
-    private static final Logger l = Util.l(Stores.class);
-
-    @Inject
-    public void inject_(IStoreDatabase sdb, TransManager tm, StoreCreator sc, SIDMap sm,
-            MapSIndex2Store sidx2s, MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp,
-            StoreDeletionNotifier sdn)
+    public StoresBase(IStoreDatabase sdb, SIDMap sm, MapSIndex2Store sidx2s,
+            MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp, StoreDeletionNotifier sdn,
+            IStoresBaseOperator operator)
     {
         _sdb = sdb;
-        _tm = tm;
-        _sc = sc;
         _sm = sm;
         _sidx2s = sidx2s;
         _sidx2dbm = sidx2dbm;
         _dp = dp;
+        _operator = operator;
 
         sdn.addListener_(this);
     }
 
     public void init_() throws SQLException, ExAlreadyExist, IOException
     {
-        populate_();
+        reset_();
 
-        // run the following tasks in init_() so when exceptions happen, the system can fail fast on
-        // startup.
-        if (_root != null) {
-            for (SIndex sidx : _s2parent.keySet()) postAdd_(sidx);
-
-        } else {
-            assert _s2parent.isEmpty();
-            Trans t = _tm.begin_();
-            try {
-                _sc.createRootStore_(t);
-                t.commit_();
-            } finally {
-                t.end_();
-            }
-
-            assert _root != null;
-        }
+        for (SIndex sidx : _s2parent.keySet()) notifyAddition_(sidx);
     }
 
-    private void populate_() throws SQLException
+    /**
+     * reset the class's data structure but don't notify other classes about store addition or
+     * deletion.
+     */
+    private void reset_() throws SQLException
     {
         _s2parent.clear();
 
-        _root = null;
         for (StoreRow sr : _sdb.getAll_()) {
             Util.verify(_s2parent.put(sr._sidx, sr._sidxParent) == null);
-            if (sr._sidx.equals(sr._sidxParent)) {
-                assert _root == null;
-                _root = sr._sidx;
-            }
         }
+
+        _operator.postReset_();
     }
 
-    @Override
     public void add_(final SIndex sidx, @Nonnull SIndex sidxParent, Trans t)
             throws SQLException
     {
         _sdb.add_(sidx, sidxParent, t);
 
         Util.verify(_s2parent.put(sidx, sidxParent) == null);
-        postAdd_(sidx);
-        if (sidx.equals(sidxParent)) {
-            assert _root == null;
-            _root = sidx;
-        }
+        notifyAddition_(sidx);
 
-        registerRollbackHandler_(t, new Callable<Void>() {
+        registerRollbackHandler_(t, new Callable<Void>()
+        {
             @Override
-            public Void call() throws SQLException
+            public Void call()
+                    throws SQLException
             {
-                preDelete_(sidx);
-                populate_();
+                notifyDeletion_(sidx);
+                reset_();
                 return null;
             }
         });
+
+        _operator.postAdd_(sidx, t);
     }
 
     @Override
     public void onStoreDeletion_(final SIndex sidx, Trans t) throws SQLException
     {
-        // Grab a reference to the Store object before preDelete_ removes in-memory references to it
+        // Grab a reference to the Store object before notifyDeletion_ removes in-memory references
+        // to it
         Store s = _sidx2s.get_(sidx);
 
-        preDelete_(sidx);
+        notifyDeletion_(sidx);
         Util.verify(_s2parent.remove(sidx) != null);
 
         s.deletePersistentData_(t);
 
         // TODO (MJ) this is an odd place to invalidate the cache for sidx2dbm, especially since
-        // it's the only reference to that class in Stores.java. The only reason for this coupling
+        // it's the only reference to that class in this class. The only reason for this coupling
         // is that the DeviceBitMap is in the StoreDatabase. A cleaner/less coupled design would
         // use a separate table for the DeviceBitMaps, from the StoreDatabase, and then
         // MapSIndex2DeviceBitMap would "own" that database.
@@ -146,28 +151,29 @@ public class Stores implements IStores, IStoreDeletionListener
             @Override
             public Void call() throws SQLException
             {
-                populate_();
-                postAdd_(sidx);
+                reset_();
+                notifyAddition_(sidx);
                 return null;
             }
         });
+
+        _operator.postDelete_(sidx);
     }
 
-    private void postAdd_(SIndex sidx) throws SQLException
+    private void notifyAddition_(SIndex sidx) throws SQLException
     {
         _sm.add_(sidx);
         _sidx2s.add_(sidx);
         _dp.storeAdded_(sidx);
     }
 
-    private void preDelete_(SIndex sidx)
+    private void notifyDeletion_(SIndex sidx)
     {
         _dp.beforeDeletingStore_(sidx);
         _sidx2s.delete_(sidx);
         _sm.delete_(sidx);
     }
 
-    @Override
     public void setParent_(SIndex sidx, SIndex sidxParent, Trans t)
             throws SQLException
     {
@@ -180,7 +186,7 @@ public class Stores implements IStores, IStoreDeletionListener
             public Void call()
                     throws SQLException
             {
-                populate_();
+                reset_();
                 return null;
             }
         });
@@ -203,22 +209,7 @@ public class Stores implements IStores, IStoreDeletionListener
         });
     }
 
-    @Override
-    public @Nonnull SIndex getRoot_(Path path)
-    {
-        assert _root != null;
-        return _root;
-    }
-
-    @Override
-    public boolean isRoot_(SIndex sidx)
-    {
-        assert _root != null;
-        return sidx.equals(_root);
-    }
-
-    @Override
-    public @Nonnull SIndex getParent_(SIndex sidx) throws SQLException
+    public @Nonnull SIndex getParent_(SIndex sidx)
     {
         // Parent must contain key sidx
         SIndex parent = _s2parent.get(sidx);
@@ -226,8 +217,7 @@ public class Stores implements IStores, IStoreDeletionListener
         return parent;
     }
 
-    @Override
-    public Set<SIndex> getChildren_(SIndex sidx) throws SQLException
+    public Set<SIndex> getChildren_(SIndex sidx)
     {
         assert _s2parent.containsKey(sidx);
         Set<SIndex> children = Sets.newTreeSet();
@@ -237,8 +227,7 @@ public class Stores implements IStores, IStoreDeletionListener
         return children;
     }
 
-    @Override
-    public Set<SIndex> getAll_() throws SQLException
+    public Set<SIndex> getAll_()
     {
         return Collections.unmodifiableSet(_s2parent.keySet());
     }

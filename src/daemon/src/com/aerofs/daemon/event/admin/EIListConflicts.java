@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.ListConflictsReply.ConflictedPath;
 
 public class EIListConflicts extends AbstractEBIMC

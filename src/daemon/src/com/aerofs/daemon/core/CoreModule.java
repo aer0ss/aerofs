@@ -4,9 +4,7 @@ import com.aerofs.daemon.core.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
-import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
@@ -55,7 +53,6 @@ public class CoreModule extends AbstractModule
 
         binder().disableCircularProxies();
 
-        bind(IStores.class).to(Stores.class);
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);
         bind(IDeletionBuffer.class).to(TimeoutDeletionBuffer.class);

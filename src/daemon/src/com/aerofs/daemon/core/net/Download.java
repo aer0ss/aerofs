@@ -57,8 +57,8 @@ public class Download
     private static final FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     private final To _src;
-    private final ConcurrentlyModifiableListeners<IDownloadCompletionListener> _ls = ConcurrentlyModifiableListeners
-            .create();
+    private final ConcurrentlyModifiableListeners<IDownloadCompletionListener> _ls =
+            ConcurrentlyModifiableListeners.create();
     private final Token _tk;
     private final SOCID _socid;
     private Prio _prio;

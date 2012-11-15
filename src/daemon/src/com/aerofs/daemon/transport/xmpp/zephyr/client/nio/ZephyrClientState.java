@@ -466,18 +466,6 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
     }
 
     /**
-     * Sends a valid {@code ACK} message to the remote peer
-     *
-     * @param ctx context object from which to retrieve the current state
-     * @return an event of {@link HANDSHAKE_COMPLETED} type
-     */
-    private static StateMachineEvent ackRemote(ZephyrClientContext ctx)
-    {
-        ctx.sendack_();
-        return new StateMachineEvent(HANDSHAKE_COMPLETE);
-    }
-
-    /**
      * Finish a handshake; this may involve no external action (you received an ACK), or, it
      * may involve sending an ACK back (you received a SYNACK)
      *

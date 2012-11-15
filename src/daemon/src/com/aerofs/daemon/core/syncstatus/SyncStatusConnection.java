@@ -33,8 +33,6 @@ import java.util.List;
  */
 public class SyncStatusConnection extends AbstractConnectionStatusNotifier
 {
-    private static final Logger l = Util.l(SyncStatusConnection.class);
-
     private final TC _tc;
     private final CfgLocalUser _user;
     private final SyncStatusBlockingClient.Factory _ssf;

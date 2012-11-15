@@ -2,9 +2,11 @@ package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Set;
 
@@ -13,6 +15,8 @@ import java.util.Set;
  */
 public interface IStores
 {
+    void init_() throws SQLException, ExAlreadyExist, IOException;
+
     /**
      * @param sidxParent set to {@code sidx} for root stores. See {@link IStores#getRoot_}.
      *

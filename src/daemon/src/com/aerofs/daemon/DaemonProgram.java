@@ -2,6 +2,8 @@ package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
+import com.aerofs.daemon.core.sumu.multiuser.MultiuserModule;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
@@ -17,7 +19,8 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 
-public class DaemonProgram implements IProgram {
+public class DaemonProgram implements IProgram
+{
     private final RitualServer _ritual = new RitualServer();
 
     @Override
@@ -44,14 +47,17 @@ public class DaemonProgram implements IProgram {
     {
         ///GuiceLogging.enable();
 
-        final Stage stage = Stage.PRODUCTION;
-        Module storageModule;
-        if (Cfg.db().getNullable(Key.S3_DIR) == null) {
-            storageModule = new LinkedStorageModule();
-        } else {
-            storageModule = new S3Module();
-        }
-        Injector injCore = Guice.createInjector(stage, new CfgModule(), new CoreModule(), storageModule);
+        Module storageModule = Cfg.db().getNullable(Key.S3_DIR) == null ?
+                new LinkedStorageModule() : new S3Module();
+
+        Module sumuModule = Cfg.db().getBoolean(Key.MULTIUSER) ?
+                new MultiuserModule() : new SingleuserModule();
+
+        Stage stage = Stage.PRODUCTION;
+
+        Injector injCore = Guice.createInjector(stage, new CfgModule(), sumuModule,
+                new CoreModule(), storageModule);
+
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
 
         return injDaemon.getInstance(Daemon.class);

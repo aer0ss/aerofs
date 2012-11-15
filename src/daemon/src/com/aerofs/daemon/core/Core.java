@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
-import com.aerofs.daemon.core.store.Stores;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
@@ -33,7 +33,7 @@ public class Core implements IModule
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
     private final IPhysicalStorage _ps;
-    private final Stores _ss;
+    private final IStores _ss;
     private final LinkStateService _lss;
     private final Transports _tps;
     private final CoreScheduler _sched;
@@ -50,7 +50,6 @@ public class Core implements IModule
     public Core(
             TC tc,
             CoreIMCExecutor imce,
-            Stores ss,
             Transports tps,
             LinkStateService lss,
             CoreScheduler sched,
@@ -64,7 +63,8 @@ public class Core implements IModule
             UnicastInputOutputStack stack,
             RitualNotificationServer notifier,
             ILinker linker,
-            DaemonPostUpdateTasks dput)
+            DaemonPostUpdateTasks dput,
+            IStores ss)
     {
         _imce2core = imce.imce();
         _tc = tc;
