@@ -182,7 +182,7 @@ public class LocalSyncStatus implements IStoreDeletionListener
             throws SQLException, ExExpelled
     {
         OA oa = _ds.getOA_(soid);
-        l.debug("aggregate " + soid);
+        l.debug("aggregate across stores " + soid);
         aggregateWithinStore_(soid, oa.isDir(), aggregated);
         if (oa.isDir()) {
             // aggregate stores strictly under this directory
@@ -238,7 +238,7 @@ public class LocalSyncStatus implements IStoreDeletionListener
             SOID croot = _ds.followAnchorNullable_(_ds.getOA_(csoid));
             // the anchor will be null for expelled stores
             if (croot != null) {
-                l.debug("aggregate store " + croot);
+                l.debug("aggregate descendants " + croot);
                 IAggregatedStatus saggregate = aggregated.create();
                 aggregateWithinStore_(croot, true, saggregate);
                 aggregated.mergeStore_(saggregate);
