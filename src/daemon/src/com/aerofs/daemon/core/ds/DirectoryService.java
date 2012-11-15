@@ -712,10 +712,10 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         BitVector bv = null;
         if (!oa.isExpelled()) {
             path = resolve_(oa);
-            // NOTE: if the object is temporary it only lives during the transaction and may not
-            // have sync status so this should not be needed. However Mark tells me it is possible
-            // for both objects to be locally present (and thus have sync status) before aliasing
-            // kicks in so we need to play safe...
+            // NOTE: if the object is temporary it only lives during the transaction and can not
+            // have sync status so this should not be needed. However it is possible for the objects
+            // to have been locally present (and thus have sync status) before aliasing occured
+            // TODO: make sure we don't get bitten by CA movement...
             bv = getSyncStatus_(soid);
             if (oa.isDir()) {
                 // one does not simply delete an OA with existing children
