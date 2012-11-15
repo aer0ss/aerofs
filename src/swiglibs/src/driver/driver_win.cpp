@@ -313,7 +313,7 @@ int killDaemon()
 
         // Enumerate the processes
         if (!EnumProcesses(processes, maxBufferSize * sizeof(DWORD), &bytesNeeded)) {
-            FERROR(" failed to enumerate processes: "<< GetLastError());
+            FERROR("failed to enumerate processes: "<< GetLastError());
             exit(1);
         }
 

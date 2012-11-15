@@ -186,7 +186,7 @@ int killDaemon()
 
     // Retrieve the list of active processes
     if (GetBSDProcessList(&procList, &len) != 0) {
-        FERROR("Error occurred retrieving BSD process list");
+        FERROR(": Error occurred retrieving BSD process list");
         exit(1);
     }
 

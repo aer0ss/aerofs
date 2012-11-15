@@ -45,7 +45,7 @@ bool killProcess(pid_t pid)
                 // the process has exited
                 break;
             } else {
-                FERROR(" kill(pid, 0) returns error " << errno);
+                FERROR(": kill(pid, 0) returns error " << errno);
                 return false;
             }
         }

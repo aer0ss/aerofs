@@ -20,10 +20,15 @@ using namespace std;
 enum LogLevel { LDEBUG = 0, LINFO, LWARN, LERROR };
 
 #ifndef SWIG
-#define FDEBUG(x)   do { if (l.loglevel() <= LDEBUG) l.debug() << __FUNCTION__ << x << l; } while (0)
-#define FINFO(x)    do { if (l.loglevel() <= LINFO)  l.info()  << __FUNCTION__ << x << l; } while (0)
-#define FWARN(x)    do { if (l.loglevel() <= LWARN)  l.warn()  << __FUNCTION__ << x << l; } while (0)
-#define FERROR(x)   do { if (l.loglevel() <= LERROR) l.error() << __FUNCTION__ << x << l; } while (0)
+#ifdef _WIN32
+#define FUNCTION_SEPARATOR _T(" ")
+#else
+#define FUNCTION_SEPARATOR " "
+#endif
+#define FDEBUG(x)   do { if (l.loglevel() <= LDEBUG) l.debug() << __FUNCTION__ << FUNCTION_SEPARATOR << x << l; } while (0)
+#define FINFO(x)    do { if (l.loglevel() <= LINFO)  l.info()  << __FUNCTION__ << FUNCTION_SEPARATOR << x << l; } while (0)
+#define FWARN(x)    do { if (l.loglevel() <= LWARN)  l.warn()  << __FUNCTION__ << FUNCTION_SEPARATOR << x << l; } while (0)
+#define FERROR(x)   do { if (l.loglevel() <= LERROR) l.error() << __FUNCTION__ << FUNCTION_SEPARATOR << x << l; } while (0)
 
 
 class Logger;
@@ -128,17 +133,20 @@ private:
         SYSTEMTIME st;
         GetLocalTime(&st);
 
+        // On Windows, we need to cast shorts to ints
+        // because otherwise they're TCHARs and get written
+        // as character data not integers.
         tostringstream os;
         os.fill('0');
         os.setf(std::ios::right);
         os.width(2);
-        os << st.wHour;
+        os << int(st.wHour);
         os.width(2);
-        os << st.wMinute;
+        os << int(st.wMinute);
         os.width(2);
-        os << st.wSecond << '.';
+        os << int(st.wSecond) << '.';
         os.width(3);
-        os << st.wMilliseconds;
+        os << int(st.wMilliseconds);
 #else
         struct timeval tv;
         struct timezone tz;
@@ -156,7 +164,7 @@ private:
         os.width(2);
         os << tm->tm_sec << '.';
         os.width(3);
-        os << tv.tv_usec;
+        os << (tv.tv_usec / 1000);
 
         //free(tm);
 #endif
