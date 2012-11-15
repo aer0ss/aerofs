@@ -205,7 +205,7 @@ public class TC implements IDumpStatMisc
                             _tm.assertNoOngoingTransaction_();
                         } catch (Throwable e) {
                             // fail fast
-                            throw SystemUtil.fatal(e);
+                            throw SystemUtil.fatalWithReturn(e);
                         }
                     }
 
@@ -350,7 +350,7 @@ public class TC implements IDumpStatMisc
             try {
                 ret = tcb._cv.await(timeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                throw SystemUtil.fatal(e);
+                throw SystemUtil.fatalWithReturn(e);
             }
         }
 

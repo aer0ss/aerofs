@@ -729,7 +729,7 @@ public class SyncStatusSynchronizer
 
             return false;
         } catch (SQLException e) {
-            throw SystemUtil.fatal(e);
+            throw SystemUtil.fatalWithReturn(e);
         }
     }
 }

@@ -119,7 +119,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     encoded = Base64.encodeBytes(d, Base64.URL_SAFE);
                 } catch (IOException e) {
                     // the base64 encoder can only throw IOException when using the GZIP option...
-                    throw SystemUtil.fatal(e);
+                    throw SystemUtil.fatalWithReturn(e);
                 }
             }
             return encoded;
@@ -375,8 +375,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             long totalSpace = root.getTotalSpace();
             long usableSpace = root.getUsableSpace();
             // allow at least 100 MB, at most min of 1/5 of total space and usable free space
-            long spaceLimit = Math.max(_minSpaceLimit, Math.min(totalSpace / 5, usableSpace));
-            return spaceLimit;
+            return Math.max(_minSpaceLimit, Math.min(totalSpace / 5, usableSpace));
         }
 
         /** Delete old revs until space is under this limit */
@@ -404,7 +403,6 @@ public class LinkedRevProvider implements IPhysicalRevProvider
             long _fileCount;
             long _dirCount;
             Date _startTime = new Date();
-            Date _maxTime = new Date(_startTime.getTime() - _ageLimitMillis);
             int _delayCount;
 
             ExternalSorter<RevInfo> _sorter =
@@ -432,7 +430,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
 
             void walk() throws InterruptedException, IOException {
                 InjectableFile root = _factFile.create(_pathBase);
-                walk(null, root);
+                walk(root);
             }
 
             void delete() throws InterruptedException, IOException {
@@ -463,7 +461,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 }
             }
 
-            private void walk(InjectableFile parent, InjectableFile file)
+            private void walk(InjectableFile file)
                     throws InterruptedException, IOException {
                 checkInterrupted();
                 if (file.isFile()) {
@@ -481,7 +479,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     InjectableFile[] children = file.listFiles();
                     if (children != null) {
                         for (InjectableFile child : children) {
-                            walk(file, child);
+                            walk(child);
                         }
                     }
                     delay();

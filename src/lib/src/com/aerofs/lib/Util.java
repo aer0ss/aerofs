@@ -873,7 +873,7 @@ public abstract class Util
         try {
             return URLEncoder.encode(str, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw SystemUtil.fatal(e);
+            throw SystemUtil.fatalWithReturn(e);
         }
     }
 

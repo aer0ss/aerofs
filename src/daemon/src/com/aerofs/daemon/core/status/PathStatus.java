@@ -130,7 +130,7 @@ public class PathStatus
         try {
             _lsync.aggregateAcrossStores_(path, s);
         } catch (SQLException e) {
-            throw SystemUtil.fatal(e);
+            throw SystemUtil.fatalWithReturn(e);
         } catch (ExExpelled e) {
             return Sync.OUT_SYNC;
         } catch (ExNotFound e) {

@@ -105,11 +105,10 @@ public abstract class SystemUtil
     }
 
     /**
-     * Send a defect report and crash the daemon. Some callers need to throw the returned value
-     * only to suppress compiler warnings, whereas other callers require this method to declare
-     * "throws Error" for the same lame purpose.
+     * Send a defect report and crash the daemon. The caller can throw the returned value so that
+     * the compiler wouldn't complain in certain cases.
      */
-    public static Error fatal(final Throwable e) throws Error
+    public static Error fatalWithReturn(final Throwable e)
     {
         l.fatal("FATAL:" + Util.e(e));
         SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
@@ -118,11 +117,28 @@ public abstract class SystemUtil
     }
 
     /**
+     * Send a defect report and crash the daemon. The throws signature is to suppress compiler
+     * warnings in certain cases.
+     */
+    public static void fatal(final Throwable e) throws Error
+    {
+        fatalWithReturn(e);
+    }
+
+    /**
+     * See {@link com.aerofs.lib.SystemUtil#fatalWithReturn}
+     */
+    public static Error fatalWithReturn(String str)
+    {
+        return fatalWithReturn(new Exception(str));
+    }
+
+    /**
      * See {@link com.aerofs.lib.SystemUtil#fatal(Throwable)}
      */
-    public static Error fatal(String str) throws Error
+    public static void fatal(String str) throws Error
     {
-        return fatal(new Exception(str));
+        fatal(new Exception(str));
     }
 
     /**

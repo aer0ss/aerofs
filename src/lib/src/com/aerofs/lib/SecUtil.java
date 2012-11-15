@@ -68,7 +68,7 @@ public abstract class SecUtil
         try {
             s_rand = SecureRandom.getInstance("SHA1PRNG");
         } catch (NoSuchAlgorithmException e) {
-            throw SystemUtil.fatal(e);
+            throw SystemUtil.fatalWithReturn(e);
         }
     }
 
@@ -593,7 +593,7 @@ public abstract class SecUtil
         try {
             return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            throw SystemUtil.fatal(e);
+            throw SystemUtil.fatalWithReturn(e);
         }
     }
 
@@ -602,7 +602,7 @@ public abstract class SecUtil
         try {
             return MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
-            throw SystemUtil.fatal(e);
+            throw SystemUtil.fatalWithReturn(e);
         }
     }
 

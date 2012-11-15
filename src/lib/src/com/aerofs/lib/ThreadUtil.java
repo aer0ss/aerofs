@@ -4,7 +4,6 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.sv.client.SVClient;
 import org.apache.log4j.Logger;
 
 import java.util.concurrent.ThreadFactory;
