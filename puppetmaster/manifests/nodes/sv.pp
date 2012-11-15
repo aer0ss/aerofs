@@ -12,4 +12,16 @@ node "sv.aerofs.com" inherits default {
     include mailserver
 
     class{"analytics":}
+
+    cron{"remove old defects":
+        command => 'find /var/svlogs_prod/defect/ -mtime +28 -iname log.defect\* | xargs rm',
+        hour    => "0",
+        minute  => "0"
+    }
+
+    cron{"remove empty defects":
+        command => 'find /var/svlogs_prod/defect/ -iname log.defect\* -size 0 | xargs rm',
+        hour    => "0",
+        minute  => "0"
+    }
 }
