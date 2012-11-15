@@ -1,8 +1,8 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
@@ -14,7 +14,7 @@ import java.util.Set;
 public interface IStores
 {
     /**
-     * @param sidxParent set to {@code sidx} for the root store. See {@link IStores#getRoot_}.
+     * @param sidxParent set to {@code sidx} for root stores. See {@link IStores#getRoot_}.
      *
      * @pre the store is not present locally
      */
@@ -26,13 +26,26 @@ public interface IStores
     void setParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 
     /**
-     * @return the store which points to itself as the parent
+     * @return the root store of the given path. For single-user systems, there is a single root
+     * store, and the return value doesn't depend on the parameter; for multi-user systems, each
+     * store is its own root, and the first element in the parameter identifies the SID in Base64
+     * encoding.
      */
-    @Nonnull SIndex getRoot_();
+    @Nonnull SIndex getRoot_(Path path);
 
     /**
-     * @return {@code sidx} if {@code sidx} refers to the root store
+     * @return true if and only if getParent_(sidx).equals(sidx)
+     *
+     * There is a single root in single-user system, where multiple roots can exist in multi-user
+     * systems.
+     */
+    boolean isRoot_(SIndex sidx);
+
+    /**
+     * @return the parent of the specified store.
      * @pre the store is present locally
+     *
+     * Invariant: the parent of a root store is itself.
      */
     @Nonnull SIndex getParent_(SIndex sidx) throws SQLException;
 
@@ -42,10 +55,8 @@ public interface IStores
      */
     Set<SIndex> getChildren_(SIndex sidx) throws SQLException;
 
-    Set<SIndex> getAll_() throws SQLException;
-
     /**
-     * Get a set of all stores (strictly) under a given SOID (recursively)
+     * @return the set of all the stores that are present locally
      */
-    Set<SIndex> getDescendants_(SOID soid) throws SQLException;
+    Set<SIndex> getAll_() throws SQLException;
 }

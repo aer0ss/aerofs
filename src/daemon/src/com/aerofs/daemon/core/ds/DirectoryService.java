@@ -132,10 +132,10 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
             @Override
             public SOID read_(Path path) throws SQLException
             {
-                String[] elems = path.elements();
-                SIndex sidx = _ss.getRoot_();
+                SIndex sidx = _ss.getRoot_(path);
                 OID oid = OID.ROOT;
                 int i = 0;
+                String[] elems = path.elements();
                 while (i < elems.length) {
                     OID child = getChild_(sidx, oid, elems[i]);
                     if (child == null) {
@@ -229,7 +229,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         List<String> elems = Lists.newArrayListWithCapacity(16);
         while (true) {
             if (oa.soid().oid().isRoot()) {
-                if (oa.soid().sidx().equals(_ss.getRoot_())) {
+                if (_ss.isRoot_(oa.soid().sidx())) {
                     break;
                 } else {
                     // parent oid of the root encodes the parent store's sid
@@ -258,7 +258,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
      */
     private SOID getAnchor_(SIndex sidx) throws SQLException
     {
-        assert !sidx.equals(_ss.getRoot_());
+        assert !_ss.isRoot_(sidx);
         SIndex sidxAnchor = _ss.getParent_(sidx);
         OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidx));
         return new SOID(sidxAnchor, oidAnchor);

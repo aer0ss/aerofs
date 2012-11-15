@@ -16,6 +16,8 @@ import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
+
+import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
@@ -58,15 +60,16 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final ObjectMover _om;
     private final ObjectDeleter _od;
     private final IMapSID2SIndex _sid2sidx;
-    private final IStores _stores;
+    private final IStores _ss;
     private final ACLSynchronizer _aclsync;
+    private final DescendantStores _dss;
 
     @Inject
     public HdShareFolder(LocalACL lacl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
             ImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
-            ACLSynchronizer aclsync, IStores stores)
+            ACLSynchronizer aclsync, IStores ss, DescendantStores dss)
     {
-        _stores = stores;
+        _ss = ss;
         _lacl = lacl;
         _tc = tc;
         _tm = tm;
@@ -77,6 +80,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _od = od;
         _sid2sidx = sid2sidx;
         _aclsync = aclsync;
+        _dss = dss;
     }
 
     @Override
@@ -95,9 +99,9 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         if (oa.isExpelled()) throw new ExExpelled();
 
         // throw if a parent folder is already shared
-        if (!_stores.getRoot_().equals(soid.sidx())) throw new ExParentAlreadyShared();
+        if (!_ss.isRoot_(soid.sidx())) throw new ExParentAlreadyShared();
 
-        Set<SIndex> descendants = _stores.getDescendants_(soid);
+        Set<SIndex> descendants = _dss.getDescendantStores_(soid);
         if (!descendants.isEmpty()) throw new ExChildAlreadyShared();
 
         // check ACL

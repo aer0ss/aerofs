@@ -12,7 +12,6 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
 import com.aerofs.daemon.core.device.DevicePresence;
-import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase.StoreRow;
@@ -22,9 +21,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
@@ -36,9 +33,7 @@ public class Stores implements IStores, IStoreDeletionListener
     private StoreCreator _sc;
     private SIDMap _sm;
     private MapSIndex2Store _sidx2s;
-    private IMapSIndex2SID _sidx2sid;
     private MapSIndex2DeviceBitMap _sidx2dbm;
-    private DirectoryService _ds;
     private DevicePresence _dp;
 
     // map: sidx -> parent sidx for locally present stores
@@ -50,20 +45,18 @@ public class Stores implements IStores, IStoreDeletionListener
 
     @Inject
     public void inject_(IStoreDatabase sdb, TransManager tm, StoreCreator sc, SIDMap sm,
-            MapSIndex2Store sidx2s, IMapSIndex2SID sidx2sid, MapSIndex2DeviceBitMap sidx2dbm,
-            DirectoryService ds, DevicePresence dp, StoreDeletionNotifier storeDeletionNotifier)
+            MapSIndex2Store sidx2s, MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp,
+            StoreDeletionNotifier sdn)
     {
         _sdb = sdb;
         _tm = tm;
         _sc = sc;
         _sm = sm;
         _sidx2s = sidx2s;
-        _sidx2sid = sidx2sid;
         _sidx2dbm = sidx2dbm;
-        _ds = ds;
         _dp = dp;
 
-        storeDeletionNotifier.addListener_(this);
+        sdn.addListener_(this);
     }
 
     public void init_() throws SQLException, ExAlreadyExist, IOException
@@ -79,11 +72,13 @@ public class Stores implements IStores, IStoreDeletionListener
             assert _s2parent.isEmpty();
             Trans t = _tm.begin_();
             try {
-                _root = _sc.createRootStore_(t);
+                _sc.createRootStore_(t);
                 t.commit_();
             } finally {
                 t.end_();
             }
+
+            assert _root != null;
         }
     }
 
@@ -106,8 +101,13 @@ public class Stores implements IStores, IStoreDeletionListener
             throws SQLException
     {
         _sdb.add_(sidx, sidxParent, t);
+
         Util.verify(_s2parent.put(sidx, sidxParent) == null);
         postAdd_(sidx);
+        if (sidx.equals(sidxParent)) {
+            assert _root == null;
+            _root = sidx;
+        }
 
         registerRollbackHandler_(t, new Callable<Void>() {
             @Override
@@ -174,9 +174,11 @@ public class Stores implements IStores, IStoreDeletionListener
         _sdb.setParent_(sidx, sidxParent, t);
         Util.verify(_s2parent.put(sidx, sidxParent) != null);
 
-        registerRollbackHandler_(t, new Callable<Void>() {
+        registerRollbackHandler_(t, new Callable<Void>()
+        {
             @Override
-            public Void call() throws SQLException
+            public Void call()
+                    throws SQLException
             {
                 populate_();
                 return null;
@@ -202,10 +204,17 @@ public class Stores implements IStores, IStoreDeletionListener
     }
 
     @Override
-    public @Nonnull SIndex getRoot_()
+    public @Nonnull SIndex getRoot_(Path path)
     {
         assert _root != null;
         return _root;
+    }
+
+    @Override
+    public boolean isRoot_(SIndex sidx)
+    {
+        assert _root != null;
+        return sidx.equals(_root);
     }
 
     @Override
@@ -232,36 +241,5 @@ public class Stores implements IStores, IStoreDeletionListener
     public Set<SIndex> getAll_() throws SQLException
     {
         return Collections.unmodifiableSet(_s2parent.keySet());
-    }
-
-    @Override
-    public Set<SIndex> getDescendants_(SOID soid) throws SQLException
-    {
-        Set<SIndex> set = Sets.newHashSet();
-
-        SIndex sidx = soid.sidx();
-        Path path = _ds.resolve_(soid);
-
-        // among immediate children of the given store, find those who are under the given path
-        Set<SIndex> children = getChildren_(sidx);
-        for (SIndex csidx : children) {
-            if (csidx == sidx) continue;
-
-            SID csid = _sidx2sid.get_(csidx);
-            Path cpath = _ds.resolve_(new SOID(sidx, SID.storeSID2anchorOID(csid)));
-            if (cpath.isUnder(path)) {
-                // recursively add child stores to result set
-                addChildren_(csidx, set);
-            }
-        }
-
-        return set;
-    }
-
-    private void addChildren_(SIndex sidx, Set<SIndex> set) throws SQLException
-    {
-        if (set.contains(sidx)) return;
-        set.add(sidx);
-        for (SIndex csidx : getChildren_(sidx)) addChildren_(csidx, set);
     }
 }

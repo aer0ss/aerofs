@@ -55,8 +55,12 @@ public class TestEmigrantCreator extends AbstractTest
         when(ss.getParent_(sidxTarget)).thenReturn(sidxParent);
         when(ss.getParent_(sidxParent)).thenReturn(sidxGrandParent);
         when(ss.getParent_(sidxGrandParent)).thenReturn(sidxGreatGrandParent);
+        when(ss.getParent_(sidxGreatGrandParent)).thenReturn(sidxRoot);
 
-        when(ss.getRoot_()).thenReturn(sidxGreatGrandParent);
+        when(ss.isRoot_(sidxTarget)).thenReturn(false);
+        when(ss.isRoot_(sidxParent)).thenReturn(false);
+        when(ss.isRoot_(sidxGrandParent)).thenReturn(false);
+        when(ss.isRoot_(sidxGreatGrandParent)).thenReturn(true);
     }
 
     @Test
@@ -97,7 +101,7 @@ public class TestEmigrantCreator extends AbstractTest
     public void shouldReturnOneAncestorForLevelTwoTargetStore()
             throws SQLException
     {
-        when(ss.getRoot_()).thenReturn(sidxParent);
+        when(ss.isRoot_(sidxParent)).thenReturn(true);
         List<SID> list = emc.getEmigrantTargetAncestorSIDsForMeta_(OID.TRASH, name);
         assertEquals(list.size(), 1);
         assertEquals(list.get(0), sidParent);
@@ -107,8 +111,9 @@ public class TestEmigrantCreator extends AbstractTest
     public void shouldReturnOneAncestorForLevelOneTargetStore()
             throws SQLException
     {
-        when(ss.getRoot_()).thenReturn(sidxTarget);
+        when(ss.isRoot_(sidxTarget)).thenReturn(true);
         List<SID> list = emc.getEmigrantTargetAncestorSIDsForMeta_(OID.TRASH, name);
+        System.out.println(list.size());
         assertEquals(list.size(), 1);
         assertEquals(list.get(0), sidTarget);
     }

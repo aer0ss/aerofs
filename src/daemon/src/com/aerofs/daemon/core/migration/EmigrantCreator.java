@@ -91,9 +91,9 @@ public class EmigrantCreator
     /**
      * @param oidParent the parent OID of the object
      * @param name the name of the object
-     * @return a list of SIDs ready to be filled into the
-     * PBMeta.emigrant_target_ancestor_sid field for the given object. an empty
-     * list for non-emigrant objects or if the target store doesn't exist locally
+     * @return a list of SIDs ready to be filled into the PBMeta.emigrant_target_ancestor_sid field
+     *      for the given object. an empty list for non-emigrant objects or if the target store
+     *      doesn't exist locally
      */
     public List<SID> getEmigrantTargetAncestorSIDsForMeta_(OID oidParent, String name)
             throws SQLException
@@ -105,15 +105,14 @@ public class EmigrantCreator
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) return Collections.emptyList();
 
-        SIndex sidxRoot = _ss.getRoot_();
-
         // get the parent store for non-root stores
-        if (!sidx.equals(sidxRoot)) sidx = _ss.getParent_(sidx);
+        if (!_ss.isRoot_(sidx)) sidx = _ss.getParent_(sidx);
 
         ArrayList<SID> ret = Lists.newArrayListWithCapacity(2);
         while (true) {
+
             ret.add(_sidx2sid.get_(sidx));
-            if (sidx.equals(sidxRoot)) break;
+            if (_ss.isRoot_(sidx)) break;
             sidx = _ss.getParent_(sidx);
         }
 

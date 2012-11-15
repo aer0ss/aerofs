@@ -37,10 +37,10 @@ public class HdListSharedFolders extends AbstractHdIMC<EIListSharedFolders>
         Set<SIndex> all = _ss.getAll_();
         Collection<Path> paths = Lists.newArrayListWithCapacity(all.size());
         for (SIndex sidx : all) {
-            if (sidx.equals(_ss.getRoot_())) continue;
-            SIndex sidxAnchor = _ss.getParent_(sidx);
+            if (_ss.isRoot_(sidx)) continue;
+            SIndex sidxParent = _ss.getParent_(sidx);
             OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidx));
-            paths.add(_ds.resolveNullable_(new SOID(sidxAnchor, oidAnchor)));
+            paths.add(_ds.resolveNullable_(new SOID(sidxParent, oidAnchor)));
         }
 
         ev.setResult_(paths);

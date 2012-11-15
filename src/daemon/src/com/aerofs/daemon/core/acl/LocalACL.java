@@ -99,13 +99,10 @@ public class LocalACL
         Role roleActual = get_(sidx).get(subject);
         boolean allowed = roleActual != null && roleActual.covers(role);
 
-        if (!allowed) {
-            // always allow the local user to operate on the root store, so that newly installed
-            // devices can instantly start syncing with other devices without waiting for ACL to be
-            // downloaded.
-            allowed = subject.equals(_cfgLocalUser.get()) && sidx.equals(_ss.getRoot_());
-        }
-        return allowed;
+        // always allow the local user to operate on the root store, so that newly installed
+        // devices can instantly start syncing with other devices without waiting for ACL to be
+        // downloaded.
+        return allowed ? true : subject.equals(_cfgLocalUser.get()) && _ss.isRoot_(sidx);
     }
 
     /**
