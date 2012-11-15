@@ -64,7 +64,7 @@ int killDaemon()
     // Open the /proc directory
     DIR* procDir = opendir(PROC_PATH);
     if (procDir == NULL) {
-        FERROR(" no /proc on filesystem");
+        FERROR(": no /proc on filesystem");
         return DRIVER_FAILURE;
     }
 
@@ -123,7 +123,7 @@ int killDaemon()
     // Kill all the discovered daemon processes
     std::vector<pid_t>::iterator iter = daemonProcs.begin();
     for (; iter != daemonProcs.end(); iter++) {
-        FINFO(" kill " << *iter);
+        FINFO(": kill " << *iter);
 
         // Kill it!! Kill them all!!
         error |= !killProcess(*iter);
