@@ -216,6 +216,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         }
 
         for (int i = first; i != -1; i = diffStatus.findNextSetBit(i + 1)) {
+            assert diffStatus.test(i) : i + " " + diffStatus;
             int prev = parentAggregate.get(i);
             if (newStatus.test(i)) {
                 // out_sync -> in_sync
@@ -290,7 +291,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     {
         if (l.isInfoEnabled()) l.info("deleted " + soid + " " + parent);
 
-        updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parent), pathFrom, t);
+        updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parent), pathFrom, true, t);
     }
 
     /**
@@ -327,7 +328,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         if (l.isInfoEnabled()) l.info("moved " + soid + " " + parentFrom + " " + parentTo);
 
-        updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parentFrom), pathFrom, t);
+        updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parentFrom), pathFrom, true, t);
         updateParentAggregateOnCreation_(soid, new SOID(soid.sidx(), parentTo), pathTo, t);
     }
 
@@ -379,7 +380,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         }
 
         if (l.isInfoEnabled()) l.info("expelled " + soid);
-        updateParentAggregateOnDeletion_(soid, parent, path, t);
+        updateParentAggregateOnDeletion_(soid, parent, path, false, t);
     }
 
     /**
@@ -435,16 +436,19 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
      * Helper: calls {@link #updateRecursively_} with the appropriate arguments to indicate an
      * object deletion
      */
-    private void updateParentAggregateOnDeletion_(SOID soid, SOID parent, Path path, Trans t)
-            throws SQLException
+    private void updateParentAggregateOnDeletion_(SOID soid, SOID parent, Path path,
+            boolean ignoreExpelled, Trans t) throws SQLException
     {
         // get old sync status, this will be the diff
         BitVector oldStatus = _ds.getSyncStatus_(soid);
 
         OA oa = _ds.getOA_(soid);
-        // expelled objects are not take into account in the aggregate sync status of their parent
-        // so we don't have anything to update in this case
-        if (oa.isExpelled()) {
+        // expulsion and deletion are nicely intertwined:
+        // deletion causes implicit expulsion and explicitly expelled object (and their implicitly
+        // expelled children) may still be deleted from other peers. All this cases can be handled
+        // in the same way but one must be careful not to decrement aggregate counter multiple times
+        // lest he ends up with a bogus aggregate status (and assertion failures down the road)
+        if (ignoreExpelled && oa.isExpelled()) {
             if (l.isInfoEnabled()) l.info("ignore delete expelled " + soid);
             return;
         }
