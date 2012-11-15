@@ -20,6 +20,7 @@ import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
+import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -116,7 +117,7 @@ public class RPC
                 ep = _nsl.send_(to, sidx, call);
                 return recvReply_(call.getRpcid(), to, tk, reason);
             } catch (ExTimeout e) {
-                l.warn(ep + " " + typeString(call) + " timeout. pulse and try next");
+                logRpcTimeout(ep, call, e);
                 if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
             }
         }
@@ -130,9 +131,16 @@ public class RPC
             ep = _nsl.sendUnicast_(did, sidx, call);
             return recvReply_(call.getRpcid(), null, tk, reason);
         } catch (ExTimeout e) {
+            logRpcTimeout(ep, call, e);
             if (ep != null) _dp.startPulse_(ep.tp(), ep.did());
             throw e;
         }
+    }
+
+    private static void logRpcTimeout(Endpoint ep, PBCore call, ExTimeout e)
+    {
+        l.warn(ep + " " + typeString(call) + " timeout. pulse and try next");
+        SVClient.logSendDefectAsync(true, "pulse ep:" + ep + " call:" + typeString(call), e);
     }
 
     /**
