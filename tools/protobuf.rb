@@ -15,6 +15,7 @@ class Protobuf < Formula
     # Avoid generating code that will produce warnings when compiled.
     # Patch taken from the upstream bug report:
     # http://code.google.com/p/protobuf/issues/detail?id=266
+    # + modifications to also patch java_enum_field.cc
     DATA
   end
 
@@ -41,6 +42,28 @@ class Protobuf < Formula
   end
 end
 __END__
+Index: src/google/protobuf/compiler/java/java_enum_field.cc
+===================================================================
+--- a/src/google/protobuf/compiler/java/java_enum_field.cc     (revision 381)
++++ b/src/google/protobuf/compiler/java/java_enum_field.cc     (working copy)
+@@ -83,6 +83,8 @@
+ 
+   // For repated builders, one bit is used for whether the array is immutable.
+   (*variables)["get_mutable_bit_builder"] = GenerateGetBit(builderBitIndex);
++  (*variables)["get_mutable_bit_builder_from_local"] =
++      GenerateGetBitFromLocal(builderBitIndex);
+   (*variables)["set_mutable_bit_builder"] = GenerateSetBit(builderBitIndex);
+   (*variables)["clear_mutable_bit_builder"] = GenerateClearBit(builderBitIndex);
+ 
+@@ -411,7 +413,7 @@
+   // The code below ensures that the result has an immutable list. If our
+   // list is immutable, we can just reuse it. If not, we make it immutable.
+   printer->Print(variables_,
+-    "if ($get_mutable_bit_builder$) {\n"
++    "if ($get_mutable_bit_builder_from_local$) {\n"
+     "  $name$_ = java.util.Collections.unmodifiableList($name$_);\n"
+     "  $clear_mutable_bit_builder$;\n"
+     "}\n"
 Index: src/google/protobuf/compiler/java/java_string_field.cc
 ===================================================================
 --- a/src/google/protobuf/compiler/java/java_string_field.cc	(revision 381)
