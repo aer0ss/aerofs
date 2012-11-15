@@ -52,7 +52,7 @@ public class CmdVersionHistory implements IShellCommand<ShProgram>
         PBPath parent = ShProgram.buildPath_(path);
         ListRevHistoryReply reply = s.d().getRitualClient_().listRevHistory(parent);
 
-        s.out().println("Version index           Size      Date");
+        s.out().println("Version index                   Size      Date");
         s.out().println("------------------------------------------------------");
 
         for (PBRevision rev : reply.getRevisionList()) {

@@ -334,7 +334,7 @@ public abstract class FileUtil
     {
         if (!from.renameTo(to)) {
             try {
-                 copy(from, to, false, false);
+                 copy(from, to, false, true);
             } catch (IOException e) {
                 throw new ExFileIO("couldn't rename {} to {}", from, to);
             }

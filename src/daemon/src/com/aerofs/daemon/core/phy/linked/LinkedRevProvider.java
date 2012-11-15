@@ -261,11 +261,13 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     public RevInputStream getRevInputStream_(Path path, byte[] index)
             throws Exception
     {
+        String strIndex = Util.utf2string(index);
         String auxPath = Util.join(_pathBase, Util.join(path.elements()))
-                + RevisionSuffix.SEPARATOR + Util.utf2string(index);
+                + RevisionSuffix.SEPARATOR + strIndex;
         InjectableFile file = _factFile.create(auxPath);
         if (!file.exists() || file.isDirectory()) throw new InvalidRevisionIndexException();
-        return new RevInputStream(file.newInputStream(), file.getLength());
+        return new RevInputStream(file.newInputStream(), file.getLength(),
+                RevisionSuffix.fromEncodedNullable(strIndex)._mtime);
     }
 
     private synchronized void changeSpace(long delta)

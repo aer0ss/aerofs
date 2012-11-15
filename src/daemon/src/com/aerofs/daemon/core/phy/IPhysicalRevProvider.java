@@ -86,11 +86,13 @@ public interface IPhysicalRevProvider
     {
         public final long _length;
         public final InputStream _is;
+        public final long _mtime;
 
-        public RevInputStream(InputStream is, long length)
+        public RevInputStream(InputStream is, long length, long mtime)
         {
             _is = is;
             _length = length;
+            _mtime = mtime;
         }
     }
 
