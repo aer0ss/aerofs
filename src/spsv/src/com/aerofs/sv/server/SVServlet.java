@@ -41,7 +41,7 @@ public class SVServlet extends AeroServlet
 
         try {
             _reactor.init_();
-            initdb_();
+            initDB_();
             initMetrics_();
         } catch (Exception e) {
             l.error("init: ", e);
@@ -49,7 +49,7 @@ public class SVServlet extends AeroServlet
         }
     }
 
-    private void initdb_()
+    private void initDB_()
             throws SQLException, ClassNotFoundException
     {
         String svdbRef = getServletContext().getInitParameter(SV_DATABASE_REFERENCE_PARAMETER);

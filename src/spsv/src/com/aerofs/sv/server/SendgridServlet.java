@@ -40,14 +40,14 @@ public class SendgridServlet extends AeroServlet {
         init_();
 
         try {
-            initdb_();
+            initDB_();
         } catch (Exception e) {
             l.error("init: ", e);
             throw new ServletException(e);
         }
     }
 
-    private void initdb_()
+    private void initDB_()
             throws SQLException, ClassNotFoundException
     {
         String context = getServletContext().getInitParameter(
