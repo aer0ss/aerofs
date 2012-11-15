@@ -8,12 +8,12 @@ import com.aerofs.daemon.core.net.IDownloadStateListener.*;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.google.common.collect.Maps;
 
 // see IDownloadStateListener for valid state transitions
 
-public class DownloadState extends Listeners<IDownloadStateListener>
+public class DownloadState extends ConcurrentlyModifiableListeners<IDownloadStateListener>
 implements IDumpStatMisc {
 
     private final Map<SOCID, State> _states = Maps.newTreeMap();

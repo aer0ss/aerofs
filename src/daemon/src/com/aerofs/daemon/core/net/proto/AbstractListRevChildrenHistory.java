@@ -9,7 +9,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.Maps;
@@ -19,7 +19,7 @@ import java.util.Map;
 public abstract class AbstractListRevChildrenHistory<LISTENER>
 {
 
-    protected class RCHListeners extends Listeners<LISTENER>
+    protected class RCHListeners extends ConcurrentlyModifiableListeners<LISTENER>
     {
         private final Path _path;
 

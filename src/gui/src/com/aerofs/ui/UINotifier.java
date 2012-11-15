@@ -1,7 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.controller.IViewNotifier;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.google.common.collect.Maps;
 import com.google.protobuf.GeneratedMessageLite;
@@ -16,7 +16,7 @@ import java.util.EnumMap;
  */
 public class UINotifier implements IViewNotifier
 {
-    private final EnumMap<Type, Listeners<IUINotificationListener>> map =
+    private final EnumMap<Type, ConcurrentlyModifiableListeners<IUINotificationListener>> map =
             Maps.newEnumMap(Type.class);
 
     /**
@@ -26,9 +26,9 @@ public class UINotifier implements IViewNotifier
     public void addListener(Type type, IUINotificationListener listener)
     {
         synchronized (map) {
-            Listeners<IUINotificationListener> ls = map.get(type);
+            ConcurrentlyModifiableListeners<IUINotificationListener> ls = map.get(type);
             if (ls == null) {
-                ls = Listeners.newListeners();
+                ls = ConcurrentlyModifiableListeners.create();
                 map.put(type, ls);
             }
             ls.addListener_(listener);
@@ -70,7 +70,7 @@ public class UINotifier implements IViewNotifier
     private void doNotify(Type type, GeneratedMessageLite notification)
     {
         synchronized (map) {
-            Listeners<IUINotificationListener> ls = map.get(type);
+            ConcurrentlyModifiableListeners<IUINotificationListener> ls = map.get(type);
             if (ls != null) {
                 try {
                     for (IUINotificationListener l : ls.beginIterating_()) {

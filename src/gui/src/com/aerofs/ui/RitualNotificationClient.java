@@ -12,7 +12,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 
 public class RitualNotificationClient
@@ -32,7 +32,7 @@ public class RitualNotificationClient
     private volatile boolean _stopping;
 
     // access protected by synchronized (_ls)
-    private final Listeners<IListener> _ls = Listeners.newListeners();
+    private final ConcurrentlyModifiableListeners<IListener> _ls = ConcurrentlyModifiableListeners.create();
 
     /**
      * @pre this method hasn't been called before.

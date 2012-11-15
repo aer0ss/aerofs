@@ -13,7 +13,7 @@ import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.events.VerifyEvent;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 
 public class CompEmailAddressTextBox extends Composite
 {
@@ -30,7 +30,8 @@ public class CompEmailAddressTextBox extends Composite
 
         private final Pattern _pattern = Pattern.compile("[\\p{Space},;]+");
 
-        private final Listeners<IInputChangeListener> _ls = Listeners.newListeners();
+        private final ConcurrentlyModifiableListeners<IInputChangeListener> _ls = ConcurrentlyModifiableListeners
+                .create();
 
         /**
          * Create the composite.

@@ -18,7 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 
 /**
  * Acquire your tokens here, for a nominal fee
@@ -68,7 +68,8 @@ public class TokenManager implements IDumpStatMisc
             _tokenSetMap.put(Prio.HI, _hi);
         }
 
-        private final Listeners<ITokenReclamationListener> _ls = Listeners.newListeners();
+        private final ConcurrentlyModifiableListeners<ITokenReclamationListener> _ls = ConcurrentlyModifiableListeners
+                .create();
 
         private CatInfo(Cat cat)
         {

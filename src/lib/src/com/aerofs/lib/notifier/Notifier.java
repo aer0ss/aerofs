@@ -16,7 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
- * TODO (WW) this class is duplicate with Listeners in functionality. Consider refactoring.
+ * TODO (WW) this class is duplicate with ConcurrentlyModifiableListeners in functionality.
+ *
+ * N.B. Listeners are notified in an arbitrary order.
  */
 public final class Notifier<ListenerType>
 {

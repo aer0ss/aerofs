@@ -10,11 +10,11 @@ import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.notifier.Listeners;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 
 // see IDownloadListener for valid state transitions
 
-public class UploadState extends Listeners<IUploadStateListener>
+public class UploadState extends ConcurrentlyModifiableListeners<IUploadStateListener>
 implements IDumpStatMisc {
 
     private final Map<Key, Value> _state = new HashMap<Key, Value>();

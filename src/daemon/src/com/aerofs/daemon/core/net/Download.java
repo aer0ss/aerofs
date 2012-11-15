@@ -31,6 +31,7 @@ import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExOutOfSpace;
 import com.aerofs.lib.ex.ExUpdateInProgress;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
+import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -47,7 +48,6 @@ import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.notifier.Listeners;
 
 import javax.annotation.Nullable;
 
@@ -57,7 +57,8 @@ public class Download
     private static final FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     private final To _src;
-    private final Listeners<IDownloadCompletionListener> _ls = Listeners.newListeners();
+    private final ConcurrentlyModifiableListeners<IDownloadCompletionListener> _ls = ConcurrentlyModifiableListeners
+            .create();
     private final Token _tk;
     private final SOCID _socid;
     private Prio _prio;

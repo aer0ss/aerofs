@@ -11,24 +11,26 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
+ * THIS CLASS IS OBSOLETE. CONSIDER USING AND IMPROVING Notifier.java INSTEAD.
+ *
+ * TODO (WW) this class is duplicate with Notifier in functionality. Consider refactoring.
+ *
  * A utility class for listener registration and notification. Support copy-on-write on the
  * listeners list. It iterates the listeners in the same order as the order in which listeners
  * are added.
- *
- * TODO (WW) this class is duplicate with Notifier in functionality. Consider refactoring.
  */
-public class Listeners<T>
+public class ConcurrentlyModifiableListeners<T>
 {
     private LinkedHashSet<T> _ls = new LinkedHashSet<T>();
     private int _iterators;
     private boolean _copiedOnWrite;
 
     /**
-     * @return a newly created Listeners object
+     * @return a newly created ConcurrentlyModifiableListeners object
      */
-    public static <T> Listeners<T> newListeners()
+    public static <T> ConcurrentlyModifiableListeners<T> create()
     {
-        return new Listeners<T>();
+        return new ConcurrentlyModifiableListeners<T>();
     }
 
     /**
@@ -87,11 +89,6 @@ public class Listeners<T>
             assert _iterators > 0;
             _ls = removeAll ? new LinkedHashSet<T>() : new LinkedHashSet<T>(_ls);
         }
-    }
-
-    public boolean hasListeners_()
-    {
-        return !_ls.isEmpty();
     }
 
     /**
