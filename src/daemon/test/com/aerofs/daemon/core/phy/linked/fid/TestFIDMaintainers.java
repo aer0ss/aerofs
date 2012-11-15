@@ -3,12 +3,14 @@ package com.aerofs.daemon.core.phy.linked.fid;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
@@ -38,9 +40,9 @@ public class TestFIDMaintainers extends AbstractTest
     FID fid = new FID(new byte[] {0, 1, 2, 3, 4});
 
     @Before
-    public void setup() throws IOException, SQLException
+    public void setup() throws IOException, SQLException, ExNotFound
     {
-        when(dr.getFID(anyString())).thenReturn(fid);
+        when(dr.getFIDAndType(anyString())).thenReturn(new FIDAndType(fid, false));
         when(ds.getOA_(any(SOID.class))).thenReturn(oa);
         when(oa.fid()).thenReturn(fid);
     }

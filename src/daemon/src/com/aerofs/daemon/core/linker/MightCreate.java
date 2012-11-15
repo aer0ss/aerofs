@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.fs.HdCreateObject;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -40,6 +39,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class MightCreate
 {
@@ -58,7 +58,7 @@ public class MightCreate
 
     @Inject
     public MightCreate(IgnoreList ignoreList, DirectoryService ds, HdMoveObject hdmo,
-            ObjectMover om, ObjectCreator oc, InjectableDriver driver, HdCreateObject hdco,
+            ObjectMover om, ObjectCreator oc, InjectableDriver driver,
             VersionUpdater vu, InjectableFile.Factory factFile,
             Analytics a, CfgAbsRootAnchor cfgAbsRootAnchor)
     {
@@ -93,6 +93,38 @@ public class MightCreate
     }
 
     /**
+     * To handle the cases of SAME_PATH_SAME_TYPE_ADMITTED and SAME_PATH_DIFF_TYPE_OR_EXPELLED
+     * the logical OA for the physical path is required, so we embed that in this wrapper class.
+     * TODO (MJ) this class smells. The best solution to remove it is to replace the switch
+     * statement in mightCreate with polymorphism, and embed the oaSamePath in the polymorphic
+     * subclasses.
+     */
+    private class ConditionAndOA
+    {
+        public final Condition _cond;
+        @Nullable public final OA _oaSamePath;
+
+        ConditionAndOA(Condition cond)
+        {
+            _cond = cond;
+            _oaSamePath = null;
+        }
+
+        ConditionAndOA(Condition cond, @Nonnull OA oaSamePath)
+        {
+            switch(cond) {
+            case SAME_PATH_DIFF_TYPE_OR_EXPELLED:
+            case SAME_PATH_SAME_TYPE_ADMITTED:
+                break;
+            default:
+                assert false;
+            }
+            _cond = cond;
+            _oaSamePath = oaSamePath;
+        }
+    }
+
+    /**
      * N.B. This method must throw on _any_ error instead of ignoring them and proceeding. See
      * Comment (A) in ScanSession.
      *
@@ -110,117 +142,37 @@ public class MightCreate
         // OS-specific files should be ignored
         if (fnt == null) return Result.IGNORED;
 
-        if (l.isInfoEnabled()) l.info(pcPhysical + ":" + fnt._fid);
+        if (l.isDebugEnabled()) l.debug(pcPhysical + ":" + fnt._fid);
 
         // TODO acl checking
 
         ////////
         // Determine condition. See enum Condition
 
-        Condition cond;
-        OA oaSamePath;
-        SOID soid;
-
-        soid = _ds.getSOIDNullable_(fnt._fid);
-        if (soid == null) {
-            // Logical object of the same FID is not found.
-            cond = null;
-        } else {
-            assert !_ds.getOA_(soid).isExpelled();
-
-            Path logicalPath = _ds.resolveNullable_(soid);
-            if (logicalPath != null) {
-                // Hard-link handling: We only let one of the hard-linked physical files/folders to
-                // be recorded as a logical object in the databse; the rest of the physical objects
-                // are subsequently skipped by the scan_() method, which results in the removal of
-                // the object from the MetaDatabase.
-                // 1) We retrieve the logical path from our DB for the current FID.
-                // 2) If the logical and physical paths are not equal and the
-                //    physical file with that logical path has the same FID as the current file
-                //    then we detected a hard link between the logical object and the current
-                //    physical object. In this situation, we ignore our current object and keep the
-                //    logical object in the database.
-                //
-                // NOTE: If the user deletes the object that we decided to keep in our database
-                //       after a full scan happened, the other devices will see one of the other
-                //       hard linked object appear only after another full scan.
-
-                if (!pcPhysical._path.equalsIgnoreCase(logicalPath)) {
-                    // Do a case insensitive equals to tolerate both case preserving and insensitive
-                    // file systems to make sure we don't ignore mv operations on files that have
-                    // the same letters in their name.
-                    // Example scenario is: mv ./hello.txt ./HELLO.txt
-
-                    String absLogicalPath = logicalPath.toAbsoluteString(_cfgAbsRootAnchor.get());
-                    try {
-                        FIDAndType logicalFnt = _dr.getFIDAndType(absLogicalPath);
-
-                        if ((logicalFnt != null) && (logicalFnt._fid.equals(fnt._fid))) {
-                            return Result.IGNORED;
-                        }
-                    } catch (IOException e) {
-                        // File is not found or there was an IO exception, in either case
-                        // this means that the FID of the logical object was not found, most likely
-                        // deleted, so proceed to update the DB.
-                    } catch (ExNotFound e) {
-                        // see above
-                    }
-                }
-            }
-            if (fnt._dir == _ds.getOA_(soid).isDirOrAnchor()) {
-                cond = Condition.SAME_FID_SAME_TYPE;
-            } else {
-                // The logical object has the same FID but different type than the physical object.
-                // This may happen if 1) the OS deletes an object and soon reuses the same FID to
-                // create a new object of a different type (this has been observed on a Ubuntu test
-                // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
-                // Linux. In either case, we assign the logical object with a random FID and proceed
-                // to the condition determination code.
-                l.info("set random fid for " + soid);
-                assignRandomFID_(soid, t);
-                cond = null;
-            }
-        }
-
-        if (cond != null) {
-            oaSamePath = null;
-        } else {
-            SOID soidSamePath = _ds.resolveNullable_(pcPhysical._path);
-            if (soidSamePath == null) {
-                oaSamePath = null;
-                cond = Condition.NO_MATCHING;
-            } else {
-                // Found a logical object with a different FID but the same path.
-                oaSamePath = _ds.getOA_(soidSamePath);
-
-                // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
-                // the no branch is present. See also detectAndApplyModification_()
-                assert !fnt._fid.equals(oaSamePath.fid());
-                // This assertion would fail if a new type other than file/dir/anchor is created in
-                // the future. The assertion is needed for the "fnt._dir == ...isDirOrAnchor()"
-                // check below.
-                assert oaSamePath.isDirOrAnchor() != oaSamePath.isFile();
-
-                if (oaSamePath.isExpelled()) {
-                    // MightDelete.shouldNotDelete should prevent expelled objects from entering the
-                    // deletion buffer.
-                    assert !delBuffer.contains_(soidSamePath);
-                    cond = Condition.SAME_PATH_DIFF_TYPE_OR_EXPELLED;
-                } else if (fnt._dir == oaSamePath.isDirOrAnchor()) {
-                    // The logical object is admitted and has the same type as the physical object.
-                    cond = Condition.SAME_PATH_SAME_TYPE_ADMITTED;
-                } else {
-                    // the logical object has a different type
-                    cond = Condition.SAME_PATH_DIFF_TYPE_OR_EXPELLED;
-                }
-            }
+        SOID soid = _ds.getSOIDNullable_(fnt._fid);
+        ConditionAndOA condAndOA;
+        try {
+            condAndOA = determineCondition_(soid, fnt, pcPhysical._path, delBuffer, t);
+        } catch (ExHardLinkDetected e) {
+            // Hard-link handling:
+            // Generally, we only let one of the hard-linked physical files/folders to
+            // be recorded as a logical object in the database; the rest of the physical objects
+            // are subsequently skipped by the scan_() method, which results in the removal of
+            // the object from the MetaDatabase.
+            //
+            // Specifically, in lieu of a hardlink, we ignore the current physical object and leave
+            // the logical object intact in the database.
+            // NOTE: If the user deletes the object that we decided to keep in our database
+            //       after a full scan happened, the other devices will see one of the other
+            //       hard linked object appear only after another full scan.
+            return Result.IGNORED;
         }
 
         ////////
         // Perform operations suited to each condition
 
         boolean createdOrReplaced;
-        switch (cond) {
+        switch (condAndOA._cond) {
         case SAME_FID_SAME_TYPE:
             // Update the logical object to reflect changes on the physical one, if any
             updateLogicalObject_(soid, pcPhysical, fnt._dir, t);
@@ -229,8 +181,8 @@ public class MightCreate
             break;
         case SAME_PATH_SAME_TYPE_ADMITTED:
             // Link the physical object to the logical object by replacing the FID.
-            replaceFID_(oaSamePath.soid(), pcPhysical, fnt._dir, fnt._fid, t);
-            delBuffer.remove_(oaSamePath.soid());
+            replaceFID_(condAndOA._oaSamePath.soid(), pcPhysical, fnt._dir, fnt._fid, t);
+            delBuffer.remove_(condAndOA._oaSamePath.soid());
             createdOrReplaced = true;
             break;
         case SAME_PATH_DIFF_TYPE_OR_EXPELLED:
@@ -238,7 +190,7 @@ public class MightCreate
             // physical object by replacing the FID.
 
             // First, move the existing logical object out of way.
-            renameConflictingLogicalObject_(oaSamePath, pcPhysical, t);
+            renameConflictingLogicalObject_(condAndOA._oaSamePath, pcPhysical, t);
 
             // Second, treat it as if no corresponding logical object is found, so that the system
             // will create a new logical object for the physical object.
@@ -248,7 +200,7 @@ public class MightCreate
             // deleted if it's not moved to other locations later on.
             break;
         default:
-            assert cond == Condition.NO_MATCHING;
+            assert condAndOA._cond == Condition.NO_MATCHING;
             createdOrReplaced = createLogicalObject_(pcPhysical, fnt._dir, t);
             break;
         }
@@ -257,6 +209,108 @@ public class MightCreate
             return createdOrReplaced ? Result.NEW_OR_REPLACED_FOLDER : Result.EXISTING_FOLDER;
         } else {
             return Result.FILE;
+        }
+    }
+
+    /**
+     * @pre fnt is the FID from the file system for physicalPath, and soid is the logical object
+     * recorded for that FID.
+     */
+    private ConditionAndOA determineCondition_(@Nullable SOID soid, FIDAndType fnt,
+            Path physicalPath, IDeletionBuffer delBuffer, Trans t)
+            throws SQLException, ExHardLinkDetected
+    {
+        if (soid == null) {
+            // Logical object of the same FID is not found.
+        } else {
+            assert !_ds.getOA_(soid).isExpelled();
+
+            Path logicalPath = _ds.resolveNullable_(soid);
+            if (logicalPath != null) throwIfHardLinkDetected_(logicalPath, physicalPath, fnt._fid);
+
+            if (fnt._dir == _ds.getOA_(soid).isDirOrAnchor()) {
+                return new ConditionAndOA(Condition.SAME_FID_SAME_TYPE);
+            } else {
+                // The logical object has the same FID but different type than the physical object.
+                // This may happen if 1) the OS deletes an object and soon reuses the same FID to
+                // create a new object of a different type (this has been observed on a Ubuntu test
+                // VM). This can also happen 2) on filesystems with ephemeral FIDs such as FAT on
+                // Linux. In either case, we assign the logical object with a random FID and proceed
+                // to the condition determination code.
+                l.info("set random fid for " + soid);
+                assignRandomFID_(soid, t);
+            }
+        }
+
+        SOID soidSamePath = _ds.resolveNullable_(physicalPath);
+        if (soidSamePath == null) {
+            return new ConditionAndOA(Condition.NO_MATCHING);
+        } else {
+            OA oaSamePath;
+            // Found a logical object with a different FID but the same path.
+            oaSamePath = _ds.getOA_(soidSamePath);
+
+            // The assertion below is guaranteed by the above code. N.B. oa.fid() may be null if
+            // the no branch is present. See also detectAndApplyModification_()
+            assert !fnt._fid.equals(oaSamePath.fid());
+            // This assertion would fail if a new type other than file/dir/anchor is created in
+            // the future. The assertion is needed for the "fnt._dir == ...isDirOrAnchor()"
+            // check below.
+            assert oaSamePath.isDirOrAnchor() != oaSamePath.isFile();
+
+            if (oaSamePath.isExpelled()) {
+                // MightDelete.shouldNotDelete should prevent expelled objects from entering the
+                // deletion buffer.
+                assert !delBuffer.contains_(soidSamePath);
+                return new ConditionAndOA(Condition.SAME_PATH_DIFF_TYPE_OR_EXPELLED, oaSamePath);
+            } else if (fnt._dir == oaSamePath.isDirOrAnchor()) {
+                // The logical object is admitted and has the same type as the physical object.
+                return new ConditionAndOA(Condition.SAME_PATH_SAME_TYPE_ADMITTED, oaSamePath);
+            } else {
+                // the logical object has a different type
+                return new ConditionAndOA(Condition.SAME_PATH_DIFF_TYPE_OR_EXPELLED, oaSamePath);
+            }
+        }
+    }
+
+    private class ExHardLinkDetected extends Exception
+    {
+        private static final long serialVersionUID = 2282347650299771874L;
+    }
+
+    /**
+     * Determine whether a hardlink exists between logicalPath and physicalPath.
+     * @param logicalPath path in the DB when looking up {@code physicalFID}
+     * @param physicalPath path that currently represents {@code physicalFID} on the FS
+     * @throws ExHardLinkDetected when a hardlink has been detected between logicalPath
+     * and physicalPath
+     */
+    private void throwIfHardLinkDetected_(Path logicalPath, Path physicalPath, FID physicalFID)
+            throws SQLException, ExHardLinkDetected
+    {
+        // If the logical and physical paths are not equal and the
+        // physical file with that logical path has the same FID as the current file
+        // then we detected a hard link between the logical object and the current
+        // physical object.
+
+        if (!physicalPath.equalsIgnoreCase(logicalPath)) {
+            // Do a case insensitive equals to tolerate both case preserving and insensitive
+            // file systems to make sure we don't ignore mv operations on files that have
+            // the same letters in their name.
+            // Example scenario is: mv ./hello.txt ./HELLO.txt
+
+            try {
+                String absLogicalPath = logicalPath.toAbsoluteString(_cfgAbsRootAnchor.get());
+                FID logicalFID = _dr.getFID(absLogicalPath);
+
+                if ((logicalFID != null) && (logicalFID.equals(physicalFID))) {
+                    throw new ExHardLinkDetected();
+                }
+            } catch (IOException e) {
+                // File is not found or there was an IO exception, in either case
+                // this means that the FID of the logical object was not found, most likely
+                // deleted, so proceed to update the DB.
+            }
         }
     }
 
@@ -383,7 +437,7 @@ public class MightCreate
             SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
                     pcPhysical._path.last(), MAP, t);
             _a.incSaveCount();
-            l.info("created " + newSOID + " " + pcPhysical);
+            l.info("created " + newSOID + ": " + _ds.getOA_(newSOID).fid() + " " + pcPhysical);
             return true;
         }
     }

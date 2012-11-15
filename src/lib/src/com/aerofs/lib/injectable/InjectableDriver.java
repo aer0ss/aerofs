@@ -63,7 +63,7 @@ public class InjectableDriver
         assert f.isAbsolute() : absPath;
         byte[] bs = new byte[getFIDLength()];
         int ret = Driver.getFid(null, absPath, bs);
-        if (ret == DRIVER_FAILURE) throwNotFoundOrIOException(absPath);
+        if (ret == DRIVER_FAILURE) throwNotFoundOrIOException(f);
         if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FIDAndType(new FID(bs), ret == GETFID_DIR);
     }
@@ -71,26 +71,28 @@ public class InjectableDriver
     /**
      * @return null on OS-specific files
      */
-    public @Nullable FID getFID(String absPath) throws IOException
+    final public @Nullable FID getFID(String absPath) throws IOException
     {
-        File f = new File(absPath);
-        assert f.isAbsolute() : absPath;
-        byte[] bs = new byte[getFIDLength()];
-        int ret = Driver.getFid(null, absPath, bs);
-        if (ret == DRIVER_FAILURE) throwIOException(absPath);
-        if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
-        return new FID(bs);
+        try {
+            FIDAndType fnt = getFIDAndType(absPath);
+            return fnt == null ? null : fnt._fid;
+        } catch (ExNotFound e) {
+            // TODO (MJ) this is a hack: for some reason, getFID and getFIDAndType diverged in the
+            // exception types thrown. Previously they were copy-pasted differing mainly in
+            // Driver-failure handling. Perhaps callers of getFID can handle ExNotFound being
+            // thrown, but I don't want to find out now.
+            throw new IOException(e);
+        }
     }
 
     /**
      * @throws ExNotFound if the object is not present
      * @throws IOException if getFID failed for other reasons
      */
-    private void throwNotFoundOrIOException(String path)
+    private void throwNotFoundOrIOException(File f)
             throws IOException, ExNotFound
     {
-        File f = new File(path);
-        if (f.exists()) throwIOException(path);
+        if (f.exists()) throwIOException(f);
         else throw new ExNotFound(FileUtil.debugString(f));
     }
 
@@ -99,9 +101,8 @@ public class InjectableDriver
             "2a1a2221"  // hola@hoyesmiercoles.com
             );
 
-    private void throwIOException(String path) throws IOException
+    private void throwIOException(File f) throws IOException
     {
-        File f = new File(path);
         // TODO (DF/MJ): remove after you're done debugging daniel@iswech.de and
         // hola@hoyesmiercoles.com
         String user = _cfgLocalUser.get();

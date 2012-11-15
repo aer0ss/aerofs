@@ -8,8 +8,10 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.injectable.InjectableFile.Factory;
 import com.aerofs.testlib.AbstractTest;
@@ -46,9 +48,9 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
             InjectableDriver dr, DirectoryService ds, IgnoreList il, SOKID sokid, Path path);
 
     @Before
-    public void setupAbstractTestLocalObject() throws IOException, SQLException
+    public void setupAbstractTestLocalObject() throws IOException, SQLException, ExNotFound
     {
-        when(dr.getFID(any(String.class))).thenReturn(fid);
+        when(dr.getFIDAndType(any(String.class))).thenReturn(new FIDAndType(fid, false));
 
         when(cfgAbsRootAnchor.get()).thenReturn("");
         when(factFile.create(any(String.class))).then(RETURNS_MOCKS);
