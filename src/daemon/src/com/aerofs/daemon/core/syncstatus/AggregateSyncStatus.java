@@ -183,8 +183,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             throws SQLException
     {
         OA oaParent = _ds.getOA_(parent);
-        // invariant : aggregation stop at store root, anchors are treated as regular file within
-        // the parent store
+        // invariant: aggregation stop at store root, anchors are treated as regular file within
+        // the parent store.
         assert !oaParent.isAnchor();
 
         int first = diffStatus.findFirstSetBit();
@@ -445,15 +445,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         OA oa = _ds.getOA_(soid);
         // expulsion and deletion are nicely intertwined:
         // deletion causes implicit expulsion and explicitly expelled object (and their implicitly
-        // expelled children) may still be deleted from other peers. All this cases can be handled
+        // expelled children) may still be deleted from other peers. All these cases can be handled
         // in the same way but one must be careful not to decrement aggregate counter multiple times
-        // lest he ends up with a bogus aggregate status (and assertion failures down the road)
+        // lest you end up with a bogus aggregate status (and assertion failures down the road).
         if (ignoreExpelled && oa.isExpelled()) {
             if (l.isInfoEnabled()) l.info("ignore delete expelled " + soid);
             return;
         }
 
-        // for directories, take aggregate sync status into account
+        // for directories, take aggregate sync status into account.
         // anchors are treated as regular files as their children are aggregated on lookup
         if (oa.isDir()) {
             oldStatus.andInPlace(getAggregateSyncStatusVector_(soid));
