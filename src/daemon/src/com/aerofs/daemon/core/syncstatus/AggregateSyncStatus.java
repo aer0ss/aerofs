@@ -210,8 +210,9 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         parentDiffStatus.andInPlace(parentStatus);
 
         if (l.isInfoEnabled()) {
-            l.info("update " + parent + " " + diffStatus + " " + newStatus + " " + parentAggregate);
-            l.info("\t" + parentSyncableChildCountDiff + " " + parentStatus + " " + parentDiffStatus);
+            l.info("update " + parent + " " + diffStatus + " " + newStatus);
+            l.info("\t" + parentAggregate + " " + parentStatus + " " + parentDiffStatus);
+            l.info("\t" + parentSyncableChildCountDiff + " " + total + " " + deviceCount);
         }
 
         for (int i = first; i != -1; i = diffStatus.findNextSetBit(i + 1)) {
@@ -294,6 +295,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
     /**
      * Called from DirectoryService when an existing object is *removed from the DB*
+     *
+     * NOTE: This callback is guaranteed to only be called for non-expelled objects
      */
     @Override
     public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t)
@@ -321,8 +324,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             }
             return;
         }
-
-        // TODO: figure out if expelled objects can be moved and what to do in this case
 
         if (l.isInfoEnabled()) l.info("moved " + soid + " " + parentFrom + " " + parentTo);
 
@@ -367,8 +368,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         Path path = _ds.resolve_(soid);
         SOID parent = new SOID(soid.sidx(), oa.parent());
 
-        // ignore expulsion resulting from object deletion (moving to trash)
-        if (_ds.isDeleted_(oa)) return;
+        // NOTE: it would theoretically be possible to handle expulsion resulting from deletion
+        // and selective sync the same way which one might think would be cleaner but it would
+        // involve limiting the upward propagation at the deletion boundary which would actually
+        // end up being quite cumbersome. Therefore we simply reset aggregate sync status upon
+        // expulsion resulting from deletion
+        if (_ds.isDeleted_(oa)) {
+            if (oa.isDir()) _ds.setAggregateSyncStatus_(soid, new CounterVector(), t);
+            return;
+        }
 
         if (l.isInfoEnabled()) l.info("expelled " + soid);
         updateParentAggregateOnDeletion_(soid, parent, path, t);
@@ -433,9 +441,16 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // get old sync status, this will be the diff
         BitVector oldStatus = _ds.getSyncStatus_(soid);
 
+        OA oa = _ds.getOA_(soid);
+        // expelled objects are not take into account in the aggregate sync status of their parent
+        // so we don't have anything to update in this case
+        if (oa.isExpelled()) {
+            if (l.isInfoEnabled()) l.info("ignore delete expelled " + soid);
+            return;
+        }
+
         // for directories, take aggregate sync status into account
         // anchors are treated as regular files as their children are aggregated on lookup
-        OA oa = _ds.getOA_(soid);
         if (oa.isDir()) {
             oldStatus.andInPlace(getAggregateSyncStatusVector_(soid));
         }
@@ -477,7 +492,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // is known locally but expelled. No actual CONTENT is being created so no file/folder
         // is created either and aggregate sync status can therefore safely ignore these events
         if (oa.isExpelled()) {
-            if (l.isInfoEnabled()) l.info("ignore expelled " + soid);
+            if (l.isInfoEnabled()) l.info("ignore create expelled " + soid);
             return;
         }
 
