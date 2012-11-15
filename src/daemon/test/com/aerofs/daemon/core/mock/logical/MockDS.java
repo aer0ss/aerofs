@@ -322,20 +322,18 @@ public class MockDS
             }
         }
 
-        public void move(MockDSDir newParent, String newName) throws Exception
+        public void move(MockDSDir newParent, String newName,
+                Trans t, IDirectoryServiceListener... listeners) throws Exception
         {
             assert _parent != null;
             assert newParent != _parent;
             assert newParent != this;
 
             Path oldPath = getPath();
+            MockDSDir oldParent = _parent;
 
             _parent.remove(this);
             _parent = newParent;
-            if (_parent._oa.isExpelled() && !_oa.isExpelled()) {
-                when(_oa.isExpelled()).thenReturn(true);
-                // TODO: propagate to children
-            }
             when(_oa.parent()).thenReturn(_parent.soid().oid());
 
             if (!_name.equalsIgnoreCase(newName)) {
@@ -351,6 +349,23 @@ public class MockDS
             when(_ds.resolveNullable_(eq(_soid))).thenReturn(newPath);
             when(_ds.resolveThrows_(eq(_soid))).thenReturn(newPath);
             updatePathResolution(oldPath, newPath);
+
+
+            if (_ds.isTrashOrDeleted_(_parent.soid())) {
+                for (IDirectoryServiceListener listener : listeners)
+                    listener.objectDeleted_(_soid, oldParent.soid().oid(), oldPath, t);
+
+                if (_parent._oa.isExpelled() && !_oa.isExpelled()) {
+                    when(_oa.isExpelled()).thenReturn(true);
+                }
+
+                for (IDirectoryServiceListener listener : listeners)
+                    listener.objectExpelled_(_soid, t);
+            } else {
+                for (IDirectoryServiceListener listener : listeners)
+                    listener.objectMoved_(_soid, oldParent.soid().oid(), _parent.soid().oid(),
+                            oldPath, newPath, t);
+            }
         }
 
         public void updatePathResolution(Path oldPath, Path newPath) throws Exception
@@ -359,7 +374,7 @@ public class MockDS
             mockPathResolution(newPath, _soid);
         }
 
-        public void delete() throws Exception
+        public void delete(Trans t, IDirectoryServiceListener... listeners) throws Exception
         {
             // deleting is moving to the trash of the current store
             MockDSDir d = _parent;
@@ -367,7 +382,8 @@ public class MockDS
                 d = d._parent;
             }
 
-            move(d != null ? ((MockDSAnchor) d)._trash : _trash, _soid.oid().toStringFormal());
+            move(d != null ? ((MockDSAnchor) d)._trash : _trash, _soid.oid().toStringFormal(),
+                    t,  listeners);
         }
 
         public BitVector ss(BitVector newStatus) throws Exception
@@ -529,18 +545,18 @@ public class MockDS
         }
 
         @Override
-        public void delete() throws Exception
+        public void delete(Trans t, IDirectoryServiceListener... listeners) throws Exception
         {
             // recursively delete children
             for (MockDSObject o : _children.values()) {
-                o.delete();
+                o.delete(t, listeners);
             }
 
             // undo DS mocking
             when(_ds.getChild_(eq(_soid.sidx()), eq(_soid.oid()), any(String.class)))
                     .thenReturn(null);
 
-            super.delete();
+            super.delete(t, listeners);
         }
 
         public MockDSDir ss(boolean... sstat) throws Exception
@@ -696,10 +712,10 @@ public class MockDS
         }
 
         @Override
-        public void delete() throws Exception
+        public void delete(Trans t, IDirectoryServiceListener... listeners) throws Exception
         {
             // recursively delete children
-            _root.delete();
+            _root.delete(t, listeners);
             if (_sidx2dbm != null) {
                 when(_sidx2dbm.getDeviceMapping_(eq(_root.soid().sidx()))).thenReturn(new DeviceBitMap());
             }
@@ -708,7 +724,7 @@ public class MockDS
             when(_ds.followAnchorThrows_(_oa)).thenReturn(null);
 
             // undo DS mocking
-            super.delete();
+            super.delete(t,  listeners);
         }
 
         @Override
@@ -832,27 +848,7 @@ public class MockDS
         Path path = Path.fromString(p);
         MockDSDir d = cd(path.removeLast());
         MockDSObject c = d.child(path.last());
-        c.delete();
-        for (IDirectoryServiceListener listener : listeners)
-            listener.objectDeleted_(c.soid(), d.soid().oid(), path, t);
-        expel(c, t, listeners);
-    }
-
-    private void expel(MockDSObject o, Trans t, IDirectoryServiceListener... listeners)
-            throws Exception
-    {
-        if (o instanceof MockDSFile) {
-            // TODO: delete all CAs
-        } else if (o instanceof MockDSAnchor) {
-            // TODO: remove anchored store
-        } else if (o instanceof MockDSDir) {
-            MockDSDir d = (MockDSDir)o;
-            for (MockDSObject c : d._children.values()) {
-                expel(c, t, listeners);
-            }
-        }
-        for (IDirectoryServiceListener listener : listeners)
-            listener.objectExpelled_(o.soid(), t);
+        c.delete(t, listeners);
     }
 
     public void move(String org, String dst, Trans t, IDirectoryServiceListener... listeners)
@@ -864,9 +860,7 @@ public class MockDS
         MockDSObject c = dfrom.child(from.last());
 
         MockDSDir dto = cd(to.removeLast());
-        c.move(dto, to.last());
-        for (IDirectoryServiceListener listener : listeners)
-            listener.objectMoved_(c.soid(), dfrom.soid().oid(), dto.soid().oid(), from, to, t);
+        c.move(dto, to.last(), t, listeners);
     }
 
     public void sync(String p, BitVector newStatus, Trans t, IDirectoryServiceListener... listeners)
