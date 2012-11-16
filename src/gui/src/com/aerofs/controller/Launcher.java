@@ -156,10 +156,10 @@ class Launcher
             // failures due to binary issues.
             if (PostUpdate.updated()) verifyChecksums();
 
-            // RootAnchorWatch should be executed before the daemon starts so that the users know
+            // RootAnchorPoller should be executed before the daemon starts so that the users know
             // that they moved or deleted the root anchor prior to the daemon failing because
             // that folder is missing
-            UI.raw().start();
+            UI.rap().start();
 
             if (!isFirstTime) {
                 UI.dm().start();

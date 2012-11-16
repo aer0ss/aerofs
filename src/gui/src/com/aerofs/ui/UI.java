@@ -3,8 +3,6 @@ package com.aerofs.ui;
 import com.aerofs.controller.ControllerClient;
 import com.aerofs.ui.update.Updater;
 import com.aerofs.gui.GUI;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.injectable.InjectableJNotify;
 
 /**
  * Global access points for all the singleton classes used in the Java UI
@@ -37,8 +35,7 @@ public class UI
     private static final Updater s_updater = Updater.getInstance_();
     private static final UINotifier s_notifier = new UINotifier();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
-    private static final RootAnchorWatch s_raw = new RootAnchorWatch(new InjectableFile.Factory(),
-            new InjectableJNotify());
+    private static final RootAnchorPoller s_rap = new RootAnchorPoller();
 
     private static ControllerClient s_controller;
 
@@ -49,7 +46,7 @@ public class UI
     public static RitualNotificationClient rnc() { return s_rnc; }
 
     // TODO (WW): Move to ControllerService
-    public static RootAnchorWatch raw() { return s_raw; }
+    public static RootAnchorPoller rap() { return s_rap; }
 
     public static UINotifier notifier() { return s_notifier; }
 

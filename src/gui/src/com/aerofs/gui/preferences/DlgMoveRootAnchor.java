@@ -108,10 +108,6 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
                 ritual.close();
             }
         }
-
-        // Call this method in case the deletion of the old root anchor fails, which would prevent
-        // RootAnchorWatch from detecting the change. See HdRelocateRootAnchor#deleteOldFolders.
-        UI.raw().onPotentialRootAnchorChange();
     }
 
     @Override
