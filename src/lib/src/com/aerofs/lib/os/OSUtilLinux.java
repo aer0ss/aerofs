@@ -167,7 +167,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
                 "REISER", "XFS", "UFS", "CRYPT", "JFS", "SIMFS",
                 "UNKNOWN (0X565A4653)", // VZFS when stat doesn't know about that magic number
         };
-        for (String fs : fss) if (type.startsWith(fs)) return true;
+        for (String fs : fss) if (type.toUpperCase().startsWith(fs.toUpperCase())) return true;
         return false;
     }
 
