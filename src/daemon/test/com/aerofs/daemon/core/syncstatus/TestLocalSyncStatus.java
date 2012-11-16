@@ -89,7 +89,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
         DirectoryService r = new DirectoryService();
         r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, il, sdn);
-        lsync = new LocalSyncStatus(r, stores, ssdb, sidx2sid, sidx2dbm, assc, sdn, dss);
+        lsync = new LocalSyncStatus(r, ssdb, sidx2dbm, assc, sdn, dss);
     }
 
     @After
