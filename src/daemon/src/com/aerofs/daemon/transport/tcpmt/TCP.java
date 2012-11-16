@@ -553,6 +553,12 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     @Override
     public synchronized void arpChange_(DID did, ARPChange chg)
     {
+        if (chg == ARPChange.ADD) {
+            l.info("rcv online presence d:" + did);
+        } else if (chg == ARPChange.REM) {
+            l.info("rcv offline presence d:" + did);
+        }
+
         _pm.stopPulse(did, false);
     }
 
