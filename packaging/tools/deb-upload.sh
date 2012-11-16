@@ -41,7 +41,8 @@ fi
 ssh $APT_SERVER "rm -f ~/debs/*"
 scp debs/* $APT_SERVER:~/debs/
 ssh $APT_SERVER \
-    "cd /var/www/ubuntu/$DEST/; \
+    "set -e;
+    cd /var/www/ubuntu/$DEST/; \
     for deb in \$(ls ~/debs/*.deb); \
     do \
         echo signing \$deb; \
