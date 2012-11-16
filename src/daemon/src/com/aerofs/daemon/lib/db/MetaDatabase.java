@@ -260,7 +260,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
 
    private PreparedStatement _psSCAH;
     @Override
-    public void setCAHash_(SOID soid, KIndex kidx, ContentHash h, Trans t)
+    public void setCAHash_(SOID soid, KIndex kidx, @Nonnull ContentHash h, Trans t)
         throws SQLException
     {
         try {
@@ -272,7 +272,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
                     C_CA_KIDX + "=?");
 
             _psSCAH.setBytes(1, h.getBytes());
-
             _psSCAH.setInt(2, soid.sidx().getInt());
             _psSCAH.setBytes(3, soid.oid().getBytes());
             _psSCAH.setInt(4, kidx.getInt());

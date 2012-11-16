@@ -12,6 +12,8 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserPathResolver;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.id.UniqueID;
 import com.google.common.collect.Lists;
@@ -64,6 +66,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock IgnoreList il;
     @Mock FrequentDefectSender fds;
     @Mock StoreDeletionNotifier sdn;
+    @Mock SingleuserStores sss;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
     IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
@@ -89,9 +92,10 @@ public class TestLocalSyncStatus extends AbstractTest
 
         when(tm.begin_()).thenReturn(t);
 
-        DirectoryService r = new DirectoryService();
-        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, il, fds, sdn);
-        lsync = new LocalSyncStatus(r, ssdb, sidx2dbm, assc, sdn, dss);
+        DirectoryService ds = new DirectoryService();
+        SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sidx2sid);
+        ds.inject_(ps, mdb, alias2target, tm, sm, il, fds, sdn, pathResolver);
+        lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdn, dss);
     }
 
     @After
@@ -114,7 +118,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Test
     public void shouldAddDevices() throws SQLException
     {
-        sdb.add_(sidx, sidx, t);
+        sdb.add_(sidx, t);
 
         assertDeviceList();
 
@@ -131,7 +135,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Test
     public void shouldUpdateSyncStatus() throws SQLException, ExAlreadyExist
     {
-        sdb.add_(sidx, sidx, t);
+        sdb.add_(sidx, t);
         mdb.createOA_(sidx, OID.ROOT, OID.ROOT, "R", OA.Type.DIR, 0, t);
         mdb.createOA_(sidx, o1.oid(), OID.ROOT, "foo", OA.Type.FILE, 0, t);
         mdb.createOA_(sidx, o2.oid(), OID.ROOT, "bar", OA.Type.DIR, 0, t);

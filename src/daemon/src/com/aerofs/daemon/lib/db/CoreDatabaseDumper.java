@@ -57,6 +57,8 @@ public class CoreDatabaseDumper extends AbstractDatabase
         ps.println();
         dumpStore_(ps);
         ps.println();
+        dumpStoreParent_(ps);
+        ps.println();
         dumpPrefix_(ps, formal);
         ps.println();
         dumpVer_(ps, formal);
@@ -398,7 +400,7 @@ public class CoreDatabaseDumper extends AbstractDatabase
         ResultSet rs = c().createStatement().executeQuery(
                 "select " + C_SID_SIDX + "," + C_SID_SID + " from " + T_SID);
         ps.println("================== " + T_SID + " =====================");
-        ps.println(C_STORE_SIDX + "\t" + C_SID_SID);
+        ps.println(C_SID_SIDX + "\t" + C_SID_SID);
         ps.println("------------------------------------------");
         while (rs.next()) {
             SIndex sidx = new SIndex(rs.getInt(1));
@@ -411,23 +413,37 @@ public class CoreDatabaseDumper extends AbstractDatabase
             throws SQLException
     {
         ResultSet rs = c().createStatement().executeQuery(
-                "select " + C_STORE_SIDX + "," + C_STORE_PARENT + ","  + C_STORE_DIDS +
+                "select " + C_STORE_SIDX + "," + C_STORE_DIDS +
                 " from " + T_STORE);
         ps.println("================== " + T_STORE + " =====================");
-        ps.println(C_STORE_SIDX + "\t" + C_STORE_PARENT + "\t" + C_STORE_DIDS);
+        ps.println(C_STORE_SIDX + "\t" + C_STORE_DIDS);
+        ps.println("------------------------------------------");
+        while (rs.next()) {
+            SIndex sidx = new SIndex(rs.getInt(1));
+            byte[] d = rs.getBytes(2);
+            StringBuilder bd = new StringBuilder();
+            for (int i = 0; i < (d != null ? d.length / DID.LENGTH : 0); ++i) {
+                bd.append(new DID(Arrays.copyOfRange(d, i * DID.LENGTH, (i+1) * DID.LENGTH))
+                        .toStringFormal());
+                bd.append(" ");
+            }
+            ps.println(sidx + "\t" + bd.toString());
+        }
+    }
+
+    private void dumpStoreParent_(PrintStream ps)
+            throws SQLException
+    {
+        ResultSet rs = c().createStatement().executeQuery(
+                "select " + C_SH_SIDX + "," + C_SH_PARENT_SIDX +
+                        " from " + T_SH);
+        ps.println("================== " + T_SH + " =====================");
+        ps.println(C_SH_SIDX + "\t" + C_SH_PARENT_SIDX);
         ps.println("------------------------------------------");
         while (rs.next()) {
             SIndex sidx = new SIndex(rs.getInt(1));
             SIndex parent = new SIndex(rs.getInt(2));
-            byte[] d = rs.getBytes(3);
-            StringBuilder bd = new StringBuilder();
-            for (int i = 0; i < (d != null ? d.length / DID.LENGTH : 0); ++i) {
-                bd.append(new DID(Arrays.copyOfRange(d, i * DID.LENGTH,
-                                                     (i+1) * DID.LENGTH)
-                                 ).toStringFormal());
-                bd.append(" ");
-            }
-            ps.println(sidx + "\t" + parent + "\t" + bd.toString());
+            ps.println(sidx + "\t" + parent);
         }
     }
 

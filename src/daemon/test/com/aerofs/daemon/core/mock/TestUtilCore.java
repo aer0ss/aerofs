@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import org.junit.Ignore;
 
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -105,8 +106,6 @@ public class TestUtilCore
     }
 
     /**
-     * @param len
-     * @param mtime
      * @param nvc non-null to mock local versions for those branches
      */
     public static void mockBranches(OA oa, int branches,
@@ -144,7 +143,7 @@ public class TestUtilCore
         }
 
         if (ss != null) {
-            when(ss.getParent_(sidx)).thenReturn(sidxParent);
+            when(ss.getParents_(sidx)).thenReturn(Collections.singleton(sidxParent));
             Set<SIndex> children = ss.getChildren_(sidxParent);
             if (children == null) children = Sets.newHashSet();
             children.add(sidx);

@@ -183,7 +183,7 @@ public class DevicePresence implements IDumpStatMisc
         return ret;
     }
 
-    public void storeAdded_(SIndex sidx)
+    public void afterAddingStore_(SIndex sidx)
     {
         updateStoresForTransports_(sindex2sid_(Collections.singleton(sidx)), new SID[0]);
 

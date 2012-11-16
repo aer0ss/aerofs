@@ -1,23 +1,24 @@
 package com.aerofs.daemon.lib.db;
 
 import static com.aerofs.lib.db.CoreSchema.*;
+import static com.aerofs.lib.db.DBUtil.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 /**
@@ -32,24 +33,40 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         super(dbcw.get());
     }
 
+    private PreparedStatement _psGA;
     @Override
-    public Collection<StoreRow> getAll_() throws SQLException
+    public Set<SIndex> getAll_() throws SQLException
     {
-        ArrayList<StoreRow> srs = Lists.newArrayList();
+        try {
+            if (_psGA == null) _psGA = c().prepareStatement(selectFrom(T_STORE, C_STORE_SIDX));
 
+            ResultSet rs = _psGA.executeQuery();
+            try {
+                Set<SIndex> srs = Sets.newTreeSet();
+                while (rs.next()) Util.verify(srs.add(new SIndex(rs.getInt(1))));
+                return srs;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            DBUtil.close(_psGA);
+            _psGA = null;
+            throw e;
+        }
+    }
+
+    @Override
+    public boolean hasAny_() throws SQLException
+    {
         // we don't prepare the statement as the method is called infrequently
         Statement stmt = c().createStatement();
         try {
-            ResultSet rs = stmt.executeQuery("select " + C_STORE_SIDX + "," + C_STORE_PARENT +
-                    " from " + T_STORE);
+            ResultSet rs = stmt.executeQuery(selectFrom(T_STORE, "count(*)"));
             try {
-                while (rs.next()) {
-                    StoreRow sr = new StoreRow();
-                    sr._sidx = new SIndex(rs.getInt(1));
-                    sr._sidxParent = new SIndex(rs.getInt(2));
-                    srs.add(sr);
-                }
-                return srs;
+                Util.verify(rs.next());
+                int count = rs.getInt(1);
+                assert !rs.next();
+                return count != 0;
             } finally {
                 rs.close();
             }
@@ -58,42 +75,52 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         }
     }
 
-    private PreparedStatement _psAdd;
-    @Override
-    public void add_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException
-    {
-        try {
-            if (_psAdd == null) {
-                _psAdd = c().prepareStatement("insert into " + T_STORE + "(" + C_STORE_SIDX + "," +
-                        C_STORE_PARENT + ") values(?,?)");
-            }
+    static boolean _assertsEnabled;
+    static {
+        //noinspection AssertWithSideEffects,ConstantConditions
+        assert _assertsEnabled = true; // Intentional side effect!
+    }
 
-            _psAdd.setInt(1, sidx.getInt());
-            _psAdd.setInt(2, sidxParent.getInt());
-            Util.verify(_psAdd.executeUpdate() == 1);
+    private PreparedStatement _psAE;
+    @Override
+    public void assertExists_(SIndex sidx) throws SQLException
+    {
+        if (!_assertsEnabled) return;
+
+        try {
+            if (_psAE == null) _psAE = c().prepareStatement(
+                    selectFromWhere(T_STORE, C_STORE_SIDX + "=?", "count(*)"));
+
+            _psAE.setInt(1, sidx.getInt());
+            ResultSet rs = _psAE.executeQuery();
+            try {
+                Util.verify(rs.next());
+                assert rs.getInt(1) == 1;
+                assert !rs.next();
+            } finally {
+                rs.close();
+            }
         } catch (SQLException e) {
-            DBUtil.close(_psAdd);
-            _psAdd = null;
+            DBUtil.close(_psAE);
+            _psAE = null;
             throw e;
         }
     }
 
-    private PreparedStatement _psSP;
+    private PreparedStatement _psAdd;
     @Override
-    public void setParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException
+    public void add_(SIndex sidx, Trans t) throws SQLException
     {
         try {
-            if (_psSP == null) {
-                _psSP = c().prepareStatement("update " + T_STORE + " set " + C_STORE_PARENT +
-                        "=? where " + C_STORE_SIDX + "=?");
+            if (_psAdd == null) {
+                _psAdd = c().prepareStatement(insert(T_STORE, C_STORE_SIDX));
             }
 
-            _psSP.setInt(1, sidxParent.getInt());
-            _psSP.setInt(2, sidx.getInt());
-            Util.verify(_psSP.executeUpdate() == 1);
+            _psAdd.setInt(1, sidx.getInt());
+            Util.verify(_psAdd.executeUpdate() == 1);
         } catch (SQLException e) {
-            DBUtil.close(_psSP);
-            _psSP = null;
+            DBUtil.close(_psAdd);
+            _psAdd = null;
             throw e;
         }
     }
@@ -105,6 +132,83 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         assert rowsChanged == 1 : rowsChanged;
     }
 
+    private PreparedStatement _psAP;
+    @Override
+    public void addParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException
+    {
+        try {
+            if (_psAP == null) {
+                _psAP = c().prepareStatement(insert(T_SH, C_SH_SIDX, C_SH_PARENT_SIDX));
+            }
+
+            _psAP.setInt(1, sidx.getInt());
+            _psAP.setInt(2, sidxParent.getInt());
+            Util.verify(_psAP.executeUpdate() == 1);
+        } catch (SQLException e) {
+            DBUtil.close(_psAP);
+            _psAP = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psDP;
+    @Override
+    public void deleteParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException
+    {
+        try {
+            if (_psDP == null) {
+                _psDP = c().prepareStatement(deleteWhereEquals(T_SH, C_SH_SIDX, C_SH_PARENT_SIDX));
+            }
+
+            _psDP.setInt(1, sidx.getInt());
+            _psDP.setInt(2, sidxParent.getInt());
+            Util.verify(_psDP.executeUpdate() == 1);
+        } catch (SQLException e) {
+            DBUtil.close(_psDP);
+            _psDP = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatementWrapper _psrGC = new PreparedStatementWrapper();
+    @Override
+    public Set<SIndex> getChildren_(SIndex sidx) throws SQLException
+    {
+        return getChildrenOrParents_(_psrGC, C_SH_PARENT_SIDX, C_SH_SIDX, sidx);
+    }
+
+    private PreparedStatementWrapper _psrGP = new PreparedStatementWrapper();
+    @Override
+    public Set<SIndex> getParents_(SIndex sidx) throws SQLException
+    {
+        return getChildrenOrParents_(_psrGP, C_SH_SIDX, C_SH_PARENT_SIDX, sidx);
+    }
+
+    private Set<SIndex> getChildrenOrParents_(PreparedStatementWrapper psr,
+            String conditionColumn, String resultColumn, SIndex sidx) throws SQLException
+    {
+        Set<SIndex> children = Sets.newTreeSet();
+
+        try {
+            if (psr.get() == null) {
+                psr.set(c().prepareStatement(
+                        selectFromWhere(T_SH, conditionColumn + "=?", resultColumn)));
+            }
+
+            psr.get().setInt(1, sidx.getInt());
+            ResultSet rs = psr.get().executeQuery();
+            try {
+                while (rs.next()) Util.verify(children.add(new SIndex(rs.getInt(1))));
+                return children;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            psr.close();
+            throw e;
+        }
+    }
+
     private PreparedStatement _psGetDeviceList;
     @Override
     public byte[] getDeviceMapping_(SIndex sidx) throws SQLException
@@ -112,7 +216,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         try {
             if (_psGetDeviceList == null) {
                 _psGetDeviceList = c().prepareStatement(
-                        "select " + C_STORE_DIDS + " from " + T_STORE + " where " + C_STORE_SIDX + "=?");
+                        selectFromWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_DIDS));
             }
             _psGetDeviceList.setInt(1, sidx.getInt());
             ResultSet rs = _psGetDeviceList.executeQuery();
@@ -139,8 +243,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         try {
             if (_psSetDeviceList == null) {
                 _psSetDeviceList = c().prepareStatement(
-                        "update " + T_STORE + " set " + C_STORE_DIDS + "=?" +
-                                " where " + C_STORE_SIDX + "=?");
+                        updateWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_DIDS));
             }
             _psSetDeviceList.setBytes(1, raw);
             _psSetDeviceList.setInt(2, sidx.getInt());
@@ -171,8 +274,8 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             int rowsChanged = 0;
 
             for (Entry<String, String> t2c : tables2columns.entrySet()) {
-                rowsChanged += stmt.executeUpdate("delete from " + t2c.getKey() + " where "
-                        + t2c.getValue() + "=" + sidx.getInt());
+                rowsChanged += stmt.executeUpdate(
+                        deleteWhere(t2c.getKey(), t2c.getValue() + "=" + sidx.getInt()));
             }
             return rowsChanged;
         } finally {

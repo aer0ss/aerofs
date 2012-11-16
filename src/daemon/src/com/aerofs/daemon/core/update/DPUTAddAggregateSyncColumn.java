@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
-import com.aerofs.daemon.lib.db.IStoreDatabase.StoreRow;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
@@ -137,9 +136,9 @@ public class DPUTAddAggregateSyncColumn implements IDaemonPostUpdateTask
 
         // populate the aggregate sync status column by recursively aggregating sync status for each
         // store root
-        for (StoreRow sr : _sdb.getAll_()) {
-            l.warn("-> " + sr._sidx);
-            SOID croot = new SOID(sr._sidx, OID.ROOT);
+        for (SIndex sidx : _sdb.getAll_()) {
+            l.warn("-> " + sidx);
+            SOID croot = new SOID(sidx, OID.ROOT);
             aggregateRecursivelyWithinStore_(croot);
         }
     }

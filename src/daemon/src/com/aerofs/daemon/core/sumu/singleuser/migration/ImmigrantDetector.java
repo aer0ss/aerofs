@@ -182,9 +182,9 @@ public class ImmigrantDetector implements IImmigrantDetector
         SID sid = SID.anchorOID2storeSID(soidTo.oid());
         SIndex sidx = _sid2sidx.get_(sid);
 
-        // update the child store's parent
-        assert _ss.getParent_(sidx).equals(oaFrom.soid().sidx());
-        _ss.setParent_(sidx, soidTo.sidx(), t);
+        // update the child store's parents
+        _ss.deleteParent_(sidx, oaFrom.soid().sidx(), t);
+        _ss.addParent_(sidx, soidTo.sidx(), t);
 
         // move physical objects
         oaFrom.physicalFolder().move_(oaTo.physicalFolder(), op, t);

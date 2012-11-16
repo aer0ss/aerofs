@@ -1,8 +1,6 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.Path;
-import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nonnull;
@@ -11,56 +9,68 @@ import java.sql.SQLException;
 import java.util.Set;
 
 /**
- * This is a wrapper around IStoreDatabase
+ * This interface provide a high-level accessor to IStoreDatabase. Clients should use this interface
+ * instead of referring to IStoreDatabse directly.
+ *
+ * General model of store hierarchy:
+ *
+ *  o Each store has zero or one or more parents.
+ *  o Store S is a parent of store T iff. S contains an admitted Anchor object referring to T.
+ *  o Root stores have zero parents.
+ *
+ * Additional constrains in single-user systems (See SingleuserStores):
+ *
+ *  o There is a single root store whose SID is derived from the user ID.
+ *  o Each non-root store has one and only one parent store. This is maintained by the migration
+ *    system.
+ *
+ * Also see IPathResolver for path hierachy, which is related to but different from store hierarchy.
  */
 public interface IStores
 {
-    void init_() throws SQLException, ExAlreadyExist, IOException;
+    void init_() throws SQLException, IOException;
 
     /**
-     * @param sidxParent set to {@code sidx} for root stores. See {@link IStores#getRoot_}.
-     *
      * @pre the store is not present locally
      */
-    void add_(SIndex sidx, @Nonnull SIndex sidxParent, Trans t) throws SQLException;
+    void add_(SIndex sidx, Trans t) throws SQLException;
 
     /**
-     * @pre the store is present locally
+     * @pre the store is present locally, and the parent doesn't exist
      */
-    void setParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
+    void addParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 
     /**
-     * @return the root store of the given path. For single-user systems, there is a single root
-     * store, and the return value doesn't depend on the parameter; for multi-user systems, each
-     * store is its own root, and the first element in the parameter identifies the SID in Base64
-     * encoding.
+     * @pre the store is present locally, and the parent exists
      */
-    @Nonnull SIndex getRoot_(Path path);
+    void deleteParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 
     /**
-     * @return true if and only if getParent_(sidx).equals(sidx)
+     * @return true if the store is a root store.
      *
-     * There is a single root in single-user system, where multiple roots can exist in multi-user
-     * systems.
+     * Invariant: a root store has an empty parent list: isRoot(S) == getParents_(S).isEmpty()
+     *
+     * There is a single root in single-user system, where more roots can exist in multi-user
+     * systems. In either case, there is one-to-one mapping between users to root stores.
      */
-    boolean isRoot_(SIndex sidx);
+    boolean isRoot_(SIndex sidx) throws SQLException;
 
     /**
-     * @return the parent of the specified store.
+     * @return parents of the specified store.
      * @pre the store is present locally
      *
-     * Invariant: the parent of a root store is itself.
+     * Invariant: a root store has an empty parent list: isRoot(S) == getParents_(S).isEmpty()
      */
-    @Nonnull SIndex getParent_(SIndex sidx) throws SQLException;
+    @Nonnull Set<SIndex> getParents_(SIndex sidx) throws SQLException;
 
     /**
      * @return direct children of the given store
      * @pre the store is present locally
      */
-    Set<SIndex> getChildren_(SIndex sidx) throws SQLException;
+    @Nonnull Set<SIndex> getChildren_(SIndex sidx) throws SQLException;
 
     /**
      * @return the set of all the stores that are present locally
      */
-    Set<SIndex> getAll_() throws SQLException;
+    @Nonnull Set<SIndex> getAll_() throws SQLException;
 }

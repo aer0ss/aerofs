@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.store;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Set;
 
 import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -48,17 +49,31 @@ public class StoreDeleter
     }
 
     /**
-     * Delete the store s, along with all the store's physical objects and child
-     * stores. This method can be called after the caller has updated
-     * the location of the store's anchor in the database, but not the location
-     * of physical files under the store. If the caller hasn't done that,
-     * the parameter {@code pathOld} should point to the current location of
-     * the anchor.
+     * Remove {@code sidxParent} as {@code sidx}'s parent. If the child store has no more parent,
+     * delete the store, along with all the store's physical objects and child stores. This method
+     * can be called after the caller has updated the location of the store's anchor in the
+     * database, but not the location of physical files under the store. If the caller hasn't done
+     * that, the parameter {@code pathOld} should point to the current location of the anchor.
      *
-     * @param pathOld the old path of the store's anchor before the caller moves
-     * it. It's used to locate the physical files.
+     * @param pathOld the old path of the store's anchor before the caller moves it. It's used to
+     * locate physical files.
      */
-    public void deleteRecursively_(SIndex sidx, Path pathOld, PhysicalOp op, Trans t)
+    public void removeParentStoreReference_(SIndex sidx, SIndex sidxParent, Path pathOld,
+            PhysicalOp op, Trans t)
+            throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
+    {
+        Set<SIndex> parents = _ss.getParents_(sidx);
+        if (parents.size() == 1) {
+            assert parents.contains(sidxParent);
+            deleteRecursively_(sidx, pathOld, op, t);
+        }
+
+        // Remove the parent _after_ deleting the store, since the deletion code may need the
+        // parenthood for path resolution, etc.
+        _ss.deleteParent_(sidx, sidxParent, t);
+    }
+
+    private void deleteRecursively_(SIndex sidx, Path pathOld, PhysicalOp op, Trans t)
             throws SQLException, ExNotFound, ExNotDir, ExStreamInvalid, IOException, ExAlreadyExist
     {
         // delete child stores. go through the store list before actual
@@ -85,7 +100,7 @@ public class StoreDeleter
 
         // actual deletion of child stores
         for (int i = 0; i < sidxChildren.size(); i++) {
-            deleteRecursively_(sidxChildren.get(i), pathChildren.get(i), op, t);
+            removeParentStoreReference_(sidxChildren.get(i), sidx, pathChildren.get(i), op, t);
         }
 
         // delete physical objects under the store. this must be done

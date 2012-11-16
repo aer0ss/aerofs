@@ -81,11 +81,11 @@ public class DBUtil
         sb.append(") VALUES(");
 
         for (int i = 0; i < fields.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append("?");
+            if (i > 0) sb.append(',');
+            sb.append('?');
         }
 
-        sb.append(")");
+        sb.append(')');
 
         return sb;
 
@@ -126,7 +126,7 @@ public class DBUtil
 
         boolean first = true;
         for (String field : fields) {
-            if (!first) sb.append(",");
+            if (!first) sb.append(',');
             else first = false;
             sb.append(field).append("=?");
         }
@@ -134,26 +134,32 @@ public class DBUtil
         return sb;
     }
 
-
-    public static String deleteWhere(String table, String... fields)
-    {
-        return deleteImpl(table, fields).toString();
-    }
-
     /**
-     * @return "delete from <table> where <field>=?, <field>=?,...
+     * @return "delete from <table> where <field>=?, <field>=?,..."
      */
-    private static StringBuilder deleteImpl(String table, String... fields)
+    public static String deleteWhereEquals(String table, String... fields)
     {
-        StringBuilder sb = new StringBuilder("delete from ").append(table).append(" where ");
-
+        StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (String field : fields) {
             if (!first) sb.append(" and ");
             else first = false;
             sb.append(field).append("=?");
         }
-        return sb;
+
+        return deleteWhere(table, sb.toString());
+    }
+
+    /**
+     * @return "delete from <table> where <condition>"
+     */
+    public static String deleteWhere(String table, String condition)
+    {
+        return new StringBuilder("delete from ")
+                .append(table)
+                .append(" where ")
+                .append(condition)
+                .toString();
     }
 
     public static String createUniqueIndex(String table, int indexNum, String ... columns)

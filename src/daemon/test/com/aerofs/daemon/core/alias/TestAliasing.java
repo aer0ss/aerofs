@@ -16,8 +16,9 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.SIDMap;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserPathResolver;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
 import com.aerofs.daemon.lib.db.*;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -102,6 +103,7 @@ public class TestAliasing extends AbstractTest
     private final ReceiveAndApplyUpdate ru = mock(ReceiveAndApplyUpdate.class);
     private final VersionUpdater vu = mock(VersionUpdater.class);
     private final TransManager tm = mock(TransManager.class);
+    private final SingleuserStores sss = mock(SingleuserStores.class);
 
     // System under test.
     private Aliasing al = new Aliasing();
@@ -129,8 +131,9 @@ public class TestAliasing extends AbstractTest
     public void setUp() throws Exception
     {
         DirectoryService realDS = new DirectoryService();
-        realDS.inject_(ps, mdb, alias2target, mock(IStores.class), tm, sidx2sid, sid2sidx, null,
-                mock(FrequentDefectSender.class), sdn);
+        SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, realDS, sidx2sid);
+        realDS.inject_(ps, mdb, alias2target, tm, sid2sidx, null,
+                mock(FrequentDefectSender.class), sdn, pathResolver);
         ds = spy(realDS);
 
         AliasingMover almv = new AliasingMover(ds, hasher, om, pvc, nvc, bd);

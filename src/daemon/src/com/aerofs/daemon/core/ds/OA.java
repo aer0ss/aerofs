@@ -86,6 +86,8 @@ public class OA
     private OA(SOID soid, OID parent, String name, Type type,
             @Nullable ImmutableSortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
     {
+        assert soid.oid().isRoot() || !soid.oid().equals(parent) : parent;
+
         _soid = soid;
         _parent = parent;
         _name = name;

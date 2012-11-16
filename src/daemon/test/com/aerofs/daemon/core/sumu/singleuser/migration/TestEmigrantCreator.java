@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.sumu.singleuser.migration;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
@@ -28,7 +28,7 @@ public class TestEmigrantCreator extends AbstractTest
 {
     @Mock IMapSID2SIndex sid2sidx;
     @Mock IMapSIndex2SID sidx2sid;
-    @Mock IStores ss;
+    @Mock SingleuserStores sss;
 
     @InjectMocks EmigrantCreator emc;
 
@@ -48,20 +48,20 @@ public class TestEmigrantCreator extends AbstractTest
     @Before
     public void setUp() throws SQLException, ExNotFound
     {
-        mockStore(null, sidTarget, sidxTarget, sidxRoot, ss, null, sid2sidx, sidx2sid);
-        mockStore(null, sidParent, sidxParent, sidxGrandParent, ss, null, sid2sidx, sidx2sid);
-        mockStore(null, sidGrandParent, sidxGrandParent, sidxGreatGrandParent, ss, null, sid2sidx, sidx2sid);
-        mockStore(null, sidGreatGrandParent, sidxGreatGrandParent, sidxRoot, ss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidTarget, sidxTarget, sidxRoot, sss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidParent, sidxParent, sidxGrandParent, sss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidGrandParent, sidxGrandParent, sidxGreatGrandParent, sss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidGreatGrandParent, sidxGreatGrandParent, sidxRoot, sss, null, sid2sidx, sidx2sid);
 
-        when(ss.getParent_(sidxTarget)).thenReturn(sidxParent);
-        when(ss.getParent_(sidxParent)).thenReturn(sidxGrandParent);
-        when(ss.getParent_(sidxGrandParent)).thenReturn(sidxGreatGrandParent);
-        when(ss.getParent_(sidxGreatGrandParent)).thenReturn(sidxRoot);
+        when(sss.getParent_(sidxTarget)).thenReturn(sidxParent);
+        when(sss.getParent_(sidxParent)).thenReturn(sidxGrandParent);
+        when(sss.getParent_(sidxGrandParent)).thenReturn(sidxGreatGrandParent);
+        when(sss.getParent_(sidxGreatGrandParent)).thenReturn(sidxRoot);
 
-        when(ss.isRoot_(sidxTarget)).thenReturn(false);
-        when(ss.isRoot_(sidxParent)).thenReturn(false);
-        when(ss.isRoot_(sidxGrandParent)).thenReturn(false);
-        when(ss.isRoot_(sidxGreatGrandParent)).thenReturn(true);
+        when(sss.isRoot_(sidxTarget)).thenReturn(false);
+        when(sss.isRoot_(sidxParent)).thenReturn(false);
+        when(sss.isRoot_(sidxGrandParent)).thenReturn(false);
+        when(sss.isRoot_(sidxGreatGrandParent)).thenReturn(true);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class TestEmigrantCreator extends AbstractTest
     public void shouldReturnOneAncestorForLevelTwoTargetStore()
             throws SQLException
     {
-        when(ss.isRoot_(sidxParent)).thenReturn(true);
+        when(sss.isRoot_(sidxParent)).thenReturn(true);
         List<SID> list = emc.getEmigrantTargetAncestorSIDsForMeta_(OID.TRASH, name);
         assertEquals(list.size(), 1);
         assertEquals(list.get(0), sidParent);
@@ -112,9 +112,8 @@ public class TestEmigrantCreator extends AbstractTest
     public void shouldReturnOneAncestorForLevelOneTargetStore()
             throws SQLException
     {
-        when(ss.isRoot_(sidxTarget)).thenReturn(true);
+        when(sss.isRoot_(sidxTarget)).thenReturn(true);
         List<SID> list = emc.getEmigrantTargetAncestorSIDsForMeta_(OID.TRASH, name);
-        System.out.println(list.size());
         assertEquals(list.size(), 1);
         assertEquals(list.get(0), sidTarget);
     }

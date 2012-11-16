@@ -21,13 +21,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 public class DaemonPostUpdateTasks
 {
     private final CfgDatabase _cfgDB;
-    private final CoreDBCW _dbcw;
-    private final TransManager _tm;
-    private final InjectableDriver _dr;
-    private final IStoreDatabase _sdb;
-    private final IMetaDatabase _mdb;
-    private final MapSIndex2DeviceBitMap _sidx2dbm;
-    private final CfgAbsAuxRoot _absAuxRoot;
+    private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
     public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, InjectableDriver dr,
@@ -35,45 +29,38 @@ public class DaemonPostUpdateTasks
             CfgAbsAuxRoot absAuxRoot)
     {
         _cfgDB = cfgDB;
-        _dbcw = dbcw;
-        _dr = dr;
-        _tm = tm;
-        _sdb = sdb;
-        _mdb = mdb;
-        _sidx2dbm = sidx2dbm;
-        _absAuxRoot = absAuxRoot;
+
+        _tasks = new IDaemonPostUpdateTask[] {
+            new DPUTOptimizeCSTableIndex(dbcw),
+            new DPUTUpdateEpochTable(dbcw),
+            new DPUTCreateActivityLogTables(dbcw, dr),
+            new DPUTUpdateSchemaForSyncStatus(dbcw),
+            new DPUTAddAggregateSyncColumn(dbcw, tm, sdb, mdb, sidx2dbm),
+            new DPUTMakeMTimesNaturalNumbersOnly(dbcw),
+            new DPUTGetEncodingStats(dbcw),
+            new DPUTMigrateRevisionSuffixToBase64(absAuxRoot),
+            null, // used to be DPUTResetSyncStatus (for redis migation issue)
+            null, // used to be DPUTRestSyncStatus (account for change in vh computation)
+            new DPUTResetSyncStatus(dbcw), // new run to account for aliasing related crash.
+            new DPUTMorphStoreTables(dbcw)
+            // TODO (MP) will need to add a new task for syncstat aliasing fix.
+            // new tasks go here
+        };
+
+        // please update this macro whenever new tasks are added
+        assert _tasks.length == PostUpdate.DAEMON_POST_UPDATE_TASKS;
     }
 
     public void run() throws Exception
     {
-        // do not use a static member to avoid permanently occupying the memory
-        final IDaemonPostUpdateTask[] tasks = new IDaemonPostUpdateTask[] {
-                new DPUTOptimizeCSTableIndex(_dbcw),
-                new DPUTUpdateEpochTable(_dbcw),
-                new DPUTCreateActivityLogTables(_dbcw, _dr),
-                new DPUTUpdateSchemaForSyncStatus(_dbcw),
-                new DPUTAddAggregateSyncColumn(_dbcw, _tm, _sdb, _mdb, _sidx2dbm),
-                new DPUTMakeMTimesNaturalNumbersOnly(_dbcw),
-                new DPUTGetEncodingStats(_dbcw),
-                new DPUTMigrateRevisionSuffixToBase64(_absAuxRoot),
-                null, // used to be DPUTResetSyncStatus (for redis migation issue)
-                null, // used to be DPUTRestSyncStatus (account for change in vh computation)
-                new DPUTResetSyncStatus(_dbcw) // new run to account for aliasing related crash.
-                // TODO (MP) will need to add a new task for syncstat aliasing fix.
-                // new tasks go here
-        };
-
-        // please update this macro whenever new tasks are added
-        assert tasks.length == PostUpdate.DAEMON_POST_UPDATE_TASKS;
-
         // the zero value is required for oldest client to run all the tasks
         assert Key.DAEMON_POST_UPDATES.defaultValue().equals(Integer.toString(0));
 
         int current = _cfgDB.getInt(Key.DAEMON_POST_UPDATES);
 
         // N.B: no-op if current >= tasks.length
-        for (int i = current; i < tasks.length; i++) {
-            IDaemonPostUpdateTask task = tasks[i];
+        for (int i = current; i < _tasks.length; i++) {
+            IDaemonPostUpdateTask task = _tasks[i];
             if (task != null) {
                 Util.l(DaemonPostUpdateTasks.class).warn(task.getClass().getName());
                 task.run();

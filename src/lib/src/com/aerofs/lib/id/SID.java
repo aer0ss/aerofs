@@ -1,6 +1,7 @@
 package com.aerofs.lib.id;
 
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.ex.ExFormatError;
 import com.google.protobuf.ByteString;
 
 /**
@@ -27,6 +28,11 @@ public class SID extends UniqueID
     public SID(byte[] bs)
     {
         super(bs);
+    }
+
+    public SID(String str) throws ExFormatError
+    {
+        super(str);
     }
 
     /**

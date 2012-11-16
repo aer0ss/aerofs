@@ -2162,7 +2162,7 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                       DBUtil.deleteWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL,
+                       DBUtil.deleteWhereEquals(SPSchema.T_ES, SPSchema.C_ES_EMAIL,
                                SPSchema.C_ES_SUBSCRIPTION));
 
         ps.setString(1, email);
@@ -2175,7 +2175,7 @@ public class SPDatabase
     public void removeEmailSubscription(final String tokenId) throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-               DBUtil.deleteWhere(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID));
+               DBUtil.deleteWhereEquals(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID));
 
         ps.setString(1, tokenId);
         Util.verify(ps.executeUpdate() == 1);

@@ -19,8 +19,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import javax.annotation.Nullable;
-
 public class StoreCreator
 {
     private IStores _ss;
@@ -46,12 +44,19 @@ public class StoreCreator
     }
 
     /**
-     * Create a new store.
+     * Add {@code sidxParent} as {@code sid}'s parent. Create the child store if it doesn't exist.
      */
-    public void createStore_(SID sid, SIndex sidxParent, Path path, Trans t)
+    public void addParentStoreReference_(SID sid, SIndex sidxParent, Path path, Trans t)
             throws ExAlreadyExist, SQLException, IOException
     {
-        createStoreImpl_(sid, sidxParent, path, t);
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+        if (sidx == null) {
+            sidx = createStoreImpl_(sid, path, t);
+            assert _ss.getParents_(sidx).isEmpty();
+        } else {
+            assert !_ss.getParents_(sidx).isEmpty();
+        }
+        _ss.addParent_(sidx, sidxParent, t);
     }
 
     /**
@@ -59,13 +64,10 @@ public class StoreCreator
      */
     public SIndex createRootStore_(Trans t) throws ExAlreadyExist, SQLException, IOException
     {
-        return createStoreImpl_(_cfgRootSID.get(), null, new Path(), t);
+        return createStoreImpl_(_cfgRootSID.get(), new Path(), t);
     }
 
-    /**
-     * @param sidxParent the parent store's sidx, null if the store being created is the root.
-     */
-    private SIndex createStoreImpl_(SID sid, @Nullable SIndex sidxParent, Path path, Trans t)
+    private SIndex createStoreImpl_(SID sid, Path path, Trans t)
             throws SQLException, ExAlreadyExist, IOException
     {
         // Note that during store creation, all in-memory data structures may not be fully set up
@@ -87,7 +89,7 @@ public class StoreCreator
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);
         _ps.createStore_(sidx, path, t);
-        _ss.add_(sidx, sidxParent == null ? sidx : sidxParent, t);
+        _ss.add_(sidx, t);
 
         return sidx;
     }

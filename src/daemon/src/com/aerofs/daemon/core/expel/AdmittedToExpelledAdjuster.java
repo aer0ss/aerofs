@@ -101,7 +101,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     if (!oldExpelled && !emigrate) {
                         // delete the anchored store
                         SIndex sidx = _sid2sidx.get_(SID.anchorOID2storeSID(oa.soid().oid()));
-                        _sd.deleteRecursively_(sidx, pathOld, op, t);
+                        _sd.removeParentStoreReference_(sidx, oa.soid().sidx(), pathOld, op, t);
                         _ps.newFolder_(oa.soid(), pathOld).delete_(op, t);
                     }
                     return null;

@@ -17,7 +17,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIParam;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;

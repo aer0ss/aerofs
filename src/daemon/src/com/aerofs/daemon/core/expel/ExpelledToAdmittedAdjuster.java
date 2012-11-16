@@ -78,7 +78,7 @@ class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
                     if (!immigrated) {
                         oa.physicalFolder().create_(op, t);
                         SID sid = SID.anchorOID2storeSID(oa.soid().oid());
-                        _sc.createStore_(sid, oa.soid().sidx(), _ds.resolve_(oa), t);
+                        _sc.addParentStoreReference_(sid, oa.soid().sidx(), _ds.resolve_(oa), t);
                     }
                     return null;
                 default:

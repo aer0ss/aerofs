@@ -15,8 +15,13 @@ public class CoreSchema
             // Stores
             T_STORE         = "s",
             C_STORE_SIDX    = "s_i",        // SIndex
-            C_STORE_PARENT  = "s_p",        // SIndex
-            C_STORE_DIDS    = "s_d",         // concatenated DIDs
+            C_STORE_DIDS    = "s_d",        // concatenated DIDs
+
+            // Store Hierarchy. See IStores' class-level comments for details.
+            // parents.
+            T_SH             = "sh",
+            C_SH_SIDX        = "sh_s",      // SIndex
+            C_SH_PARENT_SIDX = "sh_p",      // SIndex
 
             // SIndex-SID map. It maintains bidirectional map between SIndexes and SIDs
             T_SID           = "i",
@@ -33,7 +38,6 @@ public class CoreSchema
             C_VER_KIDX      = "v_k",
             C_VER_DID       = "v_d",        // DID
             C_VER_TICK      = "v_t",        // Tick
-            C_VER_TS        = "v_ts",       // only in partial replicas
 
             // Knowledge
             T_KWLG          = "k",
@@ -337,13 +341,6 @@ public class CoreSchema
                 ")" + _dbcw.charSet());
 
         s.executeUpdate(
-                "create table " + T_STORE + "(" +
-                    C_STORE_SIDX + " integer primary key," +
-                    C_STORE_PARENT + " integer not null," +
-                    C_STORE_DIDS + " blob" +
-                ")" + _dbcw.charSet());
-
-        s.executeUpdate(
                 "create table " + T_SID + "(" +
                     C_SID_SIDX + " integer primary key " + _dbcw.autoIncrement() +"," +
                     C_SID_SID + _dbcw.uniqueIdType() + " unique not null" +
@@ -532,6 +529,7 @@ public class CoreSchema
                             C.INITIAL_SYNC_PUSH_EPOCH +
                         ")");
 
+        createStoreTables(s, _dbcw);
         createSyncStatusBootstrapTable(s, _dbcw);
         createActivityLogTables(s);
 
@@ -540,8 +538,34 @@ public class CoreSchema
         c.commit();
     }
 
-    public static void createSyncStatusBootstrapTable(Statement s, IDBCW dbcw)
-            throws SQLException {
+    public static void createStoreTables(Statement s, IDBCW dbcw)
+            throws SQLException
+    {
+
+        s.executeUpdate(
+                "create table " + T_STORE + "(" +
+                        C_STORE_SIDX + " integer primary key," +
+                        C_STORE_DIDS + " blob" +
+                        ")" + dbcw.charSet());
+
+        s.executeUpdate(
+                "create table " + T_SH + "(" +
+                        C_SH_SIDX + " integer not null," +
+                        C_SH_PARENT_SIDX + " integer not null," +
+                        "unique (" + C_SH_SIDX + "," + C_SH_PARENT_SIDX + ")" +
+                        ")" + dbcw.charSet());
+
+        // for getParents()
+        s.executeUpdate(
+                "create index " + T_SH + "0 on " + T_SH + "(" + C_SH_SIDX + ")");
+
+        // for getChildren()
+        s.executeUpdate(
+                "create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
+    }
+
+    public static void createSyncStatusBootstrapTable(Statement s, IDBCW dbcw) throws SQLException
+    {
         s.executeUpdate(
                 "create table " + T_SSBS  + "(" +
                     C_SSBS_SIDX + " integer not null," +

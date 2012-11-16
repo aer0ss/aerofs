@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-import com.aerofs.daemon.lib.db.IStoreDatabase.StoreRow;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -43,8 +42,8 @@ public class TestStoreDatabase extends AbstractTest
     @Test(expected = SQLException.class)
     public void shouldThrowOnAddingExistingStore() throws ExAlreadyExist, SQLException
     {
-        db.add_(sidx, sidxParent, t);
-        db.add_(sidx, sidxParent, t);
+        db.add_(sidx, t);
+        db.add_(sidx, t);
     }
 
     @Test(expected = AssertionError.class)
@@ -53,32 +52,26 @@ public class TestStoreDatabase extends AbstractTest
         db.delete_(sidx, t);
     }
 
-    @Test(expected = AssertionError.class)
-    public void shouldFailAssertionIfSettingParentOnNonexistingStore() throws SQLException
-    {
-        db.setParent_(sidx, sidxParent, t);
-    }
-
     @Test
-    public void shouldReturnParentAsSet() throws SQLException
+    public void shouldReturnParents() throws SQLException
     {
-        db.add_(sidx, sidxParent, t);
-        db.setParent_(sidx, sidxParent, t);
-        Collection<StoreRow> srs = db.getAll_();
-        assertEquals(srs.size(), 1);
-        for (StoreRow sr : srs) assertTrue(sr._sidxParent.equals(sidxParent));
+        db.add_(sidx, t);
+        db.addParent_(sidx, sidxParent, t);
+        Collection<SIndex> sidxs = db.getParents_(sidx);
+        assertEquals(sidxs.size(), 1);
+        for (SIndex sidx : sidxs) assertTrue(sidx.equals(sidxParent));
     }
 
     @Test
     public void shouldReturnExistingStoresOnly() throws SQLException
     {
-        db.add_(sidx, sidxParent, t);
-        db.add_(sidx2, sidxParent, t);
+        db.add_(sidx, t);
+        db.add_(sidx2, t);
         db.delete_(sidx, t);
 
-        Collection<StoreRow> srs = db.getAll_();
-        assertEquals(srs.size(), 1);
-        for (StoreRow sr : srs) assertTrue(sr._sidx.equals(sidx2));
+        Collection<SIndex> sidxs = db.getAll_();
+        assertEquals(sidxs.size(), 1);
+        for (SIndex sidx : sidxs) assertTrue(sidx.equals(sidx2));
     }
 
 }

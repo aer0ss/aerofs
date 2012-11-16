@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.sumu.singleuser;
 
+import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
@@ -26,6 +27,8 @@ public class SingleuserModule extends AbstractModule
         binder().disableCircularProxies();
 
         bind(IStores.class).to(SingleuserStores.class);
+        bind(IPathResolver.class).to(SingleuserPathResolver.class);
+
         bind(IEmigrantCreator.class).to(EmigrantCreator.class);
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);
         bind(IImmigrantCreator.class).to(ImmigrantCreator.class);

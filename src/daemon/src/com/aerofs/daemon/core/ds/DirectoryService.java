@@ -12,8 +12,6 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
@@ -54,11 +52,10 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     private IMetaDatabase _mdb;
     private MapAlias2Target _alias2target;
     private IPhysicalStorage _ps;
-    private IMapSIndex2SID _sidx2sid;
     private IMapSID2SIndex _sid2sidx;
-    private IStores _ss;
     private IgnoreList _il;
     private FrequentDefectSender _fds;
+    private IPathResolver _pathResolver;
 
     private DBCache<Path, SOID> _cacheDS;
     private DBCache<SOID, OA> _cacheOA;
@@ -103,17 +100,16 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
-            IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
-            IgnoreList il, FrequentDefectSender fds, StoreDeletionNotifier storeDeletionNotifier)
+            TransManager tm, IMapSID2SIndex sid2sidx, IgnoreList il, FrequentDefectSender fds,
+            StoreDeletionNotifier storeDeletionNotifier, IPathResolver pathResolver)
     {
         _ps = ps;
         _mdb = mdb;
         _alias2target = alias2target;
         _sid2sidx = sid2sidx;
-        _sidx2sid = sidx2sid;
-        _ss = ss;
         _il = il;
         _fds = fds;
+        _pathResolver = pathResolver;
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
@@ -140,29 +136,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
             @Override
             public SOID read_(Path path) throws SQLException
             {
-                SIndex sidx = _ss.getRoot_(path);
-                OID oid = OID.ROOT;
-                int i = 0;
-                String[] elems = path.elements();
-                while (i < elems.length) {
-                    OID child = getChild_(sidx, oid, elems[i]);
-                    if (child == null) {
-                        OA oa = getOA_(new SOID(sidx, oid));
-                        if (!oa.isAnchor()) {
-                            return null;
-                        } else {
-                            SOID soid = followAnchorNullable_(oa);
-                            if (soid == null) return null;
-                            sidx = soid.sidx();
-                            oid = soid.oid();
-                        }
-                    } else {
-                        oid = child;
-                        i++;
-                    }
-                }
-
-                return new SOID(sidx, oid);
+                return _pathResolver.resolve_(path);
             }
         };
 
@@ -234,42 +208,13 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
      */
     @Nonnull public Path resolve_(@Nonnull OA oa) throws SQLException
     {
-        List<String> elems = Lists.newArrayListWithCapacity(16);
-        while (true) {
-            if (oa.soid().oid().isRoot()) {
-                if (_ss.isRoot_(oa.soid().sidx())) {
-                    break;
-                } else {
-                    // parent oid of the root encodes the parent store's sid
-                    SOID soidAnchor = getAnchor_(oa.soid().sidx());
-                    assert !soidAnchor.equals(oa.soid()) : soidAnchor + " " + oa;
-                    oa = getOA_(soidAnchor);
-                }
-            }
+        List<String> elems = _pathResolver.resolve_(oa);
 
-            elems.add(oa.name());
-
-            assert !oa.parent().equals(oa.soid().oid()) : oa;
-            oa = getOA_(new SOID(oa.soid().sidx(), oa.parent()));
-        }
-
+        // The first element in the list is the last element in the path. The following code creates
+        // the path by reversing the list order
         String[] path = new String[elems.size()];
-        for (int i = 0; i < path.length; i++) {
-            path[i] = elems.get(path.length - i - 1);
-        }
+        for (int i = 0; i < path.length; i++) path[i] = elems.get(path.length - i - 1);
         return new Path(path);
-    }
-
-    /**
-     * @return the SOID of the given store's anchor
-     * @pre {@code sidx} must not refer to the root store
-     */
-    private SOID getAnchor_(SIndex sidx) throws SQLException
-    {
-        assert !_ss.isRoot_(sidx);
-        SIndex sidxAnchor = _ss.getParent_(sidx);
-        OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidx));
-        return new SOID(sidxAnchor, oidAnchor);
     }
 
     @Nonnull public OA getOAThrows_(SOID soid)
@@ -622,12 +567,17 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         _cacheOA.dumpStatMisc(indent + indentUnit, indentUnit, ps);
     }
 
-    final public void unsetFID_(SOID soid, Trans t) throws SQLException
+    public void unsetFID_(SOID soid, Trans t) throws SQLException
     {
-        setFID_(soid, null, t);
+        setFIDImpl_(soid, null, t);
     }
 
-    public void setFID_(final SOID soid, final FID fid, Trans t) throws SQLException
+    public void setFID_(SOID soid, @Nonnull FID fid, Trans t) throws SQLException
+    {
+        setFIDImpl_(soid, fid, t);
+    }
+
+    private void setFIDImpl_(final SOID soid, @Nullable final FID fid, Trans t) throws SQLException
     {
         // Roots do not have a valid FID
         assert !soid.oid().isRoot();
@@ -707,8 +657,6 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 
     public void setCAHash_(SOKID sokid, @Nonnull ContentHash h, Trans t) throws SQLException
     {
-        assert h != null;
-
         // The implementation asserts that the CA row corresponding to the sokid exists in the db.
         _mdb.setCAHash_(sokid.soid(), sokid.kidx(), h, t);
     }

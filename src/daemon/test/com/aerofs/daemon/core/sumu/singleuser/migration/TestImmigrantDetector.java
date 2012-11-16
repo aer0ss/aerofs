@@ -7,13 +7,13 @@ import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
@@ -39,7 +39,7 @@ public class TestImmigrantDetector extends AbstractTest
     @Mock ImmigrantVersionControl ivc;
     @Mock Hasher hasher;
     @Mock IPhysicalStorage ps;
-    @Mock IStores ss;
+    @Mock SingleuserStores sss;
     @Mock IMapSID2SIndex sid2sidx;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock ObjectDeleter od;
@@ -85,9 +85,9 @@ public class TestImmigrantDetector extends AbstractTest
         mockOA(oaTo, soidTo, Type.FILE, false, null, null, ds);
         mockOA(oaAnchoredRoot, soidAnchoredRoot, Type.DIR, false, null, null, ds);
 
-        mockStore(null, sidFrom, sidxFrom, sidxParent, ss, null, sid2sidx, sidx2sid);
-        mockStore(null, sidTo, sidxTo, sidxParent, ss, null, sid2sidx, sidx2sid);
-        mockStore(null, sidAnchored, sidxAnchored, sidxFrom, ss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidFrom, sidxFrom, sidxParent, sss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidTo, sidxTo, sidxParent, sss, null, sid2sidx, sidx2sid);
+        mockStore(null, sidAnchored, sidxAnchored, sidxFrom, sss, null, sid2sidx, sidx2sid);
 
         when(ds.resolveNullable_(soidFrom)).thenReturn(pFrom);
         when(ds.resolveNullable_(soidTo)).thenReturn(pTo);
@@ -150,7 +150,7 @@ public class TestImmigrantDetector extends AbstractTest
         mockOA(oaTo, soidTo, OA.Type.ANCHOR, false, null, null, ds);
 
         shouldMigrate();
-        verify(ss).setParent_(sidxAnchored, sidxTo, t);
+        verify(sss).addParent_(sidxAnchored, sidxTo, t);
     }
 
     @Test

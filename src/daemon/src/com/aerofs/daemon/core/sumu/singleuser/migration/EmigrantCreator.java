@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
+import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
@@ -25,14 +25,14 @@ import com.google.inject.Inject;
  */
 public class EmigrantCreator implements IEmigrantCreator
 {
-    private final IStores _ss;
+    private final SingleuserStores _sss;
     private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public EmigrantCreator(IStores ss, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid)
+    public EmigrantCreator(SingleuserStores sss, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid)
     {
-        _ss = ss;
+        _sss = sss;
         _sid2sidx = sid2sidx;
         _sidx2sid = sidx2sid;
     }
@@ -56,14 +56,13 @@ public class EmigrantCreator implements IEmigrantCreator
         if (sidx == null) return Collections.emptyList();
 
         // get the parent store for non-root stores
-        if (!_ss.isRoot_(sidx)) sidx = _ss.getParent_(sidx);
+        if (!_sss.isRoot_(sidx)) sidx = _sss.getParent_(sidx);
 
         ArrayList<SID> ret = Lists.newArrayListWithCapacity(2);
         while (true) {
-
             ret.add(_sidx2sid.get_(sidx));
-            if (_ss.isRoot_(sidx)) break;
-            sidx = _ss.getParent_(sidx);
+            if (_sss.isRoot_(sidx)) break;
+            sidx = _sss.getParent_(sidx);
         }
 
         return ret;

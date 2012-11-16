@@ -206,7 +206,7 @@ public class TestStoreDeleter extends AbstractTest
 
     private void delete(PhysicalOp op) throws Exception
     {
-        sd.deleteRecursively_(sidxRoot, pOldRoot, op, t);
+        sd.removeParentStoreReference_(sidxRoot, sidxRootParent, pOldRoot, op, t);
     }
 
     private void verifyStoreDeletion(SIndex sidx) throws SQLException, IOException

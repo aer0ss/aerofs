@@ -13,6 +13,7 @@ import com.google.common.collect.Sets;
 
 import javax.inject.Inject;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -43,7 +44,7 @@ public class DescendantStores
         Path path = _ds.resolve_(soid);
 
         // among immediate children of the given store, find those who are under the given path
-        Set<SIndex> children = _ss.getChildren_(sidx);
+        Collection<SIndex> children = _ss.getChildren_(sidx);
         for (SIndex csidx : children) {
             if (csidx == sidx) continue;
 
