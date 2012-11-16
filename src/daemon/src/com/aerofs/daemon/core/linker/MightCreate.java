@@ -275,7 +275,7 @@ public class MightCreate
 
     private class ExHardLinkDetected extends Exception
     {
-        private static final long serialVersionUID = 2282347650299771874L;
+        private static final long serialVersionUID = 0L;
     }
 
     /**

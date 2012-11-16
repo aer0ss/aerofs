@@ -95,7 +95,7 @@ public class OA
         _fid = fid;
 
         // TODO Can't assert validity of FIDs at construction time for files or folders
-        //assertValidityOfFID();
+        //fidIsConsistentWithCAsOrExpulsion();
     }
 
     @Override
@@ -228,12 +228,16 @@ public class OA
         _flags = flags;
     }
 
-    private void assertValidityOfFID()
+    /**
+     * @return true iff the nullability of _fid is consistent with the set of content attributes
+     *         or the expulsion state (if this is a folder)
+     */
+    public boolean fidIsConsistentWithCAsOrExpulsion()
     {
         if (isFile()) {
-            assert (_fid == null) == cas().isEmpty() : this;
+            return (_fid == null) == cas().isEmpty();
         } else {
-            assert (_fid == null) == isExpelled() : isExpelled() + " " + this;
+            return (_fid == null) == isExpelled();
         }
     }
 
@@ -242,7 +246,7 @@ public class OA
      */
     @Nullable public FID fid()
     {
-        assertValidityOfFID();
+        assert fidIsConsistentWithCAsOrExpulsion() : this;
         return _fid;
     }
 

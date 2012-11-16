@@ -18,12 +18,14 @@ import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.core.store.IStoreDeletionListener;
+import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 
@@ -56,6 +58,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     private IMapSID2SIndex _sid2sidx;
     private IStores _ss;
     private IgnoreList _il;
+    private FrequentDefectSender _fds;
 
     private DBCache<Path, SOID> _cacheDS;
     private DBCache<SOID, OA> _cacheOA;
@@ -101,7 +104,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
             IStores ss, TransManager tm, IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx,
-            IgnoreList il, StoreDeletionNotifier storeDeletionNotifier)
+            IgnoreList il, FrequentDefectSender fds, StoreDeletionNotifier storeDeletionNotifier)
     {
         _ps = ps;
         _mdb = mdb;
@@ -110,6 +113,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         _sidx2sid = sidx2sid;
         _ss = ss;
         _il = il;
+        _fds = fds;
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
@@ -618,17 +622,44 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         _cacheOA.dumpStatMisc(indent + indentUnit, indentUnit, ps);
     }
 
-    final public void unsetFID_(final SOID soid, Trans t) throws SQLException
+    final public void unsetFID_(SOID soid, Trans t) throws SQLException
     {
         setFID_(soid, null, t);
     }
 
-    public void setFID_(SOID soid, FID fid, Trans t) throws SQLException
+    public void setFID_(final SOID soid, final FID fid, Trans t) throws SQLException
     {
         // Roots do not have a valid FID
         assert !soid.oid().isRoot();
         _mdb.setFID_(soid, fid, t);
         _cacheOA.invalidate_(soid);
+
+        // Invariant: at the end of this transaction, if the OA for soid hasn't been deleted, either
+        // 1) the FID for the object must be null and there are no content attributes or
+        //    it is expelled OR
+        // 2) the FID is non-null and there exist content attributes (or the dir is not expelled)
+        // TODO (MJ) this listener is only needed once per SOID per tx, but repeated calls to
+        // setFID/unsetFID would result in redundant transaction listeners.
+        t.addListener_(new ITransListener()
+        {
+            @Override
+            public void committing_(Trans t)
+                    throws SQLException
+            {
+                OA oa = getOANullable_(soid);
+                if (oa != null && !oa.fidIsConsistentWithCAsOrExpulsion()) {
+                    SQLException e = new SQLException("oa inconsistent " + oa);
+                    _fds.logSendAsync("ds fid inconsistent", e);
+                    throw e;
+                }
+            }
+
+            @Override
+            public void committed_() { }
+
+            @Override
+            public void aborted_() { }
+        });
     }
 
     /**
