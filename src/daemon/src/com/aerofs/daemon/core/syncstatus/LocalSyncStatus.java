@@ -8,8 +8,6 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.DeviceBitMap;
-import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.store.IStoreDeletionListener;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
@@ -21,7 +19,7 @@ import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;
@@ -53,8 +51,6 @@ public class LocalSyncStatus implements IStoreDeletionListener
 {
     private final static Logger l = Util.l(LocalSyncStatus.class);
 
-    private final IStores _ss;
-    private final IMapSIndex2SID _sidx2sid;
     private final DirectoryService _ds;
     private final ISyncStatusDatabase _ssdb;
     private final MapSIndex2DeviceBitMap _sidx2dbm;
@@ -62,14 +58,12 @@ public class LocalSyncStatus implements IStoreDeletionListener
     private final DescendantStores _dss;
 
     @Inject
-    public LocalSyncStatus(DirectoryService ds, IStores ss, ISyncStatusDatabase ssdb,
-            IMapSIndex2SID sidx2sid, MapSIndex2DeviceBitMap sidx2dbm, AggregateSyncStatus assc,
+    public LocalSyncStatus(DirectoryService ds, ISyncStatusDatabase ssdb,
+            MapSIndex2DeviceBitMap sidx2dbm, AggregateSyncStatus assc,
             StoreDeletionNotifier storeDeletionNotifier, DescendantStores dss)
     {
         _ds = ds;
-        _ss = ss;
         _ssdb = ssdb;
-        _sidx2sid = sidx2sid;
         _sidx2dbm = sidx2dbm;
         _assc = assc;
         _dss = dss;
@@ -232,17 +226,13 @@ public class LocalSyncStatus implements IStoreDeletionListener
     private void aggregateDescendants_(SOID soid, IAggregatedStatus aggregated) throws SQLException
     {
         for (SIndex sidx : _dss.getDescendantStores_(soid)) {
-            // Child SID, anchor SOID and root SOID
-            SID csid = _sidx2sid.get_(sidx);
-            SOID csoid = new SOID(_ss.getParent_(sidx), SID.storeSID2anchorOID(csid));
-            SOID croot = _ds.followAnchorNullable_(_ds.getOA_(csoid));
-            // the anchor will be null for expelled stores
-            if (croot != null) {
-                l.debug("aggregate descendants " + croot);
-                IAggregatedStatus saggregate = aggregated.create();
-                aggregateWithinStore_(croot, true, saggregate);
-                aggregated.mergeStore_(saggregate);
-            }
+            SOID root = new SOID(sidx, OID.ROOT);
+            // all descendant stores must be admitted
+            assert _ds.hasOA_(root);
+            l.debug("aggregate descendants " + root);
+            IAggregatedStatus saggregate = aggregated.create();
+            aggregateWithinStore_(root, true, saggregate);
+            aggregated.mergeStore_(saggregate);
         }
     }
 
