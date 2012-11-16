@@ -618,7 +618,12 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         _cacheOA.dumpStatMisc(indent + indentUnit, indentUnit, ps);
     }
 
-    public void setFID_(SOID soid, @Nullable FID fid, Trans t) throws SQLException
+    final public void unsetFID_(final SOID soid, Trans t) throws SQLException
+    {
+        setFID_(soid, null, t);
+    }
+
+    public void setFID_(SOID soid, FID fid, Trans t) throws SQLException
     {
         // Roots do not have a valid FID
         assert !soid.oid().isRoot();

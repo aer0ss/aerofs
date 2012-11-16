@@ -69,7 +69,7 @@ public class TestFIDMaintainers extends AbstractTest
 
         from.physicalObjectMoved_(to, t);
 
-        verify(ds).setFID_(soid1, null, t);
+        verify(ds).unsetFID_(soid1, t);
         verify(ds).setFID_(soid2, fid, t);
     }
 
@@ -82,7 +82,7 @@ public class TestFIDMaintainers extends AbstractTest
 
         from.physicalObjectMoved_(to, t);
 
-        verify(ds).setFID_(soid1, null, t);
+        verify(ds).unsetFID_(soid1, t);
     }
 
     @Test

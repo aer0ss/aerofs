@@ -77,7 +77,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
     {
         obj.delete_(MAP, t);
 
-        verify(ds).setFID_(soid, null, t);
+        verify(ds).unsetFID_(soid, t);
     }
 
     @Test
@@ -100,7 +100,7 @@ public abstract class AbstractTestLinkedObject<T extends IPhysicalObject> extend
 
         obj.move_(obj2, MAP, t);
 
-        verify(ds).setFID_(soid, null, t);
+        verify(ds).unsetFID_(soid, t);
         verify(ds).setFID_(soid2, fid, t);
     }
 }

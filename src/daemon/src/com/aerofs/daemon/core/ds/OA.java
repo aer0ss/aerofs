@@ -102,7 +102,7 @@ public class OA
     public String toString()
     {
         return "s " + _soid + " p " + _parent + " n " + (Cfg.staging() ? _name : Util.crc32(_name))
-                + " f " + String.format("%08X", _flags) + " cas " + _cas;
+                + " f " + String.format("%08X", _flags) + " fid " + _fid + " cas " + _cas;
     }
 
     /**
@@ -231,9 +231,9 @@ public class OA
     private void assertValidityOfFID()
     {
         if (isFile()) {
-            assert (_fid == null) == cas().isEmpty() : soid() + " " + _fid + " " + cas();
+            assert (_fid == null) == cas().isEmpty() : this;
         } else {
-            assert (_fid == null) == isExpelled() : soid() + " " + _fid + " " + isExpelled();
+            assert (_fid == null) == isExpelled() : isExpelled() + " " + this;
         }
     }
 

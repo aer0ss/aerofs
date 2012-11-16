@@ -59,7 +59,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
         SOID soidOld = _ds.getSOIDNullable_(fid);
 
         // unmap the FID first if it exist for other objects
-        if (soidOld != null && !_soid.equals(soidOld)) _ds.setFID_(soidOld, null, t);
+        if (soidOld != null && !_soid.equals(soidOld)) _ds.unsetFID_(soidOld, t);
 
         _ds.setFID_(_soid, fid, t);
     }
@@ -69,7 +69,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
     {
         if (to instanceof NonMasterFIDMaintainer) {
             // reset the FID of the source object
-            _ds.setFID_(_soid, null, t);
+            _ds.unsetFID_(_soid, t);
 
         } else {
             assert to instanceof MasterFIDMaintainer;
@@ -82,7 +82,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
             // logical object to the target physical object.
             falliblyAssert(fid.equals(_ds.getOA_(_soid).fid()));
             // reset the FID of the source object
-            _ds.setFID_(_soid, null, t);
+            _ds.unsetFID_(_soid, t);
             // set the FID of the destination object
             _ds.setFID_(mfmTo._soid, fid, t);
         }
@@ -93,7 +93,7 @@ public class MasterFIDMaintainer implements IFIDMaintainer
     {
         // the object's FID may be already null if the FID has been assigned to another object by
         // physicalObjectCreated_ or physicalObjectMoved_
-        _ds.setFID_(_soid, null, t);
+        _ds.unsetFID_(_soid, t);
     }
 
     /**

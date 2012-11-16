@@ -365,7 +365,7 @@ public class MightCreate
         if (!dir) detectAndApplyModification_(soid, pcPhysical._absPath, t);
     }
 
-    private void replaceFID_(SOID soid, PathCombo pc, boolean dir, FID fid, Trans t)
+    private void replaceFID_(SOID soid, PathCombo pc, boolean dir, @Nonnull FID fid, Trans t)
             throws Exception
     {
         l.info("replace " + soid + ":" + pc);
@@ -437,7 +437,7 @@ public class MightCreate
             SOID newSOID = _oc.create_(dir ? Type.DIR : Type.FILE, soidParent,
                     pcPhysical._path.last(), MAP, t);
             _a.incSaveCount();
-            l.info("created " + newSOID + ": " + _ds.getOA_(newSOID).fid() + " " + pcPhysical);
+            l.info("created " + _ds.getOA_(newSOID) + " " + pcPhysical);
             return true;
         }
     }
