@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.id.UniqueID;
 import com.google.common.collect.Lists;
 import junit.framework.Assert;
@@ -61,6 +62,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock IMapSIndex2SID sidx2sid;
     @Mock AggregateSyncStatus assc;
     @Mock IgnoreList il;
+    @Mock FrequentDefectSender fds;
     @Mock StoreDeletionNotifier sdn;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
@@ -88,7 +90,7 @@ public class TestLocalSyncStatus extends AbstractTest
         when(tm.begin_()).thenReturn(t);
 
         DirectoryService r = new DirectoryService();
-        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, il, sdn);
+        r.inject_(ps, mdb, alias2target, stores, tm, sm, sm, il, fds, sdn);
         lsync = new LocalSyncStatus(r, ssdb, sidx2dbm, assc, sdn, dss);
     }
 

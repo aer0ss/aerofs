@@ -26,6 +26,7 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.daemon.lib.db.ver.VersionAssistant;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
@@ -129,7 +130,7 @@ public class TestAliasing extends AbstractTest
     {
         DirectoryService realDS = new DirectoryService();
         realDS.inject_(ps, mdb, alias2target, mock(IStores.class), tm, sidx2sid, sid2sidx, null,
-                sdn);
+                mock(FrequentDefectSender.class), sdn);
         ds = spy(realDS);
 
         AliasingMover almv = new AliasingMover(ds, hasher, om, pvc, nvc, bd);
