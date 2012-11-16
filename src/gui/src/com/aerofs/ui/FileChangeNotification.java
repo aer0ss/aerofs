@@ -88,22 +88,12 @@ public class FileChangeNotification
         });
     }
 
-    private static final String[] NUMBERS = { "Two", "Three", "Four", "Five",
-        "Six", "Seven", "Eight", "Nine", "Ten" };
-
     private void show()
     {
         assert UI.get().isUIThread();
 
-        String title;
-        int size = _recents.size();
-        if (size == 1) {
-            title = "A file was " + S.MODIFIED;
-        } else if (size <= 10) {
-            title = NUMBERS[size - 2] + " files were " + S.MODIFIED;
-        } else {
-            title = size + " files were " + S.MODIFIED;
-        }
+        String title = UIUtil.prettyLabelWithCount(_recents.size(),
+                "A file was " + S.MODIFIED, "files were " + S.MODIFIED);
 
         StringBuilder sb = new StringBuilder();
         int cnt = 0;

@@ -5,6 +5,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -24,6 +25,7 @@ import com.aerofs.proto.Sv;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
+import java.util.Set;
 
 public class TrayIcon
 {
@@ -31,7 +33,6 @@ public class TrayIcon
     private final SystemTray _st;
     private final TrayItem _ti;
     private Thread _thdSpinning;
-    private boolean _showNotification;
     private int _iconIndex;
 
     TrayIcon(SystemTray st)
@@ -92,11 +93,6 @@ public class TrayIcon
         }
     }
 
-    private void refreshTrayIconImage()
-    {
-        _ti.setImage(Images.getTrayIcon(_showNotification, _iconIndex));
-    }
-
     TrayItem getTrayItem()
     {
         return _ti;
@@ -149,9 +145,34 @@ public class TrayIcon
         _ti.setToolTipText(str);
     }
 
-    public void showNotification(boolean b)
+    public static enum NotificationReason
     {
-       _showNotification = b;
+        UPDATE,
+        CONFLICT
+    }
+
+    private final Set<NotificationReason> _notificationReasons = Sets.newHashSet();
+
+    public void clearNotifications()
+    {
+        _notificationReasons.clear();
+
+        GUI.get().safeAsyncExec(_ti, new Runnable() {
+            @Override
+            public void run()
+            {
+                refreshTrayIconImage();
+            }
+        });
+    }
+
+    public void showNotification(NotificationReason reason, boolean b)
+    {
+        if (b) {
+            _notificationReasons.add(reason);
+        } else {
+            _notificationReasons.remove(reason);
+        }
 
        GUI.get().safeAsyncExec(_ti, new Runnable() {
             @Override
@@ -160,6 +181,11 @@ public class TrayIcon
                 refreshTrayIconImage();
             }
         });
+    }
+
+    private void refreshTrayIconImage()
+    {
+        _ti.setImage(Images.getTrayIcon(!_notificationReasons.isEmpty(), _iconIndex));
     }
 
     public static class TrayPosition

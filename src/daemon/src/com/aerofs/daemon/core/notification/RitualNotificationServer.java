@@ -54,6 +54,7 @@ public class RitualNotificationServer implements IConnectionManager
     private final CoreScheduler _sched;
     private final DownloadState _dls;
     private final UploadState _uls;
+    private final PathStatusNotifier _psn;
     private final PathStatus _so;
     private final SyncStatusSynchronizer _sss;
     private final AggregateSyncStatus _agss;
@@ -78,6 +79,7 @@ public class RitualNotificationServer implements IConnectionManager
         _tc = tc;
         _scs = scs;
         _cl = cl;
+        _psn = new PathStatusNotifier(this, _ds, _so);
     }
 
     public void init_() throws IOException
@@ -169,7 +171,7 @@ public class RitualNotificationServer implements IConnectionManager
         _proactor.reuseForOutgoingConnection(from, c);
 
         // must enqueue since this method is called by non-core threads
-        _cq.enqueueBlocking(new EISendSnapshot(_tc, this, from, _dls, _uls, _ds), PRIO);
+        _cq.enqueueBlocking(new EISendSnapshot(_tc, this, from, _dls, _uls, _psn, _ds), PRIO);
 
         return rc;
     }

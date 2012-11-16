@@ -23,7 +23,6 @@ import com.aerofs.proto.Shellext.GreetingCall;
 import com.aerofs.proto.Shellext.ShellextCall;
 import com.aerofs.proto.Shellext.ShellextNotification;
 import com.aerofs.proto.Shellext.ShellextNotification.Type;
-import com.aerofs.ui.UIUtil;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.util.List;

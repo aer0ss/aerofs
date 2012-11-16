@@ -1,9 +1,11 @@
 package com.aerofs.gui.tray;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import com.aerofs.gui.history.DlgHistory;
+import com.aerofs.gui.tray.TrayIcon.NotificationReason;
+import com.aerofs.ui.UIUtil;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
@@ -67,21 +69,32 @@ public class TrayMenu
     private final TrayIcon _icon;
     private boolean _enabled;
 
+    private volatile int _conflictCount = 0;
+
     private MenuItem _transferStats1;    // menu item used to display information about ongoing transfers - line 1
     private MenuItem _transferStats2;    // menu item used to display information about ongoing transfers - line 2
     private Object _transferProgress;    // non-null if transfer is in progress
-    private final Map<Integer, Image> _pieChartCache = new HashMap<Integer, Image>();
+    private final Map<Integer, Image> _pieChartCache = Maps.newHashMap();
     private final TransferState _ts = new TransferState(true);
 
     private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
 
     private final IListener _l = new IListener() {
         @Override
-        public void onNotificationReceived(PBNotification pb)
-        {
-            if (pb.getType() == Type.DOWNLOAD || pb.getType() == Type.UPLOAD) {
+        public void onNotificationReceived(PBNotification pb) {
+            switch (pb.getType().getNumber()) {
+            case Type.DOWNLOAD_VALUE:
+            case Type.UPLOAD_VALUE:
                 _ts.update(pb);
                 _dr.schedule();
+                break;
+            case Type.CONFLICT_COUNT_VALUE:
+                assert pb.hasConflictCount();
+                _conflictCount = pb.getConflictCount();
+                _icon.showNotification(NotificationReason.CONFLICT, pb.getConflictCount() > 0);
+                // TODO: schedule GUI update in case the menu is currently visible?
+                break;
+            default: break;
             }
         }
     };
@@ -104,34 +117,47 @@ public class TrayMenu
             @Override
             public void menuHidden(MenuEvent arg0)
             {
-                _icon.showNotification(false);
+                _icon.clearNotifications();
             }
         });
     }
 
     private void loadMenu()
     {
-        if (UI.updater().getUpdateStatus() == Status.APPLY) {
-            String label;
-            Image image;
-            if (OSUtil.isLinux()) {
-                label = "\u26A0 " + S.BTN_APPLY_UPDATE;
-                image = null;
-            } else {
-                label = S.BTN_APPLY_UPDATE;
-                image = Images.get(Images.ICON_WARNING);
-            }
+        boolean hasWarnings = false;
 
-            addMenuItem(_menu, label, new AbstractListener(CLICKED_TASKBAR_APPLY_UPDATE) {
+        if (UI.updater().getUpdateStatus() == Status.APPLY) {
+            addWarningMenuItem(_menu, S.BTN_APPLY_UPDATE,
+                    new AbstractListener(CLICKED_TASKBAR_APPLY_UPDATE)
+                    {
+                        @Override
+                        protected void handleEventImpl(Event event)
+                        {
+                            UI.updater().execUpdateFromMenu();
+                        }
+                    });
+            hasWarnings = true;
+        }
+
+        int conflictCount = _conflictCount;
+        if (conflictCount > 0) {
+            String label = UIUtil.prettyLabelWithCount(conflictCount,
+                    "A Conflict Was Found", "Conflicts Were Found");
+
+            addWarningMenuItem(_menu, label, new AbstractListener(CLICKED_TASKBAR_RESOLVE_CONFLICTS)
+            {
                 @Override
                 protected void handleEventImpl(Event event)
                 {
-                    UI.updater().execUpdateFromMenu();
+                    // TODO: split conflict resolution from diagnosis dialog
+                    boolean showSysFiles = (event.stateMask & SWT.SHIFT) != 0;
+                    new DlgDiagnosis(GUI.get().sh(), showSysFiles).openDialog();
                 }
-            }).setImage(image);
-
-            new MenuItem(_menu, SWT.SEPARATOR);
+            });
+            hasWarnings = true;
         }
+
+        if (hasWarnings) new MenuItem(_menu, SWT.SEPARATOR);
 
         addMenuItem(_menu, "Open " + S.PRODUCT + " Folder",
                 new AbstractListener(CLICKED_TASKBAR_OPEN_AEROFS) {
@@ -497,6 +523,20 @@ public class TrayMenu
         mi.setText(text);
         if (la != null) mi.addListener(SWT.Selection, la);
         return mi;
+    }
+
+    private static void addWarningMenuItem(Menu m, String text, AbstractListener la)
+    {
+        String label;
+        Image image;
+        if (OSUtil.isLinux()) {
+            label = "\u26A0 " + text;
+            image = null;
+        } else {
+            label = text;
+            image = Images.get(Images.ICON_WARNING);
+        }
+        addMenuItem(m, label, la).setImage(image);
     }
 
     // Member variables related to the ongoing transfer status

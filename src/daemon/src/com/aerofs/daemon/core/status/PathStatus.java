@@ -125,6 +125,11 @@ public class PathStatus
         return notificationsForFlagChanges_(flagChanges);
     }
 
+    public int conflictCount_()
+    {
+        return _tsa.nodesWithFlag_(PathFlagAggregator.Conflict);
+    }
+
     /**
      * @return server-status-aware protobuf-encoded sync status summary
      */
