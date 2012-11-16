@@ -57,7 +57,8 @@ public class ConflictState implements IDirectoryServiceListener
                         for (Entry<SOID, Path> e : map.entrySet()) {
                             // if the file was deleted we still want to send a notification to avoid
                             // keeping stale data in caches of RitualNotification clients
-                            conflicts.put(e.getValue(), _ds.getOA_(e.getKey()).cas().size() > 1);
+                            OA oa = _ds.getOANullable_(e.getKey());
+                            if (oa != null) conflicts.put(e.getValue(), oa.cas().size() > 1);
                         }
                     }
                 }
@@ -124,7 +125,8 @@ public class ConflictState implements IDirectoryServiceListener
     @Override
     public void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException
     {
-        if (_ds.getOA_(obj).cas().size() > 1) {
+        OA oa = _ds.getOANullable_(obj);
+        if (oa != null && oa.isFile() && oa.cas().size() > 1) {
             // when deleting an object with conflict branches, the name will be changed before
             // the conflict branches are deleted, so we need to set the path in the translocal
             // map first to avoid sending notifications for bogus path (i.e. inside the trash)
