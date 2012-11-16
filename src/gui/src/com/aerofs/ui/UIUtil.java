@@ -368,6 +368,6 @@ public class UIUtil
         final String[] NUMBERS = {"No", "", "Two", "Three", "Four", "Five",
                 "Six", "Seven", "Eight", "Nine", "Ten" };
         if (count == 1) return singular;
-        return (count <= NUMBERS.length ? NUMBERS[count] : count) + " " + plural;
+        return (count < NUMBERS.length ? NUMBERS[count] : count) + " " + plural;
     }
 }
