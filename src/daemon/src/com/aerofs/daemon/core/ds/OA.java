@@ -148,7 +148,7 @@ public class OA
     @Nonnull public CA ca(KIndex kidx)
     {
         CA ca = caNullable(kidx);
-        assert ca != null;
+        assert ca != null : this + " " + kidx;
         return ca;
     }
 

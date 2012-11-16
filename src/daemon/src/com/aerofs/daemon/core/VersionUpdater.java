@@ -97,7 +97,7 @@ public class VersionUpdater
         if (!k.cid().isMeta()) {
             // Update length and mtime on the logical file to be consistent with the physical file.
             // The linker relies on these fields to detect file changes.
-            IPhysicalFile pf = _ds.getOA_(k.soid()).caNullable(k.kidx()).physicalFile();
+            IPhysicalFile pf = _ds.getOA_(k.soid()).ca(k.kidx()).physicalFile();
 
             long mtime = pf.getLastModificationOrCurrentTime_();
 
