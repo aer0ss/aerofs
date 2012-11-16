@@ -1,7 +1,8 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import com.aerofs.daemon.core.AbstractTestVersionControl;
 import com.aerofs.daemon.core.AbstractVersionControl;
+import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.IVersionDatabase;

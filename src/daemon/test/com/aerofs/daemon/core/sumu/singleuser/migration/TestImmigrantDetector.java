@@ -1,9 +1,10 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import java.sql.SQLException;
 import java.util.Map;
 
 import com.aerofs.daemon.core.Hasher;
+import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;

@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -63,7 +63,7 @@ public class TestAdmittedObjectLocator extends AbstractTest
         when(oa.type()).thenReturn(type);
         when(oa.soid()).thenReturn(soid);
         when(oa.isExpelled()).thenReturn(expelled);
-        when(ds.getOANullable_(soid)).thenReturn(oa);
+        when(ds.getOA_(soid)).thenReturn(oa);
     }
 
     private static Set<SIndex> newSet(SIndex ... sidxs)

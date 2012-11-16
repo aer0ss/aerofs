@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.migration.ImmigrantCreator;
+import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.fs.EIMoveObject;
@@ -21,11 +21,11 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
     private final LocalACL _lacl;
     private final TransManager _tm;
     private final ObjectMover _om;
-    private final ImmigrantCreator _imc;
+    private final IImmigrantCreator _imc;
 
     @Inject
     public HdMoveObject(ObjectMover om, TransManager tm, LocalACL lacl, DirectoryService ds,
-            ImmigrantCreator imc)
+            IImmigrantCreator imc)
     {
         _om = om;
         _tm = tm;

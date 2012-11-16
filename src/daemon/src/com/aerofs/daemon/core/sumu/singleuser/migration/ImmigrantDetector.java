@@ -1,10 +1,12 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.google.inject.Inject;
@@ -45,7 +47,7 @@ import javax.annotation.Nonnull;
  * recreated when their holding objects are moved from one store to another.
  * See the design document for more information.
  */
-public class ImmigrantDetector
+public class ImmigrantDetector implements IImmigrantDetector
 {
     static final Logger l = Util.l(ImmigrantDetector.class);
 
@@ -58,6 +60,39 @@ public class ImmigrantDetector
     private IMapSIndex2SID _sidx2sid;
     private AdmittedObjectLocator _aol;
     private IStores _ss;
+
+    @Override
+    public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid
+    {
+        // assert for assumption 1) above
+        assert !oaTo.isExpelled();
+        // assert for assumption 4) above
+        assert !oaTo.isFile() || oaTo.cas().isEmpty();
+
+        // directories can't be migrated
+        if (oaTo.isDir()) return false;
+
+        OA oaFrom = _aol.locate_(oaTo.soid().oid(), oaTo.soid().sidx(), oaTo.type());
+        if (oaFrom == null) return false;
+
+        assert oaFrom.type() == oaTo.type();
+
+        if (oaFrom.isFile()) {
+            immigrateFile_(oaFrom, oaTo, op, t);
+        } else {
+            // guaranteed by the above code
+            assert oaFrom.isAnchor();
+            immigrateAnchor_(oaFrom, oaTo, op, t);
+        }
+
+        SID sid = _sidx2sid.get_(oaTo.soid().sidx());
+        _od.delete_(oaFrom.soid(), op, sid, t);
+
+        // TODO notify with a MOVE or DELETE+CREATE event?
+
+        return true;
+    }
 
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc, ImmigrantVersionControl ivc,
@@ -153,49 +188,5 @@ public class ImmigrantDetector
 
         // move physical objects
         oaFrom.physicalFolder().move_(oaTo.physicalFolder(), op, t);
-    }
-
-    /**
-     * this method assumes that:
-     *
-     * 1) the destination is admitted
-     * 2) permissions have been checked
-     * 3) the destination metadata has been created
-     * 4) no content exists in the destination object if it is a file
-     * 5) no child store exists in the destination object if it is an anchor
-     *
-     * @param oaTo the OA of the destination object
-     * @return true if immigration has been performed
-     */
-    public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid
-    {
-        // assert for assumption 1) above
-        assert !oaTo.isExpelled();
-        // assert for assumption 4) above
-        assert !oaTo.isFile() || oaTo.cas().isEmpty();
-
-        // directories can't be migrated
-        if (oaTo.isDir()) return false;
-
-        OA oaFrom = _aol.locate_(oaTo.soid().oid(), oaTo.soid().sidx(), oaTo.type());
-        if (oaFrom == null) return false;
-
-        assert oaFrom.type() == oaTo.type();
-
-        if (oaFrom.isFile()) {
-            immigrateFile_(oaFrom, oaTo, op, t);
-        } else {
-            // guaranteed by the above code
-            assert oaFrom.isAnchor();
-            immigrateAnchor_(oaFrom, oaTo, op, t);
-        }
-
-        SID sid = _sidx2sid.get_(oaTo.soid().sidx());
-        _od.delete_(oaFrom.soid(), op, sid, t);
-
-        // TODO notify with a MOVE or DELETE+CREATE event?
-
-        return true;
     }
 }

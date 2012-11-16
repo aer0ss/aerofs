@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.expel.Expulsion;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
+import com.aerofs.daemon.core.migration.IImmigrantDetector;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -26,12 +26,12 @@ public class ObjectCreator
 {
     private DirectoryService _ds;
     private VersionUpdater _vu;
-    private ImmigrantDetector _imd;
+    private IImmigrantDetector _imd;
     private Expulsion _ex;
     private StoreCreator _sc;
 
     @Inject
-    public void inject_(DirectoryService ds, VersionUpdater vu, ImmigrantDetector imd, Expulsion ex,
+    public void inject_(DirectoryService ds, VersionUpdater vu, IImmigrantDetector imd, Expulsion ex,
             StoreCreator sc)
     {
         _ds = ds;

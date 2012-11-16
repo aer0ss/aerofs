@@ -1,8 +1,9 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import java.sql.SQLException;
 import java.util.*;
 
+import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.mock.TestUtilCore;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -120,7 +121,7 @@ public class TestEmigrantDetector extends AbstractTest
     public void setup() throws Exception
     {
         oidParentTo = OID.TRASH;
-        nameTo = EmigrantCreator.getDeletedObjectName_(soidSource, sidTarget);
+        nameTo = EmigrantUtil.getDeletedObjectName_(soidSource, sidTarget);
         mockOA(oa, soidSource, Type.FILE, false, oidSourceParentFrom, nameSourceFrom);
 
         mockStore(null, sidSource, sidxSource, sidxRoot, null, null, sid2sidx, null);
@@ -246,7 +247,7 @@ public class TestEmigrantDetector extends AbstractTest
     @Test
     public void shouldNoEmigrateIfNewNameIsNotEmigrantName() throws Exception
     {
-        nameTo = EmigrantCreator.getDeletedObjectName_(soidSource, null);
+        nameTo = EmigrantUtil.getDeletedObjectName_(soidSource, null);
         shouldNotEmigrate();
     }
 

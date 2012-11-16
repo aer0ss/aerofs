@@ -20,7 +20,6 @@ import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;

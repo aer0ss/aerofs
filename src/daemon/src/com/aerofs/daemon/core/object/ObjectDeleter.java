@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.object;
 
-import com.aerofs.daemon.core.migration.EmigrantCreator;
+import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
@@ -37,7 +37,7 @@ public class ObjectDeleter
     public void delete_(SOID soid, PhysicalOp op, @Nullable SID sidEmigrantTarget, Trans t)
             throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound, ExStreamInvalid
     {
-        String name = EmigrantCreator.getDeletedObjectName_(soid, sidEmigrantTarget);
+        String name = EmigrantUtil.getDeletedObjectName_(soid, sidEmigrantTarget);
         _om.moveInSameStore_(soid, OID.TRASH, name, op, sidEmigrantTarget != null, true, t);
     }
 }

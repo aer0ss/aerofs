@@ -1,8 +1,9 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -29,7 +30,7 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
  * ImmigrantCreator -> ObjectMover/Deleter/Creator -> ImmigrantDetector
  *
  */
-public class ImmigrantCreator
+public class ImmigrantCreator implements IImmigrantCreator
 {
     private DirectoryService _ds;
     private ObjectCreator _oc;
@@ -48,16 +49,7 @@ public class ImmigrantCreator
         _oc = oc;
     }
 
-    /**
-     * Recursively migrate the object corresponding to {@code soidFromRoot} to
-     * under {@code soidToRootParent}.
-     *
-     * This method assumes that permissions have been checked.
-     *
-     * @param soidFromRoot the SOID of the root object to be migrated
-     * @param soidToRootParent the SOID of the parent to which the root object will be migrated
-     * @return the new SOID of the root object
-     */
+    @Override
     public SOID createImmigrantRecursively_(final SOID soidFromRoot, SOID soidToRootParent,
             final String toRootName, final PhysicalOp op, final Trans t)
             throws ExStreamInvalid, IOException, ExNotFound, ExAlreadyExist, SQLException, ExNotDir

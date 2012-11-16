@@ -5,7 +5,7 @@ import static com.aerofs.daemon.core.expel.Expulsion.effectivelyExpelled;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.ObjectWalkerAdapter;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.migration.ImmigrantDetector;
+import com.aerofs.daemon.core.migration.IImmigrantDetector;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.StoreCreator;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -25,12 +25,12 @@ import java.sql.SQLException;
 class ExpelledToAdmittedAdjuster implements IExpulsionAdjuster
 {
     private final DirectoryService _ds;
-    private final ImmigrantDetector _imd;
+    private final IImmigrantDetector _imd;
     private final Expulsion _expulsion;
     private final StoreCreator _sc;
 
     @Inject
-    public ExpelledToAdmittedAdjuster(StoreCreator sc, Expulsion expulsion, ImmigrantDetector imd,
+    public ExpelledToAdmittedAdjuster(StoreCreator sc, Expulsion expulsion, IImmigrantDetector imd,
             DirectoryService ds)
     {
         _sc = sc;

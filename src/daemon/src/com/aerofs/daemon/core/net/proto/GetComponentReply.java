@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.migration.EmigrantDetector;
+import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.ReceiveAndApplyUpdate;
@@ -48,12 +48,12 @@ public class GetComponentReply
     private final Aliasing _al;
     private final MapAlias2Target _a2t;
     private final LocalACL _lacl;
-    private final EmigrantDetector _emd;
+    private final IEmigrantDetector _emd;
 
     @Inject
     public GetComponentReply(TransManager tm, DirectoryService ds, IncomingStreams iss,
             ReceiveAndApplyUpdate ru, MetaDiff mdiff, Aliasing al, MapAlias2Target a2t,
-            LocalACL lacl, EmigrantDetector emd)
+            LocalACL lacl, IEmigrantDetector emd)
     {
         _tm = tm;
         _ds = ds;

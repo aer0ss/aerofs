@@ -1,5 +1,6 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
+import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStores;
@@ -42,7 +43,7 @@ public class TestEmigrantCreator extends AbstractTest
     SIndex sidxRoot = new SIndex(5);
 
     SOID soid = new SOID(new SIndex(100), new OID(UniqueID.generate()));
-    String name = EmigrantCreator.getDeletedObjectName_(soid, sidTarget);
+    String name = EmigrantUtil.getDeletedObjectName_(soid, sidTarget);
 
     @Before
     public void setUp() throws SQLException, ExNotFound

@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -18,7 +18,7 @@ import java.util.Collection;
  * IMPORTANT invariant: The local device must maintain an invariant that among all the objects
  * sharing the same OID, at most one of them is admitted (the rest are expelled).
  */
-public class AdmittedObjectLocator
+class AdmittedObjectLocator
 {
     private final IMetaDatabase _mdb;
     private final DirectoryService _ds;
@@ -32,10 +32,6 @@ public class AdmittedObjectLocator
         _cfgBuildType = cfgBuildType;
     }
 
-    /**
-     * Identical to {@link AdmittedObjectLocator#locate_(OID, OA.Type)} except that objects in the
-     * store identified by sidxExcluded is ignored.
-     */
     public OA locate_(OID oid, SIndex sidxExcluded, OA.Type typeExpected)
         throws SQLException
     {
@@ -48,7 +44,7 @@ public class AdmittedObjectLocator
         OA oaFound = null;
         for (SIndex sidx : sidxs) {
             SOID soid = new SOID(sidx, oid);
-            OA oa = _ds.getOANullable_(soid);
+            OA oa = _ds.getOA_(soid);
             assert oa.soid().oid().equals(oid);
             assert oa.type() == typeExpected;
             if (!oa.isExpelled()) {

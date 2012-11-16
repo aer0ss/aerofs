@@ -1,7 +1,9 @@
-package com.aerofs.daemon.core.migration;
+package com.aerofs.daemon.core.sumu.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.migration.EmigrantUtil;
+import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.net.Downloads;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.To.Factory;
@@ -25,7 +27,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 
-public class EmigrantDetector
+public class EmigrantDetector implements IEmigrantDetector
 {
     static final Logger l = Util.l(EmigrantDetector.class);
 
@@ -48,23 +50,9 @@ public class EmigrantDetector
         _ds = ds;
     }
 
-    /**
-     * call this method before applying a metadata update from a remote peer,
-     * so that in case of a deletion update, the content of the object or of the
-     * object's children, are emigrated instead of deleted because of the update.
-     *
-     * NB. this method might pause to download anchoring stores or children objects.
-     *
-     * @param soid the object being downloaded. must be a metadata download
-     * @param oidParentTo the parent oid that the object is going to move to
-     * @param nameTo the name that the object is going to use
-     * @param sidsEmigrantTargetAncestor the value of the emigrant_target_ancestor_sid
-     * field from PBMeta
-     * @param did the device that provided the update
-     */
-    public void detectAndPerformEmigration_(SOID soid, OID oidParentTo,
-            String nameTo, List<ByteString> sidsEmigrantTargetAncestor, DID did,
-            Token tk)
+    @Override
+    public void detectAndPerformEmigration_(SOID soid, OID oidParentTo, String nameTo,
+            List<ByteString> sidsEmigrantTargetAncestor, DID did, Token tk)
             throws Exception
     {
         // do nothing if the remote peer doesn't have the target store
@@ -72,7 +60,7 @@ public class EmigrantDetector
 
         // do nothing if it's not an emigrant
         // TODO: check isDeleted_ ? (if so, in which store?)
-        if (!EmigrantCreator.isEmigrantName(nameTo) || !oidParentTo.isTrash()) return;
+        if (!EmigrantUtil.isEmigrantName(nameTo) || !oidParentTo.isTrash()) return;
 
         // do nothing if the object doesn't exist (no emigration is needed)
         OA oa = _ds.getOANullable_(soid);
@@ -80,9 +68,9 @@ public class EmigrantDetector
 
         // do nothing if the object has been migrated before
         // TODO: check isDeleted_ ?
-        if (EmigrantCreator.isEmigrantName(oa.name()) && oa.parent().isTrash()) return;
+        if (EmigrantUtil.isEmigrantName(oa.name()) && oa.parent().isTrash()) return;
 
-        SID sidTo = EmigrantCreator.getEmigrantTargetSID(nameTo);
+        SID sidTo = EmigrantUtil.getEmigrantTargetSID(nameTo);
         assert sidTo != null : nameTo;
         l.debug("emigration detected " + oa.type() + " " + soid + "->" + sidTo);
 

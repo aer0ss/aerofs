@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
-import com.aerofs.daemon.core.migration.ImmigrantCreator;
+import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -56,7 +56,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final TransManager _tm;
     private final ObjectCreator _oc;
     private final DirectoryService _ds;
-    private final ImmigrantCreator _imc;
+    private final IImmigrantCreator _imc;
     private final ObjectMover _om;
     private final ObjectDeleter _od;
     private final IMapSID2SIndex _sid2sidx;
@@ -66,7 +66,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
     @Inject
     public HdShareFolder(LocalACL lacl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
-            ImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
+            IImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
             ACLSynchronizer aclsync, IStores ss, DescendantStores dss)
     {
         _ss = ss;
