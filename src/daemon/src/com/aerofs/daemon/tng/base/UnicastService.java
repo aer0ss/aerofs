@@ -61,6 +61,8 @@ public final class UnicastService
     @Override
     public void start_()
     {
+        l.info("starting service");
+
         _unicastConnectionService.start_(); // FIXME: remove this - i.e. start via other means
     }
 
@@ -70,6 +72,8 @@ public final class UnicastService
             ImmutableSet<NetworkInterface> previous)
     {
         if (current.isEmpty()) {
+            l.info("network down: all links down");
+
             destroyAllPeers_(new ExTransport("network down"));
         }
     }
@@ -77,30 +81,29 @@ public final class UnicastService
     @Override
     public void onPresenceServiceConnected_()
     {
-        // this is a noop - we do nothing
+        l.info("presence service connected"); // noop; do nothing
     }
 
     @Override
     public void onPresenceServiceDisconnected_()
     {
-        // if the presence service goes down we assume all peers are unreachable
-        l.info("Presence service disconnected");
-        destroyAllPeers_(new ExTransport("presence service unavailable"));
+        l.info("presence service disconnected");
+
+        destroyAllPeers_(new ExTransport("presence service unavailable")); // if presence service goes down we assume everyone's unreachable
     }
 
     @Override
     public void onPeerOnline_(DID did)
     {
-        // this is a noop again - we do nothing until asked to by someone else
-        l.info("Peer " + did + " online");
+        l.info(did + ": online"); // noop; we don't create a peer unless a packet needs to be sent
     }
 
     @Override
     public void onPeerOffline_(DID did)
     {
-        // presence service says they're offline, destroy their resources
-        l.info("Peer " + did + " offline");
-        destroyPeer_(did, new ExTransport("peer offline"));
+        l.info(did + ": offline");
+
+        destroyPeer_(did, new ExTransport("peer offline")); // presence service says they're offline, destroy their resources
     }
 
     @Override

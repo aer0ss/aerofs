@@ -854,12 +854,16 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         if (did.equals(Cfg.did())) return;
 
         if (p.isAvailable()) {
+            l.info("rcv online presence d:" + did);
             _xpm.add(did, sid);
             _pm.stopPulse(did, false);
         } else {
             _spf.disconnect_(did, new Exception("remote offline"));
             boolean waslast = _xpm.del(did, sid);
-            if (waslast) _pm.stopPulse(did, false);
+            if (waslast) {
+                l.info("rcv offline presence d:" + did);
+                _pm.stopPulse(did, false);
+            }
         }
 
         _sink.enqueueBlocking(new EIPresence(this, p.isAvailable(), did, sid), Prio.LO);

@@ -227,6 +227,8 @@ final class XMPPPresence implements IPresenceService, IXMPPServerConnectionListe
             boolean wasfirst = _presences.add(did, sid);
 
             if (wasfirst) {
+                l.info(did + ": presence service recv online presence");
+
                 _peerPresenceNotifier.notifyOnOtherThreads(
                         new IListenerVisitor<IPeerPresenceListener>()
                         {
@@ -241,6 +243,8 @@ final class XMPPPresence implements IPresenceService, IXMPPServerConnectionListe
             boolean waslast = _presences.del(did, sid);
 
             if (waslast) {
+                l.info(did + ": presence service recv offline presence");
+
                 _peerPresenceNotifier.notifyOnOtherThreads(
                         new IListenerVisitor<IPeerPresenceListener>()
                         {
