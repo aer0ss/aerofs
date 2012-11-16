@@ -165,7 +165,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     {
         String[] fss = new String[] { "EXT", "NFS", "BTRFS", "ECRYPTFS", "VZFS",
                 "REISER", "XFS", "UFS", "CRYPT", "JFS", "SIMFS",
-                "UNKNOWN (0x565A4653)", // VZFS when stat doesn't know about that magic number
+                "UNKNOWN (0X565A4653)", // VZFS when stat doesn't know about that magic number
         };
         for (String fs : fss) if (type.startsWith(fs)) return true;
         return false;
