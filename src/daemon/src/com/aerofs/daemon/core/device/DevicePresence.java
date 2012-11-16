@@ -40,7 +40,7 @@ public class DevicePresence implements IDumpStatMisc
     private static final Logger l = Util.l(DevicePresence.class);
 
     private final Map<DID, Device> _did2dev = Maps.newHashMap();
-    private final Map<SIndex, OPMStore> _sidx2opms = Maps.newHashMap();
+    private final Map<SIndex, OPMDevices> _sidx2opm = Maps.newHashMap();
 
     private final Transports _tps;
     private final CoreScheduler _sched;
@@ -71,7 +71,8 @@ public class DevicePresence implements IDumpStatMisc
             _did2dev.put(did, dev);
         }
 
-        onlineImpl_(dev, dev.online_(tp, sidcs));
+        Collection<SIndex> sidcsOnline = dev.online_(tp, sidcs);
+        onlineImpl_(dev, sidcsOnline);
     }
 
     public void offline_(ITransport tp, DID did, Collection<SIndex> sidcs)
@@ -80,8 +81,11 @@ public class DevicePresence implements IDumpStatMisc
         if (dev == null) return;
         l.info("offline " + did + tp + " 4 " + sidcs);
 
-        offlineImpl_(did, dev.offline_(tp, sidcs));
-        if (dev.isClean_()) _did2dev.remove(did);
+        Collection<SIndex> sidcsOffline = dev.offline_(tp, sidcs);
+        offlineImpl_(did, sidcsOffline);
+        if (!dev.isAvailable_()) {
+            _did2dev.remove(did);
+        }
     }
 
     /**
@@ -90,9 +94,14 @@ public class DevicePresence implements IDumpStatMisc
     public void offline_(ITransport tp)
     {
         // make a copy to avoid concurrent modification exception
-        for (Device dev : new ArrayList<Device>(_did2dev.values())) {
-            offlineImpl_(dev.did(), dev.offline_(tp));
-            if (dev.isClean_()) _did2dev.remove(dev.did());
+        ArrayList<Device> devices = new ArrayList<Device>(_did2dev.values());
+
+        for (Device dev : devices) {
+            Collection<SIndex> sidcsOffline = dev.offline_(tp);
+            offlineImpl_(dev.did(), sidcsOffline);
+            if (!dev.isAvailable_()) {
+                _did2dev.remove(dev.did());
+            }
         }
     }
 
@@ -104,7 +113,7 @@ public class DevicePresence implements IDumpStatMisc
             _did2dev.put(did, dev);
         }
 
-        if (dev.isPulseStarted_(tp)) return;
+        if (dev.isBeingPulsed_(tp)) return;
 
         l.info("start pulse " + did + " " + tp);
 
@@ -126,9 +135,10 @@ public class DevicePresence implements IDumpStatMisc
     public void pulseStopped_(ITransport tp, DID did)
     {
         Device dev = _did2dev.get(did);
-        assert dev != null && !dev.isClean_();
+        assert dev != null && dev.isAvailable_();
 
-        onlineImpl_(dev, dev.pulseStopped_(tp));
+        Collection<SIndex> sidcsOnline = dev.pulseStopped_(tp);
+        onlineImpl_(dev, sidcsOnline);
     }
 
     private void onlineImpl_(Device dev, Collection<SIndex> sidcs)
@@ -137,16 +147,16 @@ public class DevicePresence implements IDumpStatMisc
         for (SIndex sidx : sidcs) {
             Store s = _sidx2s.getNullable_(sidx);
 
-            OPMStore opms = _sidx2opms.get(sidx);
-            if (opms == null) {
-                opms = new OPMStore();
-                _sidx2opms.put(sidx, opms);
+            OPMDevices opm = _sidx2opm.get(sidx);
+            if (opm == null) {
+                opm = new OPMDevices();
+                _sidx2opm.put(sidx, opm);
                 if (s != null) {
-                    s.setOPMStore_(opms);
+                    s.setOPMDevices_(opm);
                     s.startAntiEntropy_();
                 }
             }
-            opms.add_(did, dev);
+            opm.add_(did, dev);
 
             if (s != null) {
                 // we map online devices in the collector as OPM devices of a member store
@@ -160,12 +170,12 @@ public class DevicePresence implements IDumpStatMisc
         for (SIndex sidx : sidcs) {
             Store s = _sidx2s.getNullable_(sidx);
 
-            OPMStore opms = _sidx2opms.get(sidx);
-            assert opms != null;
-            opms.remove_(did);
-            if (opms.isEmpty_()) {
-                _sidx2opms.remove(sidx);
-                if (s != null) s.setOPMStore_(null);
+            OPMDevices opm = _sidx2opm.get(sidx);
+            assert opm != null;
+            opm.remove_(did);
+            if (opm.isEmpty_()) {
+                _sidx2opm.remove(sidx);
+                if (s != null) s.setOPMDevices_(null);
             }
 
             if (s != null) {
@@ -229,9 +239,10 @@ public class DevicePresence implements IDumpStatMisc
         return dev != null && dev.isOnline_() ? dev : null;
     }
 
-    public @Nullable OPMStore getOPMStore_(SIndex sidx)
+    public @Nullable
+    OPMDevices getOPMDevices_(SIndex sidx)
     {
-        return _sidx2opms.get(sidx);
+        return _sidx2opm.get(sidx);
     }
 
     /**
@@ -244,8 +255,7 @@ public class DevicePresence implements IDumpStatMisc
                 public Void call() throws ExNoResource, ExAborted
                 {
                     for (ITransport tp : _tps.getAll_()) {
-                        EOUpdateStores ev = new EOUpdateStores(_tps.getIMCE_(tp), sidAdded,
-                                sidRemoved);
+                        EOUpdateStores ev = new EOUpdateStores(_tps.getIMCE_(tp), sidAdded, sidRemoved);
                         CoreIMC.enqueueBlocking_(ev, _tc, Cat.UNLIMITED);
                     }
                     return null;
@@ -272,9 +282,9 @@ public class DevicePresence implements IDumpStatMisc
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
         ps.println(indent + "opm");
-        for (Entry<SIndex, OPMStore> en : _sidx2opms.entrySet()) {
+        for (Entry<SIndex, OPMDevices> en : _sidx2opm.entrySet()) {
             SIndex sidx = en.getKey();
-            Store s = _sidx2s.get_(sidx);
+            Store s = _sidx2s.getNullable_(sidx);
             ps.print(indent + indentUnit + sidx);
             if (s == null) ps.print("? ");
             else ps.print(": ");
