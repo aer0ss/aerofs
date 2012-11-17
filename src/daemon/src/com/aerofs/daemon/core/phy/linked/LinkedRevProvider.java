@@ -265,8 +265,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         String auxPath = Util.join(_pathBase, Util.join(path.elements()))
                 + RevisionSuffix.SEPARATOR + Util.utf2string(index);
         InjectableFile file = _factFile.create(auxPath);
-        if (!file.exists() || file.isDirectory())
-            throw new ExNotFound("Invalid revision index");
+        if (!file.exists() || file.isDirectory()) throw new InvalidRevisionIndexException();
         return new RevInputStream(file.newInputStream(), file.getLength());
     }
 

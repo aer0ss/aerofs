@@ -94,6 +94,11 @@ public interface IPhysicalRevProvider
         }
     }
 
+    public class InvalidRevisionIndexException extends Exception
+    {
+        private static final long serialVersionUID = 0L;
+    }
+
     Collection<Child> listRevChildren_(Path path) throws Exception;
 
     /**

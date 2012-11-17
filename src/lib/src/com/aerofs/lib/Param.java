@@ -11,7 +11,6 @@ public class Param
 {
     public static final int FILE_BUF_SIZE                    = 512 * C.KB;
     public static final int FILE_CHUNK_SIZE                  = 4 * C.MB;
-    public static final int FSICLIENT_POOL_SIZE              = 6;
     public static final boolean STRICT_LISTENERS             = false;
     public static final int MIN_PASSWD_LENGTH                = 6;
     public static final long FREQUENT_DEFECT_SENDER_INTERVAL = 3 * C.HOUR;
