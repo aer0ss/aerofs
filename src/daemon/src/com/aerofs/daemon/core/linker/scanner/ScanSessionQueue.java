@@ -6,11 +6,11 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.PathObfuscator;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableSystem;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.Maps;
 
 import javax.inject.Inject;
@@ -86,7 +86,7 @@ public class ScanSessionQueue implements IDumpStatMisc
         @Override
         public String toString()
         {
-            return PathObfuscator.obfuscate(_absPaths) + ":" + _recursive;
+            return ObfuscatingFormatters.obfuscatePaths(_absPaths) + ":" + _recursive;
         }
     }
 

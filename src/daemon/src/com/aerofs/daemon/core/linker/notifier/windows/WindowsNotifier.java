@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.linker.notifier.windows;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.PathObfuscator;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.linker.Linker;
@@ -71,8 +71,8 @@ public class WindowsNotifier implements INotifier, JNotifyListener
     private static void log(String operation, String name, @Nullable String to)
     {
         if (l.isDebugEnabled()) {
-            String logStrTo = to == null ? "" : (" -> " + PathObfuscator.obfuscate(to));
-            l.debug(operation + " " + PathObfuscator.obfuscate(name) + logStrTo);
+            String logStrTo = to == null ? "" : (" -> " + ObfuscatingFormatters.obfuscatePath(to));
+            l.debug(operation + " " + ObfuscatingFormatters.obfuscatePath(name) + logStrTo);
         }
     }
 

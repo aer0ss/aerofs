@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
@@ -65,18 +66,38 @@ public abstract class FileUtil
     private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     /**
-     * Annotate filename with extra infos to make defect reports more informative
+     * DEPRECATED: This method does not obfuscate the file path. There are currently two places
+     * that call this method and they only do so temporarily. Once those calls are removed this
+     * method should be removed. The offending callers are
+     * {@link com.aerofs.lib.injectable.InjectableDriver#throwIOException(java.io.File)} and
+     * {@link com.aerofs.lib.injectable.InjectableDriver#throwNotFoundOrIOException(java.io.File)}
+     *
+     * Annotate filename with extra infos to make defect reports more informative.
+     *
+     * @param f the file to annotate
+     * @return the String representing the file's extra info
      */
     public static String debugString(File f)
     {
         String attrParent = getDebuggingAttributesString(f.getParentFile());
         String attrSelf = getDebuggingAttributesString(f);
 
+        // @deprecated This should NEVER be shown to the user as an error message (attributes? rly?)
         // Do not obfuscate the path since the string may be displayed to the user as error messages
         return f.getAbsolutePath() + " (attributes: " + attrParent + "," + attrSelf + ")";
     }
 
-    private static String getDebuggingAttributesString(File f)
+    /**
+     * Returns a string of characters whose positions and values represent attributes of
+     * the specified file. For example, a file which exists on the system, is a directory,
+     * and can be read and executed will look like:
+     * <pre>
+     *      edr-x--
+     * </pre>
+     * @param f the file whose attributes to format
+     * @return the formatted attribute string
+     */
+    public static String getDebuggingAttributesString(File f)
     {
         return  (f.exists() ? "e" : "-") +
                 (f.isDirectory() ? "d" : (f.isFile() ? "f" : "-")) +
@@ -122,7 +143,7 @@ public abstract class FileUtil
 
     public static void deleteNow(File file) throws IOException
     {
-        if (!tryDeleteNow(file)) throw new IOException("Error deleting " + file);
+        if (!tryDeleteNow(file)) throw new ExFileIO("error deleting file", file);
     }
 
     public static boolean tryDeleteNow(File file)
@@ -147,7 +168,7 @@ public abstract class FileUtil
                 deleteRecursively(child);
             }
         }
-        if (!file.delete()) throw new IOException("Could not delete " + debugString(file));
+        if (!file.delete()) throw new ExFileIO("could not delete file", file);
     }
 
     private static File _javaTempDir;
@@ -200,24 +221,23 @@ public abstract class FileUtil
     public static void rename(File from, File to) throws IOException
     {
         if (!from.renameTo(to)) {
-            throw new IOException("Couldn't rename " + debugString(from)
-                    + " to " + debugString(to));
+            throw new ExFileIO("couldn't rename {} to {}", from, to);
         }
     }
 
     public static void delete(File file) throws IOException
     {
-        if (!file.delete()) throw new IOException("Couldn't delete: " + debugString(file));
+        if (!file.delete()) throw new ExFileIO("couldn't delete file", file);
     }
 
     public static void mkdir(File dir) throws IOException
     {
-        if (!dir.mkdir()) throw new IOException("Couldn't mkdir: " + debugString(dir));
+        if (!dir.mkdir()) throw new ExFileIO("couldn't make the directory", dir);
     }
 
     public static void mkdirs(File dir) throws IOException
     {
-        if (!dir.mkdirs()) throw new IOException("Couldn't mkdirs: " + debugString(dir));
+        if (!dir.mkdirs()) throw new ExFileIO("couldn't make the directories", dir);
     }
 
     public static File ensureDirExists(File dir) throws IOException
@@ -225,7 +245,7 @@ public abstract class FileUtil
         if (!dir.isDirectory()) {
             if (!dir.mkdirs()) {
                 if (!dir.isDirectory()) {
-                    throw new IOException("Couldn't mkdir: " + debugString(dir));
+                    throw new ExFileIO("couldn't make the directory", dir);
                 }
             }
         }
@@ -237,7 +257,7 @@ public abstract class FileUtil
      */
     private static void throwIfNotFile(File f) throws IOException
     {
-        if (!f.isFile()) throw new IOException(f + " is not a file");
+        if (!f.isFile()) throw new ExFileIO("{} is not a file", f);
     }
 
     /**
@@ -287,7 +307,7 @@ public abstract class FileUtil
 
     public static void createNewFile(File f) throws IOException
     {
-        if (!f.createNewFile()) throw new IOException("couldn't create " + f);
+        if (!f.createNewFile()) throw new ExFileIO("couldn't create file", f);
     }
 
     /**
@@ -299,8 +319,7 @@ public abstract class FileUtil
             throws IOException
     {
         if (!from.renameTo(to)) {
-            throw new IOException("couldn't rename " + debugString(from)
-                    + " to " + debugString(to));
+            throw new ExFileIO("couldn't rename {} to {}", from, to);
         }
     }
 
@@ -317,8 +336,7 @@ public abstract class FileUtil
             try {
                  copy(from, to, false, false);
             } catch (IOException e) {
-                throw new IOException("couldn't rename " + debugString(from)
-                        + " to " + debugString(to), e);
+                throw new ExFileIO("couldn't rename {} to {}", from, to);
             }
             deleteOrOnExit(from);
         }
@@ -328,7 +346,7 @@ public abstract class FileUtil
     {
         throwIfNotFile(f);
         if (!f.setLastModified(mtime)) {
-            throw new IOException("can't set mtime for " + debugString(f));
+            throw new ExFileIO("can't set the last modified time for file", f);
         }
     }
 
@@ -338,7 +356,7 @@ public abstract class FileUtil
     public static void deleteOrThrowIfExist(File f) throws IOException
     {
         if (!f.delete() && f.exists()) {
-            throw new IOException("couldn't delete " + debugString(f));
+            throw new ExFileIO("couldn't delete file", f);
         }
     }
 
@@ -366,7 +384,7 @@ public abstract class FileUtil
             throws IOException
     {
         if (exclusive && !to.createNewFile()) {
-            throw new IOException("the file already exists");
+            throw new ExFileIO("file {} already exists", to);
         }
 
         FileChannel in = null;
@@ -396,8 +414,7 @@ public abstract class FileUtil
         if (children != null) {
             if (!to.mkdir() && exclusive) {
                 // mkdir may also fail if it already exists
-                throw new IOException("cannot create " + to.getPath() +
-                        ". it might already exist");
+                throw new ExFileIO("cannot create file {}. it might already exist", to);
             }
 
             for (int i = 0; i < children.length; i++) {

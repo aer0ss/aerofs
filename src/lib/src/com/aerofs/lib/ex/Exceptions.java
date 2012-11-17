@@ -39,8 +39,13 @@ public class Exceptions
 
         PBException.Builder bd = PBException.newBuilder().setType(type);
 
-        String localMsg = e.getLocalizedMessage();
-        if (localMsg != null) bd.setLocalizedMessage(localMsg);
+        if (e instanceof IExObfuscated) {
+            // If this Exception is obfuscated, encode the plain text message
+            bd.setPlainTextMessage(((IExObfuscated) e).getPlainTextMessage());
+        }
+
+        String message = e.getLocalizedMessage();
+        if (message != null) bd.setMessage(message);
         if (stackTrace) bd.setStackTrace(Util.stackTrace2string(eRoot));
         return bd.build();
     }

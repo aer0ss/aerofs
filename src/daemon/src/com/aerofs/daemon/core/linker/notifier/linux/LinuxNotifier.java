@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -24,7 +25,6 @@ import com.aerofs.lib.injectable.InjectableJNotify;
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.linux.INotifyListener;
 
-import static com.aerofs.lib.PathObfuscator.obfuscate;
 import static net.contentobjects.jnotify.linux.JNotify_linux.*;
 
 public class LinuxNotifier implements INotifier, INotifyListener
@@ -454,13 +454,13 @@ public class LinuxNotifier implements INotifier, INotifyListener
 
     private void mightCreate(String path)
     {
-        if (l.isDebugEnabled()) l.debug("mightCreate(" + obfuscate(path) + ")");
+        if (l.isDebugEnabled()) l.debug("mightCreate(" + ObfuscatingFormatters.obfuscatePath(path) + ")");
         _cq.enqueueBlocking(new EIMightCreateNotification(path), Linker.PRIO);
     }
 
     private void mightDelete(String path)
     {
-        if (l.isDebugEnabled()) l.debug("mightDelete(" + obfuscate(path) + ")");
+        if (l.isDebugEnabled()) l.debug("mightDelete(" + ObfuscatingFormatters.obfuscatePath(path) + ")");
         _cq.enqueueBlocking(new EIMightDeleteNotification(path), Linker.PRIO);
     }
 

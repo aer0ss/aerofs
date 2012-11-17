@@ -7,6 +7,7 @@ import java.util.Set;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
@@ -118,7 +119,7 @@ public class InjectableDriver
             throw new IOException("getFid: " + FileUtil.debugString(f) + " " +
                     Joiner.on("\n").join(encodedChildren));
         }
-        throw new IOException("getFid: " + FileUtil.debugString(f));
+        throw new ExFileIO("getFid: {}", f);
     }
 
     public void setFolderIcon(String folderPath, String iconName)

@@ -5,13 +5,13 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.lib.PathObfuscator;
 import com.aerofs.daemon.lib.Scheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -284,7 +284,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                         l.info("aliased " + soid);
                         assert _ds.hasAliasedOA_(soid);
                     } else {
-                        l.warn("delete " + soid + " " + PathObfuscator.obfuscate(
+                        l.warn("delete " + soid + " " + ObfuscatingFormatters.obfuscatePath(
                                 _ds.getOA_(soid).name()));
                         _od.delete_(soid, PhysicalOp.MAP, null, t);
                         deletedSOIDs.add(soid);

@@ -25,7 +25,6 @@ import com.aerofs.lib.C.AuxFolder;
 import com.aerofs.lib.ExternalSorter;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.collect.Lists;

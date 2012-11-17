@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.lib;
 
 import com.aerofs.lib.os.OSUtil;
@@ -141,9 +145,9 @@ public class Path implements Comparable<Path>
         return FORMAL_SEP + toStringFormal();
     }
 
-    // TODO (MJ) Why do we define/use a FORMAL_SEP here when File.java defines File.separatorChar
-    // (and we even use it in toAbsoluteString?)
-    // Does File.separatorChar == '\\' depending on the OS?
+    // We use a formal separator which may be different from the native file path separator. This
+    // is to ensure that we keep consistent paths amongst Operating Systems when users interact
+    // with aerofs-sh.
     private final static String FORMAL_SEP = "/";
 
     private final static Joiner FORMAL_SEP_JOINER = Joiner.on(FORMAL_SEP);

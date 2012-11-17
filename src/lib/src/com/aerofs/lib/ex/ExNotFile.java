@@ -12,11 +12,6 @@ public class ExNotFile extends AbstractExWirable
         super();
     }
 
-    public ExNotFile(String msg)
-    {
-        super(msg);
-    }
-
     public ExNotFile(PBException pb)
     {
         super(pb);

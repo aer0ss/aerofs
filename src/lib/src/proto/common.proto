@@ -92,10 +92,16 @@ message PBException {
     required Type type = 1;
 
     /**
+     * The message from the Exception's getMessage() call. This is not guaranteed
+     * to be human readable (ex. the exception contains obfuscated paths).
+     */
+    optional string message = 4;
+
+    /**
      * User-friendly error message, if available.
      * This message *can* be displayed to the user, and should be localized if possible.
      */
-    optional string localized_message = 2;
+    optional string plain_text_message = 2;
 
     /**
      * The call stack of the exception, if available. Note that stack trace should not be sent

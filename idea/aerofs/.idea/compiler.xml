@@ -7,6 +7,7 @@
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
+      <directory url="file://$PROJECT_DIR$/../../src/syncstat/test/com/aerofs/syncstat/server/stress" includeSubdirectories="true" />
       <directory url="file://$PROJECT_DIR$/../../src/android/gen" includeSubdirectories="true" />
     </excludeFromCompile>
     <resourceExtensions />

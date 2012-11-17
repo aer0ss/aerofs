@@ -3,10 +3,9 @@ package com.aerofs.daemon.core.linker;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 
 import javax.annotation.Nonnull;
-
-import static com.aerofs.lib.PathObfuscator.obfuscate;
 
 /**
  * This class combines Path and its corresponding string-type path. The former
@@ -57,7 +56,7 @@ public class PathCombo implements Comparable<PathCombo>
     @Override
     public String toString()
     {
-        return obfuscate(_path);
+        return ObfuscatingFormatters.obfuscatePath(_path);
     }
 
     @Override

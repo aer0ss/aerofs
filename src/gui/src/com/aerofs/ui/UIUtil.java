@@ -66,12 +66,19 @@ public class UIUtil
     {
         while (e.getCause() != null) { e = e.getCause(); }
 
+        final String message;
+        if (e instanceof IExObfuscated) {
+            // Extract the plain text message if this is an obfuscated Exception
+            message = ((IExObfuscated) e).getPlainTextMessage();
+        } else {
+            message = e.getMessage();
+        }
+
         if (e instanceof AbstractExWirable) {
-            String msg = e.getMessage();
             String wireType = ((AbstractExWirable) e).getWireTypeString();
-            return wireType.equals(msg) ? wireType : wireType + ": " + e.getMessage();
+            return wireType.equals(message) ? wireType : wireType + ": " + message;
         } else if (e instanceof FileNotFoundException) {
-            return e.getMessage() + " is not found";
+            return message + " is not found";
         } else if (e instanceof SocketException) {
             return "connection failed";
         } else if (e instanceof UnknownHostException) {
@@ -84,14 +91,14 @@ public class UIUtil
             return "parsing failed";
 
         // the following tests should go last
-        } else if (e.getMessage() == null) {
+        } else if (message == null) {
             return e.getClass().getSimpleName();
-        } else if (e instanceof IOException && e.getMessage().startsWith(SERVER_ERROR)) {
+        } else if (e instanceof IOException && message.startsWith(SERVER_ERROR)) {
             int start = SERVER_ERROR.length();
-            String code = e.getMessage().substring(start, start + 3);
+            String code = message.substring(start, start + 3);
             return "server error, code " + code;
         } else {
-            return e.getMessage();
+            return message;
         }
     }
 

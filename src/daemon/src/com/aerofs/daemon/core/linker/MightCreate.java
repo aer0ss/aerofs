@@ -5,7 +5,7 @@ import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import java.io.IOException;
 import java.sql.SQLException;
 
-import static com.aerofs.lib.PathObfuscator.*;
+import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -354,7 +354,7 @@ public class MightCreate
             }
 
             // move the logical object
-            l.info("move " + soid + ":" + obfuscate(pLogical) + "->" + obfuscate(pPhysical));
+            l.info("move " + soid + ":" + obfuscatePath(pLogical) + "->" + obfuscatePath(pPhysical));
             Path pathToParent = pPhysical.removeLast();
             SOID soidToParent = _ds.resolveThrows_(pathToParent);
             OA oaToParent = _ds.getOA_(soidToParent);
@@ -411,7 +411,7 @@ public class MightCreate
         }
 
         if (l.isInfoEnabled()) {
-            l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscate(name));
+            l.info("move for confict " + oa.soid() + ":" + pc + "->" + obfuscatePath(name));
         }
 
         // rename the logical object

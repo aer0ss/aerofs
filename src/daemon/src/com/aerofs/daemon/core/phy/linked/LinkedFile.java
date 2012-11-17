@@ -7,8 +7,8 @@ import java.io.InputStream;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.ex.ExFileIO;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -149,8 +149,7 @@ public class LinkedFile implements IPhysicalFile
         try {
             return new FileInputStream(_f.getImplementation());
         } catch (FileNotFoundException e) {
-            Exception ex = new Exception("LF no file " +
-                    FileUtil.debugString(_f.getImplementation()), e);
+            Exception ex = new ExFileIO("LF no file", _f.getImplementation());
             fds.logSendAsync("LF no file", ex);
             throw e;
         }

@@ -9,7 +9,6 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -27,7 +26,6 @@ import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
-import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import static com.aerofs.lib.SystemUtil.ExitCode.*;
 

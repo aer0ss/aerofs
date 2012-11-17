@@ -42,8 +42,7 @@ public abstract class RootAnchorUtil
 
         // Check if it's a file or a non-empty folder
         if (fRootAnchor.isFile()) {
-            throw new ExNotDir("A file at the desired location " + fRootAnchor +
-                    " already exists");
+            throw new ExNotDir("A file at the desired location {} already exists", fRootAnchor);
 
         } else if (!allowNonEmptyFolder) {
             String[] children = fRootAnchor.list();

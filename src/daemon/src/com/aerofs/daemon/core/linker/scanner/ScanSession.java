@@ -7,7 +7,6 @@ import com.aerofs.daemon.core.linker.MightDelete;
 import com.aerofs.daemon.core.linker.PathCombo;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
-import com.aerofs.lib.PathObfuscator;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
@@ -17,12 +16,14 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Deque;
@@ -233,7 +234,7 @@ class ScanSession
                 * deletion of the logical object corresponding to A. This is because the
                 * logical object is already in the deletion buffer when A is being scanned.
                 */
-                l.warn("root " + PathObfuscator.obfuscate(pcRoot._absPath)
+                l.warn("root " + ObfuscatingFormatters.obfuscatePath(pcRoot._absPath)
                         + " no longer a dir. skip");
                 iter.remove();
             }
@@ -267,7 +268,7 @@ class ScanSession
 
         // compose the list of physical children
         String[] nameChildren = _f._factFile.create(pcParent._absPath).list();
-        if (nameChildren == null) throw new ExNotDir(pcParent._absPath);
+        if (nameChildren == null) throw new ExNotDir("Not a dir", new File(pcParent._absPath));
 
         // might create physical children
         int potentialUpdates = 0;

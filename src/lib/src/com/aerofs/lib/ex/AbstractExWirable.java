@@ -96,7 +96,7 @@ public abstract class AbstractExWirable extends Exception
 
     protected AbstractExWirable(PBException pb)
     {
-        super(pb.getLocalizedMessage());
+        super(pb.getMessage());
         _pb = pb;
         assert getWireType() == pb.getType();
     }

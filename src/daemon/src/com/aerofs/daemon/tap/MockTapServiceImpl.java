@@ -37,7 +37,7 @@ public class MockTapServiceImpl implements ITapService
     @Override
     public PBException encodeError(Throwable error)
     {
-        return PBException.newBuilder().setLocalizedMessage("Error from Transport").build();
+        return PBException.newBuilder().setMessage("Error from Transport").build();
     }
 
     private void assertStarted()

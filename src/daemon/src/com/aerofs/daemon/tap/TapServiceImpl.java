@@ -19,10 +19,10 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FailedFutureCallback;
 import com.aerofs.lib.async.FutureUtil;
 import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.proto.Common;
-import com.aerofs.proto.Common.PBException.Type;
 import com.aerofs.proto.Tap;
 import com.aerofs.proto.Tap.ITapService;
 import com.aerofs.proto.Tap.MessageTypeCollection;
@@ -74,14 +74,7 @@ public class TapServiceImpl implements ITapService
     public Common.PBException encodeError(Throwable error)
     {
         l.error(Util.stackTrace2string(error));
-
-        Common.PBException.Builder reply = Common.PBException.newBuilder();
-        reply.setType(Type.INTERNAL_ERROR);
-        if (error.getMessage() != null) {
-            reply.setLocalizedMessage(error.getMessage());
-        }
-        reply.setStackTrace(Util.stackTrace2string(error));
-        return reply.build();
+        return Exceptions.toPB(error);
     }
 
     @Override
