@@ -61,6 +61,7 @@ public class AppRoot
      */
     public static String abs()
     {
+        assert _abs != null;
         return _abs;
     }
 }
