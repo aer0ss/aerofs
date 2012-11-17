@@ -12,13 +12,10 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.testlib.UnitTestTempDir;
 import com.google.common.io.ByteStreams;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 
@@ -41,14 +38,8 @@ public class TestCacheBackend extends AbstractBlockTest
     @Mock CfgAbsAuxRoot auxRoot;
 
     // use in-memory DB
-    InjectableFile.Factory fileFactory = new InjectableFile.Factory();
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
     CacheDatabase cdb = new CacheDatabase(idbcw.mockCoreDBCW().get());
-
-    // setup temporary folder for use as aux root
-    @Rule
-    public final UnitTestTempDir _testTempDirFactory = new UnitTestTempDir();
-    private String testDir;
 
     @Mock IBlockStorageBackend bsb;
 
@@ -60,10 +51,8 @@ public class TestCacheBackend extends AbstractBlockTest
         idbcw.init_();
         new CacheSchema(idbcw).create_();
 
-        testDir = _testTempDirFactory.getTestTempDir().getAbsolutePath();
-
         when(tm.begin_()).thenReturn(t);
-        when(auxRoot.get()).thenReturn(testDir);
+        when(auxRoot.get()).thenReturn(testTempDirFactory.getTestTempDir().getAbsolutePath());
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         cache = new CacheBackend(auxRoot, tm, sched, cdb, bsb);

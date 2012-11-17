@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block.cache;
 
 import com.aerofs.daemon.core.CoreScheduler;
-import com.aerofs.daemon.core.phy.block.BlockStorageModule;
+import com.aerofs.daemon.core.phy.block.AbstractBlockStorageModule;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
@@ -16,7 +16,7 @@ import com.google.inject.Scopes;
  * To enable caching in any backend simply make the backend Module inherit from this class instead
  * of BlockStorageModule
  */
-public abstract class CachedStorageModule extends BlockStorageModule
+public abstract class CachedStorageModule extends AbstractBlockStorageModule
 {
     @Override
     public void configure()

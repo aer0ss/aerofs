@@ -5,27 +5,19 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.lib.aws.s3.S3TestConfig;
-import com.aerofs.testlib.UnitTestTempDir;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class TestS3Backend extends AbstractBlockTest
 {
     private final S3TestConfig s3TestConfig = new S3TestConfig();
-
-    @Rule
-    public final UnitTestTempDir testTempDirFactory = new UnitTestTempDir();
 
     private S3Backend bsb;
 
@@ -60,21 +52,11 @@ public class TestS3Backend extends AbstractBlockTest
         Assert.assertTrue(ok);
     }
 
-    private void put(TestBlock block) throws IOException
-    {
-        ByteArrayOutputStream data = new ByteArrayOutputStream();
-        EncoderWrapping wrapping = bsb.wrapForEncoding(data);
-        ByteStreams.copy(new ByteArrayInputStream(block._content), wrapping.wrapped);
-        wrapping.wrapped.close();
-        bsb.putBlock(block._key, new ByteArrayInputStream(data.toByteArray()),
-                block._content.length, wrapping.encoderData);
-    }
-
     @Test
     public void shouldStoreAndFetchBlock() throws Exception
     {
         TestBlock b = newBlock();
-        put(b);
+        put(bsb, b);
         Assert.assertArrayEquals(b._content, ByteStreams.toByteArray(bsb.getBlock(b._key)));
     }
 }

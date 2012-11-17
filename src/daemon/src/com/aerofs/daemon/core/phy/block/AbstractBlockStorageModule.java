@@ -15,7 +15,7 @@ import com.google.inject.Scopes;
  *
  * This class is abstract on purpose to enforce specific instanciation of a backend-specific module.
  */
-public abstract class BlockStorageModule extends AbstractModule
+public abstract class AbstractBlockStorageModule extends AbstractModule
 {
     @Override
     protected void configure()

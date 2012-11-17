@@ -13,27 +13,36 @@ import java.util.List;
 
 public class BlockUtil
 {
-    static final int BLOCK_HASH_SIZE = ContentHash.UNIT_LENGTH;
-    static final long FILE_BLOCK_SIZE = Param.FILE_CHUNK_SIZE;
+    public static final int BLOCK_HASH_SIZE = ContentHash.UNIT_LENGTH;
+    public static final long FILE_BLOCK_SIZE = Param.FILE_CHUNK_SIZE;
 
-    static int getNumBlocks(ContentHash hash)
+    public static int getNumBlocks(ContentHash hash)
     {
         byte[] bytes = hash.getBytes();
         return bytes.length / BLOCK_HASH_SIZE;
     }
 
-    static boolean isOneBlock(ContentHash hash)
+    public static boolean isOneBlock(ContentHash hash)
     {
         return getNumBlocks(hash) == 1;
     }
 
-    static ContentHash getBlock(ContentHash hash, int i)
+    /**
+     * ContentHash for files spanning multible blocks are simply the concatenation of the hashes
+     * of each block. This method extract the hash for a given block from the concatenated hash.
+     */
+    public static ContentHash getBlock(ContentHash hash, int i)
     {
         return new ContentHash(
                 Arrays.copyOfRange(hash.getBytes(), i * BLOCK_HASH_SIZE, (i + 1) * BLOCK_HASH_SIZE));
     }
 
-    static List<ContentHash> splitBlocks(ContentHash hash)
+    /**
+     * ContentHash for files spanning multible blocks are simply the concatenation of the hashes
+     * of each block. This method splits a concatenated hash into a list of hashes for all the
+     * blocks
+     */
+    public static List<ContentHash> splitBlocks(ContentHash hash)
     {
         byte[] bytes = hash.getBytes();
         int numBlocks = getNumBlocks(hash);
