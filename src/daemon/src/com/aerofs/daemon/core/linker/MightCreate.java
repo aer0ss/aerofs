@@ -223,7 +223,8 @@ public class MightCreate
         if (soid == null) {
             // Logical object of the same FID is not found.
         } else {
-            assert !_ds.getOA_(soid).isExpelled();
+            final OA oa = _ds.getOA_(soid);
+            assert !oa.isExpelled() : oa;
 
             Path logicalPath = _ds.resolveNullable_(soid);
             if (logicalPath != null) throwIfHardLinkDetected_(logicalPath, physicalPath, fnt._fid);
