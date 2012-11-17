@@ -113,5 +113,6 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
     public void branchesChanged_(Map<Path, Boolean> conflicts)
     {
         notify_(_ps.setConflictState_(conflicts));
+        sendConflictCount_();
     }
 }
