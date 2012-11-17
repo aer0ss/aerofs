@@ -75,7 +75,6 @@ public class AbstractBlockTest extends AbstractTest
         return new TestBlock(UniqueID.generate().getBytes());
     }
 
-
     protected static class HasKey extends ArgumentMatcher<IBlockMetadata>
     {
         private final ContentHash _key;
