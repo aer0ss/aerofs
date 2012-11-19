@@ -826,13 +826,11 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
 
     private BitVector adjustedSyncStatus_(SOID soid, BitVector status) throws SQLException
     {
-        // Recently admitted files whose content has not been resynced yet are considered out of
-        // sync even though the DB may still have old sync status information (which is required
-        // to handle some exclusion/readmission corner cases in AggregateSyncStatus).
+        // Files without a master branch are considered out of sync regardless of the content
+        // of the sync status column in the DB
         OA oa = getOA_(soid);
-        boolean recentlyAdmittedNotSynced = (!oa.isExpelled() && oa.isFile()
-                                                     && oa.caMasterNullable() == null);
-        return recentlyAdmittedNotSynced ? new BitVector() : status;
+        boolean fileWithoutMasterBranch = (oa.isFile() && oa.caMasterNullable() == null);
+        return fileWithoutMasterBranch ? new BitVector() : status;
     }
 
     /**
