@@ -366,9 +366,38 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectContentModified_(SOKID sokid, Path path, Trans t) throws SQLException
     {}
 
+    /**
+     * Called from DirectoryService when a CA is deleted
+     */
     @Override
     public void objectContentDeleted_(SOKID sokid, Path path, Trans t) throws SQLException
-    {}
+    {
+        // sync status is not interested in conflict branches
+        SOID soid = sokid.soid();
+        if (!sokid.kidx().equals(KIndex.MASTER)) return;
+
+        BitVector status = _ds.getRawSyncStatus_(soid);
+        if (status.isEmpty()) return;
+
+        // removal of master branch for an object with non-empty sync status will cause its sync
+        // status to be reported as out of sync (to deal with the time window between readmission
+        // and first content sync), so we need to update the parent aggregate status immediately
+        // as further callback (deletion, expulsion, ...) will always see an empty status BitVector
+        // and will therefore be unable to detect any change in status that needs propagation.
+        OA oa = _ds.getOA_(soid);
+        // deletion removes content after renaming to trash...
+        if (_ds.isDeleted_(oa)) return;
+
+        assert oa.isFile() && !oa.isExpelled() : soid;
+
+        if (l.isInfoEnabled()) l.info("removed master branch " + soid + " " + status);
+
+        // keep track of new status for Ritual notifications
+        _tlStatusModified.get(t).add(path);
+
+        SOID parent = new SOID(soid.sidx(), oa.parent());
+        updateRecursively_(parent, status, new BitVector(), 0, path.removeLast(), t);
+    }
 
     /**
      * Called from DirectoryService when an object is expelled
