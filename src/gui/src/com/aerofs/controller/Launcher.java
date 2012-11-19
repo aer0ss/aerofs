@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.sql.SQLException;
 
 import com.aerofs.lib.ex.ExAlreadyRunning;
+import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -34,7 +35,6 @@ import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply.Status;
 import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 import com.aerofs.ui.update.PostUpdate;
 import com.aerofs.ui.update.uput.UIPostUpdateTasks;
 
@@ -223,15 +223,16 @@ class Launcher
         String failedFile = PostUpdate.verifyChecksum();
         if (failedFile != null) {
             String url = SV.DOWNLOAD_LINK;
-            UIUtil.logShowSendDefect(true,
-                    S.PRODUCT + " couldn't launch because some program files are corrupted." +
-                            " Please " +
-                            (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " + url) +
-                            " to " +
-                            "download and install " + S.PRODUCT +
-                            " again. All your data will be intact during re-installation.",
-                    new Exception(failedFile + " chksum failed" +
-                            new File(failedFile).length()));
+            String msg = S.PRODUCT + " couldn't launch because some program files are corrupted." +
+                    " Please " +
+                    (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " + url) +
+                    " to download and install " + S.PRODUCT + " again. " +
+                    "All your data will be intact during re-installation.";
+
+            SVClient.logSendDefectAsync(true, msg, new Exception(failedFile + " chksum failed" +
+                    new File(failedFile).length()));
+            UI.get().show(MessageType.ERROR, msg);
+
             if (UI.isGUI()) Program.launch(url);
 
             throw new ExAborted();

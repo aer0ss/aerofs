@@ -16,7 +16,7 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sv.client.SVClient;
+
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
@@ -162,12 +162,6 @@ public class UIUtil
         if (u2.equals(L.get().spUser())) return -1;
 
         return comp;
-    }
-
-    public static void logShowSendDefect(boolean auto, String msg, Throwable e)
-    {
-        SVClient.logSendDefectAsync(auto, msg, e);
-        UI.get().show(MessageType.ERROR, msg);
     }
 
     /**
