@@ -116,15 +116,16 @@ class DefaultDaemonMonitor implements IDaemonMonitor
 
             RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
-                l.info("set daemon key");
-                ritual.setPrivateKey(
-                        ByteString.copyFrom(SecUtil.encodePrivateKey(Cfg.privateKey())));
-                l.warn("daemon started");
+                // Ping the daemon to see if it has started up and is listening for RPCs.
+                // ritual.heartbeat() will throw immediately if it can't connect to the daemon
+                l.info("hb daemon");
+                ritual.heartbeat();
+                l.info("daemon started");
                 break;
             } catch (Exception e) {
-                l.info("pinging deamon failed: " + e);
+                l.info("pinging daemon failed: " + e);
                 if (--retries == 0) {
-                    l.error("pinging daemon took too long. give up");
+                    l.error("pinging daemon took too long. giving up");
                     throw new ExTimeout();
                 }
             } finally {

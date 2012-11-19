@@ -156,8 +156,6 @@ service RitualService {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Misc internal methods
 
-    rpc SetPrivateKey(SetPrivateKeyCall) returns(Void);
-
     rpc TransportPing(TransportPingCall) returns(TransportPingReply);
     rpc TransportFlood(TransportFloodCall) returns(Void);
     rpc TransportFloodQuery(TransportFloodQueryCall) returns(TransportFloodQueryReply);
@@ -434,10 +432,6 @@ message GetPathStatusReply {
     repeated PBPathStatus status = 2;
 }
 
-
-message SetPrivateKeyCall {
-    required bytes key = 1;
-}
 
 message TransportPingCall {
     // see IEOTransportPing for details
