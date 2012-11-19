@@ -38,6 +38,6 @@ public class DID extends UniqueID
      */
     public DID(String str, boolean fatalOnError)
     {
-        this(UniqueID.hexDecodeFatalOnError(str));
+        this(UniqueID.fromStringFatalOnError(str));
     }
 }

@@ -45,12 +45,12 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 
     public UniqueID(String str) throws ExFormatError
     {
-        this(hexDecode(str));
+        this(fromString(str));
     }
 
     public UniqueID(String str, int start, int end) throws ExFormatError
     {
-        this(hexDecode(str, start, end));
+        this(fromString(str, start, end));
     }
 
     public UniqueID(byte[] bs)
@@ -88,32 +88,27 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
         return _str;
     }
 
-    public String toHex()
+    public String toStringFormal()
     {
         return Util.hexEncode(_bs);
     }
 
-    public String toStringFormal()
+    public static byte[] fromString(String str) throws ExFormatError
     {
-        return toHex();
+        return fromString(str, 0, str.length());
     }
 
-    public static byte[] hexDecode(String str) throws ExFormatError
-    {
-        return hexDecode(str, 0, str.length());
-    }
-
-    public static byte[] hexDecode(String str, int start, int end) throws ExFormatError
+    public static byte[] fromString(String str, int start, int end) throws ExFormatError
     {
         byte[] bs = Util.hexDecode(str, start, end);
         if (bs.length != LENGTH) throw new ExFormatError("wrong length");
         return bs;
     }
 
-    public static byte[] hexDecodeFatalOnError(String str)
+    public static byte[] fromStringFatalOnError(String str)
     {
         try {
-            return hexDecode(str);
+            return fromString(str);
         } catch (ExFormatError e) {
             SystemUtil.fatal(e);
             return null;

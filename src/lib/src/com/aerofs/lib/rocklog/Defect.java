@@ -114,7 +114,7 @@ public class Defect
         if (Cfg.inited()) {
             // TODO (GS): add cfg DB
             _json.put("user", Cfg.user());
-            _json.put("did", Cfg.did().toHex());
+            _json.put("did", Cfg.did().toStringFormal());
         }
 
         if (OSUtil.get() != null) {
