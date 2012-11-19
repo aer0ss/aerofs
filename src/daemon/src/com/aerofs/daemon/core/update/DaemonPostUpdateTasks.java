@@ -57,7 +57,8 @@ public class DaemonPostUpdateTasks
                 new DPUTGetEncodingStats(_dbcw),
                 new DPUTMigrateRevisionSuffixToBase64(_absAuxRoot),
                 null, // used to be DPUTResetSyncStatus (for redis migation issue)
-                new DPUTResetSyncStatus(_dbcw) // new run to account for change in vh computation
+                null, // used to be DPUTRestSyncStatus (account for change in vh computation)
+                new DPUTResetSyncStatus(_dbcw) // new run to account for aliasing related crash.
                 // TODO (MP) will need to add a new task for syncstat aliasing fix.
                 // new tasks go here
         };
