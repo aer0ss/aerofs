@@ -143,16 +143,16 @@ public class ScanSessionQueue implements IDumpStatMisc
      * Add the request to the queue. Replace the existing entry if the new request should happen
      * sooner than scheduled.
      */
-    private long enqueue_(PathKey pk, long delay)
+    private long enqueue_(PathKey pk, long millisecondDelay)
     {
-        assert delay >= 0;
+        assert millisecondDelay >= 0;
 
         // TODO (WW) replace the new request with an existing one if the latter covers the former,
         // e.g. if they have identical path but the new request is not recursive and the existing
         // one is.
 
         TimeKey tkOld = _path2time.get(pk);
-        long time = _sys.currentTimeMillis() + delay;
+        long time = _sys.currentTimeMillis() + millisecondDelay;
 
         boolean replace = tkOld != null && tkOld._time > time;
         if (replace) {
@@ -163,8 +163,8 @@ public class ScanSessionQueue implements IDumpStatMisc
         }
 
         if (replace || tkOld == null) {
-            l.warn("enq " + pk + " in " + delay + " replace " + replace);
-            TimeKey tk = new TimeKey(time, delay);
+            l.warn("enq " + pk + " in " + millisecondDelay + " replace " + replace);
+            TimeKey tk = new TimeKey(time, millisecondDelay);
             Util.verify(_path2time.put(pk, tk) == null);
             Util.verify(_time2path.put(tk, pk) == null);
         }
@@ -280,7 +280,6 @@ public class ScanSessionQueue implements IDumpStatMisc
                 return false;
             }
         } catch (SQLException e) {
-            fds.logSendAsync("scan sqlerror", e);
             onException(e, tk, pk);
             return true;
 
@@ -293,14 +292,16 @@ public class ScanSessionQueue implements IDumpStatMisc
 
     private void onException(Exception e, final TimeKey tk, final PathKey pk)
     {
+        fds.logSendAsync("scan exception retry", e);
+
         // schedule an exponential retry and return
-        long delay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);
-        delay = Math.min(delay, Param.EXP_RETRY_MAX_DEFFAULT);
-        l.warn("retry in " + delay + ": " + Util.e(e));
+        long millisecondDelay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);
+        millisecondDelay = Math.min(millisecondDelay, Param.EXP_RETRY_MAX_DEFFAULT);
+        l.warn("retry in " + millisecondDelay + ": " + Util.e(e));
 
         // re-enqueue the request. no need to schedule it since this method assumes that
         // scheduling will be done by the caller.
-        enqueue_(pk, delay);
+        enqueue_(pk, millisecondDelay);
     }
 
     @Override
