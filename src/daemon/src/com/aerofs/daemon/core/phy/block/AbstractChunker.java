@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.IBlockMetadata;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.lib.HashStream;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
@@ -61,35 +61,11 @@ public abstract class AbstractChunker
         return new ContentHash(hashBytes);
     }
 
-    protected static class Block implements IBlockMetadata
+    public class Block
     {
         long _length;
         ContentHash _hash;
         Object _encoderData;
-
-        @Override
-        public ContentHash getKey()
-        {
-            return _hash;
-        }
-
-        @Override
-        public long getDecodedLength()
-        {
-            return _length;
-        }
-
-        @Override
-        public Object getEncoderData()
-        {
-            return _encoderData;
-        }
-
-        @Override
-        public void setEncoderData(Object d)
-        {
-            _encoderData = d;
-        }
     }
 
     protected abstract void prePutBlock_(Block block) throws SQLException;
@@ -118,7 +94,8 @@ public abstract class AbstractChunker
             // write chunk into persistent storage, keyed by content hash
             // NOTE: ByteArrayInputStream supports reset() as expected by putBlock()
             prePutBlock_(block);
-            _bsb.putBlock(block, new ByteArrayInputStream(d.toByteArray()));
+            _bsb.putBlock(block._hash, new ByteArrayInputStream(d.toByteArray()), block._length,
+                    block._encoderData);
             postPutBlock_(block);
             return block._hash;
         } finally {
@@ -135,8 +112,9 @@ public abstract class AbstractChunker
         boolean ok = false;
         try {
             final HashStream hs = HashStream.newFileHasher();
-            out = _bsb.wrapForEncoding(out, block);
-            out = hs.wrap(out);
+            EncoderWrapping wrapping = _bsb.wrapForEncoding(out);
+            block._encoderData = wrapping.encoderData;
+            out = hs.wrap(wrapping.wrapped);
             out = new LengthTrackingOutputStream(out) {
                 @Override
                 public void close() throws IOException

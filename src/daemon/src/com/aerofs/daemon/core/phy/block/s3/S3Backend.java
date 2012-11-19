@@ -120,10 +120,9 @@ public class S3Backend implements IBlockStorageBackend
      * Also need to compute MD5 of the encoded data to comply with S3 API
      */
     @Override
-    public OutputStream wrapForEncoding(OutputStream out, IBlockMetadata meta) throws IOException
+    public EncoderWrapping wrapForEncoding(OutputStream out) throws IOException
     {
         final EncoderData d = new EncoderData();
-        meta.setEncoderData(d);
 
         boolean ok = false;
         try {
@@ -148,42 +147,43 @@ public class S3Backend implements IBlockStorageBackend
             out = new CipherFactory(_secretKey).encryptingHmacedOutputStream(out);
             out = new GZIPOutputStream(out);
             ok = true;
-            return out;
+            return new EncoderWrapping(out, d);
         } finally {
             if (!ok) out.close();
         }
     }
 
     @Override
-    public void putBlock(final IBlockMetadata meta, final InputStream input) throws IOException
+    public void putBlock(final ContentHash key, final InputStream input, final long decodedLength,
+            final Object encoderData) throws IOException
     {
         AWSRetry.retry(new Callable<Void>()
         {
             @Override
             public Void call() throws IOException
             {
-                String baseKey = meta.getKey().toHex();
-                String key = getBlockKey(baseKey);
+                String baseKey = key.toHex();
+                String s3Key = getBlockKey(baseKey);
                 String bucketName = _s3BucketIdConfig.getS3BucketId();
 
                 try {
-                    ObjectMetadata metadata = _s3Client.getObjectMetadata(bucketName, key);
+                    ObjectMetadata metadata = _s3Client.getObjectMetadata(bucketName, s3Key);
                     l.debug(metadata);
                     if (true) return null;
                 } catch (AmazonServiceException e) {
                     l.debug(e);
                 }
 
-                EncoderData d = (EncoderData)meta.getEncoderData();
+                EncoderData d = (EncoderData)encoderData;
 
                 ObjectMetadata metadata = new ObjectMetadata();
                 metadata.setContentType("application/octet-stream");
                 metadata.setContentLength(d.encodedLength);
                 metadata.setContentMD5(Base64.encodeBytes(d.md5));
-                metadata.addUserMetadata("Chunk-Length", Long.toString(meta.getDecodedLength()));
+                metadata.addUserMetadata("Chunk-Length", Long.toString(decodedLength));
                 metadata.addUserMetadata("Chunk-Hash", baseKey);
                 try {
-                    _s3Client.putObject(bucketName, key, input, metadata);
+                    _s3Client.putObject(bucketName, s3Key, input, metadata);
                 } finally {
                     // caller guarantess that calling reset will bring the input stream back to the
                     // start of the block without losing any data

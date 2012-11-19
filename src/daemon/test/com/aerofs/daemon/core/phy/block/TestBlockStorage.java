@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorage.FileAlreadyExistsException;
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.IBlockMetadata;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -36,6 +36,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -45,7 +47,11 @@ import java.io.OutputStream;
 import java.util.Collection;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -77,6 +83,17 @@ public class TestBlockStorage extends AbstractBlockTest
         when(tm.begin_()).thenReturn(t);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(auxRoot.get()).thenReturn(testTempDirFactory.getTestTempDir().getAbsolutePath());
+
+        // no encoding is performed by the mock backend
+        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                Object[] args = invocation.getArguments();
+                return new EncoderWrapping((OutputStream)args[0], null);
+            }
+        });
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         bs = new BlockStorage(auxRoot, tm, fileFactory, bsb, bsdb);
@@ -206,7 +223,8 @@ public class TestBlockStorage extends AbstractBlockTest
 
         create("foo/bar", sokid);
         byte[] result = fetch("foo/bar", sokid);
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
         Assert.assertArrayEquals(new byte[0], result);
     }
@@ -224,7 +242,8 @@ public class TestBlockStorage extends AbstractBlockTest
             ok = true;
         }
         Assert.assertTrue(ok);
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -236,7 +255,8 @@ public class TestBlockStorage extends AbstractBlockTest
 
         store("foo/bar", sokid, content, false, 0L);
 
-        verify(bsb).putBlock(hasKey(content), any(InputStream.class));
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
+                isNull());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -249,7 +269,8 @@ public class TestBlockStorage extends AbstractBlockTest
         create("foo/bar", sokid);
         store("foo/bar", sokid, content, true, 0L);
 
-        verify(bsb).putBlock(hasKey(content), any(InputStream.class));
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
+                isNull());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -299,7 +320,8 @@ public class TestBlockStorage extends AbstractBlockTest
         byte[] content = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
         store("foo/bar", sokid, content, false, 0L);
-        verify(bsb).putBlock(hasKey(content), any(InputStream.class));
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
+                isNull());
 
         when(bsb.getBlock(forKey(content))).thenReturn(new ByteArrayInputStream(content));
 
@@ -321,7 +343,8 @@ public class TestBlockStorage extends AbstractBlockTest
             ok = true;
         }
         Assert.assertTrue(ok);
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -335,7 +358,8 @@ public class TestBlockStorage extends AbstractBlockTest
 
         Assert.assertFalse(exists("foo/bar", sokid));
 
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -351,7 +375,8 @@ public class TestBlockStorage extends AbstractBlockTest
             ok = true;
         }
         Assert.assertTrue(ok);
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -364,7 +389,8 @@ public class TestBlockStorage extends AbstractBlockTest
         create("foo/bar", from);
         move("foo/bar", from, "foo/baz/bla", to);
 
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -382,7 +408,8 @@ public class TestBlockStorage extends AbstractBlockTest
         }
         Assert.assertTrue(ok);
 
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -402,7 +429,8 @@ public class TestBlockStorage extends AbstractBlockTest
         }
         Assert.assertTrue(ok);
 
-        verify(bsb, never()).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, never())
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
         verify(bsb, never()).getBlock(any(ContentHash.class));
     }
 
@@ -447,7 +475,8 @@ public class TestBlockStorage extends AbstractBlockTest
         byte[] content = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
         store("foo/bar", sokid, content, false, 0L);
-        verify(bsb).putBlock(hasKey(content), any(InputStream.class));
+        verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
+                isNull());
 
         when(bsb.getBlock(forKey(content))).thenReturn(new ByteArrayInputStream(content));
 
@@ -529,6 +558,7 @@ public class TestBlockStorage extends AbstractBlockTest
         ByteStreams.copy(new DevZero(4 * BlockUtil.FILE_BLOCK_SIZE + 1), out);
         prefix.prepare_(tk);
 
-        verify(bsb, times(5)).putBlock(any(IBlockMetadata.class), any(InputStream.class));
+        verify(bsb, times(5))
+                .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), isNull());
     }
 }

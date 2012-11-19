@@ -184,15 +184,16 @@ public class CacheBackend implements IBlockStorageBackend
     }
 
     @Override
-    public OutputStream wrapForEncoding(OutputStream out, IBlockMetadata meta) throws IOException
+    public EncoderWrapping wrapForEncoding(OutputStream out) throws IOException
     {
-        return _bsb.wrapForEncoding(out, meta);
+        return _bsb.wrapForEncoding(out);
     }
 
     @Override
-    public void putBlock(IBlockMetadata meta, InputStream input) throws IOException
+    public void putBlock(ContentHash key, InputStream input, long decodedLength, Object encoderData)
+            throws IOException
     {
-        _bsb.putBlock(meta, input);
+        _bsb.putBlock(key, input, decodedLength, encoderData);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
