@@ -1,7 +1,9 @@
 package com.aerofs.l;
 
 import com.aerofs.l.L.LabelingType;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.id.DID;
 
 /**
@@ -13,9 +15,13 @@ public class AA implements ILabeling
 
     public AA()
     {
-        _spDID = new DID(Cfg.staging() ?
-                "ac4c5631b47b39281c16074370b1b23d" :        // was 4321aerofs.com
-                "91cee4ffb4f998e7591cf298f31ec558", true);  // was 1234aerofs.com
+        try {
+            _spDID = new DID(Cfg.staging() ?
+                    "ac4c5631b47b39281c16074370b1b23d" :
+                    "91cee4ffb4f998e7591cf298f31ec558");
+        } catch (ExFormatError e) {
+            throw SystemUtil.fatalWithReturn(e);
+        }
     }
 
     @Override

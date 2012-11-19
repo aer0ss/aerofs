@@ -32,12 +32,4 @@ public class DID extends UniqueID
     {
         super(str);
     }
-
-    /**
-     * @param fatalOnError its value is disregarded
-     */
-    public DID(String str, boolean fatalOnError)
-    {
-        this(UniqueID.fromStringFatalOnError(str));
-    }
 }

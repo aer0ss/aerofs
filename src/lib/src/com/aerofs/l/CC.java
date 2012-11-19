@@ -1,6 +1,8 @@
 package com.aerofs.l;
 
 import com.aerofs.l.L.LabelingType;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.id.DID;
 
 /**
@@ -12,7 +14,11 @@ public class CC implements ILabeling
 
     public CC()
     {
-        _spDID = new DID("ac4c5631b47b39281c16074370b1b23d", true);
+        try {
+            _spDID = new DID("ac4c5631b47b39281c16074370b1b23d");
+        } catch (ExFormatError e) {
+            throw SystemUtil.fatalWithReturn(e);
+        }
     }
 
     @Override
