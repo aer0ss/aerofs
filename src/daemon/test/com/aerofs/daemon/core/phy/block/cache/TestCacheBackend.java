@@ -28,6 +28,7 @@ import java.io.InputStream;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,9 +81,9 @@ public class TestCacheBackend extends AbstractBlockTest
     {
         TestBlock b = newBlock();
 
-        bsb.putBlock(b, new ByteArrayInputStream(b._content));
+        bsb.putBlock(b._key, new ByteArrayInputStream(b._content), b._content.length, null);
 
-        verify(bsb).putBlock(eq(b), any(InputStream.class));
+        verify(bsb).putBlock(eq(b._key), any(InputStream.class), eq((long)b._content.length), isNull());
     }
 
     @Test

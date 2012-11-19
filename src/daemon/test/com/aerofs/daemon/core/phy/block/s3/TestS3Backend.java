@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
+import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.lib.aws.s3.S3TestConfig;
 import com.aerofs.testlib.UnitTestTempDir;
 import com.amazonaws.AmazonServiceException;
@@ -18,7 +19,6 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 public class TestS3Backend extends AbstractBlockTest
 {
@@ -50,7 +50,7 @@ public class TestS3Backend extends AbstractBlockTest
 
         boolean ok = false;
         try {
-            bsb.getBlock(b.getKey());
+            bsb.getBlock(b._key);
         } catch (IOException e) {
             if (e.getCause() instanceof AmazonServiceException) {
                 AmazonServiceException ae = (AmazonServiceException)e.getCause();
@@ -63,10 +63,11 @@ public class TestS3Backend extends AbstractBlockTest
     private void put(TestBlock block) throws IOException
     {
         ByteArrayOutputStream data = new ByteArrayOutputStream();
-        OutputStream encoder = bsb.wrapForEncoding(data, block);
-        ByteStreams.copy(new ByteArrayInputStream(block._content), encoder);
-        encoder.close();
-        bsb.putBlock(block, new ByteArrayInputStream(data.toByteArray()));
+        EncoderWrapping wrapping = bsb.wrapForEncoding(data);
+        ByteStreams.copy(new ByteArrayInputStream(block._content), wrapping.wrapped);
+        wrapping.wrapped.close();
+        bsb.putBlock(block._key, new ByteArrayInputStream(data.toByteArray()),
+                block._content.length, wrapping.encoderData);
     }
 
     @Test
@@ -74,6 +75,6 @@ public class TestS3Backend extends AbstractBlockTest
     {
         TestBlock b = newBlock();
         put(b);
-        Assert.assertArrayEquals(b._content, ByteStreams.toByteArray(bsb.getBlock(b.getKey())));
+        Assert.assertArrayEquals(b._content, ByteStreams.toByteArray(bsb.getBlock(b._key)));
     }
 }
