@@ -13,20 +13,20 @@ public class DBUtil
     /**
      * @return string "select <field>,<field> ... <field> from <table>"
      */
-    public static String selectFrom(String table, String... fields)
+    public static String select(String table, String... fields)
     {
-        return selectFromImpl(table, fields).toString();
+        return selectImpl(table, fields).toString();
     }
 
     /**
      * @return string "select <field>,<field> ... <field> from <table> where <condition>"
      */
-    public static String selectFromWhere(String table, String condition, String... fields)
+    public static String selectWhere(String table, String condition, String... fields)
     {
-        return selectFromImpl(table, fields).append(" where ").append(condition).toString();
+        return selectImpl(table, fields).append(" where ").append(condition).toString();
     }
 
-    private static StringBuilder selectFromImpl(String table, String... fields)
+    private static StringBuilder selectImpl(String table, String... fields)
     {
         StringBuilder sb = new StringBuilder("select ");
         boolean first = true;

@@ -148,13 +148,8 @@ public class SVDatabase extends AbstractSQLDatabase
         throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectFromWhere(T_EE,
-                                C_EE_ID+"=?",
-                                C_EE_EMAIL,
-                                C_EE_EVENT,
-                                C_EE_DESC,
-                                C_EE_CATEGORY,
-                                C_EE_TS)
+                        DBUtil.selectWhere(T_EE, C_EE_ID + "=?", C_EE_EMAIL, C_EE_EVENT, C_EE_DESC,
+                                C_EE_CATEGORY, C_EE_TS)
                                 );
 
         ps.setInt(1, eventId);

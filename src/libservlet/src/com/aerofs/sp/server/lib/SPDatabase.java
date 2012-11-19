@@ -1238,7 +1238,7 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectFromWhere(SPSchema.T_TI, SPSchema.C_TI_TO + "=?",
+                        DBUtil.selectWhere(SPSchema.T_TI, SPSchema.C_TI_TO + "=?",
                                 SPSchema.C_TI_TIC));
 
         ps.setString(1, to);
@@ -2108,8 +2108,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectFromWhere(
-                                SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=?", SPSchema.C_ES_SUBSCRIPTION));
+                        DBUtil.selectWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=?",
+                                SPSchema.C_ES_SUBSCRIPTION));
 
         ps.setString(1, email);
 
@@ -2185,8 +2185,8 @@ public class SPDatabase
     public String getTokenId(final String email, final SubscriptionCategory sc) throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                DBUtil.selectFromWhere(SPSchema.T_ES,
-                        SPSchema.C_ES_EMAIL +"=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
+                DBUtil.selectWhere(SPSchema.T_ES,
+                        SPSchema.C_ES_EMAIL + "=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
                         SPSchema.C_ES_TOKEN_ID));
 
         ps.setString(1, email);
@@ -2205,7 +2205,7 @@ public class SPDatabase
     public String getEmail(final String tokenId)
             throws SQLException, ExNotFound {
         PreparedStatement ps = getConnection().prepareStatement(
-                DBUtil.selectFromWhere(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID +"=?",
+                DBUtil.selectWhere(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID + "=?",
                         SPSchema.C_ES_EMAIL)
         );
 
@@ -2223,7 +2223,7 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectFromWhere(SPSchema.T_ES,
+                        DBUtil.selectWhere(SPSchema.T_ES,
                                 SPSchema.C_ES_EMAIL + "=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
                                 SPSchema.C_ES_EMAIL)
                                 );
@@ -2289,9 +2289,10 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                       DBUtil.selectFromWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=? and " +
-                         SPSchema.C_ES_SUBSCRIPTION + "=?",
-                         "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + SPSchema.C_ES_LAST_EMAILED + "))"));
+                       DBUtil.selectWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=? and " +
+                               SPSchema.C_ES_SUBSCRIPTION + "=?",
+                               "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + SPSchema.C_ES_LAST_EMAILED +
+                                       "))"));
 
         ps.setString(1, email);
         ps.setInt(2, category.getCategoryID());

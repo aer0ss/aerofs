@@ -72,8 +72,8 @@ public class DPUTMorphStoreTables implements IDaemonPostUpdateTask
     {
         List<StoreRow> srs = Lists.newArrayList();
 
-        ResultSet rs = s.executeQuery(DBUtil.selectFrom(T_STORE, C_STORE_SIDX,
-                C_STORE_PARENT, C_STORE_DIDS));
+        ResultSet rs = s.executeQuery(DBUtil.select(T_STORE, C_STORE_SIDX, C_STORE_PARENT,
+                C_STORE_DIDS));
         try {
             while (rs.next()) {
                 StoreRow sr = new StoreRow();

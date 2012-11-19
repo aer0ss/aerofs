@@ -38,7 +38,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
     public Set<SIndex> getAll_() throws SQLException
     {
         try {
-            if (_psGA == null) _psGA = c().prepareStatement(selectFrom(T_STORE, C_STORE_SIDX));
+            if (_psGA == null) _psGA = c().prepareStatement(select(T_STORE, C_STORE_SIDX));
 
             ResultSet rs = _psGA.executeQuery();
             try {
@@ -61,7 +61,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         // we don't prepare the statement as the method is called infrequently
         Statement stmt = c().createStatement();
         try {
-            ResultSet rs = stmt.executeQuery(selectFrom(T_STORE, "count(*)"));
+            ResultSet rs = stmt.executeQuery(select(T_STORE, "count(*)"));
             try {
                 Util.verify(rs.next());
                 int count = rs.getInt(1);
@@ -89,7 +89,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
 
         try {
             if (_psAE == null) _psAE = c().prepareStatement(
-                    selectFromWhere(T_STORE, C_STORE_SIDX + "=?", "count(*)"));
+                    selectWhere(T_STORE, C_STORE_SIDX + "=?", "count(*)"));
 
             _psAE.setInt(1, sidx.getInt());
             ResultSet rs = _psAE.executeQuery();
@@ -192,7 +192,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         try {
             if (psr.get() == null) {
                 psr.set(c().prepareStatement(
-                        selectFromWhere(T_SH, conditionColumn + "=?", resultColumn)));
+                        selectWhere(T_SH, conditionColumn + "=?", resultColumn)));
             }
 
             psr.get().setInt(1, sidx.getInt());
@@ -216,7 +216,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
         try {
             if (_psGetDeviceList == null) {
                 _psGetDeviceList = c().prepareStatement(
-                        selectFromWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_DIDS));
+                        selectWhere(T_STORE, C_STORE_SIDX + "=?", C_STORE_DIDS));
             }
             _psGetDeviceList.setInt(1, sidx.getInt());
             ResultSet rs = _psGetDeviceList.executeQuery();

@@ -29,8 +29,8 @@ public class DBCheckCA
     {
         Statement stmt = _dbcw.getConnection().createStatement();
         try {
-            ResultSet rs = stmt.executeQuery(DBUtil.selectFromWhere(T_CA, C_CA_HASH + " is null",
-                            C_CA_SIDX, C_CA_OID, C_CA_KIDX));
+            ResultSet rs = stmt.executeQuery(DBUtil.selectWhere(T_CA, C_CA_HASH + " is null",
+                    C_CA_SIDX, C_CA_OID, C_CA_KIDX));
             try {
                 while (rs.next()) {
                     KIndex kidx = new KIndex(rs.getInt(3));

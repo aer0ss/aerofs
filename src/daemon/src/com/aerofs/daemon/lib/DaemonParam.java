@@ -80,10 +80,8 @@ public class DaemonParam
 
     public static class DB
     {
-        public static final int FLUSHER_CAP_DEFAULT         = 512;
-
-        public static final int OA_CACHE_SIZE               = 10 * 1024;
-        public static final int DS_CACHE_SIZE               = 10 * 1024;
+        public static final int OA_CACHE_SIZE               = 10 * C.KB;
+        public static final int DS_CACHE_SIZE               = 10 * C.KB;
     }
 
     public static class DTLS
