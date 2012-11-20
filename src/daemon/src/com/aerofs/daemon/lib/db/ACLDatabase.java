@@ -1,11 +1,11 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.core.CoreSchema.C_ACL_ROLE;
-import static com.aerofs.daemon.core.CoreSchema.C_ACL_SIDX;
-import static com.aerofs.daemon.core.CoreSchema.C_ACL_SUBJECT;
-import static com.aerofs.daemon.core.CoreSchema.C_EPOCH_ACL;
-import static com.aerofs.daemon.core.CoreSchema.T_ACL;
-import static com.aerofs.daemon.core.CoreSchema.T_EPOCH;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_ACL_ROLE;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_ACL_SIDX;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_ACL_SUBJECT;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_EPOCH_ACL;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_ACL;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_EPOCH;
 import static com.google.common.collect.Maps.immutableEntry;
 
 import java.sql.PreparedStatement;

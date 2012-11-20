@@ -133,7 +133,7 @@ public class TCTestSetup
         Mockito.when(_cfgLocalUser.get()).thenReturn("null");
     }
 
-    public CoreDBCW _coreDBCW = new InMemorySQLiteDBCW().mockCoreDBCW();
+    public CoreDBCW _coreDBCW = new InMemorySQLiteDBCW().getCoreDBCW();
     public TransManager _transManager = new TransManager(new Trans.Factory(_coreDBCW));
     public TokenManager _tokenManager = new TokenManager();
     public TC _tc = new TC();

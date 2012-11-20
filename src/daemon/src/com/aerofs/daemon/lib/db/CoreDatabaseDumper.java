@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.core.CoreSchema.*;
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 import java.io.PrintStream;
 import java.sql.ResultSet;
@@ -19,6 +19,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
+import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.FID;
@@ -38,6 +39,12 @@ import com.google.inject.Inject;
 public class CoreDatabaseDumper extends AbstractDatabase
 {
     private final InjectableDriver _dr;
+
+    public CoreDatabaseDumper(IDBCW dbcw, InjectableDriver dr)
+    {
+        super(dbcw);
+        _dr = dr;
+    }
 
     @Inject
     public CoreDatabaseDumper(CoreDBCW dbcw, InjectableDriver dr)

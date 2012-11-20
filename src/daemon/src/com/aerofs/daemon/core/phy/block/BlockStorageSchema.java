@@ -4,13 +4,17 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.TableDumper;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,7 +23,7 @@ import java.sql.Statement;
 import static com.aerofs.lib.db.DBUtil.createIndex;
 import static com.aerofs.lib.db.DBUtil.createUniqueIndex;
 
-public class BlockStorageSchema
+public class BlockStorageSchema implements ISchema
 {
     static final Logger l = Util.l(BlockStorageSchema.class);
 
@@ -100,74 +104,68 @@ public class BlockStorageSchema
 
     private final IDBCW _dbcw;
 
-    public BlockStorageSchema(IDBCW dbcw)
+    @Inject
+    public BlockStorageSchema(CoreDBCW dbcw)
     {
-        _dbcw = dbcw;
+        _dbcw = dbcw.get();
     }
 
-    public void create_() throws SQLException
+    @Override
+    public void create_(Statement s) throws SQLException
     {
-        Connection c = _dbcw.getConnection();
-        Statement s = c.createStatement();
+        String chunkType = " binary(" + ContentHash.UNIT_LENGTH + ") ";
+        String chunkListType = " blob ";
 
-        try {
-            String chunkType = " binary(" + ContentHash.UNIT_LENGTH + ") ";
-            String chunkListType = " blob ";
+        s.execute("create table if not exists " + T_FileInfo + "( " +
+                C_FileInfo_Index + _dbcw.longType() + " not null primary key " +
+                _dbcw.autoIncrement() + ", " +
+                C_FileInfo_InternalName +  _dbcw.nameType() + " unique not null ) " +
+                _dbcw.charSet());
+        s.executeUpdate(createIndex(T_FileInfo, 0, C_FileInfo_InternalName));
 
-            s.execute("create table if not exists " + T_FileInfo + "( " +
-                    C_FileInfo_Index + _dbcw.longType() + " not null primary key " +
-                    _dbcw.autoIncrement() + ", " +
-                    C_FileInfo_InternalName +  _dbcw.nameType() + " unique not null ) " +
-                    _dbcw.charSet());
-            s.executeUpdate(createIndex(T_FileInfo, 0, C_FileInfo_InternalName));
+        s.execute("create table if not exists " + T_FileCurr + "( " +
+                C_FileCurr_Index + _dbcw.longType() + " not null primary key, " +
+                C_FileCurr_Ver + _dbcw.longType() + " not null, " +
+                C_FileCurr_Len + _dbcw.longType() + " not null, " +
+                C_FileCurr_Date + _dbcw.longType() + " not null, " +
+                C_FileCurr_Chunks + chunkListType + " not null ) " +
+                _dbcw.charSet());
 
-            s.execute("create table if not exists " + T_FileCurr + "( " +
-                    C_FileCurr_Index + _dbcw.longType() + " not null primary key, " +
-                    C_FileCurr_Ver + _dbcw.longType() + " not null, " +
-                    C_FileCurr_Len + _dbcw.longType() + " not null, " +
-                    C_FileCurr_Date + _dbcw.longType() + " not null, " +
-                    C_FileCurr_Chunks + chunkListType + " not null ) " +
-                    _dbcw.charSet());
+        s.execute("create table if not exists " + T_FileHist + "( " +
+                C_FileHist_Index + _dbcw.longType() + " not null, " +
+                C_FileHist_Ver + _dbcw.longType() + " not null, " +
+                C_FileHist_Parent + _dbcw.longType() + " not null, "  +
+                C_FileHist_RealName + _dbcw.nameType() + ", " +
+                C_FileHist_Len + _dbcw.longType() + " not null, " +
+                C_FileHist_Date + _dbcw.longType() + " not null, " +
+                C_FileHist_Chunks + chunkListType + " not null, " +
+                "primary key ( " + C_FileHist_Index + ',' + C_FileHist_Ver + ") ) " +
+                _dbcw.charSet());
+        s.executeUpdate(createIndex(T_FileHist, 0, C_FileHist_Parent, C_FileHist_RealName));
 
-            s.execute("create table if not exists " + T_FileHist + "( " +
-                    C_FileHist_Index + _dbcw.longType() + " not null, " +
-                    C_FileHist_Ver + _dbcw.longType() + " not null, " +
-                    C_FileHist_Parent + _dbcw.longType() + " not null, "  +
-                    C_FileHist_RealName + _dbcw.nameType() + ", " +
-                    C_FileHist_Len + _dbcw.longType() + " not null, " +
-                    C_FileHist_Date + _dbcw.longType() + " not null, " +
-                    C_FileHist_Chunks + chunkListType + " not null, " +
-                    "primary key ( " + C_FileHist_Index + ',' + C_FileHist_Ver + ") ) " +
-                    _dbcw.charSet());
-            s.executeUpdate(createIndex(T_FileHist, 0, C_FileHist_Parent, C_FileHist_RealName));
+        s.execute("create table if not exists " + T_DirHist + "( " +
+                C_DirHist_Index + _dbcw.longType() + " not null primary key " +
+                _dbcw.autoIncrement() + ", " +
+                C_DirHist_Parent + _dbcw.longType() + " not null, " +
+                C_DirHist_Name + _dbcw.nameType() + " not null ) " +
+                _dbcw.charSet());
+        s.executeUpdate(createUniqueIndex(T_DirHist, 0, C_DirHist_Parent, C_DirHist_Name));
 
-            s.execute("create table if not exists " + T_DirHist + "( " +
-                    C_DirHist_Index + _dbcw.longType() + " not null primary key " +
-                    _dbcw.autoIncrement() + ", " +
-                    C_DirHist_Parent + _dbcw.longType() + " not null, " +
-                    C_DirHist_Name + _dbcw.nameType() + " not null ) " +
-                    _dbcw.charSet());
-            s.executeUpdate(createUniqueIndex(T_DirHist, 0, C_DirHist_Parent, C_DirHist_Name));
-
-            s.execute("create table if not exists " + T_BlockCount + "( " +
-                    C_BlockCount_Hash + chunkType + " not null primary key," +
-                    C_BlockCount_Len + _dbcw.longType() + " not null," +
-                    C_BlockCount_State + " integer not null," +
-                    C_BlockCount_Count + _dbcw.longType() + " not null ) " +
-                    _dbcw.charSet());
-        } finally {
-            s.close();
-        }
-
-        c.commit();
+        s.execute("create table if not exists " + T_BlockCount + "( " +
+                C_BlockCount_Hash + chunkType + " not null primary key," +
+                C_BlockCount_Len + _dbcw.longType() + " not null," +
+                C_BlockCount_State + " integer not null," +
+                C_BlockCount_Count + _dbcw.longType() + " not null ) " +
+                _dbcw.charSet());
     }
 
-    public void dump_(PrintWriter pw) throws IOException, SQLException
+    @Override
+    public void dump_(PrintStream ps) throws IOException, SQLException
     {
         Connection c = _dbcw.getConnection();
         Statement s = c.createStatement();
         try {
-            TableDumper td = new TableDumper(pw);
+            TableDumper td = new TableDumper(new PrintWriter(ps));
             td.dumpTable(s, T_FileInfo);
 
             td.dumpTable(s, T_FileCurr);

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.core.CoreSchema.*;
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import static com.aerofs.lib.db.DBUtil.*;
 
 import java.sql.Connection;

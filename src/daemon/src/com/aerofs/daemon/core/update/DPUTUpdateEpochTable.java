@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.update;
 
-import static com.aerofs.daemon.core.CoreSchema.C_EPOCH_SYNC_PULL;
-import static com.aerofs.daemon.core.CoreSchema.T_EPOCH;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_EPOCH_SYNC_PULL;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_EPOCH;
 
 import java.sql.Connection;
 import java.sql.Statement;

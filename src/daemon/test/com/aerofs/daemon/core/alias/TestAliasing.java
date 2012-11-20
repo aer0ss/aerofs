@@ -74,16 +74,16 @@ public class TestAliasing extends AbstractTest
 {
     private final CfgLocalDID cfgLocalDID = mock(CfgLocalDID.class);
     private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    private final INativeVersionDatabase nvdb = new NativeVersionDatabase(dbcw.mockCoreDBCW(), cfgLocalDID);
+    private final INativeVersionDatabase nvdb = new NativeVersionDatabase(dbcw.getCoreDBCW(), cfgLocalDID);
     TransLocalVersionAssistant tlva = mock(TransLocalVersionAssistant.class);
     VersionAssistant va = mock(VersionAssistant.class);
     ActivityLog alog = mock(ActivityLog.class);
 
-    private final IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
-    private final ISIDDatabase sdb = new SIDDatabase(dbcw.mockCoreDBCW());
-    private final IAliasDatabase aldb = new AliasDatabase(dbcw.mockCoreDBCW());
+    private final IMetaDatabase mdb = new MetaDatabase(dbcw.getCoreDBCW());
+    private final ISIDDatabase sdb = new SIDDatabase(dbcw.getCoreDBCW());
+    private final IAliasDatabase aldb = new AliasDatabase(dbcw.getCoreDBCW());
     private final MapAlias2Target alias2target = new MapAlias2Target(aldb);
-    private final ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(dbcw.mockCoreDBCW());
+    private final ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(dbcw.getCoreDBCW());
     private final IMapSIndex2SID sidx2sid = new SIDMap(sdb);
     private final StoreDeletionOperators sdo = mock(StoreDeletionOperators.class);
     private final NativeVersionControl nvc = new NativeVersionControl(nvdb, csdb, alias2target,

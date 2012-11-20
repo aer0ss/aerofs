@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.update;
 
-import static com.aerofs.daemon.core.CoreSchema.*;
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;

@@ -1,26 +1,26 @@
 package com.aerofs.daemon.lib.db.ver;
 
-import static com.aerofs.daemon.core.CoreSchema.C_IBT_CID;
-import static com.aerofs.daemon.core.CoreSchema.C_IBT_DID;
-import static com.aerofs.daemon.core.CoreSchema.C_IBT_IMM_TICK;
-import static com.aerofs.daemon.core.CoreSchema.C_IBT_OID;
-import static com.aerofs.daemon.core.CoreSchema.C_IBT_SIDX;
-import static com.aerofs.daemon.core.CoreSchema.C_IBT_TICK;
-import static com.aerofs.daemon.core.CoreSchema.T_IBT;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_CID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_DID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_IMM_TICK;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_OID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_SIDX;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IBT_TICK;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_IBT;
 
-import static com.aerofs.daemon.core.CoreSchema.C_IV_CID;
-import static com.aerofs.daemon.core.CoreSchema.C_IV_DID;
-import static com.aerofs.daemon.core.CoreSchema.C_IV_IMM_DID;
-import static com.aerofs.daemon.core.CoreSchema.C_IV_IMM_TICK;
-import static com.aerofs.daemon.core.CoreSchema.C_IV_OID;
-import static com.aerofs.daemon.core.CoreSchema.C_IV_SIDX;
-import static com.aerofs.daemon.core.CoreSchema.C_IV_TICK;
-import static com.aerofs.daemon.core.CoreSchema.T_IV;
-import static com.aerofs.daemon.core.CoreSchema.C_GT_IMMIGRANT;
-import static com.aerofs.daemon.core.CoreSchema.T_IK;
-import static com.aerofs.daemon.core.CoreSchema.C_IK_SIDX;
-import static com.aerofs.daemon.core.CoreSchema.C_IK_IMM_DID;
-import static com.aerofs.daemon.core.CoreSchema.C_IK_IMM_TICK;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_CID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_DID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_IMM_DID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_IMM_TICK;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_OID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_SIDX;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IV_TICK;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_IV;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_GT_IMMIGRANT;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_IK;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IK_SIDX;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IK_IMM_DID;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_IK_IMM_TICK;
 
 
 import java.sql.PreparedStatement;

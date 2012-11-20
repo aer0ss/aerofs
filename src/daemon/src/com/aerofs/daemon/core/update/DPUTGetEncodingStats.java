@@ -14,8 +14,8 @@ import java.sql.Statement;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 
-import static com.aerofs.daemon.core.CoreSchema.T_OA;
-import static com.aerofs.daemon.core.CoreSchema.C_OA_NAME;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_OA;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_NAME;
 
 public class DPUTGetEncodingStats implements IDaemonPostUpdateTask
 {

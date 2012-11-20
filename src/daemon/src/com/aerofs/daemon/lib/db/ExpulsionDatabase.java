@@ -14,9 +14,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.CoreSchema.C_EX_SIDX;
-import static com.aerofs.daemon.core.CoreSchema.C_EX_OID;
-import static com.aerofs.daemon.core.CoreSchema.T_EX;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_EX_SIDX;
+import static com.aerofs.daemon.lib.db.CoreSchema.C_EX_OID;
+import static com.aerofs.daemon.lib.db.CoreSchema.T_EX;
 
 public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDatabase
 {

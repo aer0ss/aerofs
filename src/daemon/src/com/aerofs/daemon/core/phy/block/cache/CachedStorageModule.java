@@ -5,12 +5,14 @@
 package com.aerofs.daemon.core.phy.block.cache;
 
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.core.phy.block.AbstractBlockStorageModule;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.google.inject.Provider;
 import com.google.inject.Scopes;
+import com.google.inject.multibindings.Multibinder;
 
 /**
  * To enable caching in any backend simply make the backend Module inherit from this class instead
@@ -22,6 +24,9 @@ public abstract class CachedStorageModule extends AbstractBlockStorageModule
     public void configure()
     {
         super.configure();
+
+        // make sure the storage-specific schema is created on setup
+        Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(CacheSchema.class);
 
         // override backend binding with a provider that wraps a cache around the actual backend
         bind(IBlockStorageBackend.class)

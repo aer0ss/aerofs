@@ -42,7 +42,7 @@ public class TestStores extends AbstractTest
     {
         InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
         dbcw.init_();
-        sdb = new StoreDatabase(dbcw.mockCoreDBCW());
+        sdb = new StoreDatabase(dbcw.getCoreDBCW());
 
         ss = new Stores();
         ss.inject_(sdb, sm, sidx2s, sidx2dbm, dp, sdo);

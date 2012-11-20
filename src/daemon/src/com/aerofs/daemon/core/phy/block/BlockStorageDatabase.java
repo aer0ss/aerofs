@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.block;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
+import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
@@ -68,10 +69,15 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     public static final ContentHash EMPTY_FILE_CHUNKS = new ContentHash(new byte[0]);
 
-    @Inject
     public BlockStorageDatabase(IDBCW dbcw)
     {
         super(dbcw);
+    }
+
+    @Inject
+    public BlockStorageDatabase(CoreDBCW dbcw)
+    {
+        super(dbcw.get());
     }
 
     public void init_() throws SQLException

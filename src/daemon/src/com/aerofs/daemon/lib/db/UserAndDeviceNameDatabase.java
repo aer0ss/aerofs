@@ -16,7 +16,7 @@ import java.sql.SQLException;
 
 import javax.annotation.Nullable;
 
-import static com.aerofs.daemon.core.CoreSchema.*;
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 /**
  * When possible, use the MapAlias2Target class which provides a high-level wrapper around this

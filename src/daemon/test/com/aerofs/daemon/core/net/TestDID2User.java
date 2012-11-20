@@ -19,7 +19,7 @@ import static junit.framework.Assert.assertEquals;
 public class TestDID2User extends AbstractTest
 {
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    DID2UserDatabase db = new DID2UserDatabase(dbcw.mockCoreDBCW());
+    DID2UserDatabase db = new DID2UserDatabase(dbcw.getCoreDBCW());
     DID2User did2User;
 
     DID did = new DID(UniqueID.generate());

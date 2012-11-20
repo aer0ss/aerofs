@@ -1,14 +1,20 @@
-package com.aerofs.daemon.core;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
 
-import java.sql.Connection;
+package com.aerofs.daemon.lib.db;
+
+import java.io.IOException;
+import java.io.PrintStream;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.google.inject.Inject;
 
-public class CoreSchema
+public class CoreSchema implements ISchema
 {
     public static final String
 
@@ -217,21 +223,18 @@ public class CoreSchema
     private final IDBCW _dbcw;
     private final InjectableDriver _dr;
 
-    public CoreSchema(IDBCW dbcw, InjectableDriver dr)
+    @Inject
+    public CoreSchema(CoreDBCW dbcw, InjectableDriver dr)
     {
-        _dbcw = dbcw;
+        _dbcw = dbcw.get();
         _dr = dr;
     }
 
-    public void create_() throws SQLException
+    @Override
+    public void create_(Statement s) throws SQLException
     {
         // TODO (AAG) all updates have to detect MySQL and use engine=InnoDB
         assert !_dbcw.isMySQL();
-
-        Connection c = _dbcw.getConnection();
-        assert !c.getAutoCommit();
-
-        Statement s = c.createStatement();
 
         // TODO use strict affinity once it's implemented in sqlite
 
@@ -531,11 +534,13 @@ public class CoreSchema
 
         createStoreTables(s, _dbcw);
         createSyncStatusBootstrapTable(s, _dbcw);
-        createActivityLogTables(s);
+        createActivityLogTables(s, _dbcw);
+    }
 
-        s.close();
-
-        c.commit();
+    @Override
+    public void dump_(PrintStream ps) throws IOException, SQLException
+    {
+        new CoreDatabaseDumper(_dbcw, _dr).dumpAll_(ps, true);
     }
 
     public static void createStoreTables(Statement s, IDBCW dbcw)
@@ -574,42 +579,42 @@ public class CoreSchema
                 ")");
     }
 
-    public void createActivityLogTables(Statement s) throws SQLException
+    public static void createActivityLogTables(Statement s, IDBCW dbcw) throws SQLException
     {
         // "if not exists" is needs since the method is used by a DPUT, which requires this method
         // to be idempotent.
         s.executeUpdate(
                 "create table if not exists " + T_AL + "(" +
-                    C_AL_IDX + _dbcw.longType() + " primary key " + _dbcw.autoIncrement() + "," +
+                    C_AL_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
                     C_AL_SIDX + " integer not null," +
-                    C_AL_OID + _dbcw.uniqueIdType() + "not null," +
+                    C_AL_OID + dbcw.uniqueIdType() + "not null," +
                     C_AL_TYPE + " integer not null," +
                     C_AL_PATH + " text not null," +
                     C_AL_PATH_TO + " text," +
                     C_AL_DIDS + " blob not null," +
-                    C_AL_TIME + _dbcw.longType() + " not null" +
-                ")" + _dbcw.charSet());
+                    C_AL_TIME + dbcw.longType() + " not null" +
+                ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table if not exists " + T_D2U + "(" +
-                        C_D2U_DID + _dbcw.uniqueIdType() + " primary key," +
-                        C_D2U_USER + _dbcw.userIdType() + " not null" +
-                        ")" + _dbcw.charSet());
+                        C_D2U_DID + dbcw.uniqueIdType() + " primary key," +
+                        C_D2U_USER + dbcw.userIdType() + " not null" +
+                        ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table if not exists " + T_UN + "(" +
-                        C_UN_USER + _dbcw.userIdType() + " primary key," +
+                        C_UN_USER + dbcw.userIdType() + " primary key," +
                         C_UN_FIRST_NAME + " text," +
                         C_UN_LAST_NAME + " text," +
-                        C_UN_TIME + _dbcw.longType() + " not null" +
-                        ")" + _dbcw.charSet());
+                        C_UN_TIME + dbcw.longType() + " not null" +
+                        ")" + dbcw.charSet());
 
         s.executeUpdate(
                 "create table if not exists " + T_DN + "(" +
-                        C_DN_DID + _dbcw.uniqueIdType() + " primary key," +
+                        C_DN_DID + dbcw.uniqueIdType() + " primary key," +
                         C_DN_NAME + " text," +
-                        C_DN_TIME + _dbcw.longType() + " not null" +
-                        ")" + _dbcw.charSet());
+                        C_DN_TIME + dbcw.longType() + " not null" +
+                        ")" + dbcw.charSet());
     }
 
     public static void createIndexForCSTable(Statement s) throws SQLException

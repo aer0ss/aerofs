@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.daemon.core.CoreSchema;
-import static com.aerofs.daemon.core.CoreSchema.*;
+import com.aerofs.daemon.lib.db.CoreSchema;
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.SIndex;

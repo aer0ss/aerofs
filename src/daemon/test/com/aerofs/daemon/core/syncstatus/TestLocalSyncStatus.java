@@ -69,9 +69,9 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock SingleuserStores sss;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    IMetaDatabase mdb = new MetaDatabase(dbcw.mockCoreDBCW());
-    IStoreDatabase sdb = new StoreDatabase(dbcw.mockCoreDBCW());
-    ISyncStatusDatabase ssdb = new SyncStatusDatabase(dbcw.mockCoreDBCW());
+    IMetaDatabase mdb = new MetaDatabase(dbcw.getCoreDBCW());
+    IStoreDatabase sdb = new StoreDatabase(dbcw.getCoreDBCW());
+    ISyncStatusDatabase ssdb = new SyncStatusDatabase(dbcw.getCoreDBCW());
     MapSIndex2DeviceBitMap sidx2dbm = new MapSIndex2DeviceBitMap(sdb);
 
     LocalSyncStatus lsync;

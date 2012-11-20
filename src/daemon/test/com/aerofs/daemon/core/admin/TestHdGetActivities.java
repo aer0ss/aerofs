@@ -72,7 +72,7 @@ public class TestHdGetActivities extends AbstractTest
     HdGetActivities hd;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    IActivityLogDatabase aldb = new ActivityLogDatabase(dbcw.mockCoreDBCW());
+    IActivityLogDatabase aldb = new ActivityLogDatabase(dbcw.getCoreDBCW());
     ActivityLog al;
 
     EIGetActivities ev;

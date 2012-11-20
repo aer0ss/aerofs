@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 
 import java.sql.SQLException;
 
-import com.aerofs.daemon.core.CoreSchema;
+import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -16,6 +16,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 public class InMemorySQLiteDBCW extends SQLiteDBCW
 {
     private final InjectableDriver _dr;
+    private final CoreDBCW _core;
     private boolean _finiWasCalled;
 
     /**
@@ -26,6 +27,9 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
     {
         super("jdbc:sqlite::memory:", false, true, false);
         _dr = dr;
+
+        _core = mock(CoreDBCW.class);
+        when(_core.get()).thenReturn(this);
     }
 
     /**
@@ -36,11 +40,9 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
         this(mock(InjectableDriver.class));
     }
 
-    public CoreDBCW mockCoreDBCW()
+    public CoreDBCW getCoreDBCW()
     {
-        CoreDBCW core = mock(CoreDBCW.class);
-        when(core.get()).thenReturn(this);
-        return core;
+        return _core;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class InMemorySQLiteDBCW extends SQLiteDBCW
     public void init_() throws SQLException
     {
         super.init_();
-        new CoreSchema(this, _dr).create_();
+        new CoreSchema(_core, _dr).create_(getConnection().createStatement());
     }
 
     @Override

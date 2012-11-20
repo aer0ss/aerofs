@@ -12,7 +12,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.injectable.InjectableDriver;
 
 /**
  * This class is structurally identical to UIPostUpdateTasks.
@@ -24,8 +23,8 @@ public class DaemonPostUpdateTasks
     private final IDaemonPostUpdateTask[] _tasks;
 
     @Inject
-    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, InjectableDriver dr,
-            TransManager tm, IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm,
+    public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, TransManager tm,
+            IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm,
             CfgAbsAuxRoot absAuxRoot)
     {
         _cfgDB = cfgDB;
@@ -33,7 +32,7 @@ public class DaemonPostUpdateTasks
         _tasks = new IDaemonPostUpdateTask[] {
             new DPUTOptimizeCSTableIndex(dbcw),
             new DPUTUpdateEpochTable(dbcw),
-            new DPUTCreateActivityLogTables(dbcw, dr),
+            new DPUTCreateActivityLogTables(dbcw),
             new DPUTUpdateSchemaForSyncStatus(dbcw),
             new DPUTAddAggregateSyncColumn(dbcw, tm, sdb, mdb, sidx2dbm),
             new DPUTMakeMTimesNaturalNumbersOnly(dbcw),

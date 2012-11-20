@@ -4,10 +4,14 @@
 
 package com.aerofs.daemon.core.phy.block.cache;
 
+import com.aerofs.daemon.lib.db.CoreDBCW;
+import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.lib.db.TableDumper;
 import com.aerofs.lib.db.dbcw.IDBCW;
+import com.google.inject.Inject;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -15,7 +19,7 @@ import java.sql.Statement;
 
 import static com.aerofs.lib.db.DBUtil.createIndex;
 
-public class CacheSchema
+public class CacheSchema implements ISchema
 {
     public static final String
             T_BlockCache            = "bsca",
@@ -24,35 +28,29 @@ public class CacheSchema
 
     private final IDBCW _dbcw;
 
-    public CacheSchema(IDBCW dbcw)
+    @Inject
+    public CacheSchema(CoreDBCW dbcw)
     {
-        _dbcw = dbcw;
+        _dbcw = dbcw.get();
     }
 
-    public void create_() throws SQLException
+    @Override
+    public void create_(Statement s) throws SQLException
     {
-        Connection c = _dbcw.getConnection();
-        Statement s = c.createStatement();
-
-        try {
-            s.execute("create table if not exists " + T_BlockCache + "( " +
-                    C_BlockCache_Hash + " blob not null primary key," +
-                    C_BlockCache_Time + _dbcw.longType() + " not null )" +
-                    _dbcw.charSet());
-            s.executeUpdate(createIndex(T_BlockCache, 0, C_BlockCache_Time));
-        } finally {
-            s.close();
-        }
-
-        c.commit();
+        s.execute("create table if not exists " + T_BlockCache + "( " +
+                C_BlockCache_Hash + " blob not null primary key," +
+                C_BlockCache_Time + _dbcw.longType() + " not null )" +
+                _dbcw.charSet());
+        s.executeUpdate(createIndex(T_BlockCache, 0, C_BlockCache_Time));
     }
 
-    public void dump_(PrintWriter pw) throws IOException, SQLException
+    @Override
+    public void dump_(PrintStream ps) throws IOException, SQLException
     {
         Connection c = _dbcw.getConnection();
         Statement s = c.createStatement();
         try {
-            TableDumper td = new TableDumper(pw);
+            TableDumper td = new TableDumper(new PrintWriter(ps));
             td.dumpTable(s, T_BlockCache);
         } finally {
             s.close();

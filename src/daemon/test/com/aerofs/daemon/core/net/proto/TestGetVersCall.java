@@ -42,7 +42,7 @@ public class TestGetVersCall extends AbstractTest
     @Mock Metrics m;
     @Mock OutgoingStreams oss;
     @Mock MapSIndex2Store sidx2s;
-    @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.mockCoreDBCW(),
+    @Spy  IPulledDeviceDatabase pulledDevices = new PulledDeviceDatabase(dbcw.getCoreDBCW(),
             mock(StoreDeletionOperators.class));
 
     // System Under Test

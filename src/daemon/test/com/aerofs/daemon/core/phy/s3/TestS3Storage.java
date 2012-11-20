@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.sql.SQLException;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -128,20 +128,20 @@ public class TestS3Storage extends AbstractTest
                 _s3Cache);
 
         _tcTestSetup.start_();
-        new S3Schema(_tcTestSetup._coreDBCW.get()).create_();
+        new S3Schema(_tcTestSetup._coreDBCW)
+                .create_(_tcTestSetup._coreDBCW.get().getConnection().createStatement());
         _s3Storage.init_();
     }
 
     @After
     public void tearDown() throws Exception {
         if (_verbose) {
-            S3Schema s3Schema = new S3Schema(_tcTestSetup._coreDBCW.get());
-            PrintWriter pw = new PrintWriter(System.out, false);
+            S3Schema s3Schema = new S3Schema(_tcTestSetup._coreDBCW);
             try {
-                pw.println();
-                s3Schema.dump_(pw);
+                System.out.println();
+                s3Schema.dump_(System.out);
             } finally {
-                pw.flush();
+                System.out.flush();
             }
         }
         _shutdownHooks.shutdown_();

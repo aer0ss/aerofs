@@ -39,7 +39,7 @@ public class TestCacheBackend extends AbstractBlockTest
 
     // use in-memory DB
     InMemorySQLiteDBCW idbcw = new InMemorySQLiteDBCW();
-    CacheDatabase cdb = new CacheDatabase(idbcw.mockCoreDBCW().get());
+    CacheDatabase cdb = new CacheDatabase(idbcw.getCoreDBCW().get());
 
     @Mock IBlockStorageBackend bsb;
 
@@ -49,7 +49,7 @@ public class TestCacheBackend extends AbstractBlockTest
     public void setUp() throws Exception
     {
         idbcw.init_();
-        new CacheSchema(idbcw).create_();
+        new CacheSchema(idbcw.getCoreDBCW()).create_(idbcw.getConnection().createStatement());
 
         when(tm.begin_()).thenReturn(t);
         when(auxRoot.get()).thenReturn(testTempDirFactory.getTestTempDir().getAbsolutePath());

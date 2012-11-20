@@ -1,5 +1,6 @@
 package com.aerofs.s3;
 
+import com.aerofs.daemon.lib.db.ISchema;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -14,6 +15,7 @@ import com.aerofs.daemon.core.phy.s3.S3Storage;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig;
 import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
+import com.google.inject.multibindings.Multibinder;
 
 public class S3Module extends AbstractModule
 {
@@ -22,6 +24,9 @@ public class S3Module extends AbstractModule
     {
         bind(IPhysicalStorage.class).to(S3Storage.class).in(Scopes.SINGLETON);
         bind(ILinker.class).to(ILinker.NullLinker.class).in(Scopes.SINGLETON);
+
+        // make sure the storage-specific schema is created on setup
+        Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(S3Schema.class);
     }
 
     @Provides

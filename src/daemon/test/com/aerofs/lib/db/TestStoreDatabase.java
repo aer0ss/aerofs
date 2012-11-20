@@ -19,7 +19,7 @@ import com.aerofs.testlib.AbstractTest;
 public class TestStoreDatabase extends AbstractTest
 {
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
-    StoreDatabase db = new StoreDatabase(dbcw.mockCoreDBCW());
+    StoreDatabase db = new StoreDatabase(dbcw.getCoreDBCW());
 
     @Mock Trans t;
 

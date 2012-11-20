@@ -28,7 +28,7 @@ public class TestSenderFilters extends AbstractTest
 {
     private final InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
 
-    @Spy  ISenderFilterDatabase sfdb = new SenderFilterDatabase(dbcw.mockCoreDBCW());
+    @Spy  ISenderFilterDatabase sfdb = new SenderFilterDatabase(dbcw.getCoreDBCW());
     @Mock TransManager tm;
 
     @InjectMocks SenderFilters.Factory sfFact;

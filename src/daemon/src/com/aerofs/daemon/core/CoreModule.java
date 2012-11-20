@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.daemon.lib.db.CoreSchema;
+import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.core.linker.IDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -43,6 +45,7 @@ import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
+import com.google.inject.multibindings.Multibinder;
 
 public class CoreModule extends AbstractModule
 {
@@ -73,6 +76,11 @@ public class CoreModule extends AbstractModule
         bind(IDID2UserDatabase.class).to(DID2UserDatabase.class);
         bind(IUserAndDeviceNameDatabase.class).to(UserAndDeviceNameDatabase.class);
         bind(ISyncStatusDatabase.class).to(SyncStatusDatabase.class);
+
+        // we use multibindings to allow splitting DB schemas cleanly, only setting up
+        // exactly as much as required depending on Module instantiation and preventing
+        // schemas from leaking outside of the packages that actually use them
+        Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(CoreSchema.class);
     }
 
     @Provides

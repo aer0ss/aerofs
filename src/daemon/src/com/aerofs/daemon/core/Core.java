@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.io.IOException;
 
+import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
 import com.aerofs.lib.SystemUtil;
@@ -45,6 +46,7 @@ public class Core implements IModule
     private final ILinker _linker;
     private final RitualNotificationServer _notifier;
     private final DaemonPostUpdateTasks _dput;
+    private final CoreDBSetup _dbsetup;
 
     @Inject
     public Core(
@@ -64,6 +66,7 @@ public class Core implements IModule
             RitualNotificationServer notifier,
             ILinker linker,
             DaemonPostUpdateTasks dput,
+            CoreDBSetup dbsetup,
             IStores ss)
     {
         _imce2core = imce.imce();
@@ -83,13 +86,15 @@ public class Core implements IModule
         _linker = linker;
         _notifier = notifier;
         _dput = dput;
+        _dbsetup = dbsetup;
     }
 
     @Override
     public void init_() throws Exception
     {
         _dbcw.get().init_();
-        // TODO: DB schema should be created here during setup...
+        // setup core DB if needed
+        if (!_dbsetup.isSetupDone_()) _dbsetup.setup_();
         // must run dput immediately after database initialization and before other components, as
         // required by IDaemonPostUpdateTask.run()
         _dput.run();

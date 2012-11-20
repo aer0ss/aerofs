@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
@@ -110,7 +109,8 @@ public abstract class AbstractTestS3Cache extends AbstractTest
         prepareS3Cache(_s3Cache);
 
         _tcTestSetup.start_();
-        new S3Schema(_tcTestSetup._coreDBCW.get()).create_();
+        new S3Schema(_tcTestSetup._coreDBCW)
+                .create_(_tcTestSetup._coreDBCW.get().getConnection().createStatement());
         _s3db.init_();
         _s3Cache.init_();
     }
@@ -119,12 +119,11 @@ public abstract class AbstractTestS3Cache extends AbstractTest
     public void tearDown() throws Exception
     {
         if (_verbose) {
-            PrintWriter pw = new PrintWriter(System.out, false);
             try {
-                pw.println();
-                new S3Schema(_tcTestSetup._coreDBCW.get()).dump_(pw);
+                System.out.println();
+                new S3Schema(_tcTestSetup._coreDBCW).dump_(System.out);
             } finally {
-                pw.flush();
+                System.out.flush();
             }
         }
 
