@@ -20,14 +20,10 @@ include common::logs
         "default-jdk",
         "htop",
         "dstat",
-        "openntpd"
+        "ntp"
         ]:
         ensure => latest,
     }
-
-#    class { "fwknop":
-#        key => hiera("fwknop_pass"),
-#    }
 
     $repo = hiera("environment","") ? {
         "staging"   => "staging",
