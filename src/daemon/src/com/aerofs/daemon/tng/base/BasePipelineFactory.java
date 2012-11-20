@@ -6,6 +6,7 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
+import com.aerofs.daemon.tng.IDefectReporter;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.IUnicastListener;
@@ -29,13 +30,18 @@ public class BasePipelineFactory implements IPipelineFactory
     private static final String PULSE_STATE_KEY = PulseState.class.getSimpleName();
 
     protected final ISingleThreadedPrioritizedExecutor _executor;
-    private final IUnicastListener _unicastListener;
 
-    public BasePipelineFactory(ISingleThreadedPrioritizedExecutor executor,
-            IUnicastListener listener)
+    private final IUnicastListener _unicastListener;
+    private final IDefectReporter _defectReporter;
+
+    public BasePipelineFactory(
+            ISingleThreadedPrioritizedExecutor executor,
+            IUnicastListener listener,
+            IDefectReporter defectReporter)
     {
-        _executor = executor;
-        _unicastListener = listener;
+        this._executor = executor;
+        this._unicastListener = listener;
+        this._defectReporter = defectReporter;
     }
 
     @Override
@@ -52,9 +58,12 @@ public class BasePipelineFactory implements IPipelineFactory
         // Now we need to add low-level, specific handlers to the custom pipeline
         // for things to work out-of-the-box
 
+        // Add a handler to report all failures in sending messages
+        builder.addFirst_(new SendFailureHandler(_defectReporter));
+
         // Add the all important WireHandler that serializes and deserializes
-        // bytes into PBTPHeaders and vice versa. This must be first, as no other
-        // handler works in terms of bytes
+        // bytes into PBTPHeaders and vice versa. This must be first _message processing_
+        // handler as no other handler works in terms of bytes
         builder.addFirst_(new WireHandler());
 
         // Add the PulseHandlers after the custom handlers

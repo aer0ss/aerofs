@@ -17,6 +17,7 @@ import com.aerofs.daemon.tng.ITransport;
 import com.aerofs.daemon.tng.ReceivedMaxcastFilter;
 import com.aerofs.daemon.tng.base.BasePipelineFactory;
 import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
+import com.aerofs.daemon.core.net.SVReporter;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.daemon.tng.diagnosis.PeerDiagnoser;
 import com.aerofs.daemon.tng.xmpp.XMPPBasedTransportFactory;
@@ -80,6 +81,7 @@ public class Transports implements IDebug
                 DEFAULT_COMPARATOR);
         ReceivedMaxcastFilter receivedMaxcastFilter = new ReceivedMaxcastFilter();
         PeerDiagnoser peerDiagnoser = new PeerDiagnoser();
+        SVReporter svReporter = new SVReporter();
 
         Proxy proxy = Proxy.NO_PROXY; // FIXME <-- need to actually get proxy information
 
@@ -95,7 +97,7 @@ public class Transports implements IDebug
                 // the ITransport needs a ITransportListener. So we fix this by adding a setTransport method to the CoreQueueBasedListener,
                 // cast the ITransportListener we created to its concrete type, and set the transport after it was created
                 CoreQueueBasedTransportListener listener = new CoreQueueBasedTransportListener(transportEventLoop, coreQueue, streamMap);
-                IPipelineFactory pipelineFactory = new BasePipelineFactory(transportEventLoop, listener);
+                IPipelineFactory pipelineFactory = new BasePipelineFactory(transportEventLoop, listener, svReporter);
 
                 ITransport transport = xmppTransportsFactory.createJingle_(JINGLE.id(), JINGLE.pref(), listener, pipelineFactory);
                 listener.setTransport(transport);
@@ -106,9 +108,8 @@ public class Transports implements IDebug
                 // the ITransport needs a ITransportListener. So we fix this by adding a setTransport method to the CoreQueueBasedListener,
                 // cast the ITransportListener we created to its concrete type, and set the transport after it was created
                 CoreQueueBasedTransportListener listener = new CoreQueueBasedTransportListener(transportEventLoop, coreQueue, streamMap);
-                InetSocketAddress zephyrAddress = new InetSocketAddress(
-                        Zephyr.zephyrHost(), Zephyr.zephyrPort());
-                IPipelineFactory pipelineFactory = new BasePipelineFactory(transportEventLoop, listener);
+                InetSocketAddress zephyrAddress = new InetSocketAddress(Zephyr.zephyrHost(), Zephyr.zephyrPort());
+                IPipelineFactory pipelineFactory = new BasePipelineFactory(transportEventLoop, listener, svReporter);
 
                 ITransport transport = xmppTransportsFactory.createZephyr_(ZEPHYR.id(), ZEPHYR.pref(), zephyrAddress, listener, pipelineFactory);
                 listener.setTransport(transport);

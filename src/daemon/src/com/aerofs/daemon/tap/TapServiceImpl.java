@@ -5,6 +5,7 @@
 package com.aerofs.daemon.tap;
 
 import com.aerofs.daemon.core.net.PeerStreamMap;
+import com.aerofs.daemon.core.net.SVReporter;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
@@ -87,9 +88,10 @@ public class TapServiceImpl implements ITapService
             throw new IllegalStateException("Started transport twice");
         }
 
+        SVReporter svReporter = new SVReporter();
         ITransportListener listener = new TapTransportListener(_incomingStreams, _eventQueue);
         IPipelineFactory pipelineFactory = new TapPipelineFactory(_executor, listener,
-                _messageFilterListener);
+                _messageFilterListener, svReporter);
 
         _transport = _transportFactory.create(type, listener, pipelineFactory);
         if (_transport == null) {
