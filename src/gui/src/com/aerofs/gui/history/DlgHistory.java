@@ -553,6 +553,8 @@ public class DlgHistory extends AeroFSDialog
         fetchTempFile(version);
         if (version.tmpFile == null) return;
 
+        // Make sure users won't try to make changes to the temp file: their changes would be lost
+        new File(version.tmpFile).setReadOnly();
         Program.launch(version.tmpFile);
     }
 

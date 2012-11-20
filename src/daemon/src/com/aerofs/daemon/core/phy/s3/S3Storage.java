@@ -780,7 +780,8 @@ public class S3Storage implements IPhysicalStorage
                 if (info == null) {
                     throw new ExNotFound("Invalid revision index");
                 }
-                return new RevInputStream(_s3Cache.readChunks(info._chunks), info._length);
+                return new RevInputStream(_s3Cache.readChunks(info._chunks), info._length,
+                        info._date.getTime());
             } catch (SQLException e) {
                 return null;
             }

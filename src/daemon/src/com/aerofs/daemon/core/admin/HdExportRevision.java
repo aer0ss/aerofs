@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 
+import com.aerofs.daemon.core.phy.IPhysicalRevProvider.RevInputStream;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -31,15 +32,14 @@ public class HdExportRevision extends AbstractHdIMC<EIExportRevision> {
         File dst = FileUtil.createTempFile(file.base, file.extension, null, true);
 
         FileOutputStream os = new FileOutputStream(dst);
+        RevInputStream rev = _ps.getRevProvider().getRevInputStream_(ev._path, ev._index);
         try {
-            InputStream is = _ps.getRevProvider().getRevInputStream_(ev._path, ev._index)._is;
+            InputStream is = rev._is;
             Util.copy(is, os);
             ev.setResult_(dst);
         } finally {
             os.close();
         }
-
-        // Make sure users won't try to make changes to the temp file: their changes would be lost
-        dst.setReadOnly();
+        dst.setLastModified(rev._mtime);
     }
 }
