@@ -27,6 +27,7 @@ import com.aerofs.daemon.core.fs.HdDeleteBranch;
 import com.aerofs.daemon.core.fs.HdDeleteObject;
 import com.aerofs.daemon.core.fs.HdGetAttr;
 import com.aerofs.daemon.core.fs.HdGetChildrenAttr;
+import com.aerofs.daemon.core.fs.HdImportFile;
 import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
 import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdMoveObject;
@@ -70,6 +71,7 @@ import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
+import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EISetAttr;
 import com.aerofs.daemon.event.fs.EIShareFolder;
@@ -124,6 +126,7 @@ public class CoreEventDispatcher extends EventDispatcher
             HdGetChildrenAttr hdGetChildrenAttr,
             HdGetAttr hdGetAttr,
             HdShareFolder hdShareFolder,
+            HdImportFile hdImportFile,
             HdExportFile hdExportFile,
             HdRelocateRootAnchor hdRelocateRootAnchor,
             HdListRevChildren hdListRevChildren,
@@ -167,6 +170,7 @@ public class CoreEventDispatcher extends EventDispatcher
             .setHandler_(EISetExpelled.class, hdSetExpelled)
             .setHandler_(EIListExpelledObjects.class, hdListExpelledObjects)
             .setHandler_(EIPauseOrResumeSyncing.class, hdPauseOrResumeSyncing)
+            .setHandler_(EIImportFile.class, hdImportFile)
             .setHandler_(EIExportFile.class, hdExportFile)
             .setHandler_(EIRelocateRootAnchor.class, hdRelocateRootAnchor)
             .setHandler_(EIListRevChildren.class, hdListRevChildren)

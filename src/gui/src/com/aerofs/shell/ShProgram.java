@@ -106,6 +106,7 @@ public class ShProgram implements IProgram, ICallback<ShProgram>
         _s.addCommand_(new CmdExclude());
         _s.addCommand_(new CmdInclude());
         _s.addCommand_(new CmdExcluded());
+        _s.addCommand_(new CmdImport());
         _s.addCommand_(new CmdExport());
         _s.addCommand_(new CmdPause());
         _s.addCommand_(new CmdResume());

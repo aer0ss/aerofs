@@ -37,6 +37,7 @@ import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
 import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
+import com.aerofs.daemon.event.fs.EIImportFile;
 import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
@@ -45,7 +46,6 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
@@ -230,6 +230,14 @@ public class RitualService implements IRitualService
         ListExcludedFoldersReply.Builder bdReply = ListExcludedFoldersReply.newBuilder();
         for (Path path : ev._expelledObjects) bdReply.addPath(path.toPB());
         return createReply(bdReply.build());
+    }
+
+    @Override
+    public ListenableFuture<Void> importFile(PBPath destination, String source) throws Exception
+    {
+        EIImportFile ev = new EIImportFile(new Path(destination), source, Core.imce());
+        ev.execute(PRIO);
+        return createVoidReply();
     }
 
     @Override

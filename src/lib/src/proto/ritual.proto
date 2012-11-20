@@ -23,12 +23,15 @@ service RitualService {
     // Throw NOT_DIR if the parent path is not a folder
     rpc GetChildrenAttributes(GetChildrenAttributesCall) returns(GetChildrenAttributesReply);
 
-    // Export a file to a local path
-    rpc ExportFile(ExportFileCall) returns(ExportFileReply);
-
     rpc CreateObject(CreateObjectCall) returns(Void);
     rpc DeleteObject(DeleteObjectCall) returns(Void);
     rpc MoveObject(MoveObjectCall) returns(Void);
+
+    // import the content of a local file (useful for S3 and other non-transparent backends)
+    rpc ImportFile(ImportFileCall) returns(Void);
+
+    // Export a file to a local path
+    rpc ExportFile(ExportFileCall) returns(ExportFileReply);
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -274,6 +277,11 @@ message IncludeFolderCall {
 
 message ListExcludedFoldersReply {
     repeated PBPath path = 1;
+}
+
+message ImportFileCall {
+    required PBPath destination = 1;
+    required string source = 2;
 }
 
 message ExportFileCall {
