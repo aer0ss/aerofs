@@ -252,8 +252,8 @@ public class Download
                 reenqueue(started);
 
                 SOCID dst = new SOCID(_socid.sidx(), e._ocid);
-                DependencyEdge dependency = new NameConflictDependencyEdge(_socid, dst, e._did,
-                        e._parent, e._vRemote, e._meta, e._soidMsg, e._requested);
+                DependencyEdge dependency =
+                        NameConflictDependencyEdge.fromException(_socid, dst, e);
                 onDependency_(dependency, e);
 
             } catch (ExDependsOn e) {
@@ -290,8 +290,9 @@ public class Download
             } catch (ExNoComponentWithSpecifiedVersion e) {
                 reenqueue(started);
                 if (l.isInfoEnabled()) {
-                    l.info(_socid + ":recv " + ExNoComponentWithSpecifiedVersion.class + " & "
-                            + "kml = " + _f._nvc.getKMLVersion_(_socid));
+                    l.info(_socid + ":recv from " + replier + " "
+                            + Util.e(e, ExNoComponentWithSpecifiedVersion.class) + " & kml ="
+                            + _f._nvc.getKMLVersion_(_socid));
                 }
                 avoidDevice_(replier, e);
 

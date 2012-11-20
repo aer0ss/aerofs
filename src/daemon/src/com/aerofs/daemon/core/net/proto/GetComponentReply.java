@@ -159,7 +159,9 @@ public class GetComponentReply
             // *  after the dependency is incorrectly "resolved", the download subsystem attempts
             //    the original object, causing step 1 to repeat.
             // as a result, the system would enter an infinite loop.
-            oidParent = _a2t.dereferenceAliasedOID_(new SOID(socid.sidx(), oidParent)).oid();
+            OID derefParent = _a2t.dereferenceAliasedOID_(new SOID(socid.sidx(), oidParent)).oid();
+            if (!derefParent.equals(oidParent)) l.info("deref " + oidParent + " -> " + derefParent);
+            oidParent = derefParent;
 
             // We don't gracefully handle the parent OID being the same as that sent in the msg
             assert !oidParent.equals(socid.oid()) : "p msg " + oidParent + " socid " + socid;

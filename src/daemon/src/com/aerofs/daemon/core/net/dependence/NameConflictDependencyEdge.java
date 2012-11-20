@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net.dependence;
 
+import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
@@ -27,8 +28,8 @@ public class NameConflictDependencyEdge extends DependencyEdge
     /**
      * Requires additional arguments to break the dependency in case of deadlock
      */
-    public NameConflictDependencyEdge(SOCID src, SOCID dst, DID did, OID parent, Version vSrc,
-            PBMeta meta, SOID soidMsg, Set<OCID> requested)
+    NameConflictDependencyEdge(SOCID src, SOCID dst, DID did, OID parent, Version vSrc, PBMeta meta,
+            SOID soidMsg, Set<OCID> requested)
     {
         super(src, dst);
         _did = did;
@@ -37,6 +38,13 @@ public class NameConflictDependencyEdge extends DependencyEdge
         _meta = meta;
         _soidMsg = soidMsg;
         _requested = requested;
+    }
+
+    public static NameConflictDependencyEdge fromException(SOCID src, SOCID dst,
+            ExNameConflictDependsOn e)
+    {
+        return new NameConflictDependencyEdge(src, dst, e._did, e._parent, e._vRemote, e._meta,
+                e._soidMsg, e._requested);
     }
 
     @Override
