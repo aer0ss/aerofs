@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.core.CoreDeviceLRU;
+import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.net.proto.ComputeHashCall;
@@ -18,6 +19,7 @@ import com.aerofs.daemon.core.net.proto.NewUpdates;
 import com.aerofs.daemon.core.net.proto.UpdateSenderFilter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -28,6 +30,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
+import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -111,81 +114,139 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             // it's silly that upper layers have to guarantee that the content PBCore is smaller
             // than the transport's max unicast packet size; that's the job of a network layer
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            _f._nsl.recvUnicast_(pc.ep(), pb, null);
-
-            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.sidx(), pc.ep(), null,
-                    pc.user());
+            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.sidx(), pc.user(), null);
             process_(msg);
-
         } catch (Exception e) {
-            l.warn("process uc: " + Util.e(e,
-                    ExDeviceOffline.class, ExBadCredential.class));
+            SystemUtil.fatalOnUncheckedException(e);
+            l.warn("process uc: " + Util.e(e, ExDeviceOffline.class, ExBadCredential.class));
         }
     }
 
     public void maxcastMessageReceived_(SIndex sidx, Endpoint ep, ByteArrayInputStream is)
-            throws Exception
     {
-        assert !ep.did().equals(Cfg.did());
+        try {
+            assert !ep.did().equals(Cfg.did());
 
-        PBCore pb = PBCore.parseDelimitedFrom(is);
-        _f._nsl.recvMaxcast_(ep, pb);
-
-        String user = _d2uCache.get(ep.did());
-        if (user == null) {
-            user = _f._d2u.getFromLocalNullable_(ep.did());
-            if (user == null) user = _f._d2u.getFromPeer_(ep.did(), sidx);
-            _d2uCache.put(ep.did(), user);
+            PBCore pb = PBCore.parseDelimitedFrom(is);
+            String user = _d2uCache.get(ep.did());
+            if (user == null) {
+                user = _f._d2u.getFromLocalNullable_(ep.did());
+                if (user == null) user = _f._d2u.getFromPeer_(ep.did(), sidx);
+                _d2uCache.put(ep.did(), user);
+            }
+            process_(new DigestedMessage(pb, is, ep, sidx, user, null));
+        } catch (Exception e) {
+            SystemUtil.fatalOnUncheckedException(e);
+            l.warn("process mc: " + Util.e(e, ExDeviceOffline.class, ExBadCredential.class));
         }
-
-        process_(new DigestedMessage(pb, is, sidx, ep, null, user));
     }
+
+    //
+    // FIXME (AG): pull out process_* into a CoreMessageReactor
+    //
 
     private void process_(DigestedMessage msg)
             throws Exception
     {
+        // [sigh] I hate having to switch _twice_ on the type
+
         switch (msg.pb().getType()) {
-            case REPLY:
-                _f._rpc.processReply_(msg);
-                break;
-            case GET_COM_CALL:
-                _f._pgcc.processCall_(msg);
-                break;
-            case NEW_UPDATES:
-                _f._pnu.process_(msg);
-                break;
-            case GET_VERS_CALL:
-                _f._pgvc.processCall_(msg);
-                break;
-            case UPDATE_SENDER_FILTER:
-                _f._pusf.process_(msg);
-                break;
-            case GET_REVISION_CALL:
-                _f._gr.processCall_(msg);
-                break;
-            case LIST_REV_CHILDREN_REQUEST:
-                _f._rlc.processRequest_(msg);
-                break;
-            case LIST_REV_CHILDREN_RESPONSE:
-                _f._rlc.processResponse_(msg);
-                break;
-            case LIST_REV_HISTORY_REQUEST:
-                _f._rlh.processRequest_(msg);
-                break;
-            case LIST_REV_HISTORY_RESPONSE:
-                _f._rlh.processResponse_(msg);
-                break;
-            case DIAGNOSIS:
-                _f._diag.process_(msg);
-                break;
-            case COMPUTE_HASH_CALL:
-                _f._computeHashCall.processCall_(msg);
-                break;
-            case NOP:
-                break;
-            default:
-                l.warn("unkown msg: " + msg.pb().getType());
-                throw new ExProtocolError(Type.class);
+        case GET_COM_CALL:
+        case GET_VERS_CALL:
+        case GET_REVISION_CALL:
+        case LIST_REV_CHILDREN_REQUEST:
+        case LIST_REV_HISTORY_REQUEST:
+        case COMPUTE_HASH_CALL:
+            try {
+                processCall_(msg);
+            } catch (Exception e) {
+                SVClient.logSendDefectAsync(true, "fail process call:" + msg, e);
+                sendErrorReply_(msg, e);
+            }
+            break;
+        case REPLY:
+        case NEW_UPDATES:
+        case UPDATE_SENDER_FILTER:
+        case LIST_REV_CHILDREN_RESPONSE:
+        case LIST_REV_HISTORY_RESPONSE:
+        case DIAGNOSIS:
+        case NOP:
+            processNonCall_(msg);
+            break;
+        default:
+            l.warn("unkown msg: " + msg.pb().getType());
+            throw new ExProtocolError(Type.class);
+        }
+    }
+
+    private void processCall_(DigestedMessage msg)
+            throws Exception
+    {
+        switch (msg.pb().getType()) {
+        case GET_COM_CALL:
+            _f._pgcc.processCall_(msg);
+            break;
+        case GET_VERS_CALL:
+            _f._pgvc.processCall_(msg);
+            break;
+        case GET_REVISION_CALL:
+            _f._gr.processCall_(msg);
+            break;
+        case LIST_REV_CHILDREN_REQUEST:
+            _f._rlc.processRequest_(msg);
+            break;
+        case LIST_REV_HISTORY_REQUEST:
+            _f._rlh.processRequest_(msg);
+            break;
+        case COMPUTE_HASH_CALL:
+            _f._computeHashCall.processCall_(msg);
+            break;
+        default:
+            assert false : ("method should not be called for type:" + msg.pb().getType());
+        }
+    }
+
+    private void sendErrorReply_(DigestedMessage msg, Exception cause)
+            throws Exception
+    {
+        PBCore error = null;
+        try {
+            error = CoreUtil.newErrorReply(msg.pb(), cause);
+        } catch (ExProtocolError e) {
+            // this is a programming error: we shouldn't be creating error replies for non-rpc messages
+            SystemUtil.fatal("fail creating a reply for msg:" + CoreUtil.typeString(msg.pb()));
+        }
+
+        assert error != null;
+        _f._nsl.sendUnicast_(msg.did(), msg.sidx(), error);
+    }
+
+    private void processNonCall_(DigestedMessage msg)
+            throws Exception
+    {
+        switch (msg.pb().getType()) {
+        case REPLY:
+            _f._rpc.processReply_(msg);
+            break;
+        case NEW_UPDATES:
+            _f._pnu.process_(msg);
+            break;
+        case UPDATE_SENDER_FILTER:
+            _f._pusf.process_(msg);
+            break;
+        case LIST_REV_CHILDREN_RESPONSE:
+            _f._rlc.processResponse_(msg);
+            break;
+        case LIST_REV_HISTORY_RESPONSE:
+            _f._rlh.processResponse_(msg);
+            break;
+        case DIAGNOSIS:
+            _f._diag.process_(msg);
+            break;
+        case NOP:
+            break;
+        default:
+            assert false : ("method should not be called for type:" + msg.pb().getType());
         }
     }
 
@@ -197,10 +258,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _f._iss.begun_(key, pc);
 
             PBCore pb = PBCore.parseDelimitedFrom(r._is);
-            _f._nsl.recvUnicast_(pc.ep(), pb, key._strmid);
-
-            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.sidx(), pc.ep(), key,
-                    pc.user());
+            DigestedMessage msg = new DigestedMessage(pb, r._is, pc.ep(), pc.sidx(), pc.user(), key);
 
             switch (pb.getType()) {
                 case REPLY:

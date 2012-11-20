@@ -1,15 +1,21 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 
-public class CoreUtil
+public abstract class CoreUtil
 {
     public static final int NOT_RPC = PBCore.getDefaultInstance().getRpcid();
 
     private static int s_id = 0;
+
+    private CoreUtil()
+    {
+        // private to prevent instantiation
+    }
 
     private static int nextRPCID_()
     {
@@ -40,6 +46,24 @@ public class CoreUtil
         return newReply(call.getRpcid());
     }
 
+    public static PBCore newErrorReply(PBCore msg, Throwable cause)
+            throws ExProtocolError
+    {
+        // use toPBWithStackTrace to ease debugging.
+        // FIXME (WW): change toPBWithStackTrace back to toPB() for security concerns
+
+        return newReply(msg)
+                .setExceptionReply(Exceptions.toPBWithStackTrace(cause))
+                .build();
+    }
+
+    public static String typeString(PBCore pb)
+    {
+        String typeString = typeString(pb.getType());
+        return pb.hasExceptionReply() ?
+            typeString + ":E" + exceptionTypeString(pb.getExceptionReply().getType()) : typeString;
+    }
+
     private static String typeString(PBCore.Type type)
     {
         return Integer.toString(type.getNumber());
@@ -48,13 +72,5 @@ public class CoreUtil
     private static String exceptionTypeString(PBException.Type type)
     {
         return Integer.toString(type.getNumber());
-    }
-
-    public static String typeString(PBCore pb)
-    {
-        String typeString = typeString(pb.getType());
-        return pb.hasExceptionReply() ?
-            typeString + ":E" + exceptionTypeString(pb.getExceptionReply().getType()) :
-            typeString;
     }
 }

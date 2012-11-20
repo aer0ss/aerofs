@@ -16,7 +16,6 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -171,56 +170,46 @@ public class GetComponentCall
         SOCKID k = new SOCKID(msg.sidx(), new OID(pb.getObjectId()), new CID(pb.getComId()));
         l.info("gcc for " + k + " from " + msg.ep());
 
-        try {
-            // Give up if the requested SOCKID is not present locally (either meta or content)
-            // N.B. An aliased object is reported not present, but we should not throw if the
-            // caller requested meta for a locally-aliased object (hence the second AND block)
-            // TODO (MJ) does this mean we should change the definition of isPresent to handle
-            // aliased objects?
-            if (!_ds.isPresent_(k) &&
-                !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
-                l.debug(k + " not present. Throwing");
-                throw new ExNoComponentWithSpecifiedVersion();
-            }
-
-            // check permissions
-            if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
-                l.debug("receiver has no permission");
-                throw new ExNoPerm();
-            }
-
-            Version vRemote = new Version(pb.getLocalVersion());
-            Version vLocal = _nvc.getLocalVersion_(k);
-
-            if (!vLocal.sub_(vRemote).isZero_()) {
-                sendReply_(msg, k);
-            } else {
-                if (l.isDebugEnabled()) {
-                    l.debug("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
-                }
-                throw new ExNoComponentWithSpecifiedVersion(k + " " + vRemote);
-            }
-
-            // the kml_version field is used only as a hint for the receiver to
-            // know more available versions
-            // TODO:
-//            Version vRemoteKnown = Version.fromPB(pb.getKmlVersion()).
-//                add_(vRemote);
-//            Version vKnown = _cd.getKnownVersion_(k.socid());
-//
-//            if (!vRemoteKnown.sub_(vKnown).isZero_()) {
-//                l.debug("TODO add diff to db and issue a download");
-//            }
-        } catch (Exception e) {
-            PBCore core = CoreUtil.newReply(msg.pb())
-                    // use toPBWithStackTrace to ease debugging.
-                    // TODO (WW) change it back to toPB() for security concerns
-                    .setExceptionReply(Exceptions.toPBWithStackTrace(e))
-                    .build();
-            _nsl.sendUnicast_(msg.did(), msg.sidx(), core);
+        // Give up if the requested SOCKID is not present locally (either meta or content)
+        // N.B. An aliased object is reported not present, but we should not throw if the
+        // caller requested meta for a locally-aliased object (hence the second AND block)
+        // TODO (MJ) does this mean we should change the definition of isPresent to handle
+        // aliased objects?
+        if (!_ds.isPresent_(k) &&
+            !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
+            l.debug(k + " not present. Throwing");
+            throw new ExNoComponentWithSpecifiedVersion();
         }
-    }
 
+        // check permissions
+        if (!_lacl.check_(msg.user(), k.sidx(), Role.VIEWER)) {
+            l.debug("receiver has no permission");
+            throw new ExNoPerm();
+        }
+
+        Version vRemote = new Version(pb.getLocalVersion());
+        Version vLocal = _nvc.getLocalVersion_(k);
+
+        if (!vLocal.sub_(vRemote).isZero_()) {
+            sendReply_(msg, k);
+        } else {
+            if (l.isDebugEnabled()) {
+                l.debug("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
+            }
+            throw new ExNoComponentWithSpecifiedVersion(k + " " + vRemote);
+        }
+
+        // the kml_version field is used only as a hint for the receiver to
+        // know more available versions
+        // TODO:
+        // Version vRemoteKnown = Version.fromPB(pb.getKmlVersion()).
+        // add_(vRemote);
+        // Version vKnown = _cd.getKnownVersion_(k.socid());
+        //
+        // if (!vRemoteKnown.sub_(vKnown).isZero_()) {
+        //     l.debug("TODO add diff to db and issue a download");
+        // }
+    }
 
     public void sendReply_(DigestedMessage msg, SOCKID k)
         throws Exception
@@ -251,7 +240,7 @@ public class GetComponentCall
      *  - build ancestors for leaf nodes on these devices
      */
     private void sendMeta_(DID did, SOCKID k, PBCore.Builder bdCore, PBGetComReply.Builder bdReply)
-        throws ExNotFound, SQLException, Exception
+        throws Exception
     {
         // guaranteed by the caller
         assert _ds.isPresent_(k) || _ds.hasAliasedOA_(k.soid());

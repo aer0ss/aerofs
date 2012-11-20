@@ -29,7 +29,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.ExUpdateInProgress;
-import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.os.OSUtil;
@@ -168,10 +167,7 @@ public class GCCSendContent
 
             if (copied != len || wasContentModifiedSince_(k, v, mtime, len, pf)) {
                 l.debug(k + " updated while being sent. nak");
-                reply = CoreUtil.newReply(reply.getRpcid())
-                        .setExceptionReply(Exceptions.toPB(new ExUpdateInProgress()))
-                        .build();
-                os = Util.writeDelimited(reply);
+                throw new ExUpdateInProgress();
             }
 
             _nsl.sendUnicast_(did, k.sidx(), CoreUtil.typeString(reply), reply.getRpcid(), os);

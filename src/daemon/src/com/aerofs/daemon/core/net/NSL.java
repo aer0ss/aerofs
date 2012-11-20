@@ -62,21 +62,6 @@ public class NSL
     }
 
     //
-    // message-reception methods
-    //
-
-    public void recvUnicast_(Endpoint ep, PBCore pb, @Nullable StreamID sid)
-    {
-        l.debug(CoreUtil.typeString(pb) + ',' + pb.getRpcid() + " <- " + ep +
-                (sid == null ? "" : " sid " + sid));
-    }
-
-    public void recvMaxcast_(Endpoint ep, PBCore pb)
-    {
-        l.debug("mc " + CoreUtil.typeString(pb) + ',' + pb.getRpcid() + " <- " + ep);
-    }
-
-    //
     // message-transmission methods
     //
 
