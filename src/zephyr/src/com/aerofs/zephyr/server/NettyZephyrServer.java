@@ -9,7 +9,6 @@ import com.aerofs.lib.net.TraceHandler;
 import com.aerofs.lib.net.ZephyrConstants;
 import com.aerofs.lib.net.ZephyrPipeHandler;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;
 import org.jboss.netty.channel.ChannelFactory;
@@ -180,7 +179,6 @@ public class NettyZephyrServer implements ChannelPipelineFactory
                 @Override
                 public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
                 {
-                    ChannelBuffer buffer = (ChannelBuffer)e.getMessage();
                     ZephyrConnection peer = _peer;
                     assert peer != null;
                     synchronized (_trafficLock) {

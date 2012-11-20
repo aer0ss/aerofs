@@ -64,17 +64,13 @@ public class CompConflictFiles extends Composite
     {
         private final Path _path;
         final int _kidx;
-        final long _length;
-        final long _mtime;
 
         private @Nullable String _export;
 
-        private Entry(Path path, int kidx, long length, long mtime)
+        private Entry(Path path, int kidx)
         {
             _path = path;
             _kidx = kidx;
-            _length = length;
-            _mtime = mtime;
         }
 
         @Nonnull String getExportedFilePath(RitualBlockingClient c) throws Exception
@@ -176,7 +172,7 @@ public class CompConflictFiles extends Composite
         GridLayout glShell = new GridLayout(5, false);
         glShell.marginHeight = 0;
         glShell.marginWidth = 0;
-        glShell.horizontalSpacing = GUIUtil.getInterButtonHorizontalSpace(glShell);;
+        glShell.horizontalSpacing = GUIUtil.getInterButtonHorizontalSpace(glShell);
         setLayout(glShell);
 
         _tv = new TableViewer(this, SWT.BORDER | SWT.MULTI);
@@ -211,9 +207,7 @@ public class CompConflictFiles extends Composite
                     cb.setContents(new Object[] { sb.toString() },
                             new Transfer[] { TextTransfer.getInstance() });
                 } catch (SWTError e) {
-                    Util.l(CompConflictFiles.class).warn("cp 2 clipboard: " +
-                            Util.e(e));
-                    return;
+                    Util.l(CompConflictFiles.class).warn("cp 2 clipboard: " + Util.e(e));
                 } finally {
                     cb.dispose();
                 }
@@ -511,8 +505,7 @@ public class CompConflictFiles extends Composite
             for (PBBranch b : attr.getBranchList()) {
                 if (b.getKidx() == KIndex.MASTER.getInt()) continue;
 
-                addEntry(new Entry(new Path(conflict.getPath()), b.getKidx(), b.getLength(),
-                        b.getMtime()));
+                addEntry(new Entry(new Path(conflict.getPath()), b.getKidx()));
             }
         }
     }

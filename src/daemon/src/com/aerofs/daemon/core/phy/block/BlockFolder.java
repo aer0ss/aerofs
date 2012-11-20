@@ -20,13 +20,11 @@ class BlockFolder implements IPhysicalFolder
 {
     private static final Logger l = Util.l(BlockFolder.class);
 
-    private final BlockStorage _s;
     private final SOID _soid;
     private final Path _path;
 
     BlockFolder(BlockStorage s, SOID soid, Path path)
     {
-        _s = s;
         _soid = soid;
         _path = path;
     }
