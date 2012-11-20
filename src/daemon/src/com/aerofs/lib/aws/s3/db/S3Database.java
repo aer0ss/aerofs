@@ -1,6 +1,6 @@
 package com.aerofs.lib.aws.s3.db;
 
-import static com.aerofs.lib.db.S3Schema.*;
+import static com.aerofs.s3.S3Schema.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -27,7 +27,7 @@ import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor;
 import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.db.S3Schema.ChunkState;
+import com.aerofs.s3.S3Schema.ChunkState;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.SIndex;

@@ -43,7 +43,7 @@ import com.aerofs.lib.aws.s3.chunks.S3Cache;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor;
 import com.aerofs.lib.aws.s3.db.S3CacheDatabase;
 import com.aerofs.lib.aws.s3.db.S3Database;
-import com.aerofs.lib.db.S3Schema;
+import com.aerofs.s3.S3Schema;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;

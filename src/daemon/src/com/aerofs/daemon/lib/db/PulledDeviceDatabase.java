@@ -12,9 +12,9 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 
-import static com.aerofs.lib.db.CoreSchema.T_PD;
-import static com.aerofs.lib.db.CoreSchema.C_PD_SIDX;
-import static com.aerofs.lib.db.CoreSchema.C_PD_DID;
+import static com.aerofs.daemon.core.CoreSchema.T_PD;
+import static com.aerofs.daemon.core.CoreSchema.C_PD_SIDX;
+import static com.aerofs.daemon.core.CoreSchema.C_PD_DID;
 
 public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDeviceDatabase,
         IStoreDeletionListener

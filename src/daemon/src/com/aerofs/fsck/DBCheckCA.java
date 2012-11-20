@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.google.inject.Inject;
-import static com.aerofs.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.CoreSchema.*;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.InOutArg;

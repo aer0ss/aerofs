@@ -14,7 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static com.aerofs.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.CoreSchema.*;
 
 /**
  * The DB of @aerofs.com users got pretty dirty and possibly inconsistent during the successive

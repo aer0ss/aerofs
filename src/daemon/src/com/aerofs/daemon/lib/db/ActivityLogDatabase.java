@@ -4,15 +4,15 @@
 
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.lib.db.CoreSchema.C_AL_DIDS;
-import static com.aerofs.lib.db.CoreSchema.C_AL_IDX;
-import static com.aerofs.lib.db.CoreSchema.C_AL_OID;
-import static com.aerofs.lib.db.CoreSchema.C_AL_PATH;
-import static com.aerofs.lib.db.CoreSchema.C_AL_PATH_TO;
-import static com.aerofs.lib.db.CoreSchema.C_AL_SIDX;
-import static com.aerofs.lib.db.CoreSchema.C_AL_TIME;
-import static com.aerofs.lib.db.CoreSchema.C_AL_TYPE;
-import static com.aerofs.lib.db.CoreSchema.T_AL;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_DIDS;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_IDX;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_OID;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_PATH;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_PATH_TO;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_SIDX;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_TIME;
+import static com.aerofs.daemon.core.CoreSchema.C_AL_TYPE;
+import static com.aerofs.daemon.core.CoreSchema.T_AL;
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
 
 import java.sql.PreparedStatement;

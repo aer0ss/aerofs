@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.db.CoreSchema;
+import com.aerofs.daemon.core.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;
 

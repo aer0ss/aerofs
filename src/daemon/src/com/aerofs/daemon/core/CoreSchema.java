@@ -1,4 +1,4 @@
-package com.aerofs.lib.db;
+package com.aerofs.daemon.core;
 
 import java.sql.Connection;
 import java.sql.SQLException;

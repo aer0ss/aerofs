@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.CoreSchema.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

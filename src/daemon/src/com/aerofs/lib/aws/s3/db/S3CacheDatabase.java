@@ -1,6 +1,6 @@
 package com.aerofs.lib.aws.s3.db;
 
-import static com.aerofs.lib.db.S3Schema.*;
+import static com.aerofs.s3.S3Schema.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.TreeMap;
 
 import javax.annotation.Nullable;
@@ -31,13 +29,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgBuildType;
-import com.aerofs.lib.cfg.CfgCoreDatabaseParams;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.db.CoreSchema;
-import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.db.S3Schema;
-import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -235,7 +227,9 @@ class Setup
                 f.deleteOrThrowIfExistRecursively();
             }
 
-            initializeCoreDatabase(s3config != null);
+            // remove database file (the daemon will setup the schema if it detects a missing DB)
+            InjectableFile fDB = _factFile.create(_rtRoot, C.CORE_DATABASE);
+            fDB.deleteOrThrowIfExist();
 
             // setup root anchor
             InjectableFile fRootAnchor = _factFile.create(Cfg.absRootAnchor());
@@ -309,31 +303,6 @@ class Setup
         InjectableDriver dr = new InjectableDriver(new CfgLocalUser());
         dr.setFolderIcon(Cfg.absRootAnchor(), OSUtil.getIconPath(Icon.RootAnchor));
     }
-
-    private void initializeCoreDatabase(boolean s3setup)
-            throws IOException, SQLException
-    {
-        // remove database file
-        InjectableFile fDB = _factFile.create(_rtRoot, C.CORE_DATABASE);
-        fDB.deleteOrThrowIfExist();
-
-        // initialize database. TODO use dependency injection
-        CfgBuildType cfgBuildType = new CfgBuildType();
-        CfgCoreDatabaseParams cfgCoreDBParams = new CfgCoreDatabaseParams(Cfg.db(), cfgBuildType);
-        IDBCW dbcw = DBUtil.newDBCW(cfgCoreDBParams);
-        dbcw.init_();
-        InjectableDriver dr = new InjectableDriver(new CfgLocalUser());
-        try {
-            Connection c = dbcw.getConnection();
-            new CoreSchema(dbcw, dr).create_();
-            c.commit();
-            if (s3setup) new S3Schema(dbcw).create_();
-        } finally {
-            dbcw.fini_();
-        }
-    }
-
-
 
     /**
      * @throws IOException if unable to find a port due to any reason

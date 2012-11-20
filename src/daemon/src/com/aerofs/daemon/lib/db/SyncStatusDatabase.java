@@ -1,15 +1,15 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.lib.db.CoreSchema.C_EPOCH_SYNC_PULL;
-import static com.aerofs.lib.db.CoreSchema.C_EPOCH_SYNC_PUSH;
-import static com.aerofs.lib.db.CoreSchema.C_OA_FID;
-import static com.aerofs.lib.db.CoreSchema.C_OA_OID;
-import static com.aerofs.lib.db.CoreSchema.C_OA_SIDX;
-import static com.aerofs.lib.db.CoreSchema.C_SSBS_OID;
-import static com.aerofs.lib.db.CoreSchema.C_SSBS_SIDX;
-import static com.aerofs.lib.db.CoreSchema.T_EPOCH;
-import static com.aerofs.lib.db.CoreSchema.T_OA;
-import static com.aerofs.lib.db.CoreSchema.T_SSBS;
+import static com.aerofs.daemon.core.CoreSchema.C_EPOCH_SYNC_PULL;
+import static com.aerofs.daemon.core.CoreSchema.C_EPOCH_SYNC_PUSH;
+import static com.aerofs.daemon.core.CoreSchema.C_OA_FID;
+import static com.aerofs.daemon.core.CoreSchema.C_OA_OID;
+import static com.aerofs.daemon.core.CoreSchema.C_OA_SIDX;
+import static com.aerofs.daemon.core.CoreSchema.C_SSBS_OID;
+import static com.aerofs.daemon.core.CoreSchema.C_SSBS_SIDX;
+import static com.aerofs.daemon.core.CoreSchema.T_EPOCH;
+import static com.aerofs.daemon.core.CoreSchema.T_OA;
+import static com.aerofs.daemon.core.CoreSchema.T_SSBS;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

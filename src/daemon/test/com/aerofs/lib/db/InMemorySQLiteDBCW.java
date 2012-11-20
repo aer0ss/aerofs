@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import java.sql.SQLException;
 
+import com.aerofs.daemon.core.CoreSchema;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.db.dbcw.SQLiteDBCW;
 import com.aerofs.lib.injectable.InjectableDriver;

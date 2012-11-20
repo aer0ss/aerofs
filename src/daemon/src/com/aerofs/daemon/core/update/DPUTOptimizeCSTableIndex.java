@@ -5,13 +5,13 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.db.CoreSchema;
+import com.aerofs.daemon.core.CoreSchema;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 import java.sql.Connection;
 import java.sql.Statement;
 
-import static com.aerofs.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.CoreSchema.*;
 
 final class DPUTOptimizeCSTableIndex implements IDaemonPostUpdateTask
 {
