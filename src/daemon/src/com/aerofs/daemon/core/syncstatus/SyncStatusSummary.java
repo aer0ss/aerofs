@@ -22,13 +22,23 @@ public class SyncStatusSummary implements IAggregatedStatus
     private final UserAndDeviceNames _udn;
     private final CfgLocalUser _user;
 
-    public boolean atLeastOneInSync = false;
-    public boolean allInSync = true;
+    private boolean _isPartiallySynced = false;
+    private boolean _allInSync = true;
 
     public SyncStatusSummary(UserAndDeviceNames udn, CfgLocalUser user)
     {
         _udn = udn;
         _user = user;
+    }
+
+    public boolean isPartiallySynced()
+    {
+        return _isPartiallySynced;
+    }
+
+    public boolean allInSync()
+    {
+        return _allInSync;
     }
 
     @Override
@@ -45,8 +55,8 @@ public class SyncStatusSummary implements IAggregatedStatus
             boolean s = status.test(i);
             String owner = getOwner_(dbm.get(i));
             if (owner.equals(_user.get())) {
-                atLeastOneInSync |= s;
-                allInSync &= s;
+                _isPartiallySynced |= s;
+                _allInSync &= s;
             } else {
                 Boolean b = otherUsers.get(owner);
                 otherUsers.put(owner, (b != null ? b | s : s));
@@ -54,19 +64,9 @@ public class SyncStatusSummary implements IAggregatedStatus
         }
 
         for (boolean s : otherUsers.values()) {
-            atLeastOneInSync |= s;
-            allInSync &= s;
+            _isPartiallySynced |= s;
+            _allInSync &= s;
         }
-    }
-
-    @Override
-    public void mergeRoot_(IAggregatedStatus aggregated)
-    {
-        SyncStatusSummary o = (SyncStatusSummary)aggregated;
-        // although we're aggregating store contents, it's still referring to the same top-level
-        // object, hence the use of OR (as in mergeDevices_) instead of AND (as in mergeStore_)
-        atLeastOneInSync |= o.atLeastOneInSync;
-        allInSync &= o.allInSync;
     }
 
     @Override
@@ -74,8 +74,8 @@ public class SyncStatusSummary implements IAggregatedStatus
     {
         SyncStatusSummary o = (SyncStatusSummary)aggregated;
         // aggregation accross children is always AND (take worst)
-        atLeastOneInSync &= o.atLeastOneInSync;
-        allInSync &= o.allInSync;
+        _isPartiallySynced &= o._isPartiallySynced;
+        _allInSync &= o._allInSync;
     }
 
     private String getOwner_(DID did)

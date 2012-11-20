@@ -42,7 +42,7 @@ import org.apache.log4j.Logger;
  *  - sync status map:DID->Boolean gives a detailed view of the relative status of each remote
  *  device sharing the object of interest
  *  - sync status summary gives a condensed summary of the sync status of the file for all devices
- *  through two booleans (allInSync and atLeastOneInSync) (See {@link SyncStatusSummary})
+ *  through two booleans (allInSync and isPartiallySynced) (See {@link SyncStatusSummary})
  *
  * Further processing for human-friendliness (using user and device names instead of IDs and taking
  * network status into account) is done in {@link HdGetSyncStatus}.
@@ -97,23 +97,12 @@ public class LocalSyncStatus implements IStoreDeletionListener
 
         /**
          * Aggregate status within a store
-         *
          * NOTE: called at most once per object
          */
         public void mergeDevices_(DeviceBitMap dbm, BitVector status);
 
         /**
-         * Aggregate status of underlying store
-         *
-         * NOTE: only called when aggregating status of a store anchor
-         */
-        public void mergeRoot_(IAggregatedStatus aggregatedStatus);
-
-        /**
          * Aggregate status of child store
-         *
-         * NOTE: only called when the object for which sync status is being aggregated
-         * is a directory or an anchor.
          */
         public void mergeStore_(IAggregatedStatus aggregatedStatus);
     }
@@ -137,12 +126,6 @@ public class LocalSyncStatus implements IStoreDeletionListener
             for (int i = 0; i < dbm.size(); ++i) {
                 d.put(dbm.get(i), status.test(i));
             }
-        }
-
-        @Override
-        public void mergeRoot_(IAggregatedStatus aggregated)
-        {
-            mergeStore_(aggregated);
         }
 
         @Override
@@ -182,14 +165,12 @@ public class LocalSyncStatus implements IStoreDeletionListener
             // aggregate stores strictly under this directory
             aggregateDescendants_(soid, aggregated);
         } else if (oa.isAnchor()) {
-            // TODO: anchor should have atLeastOneInSync set for summary aggregate even when no
-            // peers are around
             SOID root = _ds.followAnchorThrows_(oa);
 
             // aggregate root of this store
             IAggregatedStatus saggregate = aggregated.create();
             aggregateWithinStore_(root, true, saggregate);
-            aggregated.mergeRoot_(saggregate);
+            aggregated.mergeStore_(saggregate);
 
             // aggregate child stores strictly under the root of this store
             aggregateDescendants_(root, aggregated);
