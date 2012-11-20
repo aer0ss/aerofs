@@ -429,7 +429,7 @@ class BlockStorage implements IPhysicalStorage
             try {
                 FileInfo info = _bsdb.getHistFileInfo_(index);
                 if (info == null) throw new InvalidRevisionIndexException();
-                return new RevInputStream(readChunks(info._chunks), info._length);
+                return new RevInputStream(readChunks(info._chunks), info._length, info._mtime);
             } catch (SQLException e) {
                 return null;
             }
