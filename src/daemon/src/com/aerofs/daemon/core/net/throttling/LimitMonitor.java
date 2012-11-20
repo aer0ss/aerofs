@@ -19,7 +19,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
-import com.aerofs.lib.ex.ExLimitMonitor;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Limit;
@@ -380,9 +379,8 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
         }, ms);
     }
 
-    private void processBytesIn(ByteArrayInputStream baos, int wirelen,
-            PeerContext pc)
-            throws IOException, ExLimitMonitor
+    private void processBytesIn(ByteArrayInputStream baos, int wirelen, PeerContext pc)
+            throws ExThrottling
     {
         // note that we've received this many packets from the peer
 
@@ -398,12 +396,12 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
         // check if the peer is requesting a realloc
 
-        Limit.PBLimit pbl = null;
+        Limit.PBLimit pbl;
         try {
             pbl = Limit.PBLimit.parseDelimitedFrom(baos);
         } catch (IOException e) {
             l.warn("bad lhdr e:" + e);
-            throw new ExLimitMonitor("PBLimit missing");
+            throw new ExThrottling("PBLimit missing");
         }
 
         assert pbl != null;
@@ -485,7 +483,7 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
             } else {
                 l.trace("is: no b");
             }
-        } catch (Exception e) {
+        } catch (ExThrottling e) {
             l.error("ignoring e for pkt from: " + pc.did() + "e: " + e);
         }
     }

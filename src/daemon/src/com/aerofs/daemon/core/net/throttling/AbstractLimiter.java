@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
 
 // TODO: Set the current time at the start of the event response interval
 // TODO: Have to have a way to set the token flag on outgoing messages
-public abstract class AbstractLimiter implements ILimiter
+abstract class AbstractLimiter implements ILimiter
 {
     private static final int _TOSTRING_INITIAL_CAPACITY = 64;
     private static final int _PRINTSTAT_INITIAL_CAPACITY = 128;

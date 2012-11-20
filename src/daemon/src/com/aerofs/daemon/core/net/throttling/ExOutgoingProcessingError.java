@@ -4,7 +4,7 @@ package com.aerofs.daemon.core.net.throttling;
  * Exception thrown when a {@link ILimiter} cannot process_ a {@link Outgoing}
  * No need to put this class under jni.ex as it's only used internally
  */
-class ExOutgoingProcessingError extends Exception
+class ExOutgoingProcessingError extends ExThrottling
 {
     private static final long serialVersionUID = 1;
 
@@ -23,14 +23,14 @@ class ExOutgoingProcessingError extends Exception
      * <code>Outgoing</code> and an <code>Exception</code>
      *
      * @param ck <code>Outgoing</code> that caused the processing exception
-     * @param e exception thrown while processing the <code>Outgoing</code>
+     * @param cause exception thrown while processing the <code>Outgoing</code>
      */
-    public ExOutgoingProcessingError(Outgoing ck, Exception e)
+    public ExOutgoingProcessingError(Outgoing ck, Exception cause)
     {
-        assert ck != null && e != null;
+        super("fail process outgoing pkt:" + ck, cause);
 
         _ck = ck;
-        _e = e;
+        _e = cause;
     }
 
     /**

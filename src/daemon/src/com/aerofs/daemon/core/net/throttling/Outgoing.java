@@ -15,7 +15,7 @@ import java.io.IOException;
 /**
  * Container for messages that pass through the Limiter layer
  */
-public class Outgoing
+class Outgoing
 {
     // BUG BUG 3~ does not behave like I expect
     public static enum Type

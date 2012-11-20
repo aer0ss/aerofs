@@ -5,7 +5,7 @@ import com.aerofs.daemon.lib.Scheduler;
 import com.aerofs.lib.Util;
 import javax.annotation.Nonnull;
 
-public class PerDeviceLimiter extends AbstractLimiter
+class PerDeviceLimiter extends AbstractLimiter
 {
     @Nonnull
     private ILimiter _nextLimiter;
