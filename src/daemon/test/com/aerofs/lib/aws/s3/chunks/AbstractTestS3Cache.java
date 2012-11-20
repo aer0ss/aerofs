@@ -32,7 +32,7 @@ import com.aerofs.lib.aws.s3.S3TestConfig;
 import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor.FileUpload;
 import com.aerofs.lib.aws.s3.db.S3CacheDatabase;
 import com.aerofs.lib.aws.s3.db.S3Database;
-import com.aerofs.lib.db.S3Schema;
+import com.aerofs.s3.S3Schema;
 import com.aerofs.s3.S3Config.S3DirConfig;
 import com.aerofs.s3.ShutdownHooks;
 import com.aerofs.testlib.AbstractTest;

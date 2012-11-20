@@ -89,6 +89,7 @@ public class Core implements IModule
     public void init_() throws Exception
     {
         _dbcw.get().init_();
+        // TODO: DB schema should be created here during setup...
         // must run dput immediately after database initialization and before other components, as
         // required by IDaemonPostUpdateTask.run()
         _dput.run();

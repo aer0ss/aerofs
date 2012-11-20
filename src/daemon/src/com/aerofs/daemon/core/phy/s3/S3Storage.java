@@ -39,7 +39,7 @@ import com.aerofs.lib.aws.s3.chunks.S3ChunkAccessor.FileUpload;
 import com.aerofs.lib.aws.s3.db.S3Database;
 import com.aerofs.lib.aws.s3.db.S3Database.S3DirInfo;
 import com.aerofs.lib.aws.s3.db.S3Database.S3FileInfo;
-import com.aerofs.lib.db.S3Schema.ChunkState;
+import com.aerofs.s3.S3Schema.ChunkState;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;

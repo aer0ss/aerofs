@@ -21,7 +21,7 @@ import com.aerofs.lib.id.SOCID;
 
 import javax.annotation.Nonnull;
 
-import static com.aerofs.lib.db.CoreSchema.T_GT;
+import static com.aerofs.daemon.core.CoreSchema.T_GT;
 
 /**
  * Those IVersionDatabase methods that share a common code path between

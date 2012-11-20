@@ -1,4 +1,4 @@
-package com.aerofs.lib.db;
+package com.aerofs.s3;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.aerofs.lib.db.TableDumper;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.ContentHash;
