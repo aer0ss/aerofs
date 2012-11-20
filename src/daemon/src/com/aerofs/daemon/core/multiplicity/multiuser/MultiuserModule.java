@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.sumu.multiuser;
+package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
@@ -11,10 +11,10 @@ import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.Stores;
-import com.aerofs.daemon.core.sumu.multiuser.migration.NullEmigrantCreator;
-import com.aerofs.daemon.core.sumu.multiuser.migration.NullEmigrantDetector;
-import com.aerofs.daemon.core.sumu.multiuser.migration.NullImmigrantCreator;
-import com.aerofs.daemon.core.sumu.multiuser.migration.NullImmigrantDetector;
+import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantCreator;
+import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetector;
+import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantCreator;
+import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDetector;
 import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.daemon.core.sumu.multiuser.migration;
+package com.aerofs.daemon.core.multiplicity.multiuser.migration;
 
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.lib.id.OID;

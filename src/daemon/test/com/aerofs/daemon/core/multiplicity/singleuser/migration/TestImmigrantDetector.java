@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.sumu.singleuser.migration;
+package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -13,7 +13,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
+import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
