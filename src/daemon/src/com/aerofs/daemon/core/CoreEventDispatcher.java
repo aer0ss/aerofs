@@ -44,6 +44,7 @@ import com.aerofs.daemon.core.net.rx.HdStreamBegun;
 import com.aerofs.daemon.core.net.rx.HdUnicastMessage;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
+import com.aerofs.daemon.event.IEBIMC;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
@@ -76,6 +77,7 @@ import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EISetAttr;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.lib.EventDispatcher;
+import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EIPulseStopped;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
@@ -87,6 +89,7 @@ import com.aerofs.daemon.event.net.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
+import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.mobile.EIDownloadPacket;
 import com.aerofs.daemon.mobile.HdDownloadPacket;
 
@@ -136,7 +139,8 @@ public class CoreEventDispatcher extends EventDispatcher
             HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat,
             HdGetActivities hdGetActivities,
-            HdDownloadPacket hdDownloadPacket)
+            HdDownloadPacket hdDownloadPacket,
+            IMultiplicityEventHandlerSetter mehs)
     {
         this
             // fs events
@@ -196,5 +200,41 @@ public class CoreEventDispatcher extends EventDispatcher
 
             // mobile events
             .setHandler_(EIDownloadPacket.class, hdDownloadPacket);
+
+        setMultiplicityHandlers_(mehs);
+    }
+
+    private static class ExNotSupported extends Exception
+    {
+        private static final long serialVersionUID = 0;
+
+        ExNotSupported()
+        {
+            super("the function is not supported in this product distribution");
+        }
+    }
+
+    private void setMultiplicityHandlers_(IMultiplicityEventHandlerSetter mehs)
+    {
+        mehs.setHandlers_(this);
+
+        // Use a default handler to notify the end user about unsupported functions that are
+        // otherwise implemented in multi-user or single-user systems.
+        // Since in different multiplicity, the UI has been specialized to avoid calling unsupported
+        // functions, this default handler is used for users accessing the functions directly
+        // through Ritual API which can't be specialized.
+        //
+        // This default handler only accepts events derived from IEBIMC. Other event types would
+        // trigger runtime casting errors.
+        //
+        setDefaultHandler_(new AbstractHdIMC<IEBIMC>()
+        {
+            @Override
+            protected void handleThrows_(IEBIMC ev, Prio prio)
+                    throws Exception
+            {
+                throw new ExNotSupported();
+            }
+        });
     }
 }

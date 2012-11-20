@@ -1,8 +1,12 @@
 package com.aerofs.lib.id;
 
+import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFormatError;
 import com.google.protobuf.ByteString;
+
+import java.security.MessageDigest;
 
 /**
  * store id
@@ -59,6 +63,16 @@ public class SID extends UniqueID
     public static SID anchorOID2storeSID(OID oid)
     {
         return new SID(oid.getBytes());
+    }
+
+    /**
+     * Translate a user ID to the SID of the user's root store
+     */
+    public static SID rootSID(String user)
+    {
+        MessageDigest md = SecUtil.newMessageDigestMD5();
+        md.update(Util.string2utf(user));
+        return new SID(md.digest(C.ROOT_SID_SALT));
     }
 
     @Override

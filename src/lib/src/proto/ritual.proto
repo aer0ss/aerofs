@@ -188,6 +188,9 @@ service RitualService {
 
     // Send a defect log to SV
     rpc TestLogSendDefect(Void) returns(Void);
+
+    // Multiuser systems only: join a root store
+    rpc TestMultiuserJoinRootStore(TestMultiuserJoinRootStoreCall) returns(Void);
 }
 
 message CreateObjectCall {
@@ -543,4 +546,9 @@ message TestGetObjectIdentifierCall {
 message TestGetObjectIdentifierReply {
     required int32 sidx = 1;
     required bytes oid = 2;
+}
+
+message TestMultiuserJoinRootStoreCall {
+    // The user to which the root store belongs
+    required string user = 1;
 }

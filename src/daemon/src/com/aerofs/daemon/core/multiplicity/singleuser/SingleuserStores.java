@@ -26,13 +26,15 @@ public class SingleuserStores extends Stores
 {
     private TransManager _tm;
     private StoreCreator _sc;
+    private CfgRootSID _cfgRootSID;
     private SIndex _root;
 
     @Inject
-    public void inject_(TransManager tm, StoreCreator sc)
+    public void inject_(TransManager tm, StoreCreator sc, CfgRootSID cfgRootSID)
     {
         _tm = tm;
         _sc = sc;
+        _cfgRootSID = cfgRootSID;
     }
 
     @Override
@@ -49,7 +51,7 @@ public class SingleuserStores extends Stores
     {
         Trans t = _tm.begin_();
         try {
-            _sc.createRootStore_(t);
+            _sc.createStore_(_cfgRootSID.get(), SingleuserPathResolver.getRootStorePath_(), t);
             t.commit_();
         } catch (ExAlreadyExist e) {
             SystemUtil.fatal(e);

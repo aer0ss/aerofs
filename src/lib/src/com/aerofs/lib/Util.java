@@ -17,7 +17,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -55,7 +54,6 @@ import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.LogLevel;
@@ -936,13 +934,6 @@ public abstract class Util
         System.arraycopy(b1, 0, ret, 0, b1.length);
         System.arraycopy(b2, 0, ret, b1.length, b2.length);
         return ret;
-    }
-
-    public static SID getRootSID(String user)
-    {
-        MessageDigest md = SecUtil.newMessageDigestMD5();
-        md.update(Util.string2utf(user));
-        return new SID(md.digest(C.ROOT_SID_SALT));
     }
 
     public static void initDriver(String logFileName)

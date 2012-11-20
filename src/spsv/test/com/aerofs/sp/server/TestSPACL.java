@@ -24,7 +24,7 @@ import java.util.Set;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static com.aerofs.lib.Util.getRootSID;
+import static com.aerofs.lib.id.SID.rootSID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -147,14 +147,14 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // malicious user creates an acl for someone's root store
         // note that they don't put themselves in the list!
-        shareFolderThroughSP(TEST_USER_1_NAME, getRootSID(TEST_USER_2_NAME),
+        shareFolderThroughSP(TEST_USER_1_NAME, rootSID(TEST_USER_2_NAME),
                 TEST_USER_3_NAME, Role.OWNER);
 
         // clear this set out, because I don't care about what happens prior to the last call
         published.clear();
 
         // now the actual owner comes along and tries to do the same
-        shareFolderThroughSP(TEST_USER_2_NAME, getRootSID(TEST_USER_2_NAME), TEST_USER_2_NAME,
+        shareFolderThroughSP(TEST_USER_2_NAME, rootSID(TEST_USER_2_NAME), TEST_USER_2_NAME,
                 Role.OWNER);
 
         // we still expect both epoch of 1) the owner and 2) the person who was flushed to be

@@ -115,7 +115,7 @@ public class Cfg
         _absRootAnchor = rootAnchor.getCanonicalPath();
 
         _portbase = readPortbase();
-        _rootSID = Util.getRootSID(_user);
+        _rootSID = SID.rootSID(_user);
         _isSP = _did.equals(L.get().spDID());
         _useDM = !new File(rtRoot, C.NODM).exists();
         _useTCP = !new File(rtRoot, C.NOTCP).exists();
@@ -207,6 +207,8 @@ public class Cfg
 
     /**
      * @return the user's root store id
+     *
+     * TODO move this method into multiplicity.singleuser package
      */
     public static SID rootSID()
     {

@@ -19,16 +19,17 @@ import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 import java.sql.SQLException;
 import java.util.List;
 
 public class MultiuserPathResolver implements IPathResolver
 {
-
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
 
+    @Inject
     public MultiuserPathResolver(DirectoryService ds, IMapSIndex2SID sidx2sid,
             IMapSID2SIndex sid2sidx)
     {
@@ -77,5 +78,13 @@ public class MultiuserPathResolver implements IPathResolver
         }
 
         return new SOID(sidx, oid);
+    }
+
+    /**
+     * @return the path to the root folder of the specified store
+     */
+    public static Path getStorePath_(SID sid)
+    {
+        return new Path(sid.toStringFormal());
     }
 }

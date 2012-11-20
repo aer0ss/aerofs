@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.daemon.core.IMultiplicityEventHandlerSetter;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -28,6 +29,7 @@ public class SingleuserModule extends AbstractModule
 
         bind(IStores.class).to(SingleuserStores.class);
         bind(IPathResolver.class).to(SingleuserPathResolver.class);
+        bind(IMultiplicityEventHandlerSetter.class).to(SingleuserEventHandlerSetter.class);
 
         bind(IEmigrantCreator.class).to(EmigrantCreator.class);
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);

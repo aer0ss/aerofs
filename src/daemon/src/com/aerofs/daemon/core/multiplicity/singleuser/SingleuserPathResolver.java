@@ -96,4 +96,12 @@ public class SingleuserPathResolver implements IPathResolver
         OID oidAnchor = SID.storeSID2anchorOID(_sidx2sid.get_(sidx));
         return new SOID(sidxAnchor, oidAnchor);
     }
+
+    /**
+     * @return the path to the root folder of the root store
+     */
+    public static Path getRootStorePath_()
+    {
+        return new Path();
+    }
 }

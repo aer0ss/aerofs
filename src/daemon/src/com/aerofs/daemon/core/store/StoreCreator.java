@@ -9,7 +9,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgRootSID;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
@@ -26,15 +25,12 @@ public class StoreCreator
     private NativeVersionControl _nvc;
     private ImmigrantVersionControl _ivc;
     private IMetaDatabase _mdb;
-    private CfgRootSID _cfgRootSID;
     private IMapSID2SIndex _sid2sidx;
 
     @Inject
-    public void inject_(CfgRootSID cfgRootSID, MapSIndex2Store sidx2s, NativeVersionControl nvc,
-            ImmigrantVersionControl ivc, IMetaDatabase mdb, IMapSID2SIndex sid2sidx, IStores ss,
-            IPhysicalStorage ps)
+    public void inject_(NativeVersionControl nvc, ImmigrantVersionControl ivc, IMetaDatabase mdb,
+            IMapSID2SIndex sid2sidx, IStores ss, IPhysicalStorage ps)
     {
-        _cfgRootSID = cfgRootSID;
         _ss = ss;
         _nvc = nvc;
         _ivc = ivc;
@@ -51,7 +47,7 @@ public class StoreCreator
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) {
-            sidx = createStoreImpl_(sid, path, t);
+            sidx = createStore_(sid, path, t);
             assert _ss.getParents_(sidx).isEmpty();
         } else {
             assert !_ss.getParents_(sidx).isEmpty();
@@ -60,14 +56,10 @@ public class StoreCreator
     }
 
     /**
-     * Create the root store.
+     * Create a store.
+     * @param path the location where the
      */
-    public SIndex createRootStore_(Trans t) throws ExAlreadyExist, SQLException, IOException
-    {
-        return createStoreImpl_(_cfgRootSID.get(), new Path(), t);
-    }
-
-    private SIndex createStoreImpl_(SID sid, Path path, Trans t)
+    public SIndex createStore_(SID sid, Path path, Trans t)
             throws SQLException, ExAlreadyExist, IOException
     {
         // Note that during store creation, all in-memory data structures may not be fully set up

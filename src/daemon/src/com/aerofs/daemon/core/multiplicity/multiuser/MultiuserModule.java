@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
+import com.aerofs.daemon.core.IMultiplicityEventHandlerSetter;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -32,6 +33,7 @@ public class MultiuserModule extends AbstractModule
 
         bind(IStores.class).to(Stores.class);
         bind(IPathResolver.class).to(MultiuserPathResolver.class);
+        bind(IMultiplicityEventHandlerSetter.class).to(MultiuserEventHandlerSetter.class);
 
         bind(IEmigrantCreator.class).to(NullEmigrantCreator.class);
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);

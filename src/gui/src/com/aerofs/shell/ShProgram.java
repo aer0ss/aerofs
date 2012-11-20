@@ -12,6 +12,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.shell.restricted.CmdTestMultiuserJoinRootStore;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBPath;
@@ -124,6 +125,7 @@ public class ShProgram implements IProgram, ICallback<ShProgram>
         // restricted
         if (Cfg.staging() || Cfg.isSP()) {
             _s.addCommand_(new CmdDstat());
+            _s.addCommand_(new CmdTestMultiuserJoinRootStore());
         }
     }
 

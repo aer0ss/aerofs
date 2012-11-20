@@ -27,6 +27,7 @@ import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
 import com.aerofs.daemon.event.admin.EIRelocateRootAnchor;
+import com.aerofs.daemon.event.admin.EITestMultiuserJoinRootStore;
 import com.aerofs.daemon.event.admin.EITransportFlood;
 import com.aerofs.daemon.event.admin.EITransportFloodQuery;
 import com.aerofs.daemon.event.admin.EITransportPing;
@@ -567,6 +568,14 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> testLogSendDefect() throws Exception
     {
         SVClient.logSendDefectSync(false, "testing sv defect reporting", null, null);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> testMultiuserJoinRootStore(String user)
+            throws Exception
+    {
+        new EITestMultiuserJoinRootStore(user, Core.imce()).execute(PRIO);
         return createVoidReply();
     }
 }

@@ -1731,7 +1731,7 @@ public class SPDatabase
 
         l.info(requester + " cannot modify acl for s:" + sid);
 
-        if (!Util.getRootSID(requester).equals(sid)) {
+        if (!SID.rootSID(requester).equals(sid)) {
             throw new ExNoPerm(requester + " not owner"); // nope - just a regular store
         }
 

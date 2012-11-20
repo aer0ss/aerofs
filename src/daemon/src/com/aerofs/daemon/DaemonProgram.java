@@ -4,6 +4,7 @@ import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
+import com.aerofs.daemon.core.phy.linked.TestMultiuserLocalStorageModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
@@ -50,12 +51,17 @@ public class DaemonProgram implements IProgram
         Module storageModule = Cfg.db().getNullable(Key.S3_BUCKET_ID) == null ?
                 new LinkedStorageModule() : new S3Module();
 
-        Module sumuModule = Cfg.db().getBoolean(Key.MULTIUSER) ?
+        Module multiplicityModule = Cfg.db().getBoolean(Key.MULTIUSER) ?
                 new MultiuserModule() : new SingleuserModule();
+
+        // TODO (WW) remove this when LocalBlockStorage is implemented
+        if (Cfg.db().getBoolean(Key.MULTIUSER)) {
+            storageModule = new TestMultiuserLocalStorageModule();
+        }
 
         Stage stage = Stage.PRODUCTION;
 
-        Injector injCore = Guice.createInjector(stage, new CfgModule(), sumuModule,
+        Injector injCore = Guice.createInjector(stage, new CfgModule(), multiplicityModule,
                 new CoreModule(), storageModule);
 
         Injector injDaemon = Guice.createInjector(stage, new DaemonModule(injCore));
