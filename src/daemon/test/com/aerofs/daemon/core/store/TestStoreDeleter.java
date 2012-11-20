@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashSet;
 
-import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import org.junit.Before;
@@ -43,7 +42,7 @@ public class TestStoreDeleter extends AbstractTest
     @Mock IPhysicalStorage ps;
     @Mock IStores ss;
     @Mock IMapSIndex2SID sidx2sid;
-    @Mock StoreDeletionNotifier notifier;
+    @Mock StoreDeletionOperators _operators;
     @Mock Trans t;
 
     @InjectMocks StoreDeleter sd;
@@ -212,6 +211,6 @@ public class TestStoreDeleter extends AbstractTest
     private void verifyStoreDeletion(SIndex sidx) throws SQLException, IOException
     {
         verify(ps).deleteStore_(eq(sidx), any(Path.class), any(PhysicalOp.class), eq(t));
-        verify(notifier).notifyListeners_(sidx, t);
+        verify(_operators).runAll_(sidx, t);
     }
 }

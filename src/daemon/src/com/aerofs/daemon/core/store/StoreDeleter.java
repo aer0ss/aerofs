@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
 
-import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
@@ -35,17 +34,17 @@ public class StoreDeleter
     private final IStores _ss;
     private final DirectoryService _ds;
     private final IMapSIndex2SID _sidx2sid;
-    private final StoreDeletionNotifier _notifier;
+    private final StoreDeletionOperators _operators;
 
     @Inject
     public StoreDeleter(IPhysicalStorage ps, DirectoryService ds, IMapSIndex2SID sidx2sid,
-            IStores ss, StoreDeletionNotifier notifier)
+            IStores ss, StoreDeletionOperators operators)
     {
         _ss = ss;
         _ps = ps;
         _ds = ds;
         _sidx2sid = sidx2sid;
-        _notifier = notifier;
+        _operators = operators;
     }
 
     /**
@@ -172,9 +171,9 @@ public class StoreDeleter
         Util.l(this).debug("delete store " + sidx);
 
         // MJ thinks (but is unsure whether) we have to do physical store deletion first, before
-        // notifying other listeners of the deletion
+        // runing other deletion operators
         _ps.deleteStore_(sidx, path, op, t);
 
-        _notifier.notifyListeners_(sidx, t);
+        _operators.runAll_(sidx, t);
     }
 }

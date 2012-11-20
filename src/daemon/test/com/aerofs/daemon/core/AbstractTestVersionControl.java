@@ -2,7 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
 
-import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
     private AbstractVersionControl<E> vc;
     @Mock VersionAssistant va;
     @Mock TransLocalVersionAssistant tlva;
-    @Mock StoreDeletionNotifier sdn;
+    @Mock StoreDeletionOperators sdo;
 
     @Mock protected CfgLocalDID cfgLocalDID;
     @Mock protected Trans t;
@@ -66,7 +66,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
         when(vdb.getMaxTicks_(sidx, cfgLocalDID.get(), Tick.ZERO))
                 .thenReturn(iter);
 
-        vc.onStoreDeletion_(sidx, t);
+        vc.deleteStore_(sidx, t);
 
         InOrder inOrder = inOrder(vdb);
         inOrder.verify(vdb).addBackupTicks_(sidx, iter, t);
@@ -95,7 +95,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
         when(vdb.getMaxTicks_(sidx, cfgLocalDID.get(), Tick.ZERO))
                 .thenReturn(iter);
 
-        vc.onStoreDeletion_(sidx, t);
+        vc.deleteStore_(sidx, t);
         verify(va).storeDeleted_(sidx);
     }
 

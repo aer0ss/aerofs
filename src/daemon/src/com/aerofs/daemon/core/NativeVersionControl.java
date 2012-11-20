@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
 
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.id.SOID;
 import org.apache.log4j.Logger;
 
@@ -38,9 +39,9 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     @Inject
     public NativeVersionControl(INativeVersionDatabase nvdb, ICollectorSequenceDatabase csdb,
             MapAlias2Target alias2target, CfgLocalDID cfgLocalDID, TransLocalVersionAssistant tlva,
-            ActivityLog al, StoreDeletionNotifier sdn)
+            ActivityLog al, StoreDeletionOperators sdo)
     {
-        super(nvdb, cfgLocalDID, tlva, sdn);
+        super(nvdb, cfgLocalDID, tlva, sdo);
         _nvdb = nvdb;
         _csdb = csdb;
         _alias2target = alias2target;

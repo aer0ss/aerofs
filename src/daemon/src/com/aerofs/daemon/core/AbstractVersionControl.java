@@ -3,7 +3,8 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 import java.util.Set;
 
-import com.aerofs.daemon.core.store.IStoreDeletionListener;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.apache.log4j.Logger;
 
@@ -27,7 +28,7 @@ import javax.annotation.Nonnull;
  * @param <E> specializes AbstractVersionControl for Native or ImmigrantTickRows
  */
 public abstract class AbstractVersionControl<E extends AbstractTickRow>
-        implements IStoreDeletionListener
+        implements IStoreDeletionOperator
 {
     private static final Logger l = Util.l(AbstractVersionControl.class);
 
@@ -37,12 +38,12 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
     protected Tick _maxTick;
 
     protected AbstractVersionControl(IVersionDatabase<E> vdb, CfgLocalDID cfgLocalDID,
-            TransLocalVersionAssistant tlva, StoreDeletionNotifier storeDeletionNotifier)
+            TransLocalVersionAssistant tlva, StoreDeletionOperators sdo)
     {
         _vdb = vdb;
         _cfgLocalDID = cfgLocalDID;
         _tlva = tlva;
-        storeDeletionNotifier.addListener_(this);
+        sdo.add_(this);
     }
 
     public void init_() throws SQLException
@@ -80,7 +81,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
      * the ticks for *this* DID
      */
     @Override
-    public void onStoreDeletion_(SIndex sidx, Trans t) throws SQLException
+    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
     {
         l.debug("Delete store " + sidx + " and backup max ticks");
         IDBIterator<E> iter = getMaxTicks_(sidx, _cfgLocalDID.get(), Tick.ZERO);

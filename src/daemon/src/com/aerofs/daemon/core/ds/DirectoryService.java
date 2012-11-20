@@ -12,10 +12,11 @@ import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
-import com.aerofs.daemon.core.store.IStoreDeletionListener;
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -45,7 +46,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 
-public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
+public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 {
     private static final Logger l = Util.l(DirectoryService.class);
 
@@ -101,7 +102,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
             TransManager tm, IMapSID2SIndex sid2sidx, IgnoreList il, FrequentDefectSender fds,
-            StoreDeletionNotifier storeDeletionNotifier, IPathResolver pathResolver)
+            StoreDeletionOperators storeDeletionOperators, IPathResolver pathResolver)
     {
         _ps = ps;
         _mdb = mdb;
@@ -114,7 +115,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
 
-        storeDeletionNotifier.addListener_(this);
+        storeDeletionOperators.add_(this);
     }
 
     public Set<OID> getChildren_(SOID soid)
@@ -819,7 +820,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionListener
     }
 
     @Override
-    public void onStoreDeletion_(SIndex sidx, Trans t)
+    public void deleteStore_(SIndex sidx, Trans t)
             throws SQLException
     {
         _mdb.deleteOAsAndCAsForStore_(sidx, t);

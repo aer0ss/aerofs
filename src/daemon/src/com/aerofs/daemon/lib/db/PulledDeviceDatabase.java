@@ -4,7 +4,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.aerofs.daemon.core.store.IStoreDeletionListener;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
@@ -17,13 +18,13 @@ import static com.aerofs.daemon.core.CoreSchema.C_PD_SIDX;
 import static com.aerofs.daemon.core.CoreSchema.C_PD_DID;
 
 public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDeviceDatabase,
-        IStoreDeletionListener
+        IStoreDeletionOperator
 {
     @Inject
-    public PulledDeviceDatabase(CoreDBCW dbcw, StoreDeletionNotifier storeDeletionNotifier)
+    public PulledDeviceDatabase(CoreDBCW dbcw, StoreDeletionOperators storeDeletionOperators)
     {
         super(dbcw.get());
-        storeDeletionNotifier.addListener_(this);
+        storeDeletionOperators.add_(this);
     }
 
     private PreparedStatement _psPDContains;
@@ -78,13 +79,6 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
         }
     }
 
-    @Override
-    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
-    {
-        StoreDatabase.deleteRowsInTableForStore_(T_PD, C_PD_SIDX, sidx, c(), t);
-    }
-
-
     /**
      * If a store is re-admitted, we need to "forget" which DIDs have been
      * pulled for filters, so that files can be downloaded again in the
@@ -93,9 +87,8 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
      * as all files in the store are necessarily expelled.
      */
     @Override
-    public void onStoreDeletion_(SIndex sidx, Trans t)
-            throws SQLException
+    public void deleteStore_(SIndex sidx, Trans t) throws SQLException
     {
-        deleteStore_(sidx, t);
+        StoreDatabase.deleteRowsInTableForStore_(T_PD, C_PD_SIDX, sidx, c(), t);
     }
 }

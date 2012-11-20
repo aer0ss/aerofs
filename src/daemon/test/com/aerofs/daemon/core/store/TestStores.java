@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.store;
 
 import com.aerofs.daemon.core.device.DevicePresence;
-import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.StoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -29,7 +28,7 @@ public class TestStores extends AbstractTest
     @Mock DevicePresence dp;
     @Mock MapSIndex2DeviceBitMap sidx2dbm;
     @Mock Trans t;
-    @Mock StoreDeletionNotifier sdn;
+    @Mock StoreDeletionOperators sdo;
     @Mock Store store;
 
     IStoreDatabase sdb;
@@ -46,7 +45,7 @@ public class TestStores extends AbstractTest
         sdb = new StoreDatabase(dbcw.mockCoreDBCW());
 
         ss = new Stores();
-        ss.inject_(sdb, sm, sidx2s, sidx2dbm, dp, sdn);
+        ss.inject_(sdb, sm, sidx2s, sidx2dbm, dp, sdo);
 
         when(sidx2s.get_(sidx)).thenReturn(store);
     }
@@ -101,7 +100,7 @@ public class TestStores extends AbstractTest
     @Test(expected = AssertionError.class)
     public void shouldFailAssertionOnDeletingNonexisingStore() throws SQLException
     {
-        ss.onStoreDeletion_(sidx, t);
+        ss.deleteStore_(sidx, t);
     }
 
     @Test
@@ -109,7 +108,7 @@ public class TestStores extends AbstractTest
     {
         ss.add_(sidx, t);
 
-        ss.onStoreDeletion_(sidx, t);
+        ss.deleteStore_(sidx, t);
 
         InOrder inOrder = inOrder(dp, store);
         inOrder.verify(dp).beforeDeletingStore_(sidx);

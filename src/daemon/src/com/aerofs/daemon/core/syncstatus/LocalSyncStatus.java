@@ -9,7 +9,8 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
-import com.aerofs.daemon.core.store.IStoreDeletionListener;
+import com.aerofs.daemon.core.store.IStoreDeletionOperator;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
@@ -47,7 +48,7 @@ import org.apache.log4j.Logger;
  * Further processing for human-friendliness (using user and device names instead of IDs and taking
  * network status into account) is done in {@link HdGetSyncStatus}.
  */
-public class LocalSyncStatus implements IStoreDeletionListener
+public class LocalSyncStatus implements IStoreDeletionOperator
 {
     private final static Logger l = Util.l(LocalSyncStatus.class);
 
@@ -60,14 +61,14 @@ public class LocalSyncStatus implements IStoreDeletionListener
     @Inject
     public LocalSyncStatus(DirectoryService ds, ISyncStatusDatabase ssdb,
             MapSIndex2DeviceBitMap sidx2dbm, AggregateSyncStatus assc,
-            StoreDeletionNotifier storeDeletionNotifier, DescendantStores dss)
+            StoreDeletionOperators storeDeletionOperators, DescendantStores dss)
     {
         _ds = ds;
         _ssdb = ssdb;
         _sidx2dbm = sidx2dbm;
         _assc = assc;
         _dss = dss;
-        storeDeletionNotifier.addListener_(this);
+        storeDeletionOperators.add_(this);
     }
 
     /**
@@ -266,7 +267,7 @@ public class LocalSyncStatus implements IStoreDeletionListener
     }
 
     @Override
-    public void onStoreDeletion_(SIndex sidx, Trans t)
+    public void deleteStore_(SIndex sidx, Trans t)
             throws SQLException
     {
         _ssdb.deleteBootstrapSOIDsForStore_(sidx, t);

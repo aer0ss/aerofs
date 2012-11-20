@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
@@ -85,9 +85,9 @@ public class TestAliasing extends AbstractTest
     private final MapAlias2Target alias2target = new MapAlias2Target(aldb);
     private final ICollectorSequenceDatabase csdb = new CollectorSequenceDatabase(dbcw.mockCoreDBCW());
     private final IMapSIndex2SID sidx2sid = new SIDMap(sdb);
-    private final StoreDeletionNotifier sdn = mock(StoreDeletionNotifier.class);
+    private final StoreDeletionOperators sdo = mock(StoreDeletionOperators.class);
     private final NativeVersionControl nvc = new NativeVersionControl(nvdb, csdb, alias2target,
-            cfgLocalDID, tlva, alog, sdn);
+            cfgLocalDID, tlva, alog, sdo);
     private final PrefixVersionControl pvc = mock(PrefixVersionControl.class);
 
     private final IPhysicalStorage ps = mock(IPhysicalStorage.class);
@@ -133,7 +133,7 @@ public class TestAliasing extends AbstractTest
         DirectoryService realDS = new DirectoryService();
         SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, realDS, sidx2sid);
         realDS.inject_(ps, mdb, alias2target, tm, sid2sidx, null,
-                mock(FrequentDefectSender.class), sdn, pathResolver);
+                mock(FrequentDefectSender.class), sdo, pathResolver);
         ds = spy(realDS);
 
         AliasingMover almv = new AliasingMover(ds, hasher, om, pvc, nvc, bd);

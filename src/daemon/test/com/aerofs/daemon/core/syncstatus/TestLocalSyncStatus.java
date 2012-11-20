@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.store.IStoreDeletionListener.StoreDeletionNotifier;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
@@ -65,7 +65,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock AggregateSyncStatus assc;
     @Mock IgnoreList il;
     @Mock FrequentDefectSender fds;
-    @Mock StoreDeletionNotifier sdn;
+    @Mock StoreDeletionOperators sdo;
     @Mock SingleuserStores sss;
 
     InMemorySQLiteDBCW dbcw = new InMemorySQLiteDBCW();
@@ -94,8 +94,8 @@ public class TestLocalSyncStatus extends AbstractTest
 
         DirectoryService ds = new DirectoryService();
         SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sidx2sid);
-        ds.inject_(ps, mdb, alias2target, tm, sm, il, fds, sdn, pathResolver);
-        lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdn, dss);
+        ds.inject_(ps, mdb, alias2target, tm, sm, il, fds, sdo, pathResolver);
+        lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdo, dss);
     }
 
     @After

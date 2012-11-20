@@ -20,7 +20,7 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class Stores implements IStores, IStoreDeletionListener
+public class Stores implements IStores, IStoreDeletionOperator
 {
     protected IStoreDatabase _sdb;
     private SIDMap _sm;
@@ -32,7 +32,7 @@ public class Stores implements IStores, IStoreDeletionListener
 
     @Inject
     public void inject_(IStoreDatabase sdb, SIDMap sm, MapSIndex2Store sidx2s,
-            MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp, StoreDeletionNotifier sdn)
+            MapSIndex2DeviceBitMap sidx2dbm, DevicePresence dp, StoreDeletionOperators sdo)
     {
         _sdb = sdb;
         _sm = sm;
@@ -40,7 +40,7 @@ public class Stores implements IStores, IStoreDeletionListener
         _sidx2dbm = sidx2dbm;
         _dp = dp;
 
-        sdn.addListener_(this);
+        sdo.add_(this);
     }
 
     @Override
@@ -116,7 +116,7 @@ public class Stores implements IStores, IStoreDeletionListener
     }
 
     @Override
-    public void onStoreDeletion_(final SIndex sidx, Trans t) throws SQLException
+    public void deleteStore_(final SIndex sidx, Trans t) throws SQLException
     {
         assert _sdb.getChildren_(sidx).isEmpty();
 

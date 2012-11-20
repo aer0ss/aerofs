@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.migration;
 
 import com.aerofs.daemon.core.AbstractVersionControl;
+import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
@@ -32,7 +33,7 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
 
     @Inject
     public ImmigrantVersionControl(IImmigrantVersionDatabase ivdb, CfgLocalDID cfgLocalDID,
-            TransLocalVersionAssistant tlva, StoreDeletionNotifier sdn)
+            TransLocalVersionAssistant tlva, StoreDeletionOperators sdn)
     {
         super(ivdb, cfgLocalDID, tlva, sdn);
         _ivdb = ivdb;
