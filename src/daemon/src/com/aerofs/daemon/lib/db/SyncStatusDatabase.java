@@ -15,7 +15,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
@@ -26,7 +25,6 @@ import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
 /**
@@ -167,19 +165,12 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
     public static void fillBootstrapTable(Connection c) throws SQLException
     {
         // Only expelled objects and the root anchor have NULL FID
-        PreparedStatement ps = c.prepareStatement("select " + C_OA_SIDX + "," + C_OA_OID +
+        PreparedStatement ps = c.prepareStatement(
+                "insert into " + T_SSBS + "(" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
+                " select " + C_OA_SIDX + "," + C_OA_OID +
                 " from " + T_OA + " where " + C_OA_FID + " is not null");
 
-        ResultSet rs = ps.executeQuery();
-        List<SOID> soids = Lists.newArrayList();
-        try {
-            while (rs.next()) {
-                soids.add(new SOID(new SIndex(rs.getInt(1)), new OID(rs.getBytes(2))));
-            }
-        } finally {
-            rs.close();
-        }
-        addBootstrapSOIDs(c, soids);
+        ps.executeUpdate();
     }
 
     /**
@@ -201,8 +192,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
     }
 
     @Override
-    public void deleteBootstrapSOIDsForStore_(SIndex sidx, Trans t)
-            throws SQLException
+    public void deleteBootstrapSOIDsForStore_(SIndex sidx, Trans t) throws SQLException
     {
         StoreDatabase.deleteRowsInTableForStore_(T_SSBS, C_SSBS_SIDX, sidx, c(), t);
     }
