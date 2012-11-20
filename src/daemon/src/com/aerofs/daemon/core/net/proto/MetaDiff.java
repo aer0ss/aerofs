@@ -27,6 +27,8 @@ public class MetaDiff
     public int computeMetaDiff_(SOID soid, PBMeta meta, OID oidParent)
         throws SQLException
     {
+        // N.B. as this stands, if {@code soid} is locally aliased, then we will always report a
+        // metaDiff of PARENT | NAME. I'm not sure whether that is correct or not.
         OA oa = _ds.getOANullable_(soid);
 
         assert !Util.test(meta.getFlags(), OA.FLAGS_LOCAL);
@@ -39,6 +41,7 @@ public class MetaDiff
         } else {
             assert oa.type() == OA.Type.valueOf(meta.getType().ordinal());
 
+            // TODO (MJ) is it worth asserting that oidParent is not a locally aliased object?
             if (!oa.parent().equals(oidParent)) diff |= PARENT;
             if (!oa.name().equals(meta.getName())) diff |= NAME;
             if ((oa.flags() & ~OA.FLAGS_LOCAL) != meta.getFlags()) diff |= FLAGS;

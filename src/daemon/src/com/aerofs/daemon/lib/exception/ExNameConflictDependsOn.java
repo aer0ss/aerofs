@@ -25,7 +25,6 @@ public class ExNameConflictDependsOn extends ExDependsOn
     public final SOID _soidMsg;
     public final Set<OCID> _requested;
 
-
     public ExNameConflictDependsOn(OID oid, DID did, boolean ignoreError, OID parent,
             Version vRemote, PBMeta meta, SOID soidMsg, Set<OCID> requested)
     {
