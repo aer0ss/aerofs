@@ -2,8 +2,8 @@ package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
-import com.aerofs.daemon.core.sumu.multiuser.MultiuserModule;
-import com.aerofs.daemon.core.sumu.singleuser.SingleuserModule;
+import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
+import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;

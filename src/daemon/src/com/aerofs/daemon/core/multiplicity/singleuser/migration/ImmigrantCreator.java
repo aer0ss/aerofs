@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.sumu.singleuser.migration;
+package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;

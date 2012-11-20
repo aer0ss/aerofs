@@ -1,4 +1,4 @@
-package com.aerofs.daemon.core.sumu.singleuser.migration;
+package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
-import com.aerofs.daemon.core.sumu.singleuser.SingleuserStores;
+import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
