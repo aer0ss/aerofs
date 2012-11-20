@@ -103,7 +103,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 
         OA oa = _ds.getOA_(soid);
         if (oa.isExpelled()) throw new ExExpelled(ev._dest.toString());
-        if (oa.isDirOrAnchor()) throw new ExNotFile(ev._dest.toString());
+        if (oa.isDirOrAnchor()) throw new ExNotFile(ev._dest);
 
         boolean wasPresent = (oa.caMaster() != null);
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
