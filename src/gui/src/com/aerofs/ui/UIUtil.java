@@ -5,6 +5,7 @@ import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.cfg.Cfg;
@@ -148,7 +149,8 @@ public class UIUtil
                 ritual.joinSharedFolder(Cfg.user(), sid.toPB(), path.toPB());
                 break;
             } catch (ExAlreadyExist e) {
-                path = new Path(Util.newNextFileName(path.last()));
+                FileName fn = FileName.fromBaseName(path.last());
+                path = new Path(Util.nextName(fn.base, fn.extension));
             }
         }
 

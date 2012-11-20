@@ -31,6 +31,7 @@ import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
@@ -480,7 +481,8 @@ public class ReceiveAndApplyUpdate
             String newName = L.get().product() + " temporary folder - do not remove";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
-                newName = Util.newNextFileName(newName);
+                FileName fn = FileName.fromBaseName(newName);
+                newName = Util.nextName(fn.base, fn.extension);
             }
 
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);

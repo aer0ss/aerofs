@@ -185,7 +185,7 @@ class SPService implements ISPService
                     _db.setDeviceInfo(new DID(deviceId), deviceName);
                     break;
                 } catch (ExDeviceNameAlreadyExist e) {
-                    deviceName = Util.newDeviceName(deviceName);
+                    deviceName = Util.nextName(deviceName, "");
                 }
             }
         }
@@ -464,7 +464,7 @@ class SPService implements ISPService
                     _db.addDevice(new DeviceRow(did, deviceName, user));
                     break;
                 } catch (ExDeviceNameAlreadyExist e) {
-                    deviceName = Util.newDeviceName(deviceName);
+                    deviceName = Util.nextName(deviceName, "");
                 }
             }
 

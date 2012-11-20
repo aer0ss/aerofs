@@ -27,6 +27,7 @@ import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.daemon.lib.db.ver.VersionAssistant;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Tick;
@@ -461,7 +462,8 @@ public class TestAliasing extends AbstractTest
         Version vRemote = vKMLTargetMeta;
 
         when(ds.resolveNullable_(new SOID(sidx, oidParent))).thenReturn(parentPath);
-        when(ds.resolveNullable_(parentPath.append(Util.newNextFileName(conflictFileName)))).thenReturn(null);
+        FileName fn = FileName.fromBaseName(conflictFileName);
+        when(ds.resolveNullable_(parentPath.append(Util.nextName(fn.base, fn.extension)))).thenReturn(null);
 
         mockObjectCreationAndMovementMethods();
 
@@ -537,7 +539,8 @@ public class TestAliasing extends AbstractTest
         Version vRemote = vKMLAliasMeta;
 
         doReturn(parentPath).when(ds).resolveNullable_(new SOID(sidx, oidParent));
-        doReturn(null).when(ds).resolveNullable_(parentPath.append(Util.newNextFileName(conflictFileName)));
+        FileName fn = FileName.fromBaseName(conflictFileName);
+        doReturn(null).when(ds).resolveNullable_(parentPath.append(Util.nextName(fn.base, fn.extension)));
 
         mockObjectCreationAndMovementMethods();
 

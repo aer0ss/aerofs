@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
@@ -400,7 +401,8 @@ public class MightCreate
         // generate a new name for the logical object
         String name = oa.name();
         while (true) {
-            name = Util.newNextFileName(name);
+            FileName fn = FileName.fromBaseName(name);
+            name = Util.nextName(fn.base, fn.extension);
             // avoid names that are taken by either logical or physical objects
             String pParent = _factFile.create(pc._absPath).getParent();
             InjectableFile f = _factFile.create(pParent, name);

@@ -29,6 +29,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePairs;
@@ -230,7 +231,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         assert !path.isEmpty(); // the caller guarantees this
         Path pathTemp = path;
         do {
-            pathTemp = path.removeLast().append(Util.newNextFileName(pathTemp.last()));
+            FileName fn = FileName.fromBaseName(pathTemp.last());
+            pathTemp = path.removeLast().append(Util.nextName(fn.base, fn.extension));
         } while (_ds.resolveNullable_(pathTemp) != null);
         _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, false, t);
 

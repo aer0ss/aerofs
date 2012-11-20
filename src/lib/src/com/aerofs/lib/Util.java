@@ -774,53 +774,18 @@ public abstract class Util
         Pattern.compile("(.*)\\(([0-9]+)\\)$");
 
     /**
-     * Use to generate the next device name by incrementing the version number of name.
-     * Given a name, it returns "<name>  (<next_ver>)"
+     * Generate the next name for the object by incrementing its version number.
+     * e.g.: given ("macbook pro", "") -> "macbook pro (2)"
+     *       given ("abc", ".def") -> "abc (2).def"
      *
-     * e.g.: given "macbook pro" -> "macbook pro (2)"
-     *       given "myponey (3)" -> "myponey (4)"
-     *
-     * @param name String that needs to be incremented.
+     * @param base String before the version number.
+     * @param extension String after the version number.
+     * @return String of the format "<base>  (<next_ver>)<extension>"
      */
-    public static String newDeviceName(String name)
+    public static String nextName(String base, String extension)
     {
-        Matcher m = NEXT_NAME_PATTERN.matcher(name);
-        String prefix;
-        int num;
-        if (m.find()) {
-            prefix = m.group(1);
-            try {
-                num = Integer.valueOf(m.group(2)) + 1;
-            } catch (NumberFormatException e) {
-                prefix  = name + " ";
-                num = 2;
-            }
-        } else {
-            prefix  = name + " ";
-            num = 2;
-        }
-        return prefix + "(" + num + ")";
-    }
-
-    /**
-     * given "abc.def", returns "abc (2).def";
-     * given "abc (5).def", returns "abc (6).def"
-     * given ".def", returns ".def (2)"
-     *
-     * N.B. because AeroFS object names are case insensitive, caller must use
-     * case insensitive comparison
-     *
-     * @param name the string to be inserted between the main part of
-     *   file name and the index number
-     *
-     * TODO avoid path length overflow
-     */
-    public static String newNextFileName(String name)
-    {
-        FileName file = FileName.fromBaseName(name);
-
         // find the pattern of "(N)" at the end of the main part
-        Matcher m = NEXT_NAME_PATTERN.matcher(file.base);
+        Matcher m = NEXT_NAME_PATTERN.matcher(base);
         String prefix;
         int num;
         if (m.find()) {
@@ -830,15 +795,15 @@ public abstract class Util
             } catch (NumberFormatException e) {
                 // If the number can't be parsed because it's too large, it's probably not us who
                 // generated that number. In this case, add a new number after it.
-                prefix = file.base + " ";
+                prefix = base + " ";
                 num = 2;
             }
         } else {
-            prefix = file.base + " ";
+            prefix = base + " ";
             num = 2;
         }
 
-        return prefix + '(' + num + ')' + file.extension;
+        return prefix + '(' + num + ')' + extension;
     }
 
     private static final Charset CHARSET_UTF = Charset.forName("UTF-8");

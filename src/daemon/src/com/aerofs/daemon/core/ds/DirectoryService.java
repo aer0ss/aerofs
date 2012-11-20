@@ -24,6 +24,7 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
@@ -738,7 +739,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
             throws SQLException, ExNotFound
     {
         do {
-            name = Util.newNextFileName(name);
+            FileName fn = FileName.fromBaseName(name);
+            name = Util.nextName(fn.base, fn.extension);
         } while (resolveNullable_(pParent.append(name)) != null);
         return name;
     }
