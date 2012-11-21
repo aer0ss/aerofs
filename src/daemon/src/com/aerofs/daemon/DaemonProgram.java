@@ -1,7 +1,10 @@
 package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.CoreModule;
-import com.aerofs.daemon.core.phy.block.local.LocalStorageModule;
+import com.aerofs.daemon.core.phy.block.BlockStorageModules;
+import com.aerofs.daemon.core.phy.block.cache.CacheBackendModule;
+import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
+import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
@@ -12,7 +15,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgModule;
-import com.aerofs.s3.S3Module;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
 import com.google.inject.Guice;
@@ -52,13 +54,16 @@ public class DaemonProgram implements IProgram
         Module multiplicityModule;
         if (Cfg.db().getBoolean(Key.MULTIUSER)) {
             multiplicityModule = new MultiuserModule();
-            storageModule = new LocalStorageModule();
+            storageModule = BlockStorageModules.storage(new LocalBackendModule());
         } else {
             multiplicityModule = new SingleuserModule();
             storageModule = new LinkedStorageModule();
         }
 
-        if (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null) storageModule = new S3Module();
+        if (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null) {
+            storageModule = BlockStorageModules.proxy(new S3BackendModule(),
+                    new CacheBackendModule());
+        }
 
         Stage stage = Stage.PRODUCTION;
 

@@ -57,7 +57,7 @@ public class CoreModule extends AbstractModule
 
         binder().disableCircularProxies();
 
-        GuiceUtil.multiBind(binder(), ICoreEventHandlerRegistrar.class,
+        GuiceUtil.multibind(binder(), ICoreEventHandlerRegistrar.class,
                 CoreEventHandlerRegistrar.class);
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);

@@ -16,7 +16,7 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig;
 import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
 
-import static com.aerofs.lib.guice.GuiceUtil.multiBind;
+import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class S3Module extends AbstractModule
 {
@@ -27,7 +27,7 @@ public class S3Module extends AbstractModule
         bind(ILinker.class).to(ILinker.NullLinker.class).in(Scopes.SINGLETON);
 
         // make sure the storage-specific schema is created on setup
-        multiBind(binder(), ISchema.class, S3Schema.class);
+        multibind(binder(), ISchema.class, S3Schema.class);
     }
 
     @Provides

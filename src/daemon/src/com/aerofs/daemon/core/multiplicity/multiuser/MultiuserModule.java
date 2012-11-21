@@ -20,7 +20,7 @@ import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 
-import static com.aerofs.lib.guice.GuiceUtil.multiBind;
+import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class MultiuserModule extends AbstractModule
 {
@@ -35,7 +35,7 @@ public class MultiuserModule extends AbstractModule
 
         bind(IStores.class).to(Stores.class);
         bind(IPathResolver.class).to(MultiuserPathResolver.class);
-        multiBind(binder(), ICoreEventHandlerRegistrar.class,
+        multibind(binder(), ICoreEventHandlerRegistrar.class,
                 MultiuserCoreEventHandlerRegistrar.class);
 
         bind(IEmigrantCreator.class).to(NullEmigrantCreator.class);

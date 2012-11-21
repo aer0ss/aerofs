@@ -4,8 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.s3;
 
-import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.daemon.core.phy.block.cache.CachedStorageModule;
+import com.aerofs.daemon.core.phy.block.BlockStorageModules.AbstractBackendModule;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig;
 import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
@@ -16,12 +15,12 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
-public class S3StorageModule extends CachedStorageModule
+public class S3BackendModule extends AbstractBackendModule
 {
     @Override
-    protected void configureBackend()
+    protected void configure()
     {
-        bind(IBlockStorageBackend.class).to(S3Backend.class).in(Scopes.SINGLETON);
+        bindBackend().to(S3Backend.class).in(Scopes.SINGLETON);
     }
 
     @Provides

@@ -116,14 +116,14 @@ public class BlockStorageSchema implements ISchema
         String chunkType = " binary(" + ContentHash.UNIT_LENGTH + ") ";
         String chunkListType = " blob ";
 
-        s.execute("create table if not exists " + T_FileInfo + "( " +
+        s.execute("create table " + T_FileInfo + "( " +
                 C_FileInfo_Index + _dbcw.longType() + " not null primary key " +
                 _dbcw.autoIncrement() + ", " +
                 C_FileInfo_InternalName +  _dbcw.nameType() + " unique not null ) " +
                 _dbcw.charSet());
         s.executeUpdate(createIndex(T_FileInfo, 0, C_FileInfo_InternalName));
 
-        s.execute("create table if not exists " + T_FileCurr + "( " +
+        s.execute("create table " + T_FileCurr + "( " +
                 C_FileCurr_Index + _dbcw.longType() + " not null primary key, " +
                 C_FileCurr_Ver + _dbcw.longType() + " not null, " +
                 C_FileCurr_Len + _dbcw.longType() + " not null, " +
@@ -131,7 +131,7 @@ public class BlockStorageSchema implements ISchema
                 C_FileCurr_Chunks + chunkListType + " not null ) " +
                 _dbcw.charSet());
 
-        s.execute("create table if not exists " + T_FileHist + "( " +
+        s.execute("create table " + T_FileHist + "( " +
                 C_FileHist_Index + _dbcw.longType() + " not null, " +
                 C_FileHist_Ver + _dbcw.longType() + " not null, " +
                 C_FileHist_Parent + _dbcw.longType() + " not null, "  +
@@ -143,7 +143,7 @@ public class BlockStorageSchema implements ISchema
                 _dbcw.charSet());
         s.executeUpdate(createIndex(T_FileHist, 0, C_FileHist_Parent, C_FileHist_RealName));
 
-        s.execute("create table if not exists " + T_DirHist + "( " +
+        s.execute("create table " + T_DirHist + "( " +
                 C_DirHist_Index + _dbcw.longType() + " not null primary key " +
                 _dbcw.autoIncrement() + ", " +
                 C_DirHist_Parent + _dbcw.longType() + " not null, " +
@@ -151,7 +151,7 @@ public class BlockStorageSchema implements ISchema
                 _dbcw.charSet());
         s.executeUpdate(createUniqueIndex(T_DirHist, 0, C_DirHist_Parent, C_DirHist_Name));
 
-        s.execute("create table if not exists " + T_BlockCount + "( " +
+        s.execute("create table " + T_BlockCount + "( " +
                 C_BlockCount_Hash + chunkType + " not null primary key," +
                 C_BlockCount_Len + _dbcw.longType() + " not null," +
                 C_BlockCount_State + " integer not null," +

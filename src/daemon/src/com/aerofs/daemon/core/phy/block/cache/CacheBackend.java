@@ -22,8 +22,10 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
+import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.inject.Named;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,6 +47,8 @@ import java.util.concurrent.FutureTask;
  */
 public class CacheBackend implements IBlockStorageBackend
 {
+    static final String TARGET_ANNOTATION = "CacheTarget";
+
     private final static Logger l = Util.l(CacheBackend.class);
 
     private static int MAX_CACHE_SIZE = 1 * C.KB;
@@ -100,9 +104,9 @@ public class CacheBackend implements IBlockStorageBackend
 
     private final SpaceFreer _spaceFreer = new SpaceFreer();
 
-
-    CacheBackend(CfgAbsAuxRoot absAuxRoot, TransManager tm, CoreScheduler sched, CacheDatabase cdb,
-            IBlockStorageBackend bsb)
+    @Inject
+    public CacheBackend(CfgAbsAuxRoot absAuxRoot, TransManager tm, CoreScheduler sched,
+            CacheDatabase cdb, @Named(TARGET_ANNOTATION) IBlockStorageBackend bsb)
     {
         _absAuxRoot = absAuxRoot;
         _tm = tm;

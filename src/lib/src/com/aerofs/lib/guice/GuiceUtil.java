@@ -47,7 +47,7 @@ public class GuiceUtil
      * Multi-bind {@code impl} to {@code type}. Use this method in AbstractModule.configure(), and
      * pass AbstarctModule.binder() as the parameter {@code binder}.
      */
-    public static <T> void multiBind(Binder binder, Class<T> type, Class<? extends T> impl)
+    public static <T> void multibind(Binder binder, Class<T> type, Class<? extends T> impl)
     {
         Multibinder.newSetBinder(binder, type).addBinding().to(impl);
     }
