@@ -42,7 +42,6 @@
 		<string>$JAVAROOT/aerofs.jar</string>
 		<key>VMOptions</key>
 		<array>
-		<string>-d64</string>
 		<string>-ea</string>
 		<string>-Xmx64m</string>
 		</array>
