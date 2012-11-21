@@ -49,19 +49,13 @@ public class Main {
 
         if (rtRoot == null) rtRoot = C.DEFAULT_RTROOT;
 
-        String app = null;
         String invite = null;
-        if (cmdarg == null) {
-            app = C.GUI_NAME;
-        } else if (cmdarg.equals(C.GUI_NAME)) {
-            app = C.GUI_NAME;
-        } else {
-            app = "gui";
+        if (cmdarg != null && !cmdarg.equals(C.GUI_NAME)) {
             invite = cmdarg;
         }
 
-        if (invite == null) mainImpl(rtRoot, app);
-        else mainImpl(rtRoot, app, invite);
+        if (invite == null) mainImpl(rtRoot, C.GUI_NAME);
+        else mainImpl(rtRoot, C.GUI_NAME, invite);
 
         return 0;
     }
