@@ -12,7 +12,8 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.google.inject.Provider;
 import com.google.inject.Scopes;
-import com.google.inject.multibindings.Multibinder;
+
+import static com.aerofs.lib.guice.GuiceUtil.multiBind;
 
 /**
  * To enable caching in any backend simply make the backend Module inherit from this class instead
@@ -26,7 +27,7 @@ public abstract class CachedStorageModule extends AbstractBlockStorageModule
         super.configure();
 
         // make sure the storage-specific schema is created on setup
-        Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(CacheSchema.class);
+        multiBind(binder(), ISchema.class, CacheSchema.class);
 
         // override backend binding with a provider that wraps a cache around the actual backend
         bind(IBlockStorageBackend.class)

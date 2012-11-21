@@ -42,6 +42,7 @@ import com.aerofs.daemon.lib.db.ver.IPrefixVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.NativeVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.PrefixVersionDatabase;
+import com.aerofs.lib.guice.GuiceUtil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.internal.Scoping;
@@ -55,6 +56,9 @@ public class CoreModule extends AbstractModule
         bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
 
         binder().disableCircularProxies();
+
+        GuiceUtil.multiBind(binder(), ICoreEventHandlerRegistrar.class,
+                CoreEventHandlerRegistrar.class);
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);

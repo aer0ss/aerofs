@@ -10,7 +10,8 @@ import com.aerofs.daemon.core.linker.ILinker.NullLinker;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
-import com.google.inject.multibindings.Multibinder;
+
+import static com.aerofs.lib.guice.GuiceUtil.multiBind;
 
 /**
  * Base class for block-based storage modules
@@ -26,7 +27,7 @@ public abstract class AbstractBlockStorageModule extends AbstractModule
         bind(ILinker.class).to(NullLinker.class).in(Scopes.SINGLETON);
 
         // make sure the storage-specific schema is created on setup
-        Multibinder.newSetBinder(binder(), ISchema.class).addBinding().to(BlockStorageSchema.class);
+        multiBind(binder(), ISchema.class, BlockStorageSchema.class);
 
         configureBackend();
     }

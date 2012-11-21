@@ -46,7 +46,7 @@ public class DaemonProgram implements IProgram
 
     private Daemon inject_()
     {
-        ///GuiceLogging.enable();
+        ///GuiceUtil.enableLogging();
 
         Module storageModule;
         Module multiplicityModule;

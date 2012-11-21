@@ -31,7 +31,6 @@ import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
-import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;

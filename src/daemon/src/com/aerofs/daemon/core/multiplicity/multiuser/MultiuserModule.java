@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
-import com.aerofs.daemon.core.IMultiplicityEventHandlerSetter;
+import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -20,6 +20,8 @@ import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 
+import static com.aerofs.lib.guice.GuiceUtil.multiBind;
+
 public class MultiuserModule extends AbstractModule
 {
     @Override
@@ -33,7 +35,8 @@ public class MultiuserModule extends AbstractModule
 
         bind(IStores.class).to(Stores.class);
         bind(IPathResolver.class).to(MultiuserPathResolver.class);
-        bind(IMultiplicityEventHandlerSetter.class).to(MultiuserEventHandlerSetter.class);
+        multiBind(binder(), ICoreEventHandlerRegistrar.class,
+                MultiuserCoreEventHandlerRegistrar.class);
 
         bind(IEmigrantCreator.class).to(NullEmigrantCreator.class);
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);

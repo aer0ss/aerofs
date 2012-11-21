@@ -5,25 +5,24 @@
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.daemon.core.CoreEventDispatcher;
-import com.aerofs.daemon.core.IMultiplicityEventHandlerSetter;
+import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.event.admin.EITestMultiuserJoinRootStore;
 
 import javax.inject.Inject;
 
-class MultiuserEventHandlerSetter implements IMultiplicityEventHandlerSetter
+class MultiuserCoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
 {
     private final HdTestMultiuserJoinRootStore _hdTestMultiuserJoinRootStore;
 
     @Inject
-    MultiuserEventHandlerSetter(HdTestMultiuserJoinRootStore hdTestMultiuserJoinRootStore)
+    MultiuserCoreEventHandlerRegistrar(HdTestMultiuserJoinRootStore hdTestMultiuserJoinRootStore)
     {
         _hdTestMultiuserJoinRootStore = hdTestMultiuserJoinRootStore;
     }
 
     @Override
-    public void setHandlers_(CoreEventDispatcher dispatcher)
+    public void registerHandlers_(CoreEventDispatcher disp)
     {
-        dispatcher
-                .setHandler_(EITestMultiuserJoinRootStore.class, _hdTestMultiuserJoinRootStore);
+        disp.setHandler_(EITestMultiuserJoinRootStore.class, _hdTestMultiuserJoinRootStore);
     }
 }

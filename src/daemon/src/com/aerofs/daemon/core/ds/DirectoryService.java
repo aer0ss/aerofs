@@ -24,7 +24,6 @@ import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.db.IDBIterator;

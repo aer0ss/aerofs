@@ -5,7 +5,6 @@ import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.l.L;
 import com.aerofs.lib.*;
-import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.cfg.Cfg;
