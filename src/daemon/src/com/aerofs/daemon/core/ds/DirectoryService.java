@@ -739,8 +739,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
             throws SQLException, ExNotFound
     {
         do {
-            FileName fn = FileName.fromBaseName(name);
-            name = Util.nextName(fn.base, fn.extension);
+            name = Util.nextFileName(name);
         } while (resolveNullable_(pParent.append(name)) != null);
         return name;
     }

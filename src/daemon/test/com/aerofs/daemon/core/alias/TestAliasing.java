@@ -462,8 +462,7 @@ public class TestAliasing extends AbstractTest
         Version vRemote = vKMLTargetMeta;
 
         when(ds.resolveNullable_(new SOID(sidx, oidParent))).thenReturn(parentPath);
-        FileName fn = FileName.fromBaseName(conflictFileName);
-        when(ds.resolveNullable_(parentPath.append(Util.nextName(fn.base, fn.extension)))).thenReturn(null);
+        when(ds.resolveNullable_(parentPath.append(Util.nextFileName(conflictFileName)))).thenReturn(null);
 
         mockObjectCreationAndMovementMethods();
 
@@ -539,8 +538,7 @@ public class TestAliasing extends AbstractTest
         Version vRemote = vKMLAliasMeta;
 
         doReturn(parentPath).when(ds).resolveNullable_(new SOID(sidx, oidParent));
-        FileName fn = FileName.fromBaseName(conflictFileName);
-        doReturn(null).when(ds).resolveNullable_(parentPath.append(Util.nextName(fn.base, fn.extension)));
+        doReturn(null).when(ds).resolveNullable_(parentPath.append(Util.nextFileName(conflictFileName)));
 
         mockObjectCreationAndMovementMethods();
 

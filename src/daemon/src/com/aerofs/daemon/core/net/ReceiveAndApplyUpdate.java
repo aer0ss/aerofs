@@ -481,8 +481,7 @@ public class ReceiveAndApplyUpdate
             String newName = L.get().product() + " temporary folder - do not remove";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
-                FileName fn = FileName.fromBaseName(newName);
-                newName = Util.nextName(fn.base, fn.extension);
+                newName = Util.nextFileName(newName);
             }
 
             _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);

@@ -278,8 +278,7 @@ public class HistoryModel
 
         File dst = new File(Util.join(absPath, restoredName));
         while (dst.exists()) {
-            fn = FileName.fromBaseName(restoredName);
-            restoredName = Util.nextName(fn.base, fn.extension);
+            restoredName = Util.nextFileName(restoredName);
             dst = new File(Util.join(absPath, restoredName));
         }
         return dst;

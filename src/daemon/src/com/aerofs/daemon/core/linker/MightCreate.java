@@ -401,8 +401,7 @@ public class MightCreate
         // generate a new name for the logical object
         String name = oa.name();
         while (true) {
-            FileName fn = FileName.fromBaseName(name);
-            name = Util.nextName(fn.base, fn.extension);
+            name = Util.nextFileName(name);
             // avoid names that are taken by either logical or physical objects
             String pParent = _factFile.create(pc._absPath).getParent();
             InjectableFile f = _factFile.create(pParent, name);

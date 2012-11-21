@@ -231,8 +231,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         assert !path.isEmpty(); // the caller guarantees this
         Path pathTemp = path;
         do {
-            FileName fn = FileName.fromBaseName(pathTemp.last());
-            pathTemp = path.removeLast().append(Util.nextName(fn.base, fn.extension));
+            pathTemp = path.removeLast().append(Util.nextFileName(pathTemp.last()));
         } while (_ds.resolveNullable_(pathTemp) != null);
         _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, false, t);
 

@@ -149,8 +149,7 @@ public class UIUtil
                 ritual.joinSharedFolder(Cfg.user(), sid.toPB(), path.toPB());
                 break;
             } catch (ExAlreadyExist e) {
-                FileName fn = FileName.fromBaseName(path.last());
-                path = new Path(Util.nextName(fn.base, fn.extension));
+                path = new Path(Util.nextFileName(path.last()));
             }
         }
 

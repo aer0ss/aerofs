@@ -806,6 +806,16 @@ public abstract class Util
         return prefix + '(' + num + ')' + extension;
     }
 
+    /**
+     * Split the file name into base and extension based on the position of the dot character,
+     * and then return nextName(base, extension).
+     */
+    public static String nextFileName(String fileName)
+    {
+        FileName fn = FileName.fromBaseName(fileName);
+        return nextName(fn.base, fn.extension);
+    }
+
     private static final Charset CHARSET_UTF = Charset.forName("UTF-8");
 
     public static byte[] string2utf(String str)
