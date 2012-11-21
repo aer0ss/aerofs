@@ -80,7 +80,7 @@ public abstract class AbstractChunker
             // read a chunk of input into an in-memory buffer, performs any backend-specific
             // encoding and metadata computation (hash, length, ...) required for actual write
             Block block = new Block();
-            ByteArrayOutputStream d = new ByteArrayOutputStream((int)Param.FILE_BLOCK_SIZE);
+            ByteArrayOutputStream d = new ByteArrayOutputStream(Param.FILE_BLOCK_SIZE);
             OutputStream out = wrapOutputStream(block, d);
             try {
                 byte[] buffer = new byte[Param.FILE_BUF_SIZE];
