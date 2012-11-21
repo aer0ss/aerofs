@@ -162,9 +162,11 @@ public abstract class FileUtil
         return deleted;
     }
 
-    public static void deleteRecursively(File file) throws IOException {
-        if (file.isDirectory()) {
-            for (File child : file.listFiles()) {
+    public static void deleteRecursively(File file) throws IOException
+    {
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
                 deleteRecursively(child);
             }
         }

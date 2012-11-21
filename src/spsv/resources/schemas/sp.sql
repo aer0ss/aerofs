@@ -33,7 +33,6 @@ CREATE TABLE `sp_user` (
   -- TODO rename u_id to u_email and most other 'ids' to 'email'
   `u_id` VARCHAR(320) NOT NULL, -- 320 is the maximum email address length
   `u_hashed_passwd` CHAR(44) NOT NULL,
-  `u_finalized` BOOLEAN NOT NULL DEFAULT FALSE, -- whether the user completed setup
   `u_verified` BOOLEAN NOT NULL DEFAULT FALSE, -- whether the email address is verified
   `u_id_created_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `u_storeless_invites_quota` INTEGER NOT NULL DEFAULT 2, -- this should be consistent with the value set in CfgDatabase. TODO let Java code set the column's value

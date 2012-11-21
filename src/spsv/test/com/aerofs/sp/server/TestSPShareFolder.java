@@ -97,7 +97,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
         // add user 4 to db but don't verify their account
         _transaction.begin();
         db.addUser(new User(TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_CRED,
-                true, false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
+                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
         _transaction.commit();
 
         shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_4_NAME, Role.OWNER);

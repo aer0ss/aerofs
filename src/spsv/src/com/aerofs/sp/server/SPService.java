@@ -151,16 +151,16 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User ur = _db.getUser(_sessionUser.getUser());
-        if (ur == null) throw new ExNotFound();
+        User user = _db.getUserNullable(_sessionUser.getUser());
+        if (user == null) throw new ExNotFound();
 
         DeviceRow dr = _db.getDevice(new DID(deviceId));
 
         _transaction.commit();
 
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
-                .setFirstName(ur._firstName)
-                .setLastName(ur._lastName)
+                .setFirstName(user._firstName)
+                .setLastName(user._lastName)
                 .setDeviceName(dr == null ? "" : dr.getName())
                 .build();
 
@@ -880,9 +880,8 @@ class SPService implements ISPService
         // - normalized userID
         // - email verification marked as false
         // - authorization set to lowest USER level
-        // - finalized state set to true
         String normalizedUserId = User.normalizeUserId(userId);
-        User user = new User(normalizedUserId, firstName, lastName, credentials, true, false,
+        User user = new User(normalizedUserId, firstName, lastName, credentials, false,
                 orgId, AuthorizationLevel.USER);
 
         l.info(user + " attempt signup");

@@ -34,7 +34,6 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
     @Spy SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(db,
             _userManagement, _organizationManagement, emailerFactory);
 
-
     protected static final String TEST_USER_1_NAME = "USER_1";
     protected static final byte[] TEST_USER_1_CRED = "CREDENTIALS".getBytes();
 
@@ -64,7 +63,6 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
         when(emailerFactory.createFolderInvitation(anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).thenReturn(new InvitationEmailer());
 
-        final boolean finalized = true;
         final boolean verified = false; // This field doesn't matter.
         String orgId = C.DEFAULT_ORGANIZATION;
         AuthorizationLevel level = AuthorizationLevel.USER;
@@ -72,13 +70,13 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
         // Add all the users to the db.
         _transaction.begin();
         db.addUser(new User(TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_CRED,
-                finalized, verified, orgId, level));
+                verified, orgId, level));
         db.markUserVerified(TEST_USER_1_NAME);
         db.addUser(new User(TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_CRED,
-                finalized, verified, orgId, level));
+                verified, orgId, level));
         db.markUserVerified(TEST_USER_2_NAME);
         db.addUser(new User(TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_CRED,
-                finalized, verified, orgId, level));
+                verified, orgId, level));
         db.markUserVerified(TEST_USER_3_NAME);
         _transaction.commit();
     }

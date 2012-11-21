@@ -13,8 +13,6 @@ final class SPSchema
     static final String C_USER_ORG_ID                   = "u_org_id";
     static final String C_USER_AUTHORIZATION_LEVEL      = "u_auth_level";
     static final String C_USER_CREDS                    = "u_hashed_passwd";
-    static final String C_USER_PASSWORD_RESET_TOKEN     = "u_passwd_reset_token";
-    static final String C_FINALIZED                     = "u_finalized";
     static final String C_USER_VERIFIED                 = "u_verified";
     static final String C_USER_STORELESS_INVITES_QUOTA  = "u_storeless_invites_quota";
     static final String C_USER_ACL_EPOCH                = "u_acl_epoch";
@@ -46,7 +44,6 @@ final class SPSchema
     static final String C_CERT_REVOKE_TS                = "c_revoke_ts";
 
     static final String T_BI                            = "sp_batch_signup_code";
-    static final String C_BI_IDX                        = "b_idx";
     static final String C_BI_BIC                        = "b_code";
     static final String C_BI_USER                       = "b_user";
 
@@ -61,7 +58,6 @@ final class SPSchema
     static final String C_PASS_TOKEN                    = "r_token";
     static final String C_PASS_USER                     = "r_user_id";
     static final String C_PASS_TS                       = "r_ts";
-    static final String C_PASS_VALID                    = "r_valid";
 
     /*
      * create table if not exists sp_acls (a_sid binary(16) not null, a_id varchar(320) not null,

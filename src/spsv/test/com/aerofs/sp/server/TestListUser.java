@@ -75,21 +75,21 @@ public class TestListUser extends AbstractTest
     {
         for (int i=0; i < NUMBER_OF_USERS; i++) {
             User user = new User("user"+i+"@test.com", "", "", "".getBytes(),
-                    true, false, validOrgId, AuthorizationLevel.USER);
+                    false, validOrgId, AuthorizationLevel.USER);
 
             _spdb.addUser(user);
         }
 
         for (int i=0; i < NUMBER_OF_ADMINS; i++) {
             User admin = new User("admin"+i+"@test.com", "", "", "".getBytes(),
-                    true, false, validOrgId, AuthorizationLevel.ADMIN);
+                    false, validOrgId, AuthorizationLevel.ADMIN);
 
             _spdb.addUser(admin);
         }
 
         for (int i=0; i < NUMBER_OF_USERS; i++) {
             User user = new User("user"+i+"@dummy.com", "", "", "".getBytes(),
-                    true, false, nonQueriedOrgId, AuthorizationLevel.USER);
+                    false, nonQueriedOrgId, AuthorizationLevel.USER);
             _spdb.addUser(user);
         }
     }

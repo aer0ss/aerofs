@@ -107,7 +107,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         // set up TEST_USER_4
         _transaction.begin();
         db.addUser(new User(TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_CRED,
-                true, false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
+                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
         db.markUserVerified(TEST_USER_4_NAME);
         _transaction.commit();
     }

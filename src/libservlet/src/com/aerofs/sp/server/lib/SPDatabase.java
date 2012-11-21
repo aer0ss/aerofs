@@ -62,6 +62,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Date;
 
+import static com.aerofs.sp.server.lib.SPSchema.*;
+
 import javax.annotation.Nullable;
 
 public class SPDatabase
@@ -79,10 +81,10 @@ public class SPDatabase
     }
 
     // TODO use DBCW.throwOnConstraintViolation() instead
-    private static void checkDuplicateKey(SQLException e) throws ExAlreadyExist
+    private static void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist
     {
         if (e.getMessage().startsWith("Duplicate entry")) {
-            if (e.getMessage().contains(SPSchema.CO_DEVICE_NAME_OWNER))
+            if (e.getMessage().contains(CO_DEVICE_NAME_OWNER))
                 throw new ExDeviceNameAlreadyExist();
             else
                 throw new ExAlreadyExist(e);
@@ -108,22 +110,21 @@ public class SPDatabase
      * organization).
      */
     private static String sidListQuery() {
-        return  "select t1." + SPSchema.C_AC_STORE_ID + " from (" +
-                    "select " + SPSchema.C_AC_STORE_ID + " from " + SPSchema.T_AC + " join " + SPSchema.T_USER
-                    + " on " + SPSchema.C_AC_USER_ID + "=" + SPSchema.C_USER_ID + " where " +
-                    SPSchema.C_USER_ORG_ID + "=?" +
-                ") as t1 join " + SPSchema.T_AC + " as t2 on t1." + SPSchema.C_AC_STORE_ID + "=" +
-                "t2." + SPSchema.C_AC_STORE_ID;
+        return  "select t1." + C_AC_STORE_ID + " from (" +
+                    "select " + C_AC_STORE_ID + " from " + T_AC + " join " + T_USER
+                    + " on " + C_AC_USER_ID + "=" + C_USER_ID + " where " +
+                    C_USER_ORG_ID + "=?" +
+                ") as t1 join " + T_AC + " as t2 on t1." + C_AC_STORE_ID + "=" +
+                "t2." + C_AC_STORE_ID;
     }
 
-    public @Nullable User getUser(String id)
+    public @Nullable User getUserNullable(String id)
             throws SQLException, IOException
     {
-        PreparedStatement psGU = getConnection().prepareStatement("select " + SPSchema.C_USER_FIRST_NAME
-                + "," + SPSchema.C_USER_LAST_NAME + "," + SPSchema.C_USER_CREDS + "," + SPSchema.C_FINALIZED + ","
-                + SPSchema.C_USER_VERIFIED + "," + SPSchema.C_USER_ORG_ID + "," + SPSchema.C_USER_AUTHORIZATION_LEVEL
-                + "," + SPSchema.C_USER_ID
-                + " from " + SPSchema.T_USER + " where " + SPSchema.C_USER_ID + "=?");
+        PreparedStatement psGU = getConnection().prepareStatement(
+                DBUtil.selectWhere(T_USER, C_USER_ID + "=?", C_USER_FIRST_NAME, C_USER_LAST_NAME,
+                        C_USER_CREDS, C_USER_VERIFIED, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
+                        C_USER_ID));
         psGU.setString(1, id);
         ResultSet rs = psGU.executeQuery();
         try {
@@ -131,13 +132,13 @@ public class SPDatabase
                 String firstName = rs.getString(1);
                 String lastName = rs.getString(2);
                 byte[] creds = Base64.decode(rs.getString(3));
-                boolean finalized = rs.getBoolean(4);
-                boolean verified = rs.getBoolean(5);
-                String orgId = rs.getString(6);
-                AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(7));
-                String userId = rs.getString(8);
-                User u = new User(userId, firstName, lastName, creds, finalized, verified, orgId,
-                        level);
+                boolean verified = rs.getBoolean(4);
+                String orgId = rs.getString(5);
+                AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(6));
+                // don't use the {@code id} parameter in case it is not normalized.
+                // TODO (WW) normalize user ids at entry points.
+                String userId = rs.getString(7);
+                User u = new User(userId, firstName, lastName, creds, verified, orgId, level);
                 assert !rs.next();
                 return u;
             } else {
@@ -175,11 +176,11 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement psLU = getConnection().prepareStatement(
-                "select " + SPSchema.C_USER_ID + "," +
-                        SPSchema.C_USER_FIRST_NAME + "," + SPSchema.C_USER_LAST_NAME + " from " +
-                        SPSchema.T_USER +
-                        " where " + SPSchema.C_USER_ORG_ID + "=? " + " order by " +
-                        SPSchema.C_USER_ID + " limit ? offset ?");
+                "select " + C_USER_ID + "," +
+                        C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " +
+                        T_USER +
+                        " where " + C_USER_ORG_ID + "=? " + " order by " +
+                        C_USER_ID + " limit ? offset ?");
 
         psLU.setString(1, orgId);
         psLU.setInt(2, maxResults);
@@ -198,10 +199,10 @@ public class SPDatabase
             int maxResults, String search)
         throws SQLException
     {
-        PreparedStatement psSLU = getConnection().prepareStatement("select " + SPSchema.C_USER_ID + "," +
-                SPSchema.C_USER_FIRST_NAME + "," + SPSchema.C_USER_LAST_NAME + " from " + SPSchema.T_USER +
-                " where " + SPSchema.C_USER_ORG_ID + "=? and " + SPSchema.C_USER_ID + " like ? " +
-                " order by " + SPSchema.C_USER_ID + " limit ? offset ?");
+        PreparedStatement psSLU = getConnection().prepareStatement("select " + C_USER_ID + "," +
+                C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " + T_USER +
+                " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " +
+                " order by " + C_USER_ID + " limit ? offset ?");
 
         psSLU.setString(1, orgId);
         psSLU.setString(2, "%" + search + "%");
@@ -222,11 +223,11 @@ public class SPDatabase
         throws SQLException
     {
         PreparedStatement psLUA = getConnection().prepareStatement(
-                "select " + SPSchema.C_USER_ID + ", " + SPSchema.C_USER_FIRST_NAME + ", " +
-                SPSchema.C_USER_LAST_NAME + " from " + SPSchema.T_USER +
-                " where " + SPSchema.C_USER_ORG_ID + "=? and " +
-                SPSchema.C_USER_AUTHORIZATION_LEVEL + "=? " +
-                "order by " + SPSchema.C_USER_ID + " limit ? offset ?"
+                "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
+                C_USER_LAST_NAME + " from " + T_USER +
+                " where " + C_USER_ORG_ID + "=? and " +
+                C_USER_AUTHORIZATION_LEVEL + "=? " +
+                "order by " + C_USER_ID + " limit ? offset ?"
         );
 
         psLUA.setString(1, orgId);
@@ -248,12 +249,12 @@ public class SPDatabase
         throws SQLException
     {
         PreparedStatement psSUA = getConnection().prepareStatement(
-                "select " + SPSchema.C_USER_ID + ", " + SPSchema.C_USER_FIRST_NAME + ", " +
-                SPSchema.C_USER_LAST_NAME + " from " + SPSchema.T_USER +
-                " where " + SPSchema.C_USER_ORG_ID + "=? and " +
-                SPSchema.C_USER_ID + " like ? and " +
-                SPSchema.C_USER_AUTHORIZATION_LEVEL + "=? " +
-                "order by " + SPSchema.C_USER_ID + " limit ? offset ?"
+                "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
+                C_USER_LAST_NAME + " from " + T_USER +
+                " where " + C_USER_ORG_ID + "=? and " +
+                C_USER_ID + " like ? and " +
+                C_USER_AUTHORIZATION_LEVEL + "=? " +
+                "order by " + C_USER_ID + " limit ? offset ?"
         );
 
         psSUA.setString(1, orgId);
@@ -284,7 +285,7 @@ public class SPDatabase
         throws SQLException
     {
         PreparedStatement psLUC = getConnection().prepareStatement("select count(*) from " +
-                SPSchema.T_USER + " where " + SPSchema.C_USER_ORG_ID + "=?");
+                T_USER + " where " + C_USER_ORG_ID + "=?");
 
         psLUC.setString(1, orgId);
         ResultSet rs = psLUC.executeQuery();
@@ -300,7 +301,7 @@ public class SPDatabase
         throws SQLException
     {
         PreparedStatement psSCU = getConnection().prepareStatement("select count(*) from " +
-                SPSchema.T_USER + " where " + SPSchema.C_USER_ORG_ID + "=? and " + SPSchema.C_USER_ID + " like ?");
+                T_USER + " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ?");
 
         psSCU.setString(1, orgId);
         psSCU.setString(2, "%" + search + "%");
@@ -319,8 +320,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement psLUAC = getConnection().prepareStatement("select count(*) from " +
-                SPSchema.T_USER + " where " + SPSchema.C_USER_ORG_ID + "=? and " +
-                SPSchema.C_USER_AUTHORIZATION_LEVEL + "=?");
+                T_USER + " where " + C_USER_ORG_ID + "=? and " +
+                C_USER_AUTHORIZATION_LEVEL + "=?");
 
         psLUAC.setString(1, orgId);
         psLUAC.setInt(2, authlevel.ordinal());
@@ -339,9 +340,9 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement psSUAC = getConnection().prepareStatement(
-                "select count(*) from " + SPSchema.T_USER + " where " + SPSchema.C_USER_ORG_ID + "=? and " +
-                SPSchema.C_USER_ID + " like ? and " +
-                SPSchema.C_USER_AUTHORIZATION_LEVEL + "=?"
+                "select count(*) from " + T_USER + " where " + C_USER_ORG_ID + "=? and " +
+                C_USER_ID + " like ? and " +
+                C_USER_AUTHORIZATION_LEVEL + "=?"
         );
 
         psSUAC.setString(1, orgId);
@@ -382,16 +383,16 @@ public class SPDatabase
         //
         // TODO: Increase the performance of this query
         PreparedStatement psLSF = getConnection().prepareStatement(
-                "select t1." + SPSchema.C_AC_STORE_ID + ", t1." + SPSchema.C_SF_NAME + ", t2." + SPSchema.C_AC_USER_ID
-                + ", t2." + SPSchema.C_AC_ROLE + " from (" +
-                    "select " + SPSchema.C_AC_STORE_ID + ", " + SPSchema.C_SF_NAME + ", count(*) from (" +
+                "select t1." + C_AC_STORE_ID + ", t1." + C_SF_NAME + ", t2." + C_AC_USER_ID
+                + ", t2." + C_AC_ROLE + " from (" +
+                    "select " + C_AC_STORE_ID + ", " + C_SF_NAME + ", count(*) from (" +
                         sidListQuery() +
-                    ") as t1 left join " + SPSchema.T_SF + " on " + SPSchema.C_AC_STORE_ID + "=" + SPSchema.C_SF_ID +
-                    " group by " + SPSchema.C_AC_STORE_ID + " having count(*) > 1 order by "
-                    + SPSchema.C_SF_NAME + " asc, " + SPSchema.C_SF_ID + " asc limit ? offset ?" +
-                ") as t1 join " + SPSchema.T_AC + " as t2 on t1." + SPSchema.C_AC_STORE_ID + "=t2." +
-                SPSchema.C_AC_STORE_ID + " order by t1." + SPSchema.C_SF_NAME + " asc, t1." + SPSchema.C_AC_STORE_ID +
-                " asc, t2." + SPSchema.C_AC_USER_ID + " asc"
+                    ") as t1 left join " + T_SF + " on " + C_AC_STORE_ID + "=" + C_SF_ID +
+                    " group by " + C_AC_STORE_ID + " having count(*) > 1 order by "
+                    + C_SF_NAME + " asc, " + C_SF_ID + " asc limit ? offset ?" +
+                ") as t1 join " + T_AC + " as t2 on t1." + C_AC_STORE_ID + "=t2." +
+                C_AC_STORE_ID + " order by t1." + C_SF_NAME + " asc, t1." + C_AC_STORE_ID +
+                " asc, t2." + C_AC_USER_ID + " asc"
         );
 
         psLSF.setString(1, orgId);
@@ -453,9 +454,9 @@ public class SPDatabase
         // statement in listSharedFolders for more details.
         PreparedStatement psCSF = getConnection().prepareStatement(
                 "select count(*) from (" +
-                    "select " + SPSchema.C_AC_STORE_ID + ", count(*) from (" +
+                    "select " + C_AC_STORE_ID + ", count(*) from (" +
                         sidListQuery() +
-                    ") as t1 group by " + SPSchema.C_AC_STORE_ID + " having count(*) > 1" +
+                    ") as t1 group by " + C_AC_STORE_ID + " having count(*) > 1" +
                 ") as t1"
         );
 
@@ -475,7 +476,7 @@ public class SPDatabase
     public int getFolderlessInvitesQuota(String user) throws SQLException
     {
         PreparedStatement psGIL = getConnection().prepareStatement("select " +
-                SPSchema.C_USER_STORELESS_INVITES_QUOTA + " from " + SPSchema.T_USER + " where " + SPSchema.C_USER_ID +
+                C_USER_STORELESS_INVITES_QUOTA + " from " + T_USER + " where " + C_USER_ID +
                 "=?");
 
         psGIL.setString(1, user);
@@ -494,8 +495,8 @@ public class SPDatabase
     public void setFolderlessInvitesQuota(String user, int quota)
             throws SQLException
     {
-        PreparedStatement psSSIQ = getConnection().prepareStatement("update " + SPSchema.T_USER + " set "
-                + SPSchema.C_USER_STORELESS_INVITES_QUOTA + "=? where " + SPSchema.C_USER_ID + "=?");
+        PreparedStatement psSSIQ = getConnection().prepareStatement("update " + T_USER + " set "
+                + C_USER_STORELESS_INVITES_QUOTA + "=? where " + C_USER_ID + "=?");
 
         psSSIQ.setInt(1, quota);
         psSSIQ.setString(2, user);
@@ -504,6 +505,7 @@ public class SPDatabase
 
     private int getNewUserInitialACLEpoch()
     {
+        //noinspection PointlessArithmeticExpression
         return C.INITIAL_ACL_EPOCH + 1;
     }
 
@@ -511,32 +513,26 @@ public class SPDatabase
      * Add a user row to the sp_user table
      *
      * Note: this method always creates the user as non-verified.
-     * @return true if a new user row was added, false if the user exists, but was
-     * not finalized
-     * @throws SQLException if there was an error executing the SQL query
-     * @throws ExAlreadyExist if the user exists (i.e. a row exists in the user table with
-     * the same user id) and is finalized
+     *
+     * @throws ExAlreadyExist if the user exists
      */
-    public boolean addUser(User ur)
+    public void addUser(User ur)
             throws SQLException, ExAlreadyExist
     {
         // We are not going to set the verified field, so make sure nobody asks us to do so
         assert !ur._isVerified;
 
-        boolean createduser = false;
-
-        l.info("Add " + ur);
+        l.info("addUser " + ur);
 
         try {
             // we always create a user with initial epoch + 1 to ensure that the first time
             // a device is created it gets any acl updates that were made while the user
             // didn't have an entry in the user table
 
-            PreparedStatement psAU = getConnection().prepareStatement("insert into " + SPSchema.T_USER +
-                    "(" + SPSchema.C_USER_ID + "," + SPSchema.C_USER_CREDS + "," + SPSchema.C_USER_FIRST_NAME + "," +
-                    SPSchema.C_USER_LAST_NAME + "," + SPSchema.C_USER_ORG_ID + "," + SPSchema.C_USER_AUTHORIZATION_LEVEL +
-                    "," + SPSchema.C_USER_ACL_EPOCH + ") values (?,?,?,?,?,?," +
-                    getNewUserInitialACLEpoch() + ")");
+            PreparedStatement psAU = getConnection().prepareStatement(
+                    DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
+                            C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
+                            C_USER_ACL_EPOCH));
 
             psAU.setString(1, ur._id);
             psAU.setString(2, Base64.encodeBytes(ur._shaedSP));
@@ -544,115 +540,18 @@ public class SPDatabase
             psAU.setString(4, ur._lastName);
             psAU.setString(5, ur._orgId);
             psAU.setInt(6, ur._level.ordinal());
+            psAU.setInt(7, getNewUserInitialACLEpoch());
             psAU.executeUpdate();
-
-            createduser = true;
         } catch (SQLException aue) {
-            l.warn("addUser err:" + aue);
-
-            try {
-                l.info("addUser (1) fail - check if duplicate");
-
-                // check if this error was called by a duplicate key
-                // if it was this will throw early into the block below
-                // I've opted to do this so that I can reuse this function
-                // (small as it is)
-                checkDuplicateKey(aue);
-
-                l.info("addUser (1) fail - user not duplicate");
-
-                // if it _wasn't_ a duplicate, then let's go ahead and
-                // throw this exception
-                throw aue;
-            } catch (ExAlreadyExist existex) {
-                l.info("addUser (2) fail b/c duplicate - check if finalized");
-
-                ResultSet rscue = null;
-
-                try {
-                    PreparedStatement psCUE = getConnection().prepareStatement("select " +
-                            SPSchema.C_FINALIZED + " from " + SPSchema.T_USER + " where " +
-                            SPSchema.C_USER_ID + " = ?");
-
-                    psCUE.setString(1, ur._id);
-
-                    rscue = psCUE.executeQuery();
-                    boolean hasrows = rscue.next();
-                    assert hasrows : ("ExExist but select fails");
-
-                    boolean finalized = rscue.getBoolean(1);
-                    if (finalized) throw new ExAlreadyExist(ur._id + " exists and is finalized");
-
-                    l.info("addUser (2) user not finalized - update creds");
-
-                    setUser(new User(ur, false));
-                    createduser = false;
-                } finally {
-                    if (rscue != null) rscue.close();
-                }
-            }
+            throwOnConstraintViolation(aue);
         }
-
-        l.info("addUser (4) completed successfully");
-
-        return createduser;
-    }
-
-    /**
-     * Update a user row if it exists, or create one if it doesn't
-     * Note: this method never updates the verified field.
-     */
-    public void setUser(User ur) throws SQLException
-    {
-        l.info("set user row for " + ur);
-
-        // [sigh] because of the craziness in the user setup I have to do this
-        // basically, I see if an epoch exists for the user. If so, then I use it when
-        // replacing the row. otherwise, I set it to the default value
-        //
-        // FWIW, AFAICT we should only get here on setup, so we should always use the default,
-        // but, JIC, I'm doing this
-
-        Map<String, Long> oldEpoch = getACLEpochs_(Sets.newHashSet(ur._id));
-        assert oldEpoch.isEmpty() || oldEpoch.size() == 1 :
-                ("too many epochs (" + oldEpoch.size() + ") for " + ur._id);
-
-        long epoch = getNewUserInitialACLEpoch();
-        if (!oldEpoch.isEmpty()) {
-            assert oldEpoch.containsKey(ur._id) : ("no epoch for " + ur._id);
-
-            epoch = oldEpoch.get(ur._id);
-            l.warn("replacing user row for " + ur._id + " with existing epoch:" + epoch);
-        }
-
-        l.info("using epoch " + epoch + " for " + ur._id);
-
-        // actually replace the row
-
-        PreparedStatement psSU = getConnection().prepareStatement("replace into " + SPSchema.T_USER +
-                "(" + SPSchema.C_USER_ID + "," + SPSchema.C_USER_FIRST_NAME + "," + SPSchema.C_USER_LAST_NAME + ","
-                + SPSchema.C_USER_ORG_ID + "," + SPSchema.C_USER_CREDS + ","
-                + SPSchema.C_FINALIZED + "," + SPSchema.C_USER_ACL_EPOCH  + "," + SPSchema.C_USER_AUTHORIZATION_LEVEL
-                + ") values (?,?,?,?,?,?,?,?)");
-
-        psSU.setString(1, ur._id);
-        psSU.setString(2, ur._firstName);
-        psSU.setString(3, ur._lastName);
-        psSU.setString(4, ur._orgId);
-        psSU.setString(5, Base64.encodeBytes(ur._shaedSP));
-        psSU.setBoolean(6, ur._isFinalized);
-        psSU.setLong(7, epoch);
-        psSU.setInt(8, ur._level.ordinal());
-        Util.verify(psSU.executeUpdate() == 1);
-
-        l.info("setUser completed");
     }
 
     public void markUserVerified(String userID)
             throws SQLException
     {
         PreparedStatement psUVerified = getConnection().prepareStatement("update " +
-                SPSchema.T_USER + " set " + SPSchema.C_USER_VERIFIED + "=true where " + SPSchema.C_USER_ID +"=?");
+                T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID +"=?");
 
         psUVerified.setString(1, userID);
         // TODO should this check whether the row was not found, instead of asserting?
@@ -664,8 +563,8 @@ public class SPDatabase
     public void setUserName(String userID, String firstName, String lastName)
             throws SQLException
     {
-        PreparedStatement psSUN = getConnection().prepareStatement("update " + SPSchema.T_USER +
-                " set " + SPSchema.C_USER_FIRST_NAME + "=?, " + SPSchema.C_USER_LAST_NAME + "=? where " + SPSchema.C_USER_ID +
+        PreparedStatement psSUN = getConnection().prepareStatement("update " + T_USER +
+                " set " + C_USER_FIRST_NAME + "=?, " + C_USER_LAST_NAME + "=? where " + C_USER_ID +
                 "=?");
 
         psSUN.setString(1, firstName.trim());
@@ -678,7 +577,7 @@ public class SPDatabase
         throws SQLException
     {
         PreparedStatement psAPRT = getConnection().prepareStatement("insert into " +
-                SPSchema.T_PASSWORD_RESET + "(" + SPSchema.C_PASS_TOKEN + "," + SPSchema.C_PASS_USER + ") values (?,?)");
+                T_PASSWORD_RESET + "(" + C_PASS_TOKEN + "," + C_PASS_USER + ") values (?,?)");
 
         psAPRT.setString(1, token);
         psAPRT.setString(2, userID);
@@ -688,8 +587,8 @@ public class SPDatabase
     public String resolvePasswordResetToken(String token)
         throws SQLException, IOException, ExNotFound
     {
-        PreparedStatement psRPRT = getConnection().prepareStatement("select " + SPSchema.C_PASS_USER +
-                " from " + SPSchema.T_PASSWORD_RESET + " where " + SPSchema.C_PASS_TOKEN + "=? and " + SPSchema.C_PASS_TS +
+        PreparedStatement psRPRT = getConnection().prepareStatement("select " + C_PASS_USER +
+                " from " + T_PASSWORD_RESET + " where " + C_PASS_TOKEN + "=? and " + C_PASS_TS +
                 " > ?");
 
         psRPRT.setString(1, token);
@@ -714,8 +613,8 @@ public class SPDatabase
     public void deletePasswordResetToken(String token)
         throws SQLException
     {
-        PreparedStatement psDPRT = getConnection().prepareStatement("delete from " + SPSchema.T_PASSWORD_RESET +
-                " where " + SPSchema.C_PASS_TOKEN + " = ?");
+        PreparedStatement psDPRT = getConnection().prepareStatement("delete from " + T_PASSWORD_RESET +
+                " where " + C_PASS_TOKEN + " = ?");
 
         psDPRT.setString(1, token);
         int updates = psDPRT.executeUpdate();
@@ -725,8 +624,8 @@ public class SPDatabase
     public void updateUserCredentials(String userID, byte[] credentials)
         throws SQLException
     {
-        PreparedStatement psUUC = getConnection().prepareStatement("update " + SPSchema.T_USER + " set " +
-                SPSchema.C_USER_CREDS + "=? where " + SPSchema.C_USER_ID + "=?");
+        PreparedStatement psUUC = getConnection().prepareStatement("update " + T_USER + " set " +
+                C_USER_CREDS + "=? where " + C_USER_ID + "=?");
 
         psUUC.setString(1, Base64.encodeBytes(credentials));
         psUUC.setString(2, userID);
@@ -738,8 +637,8 @@ public class SPDatabase
             throws ExNoPerm, SQLException
     {
         PreparedStatement psTASUC = getConnection().prepareCall(
-                "update " + SPSchema.T_USER + " set " + SPSchema.C_USER_CREDS +
-                        "=? where " + SPSchema.C_USER_ID + "=? AND " + SPSchema.C_USER_CREDS + "=?");
+                "update " + T_USER + " set " + C_USER_CREDS +
+                        "=? where " + C_USER_ID + "=? AND " + C_USER_CREDS + "=?");
 
         psTASUC.setString(1, Base64.encodeBytes(new_credentials));
         psTASUC.setString(2, userID);
@@ -765,10 +664,10 @@ public class SPDatabase
     {
         // Need to join the user and the device table.
         PreparedStatement psGDI = getConnection().prepareStatement(
-                "select dev." + SPSchema.C_DEVICE_NAME + ", dev." + SPSchema.C_DEVICE_OWNER_ID + ", user." +
-                SPSchema.C_USER_FIRST_NAME + ", user." + SPSchema.C_USER_LAST_NAME + " from " + SPSchema.T_DEVICE +
-                " dev join " + SPSchema.T_USER + " user on dev." + SPSchema.C_DEVICE_OWNER_ID + " = user." +
-                SPSchema.C_USER_ID + " where dev." + SPSchema.C_DEVICE_ID + " = ?"
+                "select dev." + C_DEVICE_NAME + ", dev." + C_DEVICE_OWNER_ID + ", user." +
+                C_USER_FIRST_NAME + ", user." + C_USER_LAST_NAME + " from " + T_DEVICE +
+                " dev join " + T_USER + " user on dev." + C_DEVICE_OWNER_ID + " = user." +
+                C_USER_ID + " where dev." + C_DEVICE_ID + " = ?"
         );
 
         psGDI.setString(1, did.toStringFormal());
@@ -811,11 +710,11 @@ public class SPDatabase
         result.add(user);
 
         PreparedStatement psGSUS = getConnection().prepareStatement(
-                "select distinct t1." + SPSchema.C_AC_USER_ID + " from " + SPSchema.T_AC +
-                        " t1 join " + SPSchema.T_AC +
-                        " t2 on t1." + SPSchema.C_AC_STORE_ID + " = t2." + SPSchema.C_AC_STORE_ID +
+                "select distinct t1." + C_AC_USER_ID + " from " + T_AC +
+                        " t1 join " + T_AC +
+                        " t2 on t1." + C_AC_STORE_ID + " = t2." + C_AC_STORE_ID +
                         " where t2." +
-                        SPSchema.C_AC_USER_ID + " = ?");
+                        C_AC_USER_ID + " = ?");
 
         psGSUS.setString(1, user);
 
@@ -887,9 +786,9 @@ public class SPDatabase
         Set<UserDevice> result = Sets.newHashSet();
 
         PreparedStatement psGIDSAcl = getConnection().prepareStatement(
-                "select " + SPSchema.C_DEVICE_ID + ", " + SPSchema.C_DEVICE_OWNER_ID + " from " + SPSchema.T_AC +
-                        " acl join " + SPSchema.T_DEVICE + " dev on " + SPSchema.C_AC_USER_ID + " = " +
-                        SPSchema.C_DEVICE_OWNER_ID + " where " + SPSchema.C_AC_STORE_ID + " = ?");
+                "select " + C_DEVICE_ID + ", " + C_DEVICE_OWNER_ID + " from " + T_AC +
+                        " acl join " + T_DEVICE + " dev on " + C_AC_USER_ID + " = " +
+                        C_DEVICE_OWNER_ID + " where " + C_AC_STORE_ID + " = ?");
         psGIDSAcl.setBytes(1, sid);
         ResultSet rs = psGIDSAcl.executeQuery();
         try {
@@ -906,8 +805,8 @@ public class SPDatabase
         }
 
         PreparedStatement psGIDSDevice = getConnection().prepareStatement(
-                "select " + SPSchema.C_DEVICE_ID + " from " + SPSchema.T_DEVICE + " where " +
-                        SPSchema.C_DEVICE_OWNER_ID + " = ?");
+                "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " +
+                        C_DEVICE_OWNER_ID + " = ?");
         psGIDSDevice.setString(1, ownerId);
         rs = psGIDSDevice.executeQuery();
         try {
@@ -929,14 +828,14 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psSDI = getConnection().prepareStatement("update " + SPSchema.T_DEVICE +
-                    " set " + SPSchema.C_DEVICE_NAME + "=? where " + SPSchema.C_DEVICE_ID + "=?");
+            PreparedStatement psSDI = getConnection().prepareStatement("update " + T_DEVICE +
+                    " set " + C_DEVICE_NAME + "=? where " + C_DEVICE_ID + "=?");
 
             psSDI.setString(1, deviceName.trim());
             psSDI.setString(2, did.toStringFormal());
             Util.verify(psSDI.executeUpdate() == 1);
         } catch (SQLException e) {
-            checkDuplicateKey(e);
+            throwOnConstraintViolation(e);
             throw e;
         }
     }
@@ -946,54 +845,12 @@ public class SPDatabase
     {
         l.info("set auth to " + authLevel + " for " + userID);
 
-        PreparedStatement psSAuthLevel = getConnection().prepareStatement("update " + SPSchema.T_USER +
-                " set " + SPSchema.C_USER_AUTHORIZATION_LEVEL + "=? where " + SPSchema.C_USER_ID + "=?");
+        PreparedStatement psSAuthLevel = getConnection().prepareStatement("update " + T_USER +
+                " set " + C_USER_AUTHORIZATION_LEVEL + "=? where " + C_USER_ID + "=?");
 
         psSAuthLevel.setInt(1, authLevel.ordinal());
         psSAuthLevel.setString(2, userID);
         Util.verify(psSAuthLevel.executeUpdate() == 1);
-    }
-
-    // TODO Allen: don't call other database methods here after transaction is done
-    void useBatchSignUp(User user, String bsc)
-        throws SQLException, ExNotFound
-    {
-        l.info("use bsc:" + bsc + " user:" + user);
-
-        // NOTE: I wanted to do update & select in the same statement, but
-        // this is not possible in mysql. As a result, I split it into two
-        // sql calls
-
-        PreparedStatement psMinBatchIdx = getConnection().prepareStatement(
-                "select min(" + SPSchema.C_BI_IDX + ") from " +
-                        SPSchema.T_BI + " where " + SPSchema.C_BI_BIC + "=? " + "and " +
-                        SPSchema.C_BI_USER + " is null");
-
-        psMinBatchIdx.setString(1, bsc);
-
-        // find the min null-user batch idx for the given bsc
-
-        int minIdx;
-        ResultSet minIdxRs = psMinBatchIdx.executeQuery();
-        try {
-            Util.verify(minIdxRs.next());
-            minIdx = minIdxRs.getInt(1);
-            if (minIdxRs.wasNull()) {
-                throw new ExNotFound("batch signup " + bsc);
-            }
-        } finally {
-            minIdxRs.close();
-        }
-
-        // update the user name for the min batch idx we found
-
-        PreparedStatement psUpMinBatch = getConnection().prepareStatement(
-                "update " + SPSchema.T_BI + " set " + SPSchema.C_BI_USER + "=? where " +
-                        SPSchema.C_BI_IDX + "=?");
-
-        psUpMinBatch.setString(1, user._id);
-        psUpMinBatch.setInt(2, minIdx);
-        Util.verify(psUpMinBatch.executeUpdate() == 1);
     }
 
     public void addTargetedSignupCode(String code, String from, String to,
@@ -1001,8 +858,8 @@ public class SPDatabase
         throws SQLException
     {
        PreparedStatement psAddTI = getConnection().prepareStatement(
-                DBUtil.insert(SPSchema.T_TI, SPSchema.C_TI_TIC, SPSchema.C_TI_FROM,
-                        SPSchema.C_TI_TO, SPSchema.C_TI_ORG_ID, SPSchema.C_TI_TS));
+                DBUtil.insert(T_TI, C_TI_TIC, C_TI_FROM,
+                        C_TI_TO, C_TI_ORG_ID, C_TI_TS));
 
         psAddTI.setString(1, code);
         psAddTI.setString(2, from);
@@ -1025,8 +882,8 @@ public class SPDatabase
     public boolean isAlreadyInvited(String user, String orgId)
             throws SQLException
     {
-        PreparedStatement psIsAlreadyInvited = getConnection().prepareStatement("select " + SPSchema.C_TI_TIC
-                + " from " + SPSchema.T_TI + " where " + SPSchema.C_TI_TO + "=? and " + SPSchema.C_TI_ORG_ID + "=? " +
+        PreparedStatement psIsAlreadyInvited = getConnection().prepareStatement("select " + C_TI_TIC
+                + " from " + T_TI + " where " + C_TI_TO + "=? and " + C_TI_ORG_ID + "=? " +
                 "limit 1");
 
         psIsAlreadyInvited.setString(1, user);
@@ -1044,9 +901,9 @@ public class SPDatabase
             String folderName)
             throws SQLException
     {
-        PreparedStatement psAddFI = getConnection().prepareStatement("insert into " + SPSchema.T_FI
-                + " (" + SPSchema.C_FI_FIC + "," + SPSchema.C_FI_FROM + "," + SPSchema.C_FI_TO + "," + SPSchema.C_FI_SID + ","
-                + SPSchema.C_FI_FOLDER_NAME + ") " + "values (?,?,?,?,?)");
+        PreparedStatement psAddFI = getConnection().prepareStatement("insert into " + T_FI
+                + " (" + C_FI_FIC + "," + C_FI_FROM + "," + C_FI_TO + "," + C_FI_SID + ","
+                + C_FI_FOLDER_NAME + ") " + "values (?,?,?,?,?)");
 
         psAddFI.setString(1, code);
         psAddFI.setString(2, from);
@@ -1068,8 +925,8 @@ public class SPDatabase
     public void initBatchSignUpCode(String bsc, int signUpCount)
         throws SQLException
     {
-        PreparedStatement psInitBIC = getConnection().prepareStatement("insert into " + SPSchema.T_BI +
-                " (" + SPSchema.C_BI_BIC + ", " + SPSchema.C_BI_USER + ") values " + "(?, ?)");
+        PreparedStatement psInitBIC = getConnection().prepareStatement("insert into " + T_BI +
+                " (" + C_BI_BIC + ", " + C_BI_USER + ") values " + "(?, ?)");
 
         int sqlBatchCount = 0;
         for (int i = 0; i < signUpCount; ++i) {
@@ -1091,7 +948,7 @@ public class SPDatabase
         throws SQLException
     {
         PreparedStatement psCountUnused = getConnection().prepareStatement("select count(*) from " +
-                SPSchema.T_BI + " where " + SPSchema.C_BI_BIC + "=? and " + SPSchema.C_BI_USER + " is null");
+                T_BI + " where " + C_BI_BIC + "=? and " + C_BI_USER + " is null");
 
         psCountUnused.setString(1, bsc);
         ResultSet rs = psCountUnused.executeQuery();
@@ -1132,8 +989,8 @@ public class SPDatabase
     public @Nullable ResolveTargetedSignUpCodeReply getTargetedSignUp(String tsc)
         throws SQLException
     {
-        PreparedStatement psGetTI = getConnection().prepareStatement("select " + SPSchema.C_TI_TO + ", " +
-                SPSchema.C_TI_ORG_ID + " from " + SPSchema.T_TI + " where " + SPSchema.C_TI_TIC + "=?");
+        PreparedStatement psGetTI = getConnection().prepareStatement("select " + C_TI_TO + ", " +
+                C_TI_ORG_ID + " from " + T_TI + " where " + C_TI_TIC + "=?");
 
         psGetTI.setString(1, tsc);
         ResultSet rs = psGetTI.executeQuery();
@@ -1189,8 +1046,8 @@ public class SPDatabase
     public FolderInvitation getFolderInvitation(String code)
             throws SQLException
     {
-        PreparedStatement psGetFI = getConnection().prepareStatement("select " + SPSchema.C_FI_SID + ", " +
-                SPSchema.C_FI_FOLDER_NAME + ", " + SPSchema.C_FI_TO + " from " + SPSchema.T_FI + " where " + SPSchema.C_FI_FIC + "=?");
+        PreparedStatement psGetFI = getConnection().prepareStatement("select " + C_FI_SID + ", " +
+                C_FI_FOLDER_NAME + ", " + C_FI_TO + " from " + T_FI + " where " + C_FI_FIC + "=?");
 
         psGetFI.setString(1, code);
         ResultSet rs = psGetFI.executeQuery();
@@ -1211,9 +1068,9 @@ public class SPDatabase
     {
         assert !to.isEmpty();
 
-        PreparedStatement psListPFI = getConnection().prepareStatement("select " + SPSchema.C_FI_FROM + ", "
-                + SPSchema.C_FI_FOLDER_NAME + ", " + SPSchema.C_FI_SID + " from " + SPSchema.T_FI + " where " + SPSchema.C_FI_TO +
-                " = ? group by " + SPSchema.C_FI_SID);
+        PreparedStatement psListPFI = getConnection().prepareStatement("select " + C_FI_FROM + ", "
+                + C_FI_FOLDER_NAME + ", " + C_FI_SID + " from " + T_FI + " where " + C_FI_TO +
+                " = ? group by " + C_FI_SID);
 
         psListPFI.setString(1, to);
         ResultSet rs = psListPFI.executeQuery();
@@ -1238,8 +1095,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectWhere(SPSchema.T_TI, SPSchema.C_TI_TO + "=?",
-                                SPSchema.C_TI_TIC));
+                        DBUtil.selectWhere(T_TI, C_TI_TO + "=?",
+                                C_TI_TIC));
 
         ps.setString(1, to);
         ResultSet rs = ps.executeQuery();
@@ -1259,8 +1116,8 @@ public class SPDatabase
            throws SQLException
     {
         PreparedStatement psAddSharedFolder = getConnection().prepareStatement("insert into "
-                + SPSchema.T_SF + " (" + SPSchema.C_SF_ID + ") values (?) on duplicate key update " + SPSchema.C_SF_ID  + "="
-                + SPSchema.C_SF_ID);
+                + T_SF + " (" + C_SF_ID + ") values (?) on duplicate key update " + C_SF_ID  + "="
+                + C_SF_ID);
 
         psAddSharedFolder.setBytes(1, sid.getBytes());
 
@@ -1272,8 +1129,8 @@ public class SPDatabase
     public @Nullable String getFolderName(SID sid)
             throws SQLException
     {
-        PreparedStatement psGetFolderName = getConnection().prepareStatement("select " + SPSchema.C_SF_NAME +
-                " from " + SPSchema.T_SF + " where " + SPSchema.C_SF_ID + "=?");
+        PreparedStatement psGetFolderName = getConnection().prepareStatement("select " + C_SF_NAME +
+                " from " + T_SF + " where " + C_SF_ID + "=?");
 
         psGetFolderName.setBytes(1, sid.getBytes());
         ResultSet rs = psGetFolderName.executeQuery();
@@ -1293,9 +1150,9 @@ public class SPDatabase
     public void setFolderName(SID sid, String folderName)
             throws SQLException
     {
-        PreparedStatement psSetFolderName = getConnection().prepareStatement("insert into " + SPSchema.T_SF +
-                " (" + SPSchema.C_SF_ID + ", " + SPSchema.C_SF_NAME + ") values (?, ?) on duplicate key update " +
-                SPSchema.C_SF_NAME + "=values(" + SPSchema.C_SF_NAME + ")");
+        PreparedStatement psSetFolderName = getConnection().prepareStatement("insert into " + T_SF +
+                " (" + C_SF_ID + ", " + C_SF_NAME + ") values (?, ?) on duplicate key update " +
+                C_SF_NAME + "=values(" + C_SF_NAME + ")");
 
         psSetFolderName.setBytes(1, sid.getBytes());
         psSetFolderName.setString(2, folderName);
@@ -1342,8 +1199,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement psGetDeviceUser = getConnection().prepareStatement("select " +
-                SPSchema.C_DEVICE_NAME + "," + SPSchema.C_DEVICE_OWNER_ID + " from " + SPSchema.T_DEVICE + " where " +
-                SPSchema.C_DEVICE_ID + " = ?");
+                C_DEVICE_NAME + "," + C_DEVICE_OWNER_ID + " from " + T_DEVICE + " where " +
+                C_DEVICE_ID + " = ?");
 
         psGetDeviceUser.setString(1, did.toStringFormal());
         ResultSet rs = psGetDeviceUser.executeQuery();
@@ -1362,15 +1219,15 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psAddDev = getConnection().prepareStatement("insert into " + SPSchema.T_DEVICE
-                    + "(" + SPSchema.C_DEVICE_ID + "," + SPSchema.C_DEVICE_NAME + "," + SPSchema.C_DEVICE_OWNER_ID + ")" +
+            PreparedStatement psAddDev = getConnection().prepareStatement("insert into " + T_DEVICE
+                    + "(" + C_DEVICE_ID + "," + C_DEVICE_NAME + "," + C_DEVICE_OWNER_ID + ")" +
                     " values (?,?,?)");
             psAddDev.setString(1, dr._did.toStringFormal());
             psAddDev.setString(2, dr._name);
             psAddDev.setString(3, dr._ownerID);
             psAddDev.executeUpdate();
         } catch (SQLException e) {
-            checkDuplicateKey(e);
+            throwOnConstraintViolation(e);
             throw e;
         }
     }
@@ -1386,8 +1243,8 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psAddCert = getConnection().prepareStatement("insert into " + SPSchema.T_CERT +
-                    "(" + SPSchema.C_CERT_SERIAL + "," + SPSchema.C_CERT_DEVICE_ID + "," + SPSchema.C_CERT_EXPIRE_TS +
+            PreparedStatement psAddCert = getConnection().prepareStatement("insert into " + T_CERT +
+                    "(" + C_CERT_SERIAL + "," + C_CERT_DEVICE_ID + "," + C_CERT_EXPIRE_TS +
                     ") values (?,?,?)");
 
             psAddCert.setString(1, String.valueOf(serial));
@@ -1395,7 +1252,7 @@ public class SPDatabase
             psAddCert.setTimestamp(3, new Timestamp(expireTs.getTime()));
             psAddCert.executeUpdate();
         } catch (SQLException e) {
-            checkDuplicateKey(e);
+            throwOnConstraintViolation(e);
             throw e;
         }
     }
@@ -1412,8 +1269,8 @@ public class SPDatabase
     {
         // Find the affected serial in the certificate table.
         PreparedStatement psRevokeDeviceCertificate = getConnection().prepareStatement("select " +
-                SPSchema.C_CERT_SERIAL + " from " + SPSchema.T_CERT + " where " + SPSchema.C_CERT_DEVICE_ID +
-                " = ? and " + SPSchema.C_CERT_REVOKE_TS + " = 0");
+                C_CERT_SERIAL + " from " + T_CERT + " where " + C_CERT_DEVICE_ID +
+                " = ? and " + C_CERT_REVOKE_TS + " = 0");
 
         psRevokeDeviceCertificate.setString(1, did.toStringFormal());
 
@@ -1432,7 +1289,7 @@ public class SPDatabase
             assert count == 0 || count == 1 : ("too many device certs: " + count);
 
             ImmutableList<Long> serials = builder.build();
-            revokeCertificatesBySerials_(serials);
+            revokeCertificatesBySerials(serials);
             return serials;
         } finally {
             rs.close();
@@ -1451,10 +1308,10 @@ public class SPDatabase
     {
         // Find all unrevoked serials for the device.
         PreparedStatement psRevokeUserCertificates = getConnection().prepareStatement("select " +
-                SPSchema.C_CERT_SERIAL + " from " + SPSchema.T_CERT + " " + "join " + SPSchema.T_DEVICE + " on " +
-                SPSchema.T_CERT + "." + SPSchema.C_CERT_DEVICE_ID + " = " + SPSchema.T_DEVICE + "." + SPSchema.C_DEVICE_ID +
-                " where " + SPSchema.T_DEVICE + "." + SPSchema.C_DEVICE_OWNER_ID + " = ? and " +
-                SPSchema.C_CERT_REVOKE_TS + " = 0");
+                C_CERT_SERIAL + " from " + T_CERT + " " + "join " + T_DEVICE + " on " +
+                T_CERT + "." + C_CERT_DEVICE_ID + " = " + T_DEVICE + "." + C_DEVICE_ID +
+                " where " + T_DEVICE + "." + C_DEVICE_OWNER_ID + " = ? and " +
+                C_CERT_REVOKE_TS + " = 0");
 
         psRevokeUserCertificates.setString(1, user);
 
@@ -1467,7 +1324,7 @@ public class SPDatabase
             }
 
             ImmutableList<Long> serials = builder.build();
-            revokeCertificatesBySerials_(serials);
+            revokeCertificatesBySerials(serials);
 
             return serials;
         } finally {
@@ -1475,14 +1332,14 @@ public class SPDatabase
         }
     }
 
-    private void revokeCertificatesBySerials_(ImmutableList<Long> serials)
+    private void revokeCertificatesBySerials(ImmutableList<Long> serials)
             throws SQLException
     {
         // Update the revoke timestamp in the certificate table.
         PreparedStatement psRevokeCertificatesBySerials = getConnection().prepareStatement("update "
-                + SPSchema.T_CERT + " set " + SPSchema.C_CERT_REVOKE_TS + " = current_timestamp, " +
-                SPSchema.C_CERT_EXPIRE_TS + " = " + SPSchema.C_CERT_EXPIRE_TS + " where " + SPSchema.C_CERT_REVOKE_TS +
-                " = 0 and " + SPSchema.C_CERT_SERIAL + " = ?");
+                + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
+                C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
+                " = 0 and " + C_CERT_SERIAL + " = ?");
 
         for (Long serial : serials) {
             psRevokeCertificatesBySerials.setLong(1, serial);
@@ -1501,9 +1358,9 @@ public class SPDatabase
     public ImmutableList<Long> getCRL()
             throws SQLException
     {
-        PreparedStatement psGetCRL = getConnection().prepareStatement("select " + SPSchema.C_CERT_SERIAL +
-                " from " + SPSchema.T_CERT + " where " + SPSchema.C_CERT_EXPIRE_TS + " > current_timestamp and " +
-                SPSchema.C_CERT_REVOKE_TS + " != 0");
+        PreparedStatement psGetCRL = getConnection().prepareStatement("select " + C_CERT_SERIAL +
+                " from " + T_CERT + " where " + C_CERT_EXPIRE_TS + " > current_timestamp and " +
+                C_CERT_REVOKE_TS + " != 0");
 
         ResultSet rs = psGetCRL.executeQuery();
         try {
@@ -1534,11 +1391,11 @@ public class SPDatabase
      * @return true if the ACL changes should be allowed (i.e. the user has permissions)
      * @throws SQLException if there is a db error
      */
-    private boolean canUserModifyACL_(String user, SID sid)
+    private boolean canUserModifyACL(String user, SID sid)
             throws SQLException, IOException
     {
         PreparedStatement psRoleCount = getConnection().prepareStatement(
-                "select count(*) from " + SPSchema.T_AC + " where " + SPSchema.C_AC_STORE_ID + "=?");
+                DBUtil.selectWhere(T_AC, C_AC_STORE_ID + "=?", "count(*)"));
 
         psRoleCount.setBytes(1, sid.getBytes());
 
@@ -1555,8 +1412,8 @@ public class SPDatabase
         }
 
         PreparedStatement psRoleCheck = getConnection().prepareStatement(
-                "select count(*) from " + SPSchema.T_AC + " where " + SPSchema.C_AC_STORE_ID + "=? and " +
-                SPSchema.C_AC_USER_ID + "=?" + " and " + SPSchema.C_AC_ROLE + " = ?");
+                DBUtil.selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?" +
+                        " and " + C_AC_ROLE + " = ?", "count(*)"));
 
         psRoleCheck.setBytes(1, sid.getBytes());
         psRoleCheck.setString(2, user);
@@ -1567,7 +1424,8 @@ public class SPDatabase
             Util.verify(rs.next());
 
             int ownerCount = rs.getInt(1);
-            assert ownerCount >= 0 && ownerCount <= 1 : ("cannot have multiple owner acl entries");
+            // cannot have multiple owner acl entries
+            assert ownerCount >= 0 && ownerCount <= 1;
 
             if (ownerCount == 1) {
                 l.info(user + " is an owner for s:" + sid);
@@ -1578,14 +1436,15 @@ public class SPDatabase
         }
 
         // see if user is an admin and one of their organization's members is an owner
-        User currentUser = getUser(user);
+        User currentUser = getUserNullable(user);
+        assert currentUser != null;
         if (currentUser._level == AuthorizationLevel.ADMIN) {
             l.info("user is an admin, checking if folder owner(s) are part of organization");
 
             PreparedStatement psOwnersInOrgCount = getConnection().prepareStatement(
-                    "select count(*) from " + SPSchema.T_AC + " join " + SPSchema.T_USER + " on " + SPSchema.C_AC_USER_ID +
-                    "=" + SPSchema.C_USER_ID + " where " + SPSchema.C_AC_STORE_ID + "=? and " + SPSchema.C_USER_ORG_ID +
-                    "=? and " + SPSchema.C_AC_ROLE + "=?");
+                    "select count(*) from " + T_AC + " join " + T_USER + " on " + C_AC_USER_ID +
+                    "=" + C_USER_ID + " where " + C_AC_STORE_ID + "=? and " + C_USER_ORG_ID +
+                    "=? and " + C_AC_ROLE + "=?");
 
             psOwnersInOrgCount.setBytes(1, sid.getBytes());
             psOwnersInOrgCount.setString(2, currentUser._orgId);
@@ -1623,7 +1482,7 @@ public class SPDatabase
         Set<String> users = Sets.newHashSet();
         users.add(user);
 
-        Map<String, Long> epochs = getACLEpochs_(users);
+        Map<String, Long> epochs = getACLEpochs(users);
         assert epochs.size() == 1 : ("too many epochs returned exp:1 act:" + epochs.size());
         assert epochs.containsKey(user) : ("did not get epoch for user:" + user);
 
@@ -1641,10 +1500,10 @@ public class SPDatabase
         //
 
         PreparedStatement psGetRoles = getConnection().prepareStatement("select acl_master." +
-                SPSchema.C_AC_STORE_ID + ", acl_master." + SPSchema.C_AC_USER_ID + ", acl_master." +
-                SPSchema.C_AC_ROLE + " from " + SPSchema.T_AC + " as acl_master inner join " + SPSchema.T_AC +
-                " as acl_filter using (" + SPSchema.C_AC_STORE_ID + ") where acl_filter." +
-                SPSchema.C_AC_USER_ID + "=?");
+                C_AC_STORE_ID + ", acl_master." + C_AC_USER_ID + ", acl_master." +
+                C_AC_ROLE + " from " + T_AC + " as acl_master inner join " + T_AC +
+                " as acl_filter using (" + C_AC_STORE_ID + ") where acl_filter." +
+                C_AC_USER_ID + "=?");
 
         psGetRoles.setString(1, user);
 
@@ -1676,13 +1535,13 @@ public class SPDatabase
      * @return a map of user -> epoch number
      * @throws SQLException if the db calls failed
      */
-    private Map<String, Long> getACLEpochs_(Set<String> users)
+    private Map<String, Long> getACLEpochs(Set<String> users)
             throws SQLException
     {
         l.info("get epoch for " + users.size() + " users");
 
-        PreparedStatement psGetEpoch = getConnection().prepareStatement("select " + SPSchema.C_USER_ID + ","
-                + SPSchema.C_USER_ACL_EPOCH + " from " + SPSchema.T_USER + " where " + SPSchema.C_USER_ID + "=?");
+        PreparedStatement psGetEpoch = getConnection().prepareStatement("select " + C_USER_ID + ","
+                + C_USER_ACL_EPOCH + " from " + T_USER + " where " + C_USER_ID + "=?");
 
         Map<String, Long> serverEpochs = Maps.newHashMap();
 
@@ -1724,7 +1583,7 @@ public class SPDatabase
             List<SubjectRolePair> pairs)
             throws SQLException, IOException, ExNoPerm
     {
-        if (canUserModifyACL_(requester, sid)) return;
+        if (canUserModifyACL(requester, sid)) return;
 
         // apparently the user cannot modify the ACL - check if an attacker maliciously
         // overwrote their permissions and repair the store if necessary
@@ -1738,7 +1597,7 @@ public class SPDatabase
         l.info("s:" + sid + " matches " + requester + " root store - delete existing acl");
 
         PreparedStatement psDeleteAllRoles = getConnection().prepareStatement("delete from "
-                + SPSchema.T_AC + " where " + SPSchema.C_AC_STORE_ID + "=?");
+                + T_AC + " where " + C_AC_STORE_ID + "=?");
 
         psDeleteAllRoles.setBytes(1, sid.getBytes());
 
@@ -1776,9 +1635,9 @@ public class SPDatabase
 
         l.info(requester + " creating " + pairs.size() + " roles for s:" + sid);
 
-        PreparedStatement psReplaceRole = getConnection().prepareStatement("insert into " + SPSchema.T_AC +
-                " (" + SPSchema.C_AC_STORE_ID + "," + SPSchema.C_AC_USER_ID + "," + SPSchema.C_AC_ROLE + ") values (?, ?, ?) "
-                + "on duplicate key update " + SPSchema.C_AC_ROLE + "= values (" + SPSchema.C_AC_ROLE + ")");
+        PreparedStatement psReplaceRole = getConnection().prepareStatement("insert into " + T_AC +
+                " (" + C_AC_STORE_ID + "," + C_AC_USER_ID + "," + C_AC_ROLE + ") values (?, ?, ?) "
+                + "on duplicate key update " + C_AC_ROLE + "= values (" + C_AC_ROLE + ")");
 
         for (SubjectRolePair pair : pairs) {
             psReplaceRole.setBytes(1, sid.getBytes());
@@ -1789,7 +1648,7 @@ public class SPDatabase
 
         executeBatchWarn(psReplaceRole, pairs.size(), 1); // update the roles for all users
 
-        return incrementACLEpoch_(getStoreMembers_(sid));
+        return incrementACLEpoch(getStoreMembers(sid));
     }
 
     /**
@@ -1807,8 +1666,8 @@ public class SPDatabase
 
         l.info(requester + " updating " + pairs.size() + " roles for s:" + sid);
 
-        PreparedStatement psUpdateRole = getConnection().prepareStatement("update " + SPSchema.T_AC +
-                " set " + SPSchema.C_AC_ROLE + "=? where " + SPSchema.C_AC_STORE_ID + "=? and " + SPSchema.C_AC_USER_ID +
+        PreparedStatement psUpdateRole = getConnection().prepareStatement("update " + T_AC +
+                " set " + C_AC_ROLE + "=? where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
                 "=?");
 
         for (SubjectRolePair pair : pairs) {
@@ -1827,14 +1686,14 @@ public class SPDatabase
 
         if (!hasAtLeastOneOwner(sid)) throw new ExNoPerm("Cannot demote all admins");
 
-        return incrementACLEpoch_(getStoreMembers_(sid));
+        return incrementACLEpoch(getStoreMembers(sid));
     }
 
     private boolean hasAtLeastOneOwner(SID sid) throws SQLException
     {
         PreparedStatement psCheckAtLeastOneOwner = getConnection()
-                .prepareStatement("select " + SPSchema.C_AC_USER_ID + " from " + SPSchema.T_AC
-                        + " where " + SPSchema.C_AC_STORE_ID + "=? and " + SPSchema.C_AC_ROLE + "=?"
+                .prepareStatement("select " + C_AC_USER_ID + " from " + T_AC
+                        + " where " + C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?"
                         + " LIMIT 1");
 
         psCheckAtLeastOneOwner.setBytes(1, sid.getBytes());
@@ -1851,11 +1710,11 @@ public class SPDatabase
     /**
      * Fetch the set of users with access to a given store
      */
-    private Set<String> getStoreMembers_(SID sid)
+    private Set<String> getStoreMembers(SID sid)
             throws SQLException
     {
         PreparedStatement psGetSubjectsForStore = getConnection().prepareStatement("select " +
-                SPSchema.C_AC_USER_ID + " from " + SPSchema.T_AC + " where " + SPSchema.C_AC_STORE_ID + "=?");
+                C_AC_USER_ID + " from " + T_AC + " where " + C_AC_STORE_ID + "=?");
 
         psGetSubjectsForStore.setBytes(1, sid.getBytes());
 
@@ -1885,7 +1744,7 @@ public class SPDatabase
 
         l.info(user + " delete roles for s:" + sid);
 
-        if (!canUserModifyACL_(user, sid)) {
+        if (!canUserModifyACL(user, sid)) {
             l.info(user + " cannot modify acl for s:" + sid);
 
             throw new ExNoPerm(user + " is not an owner. If " + user + " has admin privileges " +
@@ -1893,8 +1752,8 @@ public class SPDatabase
         }
 
         // setup the prepared statement
-        PreparedStatement psDeleteRole = getConnection().prepareStatement("delete from " + SPSchema.T_AC +
-                " where " + SPSchema.C_AC_STORE_ID + "=? and " + SPSchema.C_AC_USER_ID + "=?");
+        PreparedStatement psDeleteRole = getConnection().prepareStatement("delete from " + T_AC +
+                " where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?");
 
         // TODO: check that there is at least one admin left?
 
@@ -1911,11 +1770,11 @@ public class SPDatabase
 
         executeBatchWarn(psDeleteRole, subjects.size(), 1); // update roles for all users
 
-        Set<String> affectedUsers = getStoreMembers_(sid); // get the current users
+        Set<String> affectedUsers = getStoreMembers(sid); // get the current users
         affectedUsers.add(user); // add the caller as well
         affectedUsers.addAll(subjects); // add all the deleted guys as well
 
-        return incrementACLEpoch_(affectedUsers);
+        return incrementACLEpoch(affectedUsers);
     }
 
     /**
@@ -1924,13 +1783,13 @@ public class SPDatabase
      * @param users set of user_ids for all users for which we will update the epoch
      * @return a map of user -> updated epoch number
      */
-    private Map<String, Long> incrementACLEpoch_(Set<String> users)
+    private Map<String, Long> incrementACLEpoch(Set<String> users)
             throws SQLException
     {
         l.info("incrementing epoch for " + users.size() + " users");
 
-        PreparedStatement psUpdateACLEpoch = getConnection().prepareStatement("update " + SPSchema.T_USER +
-                " set " + SPSchema.C_USER_ACL_EPOCH + "=" + SPSchema.C_USER_ACL_EPOCH + "+1 where " + SPSchema.C_USER_ID +
+        PreparedStatement psUpdateACLEpoch = getConnection().prepareStatement("update " + T_USER +
+                " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1 where " + C_USER_ID +
                 "=?");
 
         for (String user : users) {
@@ -1943,7 +1802,7 @@ public class SPDatabase
 
         l.info("incremented epoch");
 
-        return getACLEpochs_(users);
+        return getACLEpochs(users);
     }
 
     @Override
@@ -1951,7 +1810,7 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement psGetUserPermForStore = getConnection().prepareStatement("select " +
-                SPSchema.C_AC_ROLE + " from " + SPSchema.T_AC + " where " + SPSchema.C_AC_STORE_ID + "=? and " + SPSchema.C_AC_USER_ID +
+                C_AC_ROLE + " from " + T_AC + " where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
                 "=?");
 
         psGetUserPermForStore.setBytes(1, sid.getBytes());
@@ -1976,8 +1835,8 @@ public class SPDatabase
     {
         try {
             PreparedStatement psAddOrganization = getConnection().prepareStatement("insert into " +
-                    SPSchema.T_ORGANIZATION + "(" + SPSchema.C_ORG_ID + "," + SPSchema.C_ORG_NAME + "," +
-                    SPSchema.C_ORG_ALLOWED_DOMAIN + "," + SPSchema.C_ORG_OPEN_SHARING + ") values (?,?,?,?)");
+                    T_ORGANIZATION + "(" + C_ORG_ID + "," + C_ORG_NAME + "," +
+                    C_ORG_ALLOWED_DOMAIN + "," + C_ORG_OPEN_SHARING + ") values (?,?,?,?)");
 
             psAddOrganization.setString(1, org._id);
             psAddOrganization.setString(2, org._name);
@@ -1986,7 +1845,7 @@ public class SPDatabase
             psAddOrganization.executeUpdate();
         } catch (SQLException e) {
             // The following will throw ExAlreadyExist if the orgId already exists
-            checkDuplicateKey(e);
+            throwOnConstraintViolation(e);
             throw e;
         }
     }
@@ -2000,9 +1859,9 @@ public class SPDatabase
             throws SQLException, ExNotFound
     {
         PreparedStatement psGetOrganization = getConnection().prepareStatement("select " +
-                SPSchema.C_ORG_NAME + "," + SPSchema.C_ORG_ALLOWED_DOMAIN + "," + SPSchema.C_ORG_OPEN_SHARING +
-                "," + SPSchema.C_ORG_ID +
-                " from " + SPSchema.T_ORGANIZATION + " where " + SPSchema.C_ORG_ID + "=?");
+                C_ORG_NAME + "," + C_ORG_ALLOWED_DOMAIN + "," + C_ORG_OPEN_SHARING +
+                "," + C_ORG_ID +
+                " from " + T_ORGANIZATION + " where " + C_ORG_ID + "=?");
 
         psGetOrganization.setString(1, orgId);
         ResultSet rs = psGetOrganization.executeQuery();
@@ -2028,8 +1887,8 @@ public class SPDatabase
             throws SQLException, ExNotFound
     {
         PreparedStatement psSetOrganizationPreferences = getConnection().prepareStatement("update "
-                + SPSchema.T_ORGANIZATION + " set " + SPSchema.C_ORG_NAME + "=?, " + SPSchema.C_ORG_ALLOWED_DOMAIN + "=?, " +
-                SPSchema.C_ORG_OPEN_SHARING + "=? where " + SPSchema.C_ORG_ID + "=?");
+                + T_ORGANIZATION + " set " + C_ORG_NAME + "=?, " + C_ORG_ALLOWED_DOMAIN + "=?, " +
+                C_ORG_OPEN_SHARING + "=? where " + C_ORG_ID + "=?");
 
         psSetOrganizationPreferences.setString(1, newOrg._name);
         psSetOrganizationPreferences.setString(2, newOrg._allowedDomain);
@@ -2046,8 +1905,8 @@ public class SPDatabase
             throws SQLException, ExNotFound
     {
         try {
-            PreparedStatement psMoveToOrg = getConnection().prepareStatement("update " + SPSchema.T_USER +
-                    " set " + SPSchema.C_USER_ORG_ID + " = ? where " + SPSchema.C_USER_ID + "=?");
+            PreparedStatement psMoveToOrg = getConnection().prepareStatement("update " + T_USER +
+                    " set " + C_USER_ORG_ID + " = ? where " + C_USER_ID + "=?");
 
             psMoveToOrg.setString(1, orgId);
             psMoveToOrg.setString(2, userId);
@@ -2108,8 +1967,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=?",
-                                SPSchema.C_ES_SUBSCRIPTION));
+                        DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=?",
+                                C_ES_SUBSCRIPTION));
 
         ps.setString(1, email);
 
@@ -2133,10 +1992,10 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                       DBUtil.insertOnDuplicateUpdate(SPSchema.T_ES,
-                               SPSchema.C_ES_LAST_EMAILED + "=?", SPSchema.C_ES_EMAIL,
-                               SPSchema.C_ES_TOKEN_ID, SPSchema.C_ES_SUBSCRIPTION,
-                               SPSchema.C_ES_LAST_EMAILED));
+                       DBUtil.insertOnDuplicateUpdate(T_ES,
+                               C_ES_LAST_EMAILED + "=?", C_ES_EMAIL,
+                               C_ES_TOKEN_ID, C_ES_SUBSCRIPTION,
+                               C_ES_LAST_EMAILED));
 
         String token = Base62CodeGenerator.newRandomBase62String(SubscriptionParams.TOKEN_ID_LENGTH);
         ps.setString(1, email);
@@ -2162,8 +2021,8 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                       DBUtil.deleteWhereEquals(SPSchema.T_ES, SPSchema.C_ES_EMAIL,
-                               SPSchema.C_ES_SUBSCRIPTION));
+                       DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL,
+                               C_ES_SUBSCRIPTION));
 
         ps.setString(1, email);
         ps.setInt(2, sc.getCategoryID());
@@ -2175,7 +2034,7 @@ public class SPDatabase
     public void removeEmailSubscription(final String tokenId) throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-               DBUtil.deleteWhereEquals(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID));
+               DBUtil.deleteWhereEquals(T_ES, C_ES_TOKEN_ID));
 
         ps.setString(1, tokenId);
         Util.verify(ps.executeUpdate() == 1);
@@ -2185,9 +2044,9 @@ public class SPDatabase
     public String getTokenId(final String email, final SubscriptionCategory sc) throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                DBUtil.selectWhere(SPSchema.T_ES,
-                        SPSchema.C_ES_EMAIL + "=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
-                        SPSchema.C_ES_TOKEN_ID));
+                DBUtil.selectWhere(T_ES,
+                        C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
+                        C_ES_TOKEN_ID));
 
         ps.setString(1, email);
         ps.setInt(2, sc.getCategoryID());
@@ -2205,8 +2064,8 @@ public class SPDatabase
     public String getEmail(final String tokenId)
             throws SQLException, ExNotFound {
         PreparedStatement ps = getConnection().prepareStatement(
-                DBUtil.selectWhere(SPSchema.T_ES, SPSchema.C_ES_TOKEN_ID + "=?",
-                        SPSchema.C_ES_EMAIL)
+                DBUtil.selectWhere(T_ES, C_ES_TOKEN_ID + "=?",
+                        C_ES_EMAIL)
         );
 
         ps.setString(1, tokenId);
@@ -2223,9 +2082,9 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        DBUtil.selectWhere(SPSchema.T_ES,
-                                SPSchema.C_ES_EMAIL + "=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
-                                SPSchema.C_ES_EMAIL)
+                        DBUtil.selectWhere(T_ES,
+                                C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
+                                C_ES_EMAIL)
                                 );
 
         ps.setString(1, email);
@@ -2245,9 +2104,9 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                       DBUtil.updateWhere(SPSchema.T_ES,
-                               SPSchema.C_ES_EMAIL + "=? and " + SPSchema.C_ES_SUBSCRIPTION + "=?",
-                               SPSchema.C_ES_LAST_EMAILED));
+                       DBUtil.updateWhere(T_ES,
+                               C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
+                               C_ES_LAST_EMAILED));
 
         ps.setTimestamp(1, new Timestamp(lastEmailTime), _calendar);
         ps.setString(2, email);
@@ -2261,12 +2120,12 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                        "select " + SPSchema.C_TI_TO +
-                        " from " + SPSchema.T_TI +
-                        " left join " + SPSchema.T_USER + " on " + SPSchema.C_USER_ID + "=" +
-                                SPSchema.C_TI_TO +
-                        " where " + SPSchema.C_USER_ID + " is null " +
-                        " and DATEDIFF(CURRENT_DATE(),DATE(" + SPSchema.C_TI_TS +")) =?" +
+                        "select " + C_TI_TO +
+                        " from " + T_TI +
+                        " left join " + T_USER + " on " + C_USER_ID + "=" +
+                                C_TI_TO +
+                        " where " + C_USER_ID + " is null " +
+                        " and DATEDIFF(CURRENT_DATE(),DATE(" + C_TI_TS +")) =?" +
                         " limit ? offset ?");
 
         ps.setInt(1, days);
@@ -2289,9 +2148,9 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
-                       DBUtil.selectWhere(SPSchema.T_ES, SPSchema.C_ES_EMAIL + "=? and " +
-                               SPSchema.C_ES_SUBSCRIPTION + "=?",
-                               "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + SPSchema.C_ES_LAST_EMAILED +
+                       DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=? and " +
+                               C_ES_SUBSCRIPTION + "=?",
+                               "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + C_ES_LAST_EMAILED +
                                        "))"));
 
         ps.setString(1, email);

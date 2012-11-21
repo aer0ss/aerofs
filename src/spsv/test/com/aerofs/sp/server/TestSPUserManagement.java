@@ -40,7 +40,7 @@ public class TestSPUserManagement extends AbstractTest
     public void setup()
         throws Exception
     {
-        testUser = new User("test@awesome.com","","","".getBytes(),true,true,"",
+        testUser = new User("test@awesome.com","","","".getBytes(),true,"",
                 AuthorizationLevel.USER);
 
         setupMockSPDatabaseGetUserTest();
@@ -50,7 +50,7 @@ public class TestSPUserManagement extends AbstractTest
     private void setupMockSPDatabaseGetUser(@Nullable User user)
             throws Exception
     {
-        when(db.getUser(any(String.class))).thenReturn(user);
+        when(db.getUserNullable(any(String.class))).thenReturn(user);
     }
     private void setupMockSPDatabaseGetUserTest()
             throws Exception
@@ -91,7 +91,7 @@ public class TestSPUserManagement extends AbstractTest
     {
         setupMockSPDatabaseGetUserNull();
         userManagement.sendPasswordResetEmail(testUser._id);
-        verify(db).getUser(anyString());
+        verify(db).getUserNullable(anyString());
         verifyNoMoreInteractions(db);
     }
     @Test
@@ -150,7 +150,7 @@ public class TestSPUserManagement extends AbstractTest
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );
-        verify(db).getUser(testUser._id);
+        verify(db).getUserNullable(testUser._id);
     }
 
     @Test

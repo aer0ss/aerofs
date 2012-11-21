@@ -23,7 +23,7 @@ public interface ISessionUserID
     void setUser(String userId);
 
     /**
-     * Remove the user ID from this session. A subsequent call to getUser() should throw ExNoPerm,
+     * Remove the user ID from this session. A subsequent call to getUserNullable() should throw ExNoPerm,
      * unless the ID has been set again.
      */
     void removeUser();

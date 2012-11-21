@@ -82,7 +82,7 @@ public class UserManagement
     public @Nullable User getUserNullable(@Nonnull String userID)
             throws IOException, SQLException
     {
-        return _db.getUser(userID);
+        return _db.getUserNullable(userID);
     }
 
     /**
@@ -124,7 +124,7 @@ public class UserManagement
     public void checkUserIdDoesNotExist(String userId)
             throws SQLException, IOException, ExAlreadyExist
     {
-        if (_db.getUser(userId) != null) {
+        if (_db.getUserNullable(userId) != null) {
             throw new ExAlreadyExist("A user with this email address already exists");
         }
     }
