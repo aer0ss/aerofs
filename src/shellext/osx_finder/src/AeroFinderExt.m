@@ -85,11 +85,11 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
  */
 +(AeroFinderExt*) instance
 {
-	static AeroFinderExt* inst = nil;
-	if (inst == nil) {
-		inst = [[AeroFinderExt alloc] init];
-	}
-	return inst;
+    static AeroFinderExt* inst = nil;
+    if (inst == nil) {
+        inst = [[AeroFinderExt alloc] init];
+    }
+    return inst;
 }
 
 -(id) init
