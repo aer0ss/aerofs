@@ -34,7 +34,7 @@ public class HdTestMultiuserJoinRootStore extends AbstractHdIMC<EITestMultiuserJ
 
         Trans t = _tm.begin_();
         try {
-            _sc.createStore_(sid, MultiuserPathResolver.getStorePath_(sid), t);
+            _sc.createStore_(sid, MultiuserPathResolver.getStorePath(sid), t);
             t.commit_();
         } finally {
             t.end_();

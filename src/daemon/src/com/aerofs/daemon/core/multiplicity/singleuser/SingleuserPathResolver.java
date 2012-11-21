@@ -100,7 +100,7 @@ public class SingleuserPathResolver implements IPathResolver
     /**
      * @return the path to the root folder of the root store
      */
-    public static Path getRootStorePath_()
+    public static Path getRootStorePath()
     {
         return new Path();
     }

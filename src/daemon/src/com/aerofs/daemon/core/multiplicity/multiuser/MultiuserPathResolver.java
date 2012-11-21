@@ -83,7 +83,7 @@ public class MultiuserPathResolver implements IPathResolver
     /**
      * @return the path to the root folder of the specified store
      */
-    public static Path getStorePath_(SID sid)
+    public static Path getStorePath(SID sid)
     {
         return new Path(sid.toStringFormal());
     }

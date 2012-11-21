@@ -30,6 +30,8 @@ import com.google.common.collect.Sets;
  * Variable values are stored as strings. When primitive types are used to set values, e.g. with
  * {@code set(Key, int)}, the class converts them to strings with "natural" conversions, e.g.
  * {@code Int.toString(int)}.
+ *
+ * Variable values are cached in memory for fast access.
  */
 public class CfgDatabase
 {

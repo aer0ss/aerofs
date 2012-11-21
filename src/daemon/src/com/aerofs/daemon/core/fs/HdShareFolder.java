@@ -1,12 +1,12 @@
 package com.aerofs.daemon.core.fs;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
 import com.aerofs.daemon.core.acl.LocalACL;
-import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;
@@ -36,6 +36,7 @@ import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExChildAlreadyShared;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.ExParentAlreadyShared;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -62,13 +63,12 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final ObjectDeleter _od;
     private final IMapSID2SIndex _sid2sidx;
     private final IStores _ss;
-    private final ACLSynchronizer _aclsync;
     private final DescendantStores _dss;
 
     @Inject
     public HdShareFolder(LocalACL lacl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
             IImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
-            ACLSynchronizer aclsync, IStores ss, DescendantStores dss)
+            IStores ss, DescendantStores dss)
     {
         _ss = ss;
         _lacl = lacl;
@@ -80,51 +80,41 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _om = om;
         _od = od;
         _sid2sidx = sid2sidx;
-        _aclsync = aclsync;
         _dss = dss;
     }
 
     @Override
     protected void handleThrows_(EIShareFolder ev, Prio prio) throws Exception
     {
-        ////////
-        // sanity and security check
+        OA oa = checkSanity_(ev._path);
 
-        SOID soid = _ds.resolveThrows_(ev._path);
-        if (soid.oid().isRoot() || soid.oid().isTrash()) {
-            throw new ExNoPerm("can't share system folders");
+        checkACL_(ev.user(), ev._path);
+
+        // calculate the SID
+        boolean alreadyShared = false;
+        SID sid;
+        if (oa.isAnchor()) {
+            alreadyShared = true;
+            sid = SID.anchorOID2storeSID(oa.soid().oid());
+        } else if (oa.isDir()) {
+            sid = SID.folderOID2convertedStoreSID(oa.soid().oid());
+        } else {
+            throw new ExNotDir();
         }
 
-        // throw if the object is expelled
-        OA oa = _ds.getOA_(soid);
-        if (oa.isExpelled()) throw new ExExpelled();
-
-        // throw if a parent folder is already shared
-        if (!_ss.isRoot_(soid.sidx())) throw new ExParentAlreadyShared();
-
-        Set<SIndex> descendants = _dss.getDescendantStores_(soid);
-        if (!descendants.isEmpty()) throw new ExChildAlreadyShared();
-
-        // check ACL
-        assert !ev._path.isEmpty(); // guaranteed by the above check
-        Path pathParent = ev._path.removeLast();
-        _lacl.checkThrows_(ev.user(), pathParent, Role.OWNER);
 
         //
         // IMPORTANT: the order of operations in the following code matters
         //
         // You have to:
-        // 1) calculate the SID
-        // 2) contact the central ACL server to share the folder
-        // 3) convert the local folder into a shared folder
-        //
-        // The output of 1) is used by 2) and 3), so it has to run first.
+        // 1) contact the central ACL server to share the folder
+        // 2) convert the local folder into a shared folder
         //
         // We contact the remote _first_ to update the acls because remote calls are much more
         // likely to fail than local ones. A failure will safely prevent the folder from being
         // converted into a store (i.e. a half-state in the system).
         //
-        // If the order of 2) and 3) were reversed we would convert the store locally first,
+        // If the order were reversed we would convert the store locally first,
         // and then update the acls for this store. At the same time,
         // the migration process has started, and objects will be deleted from the old folder and
         // added to the store. At the same time, this update would be propagated to other devices
@@ -140,72 +130,75 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // while remote failures will prevent the system from being in a half-state
         //
 
-        ////////
-        // calculate the SID
+        shareFolderThroughSP_(ev._subject2role, ev._emailNote, ev.user(), ev._path.last(), sid,
+                alreadyShared);
 
-        boolean alreadyShared = false;
-        SID sid;
-        if (oa.isAnchor()) {
-            alreadyShared = true;
-            sid = SID.anchorOID2storeSID(oa.soid().oid());
-        } else if (oa.isDir()) {
-            sid = SID.folderOID2convertedStoreSID(oa.soid().oid());
-        } else {
-            throw new ExNotDir();
-        }
-
-        ////////
-        // share the folder through SP
-
-        Map<String, Role> subject2role = new TreeMap<String, Role>(ev._subject2role);
-
-        // always add the user as the owner
-        if (!alreadyShared) subject2role.put(ev.user(), Role.OWNER);
-
-        if (!subject2role.isEmpty()) {
-            // the store is guaranteed not expelled by the above code
-            SIndex sidx;
-            if (alreadyShared) {
-                sidx = _sid2sidx.get_(sid);
-            } else {
-                Trans t = _tm.begin_();
-                try {
-                    sidx = _sid2sidx.getAbsent_(sid, t);
-                    t.commit_();
-                } finally {
-                    t.end_();
-                }
-            }
-
-            requestSPToShare_(sid, ev._path.last(), SubjectRolePairs.mapToPB(subject2role),
-                    ev._emailNote);
-
-            // write ACLs to local DB to avoid lag between sharing and verkehr notification
-            _aclsync.commitNewACLsToLocalDatabase(sidx, subject2role);
-        }
-
-        ////////
-        // convert the folder to a shared folder
-
-        if (!alreadyShared) {
-            assert oa.isDir();
-
-            Trans t = _tm.begin_();
-            try {
-                convert_(oa.soid(), oa.parent(), sid, ev._path, t);
-                t.commit_();
-            } finally {
-                t.end_();
-            }
-        }
+        if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
 
         ev.setResult_(sid);
     }
 
+    private void shareFolderThroughSP_(Map<String, Role> subject2role, String emailNote,
+            String user, String folderName, SID sid, boolean alreadyShared) throws Exception
+    {
+        // always add the user as the owner
+        if (!alreadyShared) {
+            subject2role = new TreeMap<String, Role>(subject2role);
+            subject2role.put(user, Role.OWNER);
+        }
+
+        if (!subject2role.isEmpty()) {
+            callSP_(sid, folderName, SubjectRolePairs.mapToPB(subject2role), emailNote);
+        }
+    }
+
+    private OA checkSanity_(Path path)
+            throws SQLException, ExNotFound, ExNoPerm, ExExpelled, ExParentAlreadyShared,
+            ExChildAlreadyShared
+    {
+        SOID soid = _ds.resolveThrows_(path);
+        if (soid.oid().isRoot() || soid.oid().isTrash()) {
+            throw new ExNoPerm("can't share system folders");
+        }
+
+        // throw if the object is expelled
+        OA oa = _ds.getOA_(soid);
+        if (oa.isExpelled()) throw new ExExpelled();
+
+        // throw if a parent folder is already shared
+        if (!_ss.isRoot_(soid.sidx())) throw new ExParentAlreadyShared();
+
+        Set<SIndex> descendants = _dss.getDescendantStores_(soid);
+        if (!descendants.isEmpty()) throw new ExChildAlreadyShared();
+        return oa;
+    }
+
+    private void checkACL_(String user, Path path)
+            throws ExNotFound, SQLException, ExNoPerm, ExExpelled
+    {
+        assert !path.isEmpty(); // guaranteed by the above check
+        Path pathParent = path.removeLast();
+        _lacl.checkThrows_(user, pathParent, Role.OWNER);
+    }
+
+    private void convertToSharedFolder_(Path path, OA oa, SID sid)
+            throws Exception
+    {
+        assert oa.isDir();
+
+        Trans t = _tm.begin_();
+        try {
+            converttoSharedFolderImpl_(oa.soid(), oa.parent(), sid, path, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
+
     /**
-     * Make the SP call to update the authoritative centralized ACL DB
+     * Pseudo-pause and make a call to SP to share the folder
      */
-    private void requestSPToShare_(SID sid, String folderName, List<PBSubjectRolePair> roles,
+    private void callSP_(SID sid, String folderName, List<PBSubjectRolePair> roles,
             String emailNote) throws Exception
     {
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
@@ -224,7 +217,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     /**
      * Convert an existing folder into a store.
      */
-    private void convert_(SOID soid, OID oidParent, SID sid, Path path, Trans t)
+    private void converttoSharedFolderImpl_(SOID soid, OID oidParent, SID sid, Path path, Trans t)
             throws Exception
     {
         // Step 1: rename the folder into a temporary name, without incrementing its version.

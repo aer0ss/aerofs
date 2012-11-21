@@ -1,10 +1,10 @@
 package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.CoreModule;
+import com.aerofs.daemon.core.phy.block.local.LocalStorageModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
-import com.aerofs.daemon.core.phy.linked.TestMultiuserLocalStorageModule;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
@@ -48,16 +48,17 @@ public class DaemonProgram implements IProgram
     {
         ///GuiceLogging.enable();
 
-        Module storageModule = Cfg.db().getNullable(Key.S3_BUCKET_ID) == null ?
-                new LinkedStorageModule() : new S3Module();
-
-        Module multiplicityModule = Cfg.db().getBoolean(Key.MULTIUSER) ?
-                new MultiuserModule() : new SingleuserModule();
-
-        // TODO (WW) remove this when LocalBlockStorage is implemented
+        Module storageModule;
+        Module multiplicityModule;
         if (Cfg.db().getBoolean(Key.MULTIUSER)) {
-            storageModule = new TestMultiuserLocalStorageModule();
+            multiplicityModule = new MultiuserModule();
+            storageModule = new LocalStorageModule();
+        } else {
+            multiplicityModule = new SingleuserModule();
+            storageModule = new LinkedStorageModule();
         }
+
+        if (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null) storageModule = new S3Module();
 
         Stage stage = Stage.PRODUCTION;
 

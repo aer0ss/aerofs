@@ -74,19 +74,7 @@ public class ACLSynchronizer
         _sid2sidx = sid2SIndex;
     }
 
-    /**
-     * For faster UI refresh and syncing with newly added users, this method immediately adds new
-     * ACL entries to the local database rather than waiting for notifications from the push
-     * service.
-     *
-     * Notes:
-     * This should only be called AFTER a successful call to SP! This just brings the local ACL
-     * database in sync with what should be on the server, so please ensure that the server has
-     * accepted the new changes before setting them locally.
-     * Also, this uses a transaction internally, so it cannot be used when inside of another
-     * transaction.
-     */
-    public void commitNewACLsToLocalDatabase(SIndex sidx, Map<String, Role> subject2role)
+    private void commitToLocal_(SIndex sidx, Map<String, Role> subject2role)
             throws SQLException, ExNotFound
     {
         Trans t = _tm.begin_();
@@ -102,7 +90,7 @@ public class ACLSynchronizer
      * Resolve the given SIndex to a SID
      * TODO: move this to a common location so other classes can use it too
      */
-    private SID resolveSIndex(SIndex sidx)
+    private SID resolveSIndex_(SIndex sidx)
             throws SQLException
     {
         SID sid = _sidx2sid.getNullable_(sidx);
@@ -247,7 +235,7 @@ public class ACLSynchronizer
             throws Exception
     {
         // first, resolve the sid and prepare data for protobuf
-        SID sid = resolveSIndex(sidx);
+        SID sid = resolveSIndex_(sidx);
         List<PBSubjectRolePair> roles = SubjectRolePairs.mapToPB(subject2role);
 
         // make the SP call (done before adding entries to the local database to avoid changing the
@@ -265,7 +253,7 @@ public class ACLSynchronizer
         }
 
         // add new entries to the local database
-        commitNewACLsToLocalDatabase(sidx, subject2role);
+        commitToLocal_(sidx, subject2role);
     }
 
     public void delete_(SIndex sidx, Iterable<String> subjects)
