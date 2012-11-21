@@ -121,10 +121,10 @@
     <None Include="OverlayIcons.rgs">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="UploadOverlay.ico">
+    <None Include="upload_overlay.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="DownloadOverlay.ico">
+    <None Include="download_overlay.ico">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="ContextMenu.rgs">
@@ -136,16 +136,16 @@
     <None Include="ContextMenuAdmin.rgs">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="InSyncOverlay.ico">
+    <None Include="in_sync_overlay.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="PartialSyncOverlay.ico">
+    <None Include="partial_sync_overlay.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="OutSyncOverlay.ico">
+    <None Include="out_of_sync_overlay.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="ConflictOverlay.ico">
+    <None Include="conflict_overlay.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

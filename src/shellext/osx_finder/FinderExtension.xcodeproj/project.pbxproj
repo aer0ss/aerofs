@@ -25,19 +25,19 @@
 		1658CC92145E9FD4005476FE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC91145E9FD3005476FE /* QuartzCore.framework */; };
 		1658CC97145F2D9C005476FE /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC96145F2D9C005476FE /* Quartz.framework */; };
 		16692664150AD6450072DA1E /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 16692663150AD6450072DA1E /* AsyncSocket.m */; };
-		1670114614840DEC0022673C /* DownloadBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114414840DEC0022673C /* DownloadBadge.icns */; };
-		1670114714840DEC0022673C /* UploadBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114514840DEC0022673C /* UploadBadge.icns */; };
+		1670114614840DEC0022673C /* download_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114414840DEC0022673C /* download_overlay.icns */; };
+		1670114714840DEC0022673C /* upload_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114514840DEC0022673C /* upload_overlay.icns */; };
 		16978FA1144E3C2D00F92021 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 16978F9D144E3C2D00F92021 /* InfoPlist.strings */; };
 		16A99D61145B296600C3EA3D /* AeroOverlay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 16A99D5F145B296600C3EA3D /* AeroOverlay.mm */; };
 		16F60E9E153F6F2B00A25339 /* Shellext.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F60E9C153F6F2B00A25339 /* Shellext.pb.m */; };
 		16F8E74B144E47BD00F78CD3 /* AeroFinderExt.m in Sources */ = {isa = PBXBuildFile; fileRef = 16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */; };
-		F341E7721612683D0055FC67 /* InSyncBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E76F1612683D0055FC67 /* InSyncBadge.icns */; };
-		F341E7731612683D0055FC67 /* OutSyncBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7701612683D0055FC67 /* OutSyncBadge.icns */; };
-		F341E7741612683D0055FC67 /* PartialSyncBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7711612683D0055FC67 /* PartialSyncBadge.icns */; };
+		F341E7721612683D0055FC67 /* in_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E76F1612683D0055FC67 /* in_sync_overlay.icns */; };
+		F341E7731612683D0055FC67 /* out_of_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */; };
+		F341E7741612683D0055FC67 /* partial_sync_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F341E7711612683D0055FC67 /* partial_sync_overlay.icns */; };
 		F341E7741612683D0055FC6D /* Path_status.pb.m in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6C /* Path_status.pb.m */; };
 		F341E7741612683D0055FC6F /* AeroOverlayCache.mm in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC6E /* AeroOverlayCache.mm */; };
 		F341E7741612683D0055FC72 /* OverlayCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F341E7741612683D0055FC71 /* OverlayCache.cpp */; };
-		F3DC484E164982AE00D66E1E /* ConflictBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = F3DC484D164982AE00D66E1E /* ConflictBadge.icns */; };
+		F3DC484E164982AE00D66E1E /* conflict_overlay.icns in Resources */ = {isa = PBXBuildFile; fileRef = F3DC484D164982AE00D66E1E /* conflict_overlay.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,8 +101,8 @@
 		1658CC96145F2D9C005476FE /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = System/Library/Frameworks/Quartz.framework; sourceTree = SDKROOT; };
 		16692661150AD6350072DA1E /* AsyncSocket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AsyncSocket.h; path = 3rd_party/cocoaasyncsocket/AsyncSocket.h; sourceTree = SOURCE_ROOT; };
 		16692663150AD6450072DA1E /* AsyncSocket.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AsyncSocket.m; path = 3rd_party/cocoaasyncsocket/AsyncSocket.m; sourceTree = SOURCE_ROOT; };
-		1670114414840DEC0022673C /* DownloadBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = DownloadBadge.icns; path = images/DownloadBadge.icns; sourceTree = SOURCE_ROOT; };
-		1670114514840DEC0022673C /* UploadBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = UploadBadge.icns; path = images/UploadBadge.icns; sourceTree = SOURCE_ROOT; };
+		1670114414840DEC0022673C /* download_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = download_overlay.icns; path = images/download_overlay.icns; sourceTree = SOURCE_ROOT; };
+		1670114514840DEC0022673C /* upload_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = upload_overlay.icns; path = images/upload_overlay.icns; sourceTree = SOURCE_ROOT; };
 		16978F82144E3B1B00F92021 /* AeroFSFinderExtension.osax */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AeroFSFinderExtension.osax; sourceTree = BUILT_PRODUCTS_DIR; };
 		16978F8A144E3B1B00F92021 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		16978F9B144E3C2D00F92021 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = src/Info.plist; sourceTree = SOURCE_ROOT; };
@@ -114,16 +114,16 @@
 		16F60E9D153F6F2B00A25339 /* Shellext.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Shellext.pb.h; path = gen/Shellext.pb.h; sourceTree = "<group>"; };
 		16F8E749144E47BD00F78CD3 /* AeroFinderExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AeroFinderExt.m; path = src/AeroFinderExt.m; sourceTree = SOURCE_ROOT; };
 		16F8E74A144E47BD00F78CD3 /* AeroFinderExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroFinderExt.h; path = src/AeroFinderExt.h; sourceTree = SOURCE_ROOT; };
-		F341E76F1612683D0055FC67 /* InSyncBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = InSyncBadge.icns; path = images/InSyncBadge.icns; sourceTree = SOURCE_ROOT; };
-		F341E7701612683D0055FC67 /* OutSyncBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = OutSyncBadge.icns; path = images/OutSyncBadge.icns; sourceTree = SOURCE_ROOT; };
-		F341E7711612683D0055FC67 /* PartialSyncBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = PartialSyncBadge.icns; path = images/PartialSyncBadge.icns; sourceTree = SOURCE_ROOT; };
+		F341E76F1612683D0055FC67 /* in_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = in_sync_overlay.icns; path = images/in_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
+		F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = out_of_sync_overlay.icns; path = images/out_of_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
+		F341E7711612683D0055FC67 /* partial_sync_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = partial_sync_overlay.icns; path = images/partial_sync_overlay.icns; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC6B /* Path_status.pb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Path_status.pb.h; path = gen/Path_status.pb.h; sourceTree = "<group>"; };
 		F341E7741612683D0055FC6C /* Path_status.pb.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Path_status.pb.m; path = gen/Path_status.pb.m; sourceTree = "<group>"; };
 		F341E7741612683D0055FC6E /* AeroOverlayCache.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AeroOverlayCache.mm; path = src/AeroOverlayCache.mm; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC70 /* AeroOverlayCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AeroOverlayCache.h; path = src/AeroOverlayCache.h; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC71 /* OverlayCache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OverlayCache.cpp; path = ../common/OverlayCache.cpp; sourceTree = SOURCE_ROOT; };
 		F341E7741612683D0055FC73 /* OverlayCache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OverlayCache.h; path = ../common/OverlayCache.h; sourceTree = SOURCE_ROOT; };
-		F3DC484D164982AE00D66E1E /* ConflictBadge.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = ConflictBadge.icns; path = images/ConflictBadge.icns; sourceTree = SOURCE_ROOT; };
+		F3DC484D164982AE00D66E1E /* conflict_overlay.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = conflict_overlay.icns; path = images/conflict_overlay.icns; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -266,12 +266,12 @@
 		16978F8C144E3B1B00F92021 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				F3DC484D164982AE00D66E1E /* ConflictBadge.icns */,
-				F341E76F1612683D0055FC67 /* InSyncBadge.icns */,
-				F341E7701612683D0055FC67 /* OutSyncBadge.icns */,
-				F341E7711612683D0055FC67 /* PartialSyncBadge.icns */,
-				1670114414840DEC0022673C /* DownloadBadge.icns */,
-				1670114514840DEC0022673C /* UploadBadge.icns */,
+				F3DC484D164982AE00D66E1E /* conflict_overlay.icns */,
+				F341E76F1612683D0055FC67 /* in_sync_overlay.icns */,
+				F341E7701612683D0055FC67 /* out_of_sync_overlay.icns */,
+				F341E7711612683D0055FC67 /* partial_sync_overlay.icns */,
+				1670114414840DEC0022673C /* download_overlay.icns */,
+				1670114514840DEC0022673C /* upload_overlay.icns */,
 				163F2F0E14560D4300762616 /* AeroFSFinderExtension.sdef */,
 				16978F9B144E3C2D00F92021 /* Info.plist */,
 				16978F9C144E3C2D00F92021 /* en.lproj */,
@@ -401,12 +401,12 @@
 				163F2F0A1455E46B00762616 /* finder_inject in Resources */,
 				16978FA1144E3C2D00F92021 /* InfoPlist.strings in Resources */,
 				163F2F0F14560D4300762616 /* AeroFSFinderExtension.sdef in Resources */,
-				1670114614840DEC0022673C /* DownloadBadge.icns in Resources */,
-				1670114714840DEC0022673C /* UploadBadge.icns in Resources */,
-				F341E7721612683D0055FC67 /* InSyncBadge.icns in Resources */,
-				F341E7731612683D0055FC67 /* OutSyncBadge.icns in Resources */,
-				F341E7741612683D0055FC67 /* PartialSyncBadge.icns in Resources */,
-				F3DC484E164982AE00D66E1E /* ConflictBadge.icns in Resources */,
+				1670114614840DEC0022673C /* download_overlay.icns in Resources */,
+				1670114714840DEC0022673C /* upload_overlay.icns in Resources */,
+				F341E7721612683D0055FC67 /* in_sync_overlay.icns in Resources */,
+				F341E7731612683D0055FC67 /* out_of_sync_overlay.icns in Resources */,
+				F341E7741612683D0055FC67 /* partial_sync_overlay.icns in Resources */,
+				F3DC484E164982AE00D66E1E /* conflict_overlay.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
