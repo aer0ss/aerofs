@@ -29,13 +29,13 @@
     // Load the icons
     NSBundle* aerofsBundle = [NSBundle bundleForClass:[self class]];
 
-    dlIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"DownloadBadge" ofType:@"icns"]];
-    ulIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"UploadBadge" ofType:@"icns"]];
-    cfIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"ConflictBadge" ofType:@"icns"]];
+    dlIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"download_overlay" ofType:@"icns"]];
+    ulIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"upload_overlay" ofType:@"icns"]];
+    cfIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"conflict_overlay" ofType:@"icns"]];
 
-    isIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"InSyncBadge" ofType:@"icns"]];
-    psIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"PartialSyncBadge" ofType:@"icns"]];
-    osIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"OutSyncBadge" ofType:@"icns"]];
+    isIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"in_sync_overlay" ofType:@"icns"]];
+    psIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"partial_sync_overlay" ofType:@"icns"]];
+    osIcon = [[AeroIconPair alloc] initWithContentsOfFile: [aerofsBundle pathForResource:@"out_of_sync_overlay" ofType:@"icns"]];
 
     // Swizzlle methods
     [AeroUtils swizzleInstanceMethod:@selector(layerForType:) fromClass:NSClassFromString(@"IKIconCell")

@@ -300,16 +300,16 @@
   <ItemGroup>
     <None Include="AeroFS.ico" />
     <None Include="AeroFSShellExtension.def" />
-    <None Include="ConflictOverlay.ico" />
+    <None Include="conflict_overlay.ico" />
     <None Include="ContextMenuAdmin.rgs" />
-    <None Include="DownloadOverlay.ico" />
-    <None Include="InSyncOverlay.ico" />
-    <None Include="OutSyncOverlay.ico" />
+    <None Include="download_overlay.ico" />
+    <None Include="in_sync_overlay.ico" />
+    <None Include="out_of_sync_overlay.ico" />
     <None Include="OverlayIcons.rgs" />
     <None Include="ContextMenu.rgs" />
     <None Include="OverlayIconsAdmin.rgs" />
-    <None Include="PartialSyncOverlay.ico" />
-    <None Include="UploadOverlay.ico" />
+    <None Include="partial_sync_overlay.ico" />
+    <None Include="upload_overlay.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
