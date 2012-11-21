@@ -554,13 +554,13 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psGetChildren.setBytes(2, parent.oid().getBytes());
             ResultSet rs = _psGetChildren.executeQuery();
             try {
-                boolean rootParent = parent.oid().equals(OID.ROOT);
+                boolean rootParent = parent.oid().isRoot();
                 // Most callers of this method simply iterate over the set, so if performance is
                 // an issue, consider using a LinkedHashSet
                 Set<OID> children = new HashSet<OID>();
                 while (rs.next()) {
                     OID oid = new OID(rs.getBytes(1));
-                    if (rootParent && oid.equals(OID.ROOT)) continue;
+                    if (rootParent && oid.isRoot()) continue;
                     children.add(oid);
                 }
                 return children;
