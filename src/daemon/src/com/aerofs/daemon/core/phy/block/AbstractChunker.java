@@ -19,9 +19,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.SQLException;
 
-import static com.aerofs.daemon.core.phy.block.BlockUtil.BLOCK_HASH_SIZE;
-import static com.aerofs.daemon.core.phy.block.BlockUtil.FILE_BLOCK_SIZE;
-
 /**
  * Split an input source into blocks and store them through the backend
  */
@@ -50,12 +47,14 @@ public abstract class AbstractChunker
     {
         if (_length == 0 && _skipEmpty) return new ContentHash(new byte[0]);
 
-        int numBlocks = _length == 0 ? 1 : (int)((_length + FILE_BLOCK_SIZE - 1) / FILE_BLOCK_SIZE);
-        byte[] hashBytes = new byte[numBlocks * BLOCK_HASH_SIZE];
+        int numBlocks = _length == 0 ? 1 : (int)((_length + Param.FILE_BLOCK_SIZE - 1) /
+                                                         Param.FILE_BLOCK_SIZE);
+        byte[] hashBytes = new byte[numBlocks * ContentHash.UNIT_LENGTH];
 
         for (int i = 0; i < numBlocks; ++i) {
             ContentHash h = storeOneBlock_(i);
-            System.arraycopy(h.getBytes(), 0, hashBytes, i * BLOCK_HASH_SIZE, BLOCK_HASH_SIZE);
+            System.arraycopy(h.getBytes(), 0, hashBytes, i * ContentHash.UNIT_LENGTH,
+                    ContentHash.UNIT_LENGTH);
         }
 
         return new ContentHash(hashBytes);
@@ -74,14 +73,14 @@ public abstract class AbstractChunker
     private ContentHash storeOneBlock_(int index) throws IOException, SQLException
     {
         InputSupplier<? extends InputStream> input
-                = ByteStreams.slice(_input, index * FILE_BLOCK_SIZE, FILE_BLOCK_SIZE);
+                = ByteStreams.slice(_input, index * Param.FILE_BLOCK_SIZE, Param.FILE_BLOCK_SIZE);
 
         InputStream in = input.getInput();
         try {
             // read a chunk of input into an in-memory buffer, performs any backend-specific
             // encoding and metadata computation (hash, length, ...) required for actual write
             Block block = new Block();
-            ByteArrayOutputStream d = new ByteArrayOutputStream((int)FILE_BLOCK_SIZE);
+            ByteArrayOutputStream d = new ByteArrayOutputStream((int)Param.FILE_BLOCK_SIZE);
             OutputStream out = wrapOutputStream(block, d);
             try {
                 byte[] buffer = new byte[Param.FILE_BUF_SIZE];

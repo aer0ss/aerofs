@@ -10,7 +10,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.io.FileNotFoundException;
@@ -31,8 +30,6 @@ import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
  */
 public class LocalBackend implements IBlockStorageBackend
 {
-    private final static Logger l = Util.l(LocalBackend.class);
-
     private final InjectableFile.Factory _fileFactory;
     private final InjectableFile _rootDir;
 
@@ -76,16 +73,18 @@ public class LocalBackend implements IBlockStorageBackend
     }
 
     // 2 hex digits per level -> 256-ary prefix tree
-    private static final int HEX_DIGIS_PER_LEVEL = 2;
+    private static final int HEX_DIGITS_PER_LEVEL = 2;
 
     private InjectableFile getBlockFile(ContentHash key)
     {
         assert isOneBlock(key);
         String k = key.toHex();
-        return _fileFactory.create(
-                _fileFactory.create(
-                        _fileFactory.create(_rootDir, k.substring(0, HEX_DIGIS_PER_LEVEL)),
-                        k.substring(HEX_DIGIS_PER_LEVEL, 2*HEX_DIGIS_PER_LEVEL)),
-                k.substring(2*HEX_DIGIS_PER_LEVEL));
+
+        String firstFolderName = k.substring(0, HEX_DIGITS_PER_LEVEL);
+        String secondFolderName  = k.substring(HEX_DIGITS_PER_LEVEL, 2 * HEX_DIGITS_PER_LEVEL);
+        String fileName = k.substring(2 * HEX_DIGITS_PER_LEVEL);
+
+        return _fileFactory.create(_rootDir, Util.join(firstFolderName, secondFolderName,
+                fileName));
     }
 }

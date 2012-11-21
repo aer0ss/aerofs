@@ -9,9 +9,10 @@ import java.net.URL;
 
 public class Param
 {
+    // recommended size for file I/O buffers
     public static final int FILE_BUF_SIZE                    = 512 * C.KB;
-    public static final int FILE_CHUNK_SIZE                  = 4 * C.MB;
-    public static final boolean STRICT_LISTENERS             = false;
+    // the block size used for content hashing and block storage (see BlockStorage)
+    public static final int FILE_BLOCK_SIZE                  = 4 * C.MB;
     public static final int MIN_PASSWD_LENGTH                = 6;
     public static final long FREQUENT_DEFECT_SENDER_INTERVAL = 3 * C.HOUR;
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;

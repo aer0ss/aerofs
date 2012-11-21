@@ -17,6 +17,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
@@ -555,7 +556,7 @@ public class TestBlockStorage extends AbstractBlockTest
         IPhysicalPrefix prefix = bs.newPrefix_(new SOCKID(sokid, CID.CONTENT));
         OutputStream out = prefix.newOutputStream_(false);
 
-        ByteStreams.copy(new DevZero(4 * BlockUtil.FILE_BLOCK_SIZE + 1), out);
+        ByteStreams.copy(new DevZero(4 * Param.FILE_BLOCK_SIZE + 1), out);
         prefix.prepare_(tk);
 
         verify(bsb, times(5))

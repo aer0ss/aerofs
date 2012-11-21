@@ -24,7 +24,7 @@ public class HashStream
 
     public static HashStream newFileHasher()
     {
-        return new HashStream(SecUtil.newMessageDigest(), Param.FILE_CHUNK_SIZE);
+        return new HashStream(SecUtil.newMessageDigest(), Param.FILE_BLOCK_SIZE);
     }
 
     public HashStream(MessageDigest md, int chunkSize)

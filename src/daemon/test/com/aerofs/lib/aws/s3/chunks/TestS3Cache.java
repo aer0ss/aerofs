@@ -55,7 +55,7 @@ public class TestS3Cache extends AbstractTestS3Cache
     public void shouldConcatenateChunks() throws Exception
     {
         String testString = "123";
-        long length = 1 * Param.FILE_CHUNK_SIZE + (4 << 10);
+        long length = 1 * Param.FILE_BLOCK_SIZE + (4 << 10);
 
         File sourceFile = new File(_tempDir, "source");
         writeLargeFile(sourceFile, length, testString.getBytes());
@@ -77,7 +77,7 @@ public class TestS3Cache extends AbstractTestS3Cache
     public void shouldSeekOverChunks() throws Exception
     {
         String testString = "123";
-        long length = 1 * Param.FILE_CHUNK_SIZE + (4 << 10);
+        long length = 1 * Param.FILE_BLOCK_SIZE + (4 << 10);
 
         File sourceFile = new File(_tempDir, "source");
         writeLargeFile(sourceFile, length, testString.getBytes());
@@ -94,9 +94,9 @@ public class TestS3Cache extends AbstractTestS3Cache
             }
         };
 
-        checkSlice(fileInput, cacheInput, Param.FILE_CHUNK_SIZE - 10, 20);
-        checkSlice(fileInput, cacheInput, Param.FILE_CHUNK_SIZE + 10, 20);
-        checkSlice(fileInput, cacheInput, Param.FILE_CHUNK_SIZE, Param.FILE_CHUNK_SIZE);
+        checkSlice(fileInput, cacheInput, Param.FILE_BLOCK_SIZE - 10, 20);
+        checkSlice(fileInput, cacheInput, Param.FILE_BLOCK_SIZE + 10, 20);
+        checkSlice(fileInput, cacheInput, Param.FILE_BLOCK_SIZE, Param.FILE_BLOCK_SIZE);
     }
 
     void checkSlice(InputSupplier<? extends InputStream> expected,

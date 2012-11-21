@@ -67,7 +67,7 @@ public class TestS3Cache_Space extends AbstractTestS3Cache
     public void shouldFreeSpaceInCache() throws Exception
     {
         String testString = "123";
-        long length = 3 * Param.FILE_CHUNK_SIZE + (4 << 10);
+        long length = 3 * Param.FILE_BLOCK_SIZE + (4 << 10);
 
         File sourceFile = new File(_tempDir, "source");
         writeLargeFile(sourceFile, length, testString.getBytes());

@@ -56,7 +56,7 @@ public class S3ChunkAccessor
     private static final Logger l = Util.l(S3ChunkAccessor.class);
 
     public static final int CHUNK_HASH_SIZE = ContentHash.UNIT_LENGTH;
-    public static final long FILE_CHUNK_SIZE = Param.FILE_CHUNK_SIZE;
+    public static final long FILE_CHUNK_SIZE = Param.FILE_BLOCK_SIZE;
 
     private static final String CHUNK_SUFFIX = ".chunk.gz.aes";
 

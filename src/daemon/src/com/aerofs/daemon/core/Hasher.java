@@ -291,7 +291,7 @@ public class Hasher
             @Nullable IAborter aborter) throws IOException, ExAborted, DigestException
     {
         MessageDigest md = SecUtil.newMessageDigest();
-        int chunkSize = Param.FILE_CHUNK_SIZE;
+        int chunkSize = Param.FILE_BLOCK_SIZE;
 
         int hashSize = md.getDigestLength();
         // TODO: what happens if you have a file so large that fileLen / chunkSize * hashSize
@@ -317,7 +317,7 @@ public class Hasher
                 md.update(dataBytes, 0, numRead);
                 chunkBytes += numRead;
 
-                // Ensure next read doesn't go beyond Param.FILE_CHUNK_SIZE
+                // Ensure next read doesn't go beyond Param.FILE_BLOCK_SIZE
                 if (chunkBytes + toRead > chunkSize) {
                     toRead = chunkSize - chunkBytes;
                     assert toRead >= 0;
