@@ -1,12 +1,28 @@
-#!/bin/sh
+#!/bin/bash
+thisdir=$(dirname $0)
 
-rm -rf ../build/*
-xcodebuild -project ../FinderExtension.xcodeproj -target AeroFSFinderExtension -configuration Release clean install
+rm -rf $thisdir/../build/*
+xcodebuild -project $thisdir/../FinderExtension.xcodeproj -target AeroFSFinderExtension -configuration Release clean install
+
+if [ $? -ne 0 ]
+then
+    echo "ERROR: xcodebuild failed."
+    exit 1
+fi
 
 echo "Looking for absolute paths hardcoded in the executable..."
-strings ../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/MacOS/AeroFSFinderExtension | grep /Users
-strings ../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/Resources/finder_inject | grep /Users
-echo "Done"
+error1=$(strings $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/MacOS/AeroFSFinderExtension | grep -c /Users)
+error2=$(strings $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax/Contents/Resources/finder_inject | grep -c /Users)
 
-rm -rf ../../../../resource/client/osx/AeroFSFinderExtension.osax
-mv ../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax ../../../../resource/client/osx
+if [ $error1 -ne 0 ] || [ $error2 -ne 0 ]
+then
+    echo "ERROR: strings failed. Hard coded absolute paths exist in the executable..."
+    exit 2
+fi
+
+echo "Moving to resource/client..."
+rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
+mv $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
+
+echo
+echo "SUCCESS."
