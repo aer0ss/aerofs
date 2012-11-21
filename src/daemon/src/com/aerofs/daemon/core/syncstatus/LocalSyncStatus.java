@@ -210,7 +210,7 @@ public class LocalSyncStatus implements IStoreDeletionOperator
         for (SIndex sidx : _dss.getDescendantStores_(soid)) {
             SOID root = new SOID(sidx, OID.ROOT);
             // all descendant stores must be admitted
-            assert _ds.hasOA_(root);
+            assert _ds.hasOA_(root) : root + " " + soid;
             l.debug("aggregate descendants " + root);
             IAggregatedStatus saggregate = aggregated.create();
             aggregateWithinStore_(root, true, saggregate);

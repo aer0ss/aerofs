@@ -30,7 +30,7 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
             throws Exception
     {
         SOID soid = _lacl.checkThrows_(ev._user, ev._path, Role.OWNER);
-        if (!soid.oid().equals(OID.ROOT)) throw new ExNotShared();
+        if (!soid.oid().isRoot()) throw new ExNotShared();
 
         // log kickouts
         for (String s : ev._subjects) SVClient.sendEventAsync(Type.KICKOUT, s);
