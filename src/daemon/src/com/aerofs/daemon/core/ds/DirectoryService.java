@@ -26,11 +26,13 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -324,12 +326,32 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         // all the children under the path need to be invalidated.
         _cacheDS.invalidateAll_();
 
+        assertHasNoAncestorCycle_(soid);
+
         if (!isTrashOrDeleted_(soidParent)) {
             Path path = resolve_(oaParent).append(name);
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectCreated_(soid, oaParent.soid().oid(), path, t);
             }
         }
+    }
+
+    /**
+     * assumes {@code soid} exists in the OA table
+     */
+    private void assertHasNoAncestorCycle_(@Nonnull SOID soid) throws SQLException
+    {
+        Set<OID> ancestors = Sets.newHashSet();
+
+        SIndex sidx = soid.sidx();
+        SOID cur = soid;
+        do {
+            if (!ancestors.add(cur.oid())) {
+                SystemUtil.fatal("anc cyc " + ancestors + " by " + soid);
+            }
+
+            cur = new SOID(sidx, getOA_(cur).parent());
+        } while (!cur.oid().isRoot());
     }
 
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
@@ -411,6 +433,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
             // Physical objects of all the children objects needs to be invalidated
             _cacheOA.invalidateAll_();
         }
+
+        assertHasNoAncestorCycle_(oa.soid());
 
         // update activity log
 
