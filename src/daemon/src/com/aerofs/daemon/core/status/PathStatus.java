@@ -155,8 +155,8 @@ public class PathStatus
             return Sync.UNKNOWN;
         }
         // NOTE: files only present on the local device are considered out of sync
-        if (!s.atLeastOneInSync) return Sync.OUT_SYNC;
-        if (s.allInSync) return Sync.IN_SYNC;
+        if (!s.isPartiallySynced()) return Sync.OUT_SYNC;
+        if (s.allInSync()) return Sync.IN_SYNC;
         return Sync.PARTIAL_SYNC;
     }
 }
