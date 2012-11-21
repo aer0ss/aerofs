@@ -13,4 +13,9 @@ public class KIndex extends IntegerID
     {
         super(i);
     }
+
+    public KIndex increment()
+    {
+        return new KIndex(getInt() + 1);
+    }
 }

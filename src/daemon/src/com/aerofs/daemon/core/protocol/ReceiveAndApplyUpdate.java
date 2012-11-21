@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedMap;
 
 import static com.aerofs.daemon.core.protocol.GetComponentReply.*;
 
@@ -253,11 +254,11 @@ public class ReceiveAndApplyUpdate
         Version vAddLocal = new Version().add_(vRemote);
         KIndex kidxApply = null;
         Version vApply = null;
-        int kidxMax = KIndex.MASTER.getInt() - 1;
         List<KIndex> kidcsDel = Lists.newArrayList();
         PBGetComReply reply = msg.pb().getGetComReply();
         ContentHash hRemote = null;
         if (reply.hasHashLength()) {
+            l.debug("hash included");
             int hashBytesRead = 0;
             int hashBytesTotal = reply.getHashLength();
             // If the protobuf, hash, and file content all fit into a single datagram,
@@ -286,68 +287,71 @@ public class ReceiveAndApplyUpdate
                 // the file content after the hash.
                 hRemote = new ContentHash(hashBuf);
             }
+        } else {
+            l.debug("hash not present");
         }
+
+        OA remoteOA = _ds.getOAThrows_(soid);
 
         // MASTER branch should be considered first for application of update as opposed
         // to conflict branches when possible (see "@@" below).
         // Hence iterate over ordered KIndices.
-        for (KIndex kidx : _ds.getOAThrows_(soid).cas().keySet()) {
+        for (KIndex kidx : remoteOA.cas().keySet()) {
             SOCKID kBranch = new SOCKID(soid, CID.CONTENT, kidx);
             Version vBranch = _nvc.getLocalVersion_(kBranch);
-            kidxMax = Math.max(kidx.getInt(), kidxMax);
 
             if (l.isDebugEnabled()) l.debug(kBranch + " l " + vBranch);
 
             if (vRemote.sub_(vBranch).isZero_()) {
-                if (_ds.isPresent_(kBranch) || !vBranch.sub_(vRemote).isZero_()) {
-                    // see computCausalityForMeta()
-                    l.warn("in cache or l - r > 0");
-                    return null;
+                // The local version is newer or the same as the remote version
 
-                } else {
-                    // vRemote == vLocal
+                // This SOCKID (kBranch) is a local conflict branch of the remotely-received SOID.
+                // If it was expelled it would not have been a member of the CA set. Therefore it
+                // should always be present.
+                assert _ds.isPresent_(kBranch) : kBranch;
+
+                l.warn("l - r > 0");
+
+                // No work to be done
+                return null;
+            }
+
+            // Computing/requesting hash is expensive so we compute it only
+            // when necessary and ensure hash of remote branch is computed
+            // only once.
+            final boolean isRemoteDominating = vBranch.sub_(vRemote).isZero_();
+            if (!isRemoteDominating && hRemote == null) {
+                l.debug("Fetching hash on demand");
+                // Abort the ongoing transfer.  If we don't, the peer will continue sending
+                // file content which we will queue until we exhaust the heap.
+                if (msg.streamKey() != null) {
+                    _iss.end_(msg.streamKey());
+                }
+                // Compute the local ContentHash first.  This ensures that the local ContentHash
+                // is available by the next time we try to download this component.
+                _hasher.computeHash_(kBranch.sokid(), false, tk);
+                // Send a ComputeHashCall to make the remote peer also compute the ContentHash.
+                // This will block for a while until the remote peer computes the hash.
+                _computeHashCall.rpc_(soid, vRemote, msg.did(), tk);
+                // Once the above call returns, throw so Downloads will restart this Download.
+                // The next time through, the peer should send the hash. Since we already
+                // computed the local hash, we can compare them.
+                throw new ExRestartWithHashComputed("restart dl after hash");
+            }
+
+            if (isRemoteDominating || isContentSame_(kBranch, hRemote, tk)) {
+                l.debug("content is the same!");
+                if (kidxApply == null) {
+                    // @@ see comments above
                     kidxApply = kidx;
                     vApply = vBranch;
-                    vAddLocal = new Version();
-                }
-
-            } else  {
-                // Computing/requesting hash is expensive so we compute it only
-                // when necessary and ensure hash of remote branch is computed
-                // only once.
-                final boolean isRemoteDominating = vBranch.sub_(vRemote).isZero_();
-                if (!isRemoteDominating && hRemote == null) {
-                    l.debug("Fetching hash on demand");
-                    // Abort the ongoing transfer.  If we don't, the peer will continue sending
-                    // file content which we will queue until we exhaust the heap.
-                    if (msg.streamKey() != null) {
-                        _iss.end_(msg.streamKey());
-                    }
-                    // Compute the local ContentHash first.  This ensures that the local ContentHash
-                    // is available by the next time we try to download this component.
-                    _hasher.computeHash_(kBranch.sokid(), false, tk);
-                    // Send a ComputeHashCall to make the remote peer also compute the ContentHash.
-                    // This will block for a while until the remote peer computes the hash.
-                    _computeHashCall.rpc_(soid, vRemote, msg.did(), tk);
-                    // Once the above call returns, throw so Downloads will restart this Download.
-                    // The next time through, the peer should send the hash. Since we already
-                    // computed the local hash, we can compare them.
-                    throw new ExRestartWithHashComputed("restart dl after hash");
-                }
-
-                if (isRemoteDominating || isContentSame_(kBranch, hRemote, tk)) {
-                    if (kidxApply == null) {
-                        // @@ see comments above
-                        kidxApply = kidx;
-                        vApply = vBranch;
-                        vAddLocal = vAddLocal.sub_(vBranch);
-                    } else {
-                        kidcsDel.add(kidx);
-                        vAddLocal = vAddLocal.add_(vBranch);
-                    }
+                    vAddLocal = vAddLocal.sub_(vBranch);
                 } else {
-                    // it's a conflict. do nothing but move on to the next branch
+                    kidcsDel.add(kidx);
+                    vAddLocal = vAddLocal.add_(vBranch);
                 }
+            } else {
+                // it's a conflict. do nothing but move on to the next branch
             }
 
             if (l.isDebugEnabled()) {
@@ -355,9 +359,10 @@ public class ReceiveAndApplyUpdate
             }
         }
 
-        // no subordinate branch was found. create a new branch
         if (kidxApply == null)  {
-            kidxApply = new KIndex(kidxMax + 1);
+            // No subordinate branch was found. Create a new branch.
+            SortedMap<KIndex, CA> cas = remoteOA.cas();
+            kidxApply = cas.isEmpty() ? KIndex.MASTER : cas.lastKey().increment();
         } else {
             // It's necessary to compute diff of the vector being added
             // from the branch to which vector will be applied.
