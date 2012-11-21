@@ -152,7 +152,9 @@ public class PathStatus
         } catch (ExExpelled e) {
             return Sync.OUT_SYNC;
         } catch (ExNotFound e) {
-            return Sync.UNKNOWN;
+            // Always return out of sync for unknown objects to avoid race conditions between the
+            // GUI and the daemon.
+            return Sync.OUT_SYNC;
         }
         // NOTE: files only present on the local device are considered out of sync
         if (!s.isPartiallySynced()) return Sync.OUT_SYNC;
