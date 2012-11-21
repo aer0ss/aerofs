@@ -24,7 +24,6 @@
 		1644252E146AE85700DE4546 /* AeroIconPair.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1644252C146AE85700DE4546 /* AeroIconPair.mm */; };
 		1658CC92145E9FD4005476FE /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC91145E9FD3005476FE /* QuartzCore.framework */; };
 		1658CC97145F2D9C005476FE /* Quartz.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1658CC96145F2D9C005476FE /* Quartz.framework */; };
-		16655B93153FA2620023DE48 /* AeroFSFinderExtension.osax in CopyFiles */ = {isa = PBXBuildFile; fileRef = 16978F82144E3B1B00F92021 /* AeroFSFinderExtension.osax */; };
 		16692664150AD6450072DA1E /* AsyncSocket.m in Sources */ = {isa = PBXBuildFile; fileRef = 16692663150AD6450072DA1E /* AsyncSocket.m */; };
 		1670114614840DEC0022673C /* DownloadBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114414840DEC0022673C /* DownloadBadge.icns */; };
 		1670114714840DEC0022673C /* UploadBadge.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1670114514840DEC0022673C /* UploadBadge.icns */; };
@@ -67,7 +66,6 @@
 			dstPath = $SRCROOT/build/$CONFIGURATION;
 			dstSubfolderSpec = 0;
 			files = (
-				16655B93153FA2620023DE48 /* AeroFSFinderExtension.osax in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
