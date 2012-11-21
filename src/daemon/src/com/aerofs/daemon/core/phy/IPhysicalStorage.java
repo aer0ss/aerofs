@@ -10,6 +10,10 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 
+/**
+ * This interface is the main access point of the physical storage layer. See
+ * docs/design/physical_storage_class_diagram.pptx for a high-level class diagram.
+ */
 public interface IPhysicalStorage
 {
     IPhysicalFile newFile_(SOKID sokid, Path path);
