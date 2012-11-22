@@ -275,9 +275,7 @@ service SPService {
     /**
      * Set the user's authorization level for SP services
      *
-     * authlevel: higher than the level of the subject user
-     *            e.g. Admin to set level for User, Super-admin to set level for Admin or User.
-     *                 Admins cannot set level for Admins
+     * authlevel: admin
      * throws:
      * - ExNotFound if the provided user email has no AeroFS account set up.
      * - ExNoPerm   if the authorization requirements are not met,
@@ -615,7 +613,6 @@ message SetAuthorizationLevelCall {
 enum PBAuthorizationLevel {
     USER       = 1;
     ADMIN      = 2;
-    SUPERADMIN = 3;
 }
 
 message AddOrganizationCall {

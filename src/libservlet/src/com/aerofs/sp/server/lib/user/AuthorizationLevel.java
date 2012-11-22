@@ -44,22 +44,20 @@ public enum AuthorizationLevel
         return AuthorizationLevel.values()[ordinal];
     }
 
-    /**
-     * @return true if 'this' dominates the authorization level of {@code level}
-     * N.B. this is duplicated from com.aerofs.lib.acl.Role
-     */
-    public boolean dominates(@Nonnull AuthorizationLevel level)
-    {
-        assert level != null;
-        return compareTo(level) > 0;
-    }
+//    /**
+//     * @return true if 'this' dominates the authorization level of {@code level}
+//     * N.B. this is duplicated from com.aerofs.lib.acl.Role
+//     */
+//    public boolean dominates(@Nonnull AuthorizationLevel level)
+//    {
+//        return compareTo(level) > 0;
+//    }
 
     /**
      * @return true if 'this' dominates or matches the authorization level of {@code level}
      */
     public boolean covers(@Nonnull AuthorizationLevel level)
     {
-        assert level != null;
         return compareTo(level) >= 0;
     }
 }
