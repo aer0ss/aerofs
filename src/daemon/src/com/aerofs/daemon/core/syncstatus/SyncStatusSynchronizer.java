@@ -100,7 +100,6 @@ public class SyncStatusSynchronizer
     private final DirectoryService _ds;
     private final ExponentialRetry _er;
 
-    private final boolean _enable;
     private boolean _startupDone;
 
     public static interface IListener
@@ -130,10 +129,6 @@ public class SyncStatusSynchronizer
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
 
-        // TODO (MP) only enable for a subset (12/16=3/4) of users for now.
-        byte[] hashedLocalUser = SecUtil.hash(localUser.get().getBytes());
-        _enable = (hashedLocalUser[0] & 0xf0) <= 11 || localUser.get().endsWith("@aerofs.com");
-
         // only schedule new scans once the startup sequence is over
         al.addListener_(new IActivityLogListener()
         {
@@ -159,9 +154,6 @@ public class SyncStatusSynchronizer
      */
     void notificationReceived_(PBSyncStatNotification notification) throws SQLException
     {
-        // TODO (huguesb): remove check when ready for all users
-        if (!_enable) return;
-
         long localEpoch = _lsync.getPullEpoch_();
         long serverEpoch = notification.getSsEpoch();
 
@@ -244,9 +236,6 @@ public class SyncStatusSynchronizer
      */
     private void bootstrap_() throws Exception
     {
-        // TODO (huguesb): remove check when ready for all users
-        if (!_enable) return;
-
         // batch DB reads
         Map<SIndex, Set<OID>> batch = getBootstrapBatch_();
         while (!batch.isEmpty()) {
@@ -340,9 +329,6 @@ public class SyncStatusSynchronizer
      */
     private void pullSyncStatus_() throws Exception
     {
-        // TODO (huguesb): remove check when ready for all users
-        if (!_enable) return;
-
         boolean more = true;
 
         while (more) {
@@ -495,9 +481,6 @@ public class SyncStatusSynchronizer
     private long _scanSeq = 0;
     private void scanActivityLog_()
     {
-        // TODO (huguesb): remove check when ready for all users
-        if (!_enable) return;
-
         schedule_(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
