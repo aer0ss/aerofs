@@ -39,8 +39,6 @@ public class DlgJoinSharedFolder extends AeroFSDialog
 {
     private Text _txtIC;
     private Button _btnJoin;
-    private Button _btnCancel;
-    private Composite composite;
 
     private final String INVITATION_CODE_ERROR = "This invitation code was meant for a different " +
             "email address.\nPlease ask the person sharing with you to invite you using your " +
@@ -88,7 +86,7 @@ public class DlgJoinSharedFolder extends AeroFSDialog
         });
         new Label(shell, SWT.NONE);
 
-        composite = new Composite(shell, SWT.NONE);
+        Composite composite = new Composite(shell, SWT.NONE);
         composite.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
         FillLayout fl = new FillLayout(SWT.HORIZONTAL);
         fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
@@ -105,15 +103,16 @@ public class DlgJoinSharedFolder extends AeroFSDialog
             }
         });
 
-        _btnCancel = new Button(composite, SWT.NONE);
-        _btnCancel.addSelectionListener(new SelectionAdapter() {
+        Button btnCancel = new Button(composite, SWT.NONE);
+        btnCancel.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 closeDialog();
             }
         });
-        _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
+        btnCancel.setText(IDialogConstants.CANCEL_LABEL);
     }
 
     private void verify(String code)
@@ -124,7 +123,6 @@ public class DlgJoinSharedFolder extends AeroFSDialog
         boolean ready;
 
         switch (ct) {
-        case BATCH_SIGNUP:
         case TARGETED_SIGNUP:
             ready = false;
             UI.get().show(MessageType.WARN, INVITATION_CODE_ERROR);

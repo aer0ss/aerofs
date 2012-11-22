@@ -582,21 +582,6 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> verifyBatchSignUpCode(String bsc)
-            throws Exception
-    {
-        _transaction.begin();
-
-        if (!_db.isValidBatchSignUp(bsc)) {
-            throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
-        }
-
-        _transaction.commit();
-
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<Void> sendEmailVerification()
             throws Exception
     {
@@ -910,25 +895,6 @@ class SPService implements ISPService
         Organization org = _db.getOrganization(orgId);
         if (!org.domainMatches(userId)) {
             throw new ExNoPerm("Email domain does not match " + org._allowedDomain);
-        }
-
-        signUpCommon(userId, credentials, firstName, lastName, orgId);
-
-        _transaction.commit();
-
-        return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<Void> signUpWithBatch(String batchSignUpCode, String userId,
-            ByteString credentials, String firstName, String lastName)
-            throws SQLException, ExNotFound, ExAlreadyExist, IOException
-    {
-        _transaction.begin();
-
-        String orgId = _db.checkBatchSignUpAndGetOrg(batchSignUpCode);
-        if (orgId == null) {
-            throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
         }
 
         signUpCommon(userId, credentials, firstName, lastName, orgId);

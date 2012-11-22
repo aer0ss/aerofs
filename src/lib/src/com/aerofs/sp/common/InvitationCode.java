@@ -3,6 +3,8 @@ package com.aerofs.sp.common;
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
+
 /**
  * This class defines the permissible types of Invitation Codes for AeroFS,
  * and provides static methods to
@@ -22,19 +24,15 @@ public class InvitationCode
      */
     public static enum CodeType
     {
-        BATCH_SIGNUP(8),
         TARGETED_SIGNUP(8),
         SHARE_FOLDER(8),
-        EMAIL_VERIFICATION(8),
-        INVALID(0),
-        // TODO remove these two code types after the old AeroFS release is phased out.
-        OLD_BATCH(6),
-        OLD_TARGETED(16);
+        INVALID(0);
 
         // Number of characters for the code type (i.e. length of the string)
         private final int _length;
 
-        private CodeType(int length) {
+        private CodeType(int length)
+        {
             _length = length;
         }
     }
@@ -45,7 +43,6 @@ public class InvitationCode
     {
         // Ensure the given codeType is supported
         switch (codeType) {
-        case BATCH_SIGNUP:
         case TARGETED_SIGNUP:
         case SHARE_FOLDER:
             // These are supported
@@ -58,27 +55,21 @@ public class InvitationCode
         // Generate the random code and add a type-specific suffix
         // - assume the codeType ordinals do not exceed BASE62_CHARS.length.
         // - taking the modulo would be safer, but probably unnecessary
-        String code = Base62CodeGenerator.newRandomBase62String(codeType._length - 1)
+        return Base62CodeGenerator.newRandomBase62String(codeType._length - 1)
                 + Base62CodeGenerator.BASE62_CHARS[codeType.ordinal()];
-
-        return code;
     }
 
-    public static CodeType getType(String code)
+    public static CodeType getType(@Nullable String code)
     {
-        if (code == null || code.length() < 1) {
+        if (code == null) {
             return CodeType.INVALID;
-        }
-
-        if (matchesType(code, CodeType.BATCH_SIGNUP)) {
-            return CodeType.BATCH_SIGNUP;
         } else if (matchesType(code, CodeType.SHARE_FOLDER)) {
             return CodeType.SHARE_FOLDER;
         } else if (matchesType(code, CodeType.TARGETED_SIGNUP)) {
             return CodeType.TARGETED_SIGNUP;
+        } else {
+            return CodeType.INVALID;
         }
-        // TODO add else if clauses of OLD_BATCH, etc, once their lengths are in C.java
-        return CodeType.INVALID;
     }
 
     /**

@@ -12,6 +12,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
+import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
@@ -58,12 +59,10 @@ class SPSignupHelper
             String firstName, String lastName)
             throws Exception
     {
-        switch (InvitationCode.getType(signUpCode)) {
+        CodeType type = InvitationCode.getType(signUpCode);
+        switch (type) {
         case TARGETED_SIGNUP:
             _sp.signUpWithTargeted(signUpCode, bscrypted, firstName, lastName);
-            break;
-        case BATCH_SIGNUP:
-            _sp.signUpWithBatch(signUpCode, userId, bscrypted, firstName, lastName);
             break;
         default:
             if (signUpCode.isEmpty() && Cfg.staging()) {
@@ -72,8 +71,7 @@ class SPSignupHelper
                 break;
             } else {
                 // Currently we don't allow signing-up without a sign-up code
-                l.warn("Invalid signup code " + signUpCode
-                        + " of type " + InvitationCode.getType(signUpCode));
+                l.warn("Invalid signup code " + signUpCode + " of type " + type);
                 throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
             }
         }

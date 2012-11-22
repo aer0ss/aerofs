@@ -18,6 +18,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
+import com.aerofs.sp.common.InvitationCode.CodeType;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.C;
@@ -89,17 +90,12 @@ class Setup
      *
      * @throws ExNotFound if the signup code was not found
      */
-    String getInvitedUser(final String code)
-            throws ExNotFound, Exception
+    String getInvitedUser(final String code) throws Exception
     {
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-        switch (InvitationCode.getType(code)) {
-        case TARGETED_SIGNUP:
+        if (InvitationCode.getType(code) == CodeType.TARGETED_SIGNUP) {
             return sp.resolveTargetedSignUpCode(code).getEmailAddress();
-        case BATCH_SIGNUP:
-            sp.verifyBatchSignUpCode(code);
-            return "";
-        default:
+        } else {
             throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
         }
     }
@@ -244,16 +240,17 @@ class Setup
             new Launcher(_rtRoot).launch(true);
 
             runNonEssential(userId, did, deviceName, returning, sp);
+        } catch (ExBadCredential e) {
+            // Don't send SV defect for bad credentials
+            UI.dm().stopIgnoreException();
+            throw e;
         } catch (Exception e) {
             UI.dm().stopIgnoreException();
-            if (!(e instanceof ExBadCredential)) { // Don't send SV defect for bad credentials
-                if (Cfg.inited()) {
-                    SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
-                } else {
-                    SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
-                }
+            if (Cfg.inited()) {
+                SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
+            } else {
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
             }
-
             throw e;
         }
     }
@@ -271,7 +268,6 @@ class Setup
             @Override
             public void run()
             {
-
                 try {
                     sp.setPreferences(null, null, did.toPB(), deviceName);
                 } catch (Exception e) {

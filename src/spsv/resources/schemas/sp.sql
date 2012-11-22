@@ -83,16 +83,6 @@ CREATE TABLE `sp_password_reset_token` (
   CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE `sp_batch_signup_code` (
-  `b_idx` INT NOT NULL AUTO_INCREMENT,
-  `b_code` CHAR(8) NOT NULL,
-  `b_user` VARCHAR(320) DEFAULT NULL, -- should probably be unique
-  -- todo: b_org_id field here
-  `b_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- todo: CONSTRAINT `b_org_foreign` FOREIGN KEY (`b_org_id`) REFERENCES `sp_organization` (`o_id`),
-  PRIMARY KEY (`b_idx`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE `sp_shared_folder_code` (
   `f_code` CHAR(8) NOT NULL,
   `f_from` VARCHAR(320) NOT NULL,

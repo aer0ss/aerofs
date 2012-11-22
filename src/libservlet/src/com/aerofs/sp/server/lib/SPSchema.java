@@ -43,10 +43,6 @@ final class SPSchema
     static final String C_CERT_EXPIRE_TS                = "c_expire_ts";
     static final String C_CERT_REVOKE_TS                = "c_revoke_ts";
 
-    static final String T_BI                            = "sp_batch_signup_code";
-    static final String C_BI_BIC                        = "b_code";
-    static final String C_BI_USER                       = "b_user";
-
     static final String T_FI                            = "sp_shared_folder_code";
     static final String C_FI_FIC                        = "f_code";
     static final String C_FI_FROM                       = "f_from";

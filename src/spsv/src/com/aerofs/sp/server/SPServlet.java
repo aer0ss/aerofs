@@ -21,7 +21,6 @@ import com.aerofs.sp.server.sp.EmailReminder;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.ThreadLocalHttpSessionUser;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -134,41 +133,6 @@ public class SPServlet extends AeroServlet
         _postDelegate.sendReply(resp, bytes);
     }
 
-    protected void handleBatchInvite(HttpServletRequest req, HttpServletResponse rsp)
-            throws IOException
-    {
-        String inviteCountStr = req.getParameter("inviteCount");
-
-        int inviteCount;
-        try {
-            inviteCount = Integer.parseInt(inviteCountStr);
-        } catch(NumberFormatException e) {
-            l.error("handleBatchInvite: ", e);
-            throw e;
-        }
-
-        if (inviteCount <= 0) {
-            rsp.getWriter().println("incomplete batch invite request");
-            return;
-        }
-
-        try {
-            String bsc = getBatchSignUpCode(inviteCount);
-            rsp.getWriter().println("done: " + SPParam.getWebDownloadLink(bsc, true));
-        } catch (Exception e) {
-            l.error("handleBatchInvite: " + e);
-            throw new IOException(e);
-        }
-    }
-
-    private String getBatchSignUpCode(int inviteCount)
-            throws SQLException
-    {
-        String bsc = InvitationCode.generate(InvitationCode.CodeType.BATCH_SIGNUP);
-        _db.initBatchSignUpCode(bsc, inviteCount);
-        return bsc;
-    }
-
     protected void handleTargetedInvite(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException
     {
@@ -180,17 +144,11 @@ public class SPServlet extends AeroServlet
         }
 
         try {
-            try {
-                inviteFromScript(fromPerson, to);
-                rsp.getWriter().println("done: " + fromPerson + " -> " + to);
-            }
-            catch (ExAlreadyExist e) {
-                rsp.getWriter().println("skip " + to);
-            }
-        } catch (IOException e) {
-            l.error("handleTargetedInvite: ", e);
-            throw e;
-        } catch (Throwable e) {
+            inviteFromScript(fromPerson, to);
+            rsp.getWriter().println("done: " + fromPerson + " -> " + to);
+        } catch (ExAlreadyExist e) {
+            rsp.getWriter().println("skip " + to);
+        } catch (Exception e) {
             l.error("handleTargetedInvite: ", e);
             throw new IOException(e);
         }
@@ -234,9 +192,6 @@ public class SPServlet extends AeroServlet
             _spTrans.begin();
             if ("love".equals(req.getParameter("aerofs"))) {
                 handleTargetedInvite(req, rsp);
-            } else if ("lotsoflove".equals(req.getParameter("aerofs"))) {
-                // not just love - LOTSOFLOVE!
-                handleBatchInvite(req, rsp);
             }
             _spTrans.commit();
         } catch (SQLException e) {

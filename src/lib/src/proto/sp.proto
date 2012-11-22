@@ -32,18 +32,6 @@ service SPService {
     rpc SignUp(SignUpCall) returns(Void);
 
     /**
-     * Sign up a user using a batch signup code.
-     * The user will be marked as unverified, and an email verification code will be sent.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExAlreadyExist if the email address is unavailable
-     *   ExNotFound if the batch signup code wasn't found
-     */
-    rpc SignUpWithBatch(SignUpWithBatchCall) returns(Void);
-
-    /**
      * Sign up a user using a targeted signup code.
      * Since the invitation has been delivered by mail, the user will be marked as verified.
      *
@@ -78,21 +66,9 @@ service SPService {
             returns (ResolveTargetedSignUpCodeReply);
 
     /**
-     * Verifies that a batch signup code is valid
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExNotFound if the signup code wasn't found or if the quota is over
-     */
-     rpc VerifyBatchSignUpCode(VerifyBatchSignUpCodeCall) returns (Void);
-
-    /**
      * Send a verification code to the user's email address. This function will be called
      * automatically when a user signs-up, but we may need to call again if the user
      * can't find the email (spam filter, etc...)
-     *
-     * TODO: Allow the user to update his email address while it's not verified, like dropbox
      *
      * Required Auth Level: user
      *
@@ -418,7 +394,6 @@ service SPService {
      *
      */
     rpc UnsubscribeEmail(SetUnsubscribeEmailCall) returns (GetUnsubscribeEmailReply);
-
 }
 
 message SignUpCall {
@@ -427,14 +402,6 @@ message SignUpCall {
     required string first_name = 3;
     required string last_name = 4;
     required string organization_id = 5;
-}
-
-message SignUpWithBatchCall {
-    required string batch_signup_code = 1;
-    required string user_id = 2;
-    required bytes credentials = 3; // hashed credentials (some combo of password, etc.)
-    required string first_name = 4;
-    required string last_name = 5;
 }
 
 message SignUpWithTargetedCall {
