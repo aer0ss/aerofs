@@ -8,6 +8,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.core.device.DevicePresence;
+import com.aerofs.daemon.core.device.OPMDevices;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.google.inject.Inject;
 
@@ -15,7 +16,6 @@ import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.device.Device;
-import com.aerofs.daemon.core.device.OPMStore;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.Util;
@@ -32,7 +32,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     // only set for partial replicas
     private long _used;
 
-    private @Nullable OPMStore _opms;
+    private @Nullable OPMDevices _opm;
 
     private final Collector _collector;
     private final SenderFilters _senderFilters;
@@ -91,7 +91,7 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         _antiEntropySeq = initAntiEntropySeq;
         _collector = _f._factCollector.create_(this);
         _senderFilters = _f._factSF.create_(sidx);
-        _opms = _f._dp.getOPMStore_(sidx);
+        _opm = _f._dp.getOPMDevices_(sidx);
         if (!Cfg.isFullReplica()) computeUsedSpace_();
         _isDeleted = false;
     }
@@ -142,13 +142,13 @@ public class Store implements Comparable<Store>, IDumpStatMisc
     }
 
     ////////
-    // OPM member management
+    // OPM device management
 
     public Map<DID, Device> getOnlinePotentialMemberDevices_()
     {
         assert !_isDeleted;
-        if (_opms == null) return Collections.emptyMap();
-        else return _opms.getAll_();
+        if (_opm == null) return Collections.emptyMap();
+        else return _opm.getAll_();
     }
 
     public boolean isOnlinePotentialMemberDevice_(DID did)
@@ -161,10 +161,10 @@ public class Store implements Comparable<Store>, IDumpStatMisc
         return !getOnlinePotentialMemberDevices_().isEmpty();
     }
 
-    public void setOPMStore_(OPMStore opms)
+    public void setOPMDevices_(OPMDevices opm)
     {
         assert !_isDeleted;
-        _opms = opms;
+        _opm = opm;
     }
 
     private void computeUsedSpace_() throws SQLException

@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.ITransport;
@@ -19,7 +20,7 @@ import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import javax.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 /**
  * State transition:
@@ -34,23 +35,31 @@ import javax.annotation.Nullable;
  *                          goes offline:   goes to offline
  */
 
+/**
+ * FIXME (AG): a lot of the logic in here is simpler if we avoid filtering sidcs on state changes
+ */
 public class Device implements Comparable<Device>, IDumpStatMisc
 {
     private final DID _did;
 
-    private static class TPEntry
+    private class TransportState
     {
-        boolean _pulsing;
-        final Set<SIndex> _sidcs = Sets.newHashSet();
+        boolean _isBeingPulsed;
+        final Set<SIndex> _sidcsAvailable = Sets.newHashSet();
 
-        boolean isClean_()
+        boolean isUnused_()
         {
-            return _pulsing == false && _sidcs.isEmpty();
+            return _isBeingPulsed == false && _sidcsAvailable.isEmpty();
+        }
+
+        boolean isOnlineForStore_(SIndex sidx)
+        {
+            return _isBeingPulsed == false && _sidcsAvailable.contains(sidx);
         }
     }
 
-    final private SortedMap<ITransport, TPEntry> _map =
-        new TreeMap<ITransport, TPEntry>(Transports.PREFERENCE_COMPARATOR);
+    final private SortedMap<ITransport, TransportState> _tpsAvailable =
+            new TreeMap<ITransport, TransportState>(Transports.PREFERENCE_COMPARATOR);
 
     public Device(DID did)
     {
@@ -73,32 +82,16 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      */
     Collection<SIndex> online_(ITransport tp, Collection<SIndex> sidcs)
     {
-        TPEntry en = _map.get(tp);
-        if (en == null) {
-            en = new TPEntry();
-            _map.put(tp, en);
-        }
+        TransportState tpState = getOrCreate_(tp);
 
         List<SIndex> ret = Lists.newLinkedList();
         for (SIndex sidx : sidcs) {
-            // the test must be in this order so the addr is always added
-            if (en._sidcs.add(sidx) && !en._pulsing) ret.add(sidx);
-        }
-
-        Iterator<SIndex> iter = ret.iterator();
-        while (iter.hasNext()) {
-            SIndex sidx = iter.next();
-            boolean old = false;
-            for (TPEntry en2 : _map.values()) {
-                if (en2 != en && !en2._pulsing && en2._sidcs.contains(sidx)) {
-                    old = true;
-                    break;
-                }
+            boolean added = tpState._sidcsAvailable.add(sidx); // _always_ add
+            if (added && !tpState._isBeingPulsed) {
+                ret.add(sidx);
             }
-            if (old) iter.remove();
         }
-
-        return ret;
+        return getSidcsWhoseStateChanged_(tpState, ret);
     }
 
     /**
@@ -106,36 +99,45 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      */
     Collection<SIndex> offline_(ITransport tp, Collection<SIndex> sidcs)
     {
-        TPEntry en = _map.get(tp);
-        if (en == null) return Collections.emptyList();
+        TransportState tpState = _tpsAvailable.get(tp);
+        if (tpState == null) return Collections.emptyList();
 
         List<SIndex> ret = Lists.newLinkedList();
         for (SIndex sidx : sidcs) {
-            // the test must be in this order so the sid is always removed
-            if (en._sidcs.remove(sidx) && !en._pulsing) ret.add(sidx);
-        }
-        if (en.isClean_()) _map.remove(tp);
+            boolean removed = tpState._sidcsAvailable.remove(sidx); // _always_ remove
 
-        Iterator<SIndex> iter = ret.iterator();
-        while (iter.hasNext()) {
-            SIndex sidx = iter.next();
-            boolean old = false;
-            for (TPEntry en2 : _map.values()) {
-                if (en2 != en && !en2._pulsing && en2._sidcs.contains(sidx)) {
-                    old = true;
-                    break;
-                }
+            //
+            // FIXME (AG): Simplify interaction between Device, DevicePresence and users of both
+            // the test for _isBeingPulsed is necessary because of a complicated (and implicit)
+            // contract between Device and its callers.
+            //
+            // Basically, when a caller decides to pulse a device we return all the stores that
+            // have gone into the offline state. Since that point, additional stores may be
+            // added. When the caller calls this method, we only return those stores that _weren't_
+            // returned previously
+            //
+
+            if (removed && !tpState._isBeingPulsed) {
+                ret.add(sidx);
             }
-            if (old) iter.remove();
         }
 
-        return ret;
+        if (tpState.isUnused_()) {
+            _tpsAvailable.remove(tp);
+        }
+
+        return getSidcsWhoseStateChanged_(tpState, ret);
     }
 
-    boolean isPulseStarted_(ITransport tp)
+    Collection<SIndex> offline_(ITransport tp)
     {
-        TPEntry en = _map.get(tp);
-        return en != null && en._pulsing;
+        TransportState en = _tpsAvailable.get(tp);
+        if (en == null) {
+            return Collections.emptyList();
+        }
+
+        // make a copy to avoid concurrent modification exception
+        return offline_(tp, new ArrayList<SIndex>(en._sidcsAvailable));
     }
 
     /**
@@ -144,28 +146,12 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      */
     Collection<SIndex> pulseStarted_(ITransport tp)
     {
-        TPEntry en = _map.get(tp);
-        if (en == null) {
-            en = new TPEntry();
-            _map.put(tp, en);
-        }
-        assert !en._pulsing;
+        TransportState tpState = getOrCreate_(tp);
 
-        en._pulsing = true;
+        assert !tpState._isBeingPulsed;
 
-        List<SIndex> ret = Lists.newLinkedList();
-        for (SIndex sidx : en._sidcs) {
-            boolean old = false;
-            for (TPEntry en2 : _map.values()) {
-                if (en2 != en && !en2._pulsing && en2._sidcs.contains(sidx)) {
-                    old = true;
-                    break;
-                }
-            }
-            if (!old) ret.add(sidx);
-        }
-
-        return ret;
+        tpState._isBeingPulsed = true;
+        return getSidcsWhoseStateChanged_(tpState);
     }
 
     /**
@@ -173,64 +159,106 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      */
     Collection<SIndex> pulseStopped_(ITransport tp)
     {
-        TPEntry en = _map.get(tp);
-        assert en != null && en._pulsing;
+        TransportState tpState = _tpsAvailable.get(tp);
 
-        en._pulsing = false;
-        if (en.isClean_()) _map.remove(tp);
+        assert tpState != null && tpState._isBeingPulsed;
 
-        List<SIndex> ret = Lists.newLinkedList();
-        for (SIndex sidx : en._sidcs) {
-            boolean old = false;
-            for (TPEntry en2 : _map.values()) {
-                if (en2 != en && !en2._pulsing && en2._sidcs.contains(sidx)) {
-                    old = true;
+        tpState._isBeingPulsed = false;
+        if (tpState.isUnused_()) {
+            _tpsAvailable.remove(tp);
+        }
+
+        return getSidcsWhoseStateChanged_(tpState);
+    }
+
+    private TransportState getOrCreate_(ITransport tp)
+    {
+        TransportState tpState = _tpsAvailable.get(tp);
+        if (tpState == null) {
+            tpState = new TransportState();
+            _tpsAvailable.put(tp, tpState);
+        }
+        return tpState;
+    }
+
+    //
+    // FIXME (AG): both versions of getSidcsWhoseStateChanged_ look similar and should be merged
+    //
+
+    /**
+     * When an action (online, offline) occurs this may trigger a tpState change to an sidx:
+     * an sidx that is previously available may no longer be available. This method returns
+     * those sidcs that were affected as a result of an operation
+     */
+    private Collection<SIndex> getSidcsWhoseStateChanged_(TransportState comparedTpState,
+            List<SIndex> sidcs)
+    {
+        Iterator<SIndex> iter = sidcs.iterator();
+        while (iter.hasNext()) {
+            SIndex sidx = iter.next();
+            boolean isAvailable = false;
+            for (TransportState tpState : _tpsAvailable.values()) {
+                if (tpState != comparedTpState && tpState.isOnlineForStore_(sidx)) {
+                    isAvailable = true;
                     break;
                 }
             }
-            if (!old) ret.add(sidx);
+            if (isAvailable) iter.remove();
+        }
+
+        return sidcs;
+    }
+
+    /*
+     * Returns a collection of sindexes that are currently unavailable on all transports
+     */
+    private Collection<SIndex> getSidcsWhoseStateChanged_(TransportState comparedTpState)
+    {
+        List<SIndex> ret = Lists.newLinkedList();
+        for (SIndex sidx : comparedTpState._sidcsAvailable) {
+            boolean isAvailable = false;
+            for (TransportState tpState : _tpsAvailable.values()) {
+                if (tpState != comparedTpState && tpState.isOnlineForStore_(sidx)) {
+                    isAvailable = true;
+                    break;
+                }
+            }
+            if (!isAvailable) ret.add(sidx);
         }
 
         return ret;
     }
 
-    Collection<SIndex> offline_(ITransport tp)
-    {
-        TPEntry en = _map.get(tp);
-        if (en == null) {
-            return Collections.emptyList();
-        } else {
-            // make a copy to avoid concurrent modification exception
-            return offline_(tp, new ArrayList<SIndex>(en._sidcs));
-        }
-    }
-
-    boolean isClean_()
-    {
-        return _map.isEmpty();
-    }
-
     boolean isOnline_()
     {
-        for (Entry<ITransport, TPEntry> en : _map.entrySet()) {
-            if (!en.getValue()._pulsing) {
-                assert !en.getValue()._sidcs.isEmpty();
+        for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
+            if (!en.getValue()._isBeingPulsed) {
+                assert !en.getValue()._sidcsAvailable.isEmpty();
                 return true;
             }
         }
         return false;
     }
 
+    boolean isBeingPulsed_(ITransport tp)
+    {
+        TransportState en = _tpsAvailable.get(tp);
+        return en != null && en._isBeingPulsed;
+    }
+
+    boolean isAvailable_()
+    {
+        return !_tpsAvailable.isEmpty();
+    }
+
     /**
      * TODO use device-specific preferences instead of static preference
-     *
-     * @return null if the device is offline
      */
-    public @Nullable ITransport getPreferedTransport_()
+    @Nonnull public ITransport getPreferedTransport_()
     {
-        for (Entry<ITransport, TPEntry> en : _map.entrySet()) {
-            if (!en.getValue()._pulsing) {
-                assert !en.getValue()._sidcs.isEmpty();
+        for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
+            if (!en.getValue()._isBeingPulsed) {
+                assert !en.getValue()._sidcsAvailable.isEmpty();
                 return en.getKey();
             }
         }
@@ -238,8 +266,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
         // this method shouldn't get called if the device is offline on all the
         // transport. this may not be a valid assumption because the daemon
         // might contact an offline peer, but so far so good
-        SystemUtil.fatal("see comment");
-        return null;
+        throw SystemUtil.fatalWithReturn("gpt on offline device");
     }
 
     /**
@@ -264,12 +291,12 @@ public class Device implements Comparable<Device>, IDumpStatMisc
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
         ps.print(indent + _did + ": ");
-        for (Entry<ITransport, TPEntry> en : _map.entrySet()) {
-            TPEntry ten = en.getValue();
-            if (ten._pulsing) {
-                ps.print("(" + en.getKey() + ten._sidcs.size() + ") ");
+        for (Entry<ITransport, TransportState> en : _tpsAvailable.entrySet()) {
+            TransportState ten = en.getValue();
+            if (ten._isBeingPulsed) {
+                ps.print("(" + en.getKey() + ten._sidcsAvailable.size() + ") ");
             } else {
-                ps.print("" + en.getKey() + ten._sidcs.size() + " ");
+                ps.print("" + en.getKey() + ten._sidcsAvailable.size() + " ");
             }
         }
         ps.println();
