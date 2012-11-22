@@ -342,7 +342,7 @@ public class Download
         final OA oa = _f._ds.getAliasedOANullable_(_socid.soid());
         if (oa == null) {
             throw new ExDependsOn(new OCID(_socid.oid(), CID.META), null,
-                    DependencyType.UNSPECIFIED, false);
+                    DependencyType.UNSPECIFIED);
         } else if (oa.isExpelled()) {
             throw new ExAborted(_socid + " is expelled");
         }

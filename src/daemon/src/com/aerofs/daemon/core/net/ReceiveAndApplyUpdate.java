@@ -394,7 +394,7 @@ public class ReceiveAndApplyUpdate
 
         // The parent must exist locally, otherwise this SOID depends on the parent
         if (!_ds.hasOA_(soidParent)) {
-            throw new ExDependsOn(new OCID(oidParent, CID.META), did, DependencyType.PARENT, false);
+            throw new ExDependsOn(new OCID(oidParent, CID.META), did, DependencyType.PARENT);
         }
 
         try {
@@ -498,8 +498,8 @@ public class ReceiveAndApplyUpdate
             // possible for a developer to break this assumption very easily in separate classes
             // than this one. Lets find a way to avoid breaking the assumption
             if (!requested.contains(new OCID(soidLocal.oid(), CID.META))) {
-                throw new ExNameConflictDependsOn(soidLocal.oid(), did, true, parent, vRemote,
-                        meta, soidMsg, requested);
+                throw new ExNameConflictDependsOn(soidLocal.oid(), did, parent, vRemote, meta,
+                        soidMsg, requested);
             }
         }
 

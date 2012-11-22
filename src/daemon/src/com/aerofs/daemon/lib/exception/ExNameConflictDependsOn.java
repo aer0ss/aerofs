@@ -25,11 +25,11 @@ public class ExNameConflictDependsOn extends ExDependsOn
     public final SOID _soidMsg;
     public final Set<OCID> _requested;
 
-    public ExNameConflictDependsOn(OID oid, DID did, boolean ignoreError, OID parent,
-            Version vRemote, PBMeta meta, SOID soidMsg, Set<OCID> requested)
+    public ExNameConflictDependsOn(OID oid, DID did, OID parent, Version vRemote, PBMeta meta,
+            SOID soidMsg, Set<OCID> requested)
     {
         // Name conflicts only apply to META components
-        super(new OCID(oid, CID.META), did, DependencyType.NAME_CONFLICT, ignoreError);
+        super(new OCID(oid, CID.META), did, DependencyType.NAME_CONFLICT, true);
         _parent = parent;
         _vRemote = vRemote;
         _meta = meta;

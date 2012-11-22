@@ -25,7 +25,12 @@ public class ExDependsOn extends Exception
     public final DependencyType _type;
     public final boolean _ignoreError;
 
-    public ExDependsOn(OCID ocid, @Nullable DID did, DependencyType type, boolean ignoreError)
+    public ExDependsOn(OCID ocid, @Nullable DID did, DependencyType type)
+    {
+        this(ocid, did, type, false);
+    }
+
+    protected ExDependsOn(OCID ocid, @Nullable DID did, DependencyType type, boolean ignoreError)
     {
         _ocid = ocid;
         _did = did;
