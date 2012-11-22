@@ -137,8 +137,8 @@ public class TestDevice extends AbstractTest
         Collection<SIndex> sidcsOfflineAfterTp2 = _dev.pulseStarted_(_tp2);
         assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp2, ImmutableSet.of(new SIndex(2))));
 
-        assertFalse(_dev.isPulseStarted_(_tp1));
-        assertTrue(_dev.isPulseStarted_(_tp2));
+        assertFalse(_dev.isBeingPulsed_(_tp1));
+        assertTrue(_dev.isBeingPulsed_(_tp2));
     }
 
     @Test
@@ -151,14 +151,14 @@ public class TestDevice extends AbstractTest
         Collection<SIndex> sidcsOfflineAfterTp2 = _dev.pulseStarted_(_tp2);
         assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp2, ImmutableSet.of(new SIndex(2))));
 
-        assertFalse(_dev.isPulseStarted_(_tp1));
+        assertFalse(_dev.isBeingPulsed_(_tp1));
 
         // now try pulsing tp1 (at this point all sids go offline)
 
         Collection<SIndex> sidcsOfflineAfterTp1 = _dev.pulseStarted_(_tp1);
         assertTrue(sidCollectionsIdentical(sidcsOfflineAfterTp1, _tp1sids));
 
-        assertTrue(_dev.isPulseStarted_(_tp1));
+        assertTrue(_dev.isBeingPulsed_(_tp1));
 
         // from our perspective the device is no longer online
 
