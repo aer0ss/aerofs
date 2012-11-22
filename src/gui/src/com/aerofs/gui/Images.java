@@ -43,13 +43,14 @@ public class Images {
     public static final String ICON_ARROW_DOWN = "arrowDown.png";
     public static final String ICON_ARROW_DOWN2 = "arrowDown2.png";
     public static final String ICON_HOME = "home.png";
-    public static final String ICON_LED_GREEN = "ledGreen.png";
-    public static final String ICON_LED_GREY = "ledGrey.png";
     public static final String ICON_NIL = "nil.png";
     public static final String ICON_SPIN = "spin.gif";
     public static final String ICON_BRICK = "brick.png";
     public static final String ICON_LINK = "link.png";
     public static final String ICON_HEART = "heart.png";
+    public static final String SS_IN_SYNC = "ss_in_sync.png";
+    public static final String SS_IN_PROGRESS = "ss_in_progress.png";
+    public static final String SS_OFFLINE_NOSYNC = "ss_offline_nosync.png";
 
     public static final String IMG_SETUP = "setup.png";
 

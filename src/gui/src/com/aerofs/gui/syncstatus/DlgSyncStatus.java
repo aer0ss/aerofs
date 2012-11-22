@@ -144,14 +144,10 @@ public class DlgSyncStatus extends AeroFSDialog
     private String statusIconName(PBSyncStatus.Status status)
     {
         switch (status.getNumber()) {
-        case Status.IN_SYNC_VALUE:
-            return Images.ICON_LED_GREEN;
-        case Status.IN_PROGRESS_VALUE:
-            return Images.ICON_LED_GREY;
-        case Status.OFFLINE_VALUE:
-            return Images.ICON_ERROR;
-        default:
-            return Images.ICON_DOUBLE_QUESTION;
+        case Status.IN_SYNC_VALUE:     return Images.SS_IN_SYNC;
+        case Status.IN_PROGRESS_VALUE: return Images.SS_IN_PROGRESS;
+        case Status.OFFLINE_VALUE:     return Images.SS_OFFLINE_NOSYNC;
+        default:                       return Images.ICON_DOUBLE_QUESTION;
         }
     }
 
