@@ -11,7 +11,6 @@ import com.aerofs.lib.SecUtil;
 public class SPParam
 {
     public static final String SESS_ATTR_USER  = "user";
-    public static final int SP_SQL_BATCH_IIC_BATCH_MAX = 0;
 
     public static final String VERKEHR_HOST_INIT_PARAMETER = "verkehr_host";
     public static final String VERKEHR_PUBLISH_PORT_INIT_PARAMETER = "verkehr_publish_port";
@@ -59,12 +58,9 @@ public class SPParam
     public static final int PASSWORD_RESET_TOKEN_LENGTH = 10;
 
     private static final String WEB_DOWNLOAD_PARAM_NAME_IC = "a";
-    private static final String WEB_DOWNLOAD_PARAM_NAME_BATCH = "b";
 
-    public static String getWebDownloadLink(String signUpCode, boolean batch)
+    public static String getWebDownloadLink(String signUpCode)
     {
-        return SV.DOWNLOAD_LINK + "?" +
-            WEB_DOWNLOAD_PARAM_NAME_IC + "=" + signUpCode +
-            "&" + WEB_DOWNLOAD_PARAM_NAME_BATCH + "=" + (batch ? 1 : 0);
+        return SV.DOWNLOAD_LINK + "?" + WEB_DOWNLOAD_PARAM_NAME_IC + "=" + signUpCode;
     }
 }

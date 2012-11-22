@@ -29,7 +29,7 @@ public class InvitationEmailer
                 final String fromPerson, @Nullable final String folderName,
                 @Nullable final String note, final String signupCode) throws Exception
         {
-            String url = SPParam.getWebDownloadLink(signupCode, false);
+            String url = SPParam.getWebDownloadLink(signupCode);
 
             // TODO Ideally static email contents should be separate from Java files.
             final String subject = (folderName != null)
@@ -109,7 +109,7 @@ public class InvitationEmailer
 
             final Email email = new Email(subject, false, null);
 
-            String url = SPParam.getWebDownloadLink(shareFolderCode, false);
+            String url = SPParam.getWebDownloadLink(shareFolderCode);
 
             String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
             String body = "\n" + nameAndEmail + " has invited you to a shared " + S.PRODUCT

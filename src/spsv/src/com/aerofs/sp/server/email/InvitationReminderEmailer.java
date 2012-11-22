@@ -25,7 +25,7 @@ public class InvitationReminderEmailer {
                 final String to, String signupCode, String unsubscribeId)
                         throws IOException
         {
-            String url = SPParam.getWebDownloadLink(signupCode, false);
+            String url = SPParam.getWebDownloadLink(signupCode);
 
             final String subject = "Reminder: You've recently been invited to try AeroFS!";
 
