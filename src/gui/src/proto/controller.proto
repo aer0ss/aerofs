@@ -200,5 +200,4 @@ message PBS3Config {
     required string access_key = 2;
     required string secret_key = 3;
     required string encryption_key = 4;
-    required string local_dir = 5;
 }

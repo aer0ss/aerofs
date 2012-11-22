@@ -33,7 +33,7 @@ public class RootAnchorPoller
     {
         // TODO (KH): Change this to Cfg.useS3() when available
         // defaultValue of S3_DIR is null
-        if (Cfg.db().getNullable(Key.S3_DIR) != null) {
+        if (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null) {
             return;
         }
 

@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
-import com.aerofs.lib.aws.s3.S3TestConfig;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import org.junit.After;

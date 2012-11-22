@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.BlockStorageModules.AbstractBackendModule;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig;
-import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
+import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig;
+import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig.S3EncryptionPasswordFromDB;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;

@@ -1,35 +1,17 @@
-package com.aerofs.s3;
+package com.aerofs.daemon.core.phy.block.s3;
 
-import java.io.File;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.SecretKey;
 
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.google.inject.Inject;
 
 public class S3Config
 {
     private S3Config() {}
-
-    public static class S3DirConfig
-    {
-        private final CfgDatabase _db;
-
-        @Inject
-        public S3DirConfig(CfgDatabase db)
-        {
-            _db = db;
-        }
-
-        public File getS3Dir()
-        {
-            return new File(_db.get(CfgDatabase.Key.S3_DIR));
-        }
-    }
 
     public static class S3BucketIdConfig
     {
@@ -93,20 +75,6 @@ public class S3Config
                 return _db.get(CfgDatabase.Key.S3_ENCRYPTION_PASSWORD).toCharArray();
             }
         }
-
-        public static class S3EncryptionPasswordFromEnv implements S3EncryptionPasswordConfig
-        {
-            public static final String S3_ENC_PASS_VAR = "S3ENCPASS";
-
-            @Override
-            public char[] getPassword() {
-                String pass = System.getenv(S3_ENC_PASS_VAR);
-                if (pass == null || pass.isEmpty()) {
-                    SystemUtil.fatal("environment variable " + S3_ENC_PASS_VAR + " must be set");
-                }
-                return pass.toCharArray();
-            }
-        }
     }
 
     public static class S3CryptoConfig
@@ -133,20 +101,4 @@ public class S3Config
             return _secretKey;
         }
     }
-
-    public static class S3ChunkDirConfig
-    {
-        private final String _chunkDir;
-
-        public S3ChunkDirConfig(String chunkDir)
-        {
-            _chunkDir = chunkDir;
-        }
-
-        public String getChunkDir()
-        {
-            return _chunkDir;
-        }
-    }
-
 }

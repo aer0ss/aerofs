@@ -1,4 +1,4 @@
-package com.aerofs.lib.aws.s3;
+package com.aerofs.daemon.core.phy.block.s3;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,9 +12,9 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 
-import com.aerofs.s3.S3Config.S3BucketIdConfig;
-import com.aerofs.s3.S3Config.S3CryptoConfig;
-import com.aerofs.s3.S3Config.S3EncryptionPasswordConfig;
+import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
+import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
+import com.aerofs.daemon.core.phy.block.s3.S3Config.S3EncryptionPasswordConfig;
 import com.aerofs.testlib.UnitTestTempDir;
 
 public class S3TestConfig

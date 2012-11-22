@@ -1,4 +1,4 @@
-package com.aerofs.lib.aws.common;
+package com.aerofs.daemon.core.phy.block.s3;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;

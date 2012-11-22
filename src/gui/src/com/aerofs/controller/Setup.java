@@ -197,7 +197,6 @@ class Setup
                 map.put(CfgDatabase.Key.S3_ACCESS_KEY, s3config.getAccessKey());
                 map.put(CfgDatabase.Key.S3_SECRET_KEY, s3config.getSecretKey());
                 map.put(CfgDatabase.Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
-                map.put(CfgDatabase.Key.S3_DIR, s3config.getLocalDir());
             }
             db.set(map);
 

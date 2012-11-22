@@ -7,14 +7,12 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import com.aerofs.lib.Base64;
-import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
@@ -89,7 +87,6 @@ public class CLISetup
         String s3AccessKey = null;
         String s3SecretKey = null;
         char[] s3EncryptionPassword = null;
-        String s3LocalDir = null;
 
         File rtRootFile = new File(rtRoot);
         File setupFile = new File(rtRootFile, UNATTENDED_SETUP_FILE);
@@ -129,7 +126,6 @@ public class CLISetup
                 s3SecretKey = props.getProperty(CfgDatabase.Key.S3_SECRET_KEY.keyString());
                 s3EncryptionPassword = props.getProperty(
                         CfgDatabase.Key.S3_ENCRYPTION_PASSWORD.keyString()).toCharArray();
-                s3LocalDir = props.getProperty(CfgDatabase.Key.S3_DIR.keyString());
             }
 
         } else {
@@ -220,10 +216,6 @@ public class CLISetup
 
         PBS3Config s3config = null;
         if (s3BucketId != null) {
-            if (s3LocalDir == null) s3LocalDir = new File(Cfg.absRTRoot(), "s3").getPath();
-            File dir = new File(s3LocalDir);
-            if (!dir.isDirectory()) FileUtil.mkdirs(dir);
-
             String scrypted = Base64.encodeBytes(SecUtil.scrypt(s3EncryptionPassword, userID));
 
             s3config = PBS3Config.newBuilder()
@@ -231,7 +223,6 @@ public class CLISetup
                 .setAccessKey(s3AccessKey)
                 .setSecretKey(s3SecretKey)
                 .setEncryptionKey(scrypted)
-                .setLocalDir(s3LocalDir)
                 .build();
         }
 
