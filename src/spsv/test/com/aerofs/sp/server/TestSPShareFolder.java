@@ -4,10 +4,10 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
@@ -97,7 +97,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
         // add user 4 to db but don't verify their account
         _transaction.begin();
         db.addUser(new User(TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_CRED,
-                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
+                false, OrgID.DEFAULT, AuthorizationLevel.USER));
         _transaction.commit();
 
         shareFolderThroughSP(TEST_USER_1_NAME, TEST_SID_1, TEST_USER_4_NAME, Role.OWNER);

@@ -1,15 +1,12 @@
 CREATE TABLE `sp_organization` (
-  `o_id` VARCHAR(80) NOT NULL, -- we use the organization's domain name as an id
+  `o_id` INTEGER NOT NULL, -- corresponding Java type: OrgID
   `o_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- organization friendly name, displayed to the user. May include spaces and all.
-  `o_allowed_domain` VARCHAR(80) NOT NULL DEFAULT "", -- default domain is empty string, no accepted domain
-  `o_open_sharing` BOOLEAN NOT NULL, -- whether sharing folders with external organizations is allowed
-  INDEX org_name_idx (`o_name`),
   PRIMARY KEY (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
--- Add the consumer AeroFS organization
-INSERT INTO `sp_organization` (`o_id`, `o_name`, `o_allowed_domain`, `o_open_sharing`)
-  VALUES ("consumer.aerofs.com", "Consumer AeroFS", "*", TRUE);
+-- Add the default organization
+INSERT INTO `sp_organization` (`o_id`, `o_name`)
+  VALUES (0, "Default Organization");
 
 CREATE TABLE `sp_shared_folder` (
   `sf_id` BINARY(16) NOT NULL,
@@ -39,7 +36,7 @@ CREATE TABLE `sp_user` (
   `u_first_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- important UTF8
   `u_last_name` VARCHAR(80) CHARSET utf8 NOT NULL,  -- important UTF8
   `u_auth_level` INT UNSIGNED NOT NULL,
-  `u_org_id` VARCHAR(80) NOT NULL,
+  `u_org_id` INTEGER NOT NULL,
   `u_acl_epoch` BIGINT NOT NULL,
   PRIMARY KEY (`u_id`),
   CONSTRAINT `u_org_foreign` FOREIGN KEY (`u_org_id`) REFERENCES `sp_organization` (`o_id`)
@@ -68,7 +65,7 @@ CREATE TABLE `sp_signup_code` (
   `t_code` CHAR(8) NOT NULL,
   `t_from` VARCHAR(320), -- used to be null if the invites was sent by aerofs
   `t_to` VARCHAR(320) NOT NULL,
-  `t_org_id` VARCHAR(80) NOT NULL,
+  `t_org_id` INTEGER NOT NULL,
   `t_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`t_code`),
   INDEX `t_ts_idx` (`t_ts`),

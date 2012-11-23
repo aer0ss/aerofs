@@ -44,8 +44,6 @@ public class S
     public static final String SETUP_S3_ENCRYPTION_PASSWORD =
             "Create an " + S3_ENCRYPTION_PASSWORD + " (used to encrypt your data before sending to S3)";
 
-    public static final String BTN_DONE                 = "Done";
-
     public static final String ROOT_ANCHOR_NAME         = PRODUCT;
 
     public static final String RAW_LOCATION_CHANGE      = PRODUCT + " Has Changed Location";
@@ -60,26 +58,20 @@ public class S
     public static final String CONFLICT_OPEN_FAIL = FILE_OPEN_FAIL +
             " Please use the [Save As...] button to save and view it.";
     public static final String WHY_ARENT_MY_FILES_SYNCED = "Why Aren't My Files Synced?";
-    public static final String VIEW_CONFLICT_FILES = "View Conflict Files...";
-    public static final String VIEW_UNSYNCABLE_FILES = "View Unsyncable Files...";
     public static final String REPORT_A_PROBLEM = "Report a Problem";
     public static final String REQUEST_A_FEATURE = "Request a Feature";
     public final static String DEFAULT_DIALOG_TITLE = PRODUCT;
     public final static String DIALOG_TITLE_SUFFIX = " - " + PRODUCT;
 
-    public final static String UPDATE_DOWNLOADED =
-        "An update has been downloaded for " + S.PRODUCT + ".";
     public final static String IMPORTANT_UPDATE_DOWNLOADED =
         "An important update has been downloaded for " + S.PRODUCT + ".";
     public final static String NO_CONSOLE = "No console is found.";
     public static final String COPYRIGHT = "2010-2012 " + L.get().vendor() + " All Rights Reserved.";
     public static final String BTN_ADVANCED = "Advanced...";
     public static final String BTN_CHANGE = "Change...";
-    public static final String ENTER_INVITATION_CODE = "Enter Invitation Code...";
     public static final String UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from the " +
         S.PRODUCT + " account and quit the program?" +
         " Files in the " + S.PRODUCT + " folder will not be deleted.";
-    public static final String INVITATION_CODE_HAS_EXPIRED = "the invitation code has expired";
     public static final String INVITATION_CODE_NOT_FOUND = "Invitation code not found";
     public static final String CHECKING_FOR_DINOSAURS = "Checking for dinosaurs...";
     public static final String PRE_SETUP_UPDATE_CHECK_FAILED = S.PRODUCT + " couldn't" +
@@ -94,9 +86,7 @@ public class S
     public static final String SENDING_INVITATION = "Inviting";
     public static final String INVITATION_WAS_SENT = "Invited successfully.";
     public static final String COULDNT_SEND_INVITATION = "Couldn't invite users.";
-    public static final String PLEASE_WAIT = "Please wait...";
     public static final String VERSION_HISTORY = "version history";
-    public static final String CLOUD_BACKUP = "Cloud Backup";
     public static final String UNNAMED_SHARED_FOLDER = "unnamed shared folder";
     public static final String CLI_NAME = L.get().productUnixName() + "-cli";
     public static final String TRY_AGAIN_LATER = "Please try again later.";

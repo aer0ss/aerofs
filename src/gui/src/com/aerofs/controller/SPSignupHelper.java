@@ -4,7 +4,6 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -67,7 +66,7 @@ class SPSignupHelper
         default:
             if (signUpCode.isEmpty() && Cfg.staging()) {
                 // special path for syncdet and other headless installs
-                _sp.signUp(userId, bscrypted, firstName, lastName, C.DEFAULT_ORGANIZATION);
+                _sp.signUp(userId, bscrypted, firstName, lastName);
                 break;
             } else {
                 // Currently we don't allow signing-up without a sign-up code

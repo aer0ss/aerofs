@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.Exceptions;
@@ -19,6 +18,7 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -90,7 +90,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         // Add an admin to the db so that authenticated calls can be performed on the SPService
         _transaction.begin();
         _db.addUser(new User(ADMIN_ID, "first", "last", ByteString.copyFrom(ADMIN_CRED),
-                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.ADMIN));
+                false, OrgID.DEFAULT, AuthorizationLevel.ADMIN));
         _db.markUserVerified(ADMIN_ID);
         _transaction.commit();
     }

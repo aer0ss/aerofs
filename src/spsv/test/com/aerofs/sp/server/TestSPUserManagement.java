@@ -6,6 +6,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
@@ -40,7 +41,7 @@ public class TestSPUserManagement extends AbstractTest
     public void setup()
         throws Exception
     {
-        testUser = new User("test@awesome.com","","","".getBytes(),true,"",
+        testUser = new User("test@awesome.com","","","".getBytes(),true,new OrgID(123),
                 AuthorizationLevel.USER);
 
         setupMockSPDatabaseGetUserTest();

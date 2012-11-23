@@ -22,7 +22,7 @@ public class SQLThreadLocalTransaction
     private ThreadLocal<Connection> _connection = new ThreadLocal<Connection>();
 
     @Override
-    protected boolean isInTransaction()
+    public boolean isInTransaction()
     {
         return _connection.get() != null;
     }

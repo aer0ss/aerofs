@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.lib.organization.OrgID;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -23,7 +24,7 @@ public interface IUserSearchDatabase
      * @return List of users under the organization {@code orgId}
      * between [offset, offset + maxResults].
      */
-    List<PBUser> listUsers(String orgId, int offset, int maxResults)
+    List<PBUser> listUsers(OrgID orgId, int offset, int maxResults)
             throws SQLException;
 
     /**
@@ -35,7 +36,7 @@ public interface IUserSearchDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    List<PBUser> searchUsers(String orgId, int offset, int maxResults, String search)
+    List<PBUser> searchUsers(OrgID orgId, int offset, int maxResults, String search)
             throws SQLException;
 
     /**
@@ -46,8 +47,8 @@ public interface IUserSearchDatabase
      * @return List of users with the given authorization level {@code authLevel} under
      * the organization {@code orgId} between [offset, offset + maxResults].
      */
-    List<PBUser> listUsersWithAuthorization(String orgId, int offset,
-            int maxResults, AuthorizationLevel authLevel)
+    List<PBUser> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+            AuthorizationLevel authLevel)
             throws SQLException;
 
 
@@ -62,15 +63,15 @@ public interface IUserSearchDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    List<PBUser> searchUsersWithAuthorization(String orgId, int offset,
-            int maxResults, AuthorizationLevel authLevel, String search)
+    List<PBUser> searchUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+            AuthorizationLevel authLevel, String search)
             throws SQLException;
 
     /**
      * @param orgId ID of the organization.
      * @return Number of users in the organization {@code orgId}.
      */
-    int listUsersCount(String orgId) throws SQLException;
+    int listUsersCount(OrgID orgId) throws SQLException;
 
     /**
      * @param orgId ID of the organization.
@@ -78,14 +79,14 @@ public interface IUserSearchDatabase
      * @return Number of users in the organization {@code orgId}
      * with user ids containing the search term {@code search}.
      */
-    int searchUsersCount(String orgId, String search) throws SQLException;
+    int searchUsersCount(OrgID orgId, String search) throws SQLException;
 
     /**
      * @param authlevel Authorization level of the users.
      * @param orgId ID of the organization.
      * @return Number of users in the organization with the given authorization level.
      */
-    int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, String orgId)
+    int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, OrgID orgId)
             throws SQLException;
 
     /**
@@ -95,6 +96,6 @@ public interface IUserSearchDatabase
      * @return Number of users in the organization {@code orgId} with user ids
      * containing the search term {@code search} and authorization level {@code authLevel}.
      */
-    int searchUsersWithAuthorizationCount(AuthorizationLevel authLevel, String orgId, String search)
+    int searchUsersWithAuthorizationCount(AuthorizationLevel authLevel, OrgID orgId, String search)
             throws SQLException;
 }

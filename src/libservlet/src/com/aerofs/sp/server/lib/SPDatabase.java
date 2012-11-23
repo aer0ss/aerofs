@@ -5,6 +5,7 @@ import java.util.EnumSet;
 
 import java.util.TimeZone;
 
+import com.aerofs.lib.S;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.common.Base62CodeGenerator;
@@ -31,10 +32,10 @@ import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.proto.Sp.PBUser;
-import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.IUserSearchDatabase;
@@ -64,6 +65,7 @@ import java.util.Date;
 
 import static com.aerofs.sp.server.lib.SPSchema.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class SPDatabase
@@ -88,15 +90,6 @@ public class SPDatabase
                 throw new ExDeviceNameAlreadyExist();
             else
                 throw new ExAlreadyExist(e);
-        }
-    }
-
-    private static void checkOrganizationKeyConstraint(SQLException e, String orgId)
-            throws ExNotFound
-    {
-        if (e.getMessage().startsWith(
-                "Cannot add or update a child row: a foreign key" + " constraint fails")) {
-            throw new ExNotFound("Organization " + orgId + " does not exist.");
         }
     }
 
@@ -133,7 +126,7 @@ public class SPDatabase
                 String lastName = rs.getString(2);
                 byte[] creds = Base64.decode(rs.getString(3));
                 boolean verified = rs.getBoolean(4);
-                String orgId = rs.getString(5);
+                OrgID orgId = new OrgID(rs.getInt(5));
                 AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(6));
                 // don't use the {@code id} parameter in case it is not normalized.
                 // TODO (WW) normalize user ids at entry points.
@@ -172,7 +165,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> listUsers(String orgId, int offset, int maxResults)
+    public List<PBUser> listUsers(OrgID orgId, int offset, int maxResults)
             throws SQLException
     {
         PreparedStatement psLU = getConnection().prepareStatement(
@@ -182,7 +175,7 @@ public class SPDatabase
                         " where " + C_USER_ORG_ID + "=? " + " order by " +
                         C_USER_ID + " limit ? offset ?");
 
-        psLU.setString(1, orgId);
+        psLU.setInt(1, orgId.getInt());
         psLU.setInt(2, maxResults);
         psLU.setInt(3, offset);
 
@@ -195,16 +188,15 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> searchUsers(String orgId, int offset,
-            int maxResults, String search)
-        throws SQLException
+    public List<PBUser> searchUsers(OrgID orgId, int offset, int maxResults, String search)
+            throws SQLException
     {
         PreparedStatement psSLU = getConnection().prepareStatement("select " + C_USER_ID + "," +
                 C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " + T_USER +
                 " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " +
                 " order by " + C_USER_ID + " limit ? offset ?");
 
-        psSLU.setString(1, orgId);
+        psSLU.setInt(1, orgId.getInt());
         psSLU.setString(2, "%" + search + "%");
         psSLU.setInt(3, maxResults);
         psSLU.setInt(4, offset);
@@ -218,9 +210,9 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> listUsersWithAuthorization(String orgId, int offset,
-            int maxResults, AuthorizationLevel authLevel)
-        throws SQLException
+    public List<PBUser> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+            AuthorizationLevel authLevel)
+            throws SQLException
     {
         PreparedStatement psLUA = getConnection().prepareStatement(
                 "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
@@ -230,7 +222,7 @@ public class SPDatabase
                 "order by " + C_USER_ID + " limit ? offset ?"
         );
 
-        psLUA.setString(1, orgId);
+        psLUA.setInt(1, orgId.getInt());
         psLUA.setInt(2, authLevel.ordinal());
         psLUA.setInt(3, maxResults);
         psLUA.setInt(4, offset);
@@ -244,7 +236,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> searchUsersWithAuthorization(String orgId, int offset,
+    public List<PBUser> searchUsersWithAuthorization(OrgID orgId, int offset,
             int maxResults, AuthorizationLevel authLevel, String search)
         throws SQLException
     {
@@ -257,7 +249,7 @@ public class SPDatabase
                 "order by " + C_USER_ID + " limit ? offset ?"
         );
 
-        psSUA.setString(1, orgId);
+        psSUA.setInt(1, orgId.getInt());
         psSUA.setString(2, "%" + search + "%");
         psSUA.setInt(3, authLevel.ordinal());
         psSUA.setInt(4, maxResults);
@@ -281,13 +273,13 @@ public class SPDatabase
     }
 
     @Override
-    public int listUsersCount(String orgId)
+    public int listUsersCount(OrgID orgId)
         throws SQLException
     {
         PreparedStatement psLUC = getConnection().prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=?");
 
-        psLUC.setString(1, orgId);
+        psLUC.setInt(1, orgId.getInt());
         ResultSet rs = psLUC.executeQuery();
         try {
             return countResultSet2Int(rs);
@@ -297,13 +289,13 @@ public class SPDatabase
     }
 
     @Override
-    public int searchUsersCount(String orgId, String search)
+    public int searchUsersCount(OrgID orgId, String search)
         throws SQLException
     {
         PreparedStatement psSCU = getConnection().prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ?");
 
-        psSCU.setString(1, orgId);
+        psSCU.setInt(1, orgId.getInt());
         psSCU.setString(2, "%" + search + "%");
 
         ResultSet rs = psSCU.executeQuery();
@@ -315,15 +307,14 @@ public class SPDatabase
     }
 
     @Override
-    public int listUsersWithAuthorizationCount(AuthorizationLevel authlevel,
-            String orgId)
+    public int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, OrgID orgId)
             throws SQLException
     {
         PreparedStatement psLUAC = getConnection().prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
                 C_USER_AUTHORIZATION_LEVEL + "=?");
 
-        psLUAC.setString(1, orgId);
+        psLUAC.setInt(1, orgId.getInt());
         psLUAC.setInt(2, authlevel.ordinal());
 
         ResultSet rs = psLUAC.executeQuery();
@@ -336,7 +327,7 @@ public class SPDatabase
 
     @Override
     public int searchUsersWithAuthorizationCount(AuthorizationLevel authLevel,
-            String orgId, String search)
+            OrgID orgId, String search)
             throws SQLException
     {
         PreparedStatement psSUAC = getConnection().prepareStatement(
@@ -345,7 +336,7 @@ public class SPDatabase
                 C_USER_AUTHORIZATION_LEVEL + "=?"
         );
 
-        psSUAC.setString(1, orgId);
+        psSUAC.setInt(1, orgId.getInt());
         psSUAC.setString(2, "%" + search + "%");
         psSUAC.setInt(3, authLevel.ordinal());
 
@@ -358,7 +349,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBSharedFolder> listSharedFolders(String orgId, int maxResults,
+    public List<PBSharedFolder> listSharedFolders(OrgID orgId, int maxResults,
             int offset)
             throws SQLException
     {
@@ -395,7 +386,7 @@ public class SPDatabase
                 " asc, t2." + C_AC_USER_ID + " asc"
         );
 
-        psLSF.setString(1, orgId);
+        psLSF.setInt(1, orgId.getInt());
         psLSF.setInt(2, maxResults);
         psLSF.setInt(3, offset);
         ResultSet rs = psLSF.executeQuery();
@@ -445,7 +436,7 @@ public class SPDatabase
     }
 
     @Override
-    public int countSharedFolders(String orgId)
+    public int countSharedFolders(OrgID orgId)
             throws SQLException
     {
         // The statement here is taken from listSharedFolders above, but the outermost
@@ -460,7 +451,7 @@ public class SPDatabase
                 ") as t1"
         );
 
-        psCSF.setString(1, orgId);
+        psCSF.setInt(1, orgId.getInt());
         ResultSet rs = psCSF.executeQuery();
         try {
             Util.verify(rs.next());
@@ -538,7 +529,7 @@ public class SPDatabase
             psAU.setString(2, Base64.encodeBytes(ur._shaedSP));
             psAU.setString(3, ur._firstName);
             psAU.setString(4, ur._lastName);
-            psAU.setString(5, ur._orgId);
+            psAU.setInt(5, ur._orgID.getInt());
             psAU.setInt(6, ur._level.ordinal());
             psAU.setInt(7, getNewUserInitialACLEpoch());
             psAU.executeUpdate();
@@ -554,7 +545,6 @@ public class SPDatabase
                 T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID +"=?");
 
         psUVerified.setString(1, userID);
-        // TODO should this check whether the row was not found, instead of asserting?
         Util.verify(psUVerified.executeUpdate() == 1);
 
         l.info("user " + userID + " marked verified");
@@ -853,8 +843,7 @@ public class SPDatabase
         Util.verify(psSAuthLevel.executeUpdate() == 1);
     }
 
-    public void addTargetedSignupCode(String code, String from, String to,
-            String orgId, long time)
+    public void addTargetedSignupCode(String code, String from, String to, OrgID orgId, long time)
         throws SQLException
     {
        PreparedStatement psAddTI = getConnection().prepareStatement(
@@ -864,12 +853,12 @@ public class SPDatabase
         psAddTI.setString(1, code);
         psAddTI.setString(2, from);
         psAddTI.setString(3, to);
-        psAddTI.setString(4, orgId);
+        psAddTI.setInt(4, orgId.getInt());
         psAddTI.setTimestamp(5, new Timestamp(time), _calendar);
         psAddTI.executeUpdate();
     }
 
-    public synchronized void addTargetedSignupCode(String code, String from, String to, String orgId)
+    public synchronized void addTargetedSignupCode(String code, String from, String to, OrgID orgId)
             throws SQLException
     {
         addTargetedSignupCode(code, from, to, orgId, System.currentTimeMillis());
@@ -879,18 +868,19 @@ public class SPDatabase
      * Check whether a user has already been invited (with a targeted signup code).
      * This is used by us to avoid spamming people when doing mass-invite
      */
-    public boolean isAlreadyInvited(String user, String orgId)
+    public boolean isAlreadyInvited(String user)
             throws SQLException
     {
-        PreparedStatement psIsAlreadyInvited = getConnection().prepareStatement("select " + C_TI_TIC
-                + " from " + T_TI + " where " + C_TI_TO + "=? and " + C_TI_ORG_ID + "=? " +
-                "limit 1");
+        PreparedStatement ps = getConnection().prepareStatement(
+                DBUtil.selectWhere(C_TI_TIC, C_TI_TO + "=?", "count(*)"));
 
-        psIsAlreadyInvited.setString(1, user);
-        psIsAlreadyInvited.setString(2, orgId);
-        ResultSet rs = psIsAlreadyInvited.executeQuery();
+        ps.setString(1, user);
+        ResultSet rs = ps.executeQuery();
         try {
-            return rs.next();
+            Util.verify(rs.next());
+            int count = rs.getInt(1);
+            assert !rs.next();
+            return count != 0;
         } finally {
             rs.close();
         }
@@ -901,40 +891,45 @@ public class SPDatabase
             String folderName)
             throws SQLException
     {
-        PreparedStatement psAddFI = getConnection().prepareStatement("insert into " + T_FI
+        PreparedStatement ps = getConnection().prepareStatement("insert into " + T_FI
                 + " (" + C_FI_FIC + "," + C_FI_FROM + "," + C_FI_TO + "," + C_FI_SID + ","
                 + C_FI_FOLDER_NAME + ") " + "values (?,?,?,?,?)");
 
-        psAddFI.setString(1, code);
-        psAddFI.setString(2, from);
-        psAddFI.setString(3, to);
-        psAddFI.setBytes(4, sid.getBytes());
-        psAddFI.setString(5, folderName);
+        ps.setString(1, code);
+        ps.setString(2, from);
+        ps.setString(3, to);
+        ps.setBytes(4, sid.getBytes());
+        ps.setString(5, folderName);
 
-        psAddFI.executeUpdate();
+        ps.executeUpdate();
+    }
+
+    public static class ResolveTargetedSignUpCodeResult
+    {
+        public String _userId;
+        public OrgID _orgId;
     }
 
     /**
      * @param tsc the invitation code
-     * @return null if not found
      */
-    public @Nullable ResolveTargetedSignUpCodeReply getTargetedSignUp(String tsc)
-        throws SQLException
+    public @Nonnull ResolveTargetedSignUpCodeResult getTargetedSignUp(String tsc)
+        throws SQLException, ExNotFound
     {
-        PreparedStatement psGetTI = getConnection().prepareStatement("select " + C_TI_TO + ", " +
-                C_TI_ORG_ID + " from " + T_TI + " where " + C_TI_TIC + "=?");
+        PreparedStatement ps = getConnection().prepareStatement(
+                DBUtil.selectWhere(T_TI, C_TI_TIC + "=?", C_TI_TO, C_TI_ORG_ID));
 
-        psGetTI.setString(1, tsc);
-        ResultSet rs = psGetTI.executeQuery();
+        ps.setString(1, tsc);
+        ResultSet rs = ps.executeQuery();
         try {
             if (rs.next()) {
-                return ResolveTargetedSignUpCodeReply.newBuilder()
-                        .setEmailAddress(rs.getString(1))
-                        .setOrganizationId(rs.getString(2))
-                        .build();
-
+                ResolveTargetedSignUpCodeResult result = new ResolveTargetedSignUpCodeResult();
+                result._userId = rs.getString(1);
+                result._orgId = new OrgID(rs.getInt(2));
+                assert !rs.next();
+                return result;
             } else {
-                return null;
+                throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
             }
         } finally {
             rs.close();
@@ -1379,7 +1374,7 @@ public class SPDatabase
                     "=? and " + C_AC_ROLE + "=?");
 
             psOwnersInOrgCount.setBytes(1, sid.getBytes());
-            psOwnersInOrgCount.setString(2, currentUser._orgId);
+            psOwnersInOrgCount.setInt(2, currentUser._orgID.getInt());
             psOwnersInOrgCount.setInt(3, Role.OWNER.ordinal());
 
             rs = psOwnersInOrgCount.executeQuery();
@@ -1766,17 +1761,13 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psAddOrganization = getConnection().prepareStatement("insert into " +
-                    T_ORGANIZATION + "(" + C_ORG_ID + "," + C_ORG_NAME + "," +
-                    C_ORG_ALLOWED_DOMAIN + "," + C_ORG_OPEN_SHARING + ") values (?,?,?,?)");
+            PreparedStatement psAddOrg = getConnection().prepareStatement(
+                    DBUtil.insert(T_ORG, C_ORG_ID, C_ORG_NAME));
 
-            psAddOrganization.setString(1, org._id);
-            psAddOrganization.setString(2, org._name);
-            psAddOrganization.setString(3, org._allowedDomain);
-            psAddOrganization.setBoolean(4, org._shareExternally);
-            psAddOrganization.executeUpdate();
+            psAddOrg.setInt(1, org._id.getInt());
+            psAddOrg.setString(2, org._name);
+            psAddOrg.executeUpdate();
         } catch (SQLException e) {
-            // The following will throw ExAlreadyExist if the orgId already exists
             throwOnConstraintViolation(e);
             throw e;
         }
@@ -1787,27 +1778,22 @@ public class SPDatabase
      * @throws ExNotFound if there is no row indexed by orgId
      */
     @Override
-    public Organization getOrganization(final String orgId)
+    public Organization getOrganization(final OrgID orgID)
             throws SQLException, ExNotFound
     {
-        PreparedStatement psGetOrganization = getConnection().prepareStatement("select " +
-                C_ORG_NAME + "," + C_ORG_ALLOWED_DOMAIN + "," + C_ORG_OPEN_SHARING +
-                "," + C_ORG_ID +
-                " from " + T_ORGANIZATION + " where " + C_ORG_ID + "=?");
+        PreparedStatement psGetOrganization = getConnection().prepareStatement(
+                DBUtil.selectWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
 
-        psGetOrganization.setString(1, orgId);
+        psGetOrganization.setInt(1, orgID.getInt());
         ResultSet rs = psGetOrganization.executeQuery();
         try {
             if (rs.next()) {
                 String name = rs.getString(1);
-                String domain = rs.getString(2);
-                boolean shareExternally = rs.getBoolean(3);
-                String dbOrgId = rs.getString(4);
-                Organization org = new Organization(dbOrgId, name, domain, shareExternally);
+                Organization org = new Organization(orgID, name);
                 assert !rs.next();
                 return org;
             } else {
-                throw new ExNotFound("Organization " + orgId + " does not exist.");
+                throw new ExNotFound("Organization " + orgID + " does not exist.");
             }
         } finally {
             rs.close();
@@ -1815,40 +1801,28 @@ public class SPDatabase
     }
 
     @Override
-    public void setOrganizationPreferences(final Organization newOrg)
-            throws SQLException, ExNotFound
+    public void setOrganizationPreferences(final Organization org)
+            throws SQLException
     {
-        PreparedStatement psSetOrganizationPreferences = getConnection().prepareStatement("update "
-                + T_ORGANIZATION + " set " + C_ORG_NAME + "=?, " + C_ORG_ALLOWED_DOMAIN + "=?, " +
-                C_ORG_OPEN_SHARING + "=? where " + C_ORG_ID + "=?");
+        PreparedStatement psSetOrgPref = getConnection().prepareStatement(
+                DBUtil.updateWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
 
-        psSetOrganizationPreferences.setString(1, newOrg._name);
-        psSetOrganizationPreferences.setString(2, newOrg._allowedDomain);
-        psSetOrganizationPreferences.setBoolean(3, newOrg._shareExternally);
-        psSetOrganizationPreferences.setString(4, newOrg._id);
+        psSetOrgPref.setString(1, org._name);
+        psSetOrgPref.setInt(2, org._id.getInt());
 
-        if (psSetOrganizationPreferences.executeUpdate() == 0) {
-            throw new ExNotFound("Organization " + newOrg._id + " does not exist.");
-        }
+        Util.verify(psSetOrgPref.executeUpdate() == 1);
     }
 
     @Override
-    public void moveUserToOrganization(String userId, String orgId)
-            throws SQLException, ExNotFound
+    public void moveUserToOrganization(String userId, OrgID orgId)
+            throws SQLException
     {
-        try {
-            PreparedStatement psMoveToOrg = getConnection().prepareStatement("update " + T_USER +
-                    " set " + C_USER_ORG_ID + " = ? where " + C_USER_ID + "=?");
+        PreparedStatement psMoveToOrg = getConnection().prepareStatement(
+                DBUtil.updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
 
-            psMoveToOrg.setString(1, orgId);
-            psMoveToOrg.setString(2, userId);
-            if (psMoveToOrg.executeUpdate() == 0) { // 0 rows updated if user id doesn't exist
-                throw new ExNotFound("User " + userId + " does not exist.");
-            }
-        } catch (SQLException e) {
-            checkOrganizationKeyConstraint(e, orgId); // throws ExNotFound if orgId doesn't exist
-            throw e;
-        }
+        psMoveToOrg.setInt(1, orgId.getInt());
+        psMoveToOrg.setString(2, userId);
+        Util.verify(psMoveToOrg.executeUpdate() == 1);
     }
 
     private class ExSizeMismatch extends Exception
@@ -2067,7 +2041,7 @@ public class SPDatabase
         ResultSet rs = ps.executeQuery();
         try {
             Set<String> users = Sets.newHashSetWithExpectedSize(maxUsers);
-            while (rs.next()) users.add(rs.getString(1));
+            while (rs.next()) { users.add(rs.getString(1)); }
             return users;
         } finally {
             rs.close();

@@ -10,6 +10,7 @@ import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.IUserSearchDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -104,13 +105,6 @@ public class UserManagement
         // Check that the invitee doesn't exist already
         checkUserIdDoesNotExist(normalizedId);
 
-        // USER-level inviters can only invite to an organization that matches the domain
-        if (inviter._level.equals(AuthorizationLevel.USER)
-                && !inviteeOrg.domainMatches(inviteeId)) {
-            throw new ExNoPerm(inviter._id + " cannot invite + " + normalizedId
-                    + " to " + inviteeOrg._id);
-        }
-
         final String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
 
         _db.addTargetedSignupCode(code, inviter._id, normalizedId, inviteeOrg._id);
@@ -135,19 +129,19 @@ public class UserManagement
         _db.setAuthorizationLevel(userId, auth);
     }
 
-    public int totalUserCount(String orgId) throws SQLException
+    public int totalUserCount(OrgID orgId) throws SQLException
     {
         return _usdb.listUsersCount(orgId);
     }
 
-    public int totalUserCount(AuthorizationLevel authLevel, String orgId)
+    public int totalUserCount(AuthorizationLevel authLevel, OrgID orgId)
             throws SQLException
     {
         return _usdb.listUsersWithAuthorizationCount(authLevel, orgId);
     }
 
     public UserListAndQueryCount listUsers(@Nullable String search, int maxResults,
-            int offset, String orgId)
+            int offset, OrgID orgId)
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
@@ -174,7 +168,7 @@ public class UserManagement
      */
     public UserListAndQueryCount listUsersAuth(@Nullable String search,
             AuthorizationLevel authLevel, int maxResults,
-            int offset, String orgId)
+            int offset, OrgID orgId)
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";

@@ -9,6 +9,7 @@ import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -31,11 +32,11 @@ public class TestListUser extends AbstractTest
     private final int NUMBER_OF_USERS = 10;
     private final int NUMBER_OF_ADMINS = 4;
     private final int TOTAL_USERS = NUMBER_OF_USERS + NUMBER_OF_ADMINS;
-    private final String validOrgId = "test.com";
-    private final String invalidOrgId = "notfound.com";
+    private final OrgID validOrgId = new OrgID(523);
+    private final OrgID invalidOrgId = new OrgID(876);
     // Organization containing users, but will not be queried.
     // We do not expect any of these users to be returned in the queries below.
-    private final String nonQueriedOrgId = "dummy.com";
+    private final OrgID nonQueriedOrgId = new OrgID(453);
 
     private final SPDatabaseParams _dbParams = new SPDatabaseParams();
     @Spy private final SQLThreadLocalTransaction _transaction =
@@ -54,8 +55,8 @@ public class TestListUser extends AbstractTest
         _transaction.begin();
 
         Organization[] orgs = new Organization[] {
-                new Organization(validOrgId, "test", "", false),
-                new Organization(nonQueriedOrgId, "dummy", "", false)
+                new Organization(validOrgId, "test"),
+                new Organization(nonQueriedOrgId, "dummy")
         };
 
         for (Organization org : orgs) _spdb.addOrganization(org);

@@ -16,6 +16,8 @@ import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.EmailReminder;
 import com.aerofs.sp.server.user.UserManagement;
@@ -164,20 +166,19 @@ public class SPServlet extends AeroServlet
     private void inviteFromScript(@Nonnull String fromPerson, @Nonnull String to)
             throws Exception
     {
-        to = to.toLowerCase();
-        String orgId = C.DEFAULT_ORGANIZATION;
+        to = User.normalizeUserId(to);
 
         // Check that the invitee isn't already a user
         _userManagement.checkUserIdDoesNotExist(to);
 
         // Check that we haven't already invited this user
-        if (_db.isAlreadyInvited(to, orgId)) throw  new ExAlreadyExist("user already invited");
+        if (_db.isAlreadyInvited(to)) throw new ExAlreadyExist("user already invited");
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _db.addTargetedSignupCode(code, SV.SUPPORT_EMAIL_ADDRESS, to, orgId);
+        _db.addTargetedSignupCode(code, SV.SUPPORT_EMAIL_ADDRESS, to, OrgID.DEFAULT);
 
-        _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null, code)
-                .send();
+        _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null,
+                code).send();
 
         _db.addEmailSubscription(to, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
     }

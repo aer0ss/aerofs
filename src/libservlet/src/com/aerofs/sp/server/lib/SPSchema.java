@@ -17,11 +17,9 @@ final class SPSchema
     static final String C_USER_STORELESS_INVITES_QUOTA  = "u_storeless_invites_quota";
     static final String C_USER_ACL_EPOCH                = "u_acl_epoch";
 
-    static final String T_ORGANIZATION                  = "sp_organization";
+    static final String T_ORG = "sp_organization";
     static final String C_ORG_ID                        = "o_id";
     static final String C_ORG_NAME                      = "o_name";
-    static final String C_ORG_ALLOWED_DOMAIN            = "o_allowed_domain";
-    static final String C_ORG_OPEN_SHARING              = "o_open_sharing";
 
     static final String T_DEVICE                        = "sp_device";
     static final String C_DEVICE_ID                     = "d_id";

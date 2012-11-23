@@ -9,6 +9,7 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
@@ -107,7 +108,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         // set up TEST_USER_4
         _transaction.begin();
         db.addUser(new User(TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_NAME, TEST_USER_4_CRED,
-                false, C.DEFAULT_ORGANIZATION, AuthorizationLevel.USER));
+                false, OrgID.DEFAULT, AuthorizationLevel.USER));
         db.markUserVerified(TEST_USER_4_NAME);
         _transaction.commit();
     }

@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server.organization;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.user.UserManagement;
@@ -20,8 +20,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Wrapper class for organization-related DB queries
@@ -43,16 +41,6 @@ public class OrganizationManagement
         _userManagement = userManagement;
     }
 
-    // Regex taken from http://myregexp.com/examples.html and modified to allow longer TLDs
-    private static final Pattern DOMAIN_NAME_PATTERN =
-            Pattern.compile("^([a-zA-Z0-9]([a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$");
-
-    private static boolean isValidDomainName(String domainName)
-    {
-        Matcher matcher = DOMAIN_NAME_PATTERN.matcher(domainName);
-        return matcher.find();
-    }
-
     private static Integer sanitizeMaxResults(Integer maxResults)
     {
         if (maxResults == null) return DEFAULT_MAX_RESULTS;
@@ -62,77 +50,54 @@ public class OrganizationManagement
         else return maxResults;
     }
 
-    /**
-     * TODO: Make this method transactional
-     */
-    public void addOrganization(String orgId, String orgName, Boolean shareExternal,
-            @Nullable String allowedDomain)
+    public Organization addOrganization(String orgName)
             throws SQLException, ExAlreadyExist, ExBadArgs, ExNotFound
     {
-        if (allowedDomain == null || allowedDomain.isEmpty()) {
-            allowedDomain = Organization.ANY_DOMAIN;
-        } else if (!isValidDomainName(allowedDomain)) {
-            throw new ExBadArgs("Domain '" + allowedDomain + "' is not a valid domain name.");
+        while (true) {
+            // Use a random ID only to prevent competitors from figuring out total number of orgs.
+            // It is NOT a security measure.
+            OrgID orgId = new OrgID(Util.rand().nextInt());
+            Organization org = new Organization(orgId, orgName);
+            try {
+                _db.addOrganization(org);
+                l.info("Organization " + org + " created");
+                return org;
+            } catch (ExAlreadyExist e) {
+                // Ideally we should use return value rather than exceptions on expected conditions
+                l.info("Duplicate organization ID " + orgId + ". Try a new one.");
+            }
         }
-
-        if (!isValidDomainName(orgId)) {
-            throw new ExBadArgs("Organization ID '" + orgId + "' is not a valid domain name.");
-        }
-
-        l.info("Creating organization '" + orgId + "' with name '" + orgName + "', " +
-                "external sharing " + (shareExternal ? "on": "off") + ", and allowedDomain '" +
-                allowedDomain + "'.");
-
-        Organization newOrg = new Organization(orgId, orgName, allowedDomain, shareExternal);
-
-        _db.addOrganization(newOrg);
     }
 
-    public Organization getOrganization(String orgId)
+    public Organization getOrganization(OrgID orgId)
             throws SQLException, ExNotFound
     {
         return _db.getOrganization(orgId);
     }
 
-    public void setOrganizationPreferences(String orgId, @Nullable String orgName,
-            @Nullable String allowedDomain, @Nullable Boolean shareExternal)
+    public void setOrganizationPreferences(OrgID orgId, @Nullable String orgName)
             throws ExNotFound, SQLException, ExBadArgs
     {
         Organization oldOrg = getOrganization(orgId);
 
-        if (orgName == null) {
-            orgName = oldOrg._name;
-        }
+        if (orgName == null) orgName = oldOrg._name;
 
-        if (allowedDomain == null) {
-            allowedDomain = oldOrg._allowedDomain;
-        } else if (allowedDomain.isEmpty()) {
-            allowedDomain = Organization.ANY_DOMAIN;
-        } else if (!allowedDomain.equals(Organization.ANY_DOMAIN) &&
-                !isValidDomainName(allowedDomain)) {
-            throw new ExBadArgs("Domain '" + allowedDomain + "' is not a valid domain name.");
-        }
+        Organization org = new Organization(orgId, orgName);
 
-        if (shareExternal == null) {
-            shareExternal = oldOrg._shareExternally;
-        }
-
-        Organization newOrg = new Organization(orgId, orgName, allowedDomain, shareExternal);
-
-        _db.setOrganizationPreferences(newOrg);
+        _db.setOrganizationPreferences(org);
     }
 
-    public void moveUserToOrganization(String user, String orgId)
+    public void moveUserToOrganization(String user, OrgID orgId)
             throws SQLException, IOException, ExNotFound, ExBadArgs
     {
         User newUser = _userManagement.getUser(user);
-        if (!newUser._orgId.equals(C.DEFAULT_ORGANIZATION)) {
+        if (!newUser._orgID.equals(OrgID.DEFAULT)) {
             throw new ExBadArgs("User " + user + " already belongs to an organization.");
         }
         _db.moveUserToOrganization(user, orgId);
     }
 
-    public List<PBSharedFolder> listSharedFolders(String orgId, Integer maxResults, Integer offset)
+    public List<PBSharedFolder> listSharedFolders(OrgID orgId, Integer maxResults, Integer offset)
             throws SQLException
     {
         if (offset == null) offset = 0;
@@ -141,7 +106,7 @@ public class OrganizationManagement
         return _db.listSharedFolders(orgId, sanitizeMaxResults(maxResults), offset);
     }
 
-    public int countSharedFolders(String orgId)
+    public int countSharedFolders(OrgID orgId)
         throws SQLException
     {
         return _db.countSharedFolders(orgId);

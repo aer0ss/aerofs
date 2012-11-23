@@ -19,6 +19,11 @@ public interface IThreadLocalTransaction<T extends Throwable>
     public void commit() throws T;
 
     /**
+     * @return true if and only if it is called after begin() and before commit() or rollback()
+     */
+    public boolean isInTransaction();
+
+    /**
      * Cleans up current connections and puts the connector back into a consistent state. Should be
      * run from the encodeError method of *Service classes (see SyncStatService.java for an example)
      * and in tests when an exception is thrown.

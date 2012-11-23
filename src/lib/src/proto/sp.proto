@@ -19,15 +19,12 @@ service SPService {
 
     /**
      * Sign up a user without a signup code
-     * The user email address must match the allowed domain of the organization
      * The user will be marked as unverified, and an email verification code will be sent.
      *
      * Required Auth Level: none
      *
      * Throws:
      *   ExAlreadyExist if the email address is unavailable
-     *   ExNotFound if the provided organization ID is not found
-     *   ExNoPerm if the email address isn't allowed to sign up for this organization
      */
     rpc SignUp(SignUpCall) returns(Void);
 
@@ -54,8 +51,7 @@ service SPService {
     rpc SignIn(SignInCall) returns(SignInReply);
 
     /**
-     * Finds the email address and the organization id associated with an
-     * signup code.
+     * Finds the email address associated with an signup code.
      *
      * Required Auth Level: none
      *
@@ -285,25 +281,13 @@ service SPService {
     rpc SetAuthorizationLevel(SetAuthorizationLevelCall) returns(Void);
 
     /**
-     * Create a new organization, create a new user account for the administrator or move the given
-     * existing user to the organization, and give the authenticated user authlevel ADMIN for the
-     * new organization.
+     * Create a new organization
      *
-     * org_allowed_domain defaults to allow any domain, meaning that there is no required domain
-     * name for members of this organization.
-     *
-     * authlevel: ADMIN, member of aerofs.com organization
+     * authlevel: none
      *
      * throws:
-     * - ExNoPerm       if the user calling is not a member of the AeroFS organization or is not
-     *                      an admin
-     * - ExAlreadyExist if an organization with the same id already exists
-     * - ExBadArg       if the organization id is not a valid domain name
-     *                  if the allowed domain of the organization is not a valid domain name
-     *                  if the user id of the caller does not match the allowed domain of the new
-     *                      organization
-     *                  if neither a new account to create nor an existing account to move to the
-     *                      organization as the administrator are set
+     * - ExNoPerm   if the user calling is not a member of the default organization or is not
+     *                  an admin
      */
     rpc AddOrganization(AddOrganizationCall) returns(Void);
 
@@ -399,7 +383,6 @@ message SignUpCall {
     required bytes credentials = 2; // hashed credentials (some combo of password, etc.)
     required string first_name = 3;
     required string last_name = 4;
-    required string organization_id = 5;
 }
 
 message SignUpWithTargetedCall {
@@ -424,7 +407,6 @@ message ResolveTargetedSignUpCodeCall {
 
 message ResolveTargetedSignUpCodeReply {
     required string email_address = 1;
-    required string organization_id = 2;
 }
 
 message VerifyBatchSignUpCodeCall {
@@ -616,13 +598,7 @@ enum PBAuthorizationLevel {
 }
 
 message AddOrganizationCall {
-    required string org_id = 1;
-    required string org_name = 2;
-    required bool org_allow_open_sharing = 3;
-    optional string org_allowed_domain = 4;
-
-    optional SignUpCall new_admin_account = 5;
-    optional string existing_user_to_make_admin = 6;
+    required string org_name = 1;
 }
 
 message SendPasswordResetEmailCall {
@@ -696,16 +672,11 @@ message ListSharedFoldersResponse {
 }
 
 message GetOrgPreferencesReply {
-    required string org_id = 1;
-    required string org_name = 2;
-    required bool org_allow_open_sharing = 3;
-    required string org_allowed_domain = 4;
+    required string org_name = 1;
 }
 
 message SetOrgPreferencesCall {
     optional string org_name = 1;
-    optional bool org_allow_open_sharing = 2;
-    optional string org_allowed_domain = 3;
 }
 
 message SetUnsubscribeEmailCall {

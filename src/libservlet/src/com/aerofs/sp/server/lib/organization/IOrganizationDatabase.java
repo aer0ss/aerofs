@@ -24,17 +24,16 @@ public interface IOrganizationDatabase
      *
      * @param org new organization to add (assume here that error checking has been done on org's
      *          values when instantiating org in the caller)
-     * @throws ExAlreadyExist if the organization exists (i.e. a row exists in the organization
-     * table with the same organization id)
+     * @throws ExAlreadyExist if the organization ID already exists
      */
-    void addOrganization(final Organization org)
-            throws SQLException, ExAlreadyExist, ExBadArgs;
+    void addOrganization(Organization org)
+            throws SQLException, ExAlreadyExist;
 
     /**
      * @return the Organization indexed by orgId
      * @throws ExNotFound if there is no row indexed by orgId
      */
-    Organization getOrganization(final String orgId)
+    Organization getOrganization(final OrgID orgId)
             throws SQLException, ExNotFound;
 
     /**
@@ -42,24 +41,22 @@ public interface IOrganizationDatabase
      * valid and preexisting organization (created by addOrganization above), and updates the
      * organization referenced by that id with the rest of the values set in newOrg.
      * @param newOrg An updated organization object
-     * @throws ExNotFound if there is no organization with the organization id in newOrg
      */
     void setOrganizationPreferences(final Organization newOrg)
-            throws SQLException, ExNotFound;
+            throws SQLException;
 
     /**
      * Moves the given user into the given organization
-     * @throws ExNotFound if the given userId or orgId don't exist
      */
-    void moveUserToOrganization(String userId, String orgId)
-            throws SQLException, ExNotFound;
+    void moveUserToOrganization(String userId, OrgID orgId)
+            throws SQLException;
 
 
     /**
      * Counts the total number of shared folders viewable by calls to listSharedFolders
      * @param orgId organization
      */
-    int countSharedFolders(String orgId)
+    int countSharedFolders(OrgID orgId)
             throws SQLException;
 
     /**
@@ -70,6 +67,6 @@ public interface IOrganizationDatabase
      * @param offset offset into the list of all shared folders to return from
      * @return a list of shared folders for the given orgId beginning at the given offset
      */
-    List<PBSharedFolder> listSharedFolders(String orgId, int maxResults, int offset)
+    List<PBSharedFolder> listSharedFolders(OrgID orgId, int maxResults, int offset)
             throws SQLException;
 }

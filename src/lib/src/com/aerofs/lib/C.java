@@ -75,13 +75,6 @@ public class C
     public static final String SS_POST_PARAM_PROTOCOL  = SP_POST_PARAM_PROTOCOL;
     public static final String SS_POST_PARAM_DATA      = SP_POST_PARAM_DATA;
 
-    // The SPServlet associates each user with an organization.
-    // This concept isn't useful for "consumers," but their user names must be distinguished from
-    // users of the "enterprise" AeroFS. All users of the "consumer" AeroFS will be added
-    // to a default organization. For now, the SP Servlet is agnostic to the default organization
-    // name.
-    public static final String DEFAULT_ORGANIZATION    = "consumer.aerofs.com";
-
     public static final long SEC = 1000;
     public static final long MIN = 60 * SEC;
     public static final long HOUR = 60 * MIN;
@@ -101,7 +94,7 @@ public class C
 
     // Make sure to update development.ini and production.ini in src/web and tools/sp_runner.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 14;
+    public static final int SP_PROTOCOL_VERSION         = 15;
     public static final int SS_PROTOCOL_VERSION         = 5;
 
     public static final byte[] ROOT_SID_SALT       = new byte[]

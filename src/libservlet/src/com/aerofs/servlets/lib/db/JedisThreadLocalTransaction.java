@@ -31,7 +31,7 @@ public class JedisThreadLocalTransaction
     }
 
     @Override
-    protected boolean isInTransaction()
+    public boolean isInTransaction()
     {
         return _jedisHolder.get() != null;
     }

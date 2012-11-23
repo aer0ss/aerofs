@@ -1,6 +1,5 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.acl.SubjectRolePair;
@@ -17,6 +16,8 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
+import com.aerofs.sp.server.lib.SPDatabase.ResolveTargetedSignUpCodeResult;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Common.PBException;
@@ -44,7 +45,6 @@ import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.proto.Sp.SignInReply;
-import com.aerofs.proto.Sp.SignUpCall;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.cert.Certificate;
@@ -203,9 +203,9 @@ class SPService implements ISPService
         _transaction.begin();
 
         User user = _userManagement.getUser(_sessionUser.getUser());
-        user.verifyIsAdmin();
+        user.throwIfNotAdmin();
 
-        String orgId = user._orgId;
+        OrgID orgId = user._orgID;
 
         UserListAndQueryCount listAndCount =
                 _userManagement.listUsers(search, maxResults, offset, orgId);
@@ -229,9 +229,9 @@ class SPService implements ISPService
         _transaction.begin();
 
         User user = _userManagement.getUser(_sessionUser.getUser());
-        user.verifyIsAdmin();
+        user.throwIfNotAdmin();
 
-        String orgId = user._orgId;
+        OrgID orgId = user._orgID;
         AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
 
 
@@ -257,11 +257,11 @@ class SPService implements ISPService
         _transaction.begin();
 
         User user = _userManagement.getUser(_sessionUser.getUser());
-        user.verifyIsAdmin();
+        user.throwIfNotAdmin();
 
-        int sharedFolderCount = _organizationManagement.countSharedFolders(user._orgId);
+        int sharedFolderCount = _organizationManagement.countSharedFolders(user._orgID);
         List<PBSharedFolder> sharedFolderList =
-                _organizationManagement.listSharedFolders(user._orgId, maxResults, offset);
+                _organizationManagement.listSharedFolders(user._orgID, maxResults, offset);
 
         _transaction.commit();
 
@@ -284,7 +284,7 @@ class SPService implements ISPService
         User subjectUser = _userManagement.getUser(userEmail);
 
         // Verify caller and subject's organization match
-        if (!callerUser._orgId.equals(subjectUser._orgId))
+        if (!callerUser._orgID.equals(subjectUser._orgID))
             throw new ExNoPerm("Organization mismatch.");
 
         // Verify caller's authorization level dominates the subject's
@@ -310,10 +310,7 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> addOrganization(final String orgId, final String orgName,
-            final Boolean shareExternal, final @Nullable String allowedDomain,
-            final @Nullable SignUpCall newAdminAccount,
-            final @Nullable String existingUserToMakeAdmin)
+    public ListenableFuture<Void> addOrganization(final String orgName)
             throws Exception
     {
         _transaction.begin();
@@ -321,28 +318,17 @@ class SPService implements ISPService
         // TODO: verify the calling user is allowed to create an organization
         // (check with the payment system)
 
-        // currently only allow AeroFS employees who are also administrators of the AeroFS internal
-        // organization to call this
-        User caller = _userManagement.getUser(_sessionUser.getUser());
-        if ((!caller._orgId.equals("aerofs.com")) || caller._level != AuthorizationLevel.ADMIN) {
+        User user = _userManagement.getUser(_sessionUser.getUser());
+
+        // only users in the default organization or admins can add organizations.
+        if ((!user._orgID.equals(OrgID.DEFAULT) || user._level != AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm("API meant for internal use by AeroFS employees only");
         }
 
-        _organizationManagement.addOrganization(orgId, orgName, shareExternal, allowedDomain);
+        Organization org = _organizationManagement.addOrganization(orgName);
 
-        if (newAdminAccount != null && newAdminAccount.isInitialized()) {
-            signUpCommon(newAdminAccount.getUserId(), newAdminAccount.getCredentials(),
-                    newAdminAccount.getFirstName(), newAdminAccount.getLastName(),
-                    newAdminAccount.getOrganizationId());
-            _userManagement.setAuthorizationLevel(newAdminAccount.getUserId(),
-                    AuthorizationLevel.ADMIN);
-        } else if (existingUserToMakeAdmin != null) {
-            _organizationManagement.moveUserToOrganization(existingUserToMakeAdmin, orgId);
-            _userManagement.setAuthorizationLevel(
-                    existingUserToMakeAdmin, AuthorizationLevel.ADMIN);
-        } else {
-            throw new ExBadArgs("Must set either newAdminAccount or existingUserToMakeAdmin");
-        }
+        _organizationManagement.moveUserToOrganization(user._id, org._id);
+        _userManagement.setAuthorizationLevel(user._id, AuthorizationLevel.ADMIN);
 
         _transaction.commit();
 
@@ -356,14 +342,11 @@ class SPService implements ISPService
         _transaction.begin();
 
         User user = _userManagement.getUser(_sessionUser.getUser());
-        user.verifyIsAdmin();
+        user.throwIfNotAdmin();
 
-        Organization org = _organizationManagement.getOrganization(user._orgId);
+        Organization org = _organizationManagement.getOrganization(user._orgID);
 
         GetOrgPreferencesReply orgPreferences = GetOrgPreferencesReply.newBuilder()
-                .setOrgId(org._id)
-                .setOrgAllowedDomain(org._allowedDomain)
-                .setOrgAllowOpenSharing(org._shareExternally)
                 .setOrgName(org._name)
                 .build();
 
@@ -373,17 +356,15 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> setOrgPreferences(@Nullable String orgName,
-            @Nullable Boolean orgAllowOpenSharing, @Nullable String orgAllowedDomain)
+    public ListenableFuture<Void> setOrgPreferences(@Nullable String orgName)
             throws Exception
     {
         _transaction.begin();
 
         User user = _userManagement.getUser(_sessionUser.getUser());
-        user.verifyIsAdmin();
+        user.throwIfNotAdmin();
 
-        _organizationManagement.setOrganizationPreferences(user._orgId, orgName, orgAllowedDomain,
-                orgAllowOpenSharing);
+        _organizationManagement.setOrganizationPreferences(user._orgID, orgName);
 
         _transaction.commit();
 
@@ -602,14 +583,12 @@ class SPService implements ISPService
         l.info("tsc: " + tsc);
 
         _transaction.begin();
-        ResolveTargetedSignUpCodeReply reply = _db.getTargetedSignUp(tsc);
+        ResolveTargetedSignUpCodeResult result = _db.getTargetedSignUp(tsc);
         _transaction.commit();
 
-        if (reply != null) {
-            return createReply(reply);
-        } else {
-            throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
-        }
+        return createReply(ResolveTargetedSignUpCodeReply.newBuilder()
+                .setEmailAddress(result._userId)
+                .build());
     }
 
     @Override
@@ -631,8 +610,7 @@ class SPService implements ISPService
             _db.setFolderlessInvitesQuota(user._id, left);
         }
 
-        Organization org = _db.getOrganization(inviteToDefaultOrg ?
-                C.DEFAULT_ORGANIZATION : user._orgId);
+        Organization org = _db.getOrganization(inviteToDefaultOrg ? OrgID.DEFAULT : user._orgID);
 
         // Invite all invitees to Organization "org"
         // The sending of invitation emails is deferred to the end of the transaction to ensure
@@ -851,23 +829,22 @@ class SPService implements ISPService
         }
     }
 
-    /**
-     * Only call this within the context of another transaction!!
-     */
     private void signUpCommon(String userId, ByteString credentials, String firstName,
-            String lastName, String orgId)
+            String lastName, OrgID orgID)
             throws ExAlreadyExist, SQLException, IOException
     {
+        // Only call this within the context of another transaction!!
+        assert _transaction.isInTransaction();
+
         assert userId != null;
-        assert orgId != null;
 
         // Create a User with
         // - normalized userID
         // - email verification marked as false
         // - authorization set to lowest USER level
         String normalizedUserId = User.normalizeUserId(userId);
-        User user = new User(normalizedUserId, firstName, lastName, credentials, false,
-                orgId, AuthorizationLevel.USER);
+        User user = new User(normalizedUserId, firstName, lastName, credentials, false, orgID,
+                AuthorizationLevel.USER);
 
         l.info(user + " attempt signup");
 
@@ -887,17 +864,12 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> signUp(String userId, ByteString credentials, String firstName,
-            String lastName, String orgId)
+            String lastName)
             throws ExNotFound, SQLException, ExNoPerm, ExAlreadyExist, IOException
     {
         _transaction.begin();
 
-        Organization org = _db.getOrganization(orgId);
-        if (!org.domainMatches(userId)) {
-            throw new ExNoPerm("Email domain does not match " + org._allowedDomain);
-        }
-
-        signUpCommon(userId, credentials, firstName, lastName, orgId);
+        signUpCommon(userId, credentials, firstName, lastName, OrgID.DEFAULT);
 
         _transaction.commit();
 
@@ -947,20 +919,13 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        // Verify the sign up code is legitimate (i.e. found in the DB)
-        ResolveTargetedSignUpCodeReply invitation = _db.getTargetedSignUp(targetedInvite);
-        if (invitation == null) {
-            throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
-        }
+        ResolveTargetedSignUpCodeResult result = _db.getTargetedSignUp(targetedInvite);
 
-        String userId = invitation.getEmailAddress();
-        String orgId = invitation.getOrganizationId();
-
-        signUpCommon(userId, credentials, firstName, lastName, orgId);
+        signUpCommon(result._userId, credentials, firstName, lastName, result._orgId);
 
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified
-        _db.markUserVerified(userId);
+        _db.markUserVerified(result._userId);
 
         _transaction.commit();
 

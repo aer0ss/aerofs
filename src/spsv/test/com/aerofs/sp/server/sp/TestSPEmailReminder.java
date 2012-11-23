@@ -26,6 +26,7 @@ import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.google.common.collect.Sets;
 import org.junit.Before;
@@ -51,7 +52,7 @@ public class TestSPEmailReminder extends AbstractTest {
     @Spy protected SPDatabase _db = new SPDatabase(_transaction);
     @InjectMocks private EmailReminder er;
 
-    private static final String ORG = "sperdefault";
+    private static final OrgID ORG_ID = new OrgID(543);
 
     private static final int TWO_DAYS_INT = 2;
     private static final long TWO_DAYS_IN_MILLISEC = TWO_DAYS_INT * C.DAY;
@@ -83,7 +84,7 @@ public class TestSPEmailReminder extends AbstractTest {
 
         _transaction.begin();
         Log.info("add default organization");
-        _db.addOrganization(new Organization(ORG, "", "", true));
+        _db.addOrganization(new Organization(ORG_ID, "Test Organization"));
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
@@ -108,8 +109,7 @@ public class TestSPEmailReminder extends AbstractTest {
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
             _db.addTargetedSignupCode(signupCode,
                     SV.SUPPORT_EMAIL_ADDRESS,
-                    user,
-                    ORG,
+                    user, ORG_ID,
                     System.currentTimeMillis()-age);
 
             _db.addEmailSubscription(user,

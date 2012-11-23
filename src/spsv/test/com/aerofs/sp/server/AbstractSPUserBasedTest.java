@@ -4,8 +4,8 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
@@ -64,7 +64,7 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
                 anyString(), anyString(), anyString())).thenReturn(new InvitationEmailer());
 
         final boolean verified = false; // This field doesn't matter.
-        String orgId = C.DEFAULT_ORGANIZATION;
+        OrgID orgId = OrgID.DEFAULT;
         AuthorizationLevel level = AuthorizationLevel.USER;
 
         // Add all the users to the db.
