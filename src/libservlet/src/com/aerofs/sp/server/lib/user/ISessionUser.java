@@ -10,18 +10,18 @@ import com.aerofs.lib.id.UserID;
 /**
  * This interace is only necessary to enable mocking of the ThreadLocalHttpSessionUser in SPService
  */
-public interface ISessionUserID
+public interface ISessionUser
 {
     /**
      * @return the user ID of this session
      * @throws ExNoPerm if no user has been set for the session
      */
-    UserID get() throws ExNoPerm;
+    UserID getID() throws ExNoPerm;
 
     /**
      * Set the session user ID.
      */
-    void set(UserID userId);
+    void setID(UserID userId);
 
     /**
      * Remove the user ID from this session. A subsequent call to getUserNullable() should throw

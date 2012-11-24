@@ -3,8 +3,8 @@ package com.aerofs.sp.client;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.SPServiceStub;
-import com.aerofs.proto.Sp.SignInReply;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -26,14 +26,14 @@ public class SPClient extends SPServiceStub
     /**
      * Sign into the SP server with the config scryted credentials
      */
-    public ListenableFuture<SignInReply> signInRemote()
+    public ListenableFuture<Void> signInRemote()
     {
-        ListenableFuture<SignInReply> future = super.signIn(_user.toString(),
+        ListenableFuture<Void> future = super.signIn(_user.toString(),
                 ByteString.copyFrom(Cfg.scrypted()));
-        Futures.addCallback(future, new FutureCallback<SignInReply>()
+        Futures.addCallback(future, new FutureCallback<Void>()
         {
             @Override
-            public void onSuccess(SignInReply signInReply)
+            public void onSuccess(Void signInReply)
             {
             }
 

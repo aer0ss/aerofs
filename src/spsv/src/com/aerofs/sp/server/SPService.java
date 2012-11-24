@@ -48,7 +48,6 @@ import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
-import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.cert.Certificate;
@@ -63,7 +62,7 @@ import com.aerofs.sp.server.lib.SPDatabase.FolderInvitation;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.ISessionUserID;
+import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -105,7 +104,7 @@ class SPService implements ISPService
     // we use this interface to gain access to the user Id of the current SPServlet thread.
     // _sessionUser.get() returns the userId associated with the current HttpSession.
     // Note that the session is set externally in SPServlet.
-    private final ISessionUserID _sessionUser;
+    private final ISessionUser _sessionUser;
 
     private final UserManagement _userManagement;
     private final OrganizationManagement _organizationManagement;
@@ -113,7 +112,7 @@ class SPService implements ISPService
     private final ICertificateGenerator _certificateGenerator;
 
     SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
-            ISessionUserID sessionUser, UserManagement userManagement,
+            ISessionUser sessionUser, UserManagement userManagement,
             OrganizationManagement organizationManagement,
             SharedFolderManagement sharedFolderManagement,
             ICertificateGenerator certificateGenerator)
@@ -155,7 +154,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _db.getUserNullable(_sessionUser.get());
+        User user = _db.getUserNullable(_sessionUser.getID());
         if (user == null) throw new ExNotFound();
 
         DeviceRow dr = _db.getDevice(new DID(deviceId));
@@ -163,8 +162,8 @@ class SPService implements ISPService
         _transaction.commit();
 
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
-                .setFirstName(user._firstName)
-                .setLastName(user._lastName)
+                .setFirstName(user.getFirstName())
+                .setLastName(user.getLastName())
                 .setDeviceName(dr == null ? "" : dr.getName())
                 .build();
 
@@ -181,7 +180,7 @@ class SPService implements ISPService
         if (userFirstName != null || userLastName != null) {
             if (userFirstName == null || userLastName == null)
                 throw new ExBadArgs("First and last name must both be non-null or both null");
-            _db.setUserName(_sessionUser.get(), userFirstName, userLastName);
+            _db.setUserName(_sessionUser.getID(), userFirstName, userLastName);
         }
         if (deviceId != null) {
             while (true) {
@@ -206,10 +205,10 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
         user.throwIfNotAdmin();
 
-        OrgID orgId = user._orgID;
+        OrgID orgId = user.getOrgID();
 
         UserListAndQueryCount listAndCount =
                 _userManagement.listUsers(search, maxResults, offset, orgId);
@@ -232,10 +231,10 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
         user.throwIfNotAdmin();
 
-        OrgID orgId = user._orgID;
+        OrgID orgId = user.getOrgID();
         AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
 
         UserListAndQueryCount listAndCount =
@@ -272,12 +271,12 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
         user.throwIfNotAdmin();
 
-        int sharedFolderCount = _organizationManagement.countSharedFolders(user._orgID);
+        int sharedFolderCount = _organizationManagement.countSharedFolders(user.getOrgID());
         List<PBSharedFolder> sharedFolderList =
-                _organizationManagement.listSharedFolders(user._orgID, maxResults, offset);
+                _organizationManagement.listSharedFolders(user.getOrgID(), maxResults, offset);
 
         _transaction.commit();
 
@@ -298,18 +297,18 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        User requester = _userManagement.getUser(_sessionUser.get());
+        User requester = _userManagement.getUser(_sessionUser.getID());
         User subject = _userManagement.getUser(userId);
 
         // Verify caller and subject's organization match
-        if (!requester._orgID.equals(subject._orgID))
+        if (!requester.getOrgID().equals(subject.getOrgID()))
             throw new ExNoPerm("Organization mismatch.");
 
         // Verify caller's authorization level dominates the subject's
-        if (requester._level != AuthorizationLevel.ADMIN) throw new ExNoPerm(requester +
+        if (requester.getLevel() != AuthorizationLevel.ADMIN) throw new ExNoPerm(requester +
                 " cannot change authorization of " + subject);
 
-        if (requester._id.equals(subject._id)) {
+        if (requester.id().equals(subject.id())) {
             throw new ExNoPerm(requester +
                     " : cannot change authorization level for yourself");
         }
@@ -317,10 +316,10 @@ class SPService implements ISPService
         AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
         // Verify caller's authorization level dominates or matches the new level
-        if (!requester._level.covers(newAuth))
+        if (!requester.getLevel().covers(newAuth))
             throw new ExNoPerm(requester + " cannot change authorization to " + authLevel);
 
-        _userManagement.setAuthorizationLevel(subject._id, newAuth);
+        _userManagement.setAuthorizationLevel(subject.id(), newAuth);
 
         _transaction.commit();
 
@@ -336,17 +335,17 @@ class SPService implements ISPService
         // TODO: verify the calling user is allowed to create an organization
         // (check with the payment system)
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
 
         // only users in the default organization or admins can add organizations.
-        if ((!user._orgID.equals(OrgID.DEFAULT) || user._level != AuthorizationLevel.ADMIN)) {
+        if ((!user.getOrgID().equals(OrgID.DEFAULT) || user.getLevel() != AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm("API meant for internal use by AeroFS employees only");
         }
 
         Organization org = _organizationManagement.addOrganization(orgName);
 
-        _organizationManagement.moveUserToOrganization(user._id, org._id);
-        _userManagement.setAuthorizationLevel(user._id, AuthorizationLevel.ADMIN);
+        _organizationManagement.moveUserToOrganization(user.id(), org._id);
+        _userManagement.setAuthorizationLevel(user.id(), AuthorizationLevel.ADMIN);
 
         _transaction.commit();
 
@@ -359,10 +358,10 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
         user.throwIfNotAdmin();
 
-        Organization org = _organizationManagement.getOrganization(user._orgID);
+        Organization org = _organizationManagement.getOrganization(user.getOrgID());
 
         GetOrgPreferencesReply orgPreferences = GetOrgPreferencesReply.newBuilder()
                 .setOrgName(org._name)
@@ -379,10 +378,10 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
         user.throwIfNotAdmin();
 
-        _organizationManagement.setOrganizationPreferences(user._orgID, orgName);
+        _organizationManagement.setOrganizationPreferences(user.getOrgID(), orgName);
 
         _transaction.commit();
 
@@ -414,7 +413,7 @@ class SPService implements ISPService
         _transaction.begin();
 
         SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME,
-                _sessionUser.get().toString(), null, UserID.fromExternal(userId).toString(), body,
+                _sessionUser.getID().toString(), null, UserID.fromExternal(userId).toString(), body,
                 null, true, null);
 
         _transaction.commit();
@@ -429,7 +428,7 @@ class SPService implements ISPService
         _transaction.begin();
 
         GetHeartInvitesQuotaReply reply = GetHeartInvitesQuotaReply.newBuilder()
-                .setCount(_db.getFolderlessInvitesQuota(_sessionUser.get()))
+                .setCount(_db.getFolderlessInvitesQuota(_sessionUser.getID()))
                 .build();
 
         _transaction.commit();
@@ -444,7 +443,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        UserID userId = _sessionUser.get();
+        UserID userId = _sessionUser.getID();
         DID did = new DID(deviceId);
 
         // Test the device id's availability/validity
@@ -500,7 +499,7 @@ class SPService implements ISPService
             throws Exception
     {
         SID sid = new SID(shareId);
-        UserID userId = _sessionUser.get();
+        UserID userId = _sessionUser.getID();
 
         l.info("user:" + userId + " attempt to share folder with subjects:" + rolePairs.size());
 
@@ -532,13 +531,13 @@ class SPService implements ISPService
         _transaction.begin();
 
         l.info("shared folder code: " + code);
-        User u = _userManagement.getUser(_sessionUser.get());
+        User u = _userManagement.getUser(_sessionUser.getID());
 
         FolderInvitation invitation = _db.getFolderInvitation(code);
         if (invitation != null) {
 
-            if (!u._id.equals(invitation._invitee)) {
-                throw new ExNoPerm("Your email " + u._id + " does not match the expected " +
+            if (!u.id().equals(invitation._invitee)) {
+                throw new ExNoPerm("Your email " + u.id() + " does not match the expected " +
                         invitation._invitee);
             }
 
@@ -548,7 +547,7 @@ class SPService implements ISPService
                     .build();
 
             // Because the folder code is valid and was received by email, the user is verified.
-            _db.markUserVerified(u._id);
+            _db.markUserVerified(u.id());
 
             _transaction.commit();
 
@@ -564,12 +563,12 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User u = _userManagement.getUser(_sessionUser.get());
+        User u = _userManagement.getUser(_sessionUser.getID());
 
-        List<FolderInvitation> invitations = _db.listPendingFolderInvitations(u._id);
+        List<FolderInvitation> invitations = _db.listPendingFolderInvitations(u.id());
 
         // Only throw ExNoPerm if user isn't verified AND there are shared folder invitations to accept
-        if (!invitations.isEmpty() && !u._isVerified) {
+        if (!invitations.isEmpty() && !u.isVerified()) {
             throw new ExNoPerm("email address not verified");
         }
 
@@ -625,17 +624,17 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.get());
+        User user = _userManagement.getUser(_sessionUser.getID());
 
         // check and set storeless invite quota
-        int left = _db.getFolderlessInvitesQuota(user._id) - userIdStrings.size();
+        int left = _db.getFolderlessInvitesQuota(user.id()) - userIdStrings.size();
         if (left < 0) {
             throw new ExNoPerm();
         } else {
-            _db.setFolderlessInvitesQuota(user._id, left);
+            _db.setFolderlessInvitesQuota(user.id(), left);
         }
 
-        Organization org = _db.getOrganization(inviteToDefaultOrg ? OrgID.DEFAULT : user._orgID);
+        Organization org = _db.getOrganization(inviteToDefaultOrg ? OrgID.DEFAULT : user.getOrgID());
 
         // Invite all invitees to Organization "org"
         // The sending of invitation emails is deferred to the end of the transaction to ensure
@@ -657,7 +656,7 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        ACLReturn result = _db.getACL(epoch, _sessionUser.get());
+        ACLReturn result = _db.getACL(epoch, _sessionUser.getID());
         _transaction.commit(); // commit right away to avoid holding read locks
 
         // this means that no acl changes have occurred
@@ -695,7 +694,7 @@ class SPService implements ISPService
     {
         if (subjectRoleList.isEmpty()) throw new ExNoPerm("Must specify one or more subjects");
 
-        UserID userId = _sessionUser.get();
+        UserID userId = _sessionUser.getID();
         SID sid = new SID(storeId);
 
         l.info("user:" + userId + " attempt update acl for subjects:" + subjectRoleList.size());
@@ -726,7 +725,7 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        UserID userId = _sessionUser.get();
+        UserID userId = _sessionUser.getID();
         l.info("user:" + userId + " attempt set acl for subjects:" + subjectList.size());
 
         assert subjectList.size() > 0;
@@ -810,7 +809,7 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<SignInReply> signIn(String userIdString, ByteString credentials)
+    public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
             throws IOException, SQLException, ExBadCredential
     {
         _transaction.begin();
@@ -829,22 +828,18 @@ class SPService implements ISPService
         l.info("sign in: " + user);
 
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
-        if (Arrays.equals(user._shaedSP, shaedSP)) {
-            _sessionUser.set(userId);
-        } else {
+        if (!Arrays.equals(user.getShaedSP(), shaedSP)) {
             l.warn("bad passwd for " + userId);
             // use the same exception as if the user doesn't exist, to prevent brute-force guessing
             // of user ids.
             throw new ExBadCredential(S.BAD_CREDENTIAL);
         }
 
+        _sessionUser.setID(userId);
+
         _transaction.commit();
 
-        SignInReply reply = SignInReply.newBuilder()
-                .setAuthLevel(user._level.toPB())
-                .build();
-
-        return createReply(reply);
+        return createVoidReply();
     }
 
     private void throwIfUserIDIsInvalid(UserID userId)
@@ -873,8 +868,8 @@ class SPService implements ISPService
         l.info(user + " attempt signup");
 
         // Common enforcement checks
-        throwIfUserIDIsInvalid(user._id);
-        _userManagement.throwIfUserIdDoesNotExist(user._id);
+        throwIfUserIDIsInvalid(user.id());
+        _userManagement.throwIfUserIdDoesNotExist(user.id());
 
         // TODO If successful, this method should delete all the user's existing signup codes from
         // the signup_code table
@@ -929,7 +924,7 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        _userManagement.changePassword(_sessionUser.get(),old_credentials,new_credentials);
+        _userManagement.changePassword(_sessionUser.getID(),old_credentials,new_credentials);
         _transaction.commit();
 
         return createVoidReply();
@@ -993,7 +988,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        UserID userId = _sessionUser.get();
+        UserID userId = _sessionUser.getID();
         DID did = new DID(deviceId);
 
         DeviceRow dr = _db.getDevice(did);
@@ -1023,7 +1018,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        ImmutableList<Long> serials = _db.revokeUserCertificates(_sessionUser.get());
+        ImmutableList<Long> serials = _db.revokeUserCertificates(_sessionUser.getID());
 
         // Push revoked serials to verkehr.
         updateCRL_(serials);
@@ -1050,7 +1045,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.get());
+        Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.getID());
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {

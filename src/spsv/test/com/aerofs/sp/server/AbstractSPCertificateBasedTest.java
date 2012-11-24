@@ -65,7 +65,7 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
         mockCertificate(certificate);
 
         // Set up test user and create pub/priv key pair.
-        sessionUser.set(TEST_1_USER);
+        sessionUser.setID(TEST_1_USER);
 
         OutArg<PublicKey> publicKey = new OutArg<PublicKey>();
         OutArg<PrivateKey> privateKey = new OutArg<PrivateKey>();

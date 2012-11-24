@@ -13,13 +13,13 @@ import com.google.protobuf.ByteString;
 
 public final class User
 {
-    public final UserID _id;
-    public final OrgID _orgID;
-    public final String _firstName;
-    public final String _lastName;
-    public final byte[] _shaedSP; // sha256(scrypt(p|u)|passwdSalt)
-    public final boolean _isVerified;
-    public final AuthorizationLevel _level;
+    private final UserID _id;
+    private final OrgID _orgID;
+    private final String _firstName;
+    private final String _lastName;
+    private final byte[] _shaedSP; // sha256(scrypt(p|u)|passwdSalt)
+    private final boolean _isVerified;
+    private final AuthorizationLevel _level;
 
     public User(UserID id, String firstName, String lastName, byte[] shaedSP,
             boolean verified, OrgID orgID, AuthorizationLevel level)
@@ -53,8 +53,8 @@ public final class User
     public void throwIfNotAdmin()
             throws ExNoPerm
     {
-        if (_level != AuthorizationLevel.ADMIN) {
-            throw new ExNoPerm("User " + _id + " does not have administrator privileges");
+        if (getLevel() != AuthorizationLevel.ADMIN) {
+            throw new ExNoPerm("User " + id() + " does not have administrator privileges");
         }
     }
 
@@ -67,12 +67,51 @@ public final class User
     @Override
     public boolean equals(Object o)
     {
-        return this == o || (o != null && _id.equals(((User) o)._id));
+        return this == o || (o != null && _id.equals(((User)o)._id));
     }
 
     @Override
     public String toString()
     {
-        return _id + "(" + _firstName + " " + _lastName + ") with <" + _orgID + "> auth " + _level;
+        return "User:" + _id.toString();
+    }
+
+    /**
+     * Since the user ID can never be changed, unlike other accessors, this method doesn't follow
+     * the "get*" naming convention
+     */
+    public UserID id()
+    {
+        return _id;
+    }
+
+    public OrgID getOrgID()
+    {
+        return _orgID;
+    }
+
+    public String getFirstName()
+    {
+        return _firstName;
+    }
+
+    public String getLastName()
+    {
+        return _lastName;
+    }
+
+    public byte[] getShaedSP()
+    {
+        return _shaedSP;
+    }
+
+    public boolean isVerified()
+    {
+        return _isVerified;
+    }
+
+    public AuthorizationLevel getLevel()
+    {
+        return _level;
     }
 }

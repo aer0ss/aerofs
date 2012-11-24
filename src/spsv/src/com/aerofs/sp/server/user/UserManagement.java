@@ -105,12 +105,12 @@ public class UserManagement
 
         final String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
 
-        _db.addTargetedSignupCode(code, inviter._id, inviteeId, inviteeOrg._id);
+        _db.addTargetedSignupCode(code, inviter.id(), inviteeId, inviteeOrg._id);
 
         _db.addEmailSubscription(inviteeId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-        return _emailerFactory.createUserInvitation(inviter._id.toString(), inviteeId.toString(),
-                inviter._firstName, folderName, note, code);
+        return _emailerFactory.createUserInvitation(inviter.id().toString(), inviteeId.toString(),
+                inviter.getFirstName(), folderName, note, code);
     }
 
     public void throwIfUserIdDoesNotExist(UserID userId)
@@ -203,9 +203,9 @@ public class UserManagement
         }
         String token = Base62CodeGenerator.newRandomBase62String(SPParam
                 .PASSWORD_RESET_TOKEN_LENGTH);
-        _db.addPasswordResetToken(user._id, token);
-        _passwordResetEmailer.sendPasswordResetEmail(user._id, token);
-        l.info("Password Reset Email sent to " + user._id);
+        _db.addPasswordResetToken(user.id(), token);
+        _passwordResetEmailer.sendPasswordResetEmail(user.id(), token);
+        l.info("Password Reset Email sent to " + user.id());
     }
 
     public void resetPassword(String passwordResetToken, ByteString newCredentials)
@@ -213,10 +213,10 @@ public class UserManagement
     {
         UserID userId = _db.resolvePasswordResetToken(passwordResetToken);
         User user = getUser(userId);
-        _db.updateUserCredentials(user._id, SPParam.getShaedSP(newCredentials.toByteArray()));
+        _db.updateUserCredentials(user.id(), SPParam.getShaedSP(newCredentials.toByteArray()));
         _db.deletePasswordResetToken(passwordResetToken);
         l.info("Reset " + userId + "'s Password");
-        _passwordResetEmailer.sendPasswordResetConfirmation(user._id);
+        _passwordResetEmailer.sendPasswordResetConfirmation(user.id());
     }
 
     public void changePassword(UserID userId, ByteString old_credentials,
@@ -224,7 +224,7 @@ public class UserManagement
             throws ExNotFound, IOException, SQLException, ExNoPerm
     {
         User user = getUser(userId);
-        _db.checkAndUpdateUserCredentials(user._id,
+        _db.checkAndUpdateUserCredentials(user.id(),
                 SPParam.getShaedSP(old_credentials.toByteArray()),
                 SPParam.getShaedSP(new_credentials.toByteArray()));
         l.info(userId + "'s Password was successfully changed");

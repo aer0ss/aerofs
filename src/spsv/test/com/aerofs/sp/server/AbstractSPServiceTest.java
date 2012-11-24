@@ -1,6 +1,6 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.servlets.MockSessionUserID;
+import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
@@ -23,7 +23,7 @@ public abstract class AbstractSPServiceTest extends AbstractTest
 {
     // To mock service.signIn(USER, PASSWORD), subclasses can call
     // sessionUser.set(USER)
-    @Spy protected MockSessionUserID sessionUser;
+    @Spy protected MockSessionUser sessionUser;
 
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;

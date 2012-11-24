@@ -105,7 +105,7 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
 
         // Try to recertify using the wrong session user.
         try {
-            sessionUser.set(TEST_2_USER);
+            sessionUser.setID(TEST_2_USER);
             service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
         } catch (Exception e) {
             _transaction.handleException();

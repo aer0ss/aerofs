@@ -82,7 +82,7 @@ public class TestSPUserManagement extends AbstractTest
     private void setupMockSPDatabaseGetUserByPasswordResetTokenTestUser()
             throws Exception
     {
-        setupMockSPDatabaseGetUserByPasswordResetToken(testUser._id);
+        setupMockSPDatabaseGetUserByPasswordResetToken(testUser.id());
     }
 
     // Tests for sendPasswordResetEmail
@@ -92,7 +92,7 @@ public class TestSPUserManagement extends AbstractTest
         throws Exception
     {
         setupMockSPDatabaseGetUserNull();
-        userManagement.sendPasswordResetEmail(testUser._id);
+        userManagement.sendPasswordResetEmail(testUser.id());
         verify(db).getUserNullable(any(UserID.class));
         verifyNoMoreInteractions(db);
     }
@@ -100,16 +100,16 @@ public class TestSPUserManagement extends AbstractTest
     public void shouldCallDatabaseToAddPasswordResetToken()
         throws Exception
     {
-        userManagement.sendPasswordResetEmail(testUser._id);
-        verify(db).addPasswordResetToken(eq(testUser._id), anyString());
+        userManagement.sendPasswordResetEmail(testUser.id());
+        verify(db).addPasswordResetToken(eq(testUser.id()), anyString());
     }
 
     @Test
     public void shouldSendPasswordResetEmail()
         throws Exception
     {
-        userManagement.sendPasswordResetEmail(testUser._id);
-        verify(passwordResetEmailer).sendPasswordResetEmail(eq(testUser._id),anyString());
+        userManagement.sendPasswordResetEmail(testUser.id());
+        verify(passwordResetEmailer).sendPasswordResetEmail(eq(testUser.id()),anyString());
     }
 
     //  Tests for resetPassword
@@ -129,7 +129,7 @@ public class TestSPUserManagement extends AbstractTest
         throws Exception
     {
         userManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
-        verify(db).updateUserCredentials(testUser._id, SPParam.getShaedSP("test123".getBytes()));
+        verify(db).updateUserCredentials(testUser.id(), SPParam.getShaedSP("test123".getBytes()));
     }
 
     @Test
@@ -147,24 +147,22 @@ public class TestSPUserManagement extends AbstractTest
         throws Exception
     {
 
-        userManagement.changePassword(
-                testUser._id,
+        userManagement.changePassword(testUser.id(),
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );
-        verify(db).getUserNullable(testUser._id);
+        verify(db).getUserNullable(testUser.id());
     }
 
     @Test
     public void shouldCallDatabaseTestAndCheckUserCredentials()
         throws Exception
     {
-        userManagement.changePassword(
-                testUser._id,
+        userManagement.changePassword(testUser.id(),
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );
-        verify(db).checkAndUpdateUserCredentials(testUser._id, SPParam.getShaedSP("old password"
+        verify(db).checkAndUpdateUserCredentials(testUser.id(), SPParam.getShaedSP("old password"
                 .getBytes()),
                 SPParam.getShaedSP("new password".getBytes()));
 

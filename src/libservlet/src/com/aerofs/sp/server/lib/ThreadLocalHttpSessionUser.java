@@ -3,23 +3,27 @@ package com.aerofs.sp.server.lib;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.user.ISessionUserID;
+import com.aerofs.sp.server.lib.user.ISessionUser;
 import org.apache.log4j.Logger;
 
 /**
  * Wraps a ThreadLocal HttpSession and provides a getter, setter, and remover of the 'user'
  * attribute.
+ *
+ * TODO (WW) FIXME The correlation of sessions and threads are accidental. It is incorrect to use
+ * thread-local storage to simulate session-local storage.
  */
 public class ThreadLocalHttpSessionUser
         extends AbstractThreadLocalHttpSession
-        implements ISessionUserID
+        implements ISessionUser
 {
     private static final Logger l = Util.l(ThreadLocalHttpSessionUser.class);
+    private static final String SESS_ATTR_USER  = "user";
 
     @Override
-    public UserID get() throws ExNoPerm
+    public UserID getID() throws ExNoPerm
     {
-        UserID userId = (UserID) _session.get().getAttribute(SPParam.SESS_ATTR_USER);
+        UserID userId = (UserID) _session.get().getAttribute(SESS_ATTR_USER);
         if (userId == null) {
             l.info("not authenticated: session " + _session.get().getId());
             throw new ExNoPerm();
@@ -29,14 +33,14 @@ public class ThreadLocalHttpSessionUser
     }
 
     @Override
-    public void set(UserID userId)
+    public void setID(UserID userId)
     {
-        _session.get().setAttribute(SPParam.SESS_ATTR_USER, userId);
+        _session.get().setAttribute(SESS_ATTR_USER, userId);
     }
 
     @Override
     public void remove()
     {
-        _session.get().removeAttribute(SPParam.SESS_ATTR_USER);
+        _session.get().removeAttribute(SESS_ATTR_USER);
     }
 }

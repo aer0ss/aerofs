@@ -96,7 +96,7 @@ public class OrganizationManagement
             throws SQLException, IOException, ExNotFound, ExBadArgs
     {
         User newUser = _userManagement.getUser(userId);
-        if (!newUser._orgID.equals(OrgID.DEFAULT)) {
+        if (!newUser.getOrgID().equals(OrgID.DEFAULT)) {
             throw new ExBadArgs("User " + userId + " already belongs to an organization.");
         }
         _db.moveUserToOrganization(userId, orgId);

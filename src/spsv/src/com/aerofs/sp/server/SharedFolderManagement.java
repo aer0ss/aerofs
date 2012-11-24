@@ -68,7 +68,7 @@ public class SharedFolderManagement
         User sharer = _userManagement.getUser(userId);
 
         // Check that the user is verified - only verified users can share
-        if (!sharer._isVerified) {
+        if (!sharer.isVerified()) {
             // TODO (GS): We want to throw a specific exception if the inviter isn't verified
             // to allow easier error handling on the client-side
             throw new ExNoPerm("user " + userId + " is not yet verified");
@@ -95,13 +95,13 @@ public class SharedFolderManagement
         final User sharee = _userManagement.getUserNullable(shareeId);
         if (sharee == null) {  // Sharing with a non-AeroFS user.
             shareeOrg = _organizationManagement.getOrganization(OrgID.DEFAULT);
-            createFolderInvitation(sharer._id, shareeId, sid, folderName);
+            createFolderInvitation(sharer.id(), shareeId, sid, folderName);
             emailer = _userManagement.inviteOneUser(sharer, shareeId, shareeOrg, folderName,
                     note);
-        } else if (!sharee._id.equals(sharer._id)) {
-            final String code = createFolderInvitation(sharer._id, sharee._id, sid, folderName);
-            emailer = _emailerFactory.createFolderInvitation(sharer._id.toString(),
-                    sharee._id.toString(), sharer._firstName, folderName, note, code);
+        } else if (!sharee.id().equals(sharer.id())) {
+            final String code = createFolderInvitation(sharer.id(), sharee.id(), sid, folderName);
+            emailer = _emailerFactory.createFolderInvitation(sharer.id().toString(),
+                    sharee.id().toString(), sharer.getFirstName(), folderName, note, code);
         } else {
             // do not create invite code for/send email to the requester
             l.warn(sharer + " tried to invite himself");

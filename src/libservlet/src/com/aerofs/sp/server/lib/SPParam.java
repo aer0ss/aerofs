@@ -10,7 +10,6 @@ import com.aerofs.lib.SecUtil;
 
 public class SPParam
 {
-    public static final String SESS_ATTR_USER  = "user";
 
     public static final String VERKEHR_HOST_INIT_PARAMETER = "verkehr_host";
     public static final String VERKEHR_PUBLISH_PORT_INIT_PARAMETER = "verkehr_publish_port";

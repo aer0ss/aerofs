@@ -6,7 +6,7 @@ package com.aerofs.servlets;
 
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.user.ISessionUserID;
+import com.aerofs.sp.server.lib.user.ISessionUser;
 
 import static org.junit.Assert.assertFalse;
 
@@ -16,12 +16,12 @@ import static org.junit.Assert.assertFalse;
  * class should be single-threaded, so this isn't a problem. Intended use is in {@code
  * LocalSPServiceReactorCaller}.
  */
-public class MockSessionUserID implements ISessionUserID
+public class MockSessionUser implements ISessionUser
 {
     private UserID _userId;
 
     @Override
-    public UserID get()
+    public UserID getID()
             throws ExNoPerm
     {
         if (_userId == null) throw new ExNoPerm();
@@ -29,7 +29,7 @@ public class MockSessionUserID implements ISessionUserID
     }
 
     @Override
-    public void set(UserID userId)
+    public void setID(UserID userId)
     {
         _userId = userId;
         assertFalse(_userId.toString().isEmpty());

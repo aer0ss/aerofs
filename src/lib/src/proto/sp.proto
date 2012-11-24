@@ -48,7 +48,7 @@ service SPService {
      * Throws:
      *   ExBadCredential if username/password combination is incorrect
      */
-    rpc SignIn(SignInCall) returns(SignInReply);
+    rpc SignIn(SignInCall) returns(Void);
 
     /**
      * Finds the email address associated with an signup code.
@@ -395,10 +395,6 @@ message SignUpWithTargetedCall {
 message SignInCall {
     required string user_id = 1;
     optional bytes credentials = 2;
-}
-
-message SignInReply {
-    required PBAuthorizationLevel auth_level = 1;
 }
 
 message ResolveTargetedSignUpCodeCall {

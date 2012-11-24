@@ -492,7 +492,7 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         // We are not going to set the verified field, so make sure nobody asks us to do so
-        assert !ur._isVerified;
+        assert !ur.isVerified();
 
         l.info("addUser " + ur);
 
@@ -506,12 +506,12 @@ public class SPDatabase
                             C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
                             C_USER_ACL_EPOCH));
 
-            psAU.setString(1, ur._id.toString());
-            psAU.setString(2, Base64.encodeBytes(ur._shaedSP));
-            psAU.setString(3, ur._firstName);
-            psAU.setString(4, ur._lastName);
-            psAU.setInt(5, ur._orgID.getInt());
-            psAU.setInt(6, ur._level.ordinal());
+            psAU.setString(1, ur.id().toString());
+            psAU.setString(2, Base64.encodeBytes(ur.getShaedSP()));
+            psAU.setString(3, ur.getFirstName());
+            psAU.setString(4, ur.getLastName());
+            psAU.setInt(5, ur.getOrgID().getInt());
+            psAU.setInt(6, ur.getLevel().ordinal());
             psAU.setInt(7, getNewUserInitialACLEpoch());
             psAU.executeUpdate();
         } catch (SQLException aue) {
@@ -1302,7 +1302,7 @@ public class SPDatabase
         // see if user is an admin and one of their organization's members is an owner
         User currentUser = getUserNullable(userId);
         assert currentUser != null;
-        if (currentUser._level == AuthorizationLevel.ADMIN) {
+        if (currentUser.getLevel() == AuthorizationLevel.ADMIN) {
             l.info("user is an admin, checking if folder owner(s) are part of organization");
 
             PreparedStatement psOwnersInOrgCount = getConnection().prepareStatement(
@@ -1311,7 +1311,7 @@ public class SPDatabase
                     "=? and " + C_AC_ROLE + "=?");
 
             psOwnersInOrgCount.setBytes(1, sid.getBytes());
-            psOwnersInOrgCount.setInt(2, currentUser._orgID.getInt());
+            psOwnersInOrgCount.setInt(2, currentUser.getOrgID().getInt());
             psOwnersInOrgCount.setInt(3, Role.OWNER.ordinal());
 
             rs = psOwnersInOrgCount.executeQuery();

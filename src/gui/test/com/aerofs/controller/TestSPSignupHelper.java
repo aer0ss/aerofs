@@ -10,9 +10,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
-import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
-import com.aerofs.proto.Sp.SignInReply;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.LocalSPServiceReactorCaller;
 import com.aerofs.testlib.AbstractTest;
@@ -83,9 +81,8 @@ public class TestSPSignupHelper extends AbstractTest
         // Setting up a new user with valid signUpCode should not throw any exceptions
         _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode, "first", "last");
 
-        // The user should be able to successfully sign in, and the returned auth level is USER
-        SignInReply reply = _sp.signIn(USER_ID.toString(), ByteString.copyFrom(SCRYPT_PASSWORD));
-        assertEquals(PBAuthorizationLevel.USER, reply.getAuthLevel());
+        // The user should be able to successfully sign in
+        _sp.signIn(USER_ID.toString(), ByteString.copyFrom(SCRYPT_PASSWORD));
 
         // TODO verify anything else?
     }

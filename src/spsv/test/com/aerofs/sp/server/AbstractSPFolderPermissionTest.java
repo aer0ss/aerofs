@@ -34,7 +34,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPUserBasedTest
     protected void shareFolderThroughSP(UserID sharer, SID sid, UserID sharee, Role role)
             throws Exception
     {
-        sessionUser.set(sharer);
+        sessionUser.setID(sharer);
         List<PBSubjectRolePair> pair = makePair(sharee, role);
         service.shareFolder(sid.toString(), sid.toPB(), pair, "").get();
     }

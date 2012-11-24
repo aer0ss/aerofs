@@ -62,7 +62,7 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         // User 1 shares with User 2, but not with User 3
         ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
 
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         pair.add(new SubjectRolePair(TEST_USER_1, Role.OWNER).toPB());
         pair.add(new SubjectRolePair(TEST_USER_2, Role.EDITOR).toPB());
 
@@ -78,7 +78,7 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
     {
         _transaction.begin();
         Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1.getBytes(),
-                sessionUser.get());
+                sessionUser.getID());
         _transaction.commit();
 
         // The size is correct (only the correct devices were returned).

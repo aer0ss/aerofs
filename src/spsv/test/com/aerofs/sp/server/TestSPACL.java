@@ -168,7 +168,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // we should see only one entry for the second user
 
-        sessionUser.set(TEST_USER_2);
+        sessionUser.setID(TEST_USER_2);
         GetACLReply reply = service.getACL(0L).get();
 
         List<PBSubjectRolePair> pairs = assertValidACLReplyAndGetPairs(reply,
@@ -205,7 +205,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         published.clear();
 
         // now let's see what the acls are like
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         List<PBSubjectRolePair> pairs = assertValidACLReplyAndGetPairs(reply,
@@ -258,7 +258,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // now have the second guy delete the third
 
-        sessionUser.set(TEST_USER_2);
+        sessionUser.setID(TEST_USER_2);
         service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_3.toString())).get();
 
         // expect first, second and third guy all to be notified
@@ -272,7 +272,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         List<PBSubjectRolePair> pairs;
 
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         // this guy has seen _all_ the updates, so he should see an epoch of 4
@@ -282,7 +282,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // now have the deleted guy get his acl
 
-        sessionUser.set(TEST_USER_3);
+        sessionUser.setID(TEST_USER_3);
         reply = service.getACL(0L).get();
 
         // only two updates have affected him, so he should have an epoch of 2
@@ -305,13 +305,13 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // now attempt to delete someone for whom the role doesn't exist
 
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_2.toString())).get();
 
         assertEquals(1, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
 
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch shouldn't be bumped on a deletion of a person that doesn't exist
@@ -335,7 +335,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // get the editor to try to delete the owner
         try {
-            sessionUser.set(TEST_USER_2);
+            sessionUser.setID(TEST_USER_2);
             service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1.toString())).get();
         } catch (Exception e) {
             _transaction.handleException();
@@ -363,7 +363,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // now have the editor do a getacl call
 
-        sessionUser.set(TEST_USER_3);
+        sessionUser.setID(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         // ok:
@@ -407,7 +407,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         published.clear(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_3, Role.OWNER));
 
         // check that notifications were published on update
@@ -416,7 +416,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertTrue(published.contains(TEST_USER_3.toString()));
 
         // verify user 3 has updated ACL in place
-        sessionUser.set(TEST_USER_3);
+        sessionUser.setID(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch for this guy should be 2 (started at 0, added as editor then as owner)
@@ -443,7 +443,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         published.clear(); // throw away this notification
 
         // update ACL for user 3 as user 1
-        sessionUser.set(TEST_USER_1);
+        sessionUser.setID(TEST_USER_1);
         Exception ex = null;
         try {
             // should fail with ExNoPerm
@@ -457,7 +457,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertEquals(0, published.size());
 
         // check that user 3 still has no ACLs set in the db
-        sessionUser.set(TEST_USER_3);
+        sessionUser.setID(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
         assertEquals(getInitialServerACL(), reply.getEpoch());
         assertEquals(0, reply.getStoreAclCount());
@@ -481,7 +481,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         published.clear(); // throw away these notifications
 
         // try to edit user 1's ACL entry for store 1 as user 3
-        sessionUser.set(TEST_USER_3);
+        sessionUser.setID(TEST_USER_3);
         Exception ex = null;
         try {
             // should fail with ExNoPerm
@@ -495,7 +495,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertEquals(0, published.size());
 
         // check that user 3 only has editor permissions
-        sessionUser.set(TEST_USER_3);
+        sessionUser.setID(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
         assertEquals(getInitialServerACL() + 1, reply.getEpoch());
         assertEquals(1, reply.getStoreAclCount());

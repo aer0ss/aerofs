@@ -102,7 +102,7 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
     {
         // Switch to a different user and try to revoke the previous user's device.
         try {
-            sessionUser.set(TEST_2_USER);
+            sessionUser.setID(TEST_2_USER);
             service.revokeDeviceCertificate(_did.toPB());
         } catch (Exception e) {
             _transaction.handleException();

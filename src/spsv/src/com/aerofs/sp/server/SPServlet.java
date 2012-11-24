@@ -50,7 +50,7 @@ public class SPServlet extends AeroServlet
     private final SQLThreadLocalTransaction _spTrans = new SQLThreadLocalTransaction(_conProvider);
     private final SPDatabase _db = new SPDatabase(_spTrans);
 
-    private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
+    private final ThreadLocalHttpSessionUser _sessionUserID = new ThreadLocalHttpSessionUser();
 
     private final InvitationEmailer.Factory _emailerFactory = new InvitationEmailer.Factory();
 
@@ -64,7 +64,7 @@ public class SPServlet extends AeroServlet
 
     private final CertificateGenerator _certificateGenerator = new CertificateGenerator();
 
-    private final SPService _service = new SPService(_db, _spTrans, _sessionUser, _userManagement,
+    private final SPService _service = new SPService(_db, _spTrans, _sessionUserID, _userManagement,
             _organizationManagement, _sharedFolderManagement, _certificateGenerator);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
@@ -109,7 +109,7 @@ public class SPServlet extends AeroServlet
     protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
         throws IOException
     {
-        _sessionUser.setSession(req.getSession());
+        _sessionUserID.setSession(req.getSession());
 
         // Receive protocol version number.
         int protocol = _postDelegate.getProtocolVersion(req);

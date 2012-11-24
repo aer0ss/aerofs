@@ -11,7 +11,7 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
-import com.aerofs.servlets.MockSessionUserID;
+import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
@@ -69,7 +69,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 new UserManagement(_db, _db, emailerFactory, mock(PasswordResetEmailer.class));
         OrganizationManagement organizationManagement = mock(OrganizationManagement.class);
 
-        SPService service = new SPService(_db, _transaction, new MockSessionUserID(),
+        SPService service = new SPService(_db, _transaction, new MockSessionUser(),
                 userManagement, organizationManagement,
                 new SharedFolderManagement(_db, userManagement, organizationManagement,
                         emailerFactory),
