@@ -20,7 +20,7 @@ public class CmdRm implements IShellCommand<ShProgram>
             PBPath path = s.d().buildPath_(arg);
 
             PBObjectAttributes attr = s.d().getRitualClient_()
-                    .getObjectAttributes(Cfg.user(), path)
+                    .getObjectAttributes(Cfg.user().toString(), path)
                     .getObjectAttributes();
 
             if (!(attr.getType() == Type.FILE || cl.hasOption('r'))) throw new ExNotFile();

@@ -2,6 +2,7 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.user.ISessionUserID;
 import org.apache.log4j.Logger;
 
@@ -16,25 +17,25 @@ public class ThreadLocalHttpSessionUser
     private static final Logger l = Util.l(ThreadLocalHttpSessionUser.class);
 
     @Override
-    public String getUser() throws ExNoPerm
+    public UserID get() throws ExNoPerm
     {
-        String user = (String) _session.get().getAttribute(SPParam.SESS_ATTR_USER);
-        if (user == null) {
+        UserID userId = (UserID) _session.get().getAttribute(SPParam.SESS_ATTR_USER);
+        if (userId == null) {
             l.info("not authenticated: session " + _session.get().getId());
             throw new ExNoPerm();
         }
 
-        return user;
+        return userId;
     }
 
     @Override
-    public void setUser(String userId)
+    public void set(UserID userId)
     {
         _session.get().setAttribute(SPParam.SESS_ATTR_USER, userId);
     }
 
     @Override
-    public void removeUser()
+    public void remove()
     {
         _session.get().removeAttribute(SPParam.SESS_ATTR_USER);
     }

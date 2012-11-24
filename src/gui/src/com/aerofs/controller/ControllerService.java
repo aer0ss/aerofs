@@ -8,6 +8,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.ControllerNotifications.Type;
@@ -140,8 +141,8 @@ public class ControllerService implements IControllerService
             String lastName, PBS3Config s3config)
             throws Exception
     {
-        _setup.setupNewUser(userId, password.toCharArray(), rootAnchor, deviceName, signUpCode,
-                firstName, lastName, s3config);
+        _setup.setupNewUser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor, deviceName,
+                signUpCode, firstName, lastName, s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
@@ -150,7 +151,8 @@ public class ControllerService implements IControllerService
             String rootAnchor, String deviceName, PBS3Config s3config)
             throws Exception
     {
-        _setup.setupExistingUser(userId, password.toCharArray(), rootAnchor, deviceName, s3config);
+        _setup.setupExistingUser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
+                deviceName, s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
@@ -167,7 +169,7 @@ public class ControllerService implements IControllerService
             String password)
             throws Exception
     {
-        CredentialUtil.resetPassword(userID, resetToken, password.toCharArray());
+        CredentialUtil.resetPassword(UserID.fromExternal(userID), resetToken, password.toCharArray());
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
@@ -177,7 +179,8 @@ public class ControllerService implements IControllerService
         throws Exception
     {
 
-        CredentialUtil.changePassword(userID, oldPassword.toCharArray(), newPassword.toCharArray());
+        CredentialUtil.changePassword(UserID.fromExternal(userID), oldPassword.toCharArray(),
+                newPassword.toCharArray());
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
@@ -185,7 +188,7 @@ public class ControllerService implements IControllerService
     public ListenableFuture<Common.Void> updateStoredPassword(String userID, String password)
             throws Exception
     {
-        CredentialUtil.updateStoredPassword(userID, password.toCharArray());
+        CredentialUtil.updateStoredPassword(UserID.fromExternal(userID), password.toCharArray());
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
@@ -195,7 +198,7 @@ public class ControllerService implements IControllerService
     {
         PBConfig config = PBConfig.newBuilder()
                 .setVersion(Cfg.ver())
-                .setUserName(Cfg.user())
+                .setUserName(Cfg.user().toString())
                 .setDeviceId(Cfg.did().toString())
                 .setRootAnchor(Cfg.absRootAnchor())
                 .build();
@@ -211,6 +214,6 @@ public class ControllerService implements IControllerService
     public ListenableFuture<PBConfig> updateConfig(PBConfig config)
             throws Exception
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 }

@@ -65,7 +65,7 @@ public class DlgLogin extends AeroFSJFaceDialog {
 
         _email = new Label(container, SWT.READ_ONLY);
         _email.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-        _email.setText(Cfg.user());
+        _email.setText(Cfg.user().toString());
 
         passwordLabel = new Label(container, SWT.NONE);
         passwordLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
@@ -127,7 +127,7 @@ public class DlgLogin extends AeroFSJFaceDialog {
                         throws Exception
                 {
                     try {
-                        UI.controller().updateStoredPassword(Cfg.user(), passwd);
+                        UI.controller().updateStoredPassword(Cfg.user().toString(), passwd);
                     } catch (Exception e) {
                         ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                         throw e;

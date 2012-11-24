@@ -12,6 +12,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -145,7 +146,7 @@ public class UIUtil
         // keep trying until finding an unused path
         while (true) {
             try {
-                ritual.joinSharedFolder(Cfg.user(), sid.toPB(), path.toPB());
+                ritual.joinSharedFolder(Cfg.user().toString(), sid.toPB(), path.toPB());
                 break;
             } catch (ExAlreadyExist e) {
                 path = new Path(Util.nextFileName(path.last()));
@@ -156,12 +157,12 @@ public class UIUtil
     }
 
     // this is used to sort user lists
-    public static int compareUser(String u1, String u2)
+    public static int compareUser(UserID u1, UserID u2)
     {
         int comp = u1.compareTo(u2);
         if (comp == 0) return 0;
 
-        String me = Cfg.user();
+        UserID me = Cfg.user();
         if (u1.equals(me)) return -1;
         if (u2.equals(me)) return 1;
 

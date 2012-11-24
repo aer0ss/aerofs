@@ -3,6 +3,7 @@ package com.aerofs.sp.client;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.protobuf.ByteString;
@@ -17,7 +18,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
 {
     private static final Logger l = Util.l(SPBlockingClient.class);
 
-    private final String _user;
+    private final UserID _user;
     private static IBadCredentialListener _bcl;
 
     /**
@@ -25,7 +26,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
      */
     public static class Factory
     {
-        public SPBlockingClient create_(URL spURL, String user)
+        public SPBlockingClient create_(URL spURL, UserID user)
         {
             return new SPBlockingClient(new SPClientHandler(spURL), user);
         }
@@ -36,7 +37,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
         _bcl = bcl;
     }
 
-    SPBlockingClient(SPServiceStubCallbacks callbacks, String user)
+    SPBlockingClient(SPServiceStubCallbacks callbacks, UserID user)
     {
         super(callbacks);
         _user = user;
@@ -48,7 +49,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     public void signInRemote() throws Exception
     {
         try {
-            super.signIn(_user, ByteString.copyFrom(Cfg.scrypted()));
+            super.signIn(_user.toString(), ByteString.copyFrom(Cfg.scrypted()));
         } catch (ExBadCredential e) {
             if (_bcl != null) {
                l.debug("ExBadCredential Caught, informing UI.");

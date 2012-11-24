@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib.user;
 
-import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrgID;
 
 import java.sql.SQLException;
@@ -17,6 +17,21 @@ import java.util.List;
  */
 public interface IUserSearchDatabase
 {
+    // TODO (WW) use User class
+    public static class UserInfo
+    {
+        public final UserID _userId;
+        public final String _firstName;
+        public final String _lastName;
+
+        public UserInfo(UserID userId, String firstName, String lastName)
+        {
+            _userId = userId;
+            _firstName = firstName;
+            _lastName = lastName;
+        }
+    }
+
     /**
      * @param orgId ID of the organization.
      * @param offset Starting index of the results list from the database.
@@ -24,7 +39,7 @@ public interface IUserSearchDatabase
      * @return List of users under the organization {@code orgId}
      * between [offset, offset + maxResults].
      */
-    List<PBUser> listUsers(OrgID orgId, int offset, int maxResults)
+    List<UserInfo> listUsers(OrgID orgId, int offset, int maxResults)
             throws SQLException;
 
     /**
@@ -36,7 +51,7 @@ public interface IUserSearchDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    List<PBUser> searchUsers(OrgID orgId, int offset, int maxResults, String search)
+    List<UserInfo> searchUsers(OrgID orgId, int offset, int maxResults, String search)
             throws SQLException;
 
     /**
@@ -47,7 +62,7 @@ public interface IUserSearchDatabase
      * @return List of users with the given authorization level {@code authLevel} under
      * the organization {@code orgId} between [offset, offset + maxResults].
      */
-    List<PBUser> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+    List<UserInfo> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
             AuthorizationLevel authLevel)
             throws SQLException;
 
@@ -63,7 +78,7 @@ public interface IUserSearchDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    List<PBUser> searchUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+    List<UserInfo> searchUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
             AuthorizationLevel authLevel, String search)
             throws SQLException;
 

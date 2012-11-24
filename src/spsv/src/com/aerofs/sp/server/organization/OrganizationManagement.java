@@ -5,15 +5,20 @@
 package com.aerofs.sp.server.organization;
 
 import com.aerofs.lib.Util;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.UserID;
+import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
+import com.aerofs.sp.server.lib.organization.IOrganizationDatabase.SharedFolder;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.user.UserManagement;
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
@@ -87,14 +92,14 @@ public class OrganizationManagement
         _db.setOrganizationPreferences(org);
     }
 
-    public void moveUserToOrganization(String user, OrgID orgId)
+    public void moveUserToOrganization(UserID userId, OrgID orgId)
             throws SQLException, IOException, ExNotFound, ExBadArgs
     {
-        User newUser = _userManagement.getUser(user);
+        User newUser = _userManagement.getUser(userId);
         if (!newUser._orgID.equals(OrgID.DEFAULT)) {
-            throw new ExBadArgs("User " + user + " already belongs to an organization.");
+            throw new ExBadArgs("User " + userId + " already belongs to an organization.");
         }
-        _db.moveUserToOrganization(user, orgId);
+        _db.moveUserToOrganization(userId, orgId);
     }
 
     public List<PBSharedFolder> listSharedFolders(OrgID orgId, Integer maxResults, Integer offset)
@@ -103,7 +108,26 @@ public class OrganizationManagement
         if (offset == null) offset = 0;
         assert offset >= 0;
 
-        return _db.listSharedFolders(orgId, sanitizeMaxResults(maxResults), offset);
+        List<SharedFolder> sfs = _db.listSharedFolders(orgId, sanitizeMaxResults(maxResults),
+                offset);
+
+        List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfs.size());
+        for (SharedFolder sf : sfs) {
+            List<PBSubjectRolePair> pbsrps = Lists.newArrayListWithCapacity(sf._acl.size());
+            for (SubjectRolePair srp : sf._acl) {
+                pbsrps.add(PBSubjectRolePair.newBuilder()
+                        .setSubject(srp._subject.toString())
+                        .setRole(srp._role.toPB())
+                        .build());
+            }
+
+            pbs.add(PBSharedFolder.newBuilder()
+                    .setStoreId(sf._sid.toPB())
+                    .setName(sf._name)
+                    .addAllSubjectRole(pbsrps)
+                    .build());
+        }
+        return pbs;
     }
 
     public int countSharedFolders(OrgID orgId)

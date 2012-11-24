@@ -24,9 +24,9 @@ public class TestSPPreferences extends AbstractSPUserBasedTest
     public void shouldTrimUserAndDeviceNames() throws Exception
     {
         // Set the session user before we try to set preferences.
-        sessionUser.setUser(TEST_USER_1_NAME);
+        sessionUser.set(TEST_USER_1);
         _transaction.begin();
-        db.addDevice(new DeviceRow(_did, "name", TEST_USER_1_NAME));
+        db.addDevice(new DeviceRow(_did, "name", TEST_USER_1));
         _transaction.commit();
         service.setPreferences("   first ", " last   ", _did.toPB(), "  device names  ").get();
         GetPreferencesReply reply = service.getPreferences(_did.toPB()).get();

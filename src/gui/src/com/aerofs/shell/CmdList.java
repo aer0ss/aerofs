@@ -46,7 +46,7 @@ public class CmdList implements IShellCommand<ShProgram>
     {
         PBPath parent = ShProgram.buildPath_(path);
         GetChildrenAttributesReply reply = s.d().getRitualClient_().getChildrenAttributes(
-                Cfg.user(), parent);
+                Cfg.user().toString(), parent);
 
         for (int i = 0; i < reply.getChildrenNameCount(); i++) {
             String name = reply.getChildrenName(i);

@@ -45,6 +45,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -137,12 +138,12 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         ev.setResult_(sid);
     }
 
-    private void shareFolderThroughSP_(Map<String, Role> subject2role, String emailNote,
-            String user, String folderName, SID sid, boolean alreadyShared) throws Exception
+    private void shareFolderThroughSP_(Map<UserID, Role> subject2role, String emailNote,
+            UserID user, String folderName, SID sid, boolean alreadyShared) throws Exception
     {
         // always add the user as the owner
         if (!alreadyShared) {
-            subject2role = new TreeMap<String, Role>(subject2role);
+            subject2role = new TreeMap<UserID, Role>(subject2role);
             subject2role.put(user, Role.OWNER);
         }
 
@@ -172,7 +173,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         return oa;
     }
 
-    private void checkACL_(String user, Path path)
+    private void checkACL_(UserID user, Path path)
             throws ExNotFound, SQLException, ExNoPerm, ExExpelled
     {
         assert !path.isEmpty(); // guaranteed by the above check

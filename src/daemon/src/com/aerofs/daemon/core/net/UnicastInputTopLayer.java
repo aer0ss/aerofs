@@ -27,6 +27,7 @@ import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -90,7 +91,7 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
     private final Factory _f;
 
     // a cache for the DID2UserDatabase to avoid DB lookup on every incoming maxcast message.
-    private final Map<DID, String> _d2uCache = Maps.newHashMap();
+    private final Map<DID, UserID> _d2uCache = Maps.newHashMap();
 
     private UnicastInputTopLayer(Factory f)
     {
@@ -128,13 +129,13 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             assert !ep.did().equals(Cfg.did());
 
             PBCore pb = PBCore.parseDelimitedFrom(is);
-            String user = _d2uCache.get(ep.did());
-            if (user == null) {
-                user = _f._d2u.getFromLocalNullable_(ep.did());
-                if (user == null) user = _f._d2u.getFromPeer_(ep.did(), sidx);
-                _d2uCache.put(ep.did(), user);
+            UserID userId = _d2uCache.get(ep.did());
+            if (userId == null) {
+                userId = _f._d2u.getFromLocalNullable_(ep.did());
+                if (userId == null) userId = _f._d2u.getFromPeer_(ep.did(), sidx);
+                _d2uCache.put(ep.did(), userId);
             }
-            process_(new DigestedMessage(pb, is, ep, sidx, user, null));
+            process_(new DigestedMessage(pb, is, ep, sidx, userId, null));
         } catch (Exception e) {
             SystemUtil.fatalOnUncheckedException(e);
             l.warn("process mc: " + Util.e(e, ExDeviceOffline.class, ExBadCredential.class));

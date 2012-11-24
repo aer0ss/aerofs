@@ -7,6 +7,7 @@ package com.aerofs.daemon.lib.db;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -23,7 +24,7 @@ public interface IUserAndDeviceNameDatabase
     void setDeviceName_(DID did, @Nullable String name, Trans t)
             throws SQLException;
 
-    void setUserName_(String user, FullName fullName, Trans t)
+    void setUserName_(UserID user, FullName fullName, Trans t)
             throws SQLException;
 
     /**
@@ -35,6 +36,6 @@ public interface IUserAndDeviceNameDatabase
     /**
      * @return null if the entry doesn't exist
      */
-    @Nullable FullName getUserNameNullable_(String user)
+    @Nullable FullName getUserNameNullable_(UserID user)
             throws SQLException;
 }

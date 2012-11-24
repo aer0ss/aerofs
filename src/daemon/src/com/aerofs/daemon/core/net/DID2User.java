@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.lib.db.IDID2UserDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -53,16 +54,16 @@ public class DID2User
      * Retreive the mapping from the local database.
      * @return null if the mapping doesn't exist locally.
      */
-    public @Nullable String getFromLocalNullable_(DID did)
+    public @Nullable UserID getFromLocalNullable_(DID did)
             throws SQLException
     {
         return _db.getNullable_(did);
     }
 
-    private @Nonnull String getFromLocal_(DID did)
+    private @Nonnull UserID getFromLocal_(DID did)
             throws SQLException
     {
-        String user = getFromLocalNullable_(did);
+        UserID user = getFromLocalNullable_(did);
         assert user != null : did;
         return user;
     }
@@ -72,7 +73,7 @@ public class DID2User
      *
      * @pre the mapping must not exist locally.
      */
-    public void addToLocal_(DID did, String user, Trans t) throws SQLException
+    public void addToLocal_(DID did, UserID user, Trans t) throws SQLException
     {
         _db.add_(did, user, t);
     }
@@ -89,7 +90,7 @@ public class DID2User
      *
      * @pre the mapping must not exist locally.
      */
-    public String getFromPeer_(DID did, SIndex sidx) throws Exception
+    public UserID getFromPeer_(DID did, SIndex sidx) throws Exception
     {
         assert getFromLocalNullable_(did) == null;
 
@@ -124,7 +125,7 @@ public class DID2User
      * Call this method only after the user is fully authenticated. Note that this method may start
      * a transaction.
      */
-    public void processMappingFromPeer_(DID did, String user)
+    public void processMappingFromPeer_(DID did, UserID user)
             throws SQLException
     {
         if (getFromLocalNullable_(did) == null) {

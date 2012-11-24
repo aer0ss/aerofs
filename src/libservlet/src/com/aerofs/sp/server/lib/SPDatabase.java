@@ -8,6 +8,7 @@ import java.util.TimeZone;
 import com.aerofs.lib.S;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
 
@@ -26,12 +27,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.sp.common.SubscriptionParams;
-import com.aerofs.proto.Common.PBRole;
-import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
-import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
-import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
-import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
@@ -45,7 +40,6 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.protobuf.ByteString;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
@@ -55,7 +49,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -111,14 +104,13 @@ public class SPDatabase
                 "t2." + C_AC_STORE_ID;
     }
 
-    public @Nullable User getUserNullable(String id)
-            throws SQLException, IOException
+    public @Nullable User getUserNullable(UserID userId)
+            throws SQLException
     {
         PreparedStatement psGU = getConnection().prepareStatement(
                 DBUtil.selectWhere(T_USER, C_USER_ID + "=?", C_USER_FIRST_NAME, C_USER_LAST_NAME,
-                        C_USER_CREDS, C_USER_VERIFIED, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
-                        C_USER_ID));
-        psGU.setString(1, id);
+                        C_USER_CREDS, C_USER_VERIFIED, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL));
+        psGU.setString(1, userId.toString());
         ResultSet rs = psGU.executeQuery();
         try {
             if (rs.next()) {
@@ -128,15 +120,15 @@ public class SPDatabase
                 boolean verified = rs.getBoolean(4);
                 OrgID orgId = new OrgID(rs.getInt(5));
                 AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(6));
-                // don't use the {@code id} parameter in case it is not normalized.
-                // TODO (WW) normalize user ids at entry points.
-                String userId = rs.getString(7);
                 User u = new User(userId, firstName, lastName, creds, verified, orgId, level);
                 assert !rs.next();
                 return u;
             } else {
                 return null;
             }
+        } catch (IOException e) {
+            // Base64.decode should not throw
+            throw new SQLException(e);
         } finally {
             rs.close();
         }
@@ -146,26 +138,22 @@ public class SPDatabase
      * @param rs Result set of tuples of the form (id, first name, last name).
      * @return  List of users in the result set.
      */
-    private List<PBUser> usersResultSet2List(ResultSet rs)
+    private List<UserInfo> usersResultSet2List(ResultSet rs)
             throws SQLException
     {
-        List<PBUser> users = Lists.newArrayList();
+        List<UserInfo> users = Lists.newArrayList();
         while (rs.next()) {
-            String id = rs.getString(1);
+            UserID id = UserID.fromInternal(rs.getString(1));
             String firstName = rs.getString(2);
             String lastName = rs.getString(3);
-            PBUser user = PBUser.newBuilder()
-                                 .setUserEmail(id)
-                                 .setFirstName(firstName)
-                                 .setLastName(lastName)
-                                 .build();
+            UserInfo user = new UserInfo(id, firstName, lastName);
             users.add(user);
         }
         return users;
     }
 
     @Override
-    public List<PBUser> listUsers(OrgID orgId, int offset, int maxResults)
+    public List<UserInfo> listUsers(OrgID orgId, int offset, int maxResults)
             throws SQLException
     {
         PreparedStatement psLU = getConnection().prepareStatement(
@@ -188,7 +176,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> searchUsers(OrgID orgId, int offset, int maxResults, String search)
+    public List<UserInfo> searchUsers(OrgID orgId, int offset, int maxResults, String search)
             throws SQLException
     {
         PreparedStatement psSLU = getConnection().prepareStatement("select " + C_USER_ID + "," +
@@ -210,7 +198,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+    public List<UserInfo> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
             AuthorizationLevel authLevel)
             throws SQLException
     {
@@ -236,7 +224,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBUser> searchUsersWithAuthorization(OrgID orgId, int offset,
+    public List<UserInfo> searchUsersWithAuthorization(OrgID orgId, int offset,
             int maxResults, AuthorizationLevel authLevel, String search)
         throws SQLException
     {
@@ -349,7 +337,7 @@ public class SPDatabase
     }
 
     @Override
-    public List<PBSharedFolder> listSharedFolders(OrgID orgId, int maxResults,
+    public List<SharedFolder> listSharedFolders(OrgID orgId, int maxResults,
             int offset)
             throws SQLException
     {
@@ -391,43 +379,36 @@ public class SPDatabase
         psLSF.setInt(3, offset);
         ResultSet rs = psLSF.executeQuery();
 
-        List<PBSharedFolder> resultList = Lists.newLinkedList();
+        List<SharedFolder> resultList = Lists.newLinkedList();
         try {
             // iterate through rows in db response, squashing rows with the same store id
             // into single PBSharedFolder objects to be returned
 
             SID curStoreId = null;
-            PBSharedFolder.Builder sfBuilder = PBSharedFolder.newBuilder();
+            SharedFolder sf = null;
 
             while (rs.next()) {
                 SID storeId = new SID(rs.getBytes(1));
+                String storeName = "(name not currently saved)";
+                List<SubjectRolePair> acl = Lists.newArrayList();
                 if (!storeId.equals(curStoreId)) {
                     if (curStoreId != null) {
-                        resultList.add(sfBuilder.build());
-                        sfBuilder = PBSharedFolder.newBuilder();
+                        resultList.add(sf);
                     }
                     curStoreId = storeId;
-                    sfBuilder.setStoreId(ByteString.copyFrom(storeId.getBytes()));
 
                     String name = rs.getString(2);
-                    if (name != null) {
-                        sfBuilder.setName(name);
-                    } else {
-                        sfBuilder.setName("(name not currently saved)");
-                    }
+                    if (name != null) storeName = name;
                 }
 
-                String userId = rs.getString(3);
-                PBRole role = Role.fromOrdinal(rs.getInt(4)).toPB();
-                PBSubjectRolePair rolePair = PBSubjectRolePair.newBuilder()
-                        .setSubject(userId)
-                        .setRole(role)
-                        .build();
+                UserID userId = UserID.fromInternal(rs.getString(3));
+                Role role = Role.fromOrdinal(rs.getInt(4));
+                acl.add(new SubjectRolePair(userId, role));
 
-                sfBuilder.addSubjectRole(rolePair);
+                sf = new SharedFolder(storeId, storeName, acl);
             }
             if (curStoreId != null) {
-                resultList.add(sfBuilder.build()); // add final shared folder
+                resultList.add(sf); // add final shared folder
             }
         } finally {
             rs.close();
@@ -464,13 +445,13 @@ public class SPDatabase
     }
 
     // Return 0 if user not found.
-    public int getFolderlessInvitesQuota(String user) throws SQLException
+    public int getFolderlessInvitesQuota(UserID userId) throws SQLException
     {
         PreparedStatement psGIL = getConnection().prepareStatement("select " +
                 C_USER_STORELESS_INVITES_QUOTA + " from " + T_USER + " where " + C_USER_ID +
                 "=?");
 
-        psGIL.setString(1, user);
+        psGIL.setString(1, userId.toString());
         ResultSet rs = psGIL.executeQuery();
         try {
             if (rs.next()) {
@@ -483,14 +464,14 @@ public class SPDatabase
         }
     }
 
-    public void setFolderlessInvitesQuota(String user, int quota)
+    public void setFolderlessInvitesQuota(UserID userId, int quota)
             throws SQLException
     {
         PreparedStatement psSSIQ = getConnection().prepareStatement("update " + T_USER + " set "
                 + C_USER_STORELESS_INVITES_QUOTA + "=? where " + C_USER_ID + "=?");
 
         psSSIQ.setInt(1, quota);
-        psSSIQ.setString(2, user);
+        psSSIQ.setString(2, userId.toString());
         psSSIQ.executeUpdate();
     }
 
@@ -525,7 +506,7 @@ public class SPDatabase
                             C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
                             C_USER_ACL_EPOCH));
 
-            psAU.setString(1, ur._id);
+            psAU.setString(1, ur._id.toString());
             psAU.setString(2, Base64.encodeBytes(ur._shaedSP));
             psAU.setString(3, ur._firstName);
             psAU.setString(4, ur._lastName);
@@ -538,19 +519,19 @@ public class SPDatabase
         }
     }
 
-    public void markUserVerified(String userID)
+    public void markUserVerified(UserID userId)
             throws SQLException
     {
         PreparedStatement psUVerified = getConnection().prepareStatement("update " +
                 T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID +"=?");
 
-        psUVerified.setString(1, userID);
+        psUVerified.setString(1, userId.toString());
         Util.verify(psUVerified.executeUpdate() == 1);
 
-        l.info("user " + userID + " marked verified");
+        l.info("user " + userId + " marked verified");
     }
 
-    public void setUserName(String userID, String firstName, String lastName)
+    public void setUserName(UserID userId, String firstName, String lastName)
             throws SQLException
     {
         PreparedStatement psSUN = getConnection().prepareStatement("update " + T_USER +
@@ -559,22 +540,22 @@ public class SPDatabase
 
         psSUN.setString(1, firstName.trim());
         psSUN.setString(2, lastName.trim());
-        psSUN.setString(3, userID);
+        psSUN.setString(3, userId.toString());
         Util.verify(psSUN.executeUpdate() == 1);
     }
 
-    public void addPasswordResetToken(String userID, String token)
+    public void addPasswordResetToken(UserID userId, String token)
         throws SQLException
     {
         PreparedStatement psAPRT = getConnection().prepareStatement("insert into " +
                 T_PASSWORD_RESET + "(" + C_PASS_TOKEN + "," + C_PASS_USER + ") values (?,?)");
 
         psAPRT.setString(1, token);
-        psAPRT.setString(2, userID);
+        psAPRT.setString(2, userId.toString());
         Util.verify(psAPRT.executeUpdate() == 1);
     }
 
-    public String resolvePasswordResetToken(String token)
+    public UserID resolvePasswordResetToken(String token)
         throws SQLException, IOException, ExNotFound
     {
         PreparedStatement psRPRT = getConnection().prepareStatement("select " + C_PASS_USER +
@@ -589,7 +570,7 @@ public class SPDatabase
         ResultSet rs = psRPRT.executeQuery();
         try {
             if (rs.next()) {
-                String id = rs.getString(1);
+                UserID id = UserID.fromInternal(rs.getString(1));
                 assert !rs.next();
                 return id;
             } else {
@@ -611,32 +592,41 @@ public class SPDatabase
         Util.verify(updates == 1);
     }
 
-    public void updateUserCredentials(String userID, byte[] credentials)
+    public void updateUserCredentials(UserID userId, byte[] credentials)
         throws SQLException
     {
         PreparedStatement psUUC = getConnection().prepareStatement("update " + T_USER + " set " +
                 C_USER_CREDS + "=? where " + C_USER_ID + "=?");
 
         psUUC.setString(1, Base64.encodeBytes(credentials));
-        psUUC.setString(2, userID);
+        psUUC.setString(2, userId.toString());
         Util.verify(psUUC.executeUpdate() == 1);
     }
 
-    public void checkAndUpdateUserCredentials(String userID, byte[] old_credentials,
-            byte[] new_credentials)
+    public void checkAndUpdateUserCredentials(UserID userID, byte[] oldCredentials,
+            byte[] newCredentials)
             throws ExNoPerm, SQLException
     {
         PreparedStatement psTASUC = getConnection().prepareCall(
                 "update " + T_USER + " set " + C_USER_CREDS +
                         "=? where " + C_USER_ID + "=? AND " + C_USER_CREDS + "=?");
 
-        psTASUC.setString(1, Base64.encodeBytes(new_credentials));
-        psTASUC.setString(2, userID);
-        psTASUC.setString(3, Base64.encodeBytes(old_credentials));
+        psTASUC.setString(1, Base64.encodeBytes(newCredentials));
+        psTASUC.setString(2, userID.toString());
+        psTASUC.setString(3, Base64.encodeBytes(oldCredentials));
         int updated = psTASUC.executeUpdate();
         if (updated == 0) {
             throw new ExNoPerm();
         }
+    }
+
+    // TODO (WW) use DeviceRow. query user names using a separate query
+    public static class DeviceInfo
+    {
+        public UserID _ownerID;
+        public String _ownerFirstName;
+        public String _ownerLastName;
+        public String _deviceName;
     }
 
     /**
@@ -650,7 +640,7 @@ public class SPDatabase
      * @return the device info corresponding to the supplied device ID. If no such device exists,
      * then return null.
      */
-    public @Nullable PBDeviceInfo getDeviceInfo(DID did) throws SQLException
+    public @Nullable DeviceInfo getDeviceInfo(DID did) throws SQLException
     {
         // Need to join the user and the device table.
         PreparedStatement psGDI = getConnection().prepareStatement(
@@ -665,16 +655,12 @@ public class SPDatabase
         ResultSet rs = psGDI.executeQuery();
         try {
             if (rs.next()) {
-                PBUser u = PBUser.newBuilder()
-                        .setUserEmail(rs.getString(2))
-                        .setFirstName(rs.getString(3))
-                        .setLastName(rs.getString(4))
-                        .build();
-
-                return PBDeviceInfo.newBuilder()
-                        .setOwner(u)
-                        .setDeviceName(rs.getString(1))
-                        .build();
+                DeviceInfo di = new DeviceInfo();
+                di._deviceName = rs.getString(1);
+                di._ownerID = UserID.fromInternal(rs.getString(2));
+                di._ownerFirstName = rs.getString(3);
+                di._ownerLastName = rs.getString(4);
+                return di;
             } else {
                 return null;
             }
@@ -690,14 +676,14 @@ public class SPDatabase
      * The smallest possible set is of size 1, since we say a user always shared with themselves
      * (even if there is no explicit ACL entry, i.e. even if they do not use shared folders).
      *
-     * @param user the user whose shared user set we are going to compute.
+     * @param userId the user whose shared user set we are going to compute.
      */
-    public Set<String> getSharedUsersSet(String user) throws SQLException
+    public Set<UserID> getSharedUsersSet(UserID userId) throws SQLException
     {
-        Set<String> result = Sets.newHashSet();
+        Set<UserID> result = Sets.newHashSet();
 
         // The user always shares with themselves.
-        result.add(user);
+        result.add(userId);
 
         PreparedStatement psGSUS = getConnection().prepareStatement(
                 "select distinct t1." + C_AC_USER_ID + " from " + T_AC +
@@ -706,12 +692,12 @@ public class SPDatabase
                         " where t2." +
                         C_AC_USER_ID + " = ?");
 
-        psGSUS.setString(1, user);
+        psGSUS.setString(1, userId.toString());
 
         ResultSet rs = psGSUS.executeQuery();
         try {
             while (rs.next()) {
-                String sharedUser = rs.getString(1);
+                UserID sharedUser = UserID.fromInternal(rs.getString(1));
                 result.add(sharedUser);
             }
         } finally {
@@ -722,27 +708,18 @@ public class SPDatabase
     }
 
     /**
+     * TODO (WW) remove this class and use Device and User classes instead
      * A class to hold both a username and a device ID.
      */
     public static class UserDevice
     {
-        private final byte[] _did;
-        private final String _userId;
+        public final byte[] _did;
+        public final UserID _userId;
 
-        public UserDevice(byte[] did, String userId)
+        public UserDevice(byte[] did, UserID userId)
         {
-            this._did = did;
-            this._userId = userId;
-        }
-
-        public byte[] getDID()
-        {
-            return _did;
-        }
-
-        public String getUserId()
-        {
-            return _userId;
+            _did = did;
+            _userId = userId;
         }
 
         @Override
@@ -770,7 +747,7 @@ public class SPDatabase
      * Note that all the devices belonging to the owner are always included in the interested
      * devices set (regardless of exclusion).
      */
-    public Set<UserDevice> getInterestedDevicesSet(byte[] sid, String ownerId)
+    public Set<UserDevice> getInterestedDevicesSet(byte[] sid, UserID ownerId)
             throws SQLException, ExFormatError
     {
         Set<UserDevice> result = Sets.newHashSet();
@@ -785,7 +762,7 @@ public class SPDatabase
             while (rs.next()) {
                 // TODO (MP) yuck. why do we store did's are CHAR(32) instead of BINARY(16)?
                 String did = rs.getString(1);
-                String userId = rs.getString(2);
+                UserID userId = UserID.fromInternal(rs.getString(2));
                 UserDevice ud = new UserDevice(new DID(did).getBytes(), userId);
 
                 result.add(ud);
@@ -797,7 +774,7 @@ public class SPDatabase
         PreparedStatement psGIDSDevice = getConnection().prepareStatement(
                 "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " +
                         C_DEVICE_OWNER_ID + " = ?");
-        psGIDSDevice.setString(1, ownerId);
+        psGIDSDevice.setString(1, ownerId.toString());
         rs = psGIDSDevice.executeQuery();
         try {
             while (rs.next()) {
@@ -830,20 +807,20 @@ public class SPDatabase
         }
     }
 
-    public void setAuthorizationLevel(String userID, AuthorizationLevel authLevel)
+    public void setAuthorizationLevel(UserID userId, AuthorizationLevel authLevel)
             throws SQLException
     {
-        l.info("set auth to " + authLevel + " for " + userID);
+        l.info("set auth to " + authLevel + " for " + userId);
 
         PreparedStatement psSAuthLevel = getConnection().prepareStatement("update " + T_USER +
                 " set " + C_USER_AUTHORIZATION_LEVEL + "=? where " + C_USER_ID + "=?");
 
         psSAuthLevel.setInt(1, authLevel.ordinal());
-        psSAuthLevel.setString(2, userID);
+        psSAuthLevel.setString(2, userId.toString());
         Util.verify(psSAuthLevel.executeUpdate() == 1);
     }
 
-    public void addTargetedSignupCode(String code, String from, String to, OrgID orgId, long time)
+    public void addTargetedSignupCode(String code, UserID from, UserID to, OrgID orgId, long time)
         throws SQLException
     {
        PreparedStatement psAddTI = getConnection().prepareStatement(
@@ -851,14 +828,14 @@ public class SPDatabase
                         C_TI_TO, C_TI_ORG_ID, C_TI_TS));
 
         psAddTI.setString(1, code);
-        psAddTI.setString(2, from);
-        psAddTI.setString(3, to);
+        psAddTI.setString(2, from.toString());
+        psAddTI.setString(3, to.toString());
         psAddTI.setInt(4, orgId.getInt());
         psAddTI.setTimestamp(5, new Timestamp(time), _calendar);
         psAddTI.executeUpdate();
     }
 
-    public synchronized void addTargetedSignupCode(String code, String from, String to, OrgID orgId)
+    public synchronized void addTargetedSignupCode(String code, UserID from, UserID to, OrgID orgId)
             throws SQLException
     {
         addTargetedSignupCode(code, from, to, orgId, System.currentTimeMillis());
@@ -868,13 +845,13 @@ public class SPDatabase
      * Check whether a user has already been invited (with a targeted signup code).
      * This is used by us to avoid spamming people when doing mass-invite
      */
-    public boolean isAlreadyInvited(String user)
+    public boolean isAlreadyInvited(UserID userId)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
                 DBUtil.selectWhere(C_TI_TIC, C_TI_TO + "=?", "count(*)"));
 
-        ps.setString(1, user);
+        ps.setString(1, userId.toString());
         ResultSet rs = ps.executeQuery();
         try {
             Util.verify(rs.next());
@@ -887,7 +864,7 @@ public class SPDatabase
     }
 
     @Override
-    public void addShareFolderCode(String code, String from, String to, SID sid,
+    public void addShareFolderCode(String code, UserID from, UserID to, SID sid,
             String folderName)
             throws SQLException
     {
@@ -896,8 +873,8 @@ public class SPDatabase
                 + C_FI_FOLDER_NAME + ") " + "values (?,?,?,?,?)");
 
         ps.setString(1, code);
-        ps.setString(2, from);
-        ps.setString(3, to);
+        ps.setString(2, from.toString());
+        ps.setString(3, to.toString());
         ps.setBytes(4, sid.getBytes());
         ps.setString(5, folderName);
 
@@ -906,7 +883,7 @@ public class SPDatabase
 
     public static class ResolveTargetedSignUpCodeResult
     {
-        public String _userId;
+        public UserID _userId;
         public OrgID _orgId;
     }
 
@@ -924,7 +901,7 @@ public class SPDatabase
         try {
             if (rs.next()) {
                 ResolveTargetedSignUpCodeResult result = new ResolveTargetedSignUpCodeResult();
-                result._userId = rs.getString(1);
+                result._userId = UserID.fromInternal(rs.getString(1));
                 result._orgId = new OrgID(rs.getInt(2));
                 assert !rs.next();
                 return result;
@@ -936,33 +913,17 @@ public class SPDatabase
         }
     }
 
-    // TODO (GS) merge this class and PBFolderInvitation
     public static class FolderInvitation
     {
-        final SID _sid;
-        final String _folderName;
-        final String _invitee;
+        public final SID _sid;
+        public final String _folderName;
+        public final UserID _invitee;
 
-        private FolderInvitation(SID sid, String folderName, String invitee)
+        private FolderInvitation(SID sid, String folderName, UserID invitee)
         {
             _sid = sid;
             _folderName = folderName;
             _invitee = invitee;
-        }
-
-        public SID getSid()
-        {
-            return _sid;
-        }
-
-        public String getFolderName()
-        {
-            return _folderName;
-        }
-
-        public String getInvitee()
-        {
-            return _invitee;
         }
     }
 
@@ -981,7 +942,7 @@ public class SPDatabase
         try {
             if (rs.next()) {
                 return new FolderInvitation(new SID(rs.getBytes(1)), rs.getString(2),
-                        rs.getString(3));
+                        UserID.fromInternal(rs.getString(3)));
             } else {
                 return null;
             }
@@ -990,25 +951,22 @@ public class SPDatabase
         }
     }
 
-    public List<PBFolderInvitation> listPendingFolderInvitations(String to)
+    public List<FolderInvitation> listPendingFolderInvitations(UserID to)
             throws SQLException
     {
-        assert !to.isEmpty();
-
         PreparedStatement psListPFI = getConnection().prepareStatement("select " + C_FI_FROM + ", "
                 + C_FI_FOLDER_NAME + ", " + C_FI_SID + " from " + T_FI + " where " + C_FI_TO +
                 " = ? group by " + C_FI_SID);
 
-        psListPFI.setString(1, to);
+        psListPFI.setString(1, to.toString());
         ResultSet rs = psListPFI.executeQuery();
         try {
-            ArrayList<PBFolderInvitation> invitations = new ArrayList<PBFolderInvitation>();
+            List<FolderInvitation> invitations = Lists.newArrayList();
             while (rs.next()) {
-                invitations.add(PBFolderInvitation.newBuilder()
-                        .setSharer(rs.getString(1))
-                        .setFolderName(rs.getString(2))
-                        .setShareId(ByteString.copyFrom(rs.getBytes(3)))
-                        .build());
+                invitations.add(new FolderInvitation(
+                        new SID(rs.getBytes(3)),
+                        rs.getString(2),
+                        UserID.fromInternal(rs.getString(1))));
             }
             return invitations;
         } finally {
@@ -1018,14 +976,14 @@ public class SPDatabase
 
 
     @Override
-    public String getOnePendingFolderInvitationCode(String to)
+    public String getOnePendingFolderInvitationCode(UserID to)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
                         DBUtil.selectWhere(T_TI, C_TI_TO + "=?",
                                 C_TI_TIC));
 
-        ps.setString(1, to);
+        ps.setString(1, to.toString());
         ResultSet rs = ps.executeQuery();
         try {
             if (rs.next()) return rs.getString(1);
@@ -1053,27 +1011,6 @@ public class SPDatabase
     }
 
     @Override
-    public @Nullable String getFolderName(SID sid)
-            throws SQLException
-    {
-        PreparedStatement psGetFolderName = getConnection().prepareStatement("select " + C_SF_NAME +
-                " from " + T_SF + " where " + C_SF_ID + "=?");
-
-        psGetFolderName.setBytes(1, sid.getBytes());
-        ResultSet rs = psGetFolderName.executeQuery();
-
-        try {
-            if (rs.next()) {
-                return rs.getString(1);
-            } else {
-                return null;
-            }
-        } finally {
-            rs.close();
-        }
-    }
-
-    @Override
     public void setFolderName(SID sid, String folderName)
             throws SQLException
     {
@@ -1094,16 +1031,16 @@ public class SPDatabase
         final String _name;
 
         // User ID of the device owner.
-        final String _ownerID;
+        final UserID _ownerID;
 
-        public DeviceRow(DID did, String name, String ownerID)
+        public DeviceRow(DID did, String name, UserID ownerID)
         {
             _did = did;
             _ownerID = ownerID;
             _name = name;
         }
 
-        public String getOwnerID()
+        public UserID getOwnerID()
         {
             return _ownerID;
         }
@@ -1133,7 +1070,7 @@ public class SPDatabase
         ResultSet rs = psGetDeviceUser.executeQuery();
         try {
             if (rs.next()) {
-                return new DeviceRow(did, rs.getString(1), rs.getString(2));
+                return new DeviceRow(did, rs.getString(1), UserID.fromInternal(rs.getString(2)));
             } else {
                 return null;
             }
@@ -1151,7 +1088,7 @@ public class SPDatabase
                     " values (?,?,?)");
             psAddDev.setString(1, dr._did.toStringFormal());
             psAddDev.setString(2, dr._name);
-            psAddDev.setString(3, dr._ownerID);
+            psAddDev.setString(3, dr._ownerID.toString());
             psAddDev.executeUpdate();
         } catch (SQLException e) {
             throwOnConstraintViolation(e);
@@ -1228,21 +1165,21 @@ public class SPDatabase
      *
      * Important note: this should be called within a transaction!
      *
-     * @param user the user whose certificates we are going to revoke.
+     * @param userId the user whose certificates we are going to revoke.
      */
-    public ImmutableList<Long> revokeUserCertificates(String user)
+    public ImmutableList<Long> revokeUserCertificates(UserID userId)
             throws SQLException
     {
         // Find all unrevoked serials for the device.
-        PreparedStatement psRevokeUserCertificates = getConnection().prepareStatement("select " +
+        PreparedStatement ps = getConnection().prepareStatement("select " +
                 C_CERT_SERIAL + " from " + T_CERT + " " + "join " + T_DEVICE + " on " +
                 T_CERT + "." + C_CERT_DEVICE_ID + " = " + T_DEVICE + "." + C_DEVICE_ID +
                 " where " + T_DEVICE + "." + C_DEVICE_OWNER_ID + " = ? and " +
                 C_CERT_REVOKE_TS + " = 0");
 
-        psRevokeUserCertificates.setString(1, user);
+        ps.setString(1, userId.toString());
 
-        ResultSet rs = psRevokeUserCertificates.executeQuery();
+        ResultSet rs = ps.executeQuery();
         try {
             Builder<Long> builder = ImmutableList.builder();
 
@@ -1313,12 +1250,12 @@ public class SPDatabase
      * <strong>Call in the context of an overall transaction only!</strong>
      *
      *
-     * @param user person requesting the ACL changes
+     * @param userId person requesting the ACL changes
      * @param sid store to which the acl changes will be made
      * @return true if the ACL changes should be allowed (i.e. the user has permissions)
      * @throws SQLException if there is a db error
      */
-    private boolean canUserModifyACL(String user, SID sid)
+    private boolean canUserModifyACL(UserID userId, SID sid)
             throws SQLException, IOException
     {
         PreparedStatement psRoleCount = getConnection().prepareStatement(
@@ -1343,7 +1280,7 @@ public class SPDatabase
                         " and " + C_AC_ROLE + " = ?", "count(*)"));
 
         psRoleCheck.setBytes(1, sid.getBytes());
-        psRoleCheck.setString(2, user);
+        psRoleCheck.setString(2, userId.toString());
         psRoleCheck.setInt(3, Role.OWNER.ordinal());
 
         rs = psRoleCheck.executeQuery();
@@ -1355,7 +1292,7 @@ public class SPDatabase
             assert ownerCount >= 0 && ownerCount <= 1;
 
             if (ownerCount == 1) {
-                l.info(user + " is an owner for s:" + sid);
+                l.info(userId + " is an owner for s:" + sid);
                 return true;
             }
         } finally {
@@ -1363,7 +1300,7 @@ public class SPDatabase
         }
 
         // see if user is an admin and one of their organization's members is an owner
-        User currentUser = getUserNullable(user);
+        User currentUser = getUserNullable(userId);
         assert currentUser != null;
         if (currentUser._level == AuthorizationLevel.ADMIN) {
             l.info("user is an admin, checking if folder owner(s) are part of organization");
@@ -1381,7 +1318,7 @@ public class SPDatabase
             try {
                 Util.verify(rs.next());
                 int ownersInUserOrgCount = rs.getInt(1);
-                l.info("there is/are " + ownersInUserOrgCount + " folder owner(s) in " + user +
+                l.info("there is/are " + ownersInUserOrgCount + " folder owner(s) in " + userId +
                         "'s organization");
                 assert !rs.next();
                 if (ownersInUserOrgCount > 0) {
@@ -1392,12 +1329,12 @@ public class SPDatabase
             }
         }
 
-        l.info(user + " cannot modify acl for s:" + sid);
+        l.info(userId + " cannot modify acl for s:" + sid);
 
         return false; // user has no permissions
     }
 
-    public ACLReturn getACL(long userEpoch, String user)
+    public ACLReturn getACL(long userEpoch, UserID user)
             throws SQLException
     {
         //
@@ -1406,10 +1343,10 @@ public class SPDatabase
 
         // AAG IMPORTANT: both db calls _do not_ have to be part of the same transaction!
 
-        Set<String> users = Sets.newHashSet();
+        Set<UserID> users = Sets.newHashSet();
         users.add(user);
 
-        Map<String, Long> epochs = getACLEpochs(users);
+        Map<UserID, Long> epochs = getACLEpochs(users);
         assert epochs.size() == 1 : ("too many epochs returned exp:1 act:" + epochs.size());
         assert epochs.containsKey(user) : ("did not get epoch for user:" + user);
 
@@ -1432,7 +1369,7 @@ public class SPDatabase
                 " as acl_filter using (" + C_AC_STORE_ID + ") where acl_filter." +
                 C_AC_USER_ID + "=?");
 
-        psGetRoles.setString(1, user);
+        psGetRoles.setString(1, user.toString());
 
         Map<SID, List<SubjectRolePair>> storeToPairs = Maps.newHashMap();
 
@@ -1445,7 +1382,7 @@ public class SPDatabase
                     storeToPairs.put(sid, new LinkedList<SubjectRolePair>());
                 }
 
-                String subject = rs.getString(2);
+                UserID subject = UserID.fromInternal(rs.getString(2));
                 Role role = Role.fromOrdinal(rs.getInt(3));
 
                 storeToPairs.get(sid).add(new SubjectRolePair(subject, role));
@@ -1460,9 +1397,8 @@ public class SPDatabase
     /**
      * @param users set of users for whom you want the acl epoch number
      * @return a map of user -> epoch number
-     * @throws SQLException if the db calls failed
      */
-    private Map<String, Long> getACLEpochs(Set<String> users)
+    private Map<UserID, Long> getACLEpochs(Set<UserID> users)
             throws SQLException
     {
         l.info("get epoch for " + users.size() + " users");
@@ -1470,16 +1406,16 @@ public class SPDatabase
         PreparedStatement psGetEpoch = getConnection().prepareStatement("select " + C_USER_ID + ","
                 + C_USER_ACL_EPOCH + " from " + T_USER + " where " + C_USER_ID + "=?");
 
-        Map<String, Long> serverEpochs = Maps.newHashMap();
+        Map<UserID, Long> serverEpochs = Maps.newHashMap();
 
         ResultSet rs;
-        for (String user : users) {
-            psGetEpoch.setString(1, user);
+        for (UserID user : users) {
+            psGetEpoch.setString(1, user.toString());
 
             rs = psGetEpoch.executeQuery();
             try {
                 if (rs.next()) {
-                    String dbUser = rs.getString(1);
+                    UserID dbUser = UserID.fromInternal(rs.getString(1));
                     long dbEpoch = rs.getLong(2);
 
                     assert dbUser.equals(user) : ("mismatched user exp:" + user + " act:" + dbUser);
@@ -1501,27 +1437,27 @@ public class SPDatabase
     }
 
     /**
-     * This method checks whether the requester has the right permissions needed to modify the
+     * This method checks whether the user has the right permissions needed to modify the
      * given store, and if not performs checks to detect malicious changes to permissions and
      * attempts to repair the store's permissions if needed. Updates pairs in place during the
      * repair process.
      */
-    private void checkUserPermissionsAndClearACLForHijackedRootStore(String requester, SID sid,
+    private void checkUserPermissionsAndClearACLForHijackedRootStore(UserID userId, SID sid,
             List<SubjectRolePair> pairs)
             throws SQLException, IOException, ExNoPerm
     {
-        if (canUserModifyACL(requester, sid)) return;
+        if (canUserModifyACL(userId, sid)) return;
 
         // apparently the user cannot modify the ACL - check if an attacker maliciously
         // overwrote their permissions and repair the store if necessary
 
-        l.info(requester + " cannot modify acl for s:" + sid);
+        l.info(userId + " cannot modify acl for s:" + sid);
 
-        if (!SID.rootSID(requester).equals(sid)) {
-            throw new ExNoPerm(requester + " not owner"); // nope - just a regular store
+        if (!SID.rootSID(userId).equals(sid)) {
+            throw new ExNoPerm(userId + " not owner"); // nope - just a regular store
         }
 
-        l.info("s:" + sid + " matches " + requester + " root store - delete existing acl");
+        l.info("s:" + sid + " matches " + userId + " root store - delete existing acl");
 
         PreparedStatement psDeleteAllRoles = getConnection().prepareStatement("delete from "
                 + T_AC + " where " + C_AC_STORE_ID + "=?");
@@ -1531,17 +1467,17 @@ public class SPDatabase
         int updatedRows = psDeleteAllRoles.executeUpdate();
         assert updatedRows > 0 : updatedRows;
 
-        l.info("adding " + requester + " as owner of s:" + sid);
+        l.info("adding " + userId + " as owner of s:" + sid);
 
         boolean foundOwner = false;
         for (SubjectRolePair pair : pairs) {
-            if (pair._subject.equals(requester) && pair._role.equals(Role.OWNER)) {
+            if (pair._subject.equals(userId) && pair._role.equals(Role.OWNER)) {
                 foundOwner = true;
             }
         }
 
         if (!foundOwner) {
-            pairs.add(new SubjectRolePair(requester, Role.OWNER));
+            pairs.add(new SubjectRolePair(userId, Role.OWNER));
         }
     }
 
@@ -1550,8 +1486,7 @@ public class SPDatabase
      * @return new ACL epochs for each affected user id, to be published via verkehr
      */
     @Override
-    public Map<String, Long> createACL(String requester, SID sid,
-            List<SubjectRolePair> pairs)
+    public Map<UserID, Long> createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
             throws SQLException, ExNoPerm, IOException
     {
         l.info(requester + " create roles for s:" + sid);
@@ -1568,7 +1503,7 @@ public class SPDatabase
 
         for (SubjectRolePair pair : pairs) {
             psReplaceRole.setBytes(1, sid.getBytes());
-            psReplaceRole.setString(2, pair._subject);
+            psReplaceRole.setString(2, pair._subject.toString());
             psReplaceRole.setInt(3, pair._role.ordinal());
             psReplaceRole.addBatch();
         }
@@ -1584,14 +1519,12 @@ public class SPDatabase
      * @return new ACL epochs for each affected user id, to be published via verkehr
      */
     @Override
-    public Map<String, Long> updateACL(String requester, SID sid, List<SubjectRolePair> pairs)
+    public Map<UserID, Long> updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
             throws SQLException, ExNoPerm, IOException
     {
-        l.info(requester + " update roles for s:" + sid);
+        l.info(requester + " updating " + pairs.size() + " roles for s:" + sid);
 
         checkUserPermissionsAndClearACLForHijackedRootStore(requester, sid, pairs);
-
-        l.info(requester + " updating " + pairs.size() + " roles for s:" + sid);
 
         PreparedStatement psUpdateRole = getConnection().prepareStatement("update " + T_AC +
                 " set " + C_AC_ROLE + "=? where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
@@ -1600,7 +1533,7 @@ public class SPDatabase
         for (SubjectRolePair pair : pairs) {
             psUpdateRole.setInt(1, pair._role.ordinal());
             psUpdateRole.setBytes(2, sid.getBytes());
-            psUpdateRole.setString(3, pair._subject);
+            psUpdateRole.setString(3, pair._subject.toString());
             psUpdateRole.addBatch();
         }
 
@@ -1637,7 +1570,7 @@ public class SPDatabase
     /**
      * Fetch the set of users with access to a given store
      */
-    private Set<String> getStoreMembers(SID sid)
+    private Set<UserID> getStoreMembers(SID sid)
             throws SQLException
     {
         PreparedStatement psGetSubjectsForStore = getConnection().prepareStatement("select " +
@@ -1645,12 +1578,10 @@ public class SPDatabase
 
         psGetSubjectsForStore.setBytes(1, sid.getBytes());
 
-        Set<String> subjects = Sets.newHashSet();
+        Set<UserID> subjects = Sets.newHashSet();
         ResultSet rs = psGetSubjectsForStore.executeQuery();
         try {
-            while (rs.next()) {
-                subjects.add(rs.getString(1));
-            }
+            while (rs.next()) { subjects.add(UserID.fromInternal(rs.getString(1))); }
         } finally {
             rs.close();
         }
@@ -1663,19 +1594,19 @@ public class SPDatabase
      *     IMPORTANT: Must be called in the context of a transaction
      * </strong>
      */
-    public Map<String, Long> deleteACL(String user, SID sid, Set<String> subjects)
+    public Map<UserID, Long> deleteACL(UserID userId, SID sid, Set<UserID> subjects)
             throws SQLException, ExNoPerm, IOException
     {
         assert !getConnection().getAutoCommit() :
                 ("auto-commit should be turned off before calling delete ACL");
 
-        l.info(user + " delete roles for s:" + sid);
+        l.info(userId + " delete roles for s:" + sid);
 
-        if (!canUserModifyACL(user, sid)) {
-            l.info(user + " cannot modify acl for s:" + sid);
+        if (!canUserModifyACL(userId, sid)) {
+            l.info(userId + " cannot modify acl for s:" + sid);
 
-            throw new ExNoPerm(user + " is not an owner. If " + user + " has admin privileges " +
-                    "no owner is a member of " + user + "'s organization.");
+            throw new ExNoPerm(userId + " is not an owner. If " + userId + " has admin privileges" +
+                    " no owner is a member of " + userId + "'s organization.");
         }
 
         // setup the prepared statement
@@ -1687,18 +1618,18 @@ public class SPDatabase
         // add all the users to be deleted to a batch update (for now don't worry about
         // splitting batches)
 
-        for (String subject : subjects) {
+        for (UserID subject : subjects) {
             psDeleteRole.setBytes(1, sid.getBytes());
-            psDeleteRole.setString(2, subject);
+            psDeleteRole.setString(2, subject.toString());
             psDeleteRole.addBatch();
         }
 
-        l.info(user + " updating " + subjects.size() + " roles for s:" + sid);
+        l.info(userId + " updating " + subjects.size() + " roles for s:" + sid);
 
         executeBatchWarn(psDeleteRole, subjects.size(), 1); // update roles for all users
 
-        Set<String> affectedUsers = getStoreMembers(sid); // get the current users
-        affectedUsers.add(user); // add the caller as well
+        Set<UserID> affectedUsers = getStoreMembers(sid); // get the current users
+        affectedUsers.add(userId); // add the caller as well
         affectedUsers.addAll(subjects); // add all the deleted guys as well
 
         return incrementACLEpoch(affectedUsers);
@@ -1710,7 +1641,7 @@ public class SPDatabase
      * @param users set of user_ids for all users for which we will update the epoch
      * @return a map of user -> updated epoch number
      */
-    private Map<String, Long> incrementACLEpoch(Set<String> users)
+    private Map<UserID, Long> incrementACLEpoch(Set<UserID> users)
             throws SQLException
     {
         l.info("incrementing epoch for " + users.size() + " users");
@@ -1719,9 +1650,9 @@ public class SPDatabase
                 " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1 where " + C_USER_ID +
                 "=?");
 
-        for (String user : users) {
+        for (UserID user : users) {
             l.info("attempt increment epoch for " + user);
-            psUpdateACLEpoch.setString(1, user);
+            psUpdateACLEpoch.setString(1, user.toString());
             psUpdateACLEpoch.addBatch();
         }
 
@@ -1733,7 +1664,7 @@ public class SPDatabase
     }
 
     @Override
-    public @Nullable Role getUserPermissionForStore(SID sid, String userID)
+    public @Nullable Role getUserPermissionForStore(SID sid, UserID userId)
             throws SQLException
     {
         PreparedStatement psGetUserPermForStore = getConnection().prepareStatement("select " +
@@ -1741,7 +1672,7 @@ public class SPDatabase
                 "=?");
 
         psGetUserPermForStore.setBytes(1, sid.getBytes());
-        psGetUserPermForStore.setString(2, userID);
+        psGetUserPermForStore.setString(2, userId.toString());
         ResultSet rs = psGetUserPermForStore.executeQuery();
         try {
             if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
@@ -1814,14 +1745,14 @@ public class SPDatabase
     }
 
     @Override
-    public void moveUserToOrganization(String userId, OrgID orgId)
+    public void moveUserToOrganization(UserID userId, OrgID orgId)
             throws SQLException
     {
         PreparedStatement psMoveToOrg = getConnection().prepareStatement(
                 DBUtil.updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
 
         psMoveToOrg.setInt(1, orgId.getInt());
-        psMoveToOrg.setString(2, userId);
+        psMoveToOrg.setString(2, userId.toString());
         Util.verify(psMoveToOrg.executeUpdate() == 1);
     }
 
@@ -1894,7 +1825,7 @@ public class SPDatabase
     }
 
     @Override
-    public String addEmailSubscription(String email, SubscriptionCategory sc, long time)
+    public String addEmailSubscription(UserID userId, SubscriptionCategory sc, long time)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
@@ -1904,7 +1835,7 @@ public class SPDatabase
                                C_ES_LAST_EMAILED));
 
         String token = Base62CodeGenerator.newRandomBase62String(SubscriptionParams.TOKEN_ID_LENGTH);
-        ps.setString(1, email);
+        ps.setString(1, userId.toString());
         ps.setString(2, token);
         ps.setInt(3, sc.getCategoryID());
         ps.setTimestamp(4, new Timestamp(time), _calendar);
@@ -1916,21 +1847,21 @@ public class SPDatabase
     }
 
     @Override
-    public String addEmailSubscription(String email, SubscriptionCategory sc)
+    public String addEmailSubscription(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
-        return addEmailSubscription(email, sc, System.currentTimeMillis());
+        return addEmailSubscription(userId, sc, System.currentTimeMillis());
     }
 
     @Override
-    public void removeEmailSubscription(String email, SubscriptionCategory sc)
+    public void removeEmailSubscription(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
                        DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL,
                                C_ES_SUBSCRIPTION));
 
-        ps.setString(1, email);
+        ps.setString(1, userId.toString());
         ps.setInt(2, sc.getCategoryID());
 
         Util.verify(ps.executeUpdate() == 1);
@@ -1947,14 +1878,14 @@ public class SPDatabase
     }
 
     @Override
-    public String getTokenId(final String email, final SubscriptionCategory sc) throws SQLException
+    public String getTokenId(final UserID userId, final SubscriptionCategory sc) throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
                 DBUtil.selectWhere(T_ES,
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
                         C_ES_TOKEN_ID));
 
-        ps.setString(1, email);
+        ps.setString(1, userId.toString());
         ps.setInt(2, sc.getCategoryID());
 
         ResultSet rs = ps.executeQuery();
@@ -1984,7 +1915,7 @@ public class SPDatabase
         }
     }
     @Override
-    public boolean isSubscribed(String email, SubscriptionCategory sc)
+    public boolean isSubscribed(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
         PreparedStatement ps = getConnection().prepareStatement(
@@ -1993,7 +1924,7 @@ public class SPDatabase
                                 C_ES_EMAIL)
                                 );
 
-        ps.setString(1, email);
+        ps.setString(1, userId.toString());
         ps.setInt(2, sc.getCategoryID());
 
         ResultSet rs = ps.executeQuery();
@@ -2005,7 +1936,7 @@ public class SPDatabase
     }
 
     @Override
-    public synchronized void setLastEmailTime(String email, SubscriptionCategory category,
+    public synchronized void setLastEmailTime(UserID userId, SubscriptionCategory category,
             long lastEmailTime)
             throws SQLException
     {
@@ -2015,13 +1946,13 @@ public class SPDatabase
                                C_ES_LAST_EMAILED));
 
         ps.setTimestamp(1, new Timestamp(lastEmailTime), _calendar);
-        ps.setString(2, email);
+        ps.setString(2, userId.toString());
         ps.setInt(3, category.getCategoryID());
         Util.verify(ps.executeUpdate() == 1);
     }
 
     @Override
-    public Set<String> getUsersNotSignedUpAfterXDays(final int days, final int maxUsers,
+    public Set<UserID> getUsersNotSignedUpAfterXDays(final int days, final int maxUsers,
                                                      final int offset)
             throws SQLException
     {
@@ -2040,8 +1971,8 @@ public class SPDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            Set<String> users = Sets.newHashSetWithExpectedSize(maxUsers);
-            while (rs.next()) { users.add(rs.getString(1)); }
+            Set<UserID> users = Sets.newHashSetWithExpectedSize(maxUsers);
+            while (rs.next()) { users.add(UserID.fromInternal(rs.getString(1))); }
             return users;
         } finally {
             rs.close();
@@ -2049,7 +1980,7 @@ public class SPDatabase
     }
 
     @Override
-    public synchronized int getHoursSinceLastEmail(final String email,
+    public synchronized int getHoursSinceLastEmail(final UserID userId,
             final SubscriptionCategory category)
             throws SQLException
     {
@@ -2059,7 +1990,7 @@ public class SPDatabase
                                "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + C_ES_LAST_EMAILED +
                                        "))"));
 
-        ps.setString(1, email);
+        ps.setString(1, userId.toString());
         ps.setInt(2, category.getCategoryID());
 
         ResultSet rs = ps.executeQuery();

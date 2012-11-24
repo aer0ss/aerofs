@@ -62,7 +62,8 @@ public class CompExclusionList extends Composite
 
             Path root = new Path();
             m._all = new HashSet<Path>();
-            GetChildrenAttributesReply reply = ritual.getChildrenAttributes(Cfg.user(), root.toPB());
+            GetChildrenAttributesReply reply = ritual.getChildrenAttributes(Cfg.user().toString(),
+                    root.toPB());
             for (int i = 0; i < reply.getChildrenNameCount(); i++) {
                 if (reply.getChildrenAttributes(i).getType() != Type.FILE) {
                     m._all.add(root.append(reply.getChildrenName(i)));

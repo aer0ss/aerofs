@@ -56,6 +56,7 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -127,9 +128,12 @@ public class RitualService implements IRitualService
             List<PBSubjectRolePair> srps, String emailNote)
             throws Exception
     {
-        Map<String, Role> acl = Maps.newTreeMap();
-        for (PBSubjectRolePair srp : srps) acl.put(srp.getSubject(), Role.fromPB(srp.getRole()));
-        EIShareFolder ev = new EIShareFolder(user, new Path(path), acl, emailNote);
+        Map<UserID, Role> acl = Maps.newTreeMap();
+        for (PBSubjectRolePair srp : srps) {
+            acl.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
+        }
+        EIShareFolder ev = new EIShareFolder(UserID.fromExternal(user), new Path(path), acl,
+                emailNote);
         ev.execute(PRIO);
 
         ShareFolderReply reply = ShareFolderReply.newBuilder()
@@ -143,7 +147,8 @@ public class RitualService implements IRitualService
             throws Exception
     {
         SID sid = new SID(shareID);
-        EIJoinSharedFolder ev = new EIJoinSharedFolder(user, new Path(path), sid);
+        EIJoinSharedFolder ev = new EIJoinSharedFolder(UserID.fromExternal(user), new Path(path),
+                sid);
         ev.execute(PRIO);
 
         return createVoidReply();
@@ -180,7 +185,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<GetObjectAttributesReply> getObjectAttributes(
             String user, PBPath path) throws Exception
     {
-        EIGetAttr ev = new EIGetAttr(user, Core.imce(), new Path(path));
+        EIGetAttr ev = new EIGetAttr(UserID.fromExternal(user), Core.imce(), new Path(path));
         ev.execute(PRIO);
         if (ev._oa == null) throw new ExNotFound();
 
@@ -194,7 +199,8 @@ public class RitualService implements IRitualService
     public ListenableFuture<GetChildrenAttributesReply> getChildrenAttributes(String user,
             PBPath path) throws Exception
     {
-        EIGetChildrenAttr ev = new EIGetChildrenAttr(user, new Path(path), Core.imce());
+        EIGetChildrenAttr ev = new EIGetChildrenAttr(UserID.fromExternal(user), new Path(path),
+                Core.imce());
         ev.execute(PRIO);
 
         GetChildrenAttributesReply.Builder bd = GetChildrenAttributesReply.newBuilder();
@@ -357,15 +363,15 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<GetACLReply> getACL(String user, PBPath path) throws Exception
     {
-        EIGetACL ev = new EIGetACL(user, new Path(path), Core.imce());
+        EIGetACL ev = new EIGetACL(UserID.fromExternal(user), new Path(path), Core.imce());
         ev.execute(PRIO);
 
         // we only get here if the event suceeded properly
 
         GetACLReply.Builder replyBuilder = GetACLReply.newBuilder();
-        for (Entry<String, Role> en : ev._subject2role.entrySet()) {
+        for (Entry<UserID, Role> en : ev._subject2role.entrySet()) {
             replyBuilder.addSubjectRole(PBSubjectRolePair.newBuilder()
-                    .setSubject(en.getKey())
+                    .setSubject(en.getKey().toString())
                     .setRole(en.getValue().toPB()));
         }
 
@@ -378,10 +384,12 @@ public class RitualService implements IRitualService
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual is open-sourced
-        Map<String, Role> map = Maps.newTreeMap();
-        for (PBSubjectRolePair srp : srps) map.put(srp.getSubject(), Role.fromPB(srp.getRole()));
+        Map<UserID, Role> map = Maps.newTreeMap();
+        for (PBSubjectRolePair srp : srps) {
+            map.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
+        }
 
-        EIUpdateACL ev = new EIUpdateACL(user, new Path(path), map, Core.imce());
+        EIUpdateACL ev = new EIUpdateACL(UserID.fromExternal(user), new Path(path), map, Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -392,7 +400,8 @@ public class RitualService implements IRitualService
     {
         // TODO: accepting {@code user} as input is sort of OK as long as the GUI is the only
         // Ritual client but it will become a major security issue if/when Ritual is open-sourced
-        EIDeleteACL ev = new EIDeleteACL(user, new Path(path), subjects, Core.imce());
+        EIDeleteACL ev = new EIDeleteACL(UserID.fromExternal(user), new Path(path),
+                UserID.fromExternal(subjects), Core.imce());
         ev.execute(PRIO);
         return createVoidReply();
     }
@@ -575,7 +584,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> testMultiuserJoinRootStore(String user)
             throws Exception
     {
-        new EITestMultiuserJoinRootStore(user, Core.imce()).execute(PRIO);
+        new EITestMultiuserJoinRootStore(UserID.fromExternal(user), Core.imce()).execute(PRIO);
         return createVoidReply();
     }
 }

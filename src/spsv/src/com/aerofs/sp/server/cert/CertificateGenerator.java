@@ -2,6 +2,7 @@ package com.aerofs.sp.server.cert;
 
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.id.UserID;
 import sun.security.pkcs.PKCS10;
 
 import java.io.ByteArrayOutputStream;
@@ -36,7 +37,7 @@ public class CertificateGenerator implements ICertificateGenerator
      * caller).
     */
     @Override
-    public Certificate createCertificate(String user, DID did, PKCS10 csr)
+    public Certificate createCertificate(UserID userId, DID did, PKCS10 csr)
         throws IOException, SignatureException, CertificateException
     {
         // Convert the CSR into string.
@@ -51,7 +52,7 @@ public class CertificateGenerator implements ICertificateGenerator
 
         URLConnection conn;
         try {
-            conn = (new URL(_caURL + "?" + user + '-' + did.toStringFormal())).openConnection();
+            conn = (new URL(_caURL + "?" + userId + '-' + did.toStringFormal())).openConnection();
         }
         catch (MalformedURLException e) {
             // Wrap in malformed URL exceptions, re-throw as IO exception so that we can cleanly

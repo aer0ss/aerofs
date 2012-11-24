@@ -5,6 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.user.UserManagement;
@@ -41,8 +42,8 @@ public class TestSPUserManagement extends AbstractTest
     public void setup()
         throws Exception
     {
-        testUser = new User("test@awesome.com","","","".getBytes(),true,new OrgID(123),
-                AuthorizationLevel.USER);
+        testUser = new User(UserID.fromInternal("test@awesome.com"),"","","".getBytes(),true,
+                new OrgID(123), AuthorizationLevel.USER);
 
         setupMockSPDatabaseGetUserTest();
         setupMockSPDatabaseGetUserByPasswordResetTokenTestUser();
@@ -51,7 +52,7 @@ public class TestSPUserManagement extends AbstractTest
     private void setupMockSPDatabaseGetUser(@Nullable User user)
             throws Exception
     {
-        when(db.getUserNullable(any(String.class))).thenReturn(user);
+        when(db.getUserNullable(any(UserID.class))).thenReturn(user);
     }
     private void setupMockSPDatabaseGetUserTest()
             throws Exception
@@ -66,7 +67,7 @@ public class TestSPUserManagement extends AbstractTest
          setupMockSPDatabaseGetUser(null);
     }
 
-    private void setupMockSPDatabaseGetUserByPasswordResetToken(@Nullable String userID)
+    private void setupMockSPDatabaseGetUserByPasswordResetToken(@Nullable UserID userID)
         throws Exception
     {
          when(db.resolvePasswordResetToken(anyString())).thenReturn(userID);
@@ -92,7 +93,7 @@ public class TestSPUserManagement extends AbstractTest
     {
         setupMockSPDatabaseGetUserNull();
         userManagement.sendPasswordResetEmail(testUser._id);
-        verify(db).getUserNullable(anyString());
+        verify(db).getUserNullable(any(UserID.class));
         verifyNoMoreInteractions(db);
     }
     @Test

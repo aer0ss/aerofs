@@ -7,6 +7,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -50,10 +51,10 @@ public class SyncStatusSummary implements IAggregatedStatus
     @Override
     public void mergeDevices_(DeviceBitMap dbm, BitVector status)
     {
-        Map<String, Boolean> otherUsers = Maps.newHashMap();
+        Map<UserID, Boolean> otherUsers = Maps.newHashMap();
         for (int i = 0; i < dbm.size(); ++i) {
             boolean s = status.test(i);
-            String owner = getOwner_(dbm.get(i));
+            UserID owner = getOwner_(dbm.get(i));
             if (owner.equals(_user.get())) {
                 _isPartiallySynced |= s;
                 _allInSync &= s;
@@ -78,14 +79,14 @@ public class SyncStatusSummary implements IAggregatedStatus
         _allInSync &= o._allInSync;
     }
 
-    private String getOwner_(DID did)
+    private UserID getOwner_(DID did)
     {
-        String owner = null;
+        UserID owner = UserID.UNKNOWN;
         try {
             owner = _udn.getDeviceOwnerNullable_(did);
         } catch (Exception e) {
             Util.l(this).warn("owner lookup failed: " + did, e);
         }
-        return owner == null ? "(Unknown)" : owner;
+        return owner;
     }
 }

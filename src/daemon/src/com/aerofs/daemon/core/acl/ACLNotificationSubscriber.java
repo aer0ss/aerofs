@@ -27,7 +27,7 @@ public final class ACLNotificationSubscriber
     public ACLNotificationSubscriber(VerkehrNotificationSubscriber subscriber,
             CfgLocalUser localUser, CoreQueue q, CoreScheduler sched, ACLSynchronizer aclsync)
     {
-        _topic = localUser.get();
+        _topic = localUser.get().toString();
         _subscriber = subscriber;
         _listener = new VerkehrListener(q, new ExponentialRetry(sched), aclsync);
     }

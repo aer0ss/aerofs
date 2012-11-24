@@ -5,6 +5,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
@@ -34,13 +35,13 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
     @Spy SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(db,
             _userManagement, _organizationManagement, emailerFactory);
 
-    protected static final String TEST_USER_1_NAME = "USER_1";
+    protected static final UserID TEST_USER_1 = UserID.fromInternal("user_1");
     protected static final byte[] TEST_USER_1_CRED = "CREDENTIALS".getBytes();
 
-    protected static final String TEST_USER_2_NAME = "USER_2";
+    protected static final UserID TEST_USER_2 = UserID.fromInternal("user_2");
     protected static final byte[] TEST_USER_2_CRED = "CREDENTIALS".getBytes();
 
-    protected static final String TEST_USER_3_NAME = "USER_3";
+    protected static final UserID TEST_USER_3 = UserID.fromInternal("user_3");
     protected static final byte[] TEST_USER_3_CRED = "CREDENTIALS".getBytes();
 
     // User based tests will probably need to mock verkehr publishes, so include this utility here.
@@ -69,15 +70,15 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
 
         // Add all the users to the db.
         _transaction.begin();
-        db.addUser(new User(TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_NAME, TEST_USER_1_CRED,
-                verified, orgId, level));
-        db.markUserVerified(TEST_USER_1_NAME);
-        db.addUser(new User(TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_NAME, TEST_USER_2_CRED,
-                verified, orgId, level));
-        db.markUserVerified(TEST_USER_2_NAME);
-        db.addUser(new User(TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_NAME, TEST_USER_3_CRED,
-                verified, orgId, level));
-        db.markUserVerified(TEST_USER_3_NAME);
+        db.addUser(new User(TEST_USER_1, TEST_USER_1.toString(), TEST_USER_1.toString(),
+                TEST_USER_1_CRED, verified, orgId, level));
+        db.markUserVerified(TEST_USER_1);
+        db.addUser(new User(TEST_USER_2, TEST_USER_2.toString(), TEST_USER_2.toString(),
+                TEST_USER_2_CRED, verified, orgId, level));
+        db.markUserVerified(TEST_USER_2);
+        db.addUser(new User(TEST_USER_3, TEST_USER_3.toString(), TEST_USER_3.toString(),
+                TEST_USER_3_CRED, verified, orgId, level));
+        db.markUserVerified(TEST_USER_3);
         _transaction.commit();
     }
 }

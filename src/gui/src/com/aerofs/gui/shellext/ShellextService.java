@@ -73,7 +73,7 @@ public class ShellextService
                 .setType(Type.ROOT_ANCHOR)
                 .setRootAnchor(RootAnchorNotification.newBuilder()
                     .setPath(Cfg.absRootAnchor())
-                    .setUser(Cfg.user()))
+                    .setUser(Cfg.user().toString()))
                 .build();
 
         _server.send(notification.toByteArray());

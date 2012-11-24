@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.id.UserID;
 import org.apache.log4j.Logger;
 
 import com.google.inject.CreationException;
@@ -141,8 +142,8 @@ public class Main {
             if (Cfg.inited()) {
                 SVClient.logSendDefectSyncIgnoreErrors(true, "failed in main()", e);
             } else {
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "failed in main()", e, "unknown",
-                        rtRoot);
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "failed in main()", e,
+                        UserID.UNKNOWN, rtRoot);
             }
 
             ExitCode.FAIL_TO_LAUNCH.exit();

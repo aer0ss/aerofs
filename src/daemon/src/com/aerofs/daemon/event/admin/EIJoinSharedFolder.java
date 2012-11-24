@@ -4,6 +4,7 @@ import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.fs.AbstractEIFS;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.UserID;
 
 public class EIJoinSharedFolder extends AbstractEIFS
 {
@@ -15,7 +16,7 @@ public class EIJoinSharedFolder extends AbstractEIFS
      * @param sid the SID of the anchored store will be the value
      * specified by this parameter.
      */
-    public EIJoinSharedFolder(String user, Path path, SID sid)
+    public EIJoinSharedFolder(UserID user, Path path, SID sid)
     {
         super(user, Core.imce());
         assert sid != null;

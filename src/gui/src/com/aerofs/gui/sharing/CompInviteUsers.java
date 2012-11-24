@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.ui.UIUtil;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -57,12 +58,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
     private final Label _lblStatus;
     private final CompSpin _compSpin;
-    private final Button _btnCancel;
-    private final Composite _composite;
     private final CompEmailAddressTextBox _compAddresses;
-    private final Label lblTypeEmailAddresses;
-    private final Composite composite_1;
-    private final Composite composite;
 
     public CompInviteUsers(Composite parent, Path path)
     {
@@ -74,7 +70,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         glShell.marginWidth = GUIParam.MARGIN;
         setLayout(glShell);
 
-        lblTypeEmailAddresses = new Label(this, SWT.NONE);
+        Label lblTypeEmailAddresses = new Label(this, SWT.NONE);
         lblTypeEmailAddresses.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         lblTypeEmailAddresses.setText(S.TYPE_EMAIL_ADDRESSES);
 
@@ -84,7 +80,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         _compAddresses.setLayoutData(gd__compAddresses);
         _compAddresses.addInputChangeListener(this);
 
-        composite_1 = new Composite(this, SWT.NONE);
+        Composite composite_1 = new Composite(this, SWT.NONE);
         composite_1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         GridLayout gl_composite_1 = new GridLayout(1, false);
         gl_composite_1.marginTop = GUIParam.MAJOR_SPACING - glShell.verticalSpacing;
@@ -101,20 +97,20 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         gdTextNote.heightHint = 60;
         _txtNote.setLayoutData(gdTextNote);
 
-        _composite = new Composite(this, SWT.NONE);
+        Composite composite1 = new Composite(this, SWT.NONE);
         GridLayout glComposite = new GridLayout(3, false);
         glComposite.marginWidth = 0;
         glComposite.marginHeight = 0;
         glComposite.marginTop = GUIParam.MAJOR_SPACING - glShell.verticalSpacing;
-        _composite.setLayout(glComposite);
-        _composite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        composite1.setLayout(glComposite);
+        composite1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
-        _compSpin = new CompSpin(_composite, SWT.NONE);
+        _compSpin = new CompSpin(composite1, SWT.NONE);
 
-        _lblStatus = new Label(_composite, SWT.NONE);
+        _lblStatus = new Label(composite1, SWT.NONE);
         _lblStatus.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 
-        composite = new Composite(_composite, SWT.NONE);
+        Composite composite = new Composite(composite1, SWT.NONE);
         FillLayout fl = new FillLayout(SWT.HORIZONTAL);
         fl.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
         composite.setLayout(fl);
@@ -130,9 +126,10 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
             }
         });
 
-        _btnCancel = new Button(composite, SWT.NONE);
-        _btnCancel.setText(IDialogConstants.CANCEL_LABEL);
-        _btnCancel.addSelectionListener(new SelectionAdapter() {
+        Button btnCancel = new Button(composite, SWT.NONE);
+        btnCancel.setText(IDialogConstants.CANCEL_LABEL);
+        btnCancel.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
@@ -152,7 +149,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     _fromPerson = sp.getPreferences(Cfg.did().toPB()).getFirstName();
                 } catch (Exception e) {
                     l.warn("cannot load user name: " + e);
-                    _fromPerson = Cfg.user();
+                    _fromPerson = Cfg.user().toString();
                 }
 
                 GUI.get().safeAsyncExec(shell, new Runnable() {
@@ -185,14 +182,14 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
 
     private void updateStatus()
     {
-        Collection<String> addresses = _compAddresses.getValidAddresses();
-        int invalid = _compAddresses.getInvalidAddressesCount();
+        Collection<UserID> userIDs = _compAddresses.getValidUserIDs();
+        int invalid = _compAddresses.getInvalidUserIDCount();
 
         // do not change the size of the dialog otherwise it would grow as
         // the user types addresses
         //getShell().pack();
 
-        _btnOk.setEnabled(_fromPerson != null && addresses.size() > 0 && invalid == 0);
+        _btnOk.setEnabled(_fromPerson != null && userIDs.size() > 0 && invalid == 0);
     }
 
     private void setStatusText(String msg)
@@ -214,7 +211,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         _compSpin.start();
         setStatusText(S.SENDING_INVITATION + "...");
 
-        final List<String> subjects = _compAddresses.getValidAddresses();
+        final List<UserID> subjects = _compAddresses.getValidUserIDs();
         final String note = _txtNote.getText().trim();
 
         enableAll(false);
@@ -262,10 +259,10 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                 try {
                     PBPath pbpath = _path.toPB();
                     List<PBSubjectRolePair> srps = Lists.newArrayList();
-                    for (String subject : subjects) {
+                    for (UserID subject : subjects) {
                         srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
                     }
-                    ritual.shareFolder(Cfg.user(), pbpath, srps, note);
+                    ritual.shareFolder(Cfg.user().toString(), pbpath, srps, note);
                 } finally {
                     ritual.close();
                 }

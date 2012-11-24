@@ -11,6 +11,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -34,7 +35,7 @@ public class RoleMenu
     private static final Logger l = Util.l(RoleMenu.class);
     private final Path _path;
     private final Menu _menu;
-    private final String _subject;
+    private final UserID _subject;
     private final Role _role;
     private final CompUserList _compUserList;
 
@@ -121,7 +122,7 @@ public class RoleMenu
             String note = CompInviteUsers.getDefaultInvitationNote(_path.last(), fromPerson);
             RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
-                ritual.shareFolder(Cfg.user(), _path.toPB(), Collections.singletonList(
+                ritual.shareFolder(Cfg.user().toString(), _path.toPB(), Collections.singletonList(
                         new SubjectRolePair(_subject, _role).toPB()), note);
             } finally {
                 ritual.close();
@@ -147,10 +148,11 @@ public class RoleMenu
             RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
                 if (role == null) {
-                    ritual.deleteACL(Cfg.user(), _path.toPB(), Collections.singletonList(_subject));
+                    ritual.deleteACL(Cfg.user().toString(), _path.toPB(),
+                            Collections.singletonList(_subject.toString()));
                 } else {
                     SubjectRolePair srp = new SubjectRolePair(_subject, role);
-                    ritual.updateACL(Cfg.user(), _path.toPB(),
+                    ritual.updateACL(Cfg.user().toString(), _path.toPB(),
                             Collections.singletonList(srp.toPB()));
                 }
                 _compUserList.load(ritual);

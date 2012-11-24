@@ -16,6 +16,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.id.UserID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -38,7 +39,7 @@ public class LocalACL
     private final IStores _ss;
 
     // mapping: store -> (subject -> role). It's an in-memory cache of the ACL table in the db.
-    private final Map<SIndex, ImmutableMap<String, Role>> _cache = Maps.newHashMap();
+    private final Map<SIndex, ImmutableMap<UserID, Role>> _cache = Maps.newHashMap();
 
     @Inject
     public LocalACL(CfgLocalUser cfgLocalUser,  DirectoryService ds, TransManager tm, IStores ss,
@@ -62,7 +63,7 @@ public class LocalACL
     /**
      * @return the SOID corresponding to the specified path
      */
-    public @Nonnull SOID checkThrows_(String subject, Path path, Role role)
+    public @Nonnull SOID checkThrows_(UserID subject, Path path, Role role)
             throws ExNotFound, SQLException, ExNoPerm, ExExpelled
     {
         SOID soid = _ds.resolveThrows_(path);
@@ -76,7 +77,7 @@ public class LocalACL
      * @return the SOID corresponding to the specified path. Do not follow anchor if the resolved
      * object is an anchor.
      */
-    public @Nonnull SOID checkNoFollowAnchorThrows_(String subject, Path path, Role role)
+    public @Nonnull SOID checkNoFollowAnchorThrows_(UserID subject, Path path, Role role)
             throws ExNotFound, SQLException, ExNoPerm
     {
         SOID soid = _ds.resolveThrows_(path);
@@ -84,7 +85,7 @@ public class LocalACL
         return soid;
     }
 
-    public void checkThrows_(String subject, SIndex sidx, Role role)
+    public void checkThrows_(UserID subject, SIndex sidx, Role role)
             throws SQLException, ExNoPerm, ExNotFound
     {
         if (!check_(subject, sidx, role)) throw new ExNoPerm(subject + ", " + role + ", " + sidx);
@@ -94,7 +95,7 @@ public class LocalACL
      * @return whether the {@code subject}'s role allows operations that are allowed by
      * {@code role}. operations on the subjects' root store are always allowed.
      */
-    public boolean check_(String subject, SIndex sidx, Role role) throws ExNotFound, SQLException
+    public boolean check_(UserID subject, SIndex sidx, Role role) throws ExNotFound, SQLException
     {
         Role roleActual = get_(sidx).get(subject);
         boolean allowed = roleActual != null && roleActual.covers(role);
@@ -108,10 +109,10 @@ public class LocalACL
     /**
      * @return the map of subjects to their permissions for a given store
      */
-    public @Nonnull ImmutableMap<String, Role> get_(SIndex sidx)
+    public @Nonnull ImmutableMap<UserID, Role> get_(SIndex sidx)
             throws ExNotFound, SQLException
     {
-        ImmutableMap<String, Role> subject2role = _cache.get(sidx);
+        ImmutableMap<UserID, Role> subject2role = _cache.get(sidx);
         if (subject2role == null) {
             subject2role = readFromDB_(sidx);
             _cache.put(sidx, subject2role);
@@ -122,14 +123,14 @@ public class LocalACL
     /**
      * Read the subject-to-role mapping for the given store from the database.
      */
-    private @Nonnull ImmutableMap<String, Role> readFromDB_(SIndex sidx)
+    private @Nonnull ImmutableMap<UserID, Role> readFromDB_(SIndex sidx)
             throws SQLException, ExNotFound
     {
-        ImmutableMap.Builder<String, Role> builder = ImmutableMap.builder();
-        IDBIterator<Map.Entry<String, Role>> iter = _adb.get_(sidx);
+        ImmutableMap.Builder<UserID, Role> builder = ImmutableMap.builder();
+        IDBIterator<Map.Entry<UserID, Role>> iter = _adb.get_(sidx);
         try {
             while (iter.next_()) {
-                Map.Entry<String, Role> srp = iter.get_();
+                Map.Entry<UserID, Role> srp = iter.get_();
                 builder.put(srp.getKey(), srp.getValue());
             }
         } finally {
@@ -142,7 +143,7 @@ public class LocalACL
     /**
      * Internal use only. Clients should use {@link ACLSynchronizer}.
      */
-    void set_(SIndex sidx, Map<String, Role> subject2role, Trans t)
+    void set_(SIndex sidx, Map<UserID, Role> subject2role, Trans t)
             throws SQLException, ExNotFound
     {
         _adb.set_(sidx, subject2role, t);
@@ -153,7 +154,7 @@ public class LocalACL
     /**
      * Internal use only. Clients should use {@link ACLSynchronizer}.
      */
-    void delete_(SIndex sidx, Iterable<String> subjects, Trans t)
+    void delete_(SIndex sidx, Iterable<UserID> subjects, Trans t)
             throws SQLException, ExNotFound
     {
         _adb.delete_(sidx, subjects, t);

@@ -2,6 +2,7 @@ package com.aerofs.l;
 
 import com.aerofs.l.L.LabelingType;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 
 /**
  * see the comments in L.java
@@ -26,7 +27,7 @@ public interface ILabeling
 
     short jingleRelayPort();
 
-    String spUser();
+    UserID spUser();
 
     DID spDID();
 

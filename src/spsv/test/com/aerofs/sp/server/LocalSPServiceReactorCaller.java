@@ -7,6 +7,7 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.Exceptions;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
@@ -48,7 +49,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
     private final SPServiceReactor _reactor;
 
     // On initialization, a single admin is added to the sp database to enable authenticated calls
-    public static final String ADMIN_ID = "testadmin@company.com";
+    public static final UserID ADMIN_ID = UserID.fromInternal("testadmin@company.com");
     public static final byte [] ADMIN_CRED = SecUtil.scrypt("adminpswd".toCharArray(), ADMIN_ID);
 
     public LocalSPServiceReactorCaller(InvitationEmailer.Factory emailerFactory)

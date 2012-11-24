@@ -6,6 +6,7 @@ import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -202,11 +203,11 @@ public class CompUserList extends Composite
         Object[] elems;
         try {
             ArrayList<SubjectRolePair> srps = Lists.newArrayList();
-            GetACLReply reply = ritual.getACL(Cfg.user(), _path.toPB());
+            GetACLReply reply = ritual.getACL(Cfg.user().toString(), _path.toPB());
             _users = reply.getSubjectRoleCount();
             for (int i = 0; i < _users; i++) {
                 PBSubjectRolePair srp = reply.getSubjectRole(i);
-                String subject = srp.getSubject();
+                UserID subject = UserID.fromExternal(srp.getSubject());
                 Role role = Role.fromPB(srp.getRole());
                 if (!_showSPUser && subject.equals(L.get().spUser())) continue;
 

@@ -18,6 +18,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
@@ -58,7 +59,7 @@ public class CLISetup
 
     private boolean _isExistingUser;
 
-    private String getUser(CLI cli) throws ExNoConsole
+    private UserID getUser(CLI cli) throws ExNoConsole
     {
         // input user name - keep going as long as it's invalid
         while (true) {
@@ -66,15 +67,15 @@ public class CLISetup
             if (!Util.isValidEmailAddress(user)) {
                 cli.show(MessageType.ERROR, S.SETUP_INVALID_USER_ID);
             } else {
-                return user;
+                return UserID.fromExternal(user);
             }
         }
     }
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
-        String userID = null;
-        char[] passwd = null;
+        UserID userID = null;
+        char[] passwd;
 
         GetSetupSettingsReply defaults = UI.controller().getSetupSettings();
         String deviceName = defaults.getDeviceName();
@@ -105,9 +106,12 @@ public class CLISetup
             signUpCode = props.getProperty(PROP_INVITE);
 
             if (signUpCode != null) {
-                userID = UI.controller().resolveSignUpCode(signUpCode).getEmail();
+                userID = UserID.fromInternal(UI.controller().resolveSignUpCode(signUpCode)
+                        .getEmail());
             }
-            if (userID == null || userID.isEmpty()) userID = props.getProperty(PROP_USERID);
+            if (userID == null || userID.toString().isEmpty()) {
+                userID = UserID.fromExternal(props.getProperty(PROP_USERID));
+            }
             passwd = props.getProperty(PROP_PASSWORD).toCharArray();
             anchorRoot = props.getProperty(PROP_ROOT, anchorRoot);
             deviceName = props.getProperty(PROP_DEVICE, deviceName);
@@ -149,8 +153,9 @@ public class CLISetup
                     signUpCode = cli.askText(S.SETUP_IC, null);
                     try {
                         cli.progress("Verifying invitation code");
-                        userID = UI.controller().resolveSignUpCode(signUpCode).getEmail();
-                        if (!userID.isEmpty()) {
+                        userID = UserID.fromInternal(UI.controller().resolveSignUpCode(signUpCode)
+                                .getEmail());
+                        if (!userID.toString().isEmpty()) {
                             cli.show(MessageType.INFO, S.SETUP_USER_ID + ": " + userID);
                         } else {
                             userID = getUser(cli);
@@ -233,11 +238,11 @@ public class CLISetup
         cli.progress("Performing magic");
 
         if (_isExistingUser) {
-            UI.controller().setupExistingUser(userID, new String(passwd), anchorRoot,
+            UI.controller().setupExistingUser(userID.toString(), new String(passwd), anchorRoot,
                     deviceName, s3config);
         } else {
-            UI.controller().setupNewUser(userID, new String(passwd), anchorRoot, deviceName,
-                    signUpCode, firstName, lastName, s3config);
+            UI.controller().setupNewUser(userID.toString(), new String(passwd), anchorRoot,
+                    deviceName, signUpCode, firstName, lastName, s3config);
         }
 
         if (s3BucketId != null) SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);

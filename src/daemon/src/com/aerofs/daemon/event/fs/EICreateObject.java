@@ -2,6 +2,7 @@ package com.aerofs.daemon.event.fs;
 
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.id.UserID;
 
 public class EICreateObject extends AbstractEIFS
 {
@@ -9,7 +10,7 @@ public class EICreateObject extends AbstractEIFS
     public final boolean _dir;
     public boolean _exist;
 
-    public EICreateObject(String user, IIMCExecutor imce, Path path, boolean isDir)
+    public EICreateObject(UserID user, IIMCExecutor imce, Path path, boolean isDir)
     {
         super(user, imce);
         _path = path;

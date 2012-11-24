@@ -6,6 +6,7 @@ package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -21,10 +22,10 @@ public interface IDID2UserDatabase
      *
      * @pre the mapping must not already exist
      */
-    void add_(DID did, String user, Trans t) throws SQLException;
+    void add_(DID did, UserID user, Trans t) throws SQLException;
 
     /**
      * @return the user id mapped to the given DID. null if the mapping doesn't exist
      */
-    @Nullable String getNullable_(DID did) throws SQLException;
+    @Nullable UserID getNullable_(DID did) throws SQLException;
 }

@@ -11,6 +11,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -38,7 +39,7 @@ public class HistoryModel
 {
     private static final Logger l = Util.l(HistoryModel.class);
 
-    private final String _user;
+    private final UserID _userId;
     private RitualBlockingClient _ritual;
     private final RitualBlockingClient.Factory _factory;
 
@@ -105,14 +106,14 @@ public class HistoryModel
 
     public HistoryModel()
     {
-        _user = Cfg.user();
+        _userId = Cfg.user();
         _factory = new RitualBlockingClient.Factory();
         _ritual = _factory.create();
     }
 
-    public HistoryModel(CfgLocalUser user, RitualBlockingClient.Factory factory)
+    public HistoryModel(CfgLocalUser userId, RitualBlockingClient.Factory factory)
     {
-        _user = user.get();
+        _userId = userId.get();
         _factory = factory;
         _ritual = _factory.create();
     }
@@ -194,7 +195,8 @@ public class HistoryModel
 
             if (parent == null || !parent.isDeleted) {
                 // TODO(huguesb): do we really need to pass user ids through Ritual?
-                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(_user, path.toPB());
+                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(_userId.toString(),
+                        path.toPB());
                 assert ca != null;
                 for (int i = 0; i < ca.getChildrenNameCount(); i++) {
                     String name = ca.getChildrenName(i);

@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.net.dtls;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
+import com.aerofs.lib.id.UserID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.net.PeerContext;
@@ -29,7 +30,7 @@ class DTLSEntry
     private final DTLSLayer _layer;
     final PrioQueue<DTLSMessage<byte[]>> _sendQ;
     long _lastHshakeMsgTime;
-    String _user;
+    UserID _user;
     private boolean _hshakeDone;
 
     DTLSEntry(DTLSLayer layer, DTLSEngine engine)

@@ -1,11 +1,13 @@
 package com.aerofs.lib.cfg;
 
+import com.aerofs.lib.id.UserID;
+
 /**
  * The local peer's user id
  */
 public class CfgLocalUser
 {
-    public String get()
+    public UserID get()
     {
         return Cfg.user();
     }

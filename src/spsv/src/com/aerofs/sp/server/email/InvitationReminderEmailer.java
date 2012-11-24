@@ -10,17 +10,16 @@ import java.util.concurrent.Callable;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
-import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.SPParam;
 
-public class InvitationReminderEmailer {
-
+public class InvitationReminderEmailer
+{
     public static class Factory {
 
-        public InvitationReminderEmailer createReminderEmail(final String fromEmail,
+        public InvitationReminderEmailer createReminderEmail(final String from,
                 final String fromName,
                 final String to, String signupCode, String unsubscribeId)
                         throws IOException
@@ -58,7 +57,8 @@ public class InvitationReminderEmailer {
                 public Void call()
                         throws Exception
                 {
-                    SVClient.sendEmail(fromEmail, fromName, to, null, subject, email.getTextEmail(),
+                    SVClient.sendEmail(from, fromName, to, null, subject,
+                            email.getTextEmail(),
                             email.getHTMLEmail(), true, EmailCategory.AEROFS_INVITATION_REMINDER);
 
                     return null;
@@ -83,15 +83,4 @@ public class InvitationReminderEmailer {
     {
         if (_c != null) _c.call();
     }
-
-    public static void sendAll(Iterable<InvitationReminderEmailer> emails) throws
-            ExEmailSendingFailed
-    {
-        try {
-            for (InvitationReminderEmailer email : emails) email.send();
-        } catch (Exception e) {
-            throw new ExEmailSendingFailed(e);
-        }
-    }
-
 }

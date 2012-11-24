@@ -4,6 +4,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -17,7 +18,6 @@ import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.organization.OrgID;
-import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.EmailReminder;
 import com.aerofs.sp.server.user.UserManagement;
@@ -163,24 +163,25 @@ public class SPServlet extends AeroServlet
      * Perhaps it can be dumped into an Invite.java if it is ever created.
      * @param fromPerson inviter's name
      */
-    private void inviteFromScript(@Nonnull String fromPerson, @Nonnull String to)
+    private void inviteFromScript(@Nonnull String fromPerson, @Nonnull String inviteeIdString)
             throws Exception
     {
-        to = User.normalizeUserId(to);
+        UserID inviteeId = UserID.fromExternal(inviteeIdString);
 
         // Check that the invitee isn't already a user
-        _userManagement.checkUserIdDoesNotExist(to);
+        _userManagement.throwIfUserIdDoesNotExist(inviteeId);
 
         // Check that we haven't already invited this user
-        if (_db.isAlreadyInvited(to)) throw new ExAlreadyExist("user already invited");
+        if (_db.isAlreadyInvited(inviteeId)) throw new ExAlreadyExist("user already invited");
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _db.addTargetedSignupCode(code, SV.SUPPORT_EMAIL_ADDRESS, to, OrgID.DEFAULT);
+        _db.addTargetedSignupCode(code, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), inviteeId,
+                OrgID.DEFAULT);
 
-        _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, to, fromPerson, null, null,
-                code).send();
+        _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, inviteeId.toString(),
+                fromPerson, null, null, code).send();
 
-        _db.addEmailSubscription(to, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        _db.addEmailSubscription(inviteeId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>

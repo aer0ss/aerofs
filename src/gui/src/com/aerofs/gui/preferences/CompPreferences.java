@@ -85,7 +85,7 @@ public class CompPreferences extends Composite
 
         _lblId2 = new Label(this, SWT.NONE);
         _lblId2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        _lblId2.setText(Cfg.user());
+        _lblId2.setText(Cfg.user().toString());
         _lblId2.addMouseListener(new MouseAdapter()
         {
             @Override
@@ -93,7 +93,7 @@ public class CompPreferences extends Composite
             {
                 if (_deviceIDShown) {
                     _lblId.setText("User ID:");
-                    _lblId2.setText(Cfg.user());
+                    _lblId2.setText(Cfg.user().toString());
                 } else {
                     _lblId.setText("Computer ID:");
                     _lblId2.setText(Cfg.did().toStringFormal());
@@ -292,10 +292,11 @@ public class CompPreferences extends Composite
                 {
                     DlgPasswordChange dPC = new DlgPasswordChange(getShell());
                     if (dPC.open() == IDialogConstants.OK_ID) {
-                        String new_password = dPC.getPassword();
-                        String old_password = dPC.getOldPassword();
+                        String newPassword = dPC.getPassword();
+                        String oldPassword = dPC.getOldPassword();
                         try {
-                            UI.controller().changePassword(Cfg.user(),old_password,new_password);
+                            UI.controller().changePassword(Cfg.user().toString(),
+                                    oldPassword, newPassword);
                             GUI.get().show(getShell(), MessageType.INFO,
                                     "Password Changed Successfully!");
                         } catch (Exception e) {

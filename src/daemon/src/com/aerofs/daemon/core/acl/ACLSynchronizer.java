@@ -11,12 +11,14 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
@@ -53,9 +55,9 @@ public class ACLSynchronizer
     private class ServerACLReturn
     {
         final long  _serverEpoch;
-        final Map<SID, Map<String, Role>> _acl;
+        final Map<SID, Map<UserID, Role>> _acl;
 
-        private ServerACLReturn(long serverEpoch, Map<SID, Map<String, Role>> acl)
+        private ServerACLReturn(long serverEpoch, Map<SID, Map<UserID, Role>> acl)
         {
             _serverEpoch = serverEpoch;
             _acl = acl;
@@ -74,7 +76,7 @@ public class ACLSynchronizer
         _sid2sidx = sid2SIndex;
     }
 
-    private void commitToLocal_(SIndex sidx, Map<String, Role> subject2role)
+    private void commitToLocal_(SIndex sidx, Map<UserID, Role> subject2role)
             throws SQLException, ExNotFound
     {
         Trans t = _tm.begin_();
@@ -161,7 +163,7 @@ public class ACLSynchronizer
         try {
             _lacl.clear_(t);
 
-            for (Map.Entry<SID, Map<String, Role>> entry : serverACLReturn._acl.entrySet()) {
+            for (Map.Entry<SID, Map<UserID, Role>> entry : serverACLReturn._acl.entrySet()) {
 
                 // gets the sidx; an sidx is created if it doesn't exist
 
@@ -204,10 +206,10 @@ public class ACLSynchronizer
         l.info("server return acl with epoch:" + serverEpoch);
 
         if (aclReply.getStoreAclCount() == 0) {
-            return new ServerACLReturn(serverEpoch, Collections.<SID, Map<String, Role>>emptyMap());
+            return new ServerACLReturn(serverEpoch, Collections.<SID, Map<UserID, Role>>emptyMap());
         }
 
-        Map<SID, Map<String, Role>> acl = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
+        Map<SID, Map<UserID, Role>> acl = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
         for (PBStoreACL storeACL : aclReply.getStoreAclList()) {
             SID sid = new SID(storeACL.getStoreId());
 
@@ -216,12 +218,13 @@ public class ACLSynchronizer
             // FWIW, it's longer to use "newHashMapWithExpectedSize" here than to simply call new
 
             if (!acl.containsKey(sid)) {
-                acl.put(sid, new HashMap<String, Role>(storeACL.getSubjectRoleCount()));
+                acl.put(sid, new HashMap<UserID, Role>(storeACL.getSubjectRoleCount()));
             }
 
-            Map<String, Role> subjectToRoleMap = acl.get(sid);
+            Map<UserID, Role> subjectToRoleMap = acl.get(sid);
             for (PBSubjectRolePair pbPair : storeACL.getSubjectRoleList()) {
-                subjectToRoleMap.put(pbPair.getSubject(), Role.fromPB(pbPair.getRole()));
+                SubjectRolePair srp = new SubjectRolePair(pbPair);
+                subjectToRoleMap.put(srp._subject, srp._role);
             }
         }
 
@@ -231,7 +234,7 @@ public class ACLSynchronizer
     /**
      * Update ACLs via the SP.updateACL call
      */
-    public void update_(SIndex sidx, Map<String, Role> subject2role)
+    public void update_(SIndex sidx, Map<UserID, Role> subject2role)
             throws Exception
     {
         // first, resolve the sid and prepare data for protobuf
@@ -256,7 +259,7 @@ public class ACLSynchronizer
         commitToLocal_(sidx, subject2role);
     }
 
-    public void delete_(SIndex sidx, Iterable<String> subjects)
+    public void delete_(SIndex sidx, Iterable<UserID> subjects)
             throws Exception
     {
         //
@@ -272,7 +275,7 @@ public class ACLSynchronizer
             tcb = tk.pseudoPause_("spacl");
             SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
             sp.signInRemote();
-            sp.deleteACL(sid.toPB(), subjects);
+            sp.deleteACL(sid.toPB(), UserID.toStrings(subjects));
         } finally {
             if (tcb != null) tcb.pseudoResumed_();
             tk.reclaim_();

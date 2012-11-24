@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.id.UserID;
 import org.apache.log4j.Logger;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -130,7 +131,7 @@ public class TCTestSetup
 
     public CfgLocalUser _cfgLocalUser = Mockito.mock(CfgLocalUser.class);
     {
-        Mockito.when(_cfgLocalUser.get()).thenReturn("null");
+        Mockito.when(_cfgLocalUser.get()).thenReturn(UserID.fromInternal("null"));
     }
 
     public CoreDBCW _coreDBCW = new InMemorySQLiteDBCW().getCoreDBCW();

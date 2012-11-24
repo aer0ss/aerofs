@@ -49,28 +49,28 @@ public class TestSPGetDeviceInfo extends AbstractSPUserBasedTest
         _transaction.begin();
 
         // User 1
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A01", TEST_USER_1_NAME));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A02", TEST_USER_1_NAME));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A03", TEST_USER_1_NAME));
+        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A01", TEST_USER_1));
+        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A02", TEST_USER_1));
+        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A03", TEST_USER_1));
 
         // User 2
         _deviceB01 = new DID(UniqueID.generate());
-        db.addDevice(new DeviceRow(_deviceB01, "Device B01", TEST_USER_2_NAME));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device B02", TEST_USER_2_NAME));
+        db.addDevice(new DeviceRow(_deviceB01, "Device B01", TEST_USER_2));
+        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device B02", TEST_USER_2));
 
         // User 3
         _deviceC01 = new DID(UniqueID.generate());
-        db.addDevice(new DeviceRow(_deviceC01, "Device C01", TEST_USER_3_NAME));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device C02", TEST_USER_3_NAME));
+        db.addDevice(new DeviceRow(_deviceC01, "Device C01", TEST_USER_3));
+        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device C02", TEST_USER_3));
 
         _transaction.commit();
 
         // User 1 shares with User 2, but not with User 3
         ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
 
-        sessionUser.setUser(TEST_USER_1_NAME);
-        pair.add(new SubjectRolePair(TEST_USER_1_NAME, Role.OWNER).toPB());
-        pair.add(new SubjectRolePair(TEST_USER_2_NAME, Role.EDITOR).toPB());
+        sessionUser.set(TEST_USER_1);
+        pair.add(new SubjectRolePair(TEST_USER_1, Role.OWNER).toPB());
+        pair.add(new SubjectRolePair(TEST_USER_2, Role.EDITOR).toPB());
 
         service.shareFolder(TEST_SID_1.toString(), TEST_SID_1.toPB(), pair, "").get();
     }
@@ -103,9 +103,9 @@ public class TestSPGetDeviceInfo extends AbstractSPUserBasedTest
         assertTrue(deviceInfo.hasOwner());
 
         // The parent sets the first name and the last name to just be the test user name.
-        assertEquals(deviceInfo.getOwner().getUserEmail(), TEST_USER_2_NAME);
-        assertEquals(deviceInfo.getOwner().getFirstName(), TEST_USER_2_NAME);
-        assertEquals(deviceInfo.getOwner().getLastName(), TEST_USER_2_NAME);
+        assertEquals(deviceInfo.getOwner().getUserEmail(), TEST_USER_2.toString());
+        assertEquals(deviceInfo.getOwner().getFirstName(), TEST_USER_2.toString());
+        assertEquals(deviceInfo.getOwner().getLastName(), TEST_USER_2.toString());
     }
 
     /**

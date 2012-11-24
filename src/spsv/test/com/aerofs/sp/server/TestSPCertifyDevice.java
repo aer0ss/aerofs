@@ -10,6 +10,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
@@ -48,7 +49,8 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     {
         // Provide the incorrect user, and clean up after the uncommitted transaction.
         try {
-            byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, "garbage", _did).getEncoded();
+            byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, UserID.fromInternal("garbage"), _did)
+                    .getEncoded();
             service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
         } catch (Exception e) {
             _transaction.handleException();
@@ -103,7 +105,7 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
 
         // Try to recertify using the wrong session user.
         try {
-            sessionUser.setUser(TEST_2_USER);
+            sessionUser.set(TEST_2_USER);
             service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
         } catch (Exception e) {
             _transaction.handleException();

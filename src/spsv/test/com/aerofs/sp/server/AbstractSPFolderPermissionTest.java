@@ -8,6 +8,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.common.collect.ImmutableList;
 
@@ -21,7 +22,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPUserBasedTest
     /**
      * Makes a protobuf-ready list of subject role pairs containing only the given sharee+role pair
      */
-    protected static List<PBSubjectRolePair> makePair(String sharee, Role role)
+    protected static List<PBSubjectRolePair> makePair(UserID sharee, Role role)
     {
         return ImmutableList.of(new SubjectRolePair(sharee, role).toPB());
     }
@@ -30,10 +31,10 @@ public class AbstractSPFolderPermissionTest extends AbstractSPUserBasedTest
      * Shares a folder through service.shareFolder with the given user and verifies that an
      * invitation email would've been sent.
      */
-    protected void shareFolderThroughSP(String sharer, SID sid, String sharee, Role role)
+    protected void shareFolderThroughSP(UserID sharer, SID sid, UserID sharee, Role role)
             throws Exception
     {
-        sessionUser.setUser(sharer);
+        sessionUser.set(sharer);
         List<PBSubjectRolePair> pair = makePair(sharee, role);
         service.shareFolder(sid.toString(), sid.toPB(), pair, "").get();
     }

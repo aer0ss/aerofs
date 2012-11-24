@@ -12,6 +12,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.AbstractExWirable;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVCall;
@@ -339,7 +340,8 @@ public final class SVClient
         }
     }
 
-    public static void logSendDefectSyncNoCfgIgnoreErrors(boolean automatic, String context, Throwable cause, String user, String rtRoot)
+    public static void logSendDefectSyncNoCfgIgnoreErrors(boolean automatic, String context,
+            Throwable cause, UserID user, String rtRoot)
     {
         try {
             doLogSendDefect(
@@ -403,7 +405,8 @@ public final class SVClient
 
         // always send non-automatic defects
         boolean isLastSent = automatic && isLastSentDefect(cause.getMessage(), stackTrace);
-        l.error((isLastSent ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
+        l.error((isLastSent ? "repeating last" : "sending") + " defect: " + desc + ": " +
+                Util.e(cause));
         if (isLastSent) return;
 
         // Send the defect to RockLog
@@ -440,7 +443,9 @@ public final class SVClient
 
             StringBuilder sbCfgDB = new StringBuilder();
             for (Entry<Key, String> en : cfgDB.entrySet()) {
-                sbCfgDB.append(en.getKey() + ": " + en.getValue());
+                sbCfgDB.append(en.getKey());
+                sbCfgDB.append(": ");
+                sbCfgDB.append(en.getValue());
                 sbCfgDB.append('\n');
             }
             bdDefect.setCfgDb(sbCfgDB.toString());
@@ -674,14 +679,14 @@ public final class SVClient
     }
 
     // FIXME (AG): I can get rid of this by creating a static block with a header initializer
-    private static PBSVHeader newHeader(String user, @Nullable DID did, String rtRoot)
+    private static PBSVHeader newHeader(UserID user, @Nullable DID did, String rtRoot)
     {
         if (did == null) did = new DID(UniqueID.ZERO);
 
         return PBSVHeader
                 .newBuilder()
                 .setTime(System.currentTimeMillis())
-                .setUser(user)
+                .setUser(user.toString())
                 .setDeviceId(did.toPB())
                 .setVersion(Cfg.ver())
                 .setAppRoot(AppRoot.abs())

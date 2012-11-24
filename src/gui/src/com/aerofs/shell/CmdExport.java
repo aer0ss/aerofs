@@ -3,6 +3,7 @@ package com.aerofs.shell;
 import java.io.File;
 import java.io.PrintStream;
 
+import com.aerofs.lib.id.UserID;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -48,21 +49,21 @@ public class CmdExport implements IShellCommand<ShProgram>
 
     class Downloader
     {
-        private final RitualBlockingClient _ritualClient;
-        private final String _user;
+        private final RitualBlockingClient _ritual;
+        private final UserID _userId;
         private final PrintStream _out;
 
         Downloader(ShellCommandRunner<ShProgram> s)
         {
-            _ritualClient = s.d().getRitualClient_();
-            _user = Cfg.user();
+            _ritual = s.d().getRitualClient_();
+            _userId = Cfg.user();
             _out = s.out();
         }
 
         void download(Path source, File dest) throws Exception
         {
             GetObjectAttributesReply objectAttributesReply =
-                    _ritualClient.getObjectAttributes(_user, source.toPB());
+                    _ritual.getObjectAttributes(_userId.toString(), source.toPB());
             PBObjectAttributes oa = objectAttributesReply.getObjectAttributes();
             download(source, oa, dest);
         }
@@ -72,7 +73,7 @@ public class CmdExport implements IShellCommand<ShProgram>
             switch (oa.getType()) {
                 case FILE: {
                     _out.format("Exporting %s to %s...\n", source, dest);
-                    ExportFileReply reply = _ritualClient.exportFile(source.toPB());
+                    ExportFileReply reply = _ritual.exportFile(source.toPB());
                     File temp = new File(reply.getDest());
                     FileUtil.moveInOrAcrossFileSystem(temp, dest);
                     break;
@@ -81,8 +82,8 @@ public class CmdExport implements IShellCommand<ShProgram>
                 case FOLDER:
                 case SHARED_FOLDER: {
                     FileUtil.mkdir(dest);
-                    GetChildrenAttributesReply reply = _ritualClient.getChildrenAttributes(_user,
-                            source.toPB());
+                    GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(
+                            _userId.toString(), source.toPB());
                     int count = reply.getChildrenNameCount();
                     assert count == reply.getChildrenAttributesCount();
                     for (int i = 0; i < count; ++i) {

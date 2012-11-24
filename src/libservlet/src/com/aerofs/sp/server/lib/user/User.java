@@ -6,21 +6,22 @@ package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.google.protobuf.ByteString;
 
 public final class User
 {
-    public final String _id;
+    public final UserID _id;
+    public final OrgID _orgID;
     public final String _firstName;
     public final String _lastName;
     public final byte[] _shaedSP; // sha256(scrypt(p|u)|passwdSalt)
     public final boolean _isVerified;
-    public final OrgID _orgID;
     public final AuthorizationLevel _level;
 
-    public User(String id, String firstName, String lastName, byte[] shaedSP,
+    public User(UserID id, String firstName, String lastName, byte[] shaedSP,
             boolean verified, OrgID orgID, AuthorizationLevel level)
     {
         _id = id;
@@ -35,23 +36,15 @@ public final class User
     /**
      * Create a User using protobuf credentials instead of byte array
      */
-    public User(String userId, String firstName, String lastName, ByteString credentials,
+    public User(UserID userId, String firstName, String lastName, ByteString credentials,
             boolean verified, OrgID orgID, AuthorizationLevel level)
     {
         this(userId, firstName, lastName, SPParam.getShaedSP(credentials.toByteArray()),
                 verified, orgID, level);
     }
 
-    /**
-     * TODO (WW) create a UserID class and move this method there (as a constructor)
-     */
-    public static String normalizeUserId(String userId)
-    {
-        return userId.toLowerCase();
-    }
-
     // TODO (WW) why is this test-specific method in the main code? Move it out
-    public static User createMockForID(String userId)
+    public static User createMockForID(UserID userId)
     {
         return new User(userId, "first", "last", SecUtil.newRandomBytes(10),
                 false, OrgID.DEFAULT, AuthorizationLevel.USER);

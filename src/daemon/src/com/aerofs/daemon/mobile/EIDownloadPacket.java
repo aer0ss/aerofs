@@ -2,6 +2,7 @@ package com.aerofs.daemon.mobile;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.lib.id.UserID;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import com.aerofs.daemon.event.fs.AbstractEIFS;
@@ -29,7 +30,7 @@ public class EIDownloadPacket extends AbstractEIFS
     public boolean _done;
     public @Nullable ChannelBuffer _data;
 
-    public EIDownloadPacket(String user, IIMCExecutor imce, Path path, long offset, int packetSize)
+    public EIDownloadPacket(UserID user, IIMCExecutor imce, Path path, long offset, int packetSize)
     {
         super(user, imce);
         _path = path;

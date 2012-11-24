@@ -17,7 +17,7 @@ class SubjectLabelProvider extends ColumnLabelProvider
             return ((Exception) element).getMessage();
         } else if (element instanceof SubjectRolePair) {
             SubjectRolePair srp = (SubjectRolePair) element;
-            return srp._subject.equals(Cfg.user()) ? "me" : srp._subject;
+            return srp._subject.equals(Cfg.user()) ? "me" : srp._subject.toString();
         } else {
             return element.toString();
         }

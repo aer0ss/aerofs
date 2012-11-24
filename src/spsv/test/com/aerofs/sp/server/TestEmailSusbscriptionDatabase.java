@@ -9,6 +9,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.UserID;
 import org.junit.After;
 
 import org.junit.Before;
@@ -34,8 +35,8 @@ import com.aerofs.sp.common.SubscriptionCategory;
 
 public class TestEmailSusbscriptionDatabase extends AbstractTest
 {
-    private static final String TEST_USER1 = "test@test.com";
-    private static final String TEST_USER2 = "test2@test.com";
+    private static final UserID TEST_USER1 = UserID.fromInternal("test@test.com");
+    private static final UserID TEST_USER2 = UserID.fromInternal("test2@test.com");
 
     protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
     protected final SQLThreadLocalTransaction _transaction =
@@ -67,12 +68,12 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
         db.addEmailSubscription(TEST_USER2,sc1);
         db.addEmailSubscription(TEST_USER2,sc2);
 
-        Set<SubscriptionCategory> subscriptions = db.getEmailSubscriptions(TEST_USER2);
+        Set<SubscriptionCategory> subscriptions = db.getEmailSubscriptions(TEST_USER2.toString());
 
         //sanity check token management
         String subscriptionToken = db.getTokenId(TEST_USER2, sc1);
         String emailFromToken = db.getEmail(subscriptionToken);
-        assertEquals(emailFromToken, TEST_USER2);
+        assertEquals(emailFromToken, TEST_USER2.toString());
 
         assertEquals(EnumSet.of(sc1,sc2), subscriptions);
 

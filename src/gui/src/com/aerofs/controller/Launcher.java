@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.sql.SQLException;
 
 import com.aerofs.lib.ex.ExAlreadyRunning;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
 import org.apache.log4j.Logger;
@@ -82,8 +83,8 @@ class Launcher
             reply.setStatus(Status.NOT_LAUNCHABLE);
             reply.setErrorMessage(msg);
             if (!(e instanceof ExAlreadyRunning)) {
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "getInitialStatus", e, "unknown",
-                        _rtRoot);
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "getInitialStatus", e,
+                        UserID.UNKNOWN, _rtRoot);
             }
         }
 
@@ -125,7 +126,9 @@ class Launcher
         }
 
         if (msg != null) {
-            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, "unknown", "unknwon");
+            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, msg, null, UserID.fromInternal(
+                    "unknown"),
+                    "unknwon");
             throw new ExAborted(msg);
         }
 

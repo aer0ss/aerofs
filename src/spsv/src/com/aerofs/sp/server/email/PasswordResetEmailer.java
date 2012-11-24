@@ -8,6 +8,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
@@ -18,7 +19,7 @@ import static com.aerofs.sp.server.SPParam.*;
 
 public class PasswordResetEmailer
 {
-    public void sendPasswordResetEmail(String to, String reset_token)
+    public void sendPasswordResetEmail(UserID userId, String reset_token)
             throws IOException
 
     {
@@ -27,7 +28,7 @@ public class PasswordResetEmailer
         Email email = new Email(subject, false ,null);
 
         String url = S.PASSWORD_RESET_URL + "?" +
-                "user_id=" + Util.urlEncode(to) +
+                "user_id=" + Util.urlEncode(userId.toString()) +
                 "&token=" + reset_token;
         String body = "\nForgot your password? It happens to the best of us.\n\nFollow this link " +
                "to reset your password:\n\n" + url + "\n\n" +
@@ -39,16 +40,17 @@ public class PasswordResetEmailer
                 Email.DEFAULT_PS);
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,SP_EMAIL_NAME, to, null, subject,
-                    email.getTextEmail(), email.getHTMLEmail(), true, EmailCategory.PASSWORD_RESET);
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,SP_EMAIL_NAME, userId.toString(), null,
+                    subject, email.getTextEmail(), email.getHTMLEmail(), true,
+                    EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
             throw new IOException(e);
         }
 
-        EmailUtil.emailSPNotification(to + " initiated a password reset ", "");
+        EmailUtil.emailSPNotification(userId + " initiated a password reset ", "");
     }
 
-    public void sendPasswordResetConfirmation(String to)
+    public void sendPasswordResetConfirmation(UserID userId)
             throws IOException
 
     {
@@ -69,12 +71,13 @@ public class PasswordResetEmailer
                 Email.DEFAULT_PS);
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME, to, null, subject,
-                    email.getTextEmail(), email.getHTMLEmail(), true, EmailCategory.PASSWORD_RESET);
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME, userId.toString(), null,
+                    subject, email.getTextEmail(), email.getHTMLEmail(), true,
+                    EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
             throw new IOException(e);
         }
 
-        EmailUtil.emailSPNotification(to + " completed a password reset ", "");
+        EmailUtil.emailSPNotification(userId + " completed a password reset ", "");
     }
 }

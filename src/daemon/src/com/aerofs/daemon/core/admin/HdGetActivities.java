@@ -22,6 +22,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Ritual.GetActivitiesReply.PBActivity;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -161,7 +162,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             /*out*/ Set<DID> unresolvedDIDs) throws SQLException
     {
         Set<DID> myDIDs = Sets.newTreeSet();
-        Map<String, DID> user2did = Maps.newTreeMap();
+        Map<UserID, DID> user2did = Maps.newTreeMap();
         int unknownOwnerDevices = 0;
         for (DID did : dids) {
             if (did.equals(_cfgLocalDID.get())) {
@@ -170,7 +171,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             }
 
             // resolve device ids to user ids
-            String user = _d2u.getFromLocalNullable_(did);
+            UserID user = _d2u.getFromLocalNullable_(did);
             if (user == null) {
                 unresolvedDIDs.add(did);
                 unknownOwnerDevices++;
@@ -217,8 +218,8 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
             }
         }
 
-        for (Entry<String, DID> en : user2did.entrySet()) {
-            String user = en.getKey();
+        for (Entry<UserID, DID> en : user2did.entrySet()) {
+            UserID user = en.getKey();
             // Guaranteed by the above code
             assert !user.equals(_cfgLocalUser.get());
 

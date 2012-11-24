@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
@@ -12,6 +12,7 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.IUserSearchDatabase.UserInfo;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.user.UserManagement.UserListAndQueryCount;
@@ -75,21 +76,21 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         for (int i=0; i < NUMBER_OF_USERS; i++) {
-            User user = new User("user"+i+"@test.com", "", "", "".getBytes(),
+            User user = new User(UserID.fromInternal("user" + i + "@test.com"), "", "", "".getBytes(),
                     false, validOrgId, AuthorizationLevel.USER);
 
             _spdb.addUser(user);
         }
 
         for (int i=0; i < NUMBER_OF_ADMINS; i++) {
-            User admin = new User("admin"+i+"@test.com", "", "", "".getBytes(),
+            User admin = new User(UserID.fromInternal("admin" + i + "@test.com"), "", "", "".getBytes(),
                     false, validOrgId, AuthorizationLevel.ADMIN);
 
             _spdb.addUser(admin);
         }
 
         for (int i=0; i < NUMBER_OF_USERS; i++) {
-            User user = new User("user"+i+"@dummy.com", "", "", "".getBytes(),
+            User user = new User(UserID.fromInternal("user" + i + "@dummy.com"), "", "", "".getBytes(),
                     false, nonQueriedOrgId, AuthorizationLevel.USER);
             _spdb.addUser(user);
         }
@@ -106,8 +107,8 @@ public class TestListUser extends AbstractTest
     {
         // search term null means search for all
         UserListAndQueryCount pair = userManagement.listUsers(null, TOTAL_USERS, 0, validOrgId);
-        assertEquals(TOTAL_USERS, pair.users.size());
-        assertEquals(TOTAL_USERS, pair.count);
+        assertEquals(TOTAL_USERS, pair._uis.size());
+        assertEquals(TOTAL_USERS, pair._count);
     }
 
     @Test
@@ -120,13 +121,13 @@ public class TestListUser extends AbstractTest
                 offset, validOrgId);
         UserListAndQueryCount allPair = userManagement.listUsers(null, TOTAL_USERS,
                 0, validOrgId);
-        assertEquals(maxResults, subsetPair.users.size());
-        assertEquals(TOTAL_USERS, allPair.users.size());
+        assertEquals(maxResults, subsetPair._uis.size());
+        assertEquals(TOTAL_USERS, allPair._uis.size());
 
         for (int index = 0; index < maxResults; index++) {
-            PBUser subsetUser = subsetPair.users.get(index);
-            PBUser allUser = allPair.users.get(index + offset);
-            assertEquals(allUser.getUserEmail(), subsetUser.getUserEmail());
+            UserInfo subsetUser = subsetPair._uis.get(index);
+            UserInfo allUser = allPair._uis.get(index + offset);
+            assertEquals(allUser._userId, subsetUser._userId);
         }
     }
 
@@ -135,7 +136,7 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         UserListAndQueryCount pair = userManagement.listUsers(null, 10, 0, invalidOrgId);
-        assertTrue(pair.users.isEmpty());
+        assertTrue(pair._uis.isEmpty());
     }
 
     // ================================
@@ -147,13 +148,13 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         UserListAndQueryCount pair = userManagement.listUsers("user", TOTAL_USERS, 0, validOrgId);
-        assertEquals(NUMBER_OF_USERS, pair.users.size());
-        for (PBUser user : pair.users) {
-            assertTrue(user.getUserEmail().contains("user"));
-            assertFalse(user.getUserEmail().contains("admin"));
+        assertEquals(NUMBER_OF_USERS, pair._uis.size());
+        for (UserInfo user : pair._uis) {
+            assertTrue(user._userId.toString().contains("user"));
+            assertFalse(user._userId.toString().contains("admin"));
         }
 
-        assertEquals(NUMBER_OF_USERS, pair.count);
+        assertEquals(NUMBER_OF_USERS, pair._count);
     }
 
     // ====================================
@@ -167,12 +168,12 @@ public class TestListUser extends AbstractTest
         // search term is null if we want to find all the users.
         UserListAndQueryCount pair = userManagement.listUsersAuth(null, AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
-        assertEquals(NUMBER_OF_USERS, pair.users.size());
-        for (PBUser user : pair.users) {
-            assertTrue(user.getUserEmail().contains("user"));
-            assertFalse(user.getUserEmail().contains("admin"));
+        assertEquals(NUMBER_OF_USERS, pair._uis.size());
+        for (UserInfo user : pair._uis) {
+            assertTrue(user._userId.toString().contains("user"));
+            assertFalse(user._userId.toString().contains("admin"));
         }
-        assertEquals(NUMBER_OF_USERS, pair.count);
+        assertEquals(NUMBER_OF_USERS, pair._count);
     }
 
     // ======================================
@@ -186,9 +187,9 @@ public class TestListUser extends AbstractTest
         UserListAndQueryCount pair = userManagement.listUsersAuth("user1@", AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
 
-        assertEquals(1, pair.users.size());
-        assertEquals("user1@test.com", pair.users.get(0).getUserEmail());
-        assertEquals(1, pair.count);
+        assertEquals(1, pair._uis.size());
+        assertEquals(UserID.fromInternal("user1@test.com"), pair._uis.get(0)._userId);
+        assertEquals(1, pair._count);
     }
 
     @Test
@@ -198,7 +199,7 @@ public class TestListUser extends AbstractTest
         UserListAndQueryCount pair = userManagement.listUsersAuth("user%", AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
 
-        assertEquals(NUMBER_OF_USERS, pair.users.size());
+        assertEquals(NUMBER_OF_USERS, pair._uis.size());
     }
 
     @Test
@@ -208,6 +209,6 @@ public class TestListUser extends AbstractTest
         UserListAndQueryCount pair = userManagement.listUsersAuth("user1",
                 AuthorizationLevel.ADMIN, TOTAL_USERS, 0, validOrgId);
 
-        assertTrue(pair.users.isEmpty());
+        assertTrue(pair._uis.isEmpty());
     }
 }

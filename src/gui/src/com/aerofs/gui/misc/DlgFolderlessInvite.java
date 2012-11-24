@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.List;
 
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.id.UserID;
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -42,11 +44,9 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
     private static final Logger l = Util.l(DlgFolderlessInvite.class);
 
     private Button _btnOk;
-    private Button _btnCancel;
     private CompEmailAddressTextBox _compAddresses;
-    private Label _lblMsg;
     private Label _lblStatus;
-    private List<String> _addresses;
+    private List<UserID> _userIDs;
 
     public DlgFolderlessInvite(Shell parent)
     {
@@ -66,9 +66,9 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         glShell.marginWidth = GUIParam.MARGIN;
         shell.setLayout(glShell);
 
-        _lblMsg = new Label(shell, SWT.NONE);
-        _lblMsg.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-        _lblMsg.setText(S.TYPE_EMAIL_ADDRESSES);
+        Label lblMsg = new Label(shell, SWT.NONE);
+        lblMsg.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+        lblMsg.setText(S.TYPE_EMAIL_ADDRESSES);
 
         _compAddresses = new CompEmailAddressTextBox(shell, SWT.NONE);
         GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
@@ -78,7 +78,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
 
         _compAddresses.addInputChangeListener(this);
 
-        composite = new Composite(shell, SWT.NONE);
+        Composite composite = new Composite(shell, SWT.NONE);
         GridLayout gl_composite = new GridLayout(4, false);
         gl_composite.marginTop = GUIParam.MAJOR_SPACING - glShell.verticalSpacing;
         gl_composite.marginHeight = 0;
@@ -92,15 +92,16 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         _lblStatus = new Label(composite, SWT.NONE);
         _lblStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 
-        _btnCancel = new Button(composite, SWT.NONE);
-        _btnCancel.addSelectionListener(new SelectionAdapter() {
+        Button btnCancel = new Button(composite, SWT.NONE);
+        btnCancel.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 closeDialog();
             }
         });
-        _btnCancel.setText(" " + IDialogConstants.CANCEL_LABEL + " ");
+        btnCancel.setText(" " + IDialogConstants.CANCEL_LABEL + " ");
 
         _btnOk = new Button(composite, SWT.NONE);
         _btnOk.setText("    " + IDialogConstants.OK_LABEL + "    ");
@@ -109,8 +110,8 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                _addresses = _compAddresses.getValidAddresses();
-                assert _addresses.size() > 0;
+                _userIDs = _compAddresses.getValidUserIDs();
+                assert _userIDs.size() > 0;
 
                 enableAll(false);
                 _compSpin.start();
@@ -164,9 +165,9 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
     {
         assert GUI.get().isUIThread();
 
-        Collection<String> addresses = _compAddresses.getValidAddresses();
-        int invalid = _compAddresses.getInvalidAddressesCount();
-        int left = Cfg.db().getInt(Key.FOLDERLESS_INVITES) - addresses.size() - invalid;
+        Collection<UserID> userIDs = _compAddresses.getValidUserIDs();
+        int invalid = _compAddresses.getInvalidUserIDCount();
+        int left = Cfg.db().getInt(Key.FOLDERLESS_INVITES) - userIDs.size() - invalid;
 
         if (left < 0) {
             setStatusText("Remove " + -left + " address" + (left != -1 ? "es" : ""), true);
@@ -184,7 +185,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         // the user types addresses
         //getShell().pack();
 
-        _btnOk.setEnabled(left >= 0 && addresses.size() > 0 && invalid == 0);
+        _btnOk.setEnabled(left >= 0 && userIDs.size() > 0 && invalid == 0);
     }
 
     @Override
@@ -193,7 +194,6 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         updateStatus();
     }
 
-    private Composite composite;
     private CompSpin _compSpin;
 
     private void enableAll(boolean b)
@@ -208,9 +208,13 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
         sp.signInRemote();
 
+        List<String> userIdStrings = Lists.newArrayListWithCapacity(_userIDs.size());
+        for (UserID userId : _userIDs) userIdStrings.add(userId.toString());
+
         // Invite to the default organization
-        sp.inviteUser(_addresses, true);
-        SVClient.sendEventAsync(Sv.PBSVEvent.Type.FOLDERLESS_INVITE_SENT,Integer.toString(_addresses.size()));
+        sp.inviteUser(userIdStrings, true);
+        SVClient.sendEventAsync(Sv.PBSVEvent.Type.FOLDERLESS_INVITE_SENT,Integer.toString(
+                _userIDs.size()));
     }
 
     @Override
@@ -223,7 +227,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         int cur = Cfg.db().getInt(Key.FOLDERLESS_INVITES);
 
         try {
-            Cfg.db().set(Key.FOLDERLESS_INVITES, (cur - _addresses.size()));
+            Cfg.db().set(Key.FOLDERLESS_INVITES, (cur - _userIDs.size()));
         } catch (SQLException e) {
             l.warn("ignored: " + Util.e(e));
         }

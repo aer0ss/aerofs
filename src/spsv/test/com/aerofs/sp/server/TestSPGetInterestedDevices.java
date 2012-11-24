@@ -48,23 +48,23 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         _transaction.begin();
 
         // User 1
-        db.addDevice(new DeviceRow(_deviceA1, "Device A1", TEST_USER_1_NAME));
-        db.addDevice(new DeviceRow(_deviceA2, "Device A2", TEST_USER_1_NAME));
+        db.addDevice(new DeviceRow(_deviceA1, "Device A1", TEST_USER_1));
+        db.addDevice(new DeviceRow(_deviceA2, "Device A2", TEST_USER_1));
 
         // User 2
-        db.addDevice(new DeviceRow(_deviceB1, "Device B1", TEST_USER_2_NAME));
+        db.addDevice(new DeviceRow(_deviceB1, "Device B1", TEST_USER_2));
 
         // User 3
-        db.addDevice(new DeviceRow(_deviceC1, "Device C2", TEST_USER_3_NAME));
+        db.addDevice(new DeviceRow(_deviceC1, "Device C2", TEST_USER_3));
 
         _transaction.commit();
 
         // User 1 shares with User 2, but not with User 3
         ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
 
-        sessionUser.setUser(TEST_USER_1_NAME);
-        pair.add(new SubjectRolePair(TEST_USER_1_NAME, Role.OWNER).toPB());
-        pair.add(new SubjectRolePair(TEST_USER_2_NAME, Role.EDITOR).toPB());
+        sessionUser.set(TEST_USER_1);
+        pair.add(new SubjectRolePair(TEST_USER_1, Role.OWNER).toPB());
+        pair.add(new SubjectRolePair(TEST_USER_2, Role.EDITOR).toPB());
 
         service.shareFolder(TEST_SID_1.toString(), TEST_SID_1.toPB(), pair, "").get();
     }
@@ -78,7 +78,7 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
     {
         _transaction.begin();
         Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1.getBytes(),
-                sessionUser.getUser());
+                sessionUser.get());
         _transaction.commit();
 
         // The size is correct (only the correct devices were returned).

@@ -16,6 +16,7 @@ import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.net.AbstractRpcServerHandler;
 import com.aerofs.lib.net.MagicHeader;
 import com.aerofs.proto.Common;
@@ -88,7 +89,7 @@ public class MobileService implements IMobileService
     public ListenableFuture<GetObjectAttributesReply> getObjectAttributes(String user, PBPath path)
             throws Exception
     {
-        EIGetAttr ev = new EIGetAttr(user, _imce, new Path(path));
+        EIGetAttr ev = new EIGetAttr(UserID.fromExternal(user), _imce, new Path(path));
         ev.execute(PRIO);
         if (ev._oa == null) throw new ExNotFound();
 
@@ -102,7 +103,8 @@ public class MobileService implements IMobileService
     public ListenableFuture<GetChildrenAttributesReply> getChildrenAttributes(String user,
             PBPath path) throws Exception
     {
-        EIGetChildrenAttr ev = new EIGetChildrenAttr(user, new Path(path), Core.imce());
+        EIGetChildrenAttr ev = new EIGetChildrenAttr(UserID.fromExternal(user), new Path(path),
+                Core.imce());
         ev.execute(PRIO);
 
         GetChildrenAttributesReply.Builder bd = GetChildrenAttributesReply.newBuilder();
@@ -118,7 +120,8 @@ public class MobileService implements IMobileService
     public ListenableFuture<StartDownloadReply> startDownload(String user, PBPath source)
             throws Exception
     {
-        EIDownloadPacket ev = new EIDownloadPacket(user, _imce, new Path(source), -1, -1);
+        EIDownloadPacket ev = new EIDownloadPacket(UserID.fromExternal(user),
+                _imce, new Path(source), -1, -1);
         ev.execute(PRIO);
 
         StartDownloadReply.Builder b = StartDownloadReply.newBuilder()
@@ -134,7 +137,8 @@ public class MobileService implements IMobileService
     {
         DownloadCookie inCookie = DownloadCookie.parseFrom(cookie);
 
-        EIDownloadPacket ev = new EIDownloadPacket(user, _imce, new Path(source), offset, length);
+        EIDownloadPacket ev = new EIDownloadPacket(UserID.fromExternal(user), _imce,
+                new Path(source), offset, length);
         ev._inFileLength = inCookie.getLength();
         ev._inFileModTime = inCookie.getModTime();
         ev._inVersion = new Version(inCookie.getVersion());
@@ -163,7 +167,8 @@ public class MobileService implements IMobileService
     private static ByteString toByteString(ChannelBuffer cb)
     {
         if (cb.hasArray()) {
-            return ByteString.copyFrom(cb.array(), cb.arrayOffset() + cb.readerIndex(), cb.readableBytes());
+            return ByteString.copyFrom(cb.array(), cb.arrayOffset() + cb.readerIndex(),
+                    cb.readableBytes());
         } else {
             return ByteString.copyFrom(cb.toByteBuffer());
         }

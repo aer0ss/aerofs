@@ -6,11 +6,12 @@ import com.aerofs.daemon.core.Core;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.id.UserID;
 
 public class EIShareFolder extends AbstractEIFS
 {
     public final Path _path;
-    public final Map<String, Role> _subject2role;
+    public final Map<UserID, Role> _subject2role;
     public final String _emailNote;
 
     // it contains the SID of the shared folder after event execution.
@@ -23,7 +24,7 @@ public class EIShareFolder extends AbstractEIFS
      * time.
      * @param path the path of the new store
      */
-    public EIShareFolder(String user, Path path, Map<String, Role> subject2role, String emailNote)
+    public EIShareFolder(UserID user, Path path, Map<UserID, Role> subject2role, String emailNote)
     {
         super(user, Core.imce());
         assert path != null;

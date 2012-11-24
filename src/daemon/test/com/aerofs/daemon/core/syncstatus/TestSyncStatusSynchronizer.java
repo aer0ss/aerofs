@@ -39,6 +39,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
@@ -235,7 +236,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         o_a233 = resolve("d2/a2.3/a2.3.3");
 
         // TODO(huguesb): remove this hack when sync stat is enabled on prod
-        when(localUser.get()).thenReturn("someone@aerofs.com");
+        when(localUser.get()).thenReturn(UserID.fromInternal("someone@aerofs.com"));
 
         // SyncStatusSynchronizer calls this to compute the version hash of an object
         // these tests do not care about the actual value of the version vector, just that it

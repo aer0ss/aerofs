@@ -499,8 +499,8 @@ public class CompConflictFiles extends Composite
             if (!_showSystemFiles && UIUtil.isSystemFile(conflict.getPath())) {
                 continue;
             }
-            PBObjectAttributes attr = ritual.getObjectAttributes(Cfg.user(), conflict.getPath())
-                    .getObjectAttributes();
+            PBObjectAttributes attr = ritual.getObjectAttributes(Cfg.user().toString(),
+                    conflict.getPath()).getObjectAttributes();
 
             for (PBBranch b : attr.getBranchList()) {
                 if (b.getKidx() == KIndex.MASTER.getInt()) continue;

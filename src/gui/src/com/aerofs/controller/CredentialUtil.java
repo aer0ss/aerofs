@@ -16,6 +16,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UI;
@@ -41,7 +42,7 @@ public class CredentialUtil
         sp.sendPasswordResetEmail(userid);
     }
 
-    static void resetPassword(String userId, String token, char[] password)
+    static void resetPassword(UserID userId, String token, char[] password)
             throws Exception
     {
         byte[] scrypted = SecUtil.scrypt(password, userId);
@@ -49,7 +50,7 @@ public class CredentialUtil
         sp.resetPassword(token, ByteString.copyFrom(scrypted));
     }
 
-    static void changePassword(String userID, char[] oldPassword, char[] newPassword)
+    static void changePassword(UserID userID, char[] oldPassword, char[] newPassword)
         throws Exception
     {
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
@@ -63,13 +64,13 @@ public class CredentialUtil
     // updateStoredPassword updated the credentials stored locally.  This must be called
     // when a password is changed so the client can authenticate successfully.  It also
     // is called when a new password is provided (after ExBadCredentials).
-    static void updateStoredPassword(String userID, char[] password)
+    static void updateStoredPassword(UserID userId, char[] password)
             throws Exception
     {
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-        byte[] scrypted = SecUtil.scrypt(password, userID);
+        byte[] scrypted = SecUtil.scrypt(password, userId);
         // use signIn instead of sign_in remote ( we haven't updated Cfg yet )
-        sp.signIn(Cfg.user(), ByteString.copyFrom(scrypted));
+        sp.signIn(Cfg.user().toString(), ByteString.copyFrom(scrypted));
 
         CfgDatabase db = Cfg.db();
         writePrivateKey(scrypted, Cfg.privateKey());
@@ -82,7 +83,7 @@ public class CredentialUtil
         UI.dm().start();
     }
 
-    static DID generateDeviceKeys(String user, byte[] scrypted, SPBlockingClient sp)
+    static DID generateDeviceKeys(UserID userId, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
         OutArg<PublicKey> pubKey = new OutArg<PublicKey>();
@@ -92,7 +93,7 @@ public class CredentialUtil
         DID did = new DID(UniqueID.generate());
         while (true) {
             try {
-                certifyAndWriteDeviceKeys(user, did, pubKey.get(), privKey.get(), scrypted, sp);
+                certifyAndWriteDeviceKeys(userId, did, pubKey.get(), privKey.get(), scrypted, sp);
                 break;
             } catch (ExAlreadyExist e) {
                 l.info("device id " + did.toStringFormal() + " exists. generate a new one");
@@ -102,11 +103,11 @@ public class CredentialUtil
         return did;
     }
 
-    private static void certifyAndWriteDeviceKeys(String user, DID did, PublicKey pubKey,
+    private static void certifyAndWriteDeviceKeys(UserID userId, DID did, PublicKey pubKey,
             PrivateKey privKey, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
-        byte[] csr = SecUtil.newCSR(pubKey, privKey, user, did).getEncoded();
+        byte[] csr = SecUtil.newCSR(pubKey, privKey, userId, did).getEncoded();
 
         String cert = sp.certifyDevice(did.toPB(), ByteString.copyFrom(csr), false).getCert();
 

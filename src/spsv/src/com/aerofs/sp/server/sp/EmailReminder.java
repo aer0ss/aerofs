@@ -10,6 +10,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.SPParam;
@@ -73,7 +74,7 @@ public class EmailReminder
             for (int interval : reminders) {
                 l.info("Checking for users not signed up after " + interval + " days");
 
-                Set<String> users;
+                Set<UserID> users;
 
                 /**
                  * The offset is used for splitting up the getUsersNotSignedUp call into
@@ -111,7 +112,7 @@ public class EmailReminder
 
                 do {
                     _trans.begin();
-                    users= _db.getUsersNotSignedUpAfterXDays(interval, MAX_USERS, offset);
+                    users = _db.getUsersNotSignedUpAfterXDays(interval, MAX_USERS, offset);
                     _trans.commit();
 
                     sendEmails(users);
@@ -126,10 +127,10 @@ public class EmailReminder
         }
     }
 
-    protected void sendEmails(Set<String> users)
+    protected void sendEmails(Set<UserID> users)
             throws Exception
     {
-        for (String user : users) {
+        for (UserID user : users) {
             _trans.begin();
 
             // make sure we don't send an emailreminder twice in 48 hours
@@ -145,7 +146,8 @@ public class EmailReminder
                 String unsubscribeTokenId =
                         _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
                 _emailFactory.createReminderEmail(SV.SUPPORT_EMAIL_ADDRESS,
-                        SPParam.SP_EMAIL_NAME, user, signupCode, unsubscribeTokenId).send();
+                        SPParam.SP_EMAIL_NAME, user.toString(), signupCode, unsubscribeTokenId)
+                        .send();
             }
 
             _trans.commit();

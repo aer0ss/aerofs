@@ -13,6 +13,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.id.UserID;
 import com.google.inject.Inject;
 
 public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
@@ -33,7 +34,7 @@ public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
         ev.setResult_(getChildrenAttr_(ev.user(), ev._path));
     }
 
-    private List<OA> getChildrenAttr_(String user, Path path)
+    private List<OA> getChildrenAttr_(UserID user, Path path)
         throws Exception
     {
         SOID soid = _lacl.checkThrows_(user, path, Role.VIEWER);

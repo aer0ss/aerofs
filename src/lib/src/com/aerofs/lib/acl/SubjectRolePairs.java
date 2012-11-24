@@ -5,6 +5,7 @@
 package com.aerofs.lib.acl;
 
 import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.common.collect.Lists;
 
@@ -23,10 +24,10 @@ public final class SubjectRolePairs
         return l;
     }
 
-    public static List<PBSubjectRolePair> mapToPB(Map<String, Role> subject2role)
+    public static List<PBSubjectRolePair> mapToPB(Map<UserID, Role> subject2role)
     {
         List<PBSubjectRolePair> roles = Lists.newArrayListWithCapacity(subject2role.size());
-        for (Map.Entry<String, Role> pair : subject2role.entrySet()) {
+        for (Map.Entry<UserID, Role> pair : subject2role.entrySet()) {
             roles.add(new SubjectRolePair(pair.getKey(), pair.getValue()).toPB());
         }
         return roles;

@@ -8,6 +8,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.cert.Certificate;
 import com.aerofs.sp.server.cert.ICertificateGenerator;
@@ -20,7 +21,6 @@ import java.security.PublicKey;
 import java.sql.Timestamp;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -39,8 +39,8 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
 
     // Private static finals.
     protected static final String RETURNED_CERT = "returned_cert";
-    protected static final String TEST_1_USER = "test1@aerofs.com";
-    protected static final String TEST_2_USER = "test2@aerofs.com";
+    protected static final UserID TEST_1_USER = UserID.fromInternal("test1@aerofs.com");
+    protected static final UserID TEST_2_USER = UserID.fromInternal("test2@aerofs.com");
 
     // Device ID that the tests will work with.
     protected DID _did = new DID(UniqueID.generate());
@@ -65,7 +65,7 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
         mockCertificate(certificate);
 
         // Set up test user and create pub/priv key pair.
-        sessionUser.setUser(TEST_1_USER);
+        sessionUser.set(TEST_1_USER);
 
         OutArg<PublicKey> publicKey = new OutArg<PublicKey>();
         OutArg<PrivateKey> privateKey = new OutArg<PrivateKey>();
@@ -78,7 +78,7 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
     public void mockCertificate(Certificate cert) throws Exception
     {
         // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
-        when(certificateGenerator.createCertificate(anyString(), any(DID.class),
+        when(certificateGenerator.createCertificate(any(UserID.class), any(DID.class),
                 any(PKCS10.class))).thenReturn(cert);
 
         when(cert.toString()).thenReturn(RETURNED_CERT);

@@ -10,6 +10,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.sv.client.SVClient;
@@ -41,7 +42,7 @@ public final class CommandNotificationSubscriber
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
 
-    public CommandNotificationSubscriber(String user, String caCertFilename)
+    public CommandNotificationSubscriber(UserID userId, String caCertFilename)
     {
         VerkehrListener listener = new VerkehrListener();
 
@@ -51,7 +52,7 @@ public final class CommandNotificationSubscriber
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());
 
-        this._topic = C.CMD_CHANNEL_TOPIC_PREFIX + user;
+        this._topic = C.CMD_CHANNEL_TOPIC_PREFIX + userId.toString();
         this._subscriber = factory.create();
     }
 

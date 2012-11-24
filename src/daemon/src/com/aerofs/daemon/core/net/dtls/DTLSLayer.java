@@ -14,6 +14,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExDTLS;
 import com.aerofs.lib.ex.ExNoResource;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.injectable.InjectableFile;
 
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
@@ -265,7 +266,8 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
                 byte[] bs = new byte[is.available()];
                 new DataInputStream(is).readFully(bs);
 
-                String user = Util.utf2string(bs);
+                // Throw to prevent DoS. See UserID.fromInternalThrowIfNotNormalized().
+                UserID user = UserID.fromInternalThrowIfNotNormalized(Util.utf2string(bs));
 
                 // verify cname
                 String pcn = entry.getPeerCName();
@@ -500,7 +502,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
     static final byte[] USERID_MAGIC_BYTES = {0x23, 0x45, 0x67};
     static final byte[] USERID_BYTES =
-            Util.concatenate(USERID_MAGIC_BYTES, Util.string2utf(Cfg.user()));
+            Util.concatenate(USERID_MAGIC_BYTES, Util.string2utf(Cfg.user().toString()));
 
     private final DTLSMessage<byte[]> USERID_MSG;
 

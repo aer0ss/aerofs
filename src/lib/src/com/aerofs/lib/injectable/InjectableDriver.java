@@ -10,6 +10,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
 import com.google.common.base.Joiner;
@@ -106,8 +107,8 @@ public class InjectableDriver
     {
         // TODO (DF/MJ): remove after you're done debugging daniel@iswech.de and
         // hola@hoyesmiercoles.com
-        String user = _cfgLocalUser.get();
-        if (user != null && verboseLoggingUserCRCs.contains(Util.crc32(user))) {
+        UserID user = _cfgLocalUser.get();
+        if (user != null && verboseLoggingUserCRCs.contains(Util.crc32(user.toString()))) {
             String[] children = f.getParentFile().list();
             String[] encodedChildren = new String[children.length + 1];
             // Log the parent folder bytes

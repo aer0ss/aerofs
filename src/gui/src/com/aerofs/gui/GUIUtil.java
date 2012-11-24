@@ -273,7 +273,8 @@ public class GUIUtil
 
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user(), path.toPB())
+            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user().toString(),
+                    path.toPB())
                     .getObjectAttributes()
                     .getType();
             create = type != PBObjectAttributes.Type.SHARED_FOLDER;

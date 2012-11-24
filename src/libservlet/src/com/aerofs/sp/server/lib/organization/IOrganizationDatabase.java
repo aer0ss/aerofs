@@ -4,10 +4,11 @@
 
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
+import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.UserID;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -48,7 +49,7 @@ public interface IOrganizationDatabase
     /**
      * Moves the given user into the given organization
      */
-    void moveUserToOrganization(String userId, OrgID orgId)
+    void moveUserToOrganization(UserID userId, OrgID orgId)
             throws SQLException;
 
 
@@ -59,6 +60,21 @@ public interface IOrganizationDatabase
     int countSharedFolders(OrgID orgId)
             throws SQLException;
 
+    // TODO (WW) make this class an active class, similar to User and Organization
+    public static class SharedFolder
+    {
+        public final SID _sid;
+        public final String _name;
+        public final List<SubjectRolePair> _acl;
+
+        public SharedFolder(SID sid, String name, List<SubjectRolePair> acl)
+        {
+            _sid = sid;
+            _name = name;
+            _acl = acl;
+        }
+    }
+
     /**
      * Returns a list of the folders being shared by members of the given organization. To support
      * paging, it takes an offset into the list and a maximum length for the returned sub-list.
@@ -67,6 +83,6 @@ public interface IOrganizationDatabase
      * @param offset offset into the list of all shared folders to return from
      * @return a list of shared folders for the given orgId beginning at the given offset
      */
-    List<PBSharedFolder> listSharedFolders(OrgID orgId, int maxResults, int offset)
+    List<SharedFolder> listSharedFolders(OrgID orgId, int maxResults, int offset)
             throws SQLException;
 }

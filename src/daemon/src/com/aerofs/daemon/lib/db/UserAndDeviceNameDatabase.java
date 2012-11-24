@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;
@@ -54,7 +55,7 @@ implements IUserAndDeviceNameDatabase
 
     private PreparedStatement _psSUN;
     @Override
-    public void setUserName_(String user, FullName fullName, Trans t)
+    public void setUserName_(UserID user, FullName fullName, Trans t)
             throws SQLException
     {
         try {
@@ -62,7 +63,7 @@ implements IUserAndDeviceNameDatabase
                     C_UN_USER + "," + C_UN_FIRST_NAME + "," + C_UN_LAST_NAME + "," + C_UN_TIME +
                     ") values (?,?,?,?)");
 
-            _psSUN.setString(1, user);
+            _psSUN.setString(1, user.toString());
             _psSUN.setString(2, fullName._first);
             _psSUN.setString(3, fullName._last);
             _psSUN.setLong(4, System.currentTimeMillis());
@@ -107,13 +108,13 @@ implements IUserAndDeviceNameDatabase
 
     private PreparedStatement _psGUN;
     @Override
-    public @Nullable FullName getUserNameNullable_(String user)
+    public @Nullable FullName getUserNameNullable_(UserID user)
             throws SQLException
     {
         try {
             if (_psGUN == null) _psGUN = c().prepareStatement("select " + C_UN_FIRST_NAME +
                     "," + C_UN_LAST_NAME + " from " + T_UN + " where " + C_UN_USER + "=?");
-            _psGUN.setString(1, user);
+            _psGUN.setString(1, user.toString());
             ResultSet rs = _psGUN.executeQuery();
             try {
                 if (rs.next()) {

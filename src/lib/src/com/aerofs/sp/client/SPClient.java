@@ -2,6 +2,7 @@ package com.aerofs.sp.client;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.SPServiceStub;
 import com.aerofs.proto.Sp.SignInReply;
 import com.google.common.util.concurrent.FutureCallback;
@@ -14,9 +15,9 @@ public class SPClient extends SPServiceStub
 {
     private static final Logger l = Util.l(SPClient.class);
 
-    private final String _user;
+    private final UserID _user;
 
-    SPClient(SPServiceStubCallbacks callbacks, String user)
+    SPClient(SPServiceStubCallbacks callbacks, UserID user)
     {
         super(callbacks);
         _user = user;
@@ -27,7 +28,7 @@ public class SPClient extends SPServiceStub
      */
     public ListenableFuture<SignInReply> signInRemote()
     {
-        ListenableFuture<SignInReply> future = super.signIn(_user,
+        ListenableFuture<SignInReply> future = super.signIn(_user.toString(),
                 ByteString.copyFrom(Cfg.scrypted()));
         Futures.addCallback(future, new FutureCallback<SignInReply>()
         {

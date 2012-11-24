@@ -13,6 +13,7 @@ import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
@@ -33,29 +34,25 @@ import java.util.Scanner;
  */
 public class Cfg
 {
-
-
     public static enum PortType {
         FSI,
         RITUAL_NOTIFICATION,
         UI,
         UI_SINGLETON,
-        RITUAL,
-    };
+        RITUAL
+    }
 
     private static final int NUM_RESERVED_PORTS =
             Math.max(8, PortType.values().length);
 
     private static String _absRTRoot;
     private static DID _did;
-    private static String _user;
+    private static UserID _user;
     private static SID _rootSID;
     private static boolean _isSP;
     private static boolean _useDM;
     private static boolean _useTCP;
     private static boolean _useXMPP;
-    private static boolean _useJingle;
-    private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
     private static String _absRootAnchor;
     private static String _ver;
@@ -102,7 +99,7 @@ public class Cfg
         _db.init_();
         _db.reload();
 
-        _user = _db.get(Key.USER_ID);
+        _user = UserID.fromInternal(_db.get(Key.USER_ID));
         _did = new DID(_db.get(Key.DEVICE_ID));
         if (readPasswd) readCreds();
 
@@ -131,11 +128,6 @@ public class Cfg
     public static CfgDatabase db()
     {
         return _db;
-    }
-
-    public static void uninit()
-    {
-        _inited = false;
     }
 
     public static boolean inited()
@@ -200,7 +192,7 @@ public class Cfg
         return _did;
     }
 
-    public static String user()
+    public static UserID user()
     {
         return _user;
     }
@@ -237,12 +229,12 @@ public class Cfg
 
     public static boolean useJingle()
     {
-        return _useJingle;
+        return false;
     }
 
     public static boolean useZephyr()
     {
-        return _useZephyr;
+        return false;
     }
 
     public static boolean isFullReplica()
@@ -325,11 +317,6 @@ public class Cfg
     //
     //-------------------------------------------------------------------------
 
-    public static void setPrivateKey_(PrivateKey privKey)
-    {
-        _privKey = privKey;
-    }
-
     // return null if neither password is set or setPrivateKey_() is called
     public static PrivateKey privateKey()
     {
@@ -349,23 +336,6 @@ public class Cfg
     {
         _privKey = null;
         _scrypted = null;
-    }
-
-    /**
-     * Init the global security tokens (i.e the bytes representing
-     * scrypt(p|u) and private key) using a plain-text password
-     *
-     * @param passwd plain-text password
-     * @throws IOException
-     * @throws com.aerofs.lib.ex.ExBadCredential
-     */
-    public static void setPrivKeyAndScryptedUsingPlainTextPassword(char[] passwd,
-            String user)
-        throws IOException, ExBadCredential
-    {
-        // generate scrypt(p|u)
-        byte[] scrypted = SecUtil.scrypt(passwd, user);
-        setPrivKeyAndScryptedUsingScrypted(scrypted);
     }
 
     /**

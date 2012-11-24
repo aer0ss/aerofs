@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.Set;
 
 import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
@@ -56,13 +57,13 @@ public class TestSPEmailReminder extends AbstractTest {
 
     private static final int TWO_DAYS_INT = 2;
     private static final long TWO_DAYS_IN_MILLISEC = TWO_DAYS_INT * C.DAY;
-    private Set<String> _twoDayUsers;
+    private Set<UserID> _twoDayUsers;
     private static final int NUM_TWO_DAY_USERS = 150;
     private static final String TWO_DAY_USERS_PREFIX = "two";
 
     private static final int THREE_DAYS_INT = 3;
     private static final long THREE_DAYS_IN_MILLISEC = THREE_DAYS_INT * C.DAY;
-    private Set<String> _threeDayUsers;
+    private Set<UserID> _threeDayUsers;
     private static final int NUM_THREE_DAY_USERS = 10;
     private static final String THREE_DAY_USERS_PREFIX = "three";
 
@@ -93,22 +94,22 @@ public class TestSPEmailReminder extends AbstractTest {
 
     }
 
-    private Set<String> setupUsers(final int count, final long age,
+    private Set<UserID> setupUsers(final int count, final long age,
                             final String prefix)
             throws Exception
     {
-        Set<String> users = Sets.newHashSetWithExpectedSize(count);
+        Set<UserID> users = Sets.newHashSetWithExpectedSize(count);
 
         //setup user email addresses
         for (int i = 0; i < count; i ++) {
-            users.add(prefix + i + USERS_SUFFIX);
+            users.add(UserID.fromInternal(prefix + i + USERS_SUFFIX));
         }
 
-        for (String user: users) {
+        for (UserID user: users) {
             Log.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
             _db.addTargetedSignupCode(signupCode,
-                    SV.SUPPORT_EMAIL_ADDRESS,
+                    UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS),
                     user, ORG_ID,
                     System.currentTimeMillis()-age);
 
@@ -129,13 +130,12 @@ public class TestSPEmailReminder extends AbstractTest {
 
         int offset = 0;
 
-        Set<String> users;
+        Set<UserID> users;
 
         do {
             _transaction.begin();
-            users = _db.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT,
-                                                                  NUM_USERS_TO_RETURN_IN_SET,
-                                                                  offset);
+            users = _db.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT, NUM_USERS_TO_RETURN_IN_SET,
+                      offset);
             _transaction.commit();
 
             // assert that the returned set of users is a subset of the full set of two-day users
@@ -169,16 +169,16 @@ public class TestSPEmailReminder extends AbstractTest {
         verifyEmailRemindersForUsers(_threeDayUsers, never());
     }
 
-    private void verifyEmailRemindersForUsers(Set<String> users, VerificationMode mode)
+    private void verifyEmailRemindersForUsers(Set<UserID> users, VerificationMode mode)
             throws SQLException, IOException
     {
-        for (String user: users) {
+        for (UserID user: users) {
             _transaction.begin();
             String tokenId = _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
             _transaction.commit();
 
             verify(_emailFactory, mode).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),
-                    eq(SPParam.SP_EMAIL_NAME), eq(user), anyString(), eq(tokenId));
+                    eq(SPParam.SP_EMAIL_NAME), eq(user.toString()), anyString(), eq(tokenId));
 
         }
 

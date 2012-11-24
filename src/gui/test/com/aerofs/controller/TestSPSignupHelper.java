@@ -7,6 +7,7 @@ package com.aerofs.controller;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -45,7 +46,7 @@ public class TestSPSignupHelper extends AbstractTest
     @Spy SPServiceBlockingStub _sp = new SPServiceBlockingStub(_serviceReactorCaller);
     @InjectMocks SPSignupHelper _spSignupHelper;
 
-    private static final String USER_ID = "user1@company.com";
+    private static final UserID USER_ID = UserID.fromInternal("user1@company.com");
     private static final byte[] SCRYPT_PASSWORD = SecUtil.scrypt("temp123".toCharArray(), USER_ID);
     private static final String INVALID_TARGETED_CODE
             = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
@@ -83,7 +84,7 @@ public class TestSPSignupHelper extends AbstractTest
         _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode, "first", "last");
 
         // The user should be able to successfully sign in, and the returned auth level is USER
-        SignInReply reply = _sp.signIn(USER_ID, ByteString.copyFrom(SCRYPT_PASSWORD));
+        SignInReply reply = _sp.signIn(USER_ID.toString(), ByteString.copyFrom(SCRYPT_PASSWORD));
         assertEquals(PBAuthorizationLevel.USER, reply.getAuthLevel());
 
         // TODO verify anything else?
@@ -101,7 +102,7 @@ public class TestSPSignupHelper extends AbstractTest
         _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode1, "first", "last");
         _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode2, "first", "last");
 
-        _sp.signIn(USER_ID, ByteString.copyFrom(SCRYPT_PASSWORD));
+        _sp.signIn(USER_ID.toString(), ByteString.copyFrom(SCRYPT_PASSWORD));
 
         // No exceptions should have been thrown
     }
@@ -128,22 +129,22 @@ public class TestSPSignupHelper extends AbstractTest
      * (i.e. create a valid invitation code for the userId)
      * @return the signup code generated for userId
      */
-    private String inviteUserToDefaultOrg(String userId)
+    private String inviteUserToDefaultOrg(UserID userId)
             throws Exception
     {
-        _sp.signIn(LocalSPServiceReactorCaller.ADMIN_ID,
+        _sp.signIn(LocalSPServiceReactorCaller.ADMIN_ID.toString(),
                 ByteString.copyFrom(LocalSPServiceReactorCaller.ADMIN_CRED));
 
         List<String> emails = Lists.newArrayList();
-        emails.add(userId);
+        emails.add(userId.toString());
         _sp.inviteUser(emails, true);
 
         // Verify an invitation email would have been sent: from the ADMIN_ID to userId.
         // Capture the code to return to the caller.
         ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
         verify(_emailFactory, atLeastOnce()).createUserInvitation(
-                eq(LocalSPServiceReactorCaller.ADMIN_ID), eq(userId), anyString(), anyString(),
-                anyString(), code.capture());
+                eq(LocalSPServiceReactorCaller.ADMIN_ID.toString()), eq(userId.toString()),
+                anyString(), anyString(), anyString(), code.capture());
 
         assertEquals(InvitationCode.getType(code.getValue()), CodeType.TARGETED_SIGNUP);
         return code.getValue();

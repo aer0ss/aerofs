@@ -68,10 +68,10 @@ public class SID extends UniqueID
     /**
      * Translate a user ID to the SID of the user's root store
      */
-    public static SID rootSID(String user)
+    public static SID rootSID(UserID userId)
     {
         MessageDigest md = SecUtil.newMessageDigestMD5();
-        md.update(Util.string2utf(user));
+        md.update(Util.string2utf(userId.toString()));
         return new SID(md.digest(C.ROOT_SID_SALT));
     }
 

@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.db.DID2UserDatabase;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,8 +40,8 @@ public class TestDID2User extends AbstractTest
     public void shouldFailOnDuplicateAdditions()
             throws SQLException
     {
-        did2User.addToLocal_(did, "hohoho", null);
-        did2User.addToLocal_(did, "hohoho", null);
+        did2User.addToLocal_(did, UserID.fromInternal("hohoho"), null);
+        did2User.addToLocal_(did, UserID.fromInternal("hohoho"), null);
     }
 
     ////////
@@ -57,7 +58,8 @@ public class TestDID2User extends AbstractTest
     public void shouldReturnAddedMapping()
             throws SQLException
     {
-        did2User.addToLocal_(did, "hohoho", null);
-        assertEquals(did2User.getFromLocalNullable_(did), "hohoho");
+        UserID userId = UserID.fromInternal("hohoho");
+        did2User.addToLocal_(did, userId, null);
+        assertEquals(did2User.getFromLocalNullable_(did), userId);
     }
 }

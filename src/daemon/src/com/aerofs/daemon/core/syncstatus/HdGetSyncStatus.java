@@ -19,6 +19,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;
 import com.google.common.collect.Lists;
@@ -108,7 +109,7 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
         // map (DID -> device name and user name)
         Map<DID, DeviceInfo> deviceInfo = _didinfo.getDeviceInfoMap_(syncStatus.keySet());
         // map (foreign user id -> sync status aggregated across all devices of that user)
-        Map<String, PBSyncStatus.Status> aggregated = Maps.newTreeMap();
+        Map<UserID, PBSyncStatus.Status> aggregated = Maps.newTreeMap();
 
         // first round: add devices owned by local user to result and aggregate foreign devices
         for (Entry<DID, Boolean> e : syncStatus.entrySet()) {
@@ -116,7 +117,7 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
             Status status = presenceAwareStatus(did, e.getValue());
             DeviceInfo info = deviceInfo.get(did);
             if (info == null) continue;
-            if (info.owner.userId.equals(_localUser.get())) {
+            if (info.owner._userId.equals(_localUser.get())) {
                 result.add(PBSyncStatus.newBuilder()
                         .setUserName(info.owner.getName())
                         .setDeviceName(info.deviceName != null ? info.deviceName : did
@@ -124,16 +125,16 @@ public class HdGetSyncStatus extends AbstractHdIMC<EIGetSyncStatus>
                         .setStatus(status)
                         .build());
             } else {
-                aggregated.put(info.owner.userId,
-                               bestSyncStatus(aggregated.get(info.owner.userId), status));
+                aggregated.put(info.owner._userId,
+                               bestSyncStatus(aggregated.get(info.owner._userId), status));
             }
         }
 
         // second round add aggregated foreign devices to result
-        for (Entry<String, Status> e : aggregated.entrySet()) {
+        for (Entry<UserID, Status> e : aggregated.entrySet()) {
             FullName fn = _didinfo.getUserNameNullable_(e.getKey());
             result.add(PBSyncStatus.newBuilder()
-                    .setUserName(fn != null ? fn.combine() : e.getKey())
+                    .setUserName(fn != null ? fn.combine() : e.getKey().toString())
                     .setStatus(e.getValue())
                     .build());
         }

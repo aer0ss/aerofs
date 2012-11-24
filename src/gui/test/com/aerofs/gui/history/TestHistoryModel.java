@@ -8,6 +8,7 @@ import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
@@ -49,7 +50,7 @@ public class TestHistoryModel extends AbstractTest
     @Before
     public void setup() throws Exception
     {
-        when(user.get()).thenReturn("foo@bar.baz");
+        when(user.get()).thenReturn(UserID.fromInternal("foo@bar.baz"));
         when(factory.create()).thenReturn(ritual);
 
         model = new HistoryModel(user, factory);

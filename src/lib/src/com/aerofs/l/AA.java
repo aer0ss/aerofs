@@ -5,6 +5,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 
 /**
  * for AeroFS
@@ -85,9 +86,9 @@ public class AA implements ILabeling
     }
 
     @Override
-    public String spUser()
+    public UserID spUser()
     {
-        return "aerofs.com";
+        return UserID.fromInternal("aerofs.com");
     }
 
     @Override

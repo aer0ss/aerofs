@@ -11,6 +11,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 
 import javax.annotation.Nullable;
@@ -34,7 +35,7 @@ public class DigestedMessage
     private final ByteArrayInputStream _is;
     private final Endpoint _ep;
     private final SIndex _sidx;
-    private final String _user;
+    private final UserID _userId;
     @Nullable private final StreamKey _strm;
 
     /**
@@ -45,7 +46,7 @@ public class DigestedMessage
             ByteArrayInputStream is,
             Endpoint ep,
             SIndex sidx,
-            String user, // FIXME (AG): Should have a User type
+            UserID userId,
             @Nullable StreamKey strm)
     {
         _pb = pb;
@@ -53,7 +54,7 @@ public class DigestedMessage
         _ep = ep;
         _sidx = sidx;
         _strm = strm;
-        _user = user;
+        _userId = userId;
     }
 
     public SIndex sidx()
@@ -86,9 +87,9 @@ public class DigestedMessage
         return _is;
     }
 
-    public String user()
+    public UserID user()
     {
-        return _user;
+        return _userId;
     }
 
     /**
@@ -103,6 +104,6 @@ public class DigestedMessage
     public String toString()
     {
         return "msg:[t:" + typeString(_pb) + " i:" + _is + " sidx:" + _sidx + " ep:" + _ep +
-                " u:" + _user +  " strm:" + _strm + "]";
+                " u:" + _userId +  " strm:" + _strm + "]";
     }
 }

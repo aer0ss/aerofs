@@ -4,6 +4,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.UserID;
 
 /**
  * N.B. The ep().tp() field is ignored by equals() and hashCode().
@@ -12,7 +13,7 @@ public class PeerContext
 {
     private final Endpoint _ep;
     private final SIndex _sidx;
-    private String _user;
+    private UserID _user;
 
     public PeerContext(Endpoint ep, SIndex sidx)
     {
@@ -25,7 +26,7 @@ public class PeerContext
      * come from secure channels. call this method only at the receiver side,
      * and only at layers above DTLS.
      */
-    public String user()
+    public UserID user()
     {
         assert _user != null;
         return _user;
@@ -34,7 +35,7 @@ public class PeerContext
     /**
      * only call this method after the user id is fully authenticated
      */
-    public void setUser(String user)
+    public void setUser(UserID user)
     {
         _user = user;
     }

@@ -4,6 +4,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.UserID;
 
 import java.sql.SQLException;
 import java.util.Map;
@@ -19,7 +20,7 @@ public interface IACLDatabase
      * @return a {@link IDBIterator} over the acl for the specified store which returns a pair from
      * subject=>role on each {@link com.aerofs.lib.db.IDBIterator#get_()} call
      */
-    IDBIterator<Map.Entry<String, Role>> get_(SIndex sidx) throws SQLException;
+    IDBIterator<Map.Entry<UserID, Role>> get_(SIndex sidx) throws SQLException;
 
     /**
      * @return local acl epoch for the user
@@ -35,7 +36,7 @@ public interface IACLDatabase
      * @param t transaction (this method can only be called as part of a transaction)
      * @throws SQLException if there are db errors during the update
      */
-    void set_(SIndex sidx, Map<String, Role> subject2role, Trans t) throws SQLException;
+    void set_(SIndex sidx, Map<UserID, Role> subject2role, Trans t) throws SQLException;
 
     /**
      * Delete entries from the acl for the specified {@code sid}
@@ -45,7 +46,7 @@ public interface IACLDatabase
      * @param t transaction (this method can only be called as part of a transaction)
      * @throws SQLException if there are db errors during the update
      */
-    void delete_(SIndex sidx, Iterable<String> subjects, Trans t) throws SQLException;
+    void delete_(SIndex sidx, Iterable<UserID> subjects, Trans t) throws SQLException;
 
     /**
      * Clear all the entries for the given store

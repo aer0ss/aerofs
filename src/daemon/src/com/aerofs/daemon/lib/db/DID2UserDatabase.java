@@ -7,6 +7,7 @@ package com.aerofs.daemon.lib.db;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;
@@ -31,7 +32,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
 
     private PreparedStatement _psAdd;
     @Override
-    public void add_(DID did, String user, Trans t)
+    public void add_(DID did, UserID user, Trans t)
         throws SQLException
     {
         try {
@@ -39,7 +40,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
                     C_D2U_DID + "," + C_D2U_USER + ") values (?,?)");
 
             _psAdd.setBytes(1, did.getBytes());
-            _psAdd.setString(2, user);
+            _psAdd.setString(2, user.toString());
 
             _psAdd.executeUpdate();
         } catch (SQLException e) {
@@ -51,7 +52,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
 
     private PreparedStatement _psGet;
     @Override
-    public String getNullable_(DID did)
+    public UserID getNullable_(DID did)
         throws SQLException
     {
         try {
@@ -61,7 +62,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
             ResultSet rs = _psGet.executeQuery();
             try {
                 if (rs.next()) {
-                    String user = rs.getString(1);
+                    UserID user = UserID.fromInternal(rs.getString(1));
                     assert !rs.next();
                     return user;
                 } else {

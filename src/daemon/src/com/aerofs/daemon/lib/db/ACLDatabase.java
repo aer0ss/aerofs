@@ -21,6 +21,7 @@ import com.aerofs.lib.db.AbstractDBIterator;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.UserID;
 import com.google.inject.Inject;
 
 public class ACLDatabase extends AbstractDatabase implements IACLDatabase
@@ -31,7 +32,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         super(dbcw.get());
     }
 
-    private static class DBIterSubjectRole extends AbstractDBIterator<Map.Entry<String, Role>>
+    private static class DBIterSubjectRole extends AbstractDBIterator<Map.Entry<UserID, Role>>
     {
         DBIterSubjectRole(ResultSet rs)
         {
@@ -39,15 +40,15 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
         }
 
         @Override
-        public Map.Entry<String, Role> get_() throws SQLException
+        public Map.Entry<UserID, Role> get_() throws SQLException
         {
-            return immutableEntry(_rs.getString(1), Role.values()[_rs.getInt(2)]);
+            return immutableEntry(UserID.fromInternal(_rs.getString(1)), Role.values()[_rs.getInt(2)]);
         }
     }
 
     private PreparedStatement _psGet;
     @Override
-    public IDBIterator<Map.Entry<String, Role>> get_(SIndex sidx) throws SQLException
+    public IDBIterator<Map.Entry<UserID, Role>> get_(SIndex sidx) throws SQLException
     {
         try {
             if (_psGet == null) {
@@ -68,7 +69,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
 
     private PreparedStatement _psSet;
     @Override
-    public void set_(SIndex sidx, Map<String, Role> subject2role, Trans t) throws SQLException
+    public void set_(SIndex sidx, Map<UserID, Role> subject2role, Trans t) throws SQLException
     {
         try {
             if (_psSet == null) {
@@ -78,8 +79,8 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             }
 
             _psSet.setInt(1, sidx.getInt());
-            for (Entry<String, Role> en : subject2role.entrySet()) {
-                _psSet.setString(2, en.getKey());
+            for (Entry<UserID, Role> en : subject2role.entrySet()) {
+                _psSet.setString(2, en.getKey().toString());
                 _psSet.setInt(3, en.getValue().ordinal());
                 _psSet.addBatch();
             }
@@ -94,7 +95,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
 
     private PreparedStatement _psDel;
     @Override
-    public void delete_(SIndex sidx, Iterable<String> subjects, Trans t) throws SQLException
+    public void delete_(SIndex sidx, Iterable<UserID> subjects, Trans t) throws SQLException
     {
         try {
             if (_psDel == null) {
@@ -104,8 +105,8 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             }
 
             _psDel.setInt(1, sidx.getInt());
-            for (String subject : subjects) {
-                _psDel.setString(2, subject);
+            for (UserID subject : subjects) {
+                _psDel.setString(2, subject.toString());
                 _psDel.addBatch();
             }
             _psDel.executeBatch();

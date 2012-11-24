@@ -13,6 +13,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
@@ -30,6 +31,9 @@ import java.util.Map;
 import java.util.Set;
 
 // FIXME (huguesb): the local DB is never invalidated when server knowledge change
+// FIXME TODO (WW): DO NOT put business logic in database packages (daemon.lib.db). Move this class
+//      to elsewhere.
+
 /**
  * Wrapper around DID2User and UserAndDeviceNameDatabase that can make SP calls when the content
  * of the local DB is insufficient.
@@ -38,18 +42,19 @@ public class UserAndDeviceNames
 {
     public static class UserInfo
     {
-        public final String userId;
-        public final @Nullable FullName userName;
+        public final UserID _userId;
+        public final @Nullable FullName _userName;
 
-        public UserInfo(String userId, @Nullable FullName userName)
+        public UserInfo(UserID userId, @Nullable FullName userName)
         {
             assert userId != null;
-            this.userId = userId;
-            this.userName = userName;
+            this._userId = userId;
+            this._userName = userName;
         }
 
-        public String getName() {
-            return userName != null ? userName.combine() : userId;
+        public String getName()
+        {
+            return _userName != null ? _userName.combine() : _userId.toString();
         }
     }
 
@@ -120,7 +125,7 @@ public class UserAndDeviceNames
 
                 _udndb.setDeviceName_(did, di.hasDeviceName() ? di.getDeviceName() : null, t);
                 if (di.hasOwner()) {
-                    String user = di.getOwner().getUserEmail();
+                    UserID user = UserID.fromInternal(di.getOwner().getUserEmail());
                     if (_d2u.getFromLocalNullable_(did) == null) _d2u.addToLocal_(did, user, t);
                     FullName fn = new FullName(di.getOwner().getFirstName(),
                             di.getOwner().getLastName());
@@ -143,7 +148,7 @@ public class UserAndDeviceNames
             Set<DID> unresolved) throws Exception
     {
         for (DID did : dids) {
-            String owner = _d2u.getFromLocalNullable_(did);
+            UserID owner = _d2u.getFromLocalNullable_(did);
             if (owner == null) {
                 unresolved.add(did);
                 continue;
@@ -193,9 +198,9 @@ public class UserAndDeviceNames
     /**
      * @return userid of the owner of the given {@code did}
      */
-    public @Nullable String getDeviceOwnerNullable_(DID did) throws Exception
+    public @Nullable UserID getDeviceOwnerNullable_(DID did) throws Exception
     {
-        String owner = _d2u.getFromLocalNullable_(did);
+        UserID owner = _d2u.getFromLocalNullable_(did);
 
         // SP call if local DB doesn't have the info
         if (owner == null && updateLocalDeviceInfo(Lists.newArrayList(did))) {
@@ -216,7 +221,7 @@ public class UserAndDeviceNames
     /**
      * see {@link IUserAndDeviceNameDatabase#getUserNameNullable_}
      */
-    public @Nullable FullName getUserNameNullable_(String userId) throws SQLException
+    public @Nullable FullName getUserNameNullable_(UserID userId) throws SQLException
     {
         return _udndb.getUserNameNullable_(userId);
     }

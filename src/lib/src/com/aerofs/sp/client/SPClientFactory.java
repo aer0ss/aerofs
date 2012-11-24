@@ -1,5 +1,6 @@
 package com.aerofs.sp.client;
 
+import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import java.net.URL;
 
@@ -13,13 +14,13 @@ public class SPClientFactory
     // TODO (WW) use injection and remove this test stub. See SPBlockingClient.Factory
     public static SPServiceStubCallbacks s_testCallbacks = null;
 
-    public static SPClient newClient(URL spURL, String user)
+    public static SPClient newClient(URL spURL, UserID user)
     {
         SPServiceStubCallbacks callbacks = new SPClientHandler(spURL);
         return new SPClient(callbacks, user);
     }
 
-    public static SPBlockingClient newBlockingClient(URL spURL, String user)
+    public static SPBlockingClient newBlockingClient(URL spURL, UserID user)
     {
         SPServiceStubCallbacks callbacks;
 

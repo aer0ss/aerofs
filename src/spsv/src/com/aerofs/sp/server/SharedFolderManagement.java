@@ -9,6 +9,7 @@ import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.ISharedFolderDatabase;
@@ -46,11 +47,11 @@ public class SharedFolderManagement
         _emailerFactory = emailerFactory;
     }
 
-    private void updateSharedFolderName(SID sid, String folderName, String userID)
+    private void updateSharedFolderName(SID sid, String folderName, UserID userId)
             throws SQLException
     {
         // Update the folder name only when an owner changes it
-        if (_db.getUserPermissionForStore(sid, userID) == Role.OWNER) {
+        if (_db.getUserPermissionForStore(sid, userId) == Role.OWNER) {
             _db.setFolderName(sid, folderName);
         }
     }
@@ -60,23 +61,23 @@ public class SharedFolderManagement
      * @param emails invitation emails to be sent once the transaction is committed (out arg)
      * @return a map of user IDs and epochs to be returned via verkehr.
      */
-    public Map<String, Long> shareFolder(String folderName, SID sid, String userID,
+    public Map<UserID, Long> shareFolder(String folderName, SID sid, UserID userId,
             List<SubjectRolePair> rolePairs, @Nullable String note, List<InvitationEmailer> emails)
             throws Exception
     {
-        User sharer = _userManagement.getUser(userID);
+        User sharer = _userManagement.getUser(userId);
 
         // Check that the user is verified - only verified users can share
         if (!sharer._isVerified) {
             // TODO (GS): We want to throw a specific exception if the inviter isn't verified
             // to allow easier error handling on the client-side
-            throw new ExNoPerm("user " + userID + " is not yet verified");
+            throw new ExNoPerm("user " + userId + " is not yet verified");
         }
 
         // Move forward with setting ACLs and sharing the folder
         // NB: if any user fails business rules check, the whole transaction is rolled back
-        Map<String, Long> epochs = _db.createACL(userID, sid, rolePairs);
-        updateSharedFolderName(sid, folderName, userID);
+        Map<UserID, Long> epochs = _db.createACL(userId, sid, rolePairs);
+        updateSharedFolderName(sid, folderName, userId);
 
         for (SubjectRolePair rolePair : rolePairs) {
             emails.add(shareFolderWithOne(sharer, rolePair._subject, folderName, sid, note));
@@ -85,29 +86,29 @@ public class SharedFolderManagement
         return epochs;
     }
 
-    private InvitationEmailer shareFolderWithOne(final User sharer, String shareeEmail,
+    private InvitationEmailer shareFolderWithOne(final User sharer, UserID shareeId,
             final String folderName, SID sid, @Nullable final String note)
             throws Exception
     {
         InvitationEmailer emailer;
         Organization shareeOrg;
-        final User sharee = _userManagement.getUserNullable(shareeEmail);
+        final User sharee = _userManagement.getUserNullable(shareeId);
         if (sharee == null) {  // Sharing with a non-AeroFS user.
             shareeOrg = _organizationManagement.getOrganization(OrgID.DEFAULT);
-            createFolderInvitation(sharer._id, shareeEmail, sid, folderName);
-            emailer = _userManagement.inviteOneUser(sharer, shareeEmail, shareeOrg, folderName,
+            createFolderInvitation(sharer._id, shareeId, sid, folderName);
+            emailer = _userManagement.inviteOneUser(sharer, shareeId, shareeOrg, folderName,
                     note);
         } else if (!sharee._id.equals(sharer._id)) {
             final String code = createFolderInvitation(sharer._id, sharee._id, sid, folderName);
-            emailer = _emailerFactory.createFolderInvitation(sharer._id, sharee._id,
-                            sharer._firstName, folderName, note, code);
+            emailer = _emailerFactory.createFolderInvitation(sharer._id.toString(),
+                    sharee._id.toString(), sharer._firstName, folderName, note, code);
         } else {
             // do not create invite code for/send email to the requester
             l.warn(sharer + " tried to invite himself");
             emailer = new InvitationEmailer();
         }
 
-        l.info("folder sharer " + sharer + " sharee " + shareeEmail);
+        l.info("folder sharer " + sharer + " sharee " + shareeId);
         return emailer;
     }
 
@@ -115,7 +116,7 @@ public class SharedFolderManagement
      * Creates a folder invitation in the database
      * @return the share folder code
      */
-    private String createFolderInvitation(String sharerId, String shareeId, SID sid,
+    private String createFolderInvitation(UserID sharerId, UserID shareeId, SID sid,
             String folderName)
             throws SQLException
     {

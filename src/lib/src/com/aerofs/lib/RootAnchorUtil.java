@@ -9,6 +9,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 
@@ -74,7 +75,7 @@ public abstract class RootAnchorUtil
                 String r = remote.get() != null && remote.get() ? "remote " : "";
                 // sync instead of async to make sure we get it
                 SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
-                        null, "n/a", rtRoot);
+                        null, UserID.fromInternal("n/a"), rtRoot);
 
                 throw new ExBadArgs(S.PRODUCT + " doesn't support " + r + type +
                         " filesystems on " + OSUtil.getOSName() + " at this moment");

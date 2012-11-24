@@ -41,6 +41,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.aerofs.lib.id.UserID;
 import sun.security.pkcs.PKCS10;
 import sun.security.x509.X500Name;
 import sun.security.x509.X500Signer;
@@ -77,7 +78,7 @@ public abstract class SecUtil
         // private to enforce uninstantiability
     }
 
-    private static int MAX_PLAIN_TEXT_SIZE = 117;
+    private final static int MAX_PLAIN_TEXT_SIZE = 117;
     public static byte[] newChallengeData() throws GeneralSecurityException
     {
         return newRandomBytes(MAX_PLAIN_TEXT_SIZE);
@@ -130,12 +131,12 @@ public abstract class SecUtil
         }
     }
 
-    public static String getCertificateCName(String user, DID did)
+    public static String getCertificateCName(UserID userId, DID did)
     {
-        return alphabetEncode(hash(Util.string2utf(user), did.getBytes()));
+        return alphabetEncode(hash(Util.string2utf(userId.toString()), did.getBytes()));
     }
 
-    public static PKCS10 newCSR(PublicKey pubKey, PrivateKey privKey, String user,
+    public static PKCS10 newCSR(PublicKey pubKey, PrivateKey privKey, UserID userId,
             DID did)
         throws GeneralSecurityException, IOException
     {
@@ -144,7 +145,7 @@ public abstract class SecUtil
         Signature signature = Signature.getInstance("SHA1withRSA");
         signature.initSign(privKey);
 
-        X500Name subject = new X500Name(getCertificateCName(user, did),
+        X500Name subject = new X500Name(getCertificateCName(userId, did),
                                         ORGANIZATION_UNIT,
                                         ORGANIZATION_NAME,
                                         LOCALITY_NAME,
@@ -272,8 +273,7 @@ public abstract class SecUtil
         KeySpec spec = new PBEKeySpec(passwd, PBE_AES_SALT, PBE_AES_ITERATION,
                 strong ? PBE_AES_STRENGTH_STRONG : PBE_AES_STRENGTH_WEAK);
         SecretKey tmp = factory.generateSecret(spec);
-        SecretKey secret = new SecretKeySpec(tmp.getEncoded(), "AES");
-        return secret;
+        return new SecretKeySpec(tmp.getEncoded(), "AES");
     }
 
     public static class CipherFactory
@@ -287,8 +287,7 @@ public abstract class SecUtil
 
         private Cipher newCipher() throws NoSuchAlgorithmException, NoSuchPaddingException
         {
-            Cipher c = Cipher.getInstance("AES/CTR/NoPadding");
-            return c;
+            return Cipher.getInstance("AES/CTR/NoPadding");
         }
 
         public Cipher newEncryptingCipher()
@@ -537,10 +536,8 @@ public abstract class SecUtil
     /**
      * OBSOLETE. USE CipherFactory instead
      *
-     * @param passwd
      * @param initvector null if @encrypt is true, has the initialization vector
      * if decrypting
-     * @param encrypt
      * @throws GeneralSecurityException
      */
     private static Cipher getAESCipher(char[] passwd, byte[] initvector,
@@ -650,8 +647,6 @@ public abstract class SecUtil
 
     /**
      * Use <b>only</b> this function to convert a char[] password to bytes
-     * @param passwd
-     * @return
      */
     public static byte[] getPasswordBytes(char[] passwd)
     {
@@ -662,10 +657,10 @@ public abstract class SecUtil
         return new String(passwd).getBytes();
     }
 
-    public static byte[] scrypt(char[] passwd, String user)
+    public static byte[] scrypt(char[] passwd, UserID user)
     {
         byte[] bsPass = getPasswordBytes(passwd);
-        byte[] bsUser = Util.string2utf(user);
+        byte[] bsUser = Util.string2utf(user.toString());
 
         OSUtil.get().loadLibrary("aerofsd");
 

@@ -9,6 +9,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.sp.common.InvitationCode.CodeType;
@@ -32,7 +33,7 @@ class SPSignupHelper
     /**
      * Sign-up the userId with SP, then sign-in for further action SP.
      */
-    void signUp(String userId, byte[] scrypted, String signUpCode, String firstName,
+    void signUp(UserID userId, byte[] scrypted, String signUpCode, String firstName,
             String lastName)
             throws Exception
     {
@@ -45,7 +46,7 @@ class SPSignupHelper
             // on the server but some error happened later on the client side.
             // So let's see if we can sign-in:
             try {
-                _sp.signIn(userId, bscrypted);
+                _sp.signIn(userId.toString(), bscrypted);
             } catch (Exception e2) {
                 // nope, sign-in didn't work either. The user definitely already exist with
                 // a different password. Throw the original ExAlreadyExist.
@@ -54,7 +55,7 @@ class SPSignupHelper
         }
     }
 
-    private void parseCodeAndSignUp(String signUpCode, String userId, ByteString bscrypted,
+    private void parseCodeAndSignUp(String signUpCode, UserID userId, ByteString bscrypted,
             String firstName, String lastName)
             throws Exception
     {
@@ -66,7 +67,7 @@ class SPSignupHelper
         default:
             if (signUpCode.isEmpty() && Cfg.staging()) {
                 // special path for syncdet and other headless installs
-                _sp.signUp(userId, bscrypted, firstName, lastName);
+                _sp.signUp(userId.toString(), bscrypted, firstName, lastName);
                 break;
             } else {
                 // Currently we don't allow signing-up without a sign-up code

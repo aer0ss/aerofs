@@ -16,6 +16,7 @@ import javax.annotation.Nullable;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.sp.common.InvitationCode.CodeType;
@@ -100,14 +101,14 @@ class Setup
         }
     }
 
-    void setupExistingUser(String userId, char[] password, String rootAnchorPath,
+    void setupExistingUser(UserID userId, char[] password, String rootAnchorPath,
             String deviceName, PBS3Config s3config)
             throws Exception
     {
         run(userId, password, rootAnchorPath, deviceName, true, null, null, null, s3config);
     }
 
-    void setupNewUser(String userId, char[] password, String rootAnchorPath,
+    void setupNewUser(UserID userId, char[] password, String rootAnchorPath,
             String deviceName, String signUpCode, String firstName, String lastName,
             PBS3Config s3config)
             throws Exception
@@ -127,14 +128,13 @@ class Setup
      */
     // TODO: needs organization
     // TODO: gui needs to handle case where a no-invite user has signed up already
-    private void run(String userId, char[] password, String rootAnchorPath, String deviceName,
+    private void run(UserID userId, char[] password, String rootAnchorPath, String deviceName,
             boolean returning, @Nullable String signUpCode, @Nullable String firstName,
             @Nullable String lastName, @Nullable PBS3Config s3config)
             throws Exception
     {
         try {
             // basic preconditions - all of these should be enforced at the UI level
-            assert !userId.isEmpty();
             // new sign ups must have a decent password length
             assert returning || password.length >= Param.MIN_PASSWD_LENGTH;
             assert !rootAnchorPath.isEmpty();
@@ -144,8 +144,6 @@ class Setup
                 assert !firstName.isEmpty();
                 assert !lastName.isEmpty();
             }
-
-            userId = userId.toLowerCase();
 
             l.info("userId:" + userId + " returning:" + returning);
             RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, true);
@@ -177,7 +175,7 @@ class Setup
                 signupHelper.signUp(userId, scrypted, signUpCode, firstName, lastName);
             }
             // always sign in, regardless of whether we had to sign up first or not
-            sp.signIn(userId, ByteString.copyFrom(scrypted));
+            sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
 
             DID did = CredentialUtil.generateDeviceKeys(userId, scrypted, sp);
 
@@ -185,7 +183,7 @@ class Setup
             CfgDatabase db = Cfg.db();
             db.recreateSchema_();
             TreeMap<CfgDatabase.Key, String> map = Maps.newTreeMap();
-            map.put(CfgDatabase.Key.USER_ID, userId);
+            map.put(CfgDatabase.Key.USER_ID, userId.toString());
             map.put(CfgDatabase.Key.DEVICE_ID, did.toStringFormal());
             map.put(CfgDatabase.Key.CRED, Cfg.scrypted2encryptedBase64(scrypted));
             map.put(CfgDatabase.Key.ROOT, rootAnchorPath);
@@ -260,7 +258,7 @@ class Setup
      * wait for them before start using AeroFS, and therefore we put these tasks into a separate
      * thread.
      */
-    private void runNonEssential(final String userId, final DID did, final String deviceName,
+    private void runNonEssential(final UserID userId, final DID did, final String deviceName,
             final boolean returning, final SPBlockingClient sp)
     {
         ThreadUtil.startDaemonThread("setup-non-essential", new Runnable()
