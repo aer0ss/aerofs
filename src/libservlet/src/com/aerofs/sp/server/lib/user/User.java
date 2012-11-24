@@ -4,54 +4,55 @@
 
 package com.aerofs.sp.server.lib.user;
 
-import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.FullName;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.SPParam;
+import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
-import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
 
-public final class User
+import java.sql.SQLException;
+import java.util.Arrays;
+
+public class User
 {
-    private final UserID _id;
-    private final OrgID _orgID;
-    private final String _firstName;
-    private final String _lastName;
-    private final byte[] _shaedSP; // sha256(scrypt(p|u)|passwdSalt)
-    private final boolean _isVerified;
-    private final AuthorizationLevel _level;
+    private final static Logger l = Util.l(User.class);
 
-    public User(UserID id, String firstName, String lastName, byte[] shaedSP,
-            boolean verified, OrgID orgID, AuthorizationLevel level)
+    private final UserID _id;
+    private final UserDatabase _db;
+
+    public static class Factory
+    {
+        private final UserDatabase _db;
+
+        public Factory(UserDatabase db)
+        {
+            _db = db;
+        }
+
+        public User create(UserID id)
+        {
+            return new User(_db, id);
+        }
+
+        public User createFromExternalID(String str)
+        {
+            return new User(_db, UserID.fromExternal(str));
+        }
+    }
+
+    private User(UserDatabase db, UserID id)
     {
         _id = id;
-        _firstName = firstName;
-        _lastName = lastName;
-        _shaedSP = shaedSP;
-        _isVerified = verified;
-        _orgID = orgID;
-        _level = level;
-    }
-
-    /**
-     * Create a User using protobuf credentials instead of byte array
-     */
-    public User(UserID userId, String firstName, String lastName, ByteString credentials,
-            boolean verified, OrgID orgID, AuthorizationLevel level)
-    {
-        this(userId, firstName, lastName, SPParam.getShaedSP(credentials.toByteArray()),
-                verified, orgID, level);
-    }
-
-    // TODO (WW) why is this test-specific method in the main code? Move it out
-    public static User createMockForID(UserID userId)
-    {
-        return new User(userId, "first", "last", SecUtil.newRandomBytes(10),
-                false, OrgID.DEFAULT, AuthorizationLevel.USER);
+        _db = db;
     }
 
     public void throwIfNotAdmin()
-            throws ExNoPerm
+            throws ExNoPerm, ExNotFound, SQLException
     {
         if (getLevel() != AuthorizationLevel.ADMIN) {
             throw new ExNoPerm("User " + id() + " does not have administrator privileges");
@@ -85,33 +86,99 @@ public final class User
         return _id;
     }
 
+    public boolean exists()
+            throws SQLException
+    {
+        return _db.hasUser(_id);
+    }
+
+    public void throwIfNotFound()
+            throws ExNotFound, SQLException
+    {
+        if (!exists()) throw new ExNotFound("user " + this);
+    }
+
+
+    // TODO (WW) return an Organization object
     public OrgID getOrgID()
+            throws ExNotFound, SQLException
     {
-        return _orgID;
+        return _db.getOrgID(_id);
     }
 
-    public String getFirstName()
+    public FullName getFullName()
+            throws ExNotFound, SQLException
     {
-        return _firstName;
+        return _db.getFullName(_id);
     }
 
-    public String getLastName()
-    {
-        return _lastName;
-    }
-
+    /**
+     * @return sha256(scrypt(p|u)|passwdSalt)
+     */
     public byte[] getShaedSP()
+            throws ExNotFound, SQLException
     {
-        return _shaedSP;
+        return _db.getShaedSP(_id);
     }
 
     public boolean isVerified()
+            throws ExNotFound, SQLException
     {
-        return _isVerified;
+        return _db.isVerified(_id);
     }
 
     public AuthorizationLevel getLevel()
+            throws ExNotFound, SQLException
     {
-        return _level;
+        return _db.getLevel(_id);
     }
+
+    public void setLevel(AuthorizationLevel auth)
+            throws SQLException
+    {
+        _db.setLevel(_id, auth);
+    }
+
+    public void setVerified() throws SQLException
+    {
+        _db.setVerified(_id);
+    }
+
+    /**
+     * Add the user to the database
+     * @throws ExAlreadyExist if the user ID already exists.
+     */
+    public void add(byte[] shaedSP, FullName fullName, OrgID orgID)
+            throws ExAlreadyExist, SQLException
+    {
+        Util.l(this).info(this + " attempts signup");
+
+        // TODO If successful, this method should delete all the user's existing signup codes from
+        // the signup_code table
+        // TODO write a test to verify that after one successful signup,
+        // other codes fail/do not exist
+        _db.addUser(_id, fullName, shaedSP, orgID, AuthorizationLevel.USER);
+    }
+
+    /**
+     * Attemp to sign in using the credential provided by the user.
+     *
+     * @throws ExBadCredential if the user doesn't exist of the credential is incorrect.
+     */
+    public void signIn(byte[] shaedSP)
+            throws SQLException, ExBadCredential
+    {
+        try {
+            if (!Arrays.equals(getShaedSP(), shaedSP)) {
+                l.warn(this + ": bad password.");
+                throw new ExBadCredential();
+            }
+        } catch (ExNotFound e) {
+            // Throw a bad credential as opposed to a not found to prevent brute force guessing of
+            // user IDs.
+            l.warn(this + ": not found.");
+            throw new ExBadCredential();
+        }
+    }
+
 }

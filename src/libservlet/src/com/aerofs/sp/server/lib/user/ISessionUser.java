@@ -7,21 +7,30 @@ package com.aerofs.sp.server.lib.user;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.UserID;
 
+import javax.annotation.Nonnull;
+
 /**
  * This interace is only necessary to enable mocking of the ThreadLocalHttpSessionUser in SPService
  */
 public interface ISessionUser
 {
     /**
+     * @return the user of this session
+     * @throws ExNoPerm if no user has been set for the session
+     */
+    @Nonnull User get() throws ExNoPerm;
+
+    /**
+     * DEPRECATED. Use get() instead
      * @return the user ID of this session
      * @throws ExNoPerm if no user has been set for the session
      */
-    UserID getID() throws ExNoPerm;
+    @Nonnull UserID getID() throws ExNoPerm;
 
     /**
-     * Set the session user ID.
+     * Set the session user
      */
-    void setID(UserID userId);
+    void set(User user);
 
     /**
      * Remove the user ID from this session. A subsequent call to getUserNullable() should throw

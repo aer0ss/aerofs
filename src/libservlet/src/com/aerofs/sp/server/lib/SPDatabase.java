@@ -1,6 +1,7 @@
 package com.aerofs.sp.server.lib;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
 
 import java.util.TimeZone;
@@ -16,7 +17,6 @@ import java.util.Calendar;
 
 import com.aerofs.lib.db.DBUtil;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExFormatError;
@@ -34,7 +34,6 @@ import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.IUserSearchDatabase;
-import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Lists;
@@ -43,7 +42,6 @@ import com.google.common.collect.Sets;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,6 +54,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Date;
 
+import static com.aerofs.lib.db.DBUtil.deleteWhere;
+import static com.aerofs.lib.db.DBUtil.insertOnDuplicateUpdate;
+import static com.aerofs.lib.db.DBUtil.selectWhere;
+import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.*;
 
 import javax.annotation.Nonnull;
@@ -75,17 +77,6 @@ public class SPDatabase
         super(provider);
     }
 
-    // TODO use DBCW.throwOnConstraintViolation() instead
-    private static void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist
-    {
-        if (e.getMessage().startsWith("Duplicate entry")) {
-            if (e.getMessage().contains(CO_DEVICE_NAME_OWNER))
-                throw new ExDeviceNameAlreadyExist();
-            else
-                throw new ExAlreadyExist(e);
-        }
-    }
-
     /**
      * This method returns a SQL query for getting a list of store IDs for shared folders in a
      * given organization. Store IDs are repeated as many times as they are listed in the database
@@ -102,36 +93,6 @@ public class SPDatabase
                     C_USER_ORG_ID + "=?" +
                 ") as t1 join " + T_AC + " as t2 on t1." + C_AC_STORE_ID + "=" +
                 "t2." + C_AC_STORE_ID;
-    }
-
-    public @Nullable User getUserNullable(UserID userId)
-            throws SQLException
-    {
-        PreparedStatement psGU = getConnection().prepareStatement(
-                DBUtil.selectWhere(T_USER, C_USER_ID + "=?", C_USER_FIRST_NAME, C_USER_LAST_NAME,
-                        C_USER_CREDS, C_USER_VERIFIED, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL));
-        psGU.setString(1, userId.toString());
-        ResultSet rs = psGU.executeQuery();
-        try {
-            if (rs.next()) {
-                String firstName = rs.getString(1);
-                String lastName = rs.getString(2);
-                byte[] creds = Base64.decode(rs.getString(3));
-                boolean verified = rs.getBoolean(4);
-                OrgID orgId = new OrgID(rs.getInt(5));
-                AuthorizationLevel level = AuthorizationLevel.fromOrdinal(rs.getInt(6));
-                User u = new User(userId, firstName, lastName, creds, verified, orgId, level);
-                assert !rs.next();
-                return u;
-            } else {
-                return null;
-            }
-        } catch (IOException e) {
-            // Base64.decode should not throw
-            throw new SQLException(e);
-        } finally {
-            rs.close();
-        }
     }
 
     /**
@@ -467,68 +428,12 @@ public class SPDatabase
     public void setFolderlessInvitesQuota(UserID userId, int quota)
             throws SQLException
     {
-        PreparedStatement psSSIQ = getConnection().prepareStatement("update " + T_USER + " set "
+        PreparedStatement ps = getConnection().prepareStatement("update " + T_USER + " set "
                 + C_USER_STORELESS_INVITES_QUOTA + "=? where " + C_USER_ID + "=?");
 
-        psSSIQ.setInt(1, quota);
-        psSSIQ.setString(2, userId.toString());
-        psSSIQ.executeUpdate();
-    }
-
-    private int getNewUserInitialACLEpoch()
-    {
-        //noinspection PointlessArithmeticExpression
-        return C.INITIAL_ACL_EPOCH + 1;
-    }
-
-    /**
-     * Add a user row to the sp_user table
-     *
-     * Note: this method always creates the user as non-verified.
-     *
-     * @throws ExAlreadyExist if the user exists
-     */
-    public void addUser(User ur)
-            throws SQLException, ExAlreadyExist
-    {
-        // We are not going to set the verified field, so make sure nobody asks us to do so
-        assert !ur.isVerified();
-
-        l.info("addUser " + ur);
-
-        try {
-            // we always create a user with initial epoch + 1 to ensure that the first time
-            // a device is created it gets any acl updates that were made while the user
-            // didn't have an entry in the user table
-
-            PreparedStatement psAU = getConnection().prepareStatement(
-                    DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
-                            C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
-                            C_USER_ACL_EPOCH));
-
-            psAU.setString(1, ur.id().toString());
-            psAU.setString(2, Base64.encodeBytes(ur.getShaedSP()));
-            psAU.setString(3, ur.getFirstName());
-            psAU.setString(4, ur.getLastName());
-            psAU.setInt(5, ur.getOrgID().getInt());
-            psAU.setInt(6, ur.getLevel().ordinal());
-            psAU.setInt(7, getNewUserInitialACLEpoch());
-            psAU.executeUpdate();
-        } catch (SQLException aue) {
-            throwOnConstraintViolation(aue);
-        }
-    }
-
-    public void markUserVerified(UserID userId)
-            throws SQLException
-    {
-        PreparedStatement psUVerified = getConnection().prepareStatement("update " +
-                T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID +"=?");
-
-        psUVerified.setString(1, userId.toString());
-        Util.verify(psUVerified.executeUpdate() == 1);
-
-        l.info("user " + userId + " marked verified");
+        ps.setInt(1, quota);
+        ps.setString(2, userId.toString());
+        ps.executeUpdate();
     }
 
     public void setUserName(UserID userId, String firstName, String lastName)
@@ -547,27 +452,27 @@ public class SPDatabase
     public void addPasswordResetToken(UserID userId, String token)
         throws SQLException
     {
-        PreparedStatement psAPRT = getConnection().prepareStatement("insert into " +
+        PreparedStatement ps = getConnection().prepareStatement("insert into " +
                 T_PASSWORD_RESET + "(" + C_PASS_TOKEN + "," + C_PASS_USER + ") values (?,?)");
 
-        psAPRT.setString(1, token);
-        psAPRT.setString(2, userId.toString());
-        Util.verify(psAPRT.executeUpdate() == 1);
+        ps.setString(1, token);
+        ps.setString(2, userId.toString());
+        Util.verify(ps.executeUpdate() == 1);
     }
 
     public UserID resolvePasswordResetToken(String token)
-        throws SQLException, IOException, ExNotFound
+        throws SQLException, ExNotFound
     {
-        PreparedStatement psRPRT = getConnection().prepareStatement("select " + C_PASS_USER +
+        PreparedStatement ps = getConnection().prepareStatement("select " + C_PASS_USER +
                 " from " + T_PASSWORD_RESET + " where " + C_PASS_TOKEN + "=? and " + C_PASS_TS +
                 " > ?");
 
-        psRPRT.setString(1, token);
+        ps.setString(1, token);
         java.util.Date today = new java.util.Date();
 
-        psRPRT.setTimestamp(2,
+        ps.setTimestamp(2,
                 new Timestamp(today.getTime() - SPParam.PASSWORD_RESET_TOKEN_VALID_DURATION));
-        ResultSet rs = psRPRT.executeQuery();
+        ResultSet rs = ps.executeQuery();
         try {
             if (rs.next()) {
                 UserID id = UserID.fromInternal(rs.getString(1));
@@ -752,12 +657,12 @@ public class SPDatabase
     {
         Set<UserDevice> result = Sets.newHashSet();
 
-        PreparedStatement psGIDSAcl = getConnection().prepareStatement(
+        PreparedStatement ps = getConnection().prepareStatement(
                 "select " + C_DEVICE_ID + ", " + C_DEVICE_OWNER_ID + " from " + T_AC +
                         " acl join " + T_DEVICE + " dev on " + C_AC_USER_ID + " = " +
                         C_DEVICE_OWNER_ID + " where " + C_AC_STORE_ID + " = ?");
-        psGIDSAcl.setBytes(1, sid);
-        ResultSet rs = psGIDSAcl.executeQuery();
+        ps.setBytes(1, sid);
+        ResultSet rs = ps.executeQuery();
         try {
             while (rs.next()) {
                 // TODO (MP) yuck. why do we store did's are CHAR(32) instead of BINARY(16)?
@@ -805,19 +710,6 @@ public class SPDatabase
             throwOnConstraintViolation(e);
             throw e;
         }
-    }
-
-    public void setAuthorizationLevel(UserID userId, AuthorizationLevel authLevel)
-            throws SQLException
-    {
-        l.info("set auth to " + authLevel + " for " + userId);
-
-        PreparedStatement psSAuthLevel = getConnection().prepareStatement("update " + T_USER +
-                " set " + C_USER_AUTHORIZATION_LEVEL + "=? where " + C_USER_ID + "=?");
-
-        psSAuthLevel.setInt(1, authLevel.ordinal());
-        psSAuthLevel.setString(2, userId.toString());
-        Util.verify(psSAuthLevel.executeUpdate() == 1);
     }
 
     public void addTargetedSignupCode(String code, UserID from, UserID to, OrgID orgId, long time)
@@ -994,20 +886,20 @@ public class SPDatabase
     }
 
     /**
-     * Add the given sid to the shared folder table with a null name. Necessary to satisfy foreign
-     * key constraints in createACL.
+     * Add the given sid to the shared folder table with a null name. No-op if the entry already
+     * exists.
      */
-    private void addSharedFolder(SID sid)
+    @Override
+    public void addSharedFolder(SID sid)
            throws SQLException
     {
-        PreparedStatement psAddSharedFolder = getConnection().prepareStatement("insert into "
-                + T_SF + " (" + C_SF_ID + ") values (?) on duplicate key update " + C_SF_ID  + "="
-                + C_SF_ID);
+        PreparedStatement ps = getConnection().prepareStatement(
+                insertOnDuplicateUpdate(T_SF, C_SF_ID + "=" + C_SF_ID, C_SF_ID));
 
-        psAddSharedFolder.setBytes(1, sid.getBytes());
+        ps.setBytes(1, sid.getBytes());
 
         // Update returns 0 on duplicate key and 1 on successful insert
-        Util.verify(psAddSharedFolder.executeUpdate() < 2);
+        Util.verify(ps.executeUpdate() < 2);
     }
 
     @Override
@@ -1025,6 +917,7 @@ public class SPDatabase
         Util.verify(psSetFolderName.executeUpdate() <= 2);
     }
 
+    // TODO (WW) use the Device class instead
     public static class DeviceRow
     {
         final DID _did;
@@ -1079,6 +972,8 @@ public class SPDatabase
         }
     }
 
+
+
     public void addDevice(DeviceRow dr)
             throws SQLException, ExAlreadyExist
     {
@@ -1091,7 +986,9 @@ public class SPDatabase
             psAddDev.setString(3, dr._ownerID.toString());
             psAddDev.executeUpdate();
         } catch (SQLException e) {
-            throwOnConstraintViolation(e);
+            if (isConstraintViolation(e) && e.getMessage().contains(CO_DEVICE_NAME_OWNER)) {
+                throw new ExDeviceNameAlreadyExist();
+            }
             throw e;
         }
     }
@@ -1222,11 +1119,11 @@ public class SPDatabase
     public ImmutableList<Long> getCRL()
             throws SQLException
     {
-        PreparedStatement psGetCRL = getConnection().prepareStatement("select " + C_CERT_SERIAL +
+        PreparedStatement ps = getConnection().prepareStatement("select " + C_CERT_SERIAL +
                 " from " + T_CERT + " where " + C_CERT_EXPIRE_TS + " > current_timestamp and " +
                 C_CERT_REVOKE_TS + " != 0");
 
-        ResultSet rs = psGetCRL.executeQuery();
+        ResultSet rs = ps.executeQuery();
         try {
             Builder<Long> builder = ImmutableList.builder();
             while (rs.next()) {
@@ -1236,102 +1133,6 @@ public class SPDatabase
         } finally {
             rs.close();
         }
-    }
-
-    //
-    //
-    // AAG FIXME: IMPORTANT!!!!!
-    //
-    // AAG FIXME: consider refactoring ACL db calls into a separate object!!!
-    //
-    //
-
-    /**
-     * <strong>Call in the context of an overall transaction only!</strong>
-     *
-     *
-     * @param userId person requesting the ACL changes
-     * @param sid store to which the acl changes will be made
-     * @return true if the ACL changes should be allowed (i.e. the user has permissions)
-     * @throws SQLException if there is a db error
-     */
-    private boolean canUserModifyACL(UserID userId, SID sid)
-            throws SQLException, IOException
-    {
-        PreparedStatement psRoleCount = getConnection().prepareStatement(
-                DBUtil.selectWhere(T_AC, C_AC_STORE_ID + "=?", "count(*)"));
-
-        psRoleCount.setBytes(1, sid.getBytes());
-
-        ResultSet rs;
-        rs = psRoleCount.executeQuery();
-        try {
-            Util.verify(rs.next());
-            if (rs.getInt(1) == 0) {
-                l.info("allow acl modification - no roles exist for s:" + sid);
-                return true;
-            }
-        } finally {
-            rs.close();
-        }
-
-        PreparedStatement psRoleCheck = getConnection().prepareStatement(
-                DBUtil.selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?" +
-                        " and " + C_AC_ROLE + " = ?", "count(*)"));
-
-        psRoleCheck.setBytes(1, sid.getBytes());
-        psRoleCheck.setString(2, userId.toString());
-        psRoleCheck.setInt(3, Role.OWNER.ordinal());
-
-        rs = psRoleCheck.executeQuery();
-        try {
-            Util.verify(rs.next());
-
-            int ownerCount = rs.getInt(1);
-            // cannot have multiple owner acl entries
-            assert ownerCount >= 0 && ownerCount <= 1;
-
-            if (ownerCount == 1) {
-                l.info(userId + " is an owner for s:" + sid);
-                return true;
-            }
-        } finally {
-            rs.close();
-        }
-
-        // see if user is an admin and one of their organization's members is an owner
-        User currentUser = getUserNullable(userId);
-        assert currentUser != null;
-        if (currentUser.getLevel() == AuthorizationLevel.ADMIN) {
-            l.info("user is an admin, checking if folder owner(s) are part of organization");
-
-            PreparedStatement psOwnersInOrgCount = getConnection().prepareStatement(
-                    "select count(*) from " + T_AC + " join " + T_USER + " on " + C_AC_USER_ID +
-                    "=" + C_USER_ID + " where " + C_AC_STORE_ID + "=? and " + C_USER_ORG_ID +
-                    "=? and " + C_AC_ROLE + "=?");
-
-            psOwnersInOrgCount.setBytes(1, sid.getBytes());
-            psOwnersInOrgCount.setInt(2, currentUser.getOrgID().getInt());
-            psOwnersInOrgCount.setInt(3, Role.OWNER.ordinal());
-
-            rs = psOwnersInOrgCount.executeQuery();
-            try {
-                Util.verify(rs.next());
-                int ownersInUserOrgCount = rs.getInt(1);
-                l.info("there is/are " + ownersInUserOrgCount + " folder owner(s) in " + userId +
-                        "'s organization");
-                assert !rs.next();
-                if (ownersInUserOrgCount > 0) {
-                    return true;
-                }
-            } finally {
-                rs.close();
-            }
-        }
-
-        l.info(userId + " cannot modify acl for s:" + sid);
-
-        return false; // user has no permissions
     }
 
     public ACLReturn getACL(long userEpoch, UserID user)
@@ -1436,67 +1237,9 @@ public class SPDatabase
         return serverEpochs;
     }
 
-    /**
-     * This method checks whether the user has the right permissions needed to modify the
-     * given store, and if not performs checks to detect malicious changes to permissions and
-     * attempts to repair the store's permissions if needed. Updates pairs in place during the
-     * repair process.
-     */
-    private void checkUserPermissionsAndClearACLForHijackedRootStore(UserID userId, SID sid,
-            List<SubjectRolePair> pairs)
-            throws SQLException, IOException, ExNoPerm
+    @Override public void createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
+            throws SQLException, ExNoPerm
     {
-        if (canUserModifyACL(userId, sid)) return;
-
-        // apparently the user cannot modify the ACL - check if an attacker maliciously
-        // overwrote their permissions and repair the store if necessary
-
-        l.info(userId + " cannot modify acl for s:" + sid);
-
-        if (!SID.rootSID(userId).equals(sid)) {
-            throw new ExNoPerm(userId + " not owner"); // nope - just a regular store
-        }
-
-        l.info("s:" + sid + " matches " + userId + " root store - delete existing acl");
-
-        PreparedStatement psDeleteAllRoles = getConnection().prepareStatement("delete from "
-                + T_AC + " where " + C_AC_STORE_ID + "=?");
-
-        psDeleteAllRoles.setBytes(1, sid.getBytes());
-
-        int updatedRows = psDeleteAllRoles.executeUpdate();
-        assert updatedRows > 0 : updatedRows;
-
-        l.info("adding " + userId + " as owner of s:" + sid);
-
-        boolean foundOwner = false;
-        for (SubjectRolePair pair : pairs) {
-            if (pair._subject.equals(userId) && pair._role.equals(Role.OWNER)) {
-                foundOwner = true;
-            }
-        }
-
-        if (!foundOwner) {
-            pairs.add(new SubjectRolePair(userId, Role.OWNER));
-        }
-    }
-
-    /**
-     * Create ACLs for a store
-     * @return new ACL epochs for each affected user id, to be published via verkehr
-     */
-    @Override
-    public Map<UserID, Long> createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm, IOException
-    {
-        l.info(requester + " create roles for s:" + sid);
-
-        checkUserPermissionsAndClearACLForHijackedRootStore(requester, sid, pairs);
-
-        addSharedFolder(sid); // to satisfy foreign key constraints add the sid before creating ACLs
-
-        l.info(requester + " creating " + pairs.size() + " roles for s:" + sid);
-
         PreparedStatement psReplaceRole = getConnection().prepareStatement("insert into " + T_AC +
                 " (" + C_AC_STORE_ID + "," + C_AC_USER_ID + "," + C_AC_ROLE + ") values (?, ?, ?) "
                 + "on duplicate key update " + C_AC_ROLE + "= values (" + C_AC_ROLE + ")");
@@ -1509,59 +1252,47 @@ public class SPDatabase
         }
 
         executeBatchWarn(psReplaceRole, pairs.size(), 1); // update the roles for all users
-
-        return incrementACLEpoch(getStoreMembers(sid));
     }
 
-    /**
-     * Update ACLs for a store
-     * @throws ExNoPerm if trying to add new users to the store
-     * @return new ACL epochs for each affected user id, to be published via verkehr
-     */
     @Override
-    public Map<UserID, Long> updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm, IOException
+    public void updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
+            throws SQLException, ExNoPerm
     {
-        l.info(requester + " updating " + pairs.size() + " roles for s:" + sid);
-
-        checkUserPermissionsAndClearACLForHijackedRootStore(requester, sid, pairs);
-
-        PreparedStatement psUpdateRole = getConnection().prepareStatement("update " + T_AC +
-                " set " + C_AC_ROLE + "=? where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
-                "=?");
+        PreparedStatement ps = getConnection().prepareStatement(updateWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
 
         for (SubjectRolePair pair : pairs) {
-            psUpdateRole.setInt(1, pair._role.ordinal());
-            psUpdateRole.setBytes(2, sid.getBytes());
-            psUpdateRole.setString(3, pair._subject.toString());
-            psUpdateRole.addBatch();
+            ps.setInt(1, pair._role.ordinal());
+            ps.setBytes(2, sid.getBytes());
+            ps.setString(3, pair._subject.toString());
+            ps.addBatch();
         }
 
         try {
             // throw if any query's affected rows != 1, meaning ACL entry doesn't exist
-            executeBatch(psUpdateRole, pairs.size(), 1); // update the roles for all users
+            executeBatch(ps, pairs.size(), 1); // update the roles for all users
         } catch (ExSizeMismatch e) {
+            // TODO (WW) What??
             throw new ExNoPerm("not permitted to create new ACLs when updating ACLs");
         }
-
-        if (!hasAtLeastOneOwner(sid)) throw new ExNoPerm("Cannot demote all admins");
-
-        return incrementACLEpoch(getStoreMembers(sid));
     }
 
-    private boolean hasAtLeastOneOwner(SID sid) throws SQLException
+    @Override
+    public boolean hasOwner(SID sid)
+            throws SQLException
     {
-        PreparedStatement psCheckAtLeastOneOwner = getConnection()
-                .prepareStatement("select " + C_AC_USER_ID + " from " + T_AC
-                        + " where " + C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?"
-                        + " LIMIT 1");
+        PreparedStatement ps = getConnection().prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?", "count(*)"));
 
-        psCheckAtLeastOneOwner.setBytes(1, sid.getBytes());
-        psCheckAtLeastOneOwner.setInt(2, Role.OWNER.ordinal());
+        ps.setBytes(1, sid.getBytes());
+        ps.setInt(2, Role.OWNER.ordinal());
 
-        ResultSet rs = psCheckAtLeastOneOwner.executeQuery();
+        ResultSet rs = ps.executeQuery();
         try {
-            return rs.next();
+            Util.verify(rs.next());
+            int count = rs.getInt(1);
+            assert !rs.next();
+            return count != 0;
         } finally {
             rs.close();
         }
@@ -1570,95 +1301,112 @@ public class SPDatabase
     /**
      * Fetch the set of users with access to a given store
      */
-    private Set<UserID> getStoreMembers(SID sid)
+    @Override
+    public Set<UserID> getACLUsers(SID sid)
             throws SQLException
     {
-        PreparedStatement psGetSubjectsForStore = getConnection().prepareStatement("select " +
-                C_AC_USER_ID + " from " + T_AC + " where " + C_AC_STORE_ID + "=?");
+        PreparedStatement ps = getConnection().prepareStatement(
+                selectWhere(T_AC, C_AC_STORE_ID + "=?", C_AC_USER_ID));
 
-        psGetSubjectsForStore.setBytes(1, sid.getBytes());
+        ps.setBytes(1, sid.getBytes());
 
-        Set<UserID> subjects = Sets.newHashSet();
-        ResultSet rs = psGetSubjectsForStore.executeQuery();
+        ResultSet rs = ps.executeQuery();
         try {
-            while (rs.next()) { subjects.add(UserID.fromInternal(rs.getString(1))); }
+            Set<UserID> subjects = Sets.newHashSet();
+            while (rs.next()) subjects.add(UserID.fromInternal(rs.getString(1)));
+            return subjects;
         } finally {
             rs.close();
         }
-
-        return subjects;
     }
 
-    /**
-     * <strong>
-     *     IMPORTANT: Must be called in the context of a transaction
-     * </strong>
-     */
-    public Map<UserID, Long> deleteACL(UserID userId, SID sid, Set<UserID> subjects)
-            throws SQLException, ExNoPerm, IOException
+    @Override
+    public boolean hasACL(SID sid)
+            throws SQLException
     {
-        assert !getConnection().getAutoCommit() :
-                ("auto-commit should be turned off before calling delete ACL");
+        PreparedStatement ps = getConnection().prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=?", "count(*)"));
 
-        l.info(userId + " delete roles for s:" + sid);
+        ps.setBytes(1, sid.getBytes());
 
-        if (!canUserModifyACL(userId, sid)) {
-            l.info(userId + " cannot modify acl for s:" + sid);
-
-            throw new ExNoPerm(userId + " is not an owner. If " + userId + " has admin privileges" +
-                    " no owner is a member of " + userId + "'s organization.");
+        ResultSet rs = ps.executeQuery();
+        try {
+            Util.verify(rs.next());
+            int count = rs.getInt(1);
+            assert !rs.next();
+            return count != 0;
+        } finally {
+            rs.close();
         }
+    }
 
-        // setup the prepared statement
-        PreparedStatement psDeleteRole = getConnection().prepareStatement("delete from " + T_AC +
-                " where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?");
+    @Override
+    public boolean isOwner(SID sid, UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?" + " and " + C_AC_ROLE + " = ?",
+                "count(*)"));
 
-        // TODO: check that there is at least one admin left?
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userId.toString());
+        ps.setInt(3, Role.OWNER.ordinal());
 
-        // add all the users to be deleted to a batch update (for now don't worry about
-        // splitting batches)
+        ResultSet rs = ps.executeQuery();
+        try {
+            Util.verify(rs.next());
+            int ownerCount = rs.getInt(1);
+            assert ownerCount >= 0 && ownerCount <= 1;
+            assert !rs.next();
+            return ownerCount == 1;
+        } finally {
+            rs.close();
+        }
+    }
+
+    @Override
+    public void deleteACL(UserID userId, SID sid, Collection<UserID> subjects)
+            throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(
+                deleteWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?"));
 
         for (UserID subject : subjects) {
-            psDeleteRole.setBytes(1, sid.getBytes());
-            psDeleteRole.setString(2, subject.toString());
-            psDeleteRole.addBatch();
+            ps.setBytes(1, sid.getBytes());
+            ps.setString(2, subject.toString());
+            ps.addBatch();
         }
 
-        l.info(userId + " updating " + subjects.size() + " roles for s:" + sid);
-
-        executeBatchWarn(psDeleteRole, subjects.size(), 1); // update roles for all users
-
-        Set<UserID> affectedUsers = getStoreMembers(sid); // get the current users
-        affectedUsers.add(userId); // add the caller as well
-        affectedUsers.addAll(subjects); // add all the deleted guys as well
-
-        return incrementACLEpoch(affectedUsers);
+        executeBatchWarn(ps, subjects.size(), 1);
     }
 
-    /**
-     * <strong>IMPORTANT:</strong> should only be called by setACL, deleteACL
-     * when called, auto-commit should be off!
-     * @param users set of user_ids for all users for which we will update the epoch
-     * @return a map of user -> updated epoch number
-     */
-    private Map<UserID, Long> incrementACLEpoch(Set<UserID> users)
+    @Override
+    public void deleteACL(SID sid)
+            throws SQLException
+    {
+        PreparedStatement ps = getConnection().prepareStatement(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
+
+        ps.setBytes(1, sid.getBytes());
+
+        Util.verify(ps.executeUpdate() > 0);
+    }
+
+    @Override
+    public Map<UserID, Long> incrementACLEpoch(Set<UserID> users)
             throws SQLException
     {
         l.info("incrementing epoch for " + users.size() + " users");
 
-        PreparedStatement psUpdateACLEpoch = getConnection().prepareStatement("update " + T_USER +
+        PreparedStatement ps = getConnection().prepareStatement("update " + T_USER +
                 " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1 where " + C_USER_ID +
                 "=?");
 
         for (UserID user : users) {
             l.info("attempt increment epoch for " + user);
-            psUpdateACLEpoch.setString(1, user.toString());
-            psUpdateACLEpoch.addBatch();
+            ps.setString(1, user.toString());
+            ps.addBatch();
         }
 
-        executeBatchWarn(psUpdateACLEpoch, users.size(), 1);
-
-        l.info("incremented epoch");
+        executeBatchWarn(ps, users.size(), 1);
 
         return getACLEpochs(users);
     }
@@ -1667,13 +1415,13 @@ public class SPDatabase
     public @Nullable Role getUserPermissionForStore(SID sid, UserID userId)
             throws SQLException
     {
-        PreparedStatement psGetUserPermForStore = getConnection().prepareStatement("select " +
+        PreparedStatement ps = getConnection().prepareStatement("select " +
                 C_AC_ROLE + " from " + T_AC + " where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
                 "=?");
 
-        psGetUserPermForStore.setBytes(1, sid.getBytes());
-        psGetUserPermForStore.setString(2, userId.toString());
-        ResultSet rs = psGetUserPermForStore.executeQuery();
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, userId.toString());
+        ResultSet rs = ps.executeQuery();
         try {
             if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
                 return null;

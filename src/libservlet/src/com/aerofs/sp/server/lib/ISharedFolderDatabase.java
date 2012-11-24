@@ -10,13 +10,17 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 
-import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Interface for shared folder related database methods
+ *
+ * TODO (WW) reorganize methods in this class. have this interface make more sense and remove
+ * duplicate / similar methods.
  */
 public interface ISharedFolderDatabase
 {
@@ -24,22 +28,17 @@ public interface ISharedFolderDatabase
      * This method returns the permission a specific user has for a specific store, or null if
      * no permission for the given combination of user/store exists.
      */
-    public Role getUserPermissionForStore(SID sid, UserID userId)
+    Role getUserPermissionForStore(SID sid, UserID userId)
             throws SQLException;
 
     /**
-     * This method creates ACLs as necessary when adding new users to a shared folder
-     * @return Map(userId to acl epoch) for use in verkehr notifications
+     * Create ACLs for a store. Replace existing entries if any.
      */
-    public Map<UserID, Long> createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm, IOException;
+    void createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
+            throws SQLException, ExNoPerm;
 
-    /**
-     * This method updates ACLs when changing user roles in an existing shared folder
-     * @return Map(userId to acl epoch) for use in verkehr notifications
-     */
-    public Map<UserID, Long> updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm, IOException;
+    void updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
+            throws SQLException, ExNoPerm;
 
     /**
      * This method performs an upsert on the shared folder name table, inserting a new row if there
@@ -47,7 +46,7 @@ public interface ISharedFolderDatabase
      * @param sid store id for the shared folder whose name is being updated
      * @param folderName new folder name
      */
-    public void setFolderName(SID sid, String folderName)
+    void setFolderName(SID sid, String folderName)
             throws SQLException;
 
     /**
@@ -58,6 +57,33 @@ public interface ISharedFolderDatabase
      * @param sid the store id of the share for this invite code
      * @param folderName the user-facing name of the folder
      */
-    public void addShareFolderCode(String code, UserID from, UserID to, SID sid, String folderName)
+    void addShareFolderCode(String code, UserID from, UserID to, SID sid, String folderName)
             throws SQLException;
+
+    void deleteACL(UserID userId, SID sid, Collection<UserID> subjects)
+            throws SQLException;
+
+    void deleteACL(SID sid)
+            throws SQLException;
+
+    boolean hasACL(SID sid)
+        throws SQLException;
+
+    boolean isOwner(SID sid, UserID userId)
+        throws SQLException;
+
+    Set<UserID> getACLUsers(SID sid)
+        throws SQLException;
+
+    void addSharedFolder(SID sid)
+        throws SQLException;
+
+    /**
+     * @param users set of user_ids for all users for which we will update the epoch
+     * @return a map of user -> updated epoch number
+     */
+    Map<UserID, Long> incrementACLEpoch(Set<UserID> users)
+            throws SQLException;
+
+    boolean hasOwner(SID sid) throws SQLException;
 }

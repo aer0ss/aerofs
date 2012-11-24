@@ -17,7 +17,9 @@ import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.EmailReminder;
 import com.aerofs.sp.server.user.UserManagement;
@@ -49,23 +51,25 @@ public class SPServlet extends AeroServlet
     private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
     private final SQLThreadLocalTransaction _spTrans = new SQLThreadLocalTransaction(_conProvider);
     private final SPDatabase _db = new SPDatabase(_spTrans);
+    private final UserDatabase _udb = new UserDatabase(_spTrans);
 
     private final ThreadLocalHttpSessionUser _sessionUserID = new ThreadLocalHttpSessionUser();
 
-    private final InvitationEmailer.Factory _emailerFactory = new InvitationEmailer.Factory();
+    private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
+
+    private final User.Factory _factUser = new User.Factory(_udb);
 
     private final UserManagement _userManagement =
-            new UserManagement(_db, _db, _emailerFactory, new PasswordResetEmailer());
-    private final OrganizationManagement _organizationManagement =
-            new OrganizationManagement(_db, _userManagement);
+            new UserManagement(_db, _db, _factUser, _factEmailer, new PasswordResetEmailer());
+    private final OrganizationManagement _organizationManagement = new OrganizationManagement(_db);
 
     private final SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(
-            _db, _userManagement, _organizationManagement, _emailerFactory);
+            _db, _userManagement, _organizationManagement, _factEmailer, _factUser);
 
     private final CertificateGenerator _certificateGenerator = new CertificateGenerator();
 
     private final SPService _service = new SPService(_db, _spTrans, _sessionUserID, _userManagement,
-            _organizationManagement, _sharedFolderManagement, _certificateGenerator);
+            _organizationManagement, _sharedFolderManagement, _certificateGenerator, _factUser);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
@@ -166,22 +170,22 @@ public class SPServlet extends AeroServlet
     private void inviteFromScript(@Nonnull String fromPerson, @Nonnull String inviteeIdString)
             throws Exception
     {
-        UserID inviteeId = UserID.fromExternal(inviteeIdString);
+        User invitee = _factUser.createFromExternalID(inviteeIdString);
 
         // Check that the invitee isn't already a user
-        _userManagement.throwIfUserIdDoesNotExist(inviteeId);
+        if (invitee.exists()) throw new ExAlreadyExist("user already exists");
 
         // Check that we haven't already invited this user
-        if (_db.isAlreadyInvited(inviteeId)) throw new ExAlreadyExist("user already invited");
+        if (_db.isAlreadyInvited(invitee.id())) throw new ExAlreadyExist("user already invited");
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _db.addTargetedSignupCode(code, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), inviteeId,
+        _db.addTargetedSignupCode(code, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), invitee.id(),
                 OrgID.DEFAULT);
 
-        _emailerFactory.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, inviteeId.toString(),
+        _factEmailer.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, invitee.id().toString(),
                 fromPerson, null, null, code).send();
 
-        _db.addEmailSubscription(inviteeId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        _db.addEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>

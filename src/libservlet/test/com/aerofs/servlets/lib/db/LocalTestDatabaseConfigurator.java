@@ -71,7 +71,7 @@ public class LocalTestDatabaseConfigurator
         }
 
         if (runBashCommand(loadSchema) != 0) {
-            throw new RuntimeException("failed to lod ddl (cmd: " + loadSchema + ")");
+            throw new RuntimeException("failed to load schema (cmd: " + loadSchema + ")");
         }
     }
 }

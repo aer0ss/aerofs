@@ -9,7 +9,6 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.cert.Certificate;
 import com.aerofs.sp.server.cert.ICertificateGenerator;
 import org.junit.Before;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.when;
 /**
  * A class used to initialize tests related to certificates and certificate revocation.
  */
-public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
+public class AbstractSPCertificateBasedTest extends AbstractSPUserBasedTest
 {
     // Inject a certificate generator.
     @Mock ICertificateGenerator certificateGenerator;
@@ -57,15 +56,15 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
             throws Exception
     {
         Log.info("Add test users to sp_user to satisfy foreign key constraints for d_owner_id");
-        _transaction.begin();
-        db.addUser(User.createMockForID(TEST_1_USER));
-        db.addUser(User.createMockForID(TEST_2_USER));
-        _transaction.commit();
+        transaction.begin();
+        addTestUser(TEST_1_USER);
+        addTestUser(TEST_2_USER);
+        transaction.commit();
 
         mockCertificate(certificate);
 
         // Set up test user and create pub/priv key pair.
-        sessionUser.setID(TEST_1_USER);
+        setSessionUser(TEST_1_USER);
 
         OutArg<PublicKey> publicKey = new OutArg<PublicKey>();
         OutArg<PrivateKey> privateKey = new OutArg<PrivateKey>();

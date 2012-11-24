@@ -45,7 +45,7 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         // Before we proceed make sure verkehr is set up to publish successfully (for ACLs).
         setupMockVerkehrToSuccessfullyPublish();
 
-        _transaction.begin();
+        transaction.begin();
 
         // User 1
         db.addDevice(new DeviceRow(_deviceA1, "Device A1", TEST_USER_1));
@@ -57,12 +57,12 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         // User 3
         db.addDevice(new DeviceRow(_deviceC1, "Device C2", TEST_USER_3));
 
-        _transaction.commit();
+        transaction.commit();
 
         // User 1 shares with User 2, but not with User 3
         ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
 
-        sessionUser.setID(TEST_USER_1);
+        setSessionUser(TEST_USER_1);
         pair.add(new SubjectRolePair(TEST_USER_1, Role.OWNER).toPB());
         pair.add(new SubjectRolePair(TEST_USER_2, Role.EDITOR).toPB());
 
@@ -76,10 +76,10 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
     public void shouldGetCorrectSetOfInterestedDevices()
         throws Exception
     {
-        _transaction.begin();
+        transaction.begin();
         Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1.getBytes(),
                 sessionUser.getID());
-        _transaction.commit();
+        transaction.commit();
 
         // The size is correct (only the correct devices were returned).
         assertEquals(3, interested.size());

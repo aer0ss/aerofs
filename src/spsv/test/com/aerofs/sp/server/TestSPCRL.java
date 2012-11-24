@@ -55,7 +55,7 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
     @Before
     public void setupVerkehrToCommandSuccessfully()
     {
-        when(_verkehrAdmin.updateCRL_(any(ImmutableList.class)))
+        when(verkehrAdmin.updateCRL_(any(ImmutableList.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 
@@ -91,7 +91,7 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
         try {
             service.revokeDeviceCertificate(new DID(UniqueID.generate()).toPB());
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }
@@ -102,10 +102,10 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
     {
         // Switch to a different user and try to revoke the previous user's device.
         try {
-            sessionUser.setID(TEST_2_USER);
+            setSessionUser(TEST_2_USER);
             service.revokeDeviceCertificate(_did.toPB());
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }

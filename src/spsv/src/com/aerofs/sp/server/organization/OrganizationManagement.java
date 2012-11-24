@@ -9,7 +9,6 @@ import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
@@ -17,7 +16,6 @@ import com.aerofs.sp.server.lib.organization.IOrganizationDatabase.SharedFolder;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sp.server.user.UserManagement;
 import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
@@ -36,14 +34,12 @@ public class OrganizationManagement
     private static final int ABSOLUTE_MAX_RESULTS = 1000;
 
     private final IOrganizationDatabase _db;
-    private final UserManagement _userManagement;
 
     private static final Logger l = Util.l(OrganizationManagement.class);
 
-    public OrganizationManagement(IOrganizationDatabase db, UserManagement userManagement)
+    public OrganizationManagement(IOrganizationDatabase db)
     {
         _db = db;
-        _userManagement = userManagement;
     }
 
     private static Integer sanitizeMaxResults(Integer maxResults)
@@ -92,14 +88,13 @@ public class OrganizationManagement
         _db.setOrganizationPreferences(org);
     }
 
-    public void moveUserToOrganization(UserID userId, OrgID orgId)
+    public void moveUserToOrganization(User user, OrgID orgId)
             throws SQLException, IOException, ExNotFound, ExBadArgs
     {
-        User newUser = _userManagement.getUser(userId);
-        if (!newUser.getOrgID().equals(OrgID.DEFAULT)) {
-            throw new ExBadArgs("User " + userId + " already belongs to an organization.");
+        if (!user.getOrgID().equals(OrgID.DEFAULT)) {
+            throw new ExBadArgs("user " + user + " already belongs to an organization.");
         }
-        _db.moveUserToOrganization(userId, orgId);
+        _db.moveUserToOrganization(user.id(), orgId);
     }
 
     public List<PBSharedFolder> listSharedFolders(OrgID orgId, Integer maxResults, Integer offset)

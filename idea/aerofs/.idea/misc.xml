@@ -3,10 +3,11 @@
   <component name="CppTools.Loader" reportImplicitCastToBool="false" reportNameReferencedOnce="false" warnedAboutFileOutOfSourceRoot="true" version="3" currentProject="$PROJECT_DIR$/../../java/aerofs.daemon/Makefile" compilerSelect="AUTO" />
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
-    <list size="3">
+    <list size="4">
       <item index="0" class="java.lang.String" itemvalue="com.google.inject.Provides" />
       <item index="1" class="java.lang.String" itemvalue="org.mockito.Captor" />
       <item index="2" class="java.lang.String" itemvalue="org.mockito.Mock" />
+      <item index="3" class="java.lang.String" itemvalue="org.mockito.Spy" />
     </list>
   </component>
   <component name="ExportToHTMLSettings">

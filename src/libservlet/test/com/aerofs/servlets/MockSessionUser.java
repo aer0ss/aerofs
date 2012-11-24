@@ -7,6 +7,9 @@ package com.aerofs.servlets;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.user.ISessionUser;
+import com.aerofs.sp.server.lib.user.User;
+
+import javax.annotation.Nonnull;
 
 import static org.junit.Assert.assertFalse;
 
@@ -18,26 +21,33 @@ import static org.junit.Assert.assertFalse;
  */
 public class MockSessionUser implements ISessionUser
 {
-    private UserID _userId;
+    private User _user;
 
     @Override
-    public UserID getID()
+    public @Nonnull UserID getID()
             throws ExNoPerm
     {
-        if (_userId == null) throw new ExNoPerm();
-        return _userId;
+        return get().id();
     }
 
     @Override
-    public void setID(UserID userId)
+    public @Nonnull User get()
+            throws ExNoPerm
     {
-        _userId = userId;
-        assertFalse(_userId.toString().isEmpty());
+        if (_user == null) throw new ExNoPerm();
+        return _user;
+    }
+
+    @Override
+    public void set(@Nonnull User user)
+    {
+        _user = user;
+        assertFalse(_user.toString().isEmpty());
     }
 
     @Override
     public void remove()
     {
-        _userId = null;
+        _user = null;
     }
 }

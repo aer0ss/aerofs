@@ -4,16 +4,17 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.IUserSearchDatabase.UserInfo;
-import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.user.UserManagement.UserListAndQueryCount;
 import com.aerofs.testlib.AbstractTest;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-
+// TODO (WW) use AbstractSP*Test class
 public class TestListUser extends AbstractTest
 {
     private final int NUMBER_OF_USERS = 10;
@@ -43,6 +44,7 @@ public class TestListUser extends AbstractTest
     @Spy private final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
     @Spy private final SPDatabase _spdb = new SPDatabase(_transaction);
+    @Spy private final UserDatabase _udb = new UserDatabase(_transaction);
     @InjectMocks UserManagement userManagement;
 
     @Before
@@ -75,24 +77,21 @@ public class TestListUser extends AbstractTest
     private void setupUsers()
             throws Exception
     {
-        for (int i=0; i < NUMBER_OF_USERS; i++) {
-            User user = new User(UserID.fromInternal("user" + i + "@test.com"), "", "", "".getBytes(),
-                    false, validOrgId, AuthorizationLevel.USER);
+        FullName fullName = new FullName("", "");
 
-            _spdb.addUser(user);
+        for (int i = 0; i < NUMBER_OF_USERS; i++) {
+            _udb.addUser(UserID.fromInternal("user" + i + "@test.com"), fullName, "".getBytes(),
+                    validOrgId, AuthorizationLevel.USER);
         }
 
-        for (int i=0; i < NUMBER_OF_ADMINS; i++) {
-            User admin = new User(UserID.fromInternal("admin" + i + "@test.com"), "", "", "".getBytes(),
-                    false, validOrgId, AuthorizationLevel.ADMIN);
-
-            _spdb.addUser(admin);
+        for (int i = 0; i < NUMBER_OF_ADMINS; i++) {
+            _udb.addUser(UserID.fromInternal("admin" + i + "@test.com"), fullName,
+                    "".getBytes(), validOrgId, AuthorizationLevel.ADMIN);
         }
 
-        for (int i=0; i < NUMBER_OF_USERS; i++) {
-            User user = new User(UserID.fromInternal("user" + i + "@dummy.com"), "", "", "".getBytes(),
-                    false, nonQueriedOrgId, AuthorizationLevel.USER);
-            _spdb.addUser(user);
+        for (int i = 0; i < NUMBER_OF_USERS; i++) {
+            _udb.addUser(UserID.fromInternal("user" + i + "@dummy.com"), fullName,
+                    "".getBytes(), nonQueriedOrgId, AuthorizationLevel.USER);
         }
     }
 

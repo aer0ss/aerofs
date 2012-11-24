@@ -36,12 +36,12 @@ import static org.mockito.Mockito.when;
 
 public class TestSPSignupHelper extends AbstractTest
 {
-    private final InvitationEmailer.Factory _emailFactory = mock(InvitationEmailer.Factory.class);
+    private final InvitationEmailer.Factory factEmail = mock(InvitationEmailer.Factory.class);
 
-    private final LocalSPServiceReactorCaller _serviceReactorCaller =
-            new LocalSPServiceReactorCaller(_emailFactory);
+    private final LocalSPServiceReactorCaller serviceReactorCaller =
+            new LocalSPServiceReactorCaller(factEmail);
 
-    @Spy SPServiceBlockingStub _sp = new SPServiceBlockingStub(_serviceReactorCaller);
+    @Spy SPServiceBlockingStub _sp = new SPServiceBlockingStub(serviceReactorCaller);
     @InjectMocks SPSignupHelper _spSignupHelper;
 
     private static final UserID USER_ID = UserID.fromInternal("user1@company.com");
@@ -54,12 +54,12 @@ public class TestSPSignupHelper extends AbstractTest
         throws Exception
     {
         // return stub invitation emails to avoid NPE
-        when(_emailFactory.createUserInvitation(anyString(), anyString(), anyString(), anyString(),
+        when(factEmail.createUserInvitation(anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString())).thenReturn(new InvitationEmailer());
-        when(_emailFactory.createFolderInvitation(anyString(), anyString(), anyString(), anyString(),
+        when(factEmail.createFolderInvitation(anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString())).thenReturn(new InvitationEmailer());
 
-        _serviceReactorCaller.init_();
+        serviceReactorCaller.init_();
     }
 
     @Test(expected = ExNotFound.class)
@@ -139,7 +139,7 @@ public class TestSPSignupHelper extends AbstractTest
         // Verify an invitation email would have been sent: from the ADMIN_ID to userId.
         // Capture the code to return to the caller.
         ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
-        verify(_emailFactory, atLeastOnce()).createUserInvitation(
+        verify(factEmail, atLeastOnce()).createUserInvitation(
                 eq(LocalSPServiceReactorCaller.ADMIN_ID.toString()), eq(userId.toString()),
                 anyString(), anyString(), anyString(), code.capture());
 

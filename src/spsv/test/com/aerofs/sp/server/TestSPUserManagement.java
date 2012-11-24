@@ -7,11 +7,9 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
@@ -20,69 +18,52 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
-import javax.annotation.Nullable;
-
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-
 
 public class TestSPUserManagement extends AbstractTest
 {
     @Mock SPDatabase db;
+    @Mock User.Factory factUser;
     @Mock PasswordResetEmailer passwordResetEmailer;
     @InjectMocks UserManagement userManagement;
 
-    User testUser;
+    @Mock User user;
+
+    UserID userId = UserID.fromInternal("test@awesome.com");
 
     @Before
     public void setup()
         throws Exception
     {
-        testUser = new User(UserID.fromInternal("test@awesome.com"),"","","".getBytes(),true,
-                new OrgID(123), AuthorizationLevel.USER);
+        when(factUser.create(userId)).thenReturn(user);
 
-        setupMockSPDatabaseGetUserTest();
-        setupMockSPDatabaseGetUserByPasswordResetTokenTestUser();
+        when(user.id()).thenReturn(userId);
+        when(user.exists()).thenReturn(true);
+
+        mockSPDatabaseGetUserByPasswordResetTokenTestUser();
     }
 
-    private void setupMockSPDatabaseGetUser(@Nullable User user)
+    private void mockNonexistingUser()
             throws Exception
     {
-        when(db.getUserNullable(any(UserID.class))).thenReturn(user);
-    }
-    private void setupMockSPDatabaseGetUserTest()
-            throws Exception
-    {
-
-        setupMockSPDatabaseGetUser(testUser);
+        when(user.exists()).thenReturn(false);
+        doThrow(new ExNotFound()).when(user).throwIfNotFound();
     }
 
-    private void setupMockSPDatabaseGetUserNull()
-            throws Exception
-    {
-         setupMockSPDatabaseGetUser(null);
-    }
-
-    private void setupMockSPDatabaseGetUserByPasswordResetToken(@Nullable UserID userID)
+    private void mockSPDatabaseGetUserByPasswordResetTokenNoUser()
         throws Exception
     {
-         when(db.resolvePasswordResetToken(anyString())).thenReturn(userID);
+        when(db.resolvePasswordResetToken(anyString())).thenThrow(new ExNotFound());
     }
 
-    private void setupMockSPDatabaseGetUserByPasswordResetTokenNull()
-        throws Exception
-    {
-        setupMockSPDatabaseGetUserByPasswordResetToken(null);
-    }
-
-    private void setupMockSPDatabaseGetUserByPasswordResetTokenTestUser()
+    private void mockSPDatabaseGetUserByPasswordResetTokenTestUser()
             throws Exception
     {
-        setupMockSPDatabaseGetUserByPasswordResetToken(testUser.id());
+        when(db.resolvePasswordResetToken(anyString())).thenReturn(userId);
     }
 
     // Tests for sendPasswordResetEmail
@@ -91,25 +72,24 @@ public class TestSPUserManagement extends AbstractTest
     public void shouldDoNothingIfEmailDoesNotExist()
         throws Exception
     {
-        setupMockSPDatabaseGetUserNull();
-        userManagement.sendPasswordResetEmail(testUser.id());
-        verify(db).getUserNullable(any(UserID.class));
-        verifyNoMoreInteractions(db);
+        mockNonexistingUser();
+        userManagement.sendPasswordResetEmail(user);
+        verify(user).exists();
     }
     @Test
     public void shouldCallDatabaseToAddPasswordResetToken()
         throws Exception
     {
-        userManagement.sendPasswordResetEmail(testUser.id());
-        verify(db).addPasswordResetToken(eq(testUser.id()), anyString());
+        userManagement.sendPasswordResetEmail(user);
+        verify(db).addPasswordResetToken(eq(user.id()), anyString());
     }
 
     @Test
     public void shouldSendPasswordResetEmail()
         throws Exception
     {
-        userManagement.sendPasswordResetEmail(testUser.id());
-        verify(passwordResetEmailer).sendPasswordResetEmail(eq(testUser.id()),anyString());
+        userManagement.sendPasswordResetEmail(user);
+        verify(passwordResetEmailer).sendPasswordResetEmail(eq(user.id()),anyString());
     }
 
     //  Tests for resetPassword
@@ -118,8 +98,8 @@ public class TestSPUserManagement extends AbstractTest
     public void shouldThrowExNotFoundIfPasswordResetTokenDoesNotExist()
             throws Exception
     {
-        setupMockSPDatabaseGetUserByPasswordResetTokenNull();
-        setupMockSPDatabaseGetUserNull();
+        mockSPDatabaseGetUserByPasswordResetTokenNoUser();
+        mockNonexistingUser();
         userManagement.resetPassword("dummy token", ByteString.copyFrom(("dummy new " +
                 "password").getBytes()));
     }
@@ -129,7 +109,7 @@ public class TestSPUserManagement extends AbstractTest
         throws Exception
     {
         userManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
-        verify(db).updateUserCredentials(testUser.id(), SPParam.getShaedSP("test123".getBytes()));
+        verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP("test123".getBytes()));
     }
 
     @Test
@@ -143,28 +123,26 @@ public class TestSPUserManagement extends AbstractTest
     // Tests for changePassword
 
     @Test
-    public void shouldCallDatabaseGetUserWithSessionUser()
+    public void shouldCheckUserExistence()
         throws Exception
     {
-
-        userManagement.changePassword(testUser.id(),
+        userManagement.changePassword(user.id(),
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );
-        verify(db).getUserNullable(testUser.id());
+        verify(user).throwIfNotFound();
     }
 
     @Test
     public void shouldCallDatabaseTestAndCheckUserCredentials()
         throws Exception
     {
-        userManagement.changePassword(testUser.id(),
+        userManagement.changePassword(user.id(),
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );
-        verify(db).checkAndUpdateUserCredentials(testUser.id(), SPParam.getShaedSP("old password"
+        verify(db).checkAndUpdateUserCredentials(user.id(), SPParam.getShaedSP("old password"
                 .getBytes()),
                 SPParam.getShaedSP("new password".getBytes()));
-
     }
 }

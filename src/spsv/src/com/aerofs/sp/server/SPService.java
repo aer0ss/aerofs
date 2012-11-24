@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.acl.SubjectRolePair;
@@ -77,14 +78,14 @@ import sun.security.pkcs.PKCS10;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.sp.server.SPParam.SP_EMAIL_NAME;
+
+// TODO (WW) This class should contain NO business logic
 
 class SPService implements ISPService
 {
@@ -110,12 +111,14 @@ class SPService implements ISPService
     private final OrganizationManagement _organizationManagement;
     private final SharedFolderManagement _sharedFolderManagement;
     private final ICertificateGenerator _certificateGenerator;
+    private final User.Factory _factUser;
 
     SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
             ISessionUser sessionUser, UserManagement userManagement,
             OrganizationManagement organizationManagement,
             SharedFolderManagement sharedFolderManagement,
-            ICertificateGenerator certificateGenerator)
+            ICertificateGenerator certificateGenerator,
+            User.Factory factUser)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -126,6 +129,7 @@ class SPService implements ISPService
         _organizationManagement = organizationManagement;
         _sharedFolderManagement = sharedFolderManagement;
         _certificateGenerator = certificateGenerator;
+        _factUser = factUser;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -154,16 +158,15 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _db.getUserNullable(_sessionUser.getID());
-        if (user == null) throw new ExNotFound();
-
+        User user = _sessionUser.get();
+        FullName fn = user.getFullName();
         DeviceRow dr = _db.getDevice(new DID(deviceId));
 
         _transaction.commit();
 
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
-                .setFirstName(user.getFirstName())
-                .setLastName(user.getLastName())
+                .setFirstName(fn._first)
+                .setLastName(fn._last)
                 .setDeviceName(dr == null ? "" : dr.getName())
                 .build();
 
@@ -205,7 +208,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
         OrgID orgId = user.getOrgID();
@@ -231,7 +234,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
         OrgID orgId = user.getOrgID();
@@ -271,7 +274,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
         int sharedFolderCount = _organizationManagement.countSharedFolders(user.getOrgID());
@@ -293,33 +296,30 @@ class SPService implements ISPService
             final PBAuthorizationLevel authLevel)
             throws Exception
     {
-        UserID userId = UserID.fromExternal(userIdString);
-
         _transaction.begin();
 
-        User requester = _userManagement.getUser(_sessionUser.getID());
-        User subject = _userManagement.getUser(userId);
+        User requester = _sessionUser.get();
+        User subject = _factUser.createFromExternalID(userIdString);
+        AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
         // Verify caller and subject's organization match
         if (!requester.getOrgID().equals(subject.getOrgID()))
-            throw new ExNoPerm("Organization mismatch.");
+            throw new ExNoPerm("organization mismatch");
 
         // Verify caller's authorization level dominates the subject's
         if (requester.getLevel() != AuthorizationLevel.ADMIN) throw new ExNoPerm(requester +
                 " cannot change authorization of " + subject);
 
         if (requester.id().equals(subject.id())) {
-            throw new ExNoPerm(requester +
-                    " : cannot change authorization level for yourself");
+            throw new ExNoPerm("cannot change authorization for yourself");
         }
 
-        AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
-
         // Verify caller's authorization level dominates or matches the new level
-        if (!requester.getLevel().covers(newAuth))
-            throw new ExNoPerm(requester + " cannot change authorization to " + authLevel);
+        if (!requester.getLevel().covers(newAuth)) {
+            throw new ExNoPerm("cannot change authorization to " + authLevel);
+        }
 
-        _userManagement.setAuthorizationLevel(subject.id(), newAuth);
+        subject.setLevel(newAuth);
 
         _transaction.commit();
 
@@ -335,17 +335,18 @@ class SPService implements ISPService
         // TODO: verify the calling user is allowed to create an organization
         // (check with the payment system)
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
 
         // only users in the default organization or admins can add organizations.
-        if ((!user.getOrgID().equals(OrgID.DEFAULT) || user.getLevel() != AuthorizationLevel.ADMIN)) {
+        if (!user.getOrgID().equals(OrgID.DEFAULT) ||
+                     user.getLevel() != AuthorizationLevel.ADMIN) {
             throw new ExNoPerm("API meant for internal use by AeroFS employees only");
         }
 
         Organization org = _organizationManagement.addOrganization(orgName);
 
-        _organizationManagement.moveUserToOrganization(user.id(), org._id);
-        _userManagement.setAuthorizationLevel(user.id(), AuthorizationLevel.ADMIN);
+        _organizationManagement.moveUserToOrganization(user, org._id);
+        user.setLevel(AuthorizationLevel.ADMIN);
 
         _transaction.commit();
 
@@ -358,7 +359,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
         Organization org = _organizationManagement.getOrganization(user.getOrgID());
@@ -378,7 +379,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
         _organizationManagement.setOrganizationPreferences(user.getOrgID(), orgName);
@@ -531,13 +532,13 @@ class SPService implements ISPService
         _transaction.begin();
 
         l.info("shared folder code: " + code);
-        User u = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
 
         FolderInvitation invitation = _db.getFolderInvitation(code);
         if (invitation != null) {
 
-            if (!u.id().equals(invitation._invitee)) {
-                throw new ExNoPerm("Your email " + u.id() + " does not match the expected " +
+            if (!user.id().equals(invitation._invitee)) {
+                throw new ExNoPerm("Your email " + user.id() + " does not match the expected " +
                         invitation._invitee);
             }
 
@@ -547,7 +548,7 @@ class SPService implements ISPService
                     .build();
 
             // Because the folder code is valid and was received by email, the user is verified.
-            _db.markUserVerified(u.id());
+            user.setVerified();
 
             _transaction.commit();
 
@@ -563,7 +564,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User u = _userManagement.getUser(_sessionUser.getID());
+        User u = _sessionUser.get();
 
         List<FolderInvitation> invitations = _db.listPendingFolderInvitations(u.id());
 
@@ -624,7 +625,7 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        User user = _userManagement.getUser(_sessionUser.getID());
+        User user = _sessionUser.get();
 
         // check and set storeless invite quota
         int left = _db.getFolderlessInvitesQuota(user.id()) - userIdStrings.size();
@@ -655,6 +656,8 @@ class SPService implements ISPService
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
             throws Exception
     {
+        // TODO (WW) move business logic to SharedFolderManagement
+
         _transaction.begin();
         ACLReturn result = _db.getACL(epoch, _sessionUser.getID());
         _transaction.commit(); // commit right away to avoid holding read locks
@@ -692,22 +695,19 @@ class SPService implements ISPService
             final List<PBSubjectRolePair> subjectRoleList)
             throws Exception
     {
-        if (subjectRoleList.isEmpty()) throw new ExNoPerm("Must specify one or more subjects");
-
         UserID userId = _sessionUser.getID();
         SID sid = new SID(storeId);
-
-        l.info("user:" + userId + " attempt update acl for subjects:" + subjectRoleList.size());
-
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(subjectRoleList);
 
+        // making the modification to the database, and then getting the current acl list should
+        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
+        // notification that is newer than what it should be (i.e. we skip an update
+
         _transaction.begin();
-        Map<UserID, Long> epochs = _db.updateACL(userId, sid, srps);
+        Map<UserID, Long> epochs = _sharedFolderManagement.updateACL(userId, sid, srps);
         // send verkehr notification as part of the transaction
         publish_(epochs);
         _transaction.commit();
-
-        l.info(userId + " completed update acl for s:" + sid);
 
         return createVoidReply();
     }
@@ -717,36 +717,13 @@ class SPService implements ISPService
             final List<String> subjectList)
             throws Exception
     {
-        //
-        // making the modification to the database, and then getting the current acl list should
-        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
-        //
+        UserID userId = _sessionUser.getID();
+        SID sid = new SID(storeId.toByteArray());
+        List<UserID> subjects = UserID.fromExternal(subjectList);
 
         _transaction.begin();
-
-        UserID userId = _sessionUser.getID();
-        l.info("user:" + userId + " attempt set acl for subjects:" + subjectList.size());
-
-        assert subjectList.size() > 0;
-
-        // convert the pb message into the appropriate format to make the db call
-
-        SID sid = new SID(storeId.toByteArray());
-        Set<UserID> subjects = new HashSet<UserID>(subjectList.size());
-        for (String subject : subjectList) {
-            subjects.add(UserID.fromExternal(subject));
-
-            l.info("delete role for s:" + sid + " j:" + subject);
-        }
-
-        // make the db call and publish the result via verkehr
-
-        Map<UserID, Long> updatedEpochs = _db.deleteACL(userId, sid, subjects);
+        Map<UserID, Long> updatedEpochs = _sharedFolderManagement.deleteACL(userId, sid, subjects);
         publish_(updatedEpochs);
-        l.info(userId + " completed delete acl for s:" + sid);
-
-        // once publishing succeeds we consider ourselves done
         _transaction.commit();
 
         return createVoidReply();
@@ -810,75 +787,18 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
-            throws IOException, SQLException, ExBadCredential
+            throws IOException, SQLException, ExBadCredential, ExNotFound
     {
         _transaction.begin();
 
-        UserID userId = UserID.fromExternal(userIdString);
-        User user;
-        try {
-            user = _userManagement.getUser(userId);
-        } catch (ExNotFound e) {
-            l.warn("user " + userId + " not found");
-            // use the same exception as if the password is incorrect, to prevent brute-force
-            // guessing of user ids.
-            throw new ExBadCredential(S.BAD_CREDENTIAL);
-        }
+        User user = _factUser.createFromExternalID(userIdString);
+        user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
 
-        l.info("sign in: " + user);
-
-        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
-        if (!Arrays.equals(user.getShaedSP(), shaedSP)) {
-            l.warn("bad passwd for " + userId);
-            // use the same exception as if the user doesn't exist, to prevent brute-force guessing
-            // of user ids.
-            throw new ExBadCredential(S.BAD_CREDENTIAL);
-        }
-
-        _sessionUser.setID(userId);
+        _sessionUser.set(user);
 
         _transaction.commit();
 
         return createVoidReply();
-    }
-
-    private void throwIfUserIDIsInvalid(UserID userId)
-            throws ExBadArgs
-    {
-        if (!Util.isValidEmailAddress(userId.toString())) {
-            throw new ExBadArgs("invalid user ID");
-        }
-    }
-
-    private void signUpCommon(UserID userId, ByteString credentials, String firstName,
-            String lastName, OrgID orgID)
-            throws ExBadArgs, ExAlreadyExist, SQLException
-    {
-        // Only call this within the context of another transaction!!
-        assert _transaction.isInTransaction();
-
-        assert userId != null;
-
-        // Create a User with
-        // - email verification marked as false
-        // - authorization set to lowest USER level
-        User user = new User(userId, firstName, lastName, credentials, false, orgID,
-                AuthorizationLevel.USER);
-
-        l.info(user + " attempt signup");
-
-        // Common enforcement checks
-        throwIfUserIDIsInvalid(user.id());
-        _userManagement.throwIfUserIdDoesNotExist(user.id());
-
-        // TODO If successful, this method should delete all the user's existing signup codes from
-        // the signup_code table
-        // TODO write a test to verify that after one successful signup,
-        // other codes fail/do not exist
-        _db.addUser(user);
-
-        //unsubscribe user from the aerofs invitation reminder mailing list
-        _db.removeEmailSubscription(userId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
     }
 
     @Override
@@ -886,10 +806,16 @@ class SPService implements ISPService
             String firstName, String lastName)
             throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs
     {
+        if (!Util.isValidEmailAddress(userIdString)) throw new ExBadArgs("invalid email address");
+
+        User user = _factUser.createFromExternalID(userIdString);
+        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
+        FullName fullName = new FullName(firstName, lastName);
+
         _transaction.begin();
-
-        signUpCommon(UserID.fromExternal(userIdString), credentials, firstName, lastName, OrgID.DEFAULT);
-
+        user.add(shaedSP, fullName, OrgID.DEFAULT);
+        //unsubscribe user from the aerofs invitation reminder mailing list
+        _db.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         _transaction.commit();
 
         return createVoidReply();
@@ -900,7 +826,7 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        _userManagement.sendPasswordResetEmail(UserID.fromExternal(userIdString));
+        _userManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
         _transaction.commit();
 
         return createVoidReply();
@@ -936,15 +862,21 @@ class SPService implements ISPService
     {
         l.info("targeted sign-up: " + targetedInvite);
 
+        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
+        FullName fullName = new FullName(firstName, lastName);
+
         _transaction.begin();
 
         ResolveTargetedSignUpCodeResult result = _db.getTargetedSignUp(targetedInvite);
+        User user = _factUser.create(result._userId);
 
-        signUpCommon(result._userId, credentials, firstName, lastName, result._orgId);
-
+        user.add(shaedSP, fullName, result._orgId);
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified
-        _db.markUserVerified(result._userId);
+        user.setVerified();
+
+        // TODO (WW) don't we need to unsubscribe the user from the reminder mailing list, similar
+        // to signUp()?
 
         _transaction.commit();
 

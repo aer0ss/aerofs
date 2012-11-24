@@ -4,7 +4,10 @@
 
 package com.aerofs.servlets.lib.db;
 
+import com.aerofs.lib.ex.ExAlreadyExist;
+
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
@@ -17,6 +20,17 @@ public abstract class AbstractSQLDatabase
     public AbstractSQLDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         _provider = provider;
+    }
+
+    // TODO use DBCW.throwOnConstraintViolation() instead
+    protected static void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist
+    {
+        if (isConstraintViolation(e)) throw new ExAlreadyExist(e);
+    }
+
+    protected static boolean isConstraintViolation(SQLException e)
+    {
+        return e.getMessage().startsWith("Duplicate entry");
     }
 
     protected final Connection getConnection()
@@ -32,4 +46,10 @@ public abstract class AbstractSQLDatabase
 
         return connection;
     }
+
+    protected PreparedStatement prepare(String sql) throws SQLException
+    {
+        return getConnection().prepareStatement(sql);
+    }
+
 }

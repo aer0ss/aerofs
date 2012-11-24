@@ -53,7 +53,7 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
                     .getEncoded();
             service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }
@@ -70,7 +70,7 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
             byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
             service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }
@@ -105,10 +105,10 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
 
         // Try to recertify using the wrong session user.
         try {
-            sessionUser.setID(TEST_2_USER);
+            setSessionUser(TEST_2_USER);
             service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }

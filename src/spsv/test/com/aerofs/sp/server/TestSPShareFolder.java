@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,7 +37,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
     private void verifyFolderInvitation(UserID sharer, UserID sharee, SID sid, boolean shouldBeSent)
             throws Exception
     {
-        verify(emailerFactory, shouldBeSent ? times(1) : never())
+        verify(factEmailer, shouldBeSent ? times(1) : never())
                 .createFolderInvitation(eq(sharer.toString()), eq(sharee.toString()),
                         eq(sharer.toString()), eq(sid.toString()),
                         eq(""), anyString());
@@ -47,7 +47,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
             boolean shouldBeInvited)
             throws Exception
     {
-        verify(emailerFactory, shouldBeInvited ? times(1) : never())
+        verify(factEmailer, shouldBeInvited ? times(1) : never())
                 .createUserInvitation(eq(sharer.toString()), eq(sharee.toString()),
                         eq(sharer.toString()), eq(sid.toString()), eq(""), anyString());
     }
@@ -62,7 +62,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
     public void shouldSuccessfullyShareFolderWithOneUser()
             throws Exception
     {
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
         verifyFolderInvitation(TEST_USER_1, TEST_USER_2, TEST_SID_1, true);
         verifyNewUserAccountInvitation(TEST_USER_1, TEST_USER_2, TEST_SID_1, false);
     }
@@ -72,7 +72,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // user 4 hasn't actually been added to the db yet so this should trigger an invite to them
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         verifyFolderInvitation(TEST_USER_1, TEST_USER_4, TEST_SID_1, false);
         verifyNewUserAccountInvitation(TEST_USER_1, TEST_USER_4, TEST_SID_1, true);
     }
@@ -81,13 +81,13 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
     public void shouldThrowExNoPermWhenEditorTriesToInviteToFolder()
             throws Exception
     {
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         try {
             // should throw ExNoPerm because user 2 is an editor
-            shareFolderThroughSP(TEST_USER_2, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+            shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_3, Role.EDITOR);
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }
@@ -97,18 +97,18 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // add user 4 to db but don't verify their account
-        _transaction.begin();
-        db.addUser(new User(TEST_USER_4, TEST_USER_4.toString(), TEST_USER_4.toString(),
-                TEST_USER_4_CRED, false, OrgID.DEFAULT, AuthorizationLevel.USER));
-        _transaction.commit();
+        transaction.begin();
+        udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
+                TEST_USER_4_CRED, OrgID.DEFAULT, AuthorizationLevel.USER);
+        transaction.commit();
 
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
 
         try {
             // should throw ExNoPerm because user 4 is unverified
-            shareFolderThroughSP(TEST_USER_4, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+            shareFolder(TEST_USER_4, TEST_SID_1, TEST_USER_2, Role.EDITOR);
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }

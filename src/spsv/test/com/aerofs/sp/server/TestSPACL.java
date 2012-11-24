@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.C;
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExBadArgs;
@@ -12,7 +13,6 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,6 +45,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
     private long getInitialServerACL()
     {
+        //noinspection PointlessArithmeticExpression
         return C.INITIAL_ACL_EPOCH + 1;
     }
 
@@ -52,7 +53,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     // UTILITY
     //
 
-    private Set<String> setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers()
+    private Set<String> mockVerkehrToSuccessfullyPublishAndStoreSubscribers()
     {
         final Set<String> published = new HashSet<String>();
         when(verkehrPublisher.publish_(any(String.class), any(byte[].class))).then(new
@@ -107,11 +108,11 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // set up TEST_USER_4
-        _transaction.begin();
-        db.addUser(new User(TEST_USER_4, TEST_USER_4.toString(), TEST_USER_4.toString(),
-                TEST_USER_4_CRED, false, OrgID.DEFAULT, AuthorizationLevel.USER));
-        db.markUserVerified(TEST_USER_4);
-        _transaction.commit();
+        transaction.begin();
+        udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
+                TEST_USER_4_CRED, OrgID.DEFAULT, AuthorizationLevel.USER);
+        udb.setVerified(TEST_USER_4);
+        transaction.commit();
     }
 
     //
@@ -124,7 +125,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     {
         setupMockVerkehrToSuccessfullyPublish();
 
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
 
         GetACLReply getAcl = service.getACL(0L).get();
 
@@ -145,18 +146,17 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     public void shouldDeleteExistingACLEntriesForStoreIfThisIsRequestersRootStoreAndRequesterDoesNotHaveAnExistingACLEntryWithOwnerRole()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // malicious user creates an acl for someone's root store
         // note that they don't put themselves in the list!
-        shareFolderThroughSP(TEST_USER_1, rootSID(TEST_USER_2), TEST_USER_3, Role.OWNER);
+        shareFolder(TEST_USER_1, rootSID(TEST_USER_2), TEST_USER_3, Role.OWNER);
 
         // clear this set out, because I don't care about what happens prior to the last call
         published.clear();
 
         // now the actual owner comes along and tries to do the same
-        shareFolderThroughSP(TEST_USER_2, rootSID(TEST_USER_2), TEST_USER_2,
-                Role.OWNER);
+        shareFolder(TEST_USER_2, rootSID(TEST_USER_2), TEST_USER_2, Role.OWNER);
 
         // we still expect both epoch of 1) the owner and 2) the person who was flushed to be
         // updated and a notification published to them
@@ -168,7 +168,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // we should see only one entry for the second user
 
-        sessionUser.setID(TEST_USER_2);
+        setSessionUser(TEST_USER_2);
         GetACLReply reply = service.getACL(0L).get();
 
         List<PBSubjectRolePair> pairs = assertValidACLReplyAndGetPairs(reply,
@@ -181,23 +181,23 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     public void shouldAllowAnyRequesterWithOwnerRoleToSetARoleForTheStoreAndNotifyRequesterAsWellAsAllAffectedUsersOfACLChange()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add yourself
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
         assertEquals(1, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
         published.clear();
 
         // add the second person
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
         assertEquals(2, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
         assertTrue(published.contains(TEST_USER_2.toString()));
         published.clear();
 
         // now lets see if the other person can add a third person
-        shareFolderThroughSP(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
+        shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         assertEquals(3, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
         assertTrue(published.contains(TEST_USER_2.toString()));
@@ -205,7 +205,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         published.clear();
 
         // now let's see what the acls are like
-        sessionUser.setID(TEST_USER_1);
+        setSessionUser(TEST_USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         List<PBSubjectRolePair> pairs = assertValidACLReplyAndGetPairs(reply,
@@ -223,42 +223,42 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         setupMockVerkehrToSuccessfullyPublish();
 
         // add the owner
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
 
         // add an editor
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         // get the editor to try and make some role changes
         try {
-            shareFolderThroughSP(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
+            shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         } catch (Exception e) {
             // make sure we clean up after uncommitted transaction(s)
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }
 
     @Test
-    public void shouldAllowAnyRequesterWithOwnerRoleToDeleteARoleForTheStoreAndNotifyRequesterAsWellAsAllAffectedUsersOfACLChange()
+    public void shouldAllowOwnerToDeleteRoleAndNotifyRequesterAndAllAffectedUsers()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
         published.clear(); // don't care
 
         // add a second person (as owner)
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
         published.clear(); // don't care
 
         // add a third person (as editor)
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
         published.clear(); // don't care
 
         // now have the second guy delete the third
 
-        sessionUser.setID(TEST_USER_2);
+        setSessionUser(TEST_USER_2);
         service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_3.toString())).get();
 
         // expect first, second and third guy all to be notified
@@ -272,7 +272,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         List<PBSubjectRolePair> pairs;
 
-        sessionUser.setID(TEST_USER_1);
+        setSessionUser(TEST_USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         // this guy has seen _all_ the updates, so he should see an epoch of 4
@@ -282,7 +282,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
 
         // now have the deleted guy get his acl
 
-        sessionUser.setID(TEST_USER_3);
+        setSessionUser(TEST_USER_3);
         reply = service.getACL(0L).get();
 
         // only two updates have affected him, so he should have an epoch of 2
@@ -297,21 +297,21 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     public void shouldAlwaysReturnSuccessfullyEvenIfDeleteACLCallIsMadeForAUserThatDoesntHaveAnACLEntry()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
         published.clear(); // don't care
 
         // now attempt to delete someone for whom the role doesn't exist
 
-        sessionUser.setID(TEST_USER_1);
+        setSessionUser(TEST_USER_1);
         service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_2.toString())).get();
 
         assertEquals(1, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
 
-        sessionUser.setID(TEST_USER_1);
+        setSessionUser(TEST_USER_1);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch shouldn't be bumped on a deletion of a person that doesn't exist
@@ -328,17 +328,17 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         setupMockVerkehrToSuccessfullyPublish();
 
         // add the owner
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
 
         // add an editor
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         // get the editor to try to delete the owner
         try {
-            sessionUser.setID(TEST_USER_2);
+            setSessionUser(TEST_USER_2);
             service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1.toString())).get();
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             throw e;
         }
     }
@@ -350,20 +350,20 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         setupMockVerkehrToSuccessfullyPublish();
 
         // add the owner for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
 
         // add the owner for store # 2
-        shareFolderThroughSP(TEST_USER_2, TEST_SID_2, TEST_USER_2, Role.OWNER);
+        shareFolder(TEST_USER_2, TEST_SID_2, TEST_USER_2, Role.OWNER);
 
         // add an editor for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
 
         // add an editor for store # 2
-        shareFolderThroughSP(TEST_USER_2, TEST_SID_2, TEST_USER_3, Role.EDITOR);
+        shareFolder(TEST_USER_2, TEST_SID_2, TEST_USER_3, Role.EDITOR);
 
         // now have the editor do a getacl call
 
-        sessionUser.setID(TEST_USER_3);
+        setSessionUser(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         // ok:
@@ -396,19 +396,19 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     public void shouldAllowUpdateACLToChangeACLsAlreadyInDatabase()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
 
         // add user 3 as editor for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
 
         published.clear(); // clear out notifications from sharing
 
         // update ACL for user 3 as user 1
-        sessionUser.setID(TEST_USER_1);
-        service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_3, Role.OWNER));
+        setSessionUser(TEST_USER_1);
+        service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_3, Role.OWNER));
 
         // check that notifications were published on update
         assertEquals(2, published.size());
@@ -416,7 +416,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertTrue(published.contains(TEST_USER_3.toString()));
 
         // verify user 3 has updated ACL in place
-        sessionUser.setID(TEST_USER_3);
+        setSessionUser(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
 
         // epoch for this guy should be 2 (started at 0, added as editor then as owner)
@@ -436,20 +436,20 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     public void shouldForbidUpdateACLFromChangingACLsNotInDatabase()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
         published.clear(); // throw away this notification
 
         // update ACL for user 3 as user 1
-        sessionUser.setID(TEST_USER_1);
+        setSessionUser(TEST_USER_1);
         Exception ex = null;
         try {
             // should fail with ExNoPerm
-            service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_3, Role.OWNER));
+            service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_3, Role.OWNER));
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             ex = e;
         }
 
@@ -457,7 +457,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertEquals(0, published.size());
 
         // check that user 3 still has no ACLs set in the db
-        sessionUser.setID(TEST_USER_3);
+        setSessionUser(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
         assertEquals(getInitialServerACL(), reply.getEpoch());
         assertEquals(0, reply.getStoreAclCount());
@@ -470,24 +470,24 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
     public void shouldForbidUpdateACLFromUserWithNonOwnerPermissions()
             throws Exception
     {
-        Set<String> published = setupMockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
 
         // add user 3 as editor for store # 1
-        shareFolderThroughSP(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
 
         published.clear(); // throw away these notifications
 
         // try to edit user 1's ACL entry for store 1 as user 3
-        sessionUser.setID(TEST_USER_3);
+        setSessionUser(TEST_USER_3);
         Exception ex = null;
         try {
             // should fail with ExNoPerm
-            service.updateACL(TEST_SID_1.toPB(), makePair(TEST_USER_1, Role.EDITOR));
+            service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_1, Role.EDITOR));
         } catch (Exception e) {
-            _transaction.handleException();
+            transaction.handleException();
             ex = e;
         }
 
@@ -495,7 +495,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertEquals(0, published.size());
 
         // check that user 3 only has editor permissions
-        sessionUser.setID(TEST_USER_3);
+        setSessionUser(TEST_USER_3);
         GetACLReply reply = service.getACL(0L).get();
         assertEquals(getInitialServerACL() + 1, reply.getEpoch());
         assertEquals(1, reply.getStoreAclCount());

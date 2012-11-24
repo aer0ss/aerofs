@@ -23,7 +23,6 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.mail.MessagingException;
 import java.io.IOException;
@@ -31,7 +30,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * This class will grow into a wrapper for DB queries regarding users
+ * TODO (WW) move all methods from this class to User or Organization classes
  */
 public class UserManagement
 {
@@ -42,14 +41,16 @@ public class UserManagement
     private final IUserSearchDatabase _usdb;
     private final InvitationEmailer.Factory _emailerFactory;
     private final PasswordResetEmailer _passwordResetEmailer;
+    private final User.Factory _factUser;
 
     private static final Logger l = Util.l(UserManagement.class);
 
-    public UserManagement(SPDatabase db, IUserSearchDatabase usdb,
+    public UserManagement(SPDatabase db, IUserSearchDatabase usdb, User.Factory factUser,
             InvitationEmailer.Factory emailerFactory, PasswordResetEmailer passwordResetEmailer)
     {
         _db = db;
         _usdb = usdb;
+        _factUser = factUser;
         _emailerFactory = emailerFactory;
         _passwordResetEmailer = passwordResetEmailer;
     }
@@ -67,27 +68,6 @@ public class UserManagement
     }
 
     /**
-     * Query the User identified by userId from the db, never returning null
-     * @throws ExNotFound if the specified userId was not found in the db
-     */
-    public @Nonnull User getUser(@Nonnull UserID userId)
-            throws ExNotFound, IOException, SQLException
-    {
-        User u = getUserNullable(userId);
-        if (u == null) throw new ExNotFound("email address not found (" + userId + ")");
-        return u;
-    }
-
-    /**
-     * Query the User identified by userId from the db, returning null if it doesn't exist
-     */
-    public @Nullable User getUserNullable(@Nonnull UserID userId)
-            throws IOException, SQLException
-    {
-        return _db.getUserNullable(userId);
-    }
-
-    /**
      * This method performs business logic checks prior to sending invite email and wrap the
      * call to the emailer in a nice and clean Callable that should be used outside of the DB
      * transaction.
@@ -101,7 +81,7 @@ public class UserManagement
         assert inviteeId != null;
 
         // Check that the invitee doesn't exist already
-        throwIfUserIdDoesNotExist(inviteeId);
+        if (_factUser.create(inviteeId).exists()) throw new ExAlreadyExist("user already exists");
 
         final String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
 
@@ -110,21 +90,7 @@ public class UserManagement
         _db.addEmailSubscription(inviteeId, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         return _emailerFactory.createUserInvitation(inviter.id().toString(), inviteeId.toString(),
-                inviter.getFirstName(), folderName, note, code);
-    }
-
-    public void throwIfUserIdDoesNotExist(UserID userId)
-            throws SQLException, ExAlreadyExist
-    {
-        if (_db.getUserNullable(userId) != null) {
-            throw new ExAlreadyExist("A user with this email address already exists");
-        }
-    }
-
-    public void setAuthorizationLevel(UserID userId, AuthorizationLevel auth)
-            throws SQLException
-    {
-        _db.setAuthorizationLevel(userId, auth);
+                inviter.getFullName()._first, folderName, note, code);
     }
 
     public int totalUserCount(OrgID orgId) throws SQLException
@@ -190,17 +156,15 @@ public class UserManagement
         return new UserListAndQueryCount(users, count);
     }
 
-    public void sendPasswordResetEmail(UserID userId)
+    public void sendPasswordResetEmail(User user)
             throws SQLException, IOException, MessagingException
     {
-        User user;
-        try {
-             user = getUser(userId);
-        } catch(ExNotFound e){
+        if (!user.exists()) {
             // If we don't have a user, just do nothing
-            l.info("Password reset requested for " + userId + " but user doesn't exist");
+            l.info("Password reset requested for " + user + " but user doesn't exist");
             return;
         }
+
         String token = Base62CodeGenerator.newRandomBase62String(SPParam
                 .PASSWORD_RESET_TOKEN_LENGTH);
         _db.addPasswordResetToken(user.id(), token);
@@ -212,7 +176,8 @@ public class UserManagement
             throws SQLException, ExNotFound, IOException, MessagingException
     {
         UserID userId = _db.resolvePasswordResetToken(passwordResetToken);
-        User user = getUser(userId);
+        User user = _factUser.create(userId);
+        user.throwIfNotFound();
         _db.updateUserCredentials(user.id(), SPParam.getShaedSP(newCredentials.toByteArray()));
         _db.deletePasswordResetToken(passwordResetToken);
         l.info("Reset " + userId + "'s Password");
@@ -223,7 +188,8 @@ public class UserManagement
             ByteString new_credentials)
             throws ExNotFound, IOException, SQLException, ExNoPerm
     {
-        User user = getUser(userId);
+        User user = _factUser.create(userId);
+        user.throwIfNotFound();
         _db.checkAndUpdateUserCredentials(user.id(),
                 SPParam.getShaedSP(old_credentials.toByteArray()),
                 SPParam.getShaedSP(new_credentials.toByteArray()));
