@@ -17,7 +17,6 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
@@ -101,10 +100,6 @@ public class ComputeHashCall
         }
 
         l.debug("No matching version. Throwing NOT_FOUND");
-        PBCore core = CoreUtil.newReply(msg.pb())
-                .setExceptionReply(Exceptions.toPB(new ExNotFound()))
-                .build();
-        _nsl.sendUnicast_(msg.did(), msg.sidx(), core);
+        throw new ExNotFound();
     }
-
 }

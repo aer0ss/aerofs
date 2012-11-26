@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.net.proto;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,6 +57,8 @@ import com.google.inject.Inject;
 import com.google.protobuf.AbstractMessageLite;
 
 import javax.annotation.Nullable;
+
+import static com.google.common.collect.Lists.newArrayListWithCapacity;
 
 public class GetVersCall
 {
@@ -184,7 +185,7 @@ public class GetVersCall
         didsExcludeRequester.remove(msg.did());
 
         List<DeviceEntry> desExcludeRequester =
-                new ArrayList<DeviceEntry>(didsExcludeRequester.size());
+                newArrayListWithCapacity(didsExcludeRequester.size());
         for (DID did : didsExcludeRequester) {
             DeviceEntry de = new DeviceEntry();
             de._did = did;

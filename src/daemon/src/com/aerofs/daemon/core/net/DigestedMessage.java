@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
 import java.io.ByteArrayInputStream;
@@ -9,24 +13,45 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 
-// a helper, dumb class
-//
-public class DigestedMessage {
+import javax.annotation.Nullable;
 
+import static com.aerofs.daemon.core.CoreUtil.typeString;
+
+/**
+ * Represents a partially-processed incoming packet from the network stack
+ * <p/>
+ * Users can expect to have access to:
+ * <ul>
+ *     <li>sender</li>
+ *     <li>transport used to send message</li>
+ *     <li>message header</li>
+ *     <li>message body</li>
+ * </ul>
+ */
+public class DigestedMessage
+{
     private final PBCore _pb;
     private final ByteArrayInputStream _is;
-    private final SIndex _sidx;
     private final Endpoint _ep;
+    private final SIndex _sidx;
     private final String _user;
-    private final StreamKey _strm;
+    @Nullable private final StreamKey _strm;
 
-    public DigestedMessage(PBCore pb, ByteArrayInputStream is, SIndex sidx, Endpoint ep,
-            StreamKey strm, String user)
+    /**
+     * @param strm may be null if the incoming message is not a stream
+     */
+    public DigestedMessage(
+            PBCore pb,
+            ByteArrayInputStream is,
+            Endpoint ep,
+            SIndex sidx,
+            String user, // FIXME (AG): Should have a User type
+            @Nullable StreamKey strm)
     {
         _pb = pb;
         _is = is;
-        _sidx = sidx;
         _ep = ep;
+        _sidx = sidx;
         _strm = strm;
         _user = user;
     }
@@ -72,5 +97,12 @@ public class DigestedMessage {
     public StreamKey streamKey()
     {
         return _strm;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "msg:[t:" + typeString(_pb) + " i:" + _is + " sidx:" + _sidx + " ep:" + _ep +
+                " u:" + _user +  " strm:" + _strm + "]";
     }
 }
