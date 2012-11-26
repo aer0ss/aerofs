@@ -31,8 +31,10 @@ import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.UniqueID;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 
@@ -93,8 +95,11 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         if (soid == null) {
             Trans t = _tm.begin_();
             try {
-                _oc.create_(OA.Type.FILE, soidParent, ev._dest.last(), PhysicalOp.APPLY, t);
-                soid = _ds.resolveThrows_(ev._dest);
+                // create a new object with no associated CA (this is important to avoid generating
+                // a bogus empty version)
+                soid = new SOID(soidParent.sidx(), new OID(UniqueID.generate()));
+                _oc.createMeta_(OA.Type.FILE, soid, soidParent.oid(), ev._dest.last(), 0,
+                        PhysicalOp.APPLY, false, true, t);
                 t.commit_();
             } finally {
                 t.end_();
@@ -105,7 +110,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
         if (oa.isExpelled()) throw new ExExpelled(ev._dest.toString());
         if (oa.isDirOrAnchor()) throw new ExNotFile(ev._dest);
 
-        boolean wasPresent = (oa.caMaster() != null);
+        boolean wasPresent = (oa.caMasterNullable() != null);
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
         IPhysicalPrefix pp = _ps.newPrefix_(sockid);
 
@@ -146,6 +151,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
             _ps.apply_(pp, pf, wasPresent, mtime, t);
 
             // update CA
+            if (!wasPresent) _ds.createCA_(soid, KIndex.MASTER, t);
             _ds.setCA_(sockid.sokid(), pp.getLength_(), mtime, h, t);
 
             // increment version number after local update
