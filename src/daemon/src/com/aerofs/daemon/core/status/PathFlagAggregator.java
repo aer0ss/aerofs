@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.daemon.core.net.IDownloadStateListener.Ended;
-import com.aerofs.daemon.core.net.IDownloadStateListener.Ongoing;
-import com.aerofs.daemon.core.net.IDownloadStateListener.State;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ended;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener.Ongoing;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;

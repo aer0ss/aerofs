@@ -59,7 +59,7 @@ class ZephyrClientSpec
 
         //
         // in all cases, returning HALT from a state terminates the state machine
-        // and PARK simply waits for an external io event in the current state
+        // and PARK simply waits for an external physical event in the current state
         // hmm...is this pretty much an hsm?
         //
 

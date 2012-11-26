@@ -20,7 +20,7 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
-// we don't use OutputStream to avoid confusion with java.io.OutputStream
+// we don't use OutputStream to avoid confusion with java.physical.OutputStream
 //
 public class OutgoingStreams
 {

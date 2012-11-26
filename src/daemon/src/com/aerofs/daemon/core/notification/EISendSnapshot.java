@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.DownloadState;
-import com.aerofs.daemon.core.net.IDownloadStateListener.State;
+import com.aerofs.daemon.core.protocol.DownloadState;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
 import com.aerofs.daemon.core.net.IUploadStateListener.Key;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.core.net.UploadState;

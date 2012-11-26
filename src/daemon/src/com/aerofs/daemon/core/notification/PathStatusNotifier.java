@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.IDownloadStateListener;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener;
 import com.aerofs.daemon.core.net.IUploadStateListener;
 import com.aerofs.daemon.core.notification.ConflictState.IConflictStateListener;
 import com.aerofs.daemon.core.status.PathStatus;

@@ -3,7 +3,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;
-import com.aerofs.daemon.core.net.proto.GetVersCall;
+import com.aerofs.daemon.core.protocol.GetVersCall;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.Cat;

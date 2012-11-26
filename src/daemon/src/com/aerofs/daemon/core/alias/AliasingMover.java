@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.proto.PrefixVersionControl;
+import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;

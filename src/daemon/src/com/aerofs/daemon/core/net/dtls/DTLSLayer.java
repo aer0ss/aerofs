@@ -1,6 +1,11 @@
 package com.aerofs.daemon.core.net.dtls;
 
-import com.aerofs.daemon.core.net.*;
+import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.daemon.core.net.IDuplexLayer;
+import com.aerofs.daemon.core.net.IUnicastInputLayer;
+import com.aerofs.daemon.core.net.IUnicastOutputLayer;
+import com.aerofs.daemon.core.net.PeerContext;
+import com.aerofs.daemon.core.net.RawMessage;
 import com.aerofs.daemon.core.net.dtls.DTLSMessage.Type;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;

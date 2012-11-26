@@ -1006,7 +1006,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
     }
 
     //
-    // unused selector io event handlers
+    // unused selector physical event handlers
     //
 
     @Override

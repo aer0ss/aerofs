@@ -11,6 +11,7 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.ITransport;
@@ -28,12 +29,13 @@ import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
-import static com.aerofs.daemon.core.net.tng.Transports.Preferences.*;
 
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
+import static com.aerofs.daemon.core.net.tng.Transports.Preferences.JINGLE;
+import static com.aerofs.daemon.core.net.tng.Transports.Preferences.ZEPHYR;
 import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;
 import static com.aerofs.daemon.tng.ITransport.DEFAULT_COMPARATOR;
 

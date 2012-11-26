@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.mock.TestUtilCore;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.net.dependence.DependencyEdge;
+import com.aerofs.daemon.core.protocol.dependence.DependencyEdge;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
@@ -20,7 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.Downloads;
+import com.aerofs.daemon.core.protocol.Downloads;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.tc.Token;

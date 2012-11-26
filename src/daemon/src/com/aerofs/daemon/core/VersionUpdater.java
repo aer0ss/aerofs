@@ -7,7 +7,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.proto.NewUpdates;
+import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import org.apache.log4j.Logger;

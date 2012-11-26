@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import static com.aerofs.daemon.core.net.throttling.LimitParam._MAX_DL_BW;
-import static com.aerofs.daemon.core.net.throttling.LimitParam._MIN_DL_BW;
 import static com.aerofs.lib.Param.Throttling.UNLIMITED_BANDWIDTH;
 
 // This is a control system
@@ -430,14 +428,14 @@ public class LimitMonitor implements IUnicastInputLayer, ICfgDatabaseListener, I
 
     private void setBandwidth_(long bw)
     {
-        if (bw == UNLIMITED_BANDWIDTH || (bw > (_MAX_DL_BW - _MAX_BW_OVERAGE))) {
-            _availBwLoLvl = _MAX_DL_BW;
-            _availBwHiLvl = _MAX_DL_BW;
-        } else if (bw >= _MIN_DL_BW) {
+        if (bw == UNLIMITED_BANDWIDTH || (bw > (LimitParam._MAX_DL_BW - _MAX_BW_OVERAGE))) {
+            _availBwLoLvl = LimitParam._MAX_DL_BW;
+            _availBwHiLvl = LimitParam._MAX_DL_BW;
+        } else if (bw >= LimitParam._MIN_DL_BW) {
             _availBwLoLvl = bw;
             _availBwHiLvl = _availBwLoLvl + _MAX_BW_OVERAGE;
         } else {
-            _availBwLoLvl = _MIN_DL_BW;
+            _availBwLoLvl = LimitParam._MIN_DL_BW;
             _availBwHiLvl = _availBwLoLvl + _MAX_BW_OVERAGE;
         }
     }

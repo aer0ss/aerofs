@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.notification;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.DownloadState;
+import com.aerofs.daemon.core.protocol.DownloadState;
 import com.aerofs.daemon.core.net.UploadState;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.IServiceStatusListener;

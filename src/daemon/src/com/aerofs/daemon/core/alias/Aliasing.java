@@ -9,7 +9,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.google.inject.Inject;
 
 
-import com.aerofs.daemon.core.net.ReceiveAndApplyUpdate;
+import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
@@ -25,8 +25,8 @@ import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Set;
 
-import static com.aerofs.daemon.core.net.ReceiveAndApplyUpdate.*;
-import static com.aerofs.daemon.core.net.proto.GetComponentReply.*;
+import static com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate.*;
+import static com.aerofs.daemon.core.protocol.GetComponentReply.*;
 
 /**
  * Implements aliasing of objects to resolve name conflict.

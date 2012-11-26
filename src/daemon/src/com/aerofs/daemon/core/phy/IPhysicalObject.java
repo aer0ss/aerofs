@@ -7,7 +7,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 
 /**
  * instances of this interface represent a combination of SOKIDs and file or directory paths.
- * They don't necessarily represent existing files/folders. This is very similar to how java.io.File
+ * They don't necessarily represent existing files/folders. This is very similar to how java.physical.File
  * represents abstract paths.
  */
 public interface IPhysicalObject

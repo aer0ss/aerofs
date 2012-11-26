@@ -4,7 +4,10 @@
 
 package com.aerofs.daemon.core;
 
-import com.aerofs.daemon.core.net.*;
+import com.aerofs.daemon.core.net.IUnicastInputLayer;
+import com.aerofs.daemon.core.net.IUnicastOutputLayer;
+import com.aerofs.daemon.core.net.UnicastInputTopLayer;
+import com.aerofs.daemon.core.net.UnicastOutputBottomLayer;
 import com.aerofs.daemon.core.net.dtls.DTLSLayer;
 import com.aerofs.daemon.core.net.throttling.GlobalLimiter;
 import com.aerofs.daemon.core.net.throttling.IncomingStreamsThrottler;

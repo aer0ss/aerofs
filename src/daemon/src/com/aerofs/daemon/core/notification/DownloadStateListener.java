@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.notification;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.net.IDownloadStateListener;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;

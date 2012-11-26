@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.status;
 
-import com.aerofs.daemon.core.net.IDownloadStateListener.State;
+import com.aerofs.daemon.core.protocol.IDownloadStateListener.State;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;

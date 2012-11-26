@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
-import com.aerofs.daemon.core.net.DownloadState;
+import com.aerofs.daemon.core.protocol.DownloadState;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.net.UploadState;
 import com.aerofs.daemon.core.tc.TC;

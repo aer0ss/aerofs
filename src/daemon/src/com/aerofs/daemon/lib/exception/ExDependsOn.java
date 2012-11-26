@@ -1,6 +1,6 @@
 package com.aerofs.daemon.lib.exception;
 
-import com.aerofs.daemon.core.net.dependence.DependencyEdge.DependencyType;
+import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
 
