@@ -178,7 +178,7 @@ public class GetComponentCall
         if (!_ds.isPresent_(k) &&
             !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
             l.debug(k + " not present. Throwing");
-            throw new ExNoComponentWithSpecifiedVersion();
+            throw new ExNoComponentWithSpecifiedVersion(k + " not present");
         }
 
         // check permissions

@@ -25,7 +25,6 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.*;
 
@@ -246,23 +245,42 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
     private final IDataReader<SOID, OA> _readerOA =
         new IDataReader<SOID, OA>() {
+
+            // A set of SOIDs visited to resolve each OA query. We want to avoid losing
+            // information upon StackOverflowErrors in the DirectoryService, so crash if duplicate
+            // SOIDs are visited (i.e. a cycle exists) or if the set becomes too large.
+            // TODO (MJ) remove this slightly-hackish variable when StackOverflows are less frequent
+            private final Set<SOID> _soidAncestorChain = Sets.newHashSet();
+
             @Override
-            @Nullable public OA read_(SOID soid) throws SQLException
+            @Nullable public OA read_(final SOID soid) throws SQLException
             {
                 OA oa = _mdb.getOA_(soid);
                 if (oa == null) return null;
 
-                Path path = resolve_(oa);
-                if (oa.isFile()) {
-                    for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
-                        en.getValue().setPhysicalFile_(_ps.newFile_(new SOKID(soid,
-                                en.getKey()), path));
-                    }
-                } else {
-                    oa.setPhyFolder_(_ps.newFolder_(soid, path));
-                }
+                try {
+                    // Should never visit the same SOID twice on the same DirectoryService query
+                    // nor should the set of visited SOIDs become too large
+                    boolean isUniqueToSet = _soidAncestorChain.add(soid);
+                    assert isUniqueToSet : oa + " " + _soidAncestorChain;
+                    assert _soidAncestorChain.size() <= 100 : oa + " " + _soidAncestorChain;
 
-                return oa;
+                    Path path = resolve_(oa);
+                    if (oa.isFile()) {
+                        for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
+                            en.getValue().setPhysicalFile_(
+                                    _ps.newFile_(new SOKID(soid, en.getKey()), path));
+                        }
+                    } else {
+                        oa.setPhyFolder_(_ps.newFolder_(soid, path));
+                    }
+
+                    return oa;
+
+                } finally {
+                    boolean wasRemoved = _soidAncestorChain.remove(soid);
+                    assert wasRemoved : soid + " " + _soidAncestorChain;
+                }
             }
         };
 
@@ -325,32 +343,12 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         // all the children under the path need to be invalidated.
         _cacheDS.invalidateAll_();
 
-        assertHasNoAncestorCycle_(soid);
-
         if (!isTrashOrDeleted_(soidParent)) {
             Path path = resolve_(oaParent).append(name);
             for (IDirectoryServiceListener listener : _listeners) {
                 listener.objectCreated_(soid, oaParent.soid().oid(), path, t);
             }
         }
-    }
-
-    /**
-     * assumes {@code soid} exists in the OA table
-     */
-    private void assertHasNoAncestorCycle_(@Nonnull SOID soid) throws SQLException
-    {
-        Set<OID> ancestors = Sets.newHashSet();
-
-        SIndex sidx = soid.sidx();
-        SOID cur = soid;
-        do {
-            if (!ancestors.add(cur.oid())) {
-                SystemUtil.fatal("anc cyc " + ancestors + " by " + soid);
-            }
-
-            cur = new SOID(sidx, getOA_(cur).parent());
-        } while (!cur.oid().isRoot());
     }
 
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
@@ -432,8 +430,6 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
             // Physical objects of all the children objects needs to be invalidated
             _cacheOA.invalidateAll_();
         }
-
-        assertHasNoAncestorCycle_(oa.soid());
 
         // update activity log
 
