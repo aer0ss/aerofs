@@ -57,12 +57,12 @@ public class UserManagement
 
     public static class UserListAndQueryCount
     {
-        public final List<UserInfo> _uis;
+        public final List<UserInfo> _userInfoList;
         public final int _count;
 
-        public UserListAndQueryCount(List<UserInfo> uis, int count)
+        public UserListAndQueryCount(List<UserInfo> userInfoList, int count)
         {
-            _uis = uis;
+            _userInfoList = userInfoList;
             _count = count;
         }
     }

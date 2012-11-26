@@ -29,8 +29,7 @@ public abstract class AbstractDatabase
     {
         if (ps == null) return false;
         try {
-            if (ps.getConnection() != c()) return false;
-            return true;
+            return ps.getConnection() == c();
         } catch (SQLException e) {
             l.warn(Util.e(e));
             DBUtil.close(ps);

@@ -117,7 +117,7 @@ public class SPDatabase
     public List<UserInfo> listUsers(OrgID orgId, int offset, int maxResults)
             throws SQLException
     {
-        PreparedStatement psLU = prepare(
+        PreparedStatement psLU = prepareStatement(
                 "select " + C_USER_ID + "," +
                         C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " +
                         T_USER +
@@ -140,7 +140,7 @@ public class SPDatabase
     public List<UserInfo> searchUsers(OrgID orgId, int offset, int maxResults, String search)
             throws SQLException
     {
-        PreparedStatement psSLU = prepare("select " + C_USER_ID + "," +
+        PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + "," +
                 C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " + T_USER +
                 " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " +
                 " order by " + C_USER_ID + " limit ? offset ?");
@@ -163,7 +163,7 @@ public class SPDatabase
             AuthorizationLevel authLevel)
             throws SQLException
     {
-        PreparedStatement psLUA = prepare(
+        PreparedStatement psLUA = prepareStatement(
                 "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
                 C_USER_LAST_NAME + " from " + T_USER +
                 " where " + C_USER_ORG_ID + "=? and " +
@@ -189,7 +189,7 @@ public class SPDatabase
             int maxResults, AuthorizationLevel authLevel, String search)
         throws SQLException
     {
-        PreparedStatement psSUA = prepare(
+        PreparedStatement psSUA = prepareStatement(
                 "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
                 C_USER_LAST_NAME + " from " + T_USER +
                 " where " + C_USER_ORG_ID + "=? and " +
@@ -225,7 +225,7 @@ public class SPDatabase
     public int listUsersCount(OrgID orgId)
         throws SQLException
     {
-        PreparedStatement psLUC = prepare("select count(*) from " +
+        PreparedStatement psLUC = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=?");
 
         psLUC.setInt(1, orgId.getInt());
@@ -241,7 +241,7 @@ public class SPDatabase
     public int searchUsersCount(OrgID orgId, String search)
         throws SQLException
     {
-        PreparedStatement psSCU = prepare("select count(*) from " +
+        PreparedStatement psSCU = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ?");
 
         psSCU.setInt(1, orgId.getInt());
@@ -259,7 +259,7 @@ public class SPDatabase
     public int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, OrgID orgId)
             throws SQLException
     {
-        PreparedStatement psLUAC = prepare("select count(*) from " +
+        PreparedStatement psLUAC = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
                 C_USER_AUTHORIZATION_LEVEL + "=?");
 
@@ -279,7 +279,7 @@ public class SPDatabase
             OrgID orgId, String search)
             throws SQLException
     {
-        PreparedStatement psSUAC = prepare(
+        PreparedStatement psSUAC = prepareStatement(
                 "select count(*) from " + T_USER + " where " + C_USER_ORG_ID + "=? and " +
                 C_USER_ID + " like ? and " +
                 C_USER_AUTHORIZATION_LEVEL + "=?"
@@ -322,7 +322,7 @@ public class SPDatabase
         // information.
         //
         // TODO: Increase the performance of this query
-        PreparedStatement psLSF = prepare(
+        PreparedStatement psLSF = prepareStatement(
                 "select t1." + C_AC_STORE_ID + ", t1." + C_SF_NAME + ", t2." + C_AC_USER_ID
                 + ", t2." + C_AC_ROLE + " from (" +
                     "select " + C_AC_STORE_ID + ", " + C_SF_NAME + ", count(*) from (" +
@@ -385,7 +385,7 @@ public class SPDatabase
         // statement in it has been modified to return the count of shared folders instead
         // of the users of the shared folders. Please see the explanation of the sql
         // statement in listSharedFolders for more details.
-        PreparedStatement psCSF = prepare(
+        PreparedStatement psCSF = prepareStatement(
                 "select count(*) from (" +
                     "select " + C_AC_STORE_ID + ", count(*) from (" +
                         sidListQuery() +
@@ -408,7 +408,7 @@ public class SPDatabase
     // Return 0 if user not found.
     public int getFolderlessInvitesQuota(UserID userId) throws SQLException
     {
-        PreparedStatement psGIL = prepare("select " +
+        PreparedStatement psGIL = prepareStatement("select " +
                 C_USER_STORELESS_INVITES_QUOTA + " from " + T_USER + " where " + C_USER_ID +
                 "=?");
 
@@ -428,7 +428,7 @@ public class SPDatabase
     public void setFolderlessInvitesQuota(UserID userId, int quota)
             throws SQLException
     {
-        PreparedStatement ps = prepare("update " + T_USER + " set "
+        PreparedStatement ps = prepareStatement("update " + T_USER + " set "
                 + C_USER_STORELESS_INVITES_QUOTA + "=? where " + C_USER_ID + "=?");
 
         ps.setInt(1, quota);
@@ -439,7 +439,7 @@ public class SPDatabase
     public void setUserName(UserID userId, String firstName, String lastName)
             throws SQLException
     {
-        PreparedStatement psSUN = prepare("update " + T_USER +
+        PreparedStatement psSUN = prepareStatement("update " + T_USER +
                 " set " + C_USER_FIRST_NAME + "=?, " + C_USER_LAST_NAME + "=? where " + C_USER_ID +
                 "=?");
 
@@ -452,7 +452,7 @@ public class SPDatabase
     public void addPasswordResetToken(UserID userId, String token)
         throws SQLException
     {
-        PreparedStatement ps = prepare("insert into " +
+        PreparedStatement ps = prepareStatement("insert into " +
                 T_PASSWORD_RESET + "(" + C_PASS_TOKEN + "," + C_PASS_USER + ") values (?,?)");
 
         ps.setString(1, token);
@@ -463,7 +463,7 @@ public class SPDatabase
     public UserID resolvePasswordResetToken(String token)
         throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepare("select " + C_PASS_USER +
+        PreparedStatement ps = prepareStatement("select " + C_PASS_USER +
                 " from " + T_PASSWORD_RESET + " where " + C_PASS_TOKEN + "=? and " + C_PASS_TS +
                 " > ?");
 
@@ -489,7 +489,7 @@ public class SPDatabase
     public void deletePasswordResetToken(String token)
         throws SQLException
     {
-        PreparedStatement psDPRT = prepare("delete from " + T_PASSWORD_RESET +
+        PreparedStatement psDPRT = prepareStatement("delete from " + T_PASSWORD_RESET +
                 " where " + C_PASS_TOKEN + " = ?");
 
         psDPRT.setString(1, token);
@@ -500,7 +500,7 @@ public class SPDatabase
     public void updateUserCredentials(UserID userId, byte[] credentials)
         throws SQLException
     {
-        PreparedStatement psUUC = prepare("update " + T_USER + " set " +
+        PreparedStatement psUUC = prepareStatement("update " + T_USER + " set " +
                 C_USER_CREDS + "=? where " + C_USER_ID + "=?");
 
         psUUC.setString(1, Base64.encodeBytes(credentials));
@@ -548,7 +548,7 @@ public class SPDatabase
     public @Nullable DeviceInfo getDeviceInfo(DID did) throws SQLException
     {
         // Need to join the user and the device table.
-        PreparedStatement psGDI = prepare(
+        PreparedStatement psGDI = prepareStatement(
                 "select dev." + C_DEVICE_NAME + ", dev." + C_DEVICE_OWNER_ID + ", user." +
                 C_USER_FIRST_NAME + ", user." + C_USER_LAST_NAME + " from " + T_DEVICE +
                 " dev join " + T_USER + " user on dev." + C_DEVICE_OWNER_ID + " = user." +
@@ -590,7 +590,7 @@ public class SPDatabase
         // The user always shares with themselves.
         result.add(userId);
 
-        PreparedStatement psGSUS = prepare(
+        PreparedStatement psGSUS = prepareStatement(
                 "select distinct t1." + C_AC_USER_ID + " from " + T_AC +
                         " t1 join " + T_AC +
                         " t2 on t1." + C_AC_STORE_ID + " = t2." + C_AC_STORE_ID +
@@ -657,7 +657,7 @@ public class SPDatabase
     {
         Set<UserDevice> result = Sets.newHashSet();
 
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 "select " + C_DEVICE_ID + ", " + C_DEVICE_OWNER_ID + " from " + T_AC +
                         " acl join " + T_DEVICE + " dev on " + C_AC_USER_ID + " = " +
                         C_DEVICE_OWNER_ID + " where " + C_AC_STORE_ID + " = ?");
@@ -676,7 +676,7 @@ public class SPDatabase
             rs.close();
         }
 
-        PreparedStatement psGIDSDevice = prepare(
+        PreparedStatement psGIDSDevice = prepareStatement(
                 "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " +
                         C_DEVICE_OWNER_ID + " = ?");
         psGIDSDevice.setString(1, ownerId.toString());
@@ -700,7 +700,7 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psSDI = prepare("update " + T_DEVICE +
+            PreparedStatement psSDI = prepareStatement("update " + T_DEVICE +
                     " set " + C_DEVICE_NAME + "=? where " + C_DEVICE_ID + "=?");
 
             psSDI.setString(1, deviceName.trim());
@@ -715,7 +715,7 @@ public class SPDatabase
     public void addTargetedSignupCode(String code, UserID from, UserID to, OrgID orgId, long time)
         throws SQLException
     {
-       PreparedStatement psAddTI = prepare(
+       PreparedStatement psAddTI = prepareStatement(
                 DBUtil.insert(T_TI, C_TI_TIC, C_TI_FROM,
                         C_TI_TO, C_TI_ORG_ID, C_TI_TS));
 
@@ -740,7 +740,7 @@ public class SPDatabase
     public boolean isAlreadyInvited(UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(C_TI_TIC, C_TI_TO + "=?", "count(*)"));
 
         ps.setString(1, userId.toString());
@@ -760,7 +760,7 @@ public class SPDatabase
             String folderName)
             throws SQLException
     {
-        PreparedStatement ps = prepare("insert into " + T_FI
+        PreparedStatement ps = prepareStatement("insert into " + T_FI
                 + " (" + C_FI_FIC + "," + C_FI_FROM + "," + C_FI_TO + "," + C_FI_SID + ","
                 + C_FI_FOLDER_NAME + ") " + "values (?,?,?,?,?)");
 
@@ -785,7 +785,7 @@ public class SPDatabase
     public @Nonnull ResolveTargetedSignUpCodeResult getTargetedSignUp(String tsc)
         throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_TI, C_TI_TIC + "=?", C_TI_TO, C_TI_ORG_ID));
 
         ps.setString(1, tsc);
@@ -826,7 +826,7 @@ public class SPDatabase
     public FolderInvitation getFolderInvitation(String code)
             throws SQLException
     {
-        PreparedStatement psGetFI = prepare("select " + C_FI_SID + ", " +
+        PreparedStatement psGetFI = prepareStatement("select " + C_FI_SID + ", " +
                 C_FI_FOLDER_NAME + ", " + C_FI_TO + " from " + T_FI + " where " + C_FI_FIC + "=?");
 
         psGetFI.setString(1, code);
@@ -846,7 +846,7 @@ public class SPDatabase
     public List<FolderInvitation> listPendingFolderInvitations(UserID to)
             throws SQLException
     {
-        PreparedStatement psListPFI = prepare("select " + C_FI_FROM + ", "
+        PreparedStatement psListPFI = prepareStatement("select " + C_FI_FROM + ", "
                 + C_FI_FOLDER_NAME + ", " + C_FI_SID + " from " + T_FI + " where " + C_FI_TO +
                 " = ? group by " + C_FI_SID);
 
@@ -871,7 +871,7 @@ public class SPDatabase
     public String getOnePendingFolderInvitationCode(UserID to)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                         DBUtil.selectWhere(T_TI, C_TI_TO + "=?",
                                 C_TI_TIC));
 
@@ -893,7 +893,7 @@ public class SPDatabase
     public void addSharedFolder(SID sid)
            throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 insertOnDuplicateUpdate(T_SF, C_SF_ID + "=" + C_SF_ID, C_SF_ID));
 
         ps.setBytes(1, sid.getBytes());
@@ -906,7 +906,7 @@ public class SPDatabase
     public void setFolderName(SID sid, String folderName)
             throws SQLException
     {
-        PreparedStatement psSetFolderName = prepare("insert into " + T_SF +
+        PreparedStatement psSetFolderName = prepareStatement("insert into " + T_SF +
                 " (" + C_SF_ID + ", " + C_SF_NAME + ") values (?, ?) on duplicate key update " +
                 C_SF_NAME + "=values(" + C_SF_NAME + ")");
 
@@ -920,32 +920,17 @@ public class SPDatabase
     // TODO (WW) use the Device class instead
     public static class DeviceRow
     {
-        final DID _did;
-        final String _name;
+        public final DID _did;
+        public final String _name;
 
         // User ID of the device owner.
-        final UserID _ownerID;
+        public final UserID _ownerID;
 
         public DeviceRow(DID did, String name, UserID ownerID)
         {
             _did = did;
             _ownerID = ownerID;
             _name = name;
-        }
-
-        public UserID getOwnerID()
-        {
-            return _ownerID;
-        }
-
-        public DID getDID()
-        {
-            return _did;
-        }
-
-        public String getName()
-        {
-            return _name;
         }
     }
 
@@ -955,7 +940,7 @@ public class SPDatabase
     public @Nullable DeviceRow getDevice(DID did)
             throws SQLException
     {
-        PreparedStatement psGetDeviceUser = prepare("select " +
+        PreparedStatement psGetDeviceUser = prepareStatement("select " +
                 C_DEVICE_NAME + "," + C_DEVICE_OWNER_ID + " from " + T_DEVICE + " where " +
                 C_DEVICE_ID + " = ?");
 
@@ -978,7 +963,7 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psAddDev = prepare("insert into " + T_DEVICE
+            PreparedStatement psAddDev = prepareStatement("insert into " + T_DEVICE
                     + "(" + C_DEVICE_ID + "," + C_DEVICE_NAME + "," + C_DEVICE_OWNER_ID + ")" +
                     " values (?,?,?)");
             psAddDev.setString(1, dr._did.toStringFormal());
@@ -1004,7 +989,7 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psAddCert = prepare("insert into " + T_CERT +
+            PreparedStatement psAddCert = prepareStatement("insert into " + T_CERT +
                     "(" + C_CERT_SERIAL + "," + C_CERT_DEVICE_ID + "," + C_CERT_EXPIRE_TS +
                     ") values (?,?,?)");
 
@@ -1029,7 +1014,7 @@ public class SPDatabase
             throws SQLException
     {
         // Find the affected serial in the certificate table.
-        PreparedStatement psRevokeDeviceCertificate = prepare("select " +
+        PreparedStatement psRevokeDeviceCertificate = prepareStatement("select " +
                 C_CERT_SERIAL + " from " + T_CERT + " where " + C_CERT_DEVICE_ID +
                 " = ? and " + C_CERT_REVOKE_TS + " = 0");
 
@@ -1068,7 +1053,7 @@ public class SPDatabase
             throws SQLException
     {
         // Find all unrevoked serials for the device.
-        PreparedStatement ps = prepare("select " +
+        PreparedStatement ps = prepareStatement("select " +
                 C_CERT_SERIAL + " from " + T_CERT + " " + "join " + T_DEVICE + " on " +
                 T_CERT + "." + C_CERT_DEVICE_ID + " = " + T_DEVICE + "." + C_DEVICE_ID +
                 " where " + T_DEVICE + "." + C_DEVICE_OWNER_ID + " = ? and " +
@@ -1097,7 +1082,7 @@ public class SPDatabase
             throws SQLException
     {
         // Update the revoke timestamp in the certificate table.
-        PreparedStatement psRevokeCertificatesBySerials = prepare("update "
+        PreparedStatement psRevokeCertificatesBySerials = prepareStatement("update "
                 + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
                 C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
                 " = 0 and " + C_CERT_SERIAL + " = ?");
@@ -1119,7 +1104,7 @@ public class SPDatabase
     public ImmutableList<Long> getCRL()
             throws SQLException
     {
-        PreparedStatement ps = prepare("select " + C_CERT_SERIAL +
+        PreparedStatement ps = prepareStatement("select " + C_CERT_SERIAL +
                 " from " + T_CERT + " where " + C_CERT_EXPIRE_TS + " > current_timestamp and " +
                 C_CERT_REVOKE_TS + " != 0");
 
@@ -1164,7 +1149,7 @@ public class SPDatabase
         // apparently the user is out of date
         //
 
-        PreparedStatement psGetRoles = prepare("select acl_master." +
+        PreparedStatement psGetRoles = prepareStatement("select acl_master." +
                 C_AC_STORE_ID + ", acl_master." + C_AC_USER_ID + ", acl_master." +
                 C_AC_ROLE + " from " + T_AC + " as acl_master inner join " + T_AC +
                 " as acl_filter using (" + C_AC_STORE_ID + ") where acl_filter." +
@@ -1204,7 +1189,7 @@ public class SPDatabase
     {
         l.info("get epoch for " + users.size() + " users");
 
-        PreparedStatement psGetEpoch = prepare("select " + C_USER_ID + ","
+        PreparedStatement psGetEpoch = prepareStatement("select " + C_USER_ID + ","
                 + C_USER_ACL_EPOCH + " from " + T_USER + " where " + C_USER_ID + "=?");
 
         Map<UserID, Long> serverEpochs = Maps.newHashMap();
@@ -1240,7 +1225,7 @@ public class SPDatabase
     @Override public void createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
             throws SQLException, ExNoPerm
     {
-        PreparedStatement psReplaceRole = prepare("insert into " + T_AC +
+        PreparedStatement psReplaceRole = prepareStatement("insert into " + T_AC +
                 " (" + C_AC_STORE_ID + "," + C_AC_USER_ID + "," + C_AC_ROLE + ") values (?, ?, ?) "
                 + "on duplicate key update " + C_AC_ROLE + "= values (" + C_AC_ROLE + ")");
 
@@ -1258,7 +1243,7 @@ public class SPDatabase
     public void updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
             throws SQLException, ExNoPerm
     {
-        PreparedStatement ps = prepare(updateWhere(T_AC,
+        PreparedStatement ps = prepareStatement(updateWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
 
         for (SubjectRolePair pair : pairs) {
@@ -1281,7 +1266,7 @@ public class SPDatabase
     public boolean hasOwner(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepare(selectWhere(T_AC,
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?", "count(*)"));
 
         ps.setBytes(1, sid.getBytes());
@@ -1305,7 +1290,7 @@ public class SPDatabase
     public Set<UserID> getACLUsers(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 selectWhere(T_AC, C_AC_STORE_ID + "=?", C_AC_USER_ID));
 
         ps.setBytes(1, sid.getBytes());
@@ -1324,7 +1309,7 @@ public class SPDatabase
     public boolean hasACL(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepare(selectWhere(T_AC, C_AC_STORE_ID + "=?", "count(*)"));
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=?", "count(*)"));
 
         ps.setBytes(1, sid.getBytes());
 
@@ -1343,7 +1328,7 @@ public class SPDatabase
     public boolean isOwner(SID sid, UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepare(selectWhere(T_AC,
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?" + " and " + C_AC_ROLE + " = ?",
                 "count(*)"));
 
@@ -1367,7 +1352,7 @@ public class SPDatabase
     public void deleteACL(UserID userId, SID sid, Collection<UserID> subjects)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 deleteWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?"));
 
         for (UserID subject : subjects) {
@@ -1383,7 +1368,7 @@ public class SPDatabase
     public void deleteACL(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepare(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
+        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
 
         ps.setBytes(1, sid.getBytes());
 
@@ -1396,7 +1381,7 @@ public class SPDatabase
     {
         l.info("incrementing epoch for " + users.size() + " users");
 
-        PreparedStatement ps = prepare("update " + T_USER +
+        PreparedStatement ps = prepareStatement("update " + T_USER +
                 " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1 where " + C_USER_ID +
                 "=?");
 
@@ -1415,7 +1400,7 @@ public class SPDatabase
     public @Nullable Role getUserPermissionForStore(SID sid, UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepare("select " +
+        PreparedStatement ps = prepareStatement("select " +
                 C_AC_ROLE + " from " + T_AC + " where " + C_AC_STORE_ID + "=? and " + C_AC_USER_ID +
                 "=?");
 
@@ -1440,7 +1425,7 @@ public class SPDatabase
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement psAddOrg = prepare(
+            PreparedStatement psAddOrg = prepareStatement(
                     DBUtil.insert(T_ORG, C_ORG_ID, C_ORG_NAME));
 
             psAddOrg.setInt(1, org._id.getInt());
@@ -1460,7 +1445,7 @@ public class SPDatabase
     public Organization getOrganization(final OrgID orgID)
             throws SQLException, ExNotFound
     {
-        PreparedStatement psGetOrganization = prepare(
+        PreparedStatement psGetOrganization = prepareStatement(
                 DBUtil.selectWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
 
         psGetOrganization.setInt(1, orgID.getInt());
@@ -1483,7 +1468,7 @@ public class SPDatabase
     public void setOrganizationPreferences(final Organization org)
             throws SQLException
     {
-        PreparedStatement psSetOrgPref = prepare(
+        PreparedStatement psSetOrgPref = prepareStatement(
                 DBUtil.updateWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
 
         psSetOrgPref.setString(1, org._name);
@@ -1496,7 +1481,7 @@ public class SPDatabase
     public void moveUserToOrganization(UserID userId, OrgID orgId)
             throws SQLException
     {
-        PreparedStatement psMoveToOrg = prepare(
+        PreparedStatement psMoveToOrg = prepareStatement(
                 DBUtil.updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
 
         psMoveToOrg.setInt(1, orgId.getInt());
@@ -1551,7 +1536,7 @@ public class SPDatabase
     public Set<SubscriptionCategory> getEmailSubscriptions(String email)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                         DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=?",
                                 C_ES_SUBSCRIPTION));
 
@@ -1576,7 +1561,7 @@ public class SPDatabase
     public String addEmailSubscription(UserID userId, SubscriptionCategory sc, long time)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                        DBUtil.insertOnDuplicateUpdate(T_ES,
                                C_ES_LAST_EMAILED + "=?", C_ES_EMAIL,
                                C_ES_TOKEN_ID, C_ES_SUBSCRIPTION,
@@ -1605,7 +1590,7 @@ public class SPDatabase
     public void removeEmailSubscription(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                        DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL,
                                C_ES_SUBSCRIPTION));
 
@@ -1618,7 +1603,7 @@ public class SPDatabase
     @Override
     public void removeEmailSubscription(final String tokenId) throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                DBUtil.deleteWhereEquals(T_ES, C_ES_TOKEN_ID));
 
         ps.setString(1, tokenId);
@@ -1628,7 +1613,7 @@ public class SPDatabase
     @Override
     public String getTokenId(final UserID userId, final SubscriptionCategory sc) throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_ES,
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
                         C_ES_TOKEN_ID));
@@ -1648,7 +1633,7 @@ public class SPDatabase
     @Override
     public String getEmail(final String tokenId)
             throws SQLException, ExNotFound {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_ES, C_ES_TOKEN_ID + "=?",
                         C_ES_EMAIL)
         );
@@ -1666,7 +1651,7 @@ public class SPDatabase
     public boolean isSubscribed(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                         DBUtil.selectWhere(T_ES,
                                 C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
                                 C_ES_EMAIL)
@@ -1688,7 +1673,7 @@ public class SPDatabase
             long lastEmailTime)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                        DBUtil.updateWhere(T_ES,
                                C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
                                C_ES_LAST_EMAILED));
@@ -1704,7 +1689,7 @@ public class SPDatabase
                                                      final int offset)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                         "select " + C_TI_TO +
                         " from " + T_TI +
                         " left join " + T_USER + " on " + C_USER_ID + "=" +
@@ -1732,7 +1717,7 @@ public class SPDatabase
             final SubscriptionCategory category)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                        DBUtil.selectWhere(T_ES, C_ES_EMAIL + "=? and " +
                                C_ES_SUBSCRIPTION + "=?",
                                "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + C_ES_LAST_EMAILED +

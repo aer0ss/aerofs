@@ -58,7 +58,7 @@ public class UserDatabase extends AbstractSQLDatabase
             // a device is created it gets any acl updates that were made while the user
             // didn't have an entry in the user table
 
-            PreparedStatement psAU = prepare(
+            PreparedStatement psAU = prepareStatement(
                     DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
                             C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
                             C_USER_ACL_EPOCH));
@@ -80,7 +80,7 @@ public class UserDatabase extends AbstractSQLDatabase
     public boolean hasUser(UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepare(selectWhere(T_USER, C_USER_ID + "=?", "count(*)"));
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", "count(*)"));
         ps.setString(1, userId.toString());
         ResultSet rs = ps.executeQuery();
         try {
@@ -155,7 +155,7 @@ public class UserDatabase extends AbstractSQLDatabase
     private ResultSet queryUser(UserID userId, String ... fields)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepare(selectWhere(T_USER, C_USER_ID + "=?", fields));
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", fields));
         ps.setString(1, userId.toString());
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
@@ -169,8 +169,8 @@ public class UserDatabase extends AbstractSQLDatabase
     public void setVerified(UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepare("update " +
-                T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID +"=?");
+        PreparedStatement ps = prepareStatement("update " +
+                T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID + "=?");
 
         ps.setString(1, userId.toString());
         Util.verify(ps.executeUpdate() == 1);
@@ -180,7 +180,7 @@ public class UserDatabase extends AbstractSQLDatabase
     public void setLevel(UserID userId, AuthorizationLevel authLevel)
             throws SQLException
     {
-        PreparedStatement ps = prepare(
+        PreparedStatement ps = prepareStatement(
                 updateWhere(T_USER, C_USER_ID + "=?", C_USER_AUTHORIZATION_LEVEL));
 
         ps.setInt(1, authLevel.ordinal());

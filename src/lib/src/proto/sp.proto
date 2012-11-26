@@ -283,7 +283,7 @@ service SPService {
     /**
      * Create a new organization
      *
-     * authlevel: none
+     * authlevel: (see below)
      *
      * throws:
      * - ExNoPerm   if the user calling is not a member of the default organization or is not

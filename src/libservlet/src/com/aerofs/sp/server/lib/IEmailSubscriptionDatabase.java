@@ -28,7 +28,7 @@ public interface IEmailSubscriptionDatabase
     /**
      * unsubscribe a user from a category
      */
-    void removeEmailSubscription(UserID ueerId, SubscriptionCategory sc) throws SQLException;
+    void removeEmailSubscription(UserID userId, SubscriptionCategory sc) throws SQLException;
 
     /**
      * unsubscribe a user from a category based on their token id

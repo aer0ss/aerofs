@@ -106,7 +106,7 @@ public class TestListUser extends AbstractTest
     {
         // search term null means search for all
         UserListAndQueryCount pair = userManagement.listUsers(null, TOTAL_USERS, 0, validOrgId);
-        assertEquals(TOTAL_USERS, pair._uis.size());
+        assertEquals(TOTAL_USERS, pair._userInfoList.size());
         assertEquals(TOTAL_USERS, pair._count);
     }
 
@@ -120,12 +120,12 @@ public class TestListUser extends AbstractTest
                 offset, validOrgId);
         UserListAndQueryCount allPair = userManagement.listUsers(null, TOTAL_USERS,
                 0, validOrgId);
-        assertEquals(maxResults, subsetPair._uis.size());
-        assertEquals(TOTAL_USERS, allPair._uis.size());
+        assertEquals(maxResults, subsetPair._userInfoList.size());
+        assertEquals(TOTAL_USERS, allPair._userInfoList.size());
 
         for (int index = 0; index < maxResults; index++) {
-            UserInfo subsetUser = subsetPair._uis.get(index);
-            UserInfo allUser = allPair._uis.get(index + offset);
+            UserInfo subsetUser = subsetPair._userInfoList.get(index);
+            UserInfo allUser = allPair._userInfoList.get(index + offset);
             assertEquals(allUser._userId, subsetUser._userId);
         }
     }
@@ -135,7 +135,7 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         UserListAndQueryCount pair = userManagement.listUsers(null, 10, 0, invalidOrgId);
-        assertTrue(pair._uis.isEmpty());
+        assertTrue(pair._userInfoList.isEmpty());
     }
 
     // ================================
@@ -147,8 +147,8 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         UserListAndQueryCount pair = userManagement.listUsers("user", TOTAL_USERS, 0, validOrgId);
-        assertEquals(NUMBER_OF_USERS, pair._uis.size());
-        for (UserInfo user : pair._uis) {
+        assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
+        for (UserInfo user : pair._userInfoList) {
             assertTrue(user._userId.toString().contains("user"));
             assertFalse(user._userId.toString().contains("admin"));
         }
@@ -167,8 +167,8 @@ public class TestListUser extends AbstractTest
         // search term is null if we want to find all the users.
         UserListAndQueryCount pair = userManagement.listUsersAuth(null, AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
-        assertEquals(NUMBER_OF_USERS, pair._uis.size());
-        for (UserInfo user : pair._uis) {
+        assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
+        for (UserInfo user : pair._userInfoList) {
             assertTrue(user._userId.toString().contains("user"));
             assertFalse(user._userId.toString().contains("admin"));
         }
@@ -186,8 +186,8 @@ public class TestListUser extends AbstractTest
         UserListAndQueryCount pair = userManagement.listUsersAuth("user1@", AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
 
-        assertEquals(1, pair._uis.size());
-        assertEquals(UserID.fromInternal("user1@test.com"), pair._uis.get(0)._userId);
+        assertEquals(1, pair._userInfoList.size());
+        assertEquals(UserID.fromInternal("user1@test.com"), pair._userInfoList.get(0)._userId);
         assertEquals(1, pair._count);
     }
 
@@ -198,7 +198,7 @@ public class TestListUser extends AbstractTest
         UserListAndQueryCount pair = userManagement.listUsersAuth("user%", AuthorizationLevel.USER,
                 TOTAL_USERS, 0, validOrgId);
 
-        assertEquals(NUMBER_OF_USERS, pair._uis.size());
+        assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
     }
 
     @Test
@@ -208,6 +208,6 @@ public class TestListUser extends AbstractTest
         UserListAndQueryCount pair = userManagement.listUsersAuth("user1",
                 AuthorizationLevel.ADMIN, TOTAL_USERS, 0, validOrgId);
 
-        assertTrue(pair._uis.isEmpty());
+        assertTrue(pair._userInfoList.isEmpty());
     }
 }

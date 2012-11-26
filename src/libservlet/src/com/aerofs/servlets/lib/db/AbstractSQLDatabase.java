@@ -47,7 +47,7 @@ public abstract class AbstractSQLDatabase
         return connection;
     }
 
-    protected PreparedStatement prepare(String sql) throws SQLException
+    protected PreparedStatement prepareStatement(String sql) throws SQLException
     {
         return getConnection().prepareStatement(sql);
     }

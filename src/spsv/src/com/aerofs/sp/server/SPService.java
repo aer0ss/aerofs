@@ -174,7 +174,7 @@ class SPService implements ISPService
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
-                .setDeviceName(dr == null ? "" : dr.getName())
+                .setDeviceName(dr == null ? "" : dr._name)
                 .build();
 
         return createReply(reply);
@@ -224,7 +224,7 @@ class SPService implements ISPService
                 _userManagement.listUsers(search, maxResults, offset, orgId);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(userInfoList2PBUserList(listAndCount._uis))
+                .addAllUsers(userInfoList2PBUserList(listAndCount._userInfoList))
                 .setFilteredCount(listAndCount._count)
                 .setTotalCount(_userManagement.totalUserCount(orgId))
                 .build();
@@ -251,7 +251,7 @@ class SPService implements ISPService
                 _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(userInfoList2PBUserList(listAndCount._uis))
+                .addAllUsers(userInfoList2PBUserList(listAndCount._userInfoList))
                 .setFilteredCount(listAndCount._count)
                 .setTotalCount(_userManagement.totalUserCount(level, orgId))
                 .build();
@@ -459,9 +459,11 @@ class SPService implements ISPService
             DeviceRow dr = _db.getDevice(did);
             if (dr == null) {
                 throw new ExNotFound("Recertify a non-existing device: " + did);
-            } else if (!dr.getOwnerID().equals(userId)) {
-                throw new ExNoPerm("Recertify a device by a different owner: " +
-                        userId + " != " + dr.getOwnerID());
+            } else {
+                if (!dr._ownerID.equals(userId)) {
+                    throw new ExNoPerm("Recertify a device by a different owner: " +
+                            userId + " != " + dr._ownerID);
+                }
             }
         } else {
             String deviceName = UNKNOWN_NAME;
@@ -933,9 +935,11 @@ class SPService implements ISPService
         DeviceRow dr = _db.getDevice(did);
         if (dr == null) {
             throw new ExNotFound("Cannot revoke cert for non-existing device: " + did);
-        } else if (!dr.getOwnerID().equals(userId)) {
-            throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
-                    userId + " != " + dr.getOwnerID());
+        } else {
+            if (!dr._ownerID.equals(userId)) {
+                throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
+                        userId + " != " + dr._ownerID);
+            }
         }
 
         ImmutableList<Long> serials = _db.revokeDeviceCertificate(did);

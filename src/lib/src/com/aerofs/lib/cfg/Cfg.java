@@ -53,6 +53,8 @@ public class Cfg
     private static boolean _useDM;
     private static boolean _useTCP;
     private static boolean _useXMPP;
+    private static boolean _useJingle;
+    private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
     private static String _absRootAnchor;
     private static String _ver;
@@ -229,12 +231,12 @@ public class Cfg
 
     public static boolean useJingle()
     {
-        return false;
+        return _useJingle;
     }
 
     public static boolean useZephyr()
     {
-        return false;
+        return _useZephyr;
     }
 
     public static boolean isFullReplica()
