@@ -150,6 +150,10 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
         return false;
     }
 
+    /**
+     * Append a count and a noun to the given string builder, and apply the appropriate plurality to
+     * the noun (i.e. add an 's' if appropriate).
+     */
     private static void countAndNoun(StringBuilder sb, int count, String noun)
     {
         sb.append(count);
@@ -190,11 +194,12 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
                 first = and(sb, first);
                 sb.append("You");
             } else {
-                boolean hasMoreDevices = !user2did.isEmpty() || unknownOwnerDevices != 0;
+                boolean hasMoreDevices = !user2did.isEmpty() || unknownOwnerDevices > 0;
                 sb.append(hasMoreDevices ? "You (on " : "You on ");
                 int myUnknownDevices = 0;
                 for (DID did : myDIDs) {
                     if (did.equals(_cfgLocalDID.get())) {
+                        first = and(sb, first);
                         sb.append("this computer");
                         continue;
                     }
