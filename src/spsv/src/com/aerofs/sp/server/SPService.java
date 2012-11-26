@@ -85,7 +85,14 @@ import java.util.concurrent.ExecutionException;
 
 import static com.aerofs.sp.server.SPParam.SP_EMAIL_NAME;
 
-// TODO (WW) This class should contain NO business logic
+/** TODO (WW):
+ *
+ * ******************************************************************
+ *  This class should contain NO business logic!
+ *  First, please do not add more business logic here.
+ *  Second, let's slowly toss out existing logic to other classes.
+ * ******************************************************************
+ */
 
 class SPService implements ISPService
 {
