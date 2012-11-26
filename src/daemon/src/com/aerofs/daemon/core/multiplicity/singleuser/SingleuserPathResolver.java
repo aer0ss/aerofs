@@ -54,6 +54,7 @@ public class SingleuserPathResolver implements IPathResolver
             }
 
             elems.add(oa.name());
+            assert !oa.parent().equals(oa.soid().oid()) : oa;
             oa = _ds.getOA_(new SOID(oa.soid().sidx(), oa.parent()));
         }
     }

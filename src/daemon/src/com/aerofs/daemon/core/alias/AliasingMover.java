@@ -66,7 +66,7 @@ public class AliasingMover
     public void moveKMLVersion_(SOCID alias, SOCID target, Version vAllLocalAlias,
             Version vAllLocalTarget, Trans t) throws SQLException
     {
-        assert !alias.equals(target);
+        assert !alias.equals(target) : alias;
 
         Version vKMLAlias =  _nvc.getKMLVersion_(alias).withoutAliasTicks_();
         Version vKMLTarget = _nvc.getKMLVersion_(target);
