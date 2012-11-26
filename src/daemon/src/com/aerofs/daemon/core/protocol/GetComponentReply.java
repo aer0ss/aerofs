@@ -285,7 +285,7 @@ public class GetComponentReply
                 // how kidxOld would ever acquire a value other than MASTER.
                 KIndex kidxOld = KIndex.MASTER;
 
-                t = _ru.applyContent_(msg, targetBranch, kidxOld, wasPresent, vRemote, cr, tk);
+                t = _ru.applyContent_(msg, targetBranch, kidxOld, vRemote, cr, tk);
                 break;
 
             default:

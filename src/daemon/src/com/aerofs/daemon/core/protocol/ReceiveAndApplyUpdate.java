@@ -12,6 +12,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.IncomingStreams;
+import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.object.BranchDeleter;
@@ -47,6 +48,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.DigestException;
 import java.sql.SQLException;
@@ -243,6 +245,59 @@ public class ReceiveAndApplyUpdate
         return result;
     }
 
+    /**
+     * Reads the content hash of a remote file from an incoming datagram's InputStream.
+     *
+     * @param is The InputStream from which to read the hash
+     * @param hashLength The length of the hash
+     * @return The ContentHash read from the message
+     */
+    private ContentHash readContentHashFromDatagram(InputStream is, int hashLength)
+            throws IOException
+    {
+        // If the protobuf, hash, and file content all fit into a single datagram,
+        // then the hash and file content will be found in message.is().
+        DataInputStream dis = new DataInputStream(is);
+        byte[] hashBuf = new byte[hashLength];
+        dis.readFully(hashBuf);
+        // N.B. don't close is - it'll close msg.is(), which will keep us from reading
+        // the file content after the hash.
+        return new ContentHash(hashBuf);
+    }
+
+    /**
+     * Reads the content hash of a remote file from an incoming stream. This method will
+     * release the CoreLock and block to wait for incoming stream chunks.
+     *
+     * @param streamKey The stream from which to read the ContentHash
+     * @param is The stream of bytes we have already received from the stream
+     * @param hashLength The length of the hash
+     * @param tk The token to use when releasing the CoreLock
+     * @return The ContentHash read from the incoming stream
+     */
+    private ContentHash readContentHashFromStream(StreamKey streamKey, InputStream is,
+            int hashLength, Token tk)
+            throws IOException, ExAborted, ExTimeout, ExStreamInvalid, ExNoResource
+    {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        // First copy any data that we have already received from the stream
+        int hashBytesRead = copyOneChunk(is, os);
+
+        while (hashBytesRead < hashLength) {
+            // This code assumes that the hash and following data will arrive in separate
+            // chunks.  While this is true now, it may not be once the underlying layers
+            // are allowed to fragment/reassemble.
+            is = _iss.recvChunk_(streamKey, tk);
+            try {
+                hashBytesRead += copyOneChunk(is, os);
+            } finally {
+                is.close();
+            }
+            l.debug("Read " + hashBytesRead + " hash bytes of " + hashLength);
+        }
+        return new ContentHash(os.toByteArray());
+    }
 
     /**
      * @return null if not to apply the update
@@ -251,45 +306,26 @@ public class ReceiveAndApplyUpdate
             Version vRemote, DigestedMessage msg, Token tk)
             throws Exception
     {
-        Version vAddLocal = new Version().add_(vRemote);
-        KIndex kidxApply = null;
-        Version vApply = null;
-        List<KIndex> kidcsDel = Lists.newArrayList();
-        PBGetComReply reply = msg.pb().getGetComReply();
-        ContentHash hRemote = null;
+        final PBGetComReply reply = msg.pb().getGetComReply();
+        final @Nullable ContentHash hRemote;
         if (reply.hasHashLength()) {
             l.debug("hash included");
-            int hashBytesRead = 0;
-            int hashBytesTotal = reply.getHashLength();
-            // If the protobuf, hash, and file content all fit into a single datagram,
-            // then the hash and file content will be found in msg.is().
-            // If not, then the hash and file content (if present) will be streamed.
+
             if (msg.streamKey() != null) {
-                ByteArrayOutputStream os = new ByteArrayOutputStream();
-                while (hashBytesRead < hashBytesTotal) {
-                    // This code assumes that the hash and following data will arrive in separate
-                    // chunks.  While this is true now, it may not be once the underlying layers
-                    // are allowed to fragment/reassemble.
-                    ByteArrayInputStream is = _iss.recvChunk_(msg.streamKey(), tk);
-                    try {
-                        hashBytesRead += copyOneChunk(is, os);
-                    } finally {
-                        is.close();
-                    }
-                    l.debug("Read " + hashBytesRead + " hash bytes of " + hashBytesTotal);
-                }
-                hRemote = new ContentHash(os.toByteArray());
+                hRemote = readContentHashFromStream(msg.streamKey(), msg.is(),
+                        reply.getHashLength(), tk);
             } else {
-                DataInputStream is = new DataInputStream(msg.is());
-                byte[] hashBuf = new byte[hashBytesTotal];
-                is.readFully(hashBuf);
-                // N.B. don't close is - it'll close msg.is(), which will keep us from reading
-                // the file content after the hash.
-                hRemote = new ContentHash(hashBuf);
+                hRemote = readContentHashFromDatagram(msg.is(), reply.getHashLength());
             }
         } else {
             l.debug("hash not present");
+            hRemote = null;
         }
+
+        Version vAddLocal = new Version(vRemote);
+        KIndex kidxApply = null;
+        Version vApply = null;
+        List<KIndex> kidcsDel = Lists.newArrayList();
 
         OA remoteOA = _ds.getOAThrows_(soid);
 
@@ -315,6 +351,8 @@ public class ReceiveAndApplyUpdate
                 // No work to be done
                 return null;
             }
+
+            // the local version is older or in parallel
 
             // Computing/requesting hash is expensive so we compute it only
             // when necessary and ensure hash of remote branch is computed
@@ -372,8 +410,7 @@ public class ReceiveAndApplyUpdate
         if (l.isDebugEnabled()) {
             l.debug("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
         }
-        return new CausalityResult(kidxApply, vAddLocal, kidcsDel, false,
-            hRemote, vApply);
+        return new CausalityResult(kidxApply, vAddLocal, kidcsDel, false, hRemote, vApply);
     }
 
     /**
@@ -560,7 +597,7 @@ public class ReceiveAndApplyUpdate
         }
     }
 
-    private int copyOneChunk(ByteArrayInputStream from, OutputStream to)
+    private int copyOneChunk(InputStream from, OutputStream to)
         throws IOException
     {
         // N.B. we can't use Util.copy because it uses the file buffer size, not the max
@@ -576,8 +613,172 @@ public class ReceiveAndApplyUpdate
         return total;
     }
 
-    public Trans applyContent_(DigestedMessage msg, SOCKID k, KIndex kidxOld,
-            boolean wasPresent, Version vRemote, CausalityResult res, Token tk)
+    private void updatePrefixVersion_(SOCKID k, Version vRemote, boolean isStreaming)
+            throws SQLException
+    {
+        Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
+
+        if (isStreaming || !vPrefixOld.isZero_()) {
+            Trans t = _tm.begin_();
+            try {
+                if (!vPrefixOld.isZero_()) {
+                    _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
+                }
+
+                // If we're not streaming data, then the download can't be interrupted.
+                // Therefore there is no point to maintain version info for the prefix.
+                if (isStreaming) {
+                    _pvc.addPrefixVersion_(k.soid(), k.kidx(), vRemote, t);
+                }
+
+                t.commit_();
+
+            } finally {
+                t.end_();
+            }
+        }
+    }
+
+    private void movePrefixFile_(SOCID socid, KIndex kFrom, KIndex kTo, Version vRemote)
+            throws SQLException, IOException
+    {
+        Trans t = _tm.begin_();
+        try {
+            // TODO (DF) : figure out if prefix files need a KIndex or are assumed
+            // to be MASTER like everything else in Download
+            IPhysicalPrefix from = _ps.newPrefix_(new SOCKID(socid.soid(), socid.cid(), kFrom));
+            assert from.getLength_() > 0;
+
+            IPhysicalPrefix to = _ps.newPrefix_(new SOCKID(socid.soid(), socid.cid(), kTo));
+            from.moveTo_(to, t);
+
+            // note: transaction may fail (i.e. process_ crashes) after the
+            // above move and before the commit below, which is fine.
+
+            _pvc.deletePrefixVersion_(socid.soid(), kFrom, t);
+            _pvc.addPrefixVersion_(socid.soid(), kTo, vRemote, t);
+
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
+
+    /**
+     * Opens the prefix file for writing. If there is no prefix length or if the content we are
+     * downloading is present locally, then we overwrite the prefix file and update the version
+     * of the prefix. Otherwise writing to the returned OutputStream will append to it.
+     *
+     * NOTE: This method screams for the need to be split up. Look at the name... just look at the
+     * name and tell me everything's going to be okay! That's right, lie through your teeth!
+     *
+     * @param prefix The prefix file to open for writing
+     * @param k The SOCKID of the prefix file
+     * @param kidxOld The previous KIndex
+     * @param vRemote The version vector of the remote object
+     * @param prefixLength The amount of data we already have in the prefix file
+     * @param isStreaming Whether we are streaming the content or receiving it in a datagram.
+     * @return an OutputStream that writes to the prefix file
+     */
+    private OutputStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
+            SOCKID k, KIndex kidxOld, Version vRemote, long prefixLength, boolean isStreaming)
+            throws ExNotFound, SQLException, IOException
+    {
+        if (prefixLength == 0) {
+            l.debug("update prefix version");
+
+            // Write the prefix version before we write to the prefix file
+            updatePrefixVersion_(k, vRemote, isStreaming);
+
+            // This truncates the file to size zero
+            return prefix.newOutputStream_(false);
+
+        } else if (kidxOld.equals(k.kidx())) {
+            // if vPrefixOld != vRemote, the prefix version must be updated in the
+            // persistent store (see above).
+            Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
+
+            assert vPrefixOld.equals(vRemote) : Joiner.on(' ').join(vPrefixOld, vRemote, k);
+
+            l.debug("prefix accepted: " + prefixLength);
+            return prefix.newOutputStream_(true);
+
+        } else {
+            // kidx of the prefix file has been changed. this may happen if
+            // after the last partial download and before the current download,
+            // the local peer modified the branch being downloaded, causing a
+            // new conflict. we in this case reuse the prefix file for the new
+            // branch. the following assertion is because local peers should
+            // only be able to change the MASTER branch.
+            assert kidxOld.equals(KIndex.MASTER) : kidxOld + " " + k;
+
+            movePrefixFile_(k.socid(), kidxOld, k.kidx(), vRemote);
+
+            l.debug("prefix transferred " + kidxOld + "->" + k.kidx() + ": " + prefixLength);
+            return prefix.newOutputStream_(true);
+        }
+    }
+
+    private void writeContentToPrefixFile_(IPhysicalPrefix pfPrefix, DigestedMessage msg,
+            final long totalFileLength, final long prefixLength, SOCKID k, KIndex kidxOld,
+            Version vRemote, Token tk)
+            throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
+            SQLException, IOException, DigestException
+    {
+        final boolean isStreaming = msg.streamKey() != null;
+
+        // Open the prefix file for writing, updating it as required
+        final OutputStream os = createPrefixOutputStreamAndUpdatePrefixState_(pfPrefix, k, kidxOld,
+                vRemote, prefixLength, isStreaming);
+        try {
+            // assert after opening the stream otherwise the file length may
+            // have changed after the assertion and before newOutputStream()
+            assert pfPrefix.getLength_() == prefixLength :
+                    k + " " + pfPrefix.getLength_() + " != " + prefixLength;
+
+            // Read from the incoming message/stream
+            ByteArrayInputStream is = msg.is();
+            int copied = copyOneChunk(is, os);
+
+            if (isStreaming) {
+                // it's a stream
+                long remaining = totalFileLength - copied - prefixLength;
+                while (remaining > 0) {
+                    _dlState.ongoing_(k.socid(), msg.ep(), totalFileLength - remaining,
+                            totalFileLength);
+                    is = _iss.recvChunk_(msg.streamKey(), tk);
+                    remaining -= copyOneChunk(is, os);
+                }
+                assert remaining >= 0;
+            }
+
+        } finally {
+            os.close();
+        }
+    }
+
+    private @Nullable ContentHash computeNewContentHash_(SOCKID k, IPhysicalPrefix prefix,
+            @Nullable ContentHash remoteHash, Token tk)
+            throws IOException, ExAborted, ExTimeout, DigestException
+    {
+        // Use the hash supplied by the sender, if available. Hash of content should be available
+        // for non-master branches and hence if not sent by sender then compute it.
+        @Nullable ContentHash h = prefix.prepare_(tk);
+        if (h == null) {
+            if (remoteHash != null) {
+                // res._hash may be null if the remote version vector is dominating or sender didn't
+                // send hash.
+                return remoteHash;
+            } else if (!k.kidx().equals(KIndex.MASTER)) {
+                // Computing hash may pause hence it can't be done in middle of transaction.
+                return _hasher.computeHash_(prefix, tk);
+            }
+        }
+        return h;
+    }
+
+    public Trans applyContent_(DigestedMessage msg, SOCKID k, KIndex kidxOld, Version vRemote,
+            CausalityResult res, Token tk)
             throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted, ExStreamInvalid,
             ExNoResource, ExOutOfSpace, ExNotFound, DigestException
     {
@@ -595,127 +796,18 @@ public class ReceiveAndApplyUpdate
         // Since there is no content associated with aliased oid
         // there shouldn't be invocation for applyContent_()?
 
-        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
-
         // TODO reserve space first
 
-        Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
+        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
 
-        final boolean append;
-        if (reply.getPrefixLength() == 0) {
-            // write the prefix version before we change the tmp file
-            if (msg.streamKey() != null || !vPrefixOld.isZero_()) {
-                Trans t = _tm.begin_();
-                try {
-                    if (!vPrefixOld.isZero_()) {
-                        _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
-                    }
+        // Write the new content to the prefix file
+        writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),
+                reply.getPrefixLength(), k, kidxOld, vRemote, tk);
 
-                    // don't bother enabling inc dl for atomic messages
-                    if (msg.streamKey() != null) {
-                        _pvc.addPrefixVersion_(k.soid(), k.kidx(), vRemote, t);
-                    }
+        @Nullable ContentHash newContentHash = computeNewContentHash_(k, pfPrefix, res._hash, tk);
 
-                    t.commit_();
-
-                } finally {
-                    t.end_();
-                }
-            }
-
-            // this truncates the file to size zero
-            append = false;
-
-        } else if (kidxOld.equals(k.kidx())) {
-            // if vPreOld != vRemote, the prefix version must be updated in the
-            // persistent store (see above).
-            assert vPrefixOld.equals(vRemote);
-
-            l.debug("prefix accepted: " + reply.getPrefixLength());
-            append = true;
-
-        } else {
-            // kidx of the prefix file has been changed. this may happen if
-            // after the last partial download and before the current download,
-            // the local peer modified the branch being downloaded, causing a
-            // new conflict. we in this case reuse the prefix file for the new
-            // branch. the following assertion is because local peers should
-            // only be able to change the MASTER branch.
-            assert kidxOld.equals(KIndex.MASTER);
-
-            Trans t = _tm.begin_();
-            try {
-                // TODO (DF) : figure out if prefix files need a KIndex or are assumed
-                // to be MASTER like everything else in Download
-                IPhysicalPrefix pfPrefixOld = _ps.newPrefix_(new SOCKID(k.soid(),
-                    k.cid(), kidxOld));
-                assert pfPrefixOld.getLength_() > 0;
-
-                pfPrefixOld.moveTo_(pfPrefix, t);
-
-                // note: transaction may fail (i.e. process_ crashes) after the
-                // above move and before the commit below, which is fine.
-
-                _pvc.deletePrefixVersion_(k.soid(), kidxOld, t);
-                _pvc.addPrefixVersion_(k.soid(), k.kidx(), vRemote, t);
-
-                t.commit_();
-            } finally {
-                t.end_();
-            }
-
-            l.debug("prefix transferred " + kidxOld + "->" + k.kidx() + ": " +
-                reply.getPrefixLength());
-            append = true;
-        }
-
-        // code after the creation of 'os' must go into the try block below so
-        // that it will be properly closed
-
-        final OutputStream os = pfPrefix.newOutputStream_(append);
-        try {
-            // assert after opening the stream otherwise the file length may
-            // have changed after the assertion and before newOutputStream()
-            assert pfPrefix.getLength_() == reply.getPrefixLength() :
-                k + " " + pfPrefix.getLength_() + " != " + reply.getPrefixLength();
-
-            ByteArrayInputStream is = msg.is();
-            int copied = copyOneChunk(is, os);
-
-            if (msg.streamKey() != null) {
-                // it's a stream
-                long total = reply.getFileTotalLength();
-                long remaining = total - copied - reply.getPrefixLength();
-                while (remaining > 0) {
-                    _dlState.ongoing_(k.socid(), msg.ep(), total - remaining, total);
-                    is = _iss.recvChunk_(msg.streamKey(), tk);
-                    remaining -= copyOneChunk(is, os);
-                }
-                assert remaining >= 0;
-            }
-
-        } finally {
-            os.close();
-        }
-
-        ContentHash h = pfPrefix.prepare_(tk);
-
-        // get length and mtime of the prefix before the actual transaction.
+        // get length of the prefix before the actual transaction.
         long len = pfPrefix.getLength_();
-
-        // Use the hash supplied by the sender, if available. Hash of content should be available
-        // for non-master branches and hence if not sent by sender then compute it.
-        if (h == null) {
-            if (res._hash != null) {
-                // res._hash may be null if the remote version vector is dominating or sender didn't
-                // send hash.
-                h = res._hash;
-            } else if (!k.kidx().equals(KIndex.MASTER)) {
-                // Computing hash may pause hence it can't be done in middle of transaction.
-                h = _hasher.computeHash_(pfPrefix, tk);
-            }
-        }
-
         boolean okay = false;
         Trans t = _tm.begin_();
         try {
@@ -731,7 +823,7 @@ public class ReceiveAndApplyUpdate
             if (oa.isExpelled()) throw new ExAborted(k + " becomes offline");
 
             CA ca = oa.caNullable(k.kidx());
-            wasPresent = ca != null;
+            boolean wasPresent = ca != null;
             if (wasPresent && pf.wasModifiedSince(ca.mtime(), ca.length())) {
                 // the linked file modified via the local filesystem
                 // (i.e. the linker), but the linker hasn't received
@@ -764,7 +856,7 @@ public class ReceiveAndApplyUpdate
                 }
                 _ds.createCA_(k.soid(), k.kidx(), t);
             }
-            _ds.setCA_(k.sokid(), len, mtime, h, t);
+            _ds.setCA_(k.sokid(), len, mtime, newContentHash, t);
 
             okay = true;
             return t;
