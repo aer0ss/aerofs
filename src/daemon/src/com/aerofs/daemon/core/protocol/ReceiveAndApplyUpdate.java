@@ -677,14 +677,16 @@ public class ReceiveAndApplyUpdate
      * @param kidxOld The previous KIndex
      * @param vRemote The version vector of the remote object
      * @param prefixLength The amount of data we already have in the prefix file
+     * @param contentPresentLocally Whether the content for the remote object is present locally
      * @param isStreaming Whether we are streaming the content or receiving it in a datagram.
      * @return an OutputStream that writes to the prefix file
      */
     private OutputStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
-            SOCKID k, KIndex kidxOld, Version vRemote, long prefixLength, boolean isStreaming)
+            SOCKID k, KIndex kidxOld, Version vRemote, long prefixLength,
+            boolean contentPresentLocally, boolean isStreaming)
             throws ExNotFound, SQLException, IOException
     {
-        if (prefixLength == 0) {
+        if (prefixLength == 0 || contentPresentLocally) {
             l.debug("update prefix version");
 
             // Write the prefix version before we write to the prefix file
@@ -719,9 +721,33 @@ public class ReceiveAndApplyUpdate
         }
     }
 
+    /**
+     * If the remote peer resolved a conflict and we're getting that update, chances are
+     * one of our branches has the same content. Find that branch.
+     *
+     * @param object The object whose branches to search
+     * @param remoteHash The hash of the remote object's content
+     * @return The branch with the same content as the remote, or null
+     */
+    private @Nullable KIndex findBranchWithMatchingContent_(SOID object, ContentHash remoteHash)
+            throws ExNotFound, SQLException
+    {
+        // See if we have the same content in one of our branches
+        if (remoteHash != null) {
+            for (KIndex branch : _ds.getOAThrows_(object).cas().keySet()) {
+                SOKID branchObject = new SOKID(object, branch);
+                ContentHash localHash = _ds.getCAHash_(branchObject);
+                if (localHash != null && localHash.equals(remoteHash)) {
+                    return branch;
+                }
+            }
+        }
+        return null;
+    }
+
     private void writeContentToPrefixFile_(IPhysicalPrefix pfPrefix, DigestedMessage msg,
             final long totalFileLength, final long prefixLength, SOCKID k, KIndex kidxOld,
-            Version vRemote, Token tk)
+            Version vRemote, @Nullable KIndex localBranchWithMatchingContent, Token tk)
             throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
             SQLException, IOException, DigestException
     {
@@ -729,27 +755,56 @@ public class ReceiveAndApplyUpdate
 
         // Open the prefix file for writing, updating it as required
         final OutputStream os = createPrefixOutputStreamAndUpdatePrefixState_(pfPrefix, k, kidxOld,
-                vRemote, prefixLength, isStreaming);
+                vRemote, prefixLength, localBranchWithMatchingContent != null, isStreaming);
+
         try {
-            // assert after opening the stream otherwise the file length may
-            // have changed after the assertion and before newOutputStream()
-            assert pfPrefix.getLength_() == prefixLength :
-                    k + " " + pfPrefix.getLength_() + " != " + prefixLength;
+            if (localBranchWithMatchingContent != null && isStreaming) {
+                // We have this file locally and we are receiving the remote content via a stream.
+                // We can cancel the stream here and use the local content.
+                l.debug("reading content from local branch");
 
-            // Read from the incoming message/stream
-            ByteArrayInputStream is = msg.is();
-            int copied = copyOneChunk(is, os);
-
-            if (isStreaming) {
-                // it's a stream
-                long remaining = totalFileLength - copied - prefixLength;
-                while (remaining > 0) {
-                    _dlState.ongoing_(k.socid(), msg.ep(), totalFileLength - remaining,
-                            totalFileLength);
-                    is = _iss.recvChunk_(msg.streamKey(), tk);
-                    remaining -= copyOneChunk(is, os);
+                // Stop the stream since we will not be reading it from now on
+                if (isStreaming) {
+                    _iss.end_(msg.streamKey());
                 }
-                assert remaining >= 0;
+
+                // Use the content from the local branch
+                IPhysicalFile file = _ds.getOA_(k.soid()).ca(localBranchWithMatchingContent)
+                        .physicalFile();
+
+                InputStream is = file.newInputStream_();
+                try {
+                    Util.copy(is, os);
+                } finally {
+                    is.close();
+                }
+
+            } else {
+                // We do not have the content locally, or we do but we are receiving the update via
+                // a datagram. The datagram is fully received at this point so there is no need to
+                // read from the file system the same content we already have in memory.
+                l.debug("reading content from network");
+
+                // assert after opening the stream otherwise the file length may
+                // have changed after the assertion and before newOutputStream()
+                assert pfPrefix.getLength_() == prefixLength :
+                        k + " " + pfPrefix.getLength_() + " != " + prefixLength;
+
+                // Read from the incoming message/stream
+                ByteArrayInputStream is = msg.is();
+                int copied = copyOneChunk(is, os);
+
+                if (isStreaming) {
+                    // it's a stream
+                    long remaining = totalFileLength - copied - prefixLength;
+                    while (remaining > 0) {
+                        _dlState.ongoing_(k.socid(), msg.ep(), totalFileLength - remaining,
+                                totalFileLength);
+                        is = _iss.recvChunk_(msg.streamKey(), tk);
+                        remaining -= copyOneChunk(is, os);
+                    }
+                    assert !(remaining < 0) : k + " " + msg.ep() + " " + remaining;
+                }
             }
 
         } finally {
@@ -800,9 +855,11 @@ public class ReceiveAndApplyUpdate
 
         final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
 
+        KIndex localBranchWithMatchingContent = findBranchWithMatchingContent_(k.soid(), res._hash);
+
         // Write the new content to the prefix file
         writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),
-                reply.getPrefixLength(), k, kidxOld, vRemote, tk);
+                reply.getPrefixLength(), k, kidxOld, vRemote, localBranchWithMatchingContent, tk);
 
         @Nullable ContentHash newContentHash = computeNewContentHash_(k, pfPrefix, res._hash, tk);
 
