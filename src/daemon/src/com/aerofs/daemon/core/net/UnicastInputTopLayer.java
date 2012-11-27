@@ -19,7 +19,6 @@ import com.aerofs.daemon.core.protocol.NewUpdates;
 import com.aerofs.daemon.core.protocol.UpdateSenderFilter;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -32,7 +31,6 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -60,13 +58,12 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
         private final ComputeHashCall _computeHashCall;
         private final IncomingStreams _iss;
         private final CoreDeviceLRU _dlru;
-        private final FrequentDefectSender _fds;
 
         @Inject
         public Factory(IncomingStreams iss, ComputeHashCall computeHashCall, Diagnosis diag, ListRevHistory rlh,
                 ListRevChildren rlc, GetRevision gr, UpdateSenderFilter pusf, GetVersCall pgvc,
                 NewUpdates pnu, GetComponentCall pgcc, RPC rpc, DID2User d2u, NSL nsl,
-                CoreDeviceLRU dlru, FrequentDefectSender fds)
+                CoreDeviceLRU dlru)
         {
             _iss = iss;
             _computeHashCall = computeHashCall;
@@ -82,7 +79,6 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             _d2u = d2u;
             _nsl = nsl;
             _dlru = dlru;
-            _fds = fds;
         }
 
         public UnicastInputTopLayer create_()
@@ -164,7 +160,8 @@ public class UnicastInputTopLayer implements IUnicastInputLayer
             try {
                 processCall_(msg);
             } catch (Exception e) {
-                _f._fds.logSendAsync("fail process call:" + msg, e);
+                // Don't use Util.e(e) to avoid spamming log files
+                l.warn("process " + CoreUtil.typeString(msg.pb()) + ": " + e);
                 sendErrorReply_(msg, e);
             }
             break;
