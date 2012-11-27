@@ -8,15 +8,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
@@ -27,7 +28,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
@@ -232,7 +232,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         String auxPath = Util.join(_pathBase, parentPath);
 
         InjectableFile parent = _factFile.create(auxPath);
-        List<Revision> revisions = Lists.newArrayList();
+        SortedMap<Long, Revision> revisions = Maps.newTreeMap();
         InjectableFile[] files = parent.listFiles();
 
         if (files != null) {
@@ -245,16 +245,15 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                     continue;
                 }
                 if (path.last().equals(info._name)) {
-                    // TODO: use the rtime (revision creation time) as sorting key
-                    revisions.add(new Revision(Util.string2utf(info.index()),
+                    revisions.put(info._suffix._rtime,
+                                  new Revision(Util.string2utf(info.index()),
                                                info._suffix._mtime,
                                                info._length));
                 }
             }
         }
 
-        Collections.sort(revisions);
-        return revisions;
+        return revisions.values();
     }
 
     @Override
