@@ -11,8 +11,8 @@ then
 fi
 
 echo "Moving to resource/client..."
-rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
-cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
+rm -rf $thisdir/../../../../approot/AeroFSFinderExtension.osax
+cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../approot
 
 echo
 echo "SUCCESS."
