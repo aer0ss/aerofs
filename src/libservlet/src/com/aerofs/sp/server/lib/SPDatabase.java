@@ -741,7 +741,7 @@ public class SPDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(C_TI_TIC, C_TI_TO + "=?", "count(*)"));
+                DBUtil.selectWhere(T_TI, C_TI_TO + "=?", "count(*)"));
 
         ps.setString(1, userId.toString());
         ResultSet rs = ps.executeQuery();
