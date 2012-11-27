@@ -1,0 +1,18 @@
+#!/bin/bash
+thisdir=$(dirname $0)
+
+rm -rf $thisdir/../build/*
+xcodebuild -project $thisdir/../FinderExtension.xcodeproj -target AeroFSFinderExtension -configuration Debug clean install
+
+if [ $? -ne 0 ]
+then
+    echo "ERROR: xcodebuild failed."
+    exit 1
+fi
+
+echo "Moving to resource/client..."
+rm -rf $thisdir/../../../../resource/client/osx/AeroFSFinderExtension.osax
+cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../resource/client/osx
+
+echo
+echo "SUCCESS."
