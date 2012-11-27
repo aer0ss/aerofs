@@ -11,7 +11,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.ITransport;
