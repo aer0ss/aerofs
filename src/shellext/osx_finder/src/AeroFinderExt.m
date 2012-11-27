@@ -200,7 +200,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     Overlay status = NONE;
     int val = [statusCache overlayForPath:path];
     if (val == -1) {
-        //NSLog(@"overlay miss %@", path);
+        //NSLog(@"AeroFS: overlay miss %@", path);
         // put placeholder in cache to avoid sending multiple requests to GUI
         [statusCache setOverlay:NONE forPath:path];
 
@@ -227,7 +227,7 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
  */
 - (void)evicted:(NSString*)path withValue:(int)value
 {
-    //NSLog(@"overlay eviction %@ %d", path, value);
+    //NSLog(@"AeroFS: overlay eviction %@ %d", path, value);
     // if the path is still visible, make sure it gets refreshed asap...
     [self refreshIconInFinder:path];
 }
@@ -337,10 +337,10 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
     // To preserve locality, discard notifications for any path not yet requested by Finder
     if ([statusCache overlayForPath:notification.path] != -1) {
         [statusCache setOverlay:o forPath:notification.path];
-        //NSLog(@"overlay update %@ %d:%d %d", notification.path, status.sync, status.flags, o);
+        //NSLog(@"AeroFS: overlay update %@ %d", notification.path, status.sync);
         [self refreshIconInFinder:notification.path];
     } else {
-        //NSLog(@"overlay discard %@ %d:%d %d", notification.path, status.sync, status.flags, o);
+        //NSLog(@"AeroFS: overlay discard %@ %d", notification.path, status.sync);
     }
 }
 
@@ -349,37 +349,40 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
  */
 - (void)refreshIconInFinder:(NSString*)path
 {
-    // attempt 1 : [[NSWorkspace sharedWorkspace] noteFileSystemChanged:path]
-    // attempt 2 : AppleScript / Apple Events (tell application "Finder" to update ...)
-    // neither of which seem to make any difference
+    // attempt 1: [[NSWorkspace sharedWorkspace] noteFileSystemChanged:path]
 
-    // attempt 3: aggressive display refresh of all windows
-    // works great, only concern is slightly degraded performance of Finder due to burst of refreshes
+    // attempt 2: AppleScript / Apple Events (tell application "Finder" to update ...) neither of
+    // which seem to make any difference.
+
+    // attempt 3: aggressive display refresh of all windows. works great, only concern is slightly
+    // degraded performance of Finder due to burst of refreshes.
     [self scheduleRefreshAllFinderWindows];
 
-    // attempt 4 : dirty hack in the bowels of Finder ?
+    // attempt 4: dirty hack in the bowels of Finder?
 }
 
 /**
- * Too avoiding degradation of Finder performance due to aggressive refreshes when receiving a flood of status
- * updates we use NSTimer to schedule the refresh in the future and implement rate-limiting by dropping incoming
- * refresh requests until a timer exists (they are effectively "merged" when the timer fires and causes a refresh)
+ * Too avoiding degradation of Finder performance due to aggressive refreshes when receiving a flood
+ * of status updates we use NSTimer to schedule the refresh in the future and implement
+ * rate-limiting by dropping incoming refresh requests until a timer exists (they are effectively
+ * "merged" when the timer fires and causes a refresh).
  */
 - (void)scheduleRefreshAllFinderWindows
 {
-    // incoming refresh, no worries...
+    // Incoming refresh, no worries...
     if (refreshTimer != nil) return;
 
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     NSTimeInterval elapsed = now - lastRefreshTime;
 
-    // more than 1s elapsed since last refresh, can afford direct refresh
+    // More than 1s elapsed since last refresh, can afford direct refresh.
     if (elapsed > 1) {
         [self refreshAllFinderWindows];
         return;
     }
 
-    // single shot timer with 500ms delay (docs says to expect a resolution no finer than ~50-100ms)
+    // Single shot timer with 500ms delay (docs says to expect a resolution no finer than
+    // ~50-100ms).
     refreshTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
                                                     target:self
                                                   selector:@selector(refreshAllFinderWindows)
@@ -406,8 +409,9 @@ OSErr AeroLoadHandler(const AppleEvent* event, AppleEvent* reply, long refcon)
  */
 -(void)clearCache
 {
-    //NSLog(@"overlay clear");
+    //NSLog(@"AeroFS: overlay clear");
     [statusCache clear];
+
     // make sure Finder discards all our icon overlays, the aggressive way
     [self refreshAllFinderWindows];
 }

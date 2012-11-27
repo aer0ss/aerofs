@@ -25,6 +25,7 @@ public class SyncStatusSummary implements IAggregatedStatus
 
     private boolean _isPartiallySynced = false;
     private boolean _allInSync = true;
+    private boolean _empty = true;
 
     public SyncStatusSummary(UserAndDeviceNames udn, CfgLocalUser user)
     {
@@ -40,6 +41,11 @@ public class SyncStatusSummary implements IAggregatedStatus
     public boolean allInSync()
     {
         return _allInSync;
+    }
+
+    public boolean isEmpty()
+    {
+        return _empty;
     }
 
     @Override
@@ -58,6 +64,7 @@ public class SyncStatusSummary implements IAggregatedStatus
             if (owner.equals(_user.get())) {
                 _isPartiallySynced |= s;
                 _allInSync &= s;
+                _empty = false;
             } else {
                 Boolean b = otherUsers.get(owner);
                 otherUsers.put(owner, (b != null ? b | s : s));
@@ -67,6 +74,7 @@ public class SyncStatusSummary implements IAggregatedStatus
         for (boolean s : otherUsers.values()) {
             _isPartiallySynced |= s;
             _allInSync &= s;
+            _empty = false;
         }
     }
 
@@ -77,6 +85,7 @@ public class SyncStatusSummary implements IAggregatedStatus
         // aggregation accross children is always AND (take worst)
         _isPartiallySynced &= o._isPartiallySynced;
         _allInSync &= o._allInSync;
+        _empty = false;
     }
 
     private UserID getOwner_(DID did)

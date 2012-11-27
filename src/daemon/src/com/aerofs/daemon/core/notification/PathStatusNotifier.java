@@ -58,6 +58,7 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
         // Only care about content transfer
         // NOTE: this also ensure that the object is not expelled
         if (socid.cid().isMeta()) return;
+
         try {
             notify_(_ps.setDownloadState_(socid, _ds.resolveNullable_(socid.soid()), state));
         } catch (SQLException e) {
@@ -76,6 +77,7 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
         // Only care about content transfer
         // NOTE: this also ensure that the object is not expelled
         if (socid.cid().isMeta()) return;
+
         try {
             notify_(_ps.setUploadState_(socid, _ds.resolveNullable_(socid.soid()), value));
         } catch (SQLException e) {
@@ -94,6 +96,7 @@ public class PathStatusNotifier implements IListener, IDownloadStateListener, IU
             bd.addPath(e.getKey().toPB());
             bd.addStatus(e.getValue());
         }
+
         _notifier.sendEvent_(PBNotification.newBuilder()
                 .setType(Type.PATH_STATUS)
                 .setPathStatus(bd)
