@@ -10,7 +10,7 @@ then
     exit 1
 fi
 
-echo "Moving to resource/client..."
+echo "Moving to approot..."
 rm -rf $thisdir/../../../../approot/AeroFSFinderExtension.osax
 cp -r $thisdir/../build/Library/ScriptingAdditions/AeroFSFinderExtension.osax $thisdir/../../../../approot
 
