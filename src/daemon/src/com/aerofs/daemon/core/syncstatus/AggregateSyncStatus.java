@@ -113,22 +113,26 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                     for (Path p : set) {
                         l.warn("  " + p);
 
-                        // aggressive consistency checking
-                        // need to be done at the end of the transaction to avoid false positives
-                        // due to two step updates (e.g move is delete+create)
-                        // TODO: disable once we're confident all bugs have been squashed
-                        // (this completely destroys the performance benefits of maintanining
-                        // aggregated status as it essentially recomputes it...)
+                        // Aggressive consistency checking.
+                        //
+                        // Need to be done at the end of the transaction to avoid false positives
+                        // due to two step updates (e.g move is delete+create).
+
+                        // TODO (MP) disable once we're confident all bugs have been squashed.
+                        // (This completely destroys the performance benefits of maintanining
+                        // aggregated status as it essentially recomputes it...).
                         try {
                             SOID soid = _ds.resolveNullable_(p);
                             if (soid == null) continue;
                             OA oa = _ds.getOA_(soid);
-                            if (!oa.isDir()) return;
+                            if (!oa.isDir()) continue;
                             checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
                         } catch (SQLException e) {
                             // bury exception
+                            l.error("Check syncstat consistency: " + e.toString());
                         }
                     }
+
                     for (IListener listener : _listeners) {
                         listener.syncStatusChanged_(set);
                     }

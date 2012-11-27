@@ -64,7 +64,6 @@ message GetPathStatusCall {
     required string path = 1;
 }
 
-
 /**
  * Notifications sent from the GUI to the shell extension
  */

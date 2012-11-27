@@ -90,6 +90,7 @@ public class PathStatus
     private Map<Path, PBPathStatus> notificationsForFlagChanges_(Map<Path, Integer> flagChanges)
     {
         Map<Path, PBPathStatus> notifications = Maps.newHashMap();
+
         for (Entry<Path, Integer> e : flagChanges.entrySet()) {
             Path path = e.getKey();
             notifications.put(path, PBPathStatus.newBuilder()
@@ -97,6 +98,7 @@ public class PathStatus
                     .setFlags(e.getValue())
                     .build());
         }
+
         return notifications;
     }
 
@@ -106,9 +108,11 @@ public class PathStatus
     public Map<Path, PBPathStatus> notificationsForSyncStatusChanges_(Set<Path> syncStatusChanges)
     {
         Map<Path, PBPathStatus> notifications = Maps.newHashMap();
+
         for (Path path : syncStatusChanges) {
             notifications.put(path, getStatus_(path));
         }
+
         return notifications;
     }
 
@@ -134,9 +138,9 @@ public class PathStatus
      * @return server-status-aware protobuf-encoded sync status summary
      */
     private Sync getSyncStatus_(Path path) {
-        return _scs.isConnected(Server.VERKEHR, Server.SYNCSTAT)
-                ? getSyncStatusSummary_(path)
-                : Sync.UNKNOWN;
+
+        Sync summary = getSyncStatusSummary_(path);
+        return _scs.isConnected(Server.VERKEHR, Server.SYNCSTAT) ? summary : Sync.UNKNOWN;
     }
 
     /**
@@ -152,11 +156,11 @@ public class PathStatus
         } catch (ExExpelled e) {
             return Sync.OUT_SYNC;
         } catch (ExNotFound e) {
-            // Always return out of sync for unknown objects to avoid race conditions between the
-            // GUI and the daemon.
-            return Sync.OUT_SYNC;
+            return Sync.UNKNOWN;
         }
-        // NOTE: files only present on the local device are considered out of sync
+
+        // Special case for local only files (do not show an icon).
+        if (s.isEmpty()) return Sync.UNKNOWN;
         if (!s.isPartiallySynced()) return Sync.OUT_SYNC;
         if (s.allInSync()) return Sync.IN_SYNC;
         return Sync.PARTIAL_SYNC;
