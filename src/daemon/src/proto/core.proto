@@ -240,5 +240,8 @@ message PBMeta {
     //
     // The list is empty if the store the target resides doesn't exist locally or the object is not
     // emigrated.
+    //
+    // N.B. Multi-user systems never never populate the list. TODO (WW) use multiple lists?
+    //
     repeated bytes emigrant_target_ancestor_sid = 7;
 }
