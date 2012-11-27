@@ -1,15 +1,6 @@
 package com.aerofs.daemon.lib.db;
 
-import static com.aerofs.daemon.lib.db.CoreSchema.C_EPOCH_SYNC_PULL;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_EPOCH_SYNC_PUSH;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_FID;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_OID;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_OA_SIDX;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_SSBS_OID;
-import static com.aerofs.daemon.lib.db.CoreSchema.C_SSBS_SIDX;
-import static com.aerofs.daemon.lib.db.CoreSchema.T_EPOCH;
-import static com.aerofs.daemon.lib.db.CoreSchema.T_OA;
-import static com.aerofs.daemon.lib.db.CoreSchema.T_SSBS;
+import static com.aerofs.daemon.lib.db.CoreSchema.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -108,92 +99,108 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
         setEpochInternal_(_pswUpdatePushEpoch, C_EPOCH_SYNC_PUSH, newIndex);
     }
 
-    private static class DBIterSOID extends AbstractDBIterator<SOID>
-    {
-        DBIterSOID(ResultSet rs)
-        {
-            super(rs);
-        }
-
-        @Override
-        public SOID get_() throws SQLException
-        {
-            return new SOID(new SIndex(_rs.getInt(1)), new OID(_rs.getBytes(2)));
-        }
-    }
-
-    private PreparedStatement _psGBO;
     @Override
-    public IDBIterator<SOID> getBootstrapSOIDs_() throws SQLException
+    public void bootstrap_(Trans t) throws SQLException
     {
-        try {
-            if (_psGBO == null) {
-                _psGBO = c().prepareStatement("select " + C_SSBS_SIDX + "," + C_SSBS_OID +
-                                              " from " + T_SSBS);
-            }
-            ResultSet rs = _psGBO.executeQuery();
-            return new DBIterSOID(rs);
-        } catch (SQLException e) {
-            DBUtil.close(_psGBO);
-            _psGBO = null;
-            throw e;
-        }
-    }
-
-    private PreparedStatement _psRBO;
-    @Override
-    public void removeBootstrapSOID_(SOID soid, Trans t) throws SQLException
-    {
-        try {
-            if (_psRBO == null) {
-                _psRBO = c().prepareStatement("delete from " + T_SSBS +
-                                              " where " + C_SSBS_SIDX + "=? and " + C_SSBS_OID + "=?");
-            }
-            _psRBO.setInt(1, soid.sidx().getInt());
-            _psRBO.setBytes(2, soid.oid().getBytes());
-            _psRBO.executeUpdate();
-        } catch (SQLException e) {
-            DBUtil.close(_psGBO);
-            _psGBO = null;
-            throw e;
-        }
+        // clear the current push queue to avoid redundancy
+        c().createStatement().executeUpdate("delete from " + T_SSPQ);
+        // fill the push queue with all non-expelled objects
+        markAllAdmittedObjectsAsModified(c());
     }
 
     /**
      * Public for use in two different post-update tasks
      */
-    public static void fillBootstrapTable(Connection c) throws SQLException
+    public static void markAllAdmittedObjectsAsModified(Connection c) throws SQLException
     {
-        // Only expelled objects and the root anchor have NULL FID
+        // ignore expelled object (non-zero flags) and store roots
         PreparedStatement ps = c.prepareStatement(
-                "insert into " + T_SSBS + "(" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
+                "insert into " + T_SSPQ + "(" + C_SSPQ_SIDX + "," + C_SSPQ_OID + ")" +
                 " select " + C_OA_SIDX + "," + C_OA_OID +
-                " from " + T_OA + " where " + C_OA_FID + " is not null");
+                " from " + T_OA + " where " + C_OA_FLAGS + "=0 and " + C_OA_OID + "!=?");
 
+        ps.setBytes(1, OID.ROOT.getBytes());
         ps.executeUpdate();
     }
 
-    /**
-     * Add a list of SOIDs to the bootstrap table
-     *
-     * NOTE: this is only public to avoid exposing the DB schema in unit tests
-     */
-    public static void addBootstrapSOIDs(Connection c, Iterable<SOID> soids) throws SQLException
+    @Override
+    public void deleteModifiedObjectsForStore_(SIndex sidx, Trans t) throws SQLException
     {
-        PreparedStatement ps = c.prepareStatement("insert into " + T_SSBS +
-                " (" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
-                " values(?,?)");
-        for (SOID soid : soids) {
-            ps.setInt(1, soid.sidx().getInt());
-            ps.setBytes(2, soid.oid().getBytes());
-            ps.addBatch();
-        }
-        ps.executeBatch();
+        StoreDatabase.deleteRowsInTableForStore_(T_SSPQ, C_SSPQ_SIDX, sidx, c(), t);
     }
 
-    @Override
-    public void deleteBootstrapSOIDsForStore_(SIndex sidx, Trans t) throws SQLException
+    private static class DBIterModifiedObject extends AbstractDBIterator<ModifiedObject>
     {
-        StoreDatabase.deleteRowsInTableForStore_(T_SSBS, C_SSBS_SIDX, sidx, c(), t);
+        DBIterModifiedObject(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        @Override
+        public ModifiedObject get_() throws SQLException
+        {
+            long idx = _rs.getLong(1);
+            SIndex sidx = new SIndex(_rs.getInt(2));
+            OID oid = new OID(_rs.getBytes(3));
+            return new ModifiedObject(idx, new SOID(sidx, oid));
+        }
+    }
+
+    private PreparedStatement _psGMO;
+    @Override
+    public IDBIterator<ModifiedObject> getModifiedObjects_(long from) throws SQLException
+    {
+        try {
+            if (_psGMO == null) _psGMO = c().prepareStatement(
+                    "select " + C_SSPQ_IDX + "," + C_SSPQ_SIDX + "," + C_SSPQ_OID +
+                            " from " + T_SSPQ + " where " + C_SSPQ_IDX + ">?" +
+                            " order by " + C_SSPQ_IDX + " asc");
+
+            _psGMO.setLong(1, from);
+            ResultSet rs = _psGMO.executeQuery();
+            return new DBIterModifiedObject(rs);
+        } catch (SQLException e) {
+            DBUtil.close(_psGMO);
+            _psGMO = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psAMO;
+    @Override
+    public void addToModifiedObjects_(SOID soid, Trans t) throws SQLException
+    {
+        try {
+            if (_psAMO == null) {
+                _psAMO = c().prepareStatement("insert into " + T_SSPQ +
+                        " (" + C_SSPQ_SIDX + "," + C_SSPQ_OID + ") values (?,?)");
+            }
+            _psAMO.setInt(1, soid.sidx().getInt());
+            _psAMO.setBytes(2, soid.oid().getBytes());
+            int rows = _psAMO.executeUpdate();
+            assert rows == 1 : soid;
+        } catch (SQLException e) {
+            DBUtil.close(_psAMO);
+            _psAMO = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psRMO;
+    @Override
+    public void removeModifiedObjects_(long idx, Trans t) throws SQLException
+    {
+        try {
+            if (_psRMO == null) {
+                _psRMO = c().prepareStatement("delete from " + T_SSPQ +
+                        " where " + C_SSPQ_IDX + "<=?");
+            }
+            _psRMO.setLong(1, idx);
+            _psRMO.executeUpdate();
+        } catch (SQLException e) {
+            DBUtil.close(_psRMO);
+            _psRMO = null;
+            throw e;
+        }
     }
 }

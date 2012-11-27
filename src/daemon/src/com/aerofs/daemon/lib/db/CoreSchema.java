@@ -196,10 +196,11 @@ public class CoreSchema implements ISchema
             C_AL_DIDS        = "ao_d",      // bytes: one or more concatenated DIDs
             C_AL_TIME        = "ao_ts",     // long
 
-            // Sync status bootstrap table
-            T_SSBS           = "ssbs",
-            C_SSBS_SIDX      = "ssbs_s",    // SIndex
-            C_SSBS_OID       = "ssbs_o",    // OID
+            // Sync status push queue
+            T_SSPQ          = "sspq",
+            C_SSPQ_IDX      = "sspq_i",
+            C_SSPQ_SIDX     = "sspq_s",
+            C_SSPQ_OID      = "sspq_o",
 
             // DID-to-User mapping
             T_D2U            = "d",
@@ -533,8 +534,8 @@ public class CoreSchema implements ISchema
                         ")");
 
         createStoreTables(s, _dbcw);
-        createSyncStatusBootstrapTable(s, _dbcw);
         createActivityLogTables(s, _dbcw);
+        createSyncStatusPushQueueTable(s, _dbcw);
     }
 
     @Override
@@ -569,13 +570,12 @@ public class CoreSchema implements ISchema
                 "create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
     }
 
-    public static void createSyncStatusBootstrapTable(Statement s, IDBCW dbcw) throws SQLException
+    public static void createSyncStatusPushQueueTable(Statement s, IDBCW dbcw) throws SQLException
     {
-        s.executeUpdate(
-                "create table " + T_SSBS  + "(" +
-                    C_SSBS_SIDX + " integer not null," +
-                    C_SSBS_OID + dbcw.uniqueIdType() + " not null," +
-                    "primary key (" + C_SSBS_SIDX + "," + C_SSBS_OID + ")" +
+        s.executeUpdate("create table " + T_SSPQ  + "(" +
+                C_SSPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
+                C_SSPQ_SIDX + " integer not null," +
+                C_SSPQ_OID + dbcw.uniqueIdType() + " not null" +
                 ")");
     }
 

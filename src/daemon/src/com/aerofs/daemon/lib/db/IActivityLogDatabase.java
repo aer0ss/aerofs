@@ -71,22 +71,4 @@ public interface IActivityLogDatabase
      * @param idxLast set to Long.MAX_VALUE to return all the activities
      */
     IDBIterator<ActivityRow> getActivities_(long idxLast) throws SQLException;
-
-    public static class ModifiedObject {
-        // the index of the row in the database. used for paging
-        public final long _idx;
-
-        // the identifier of the subject of the activity
-        public final SOID _soid;
-
-        public ModifiedObject(long idx, SOID soid) {
-            _idx = idx;
-            _soid = soid;
-        }
-    }
-    /**
-     * Return all object IDs with activities more recent than {@code from}.
-     * @param from set to Long.MAX_VALUE to return all the activities
-     */
-    IDBIterator<ModifiedObject> getModifiedObjects_(long from) throws SQLException;
 }

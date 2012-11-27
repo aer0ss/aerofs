@@ -134,45 +134,6 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
         }
     }
 
-    private static class DBIterModifiedObject extends AbstractDBIterator<ModifiedObject>
-    {
-        DBIterModifiedObject(ResultSet rs)
-        {
-            super(rs);
-        }
-
-        @Override
-        public ModifiedObject get_() throws SQLException
-        {
-            long idx = _rs.getLong(1);
-            SIndex sidx = new SIndex(_rs.getInt(2));
-            OID oid = new OID(_rs.getBytes(3));
-            return new ModifiedObject(idx, new SOID(sidx, oid));
-        }
-    }
-
-    private PreparedStatement _psGSA;
-    @Override
-    public IDBIterator<ModifiedObject> getModifiedObjects_(long from)
-            throws SQLException
-    {
-        try {
-            if (_psGSA == null) _psGSA = c().prepareStatement(
-                    "select " + C_AL_IDX + "," + C_AL_SIDX + "," + C_AL_OID +
-                    " from " + T_AL + " where " + C_AL_IDX + ">?" +
-                    " order by " + C_AL_IDX +
-                    " asc");
-
-            _psGSA.setLong(1, from);
-            ResultSet rs = _psGSA.executeQuery();
-            return new DBIterModifiedObject(rs);
-        } catch (SQLException e) {
-            DBUtil.close(_psGSA);
-            _psGSA = null;
-            throw e;
-        }
-    }
-
     /**
      * Convert a concatenation of DID byte arrays to a set of DIDs
      */

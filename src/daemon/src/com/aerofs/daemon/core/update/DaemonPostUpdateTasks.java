@@ -42,8 +42,8 @@ public class DaemonPostUpdateTasks
             null, // used to be DPUTRestSyncStatus (account for change in vh computation)
             new DPUTResetSyncStatus(dbcw), // new run to account for aliasing related crash.
             new DPUTMorphStoreTables(dbcw),
-            new DPUTMigrateS3Schema(dbcw, _cfgDB)
-            // TODO (MP) will need to add a new task for syncstat aliasing fix.
+            new DPUTMigrateS3Schema(dbcw, _cfgDB),
+            new DPUTBreakSyncStatActivityLogDependency(dbcw)
             // new tasks go here
         };
 

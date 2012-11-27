@@ -1,9 +1,11 @@
 package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
+import java.util.List;
 
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.id.SOID;
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -34,18 +36,28 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     private final INativeVersionDatabase _nvdb;
     private final ICollectorSequenceDatabase _csdb;
     private final MapAlias2Target _alias2target;
-    private final ActivityLog _al;
+
+    public static interface IVersionControlListener
+    {
+        void localVersionAdded_(SOCKID sockid, Version v, Trans t) throws SQLException;
+    }
+
+    private final List<IVersionControlListener> _listeners = Lists.newArrayList();
 
     @Inject
     public NativeVersionControl(INativeVersionDatabase nvdb, ICollectorSequenceDatabase csdb,
             MapAlias2Target alias2target, CfgLocalDID cfgLocalDID, TransLocalVersionAssistant tlva,
-            ActivityLog al, StoreDeletionOperators sdo)
+            StoreDeletionOperators sdo)
     {
         super(nvdb, cfgLocalDID, tlva, sdo);
         _nvdb = nvdb;
         _csdb = csdb;
         _alias2target = alias2target;
-        _al = al;
+    }
+
+    public void addListener_(IVersionControlListener listener)
+    {
+        _listeners.add(listener);
     }
 
     /**
@@ -142,11 +154,11 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     {
         if (v.isZero_()) return;
 
-        _al.localVersionAdded_(k.soid(), v, t);
-
         if (l.isDebugEnabled()) l.debug("add local ver " + k + " " + v);
         _nvdb.addLocalVersion_(k, v, t);
         _tlva.get(t).localVersionAdded_(k.socid(), v);
+
+        for (IVersionControlListener listener : _listeners) listener.localVersionAdded_(k, v, t);
     }
 
     public void deleteLocalVersion_(SOCKID k, Version v, Trans t)
