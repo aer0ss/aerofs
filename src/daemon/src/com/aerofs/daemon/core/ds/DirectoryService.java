@@ -9,6 +9,7 @@ import java.util.Set;
 
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
+import com.aerofs.daemon.core.ds.PreCommitFIDConsistencyVerifier;
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -17,8 +18,8 @@ import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.LRUCache.IDataReader;
 import com.aerofs.daemon.lib.db.DBCache;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
-import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.BitVector;
@@ -63,6 +64,20 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     private DBCache<SOID, OA> _cacheOA;
 
     private final List<IDirectoryServiceListener> _listeners = Lists.newArrayList();
+
+    TransLocal<PreCommitFIDConsistencyVerifier> _fidConsistencyVerifier
+            = new TransLocal<PreCommitFIDConsistencyVerifier>()
+    {
+        @Override
+        protected PreCommitFIDConsistencyVerifier initialValue(Trans t)
+        {
+            assert _fds != null;
+            PreCommitFIDConsistencyVerifier verifier
+                    = new PreCommitFIDConsistencyVerifier(DirectoryService.this, _fds);
+            t.addListener_(verifier);
+            return verifier;
+        }
+    };
 
     /**
      * Interface for DirectoryService listeners
@@ -605,32 +620,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         _mdb.setFID_(soid, fid, t);
         _cacheOA.invalidate_(soid);
 
-        // Invariant: at the end of this transaction, if the OA for soid hasn't been deleted, either
-        // 1) the FID for the object must be null and there are no content attributes or
-        //    it is expelled OR
-        // 2) the FID is non-null and there exist content attributes (or the dir is not expelled)
-        // TODO (MJ) this listener is only needed once per SOID per tx, but repeated calls to
-        // setFID/unsetFID would result in redundant transaction listeners.
-        t.addListener_(new ITransListener()
-        {
-            @Override
-            public void committing_(Trans t)
-                    throws SQLException
-            {
-                OA oa = getOANullable_(soid);
-                if (oa != null && !oa.fidIsConsistentWithCAsOrExpulsion()) {
-                    SQLException e = new SQLException("oa inconsistent " + oa);
-                    _fds.logSendAsync("ds fid inconsistent", e);
-                    throw e;
-                }
-            }
-
-            @Override
-            public void committed_() { }
-
-            @Override
-            public void aborted_() { }
-        });
+        _fidConsistencyVerifier.get(t).verifyAtEndOfTransaction(soid);
     }
 
     /**
