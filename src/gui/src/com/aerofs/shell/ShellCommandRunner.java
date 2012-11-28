@@ -3,17 +3,18 @@ package com.aerofs.shell;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.ui.UIUtil;
+import jline.console.ConsoleReader;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Scanner;
 import java.util.TreeMap;
 
 public class ShellCommandRunner<T>
@@ -31,9 +32,9 @@ public class ShellCommandRunner<T>
 
     private final Map<String, IShellCommand<T>> _cmds = new TreeMap<String, IShellCommand<T>>();
     private final Map<String, String[]> _aliases = new TreeMap<String, String[]>();
-    private final Scanner _scanner = new Scanner(System.in);
-    private final PrintStream _out = System.out;
     private final PrintStream _err = System.err;
+    private final PrintStream _out = System.out;
+    private final ConsoleReader _reader;
     private boolean _echo;
     private boolean _showStack;
     private final ICallback<T> _cb;
@@ -43,13 +44,17 @@ public class ShellCommandRunner<T>
     private String[] _cmdlineInput;
     private String _lastInput = "";
 
+
     public ShellCommandRunner(ICallback<T> cb, T data, String prog, String desc, String[] args)
-            throws ExBadArgs
+            throws ExBadArgs, IOException
     {
         _cb = cb;
         _data = data;
         _prog = prog;
         _desc = desc;
+
+        _reader = new ConsoleReader();
+        setupConsoleReader();
 
         addCommand_(new CmdHelp<T>());
         addCommand_(new CmdExit<T>());
@@ -65,6 +70,15 @@ public class ShellCommandRunner<T>
     public String getDescription()
     {
         return _desc;
+    }
+
+    private void setupConsoleReader()
+    {
+        _reader.setBellEnabled(false);
+        // http://www.gnu.org/software/bash/manual/html_node/Event-Designators.html
+        _reader.setExpandEvents(true);
+        _reader.setHistoryEnabled(true);
+        // TODO: tab completion (context specific)
     }
 
     private void parseArgs(String[] args)
@@ -100,9 +114,9 @@ public class ShellCommandRunner<T>
         _cmds.put(cmd.getName(), cmd);
     }
 
-    public String nextInputLine()
+    public String nextInputLine() throws IOException
     {
-        String line = _scanner.nextLine();
+        String line = _reader.readLine(_cb.getPrompt_());
         if (_echo) {
             _out.print(_cb.getPrompt_());
             _out.println(line);
@@ -180,7 +194,7 @@ public class ShellCommandRunner<T>
         if (_showStack) _err.println(Util.e(e));
     }
 
-    public void start_()
+    public void start_() throws IOException
     {
         if (_cmdlineInput != null) {
             exec_(_cmdlineInput);
@@ -193,11 +207,7 @@ public class ShellCommandRunner<T>
         }
 
         while (true) {
-            if (System.console() != null) {
-                _out.print(_cb.getPrompt_());
-            }
-
-            String line = null;
+            String line;
             try {
                 line = nextInputLine();
             } catch (NoSuchElementException e) {
