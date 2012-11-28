@@ -152,8 +152,15 @@ class SPService implements ISPService
     @Override
     public PBException encodeError(Throwable e)
     {
-        // Report error in logs and notify SPTransaction that an exception occurred
-        l.warn("user: " + _sessionUser + ": " + Util.e(e));
+        // Report error in logs (if it is not an exception that we would normally expect).
+        if (!(e instanceof ExNoPerm) &&
+                !(e instanceof ExBadCredential) &&
+                !(e instanceof ExBadArgs) &&
+                !(e instanceof ExNotFound)) {
+            l.warn("user: " + _sessionUser + ": " + Util.e(e));
+        }
+
+        // Notify SPTransaction that an exception occurred.
         _transaction.handleException();
 
         // don't include stack trace here to avoid expose SP internals to the client side.
