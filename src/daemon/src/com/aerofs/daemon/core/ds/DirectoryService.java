@@ -9,7 +9,6 @@ import java.util.Set;
 
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.ds.PreCommitFIDConsistencyVerifier;
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -375,6 +374,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentCreated_(new SOKID(soid, kidx), path, t);
         }
+
+        _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
     }
 
     public void deleteCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
@@ -386,6 +387,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentDeleted_(new SOKID(soid, kidx), path, t);
         }
+
+        _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
     }
 
     /**
@@ -620,7 +623,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         _mdb.setFID_(soid, fid, t);
         _cacheOA.invalidate_(soid);
 
-        _fidConsistencyVerifier.get(t).verifyAtEndOfTransaction(soid);
+        _fidConsistencyVerifier.get(t).verifyAtCommitTime(soid);
     }
 
     /**
@@ -647,6 +650,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         for (IDirectoryServiceListener listener : _listeners) {
             listener.objectContentModified_(sokid, path, t);
         }
+
+        _fidConsistencyVerifier.get(t).verifyAtCommitTime(sokid.soid());
     }
 
     /**

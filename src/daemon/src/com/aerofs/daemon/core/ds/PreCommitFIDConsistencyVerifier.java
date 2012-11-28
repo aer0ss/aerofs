@@ -36,7 +36,7 @@ class PreCommitFIDConsistencyVerifier extends AbstractTransListener
         _fds = fds;
     }
 
-    void verifyAtEndOfTransaction(SOID soid)
+    void verifyAtCommitTime(SOID soid)
     {
         _soidsToVerify.add(soid);
     }
