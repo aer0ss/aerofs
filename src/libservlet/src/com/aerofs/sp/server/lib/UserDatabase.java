@@ -48,6 +48,8 @@ public class UserDatabase extends AbstractSQLDatabase
 
     /**
      * Note: this method always creates the user as non-verified.
+     *
+     * @throws ExAlreadyExist if the user ID already exists
      */
     public void addUser(UserID id, FullName fullName, byte[] shaedSP, OrgID orgID,
             AuthorizationLevel level)
@@ -160,7 +162,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
             rs.close();
-            throw new ExNotFound("user ID " + userId);
+            throw new ExNotFound("user #" + userId);
         } else {
             return rs;
         }

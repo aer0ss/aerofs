@@ -20,10 +20,11 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.SPDatabase.ResolveTargetedSignUpCodeResult;
 import com.aerofs.sp.server.lib.organization.OrgID;
-import com.aerofs.sp.server.lib.user.IUserSearchDatabase.UserInfo;
+import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Common.PBException;
@@ -56,7 +57,6 @@ import com.aerofs.sp.server.cert.Certificate;
 import com.aerofs.sp.server.cert.ICertificateGenerator;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
-import com.aerofs.sp.server.user.UserManagement.UserListAndQueryCount;
 import com.aerofs.sp.server.lib.ACLReturn;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceRow;
@@ -120,13 +120,14 @@ class SPService implements ISPService
     private final SharedFolderManagement _sharedFolderManagement;
     private final ICertificateGenerator _certificateGenerator;
     private final User.Factory _factUser;
+    private final Organization.Factory _factOrg;
 
     SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
             ISessionUser sessionUser, UserManagement userManagement,
             OrganizationManagement organizationManagement,
             SharedFolderManagement sharedFolderManagement,
             ICertificateGenerator certificateGenerator,
-            User.Factory factUser)
+            User.Factory factUser, Organization.Factory factOrg)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -138,6 +139,7 @@ class SPService implements ISPService
         _sharedFolderManagement = sharedFolderManagement;
         _certificateGenerator = certificateGenerator;
         _factUser = factUser;
+        _factOrg = factOrg;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -226,15 +228,13 @@ class SPService implements ISPService
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
-        OrgID orgId = user.getOrgID();
-
-        UserListAndQueryCount listAndCount =
-                _userManagement.listUsers(search, maxResults, offset, orgId);
+        Organization org = user.getOrganization();
+        UserListAndQueryCount listAndCount = org.listUsers(search, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
                 .addAllUsers(userInfoList2PBUserList(listAndCount._userInfoList))
                 .setFilteredCount(listAndCount._count)
-                .setTotalCount(_userManagement.totalUserCount(orgId))
+                .setTotalCount(org.totalUserCount())
                 .build();
 
         _transaction.commit();
@@ -252,16 +252,15 @@ class SPService implements ISPService
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
-        OrgID orgId = user.getOrgID();
+        Organization org = user.getOrganization();
         AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
 
-        UserListAndQueryCount listAndCount =
-                _userManagement.listUsersAuth(search, level, maxResults, offset, orgId);
+        UserListAndQueryCount listAndCount = org.listUsersAuth(search, level, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
                 .addAllUsers(userInfoList2PBUserList(listAndCount._userInfoList))
                 .setFilteredCount(listAndCount._count)
-                .setTotalCount(_userManagement.totalUserCount(level, orgId))
+                .setTotalCount(org.totalUserCount(level))
                 .build();
 
         _transaction.commit();
@@ -291,10 +290,11 @@ class SPService implements ISPService
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
+        OrgID orgID = user.getOrganization().id();
 
-        int sharedFolderCount = _organizationManagement.countSharedFolders(user.getOrgID());
+        int sharedFolderCount = _organizationManagement.countSharedFolders(orgID);
         List<PBSharedFolder> sharedFolderList =
-                _organizationManagement.listSharedFolders(user.getOrgID(), maxResults, offset);
+                _organizationManagement.listSharedFolders(orgID, maxResults, offset);
 
         _transaction.commit();
 
@@ -318,12 +318,14 @@ class SPService implements ISPService
         AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
         // Verify caller and subject's organization match
-        if (!requester.getOrgID().equals(subject.getOrgID()))
+        if (!requester.getOrganization().id().equals(subject.getOrganization().id())) {
             throw new ExNoPerm("organization mismatch");
+        }
 
         // Verify caller's authorization level dominates the subject's
-        if (requester.getLevel() != AuthorizationLevel.ADMIN) throw new ExNoPerm(requester +
-                " cannot change authorization of " + subject);
+        if (requester.getLevel() != AuthorizationLevel.ADMIN) {
+            throw new ExNoPerm(requester + " cannot change authorization of " + subject);
+        }
 
         if (requester.id().equals(subject.id())) {
             throw new ExNoPerm("cannot change authorization for yourself");
@@ -353,14 +355,14 @@ class SPService implements ISPService
         User user = _sessionUser.get();
 
         // only users in the default organization or admins can add organizations.
-        if (!user.getOrgID().equals(OrgID.DEFAULT) ||
+        if (!user.getOrganization().id().equals(OrgID.DEFAULT) ||
                      user.getLevel() != AuthorizationLevel.ADMIN) {
             throw new ExNoPerm("API meant for internal use by AeroFS employees only");
         }
 
-        Organization org = _organizationManagement.addOrganization(orgName);
+        Organization org = _factOrg.add(orgName);
 
-        _organizationManagement.moveUserToOrganization(user, org._id);
+        _organizationManagement.moveUserToOrganization(user, org.id());
         user.setLevel(AuthorizationLevel.ADMIN);
 
         _transaction.commit();
@@ -377,10 +379,10 @@ class SPService implements ISPService
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
-        Organization org = _organizationManagement.getOrganization(user.getOrgID());
+        Organization org = user.getOrganization();
 
         GetOrgPreferencesReply orgPreferences = GetOrgPreferencesReply.newBuilder()
-                .setOrgName(org._name)
+                .setOrgName(org.getName())
                 .build();
 
         _transaction.commit();
@@ -396,8 +398,7 @@ class SPService implements ISPService
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
-
-        _organizationManagement.setOrganizationPreferences(user.getOrgID(), orgName);
+        user.getOrganization().setName(orgName);
 
         _transaction.commit();
 
@@ -665,7 +666,8 @@ class SPService implements ISPService
             _db.setFolderlessInvitesQuota(user.id(), left);
         }
 
-        Organization org = _db.getOrganization(inviteToDefaultOrg ? OrgID.DEFAULT : user.getOrgID());
+        Organization org = inviteToDefaultOrg ? _factOrg.create(OrgID.DEFAULT) :
+                user.getOrganization();
 
         // Invite all invitees to Organization "org"
         // The sending of invitation emails is deferred to the end of the transaction to ensure

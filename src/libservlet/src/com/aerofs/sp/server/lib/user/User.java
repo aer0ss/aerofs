@@ -13,6 +13,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.Organization;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
@@ -23,32 +24,37 @@ public class User
     private final static Logger l = Util.l(User.class);
 
     private final UserID _id;
+
     private final UserDatabase _db;
+    private final Organization.Factory _factOrg;
 
     public static class Factory
     {
         private final UserDatabase _db;
+        private final Organization.Factory _factOrg;
 
-        public Factory(UserDatabase db)
+        public Factory(UserDatabase db, Organization.Factory factOrg)
         {
             _db = db;
+            _factOrg = factOrg;
         }
 
         public User create(UserID id)
         {
-            return new User(_db, id);
+            return new User(_db, _factOrg, id);
         }
 
         public User createFromExternalID(String str)
         {
-            return new User(_db, UserID.fromExternal(str));
+            return create(UserID.fromExternal(str));
         }
     }
 
-    private User(UserDatabase db, UserID id)
+    private User(UserDatabase db, Organization.Factory factOrg, UserID id)
     {
         _id = id;
         _db = db;
+        _factOrg = factOrg;
     }
 
     public void throwIfNotAdmin()
@@ -74,7 +80,7 @@ public class User
     @Override
     public String toString()
     {
-        return "User:" + _id.toString();
+        return "user #" + _id.toString();
     }
 
     /**
@@ -98,12 +104,11 @@ public class User
         if (!exists()) throw new ExNotFound("user " + this);
     }
 
-
-    // TODO (WW) return an Organization object
-    public OrgID getOrgID()
+    public Organization getOrganization()
             throws ExNotFound, SQLException
     {
-        return _db.getOrgID(_id);
+        // Do not cache the created object in memory to avoid db/mem inconsistency
+        return _factOrg.create(_db.getOrgID(_id));
     }
 
     public FullName getFullName()

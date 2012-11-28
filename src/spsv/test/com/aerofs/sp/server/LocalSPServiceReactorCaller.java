@@ -21,6 +21,7 @@ import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User.Factory;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
@@ -44,10 +45,13 @@ import static org.mockito.Mockito.mock;
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
     private final SPDatabaseParams _dbParams = new SPDatabaseParams();
-    private final SQLThreadLocalTransaction _transaction =
+    private final SQLThreadLocalTransaction transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    private final UserDatabase _udb = new UserDatabase(_transaction);
-    private final SPServiceReactor _reactor;
+    private final UserDatabase udb = new UserDatabase(transaction);
+    private final SPServiceReactor reactor;
+
+    protected final OrganizationDatabase odb = new OrganizationDatabase(transaction);
+    protected final Organization.Factory factOrg = new Organization.Factory(odb);
 
     // On initialization, a single admin is added to the sp database to enable authenticated calls
     public static final UserID ADMIN_ID = UserID.fromInternal("testadmin@company.com");
@@ -66,20 +70,18 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         assert factEmailer != null;
 
-        Factory factUser = new Factory(_udb);
-        SPDatabase db = new SPDatabase(_transaction);
+        Factory factUser = new Factory(udb, factOrg);
+        SPDatabase db = new SPDatabase(transaction);
         UserManagement userManagement =
-                new UserManagement(db, db, factUser, factEmailer,
-                        mock(PasswordResetEmailer.class));
+                new UserManagement(db, factUser, factEmailer, mock(PasswordResetEmailer.class));
         OrganizationManagement organizationManagement = mock(OrganizationManagement.class);
 
-        SPService service = new SPService(db, _transaction, new MockSessionUser(),
+        SPService service = new SPService(db, transaction, new MockSessionUser(),
                 userManagement, organizationManagement,
-                new SharedFolderManagement(db, userManagement, organizationManagement,
-                        factEmailer, factUser),
-                new CertificateGenerator(), factUser);
+                new SharedFolderManagement(db, userManagement, factEmailer, factUser, factOrg),
+                new CertificateGenerator(), factUser, factOrg);
 
-        _reactor = new SPServiceReactor(service);
+        reactor = new SPServiceReactor(service);
     }
 
     /**
@@ -96,17 +98,17 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 .toByteArray());
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService
-        _transaction.begin();
-        _udb.addUser(ADMIN_ID, new FullName("first", "last"), cred, OrgID.DEFAULT,
+        transaction.begin();
+        udb.addUser(ADMIN_ID, new FullName("first", "last"), cred, OrgID.DEFAULT,
                 AuthorizationLevel.ADMIN);
-        _udb.setVerified(ADMIN_ID);
-        _transaction.commit();
+        udb.setVerified(ADMIN_ID);
+        transaction.commit();
     }
 
     @Override
     public ListenableFuture<byte[]> doRPC(byte[] data)
     {
-        return _reactor.react(data);
+        return reactor.react(data);
     }
 
     @Override

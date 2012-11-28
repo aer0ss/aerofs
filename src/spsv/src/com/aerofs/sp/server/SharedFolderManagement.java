@@ -18,7 +18,6 @@ import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
 import org.apache.log4j.Logger;
 
@@ -38,19 +37,19 @@ public class SharedFolderManagement
 
     private final ISharedFolderDatabase _db;
     private final UserManagement _userManagement;
-    private final OrganizationManagement _organizationManagement;
     private final InvitationEmailer.Factory _emailerFactory;
     private final User.Factory _factUser;
+    private final Organization.Factory _factOrg;
 
     public SharedFolderManagement(ISharedFolderDatabase db, UserManagement userManagement,
-            OrganizationManagement organizationManagement, InvitationEmailer.Factory factEmailer,
-            User.Factory factUser)
+            InvitationEmailer.Factory factEmailer, User.Factory factUser,
+            Organization.Factory factOrg)
     {
         _db = db;
         _userManagement = userManagement;
-        _organizationManagement = organizationManagement;
         _emailerFactory = factEmailer;
         _factUser = factUser;
+        _factOrg = factOrg;
     }
 
     private void updateSharedFolderName(SID sid, String folderName, UserID userId)
@@ -101,7 +100,7 @@ public class SharedFolderManagement
         Organization shareeOrg;
         final User sharee = _factUser.create(shareeId);
         if (!sharee.exists()) {  // Sharing with a non-AeroFS user.
-            shareeOrg = _organizationManagement.getOrganization(OrgID.DEFAULT);
+            shareeOrg = _factOrg.create(OrgID.DEFAULT);
             createFolderInvitation(sharer.id(), shareeId, sid, folderName);
             emailer = _userManagement.inviteOneUser(sharer, shareeId, shareeOrg, folderName,
                     note);

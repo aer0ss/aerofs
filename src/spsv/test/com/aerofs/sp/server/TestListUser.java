@@ -9,19 +9,17 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
-import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.aerofs.sp.server.lib.user.IUserSearchDatabase.UserInfo;
-import com.aerofs.sp.server.user.UserManagement;
-import com.aerofs.sp.server.user.UserManagement.UserListAndQueryCount;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
 import static org.junit.Assert.assertEquals;
@@ -43,9 +41,13 @@ public class TestListUser extends AbstractTest
     private final SPDatabaseParams _dbParams = new SPDatabaseParams();
     @Spy private final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    @Spy private final SPDatabase _spdb = new SPDatabase(_transaction);
     @Spy private final UserDatabase _udb = new UserDatabase(_transaction);
-    @InjectMocks UserManagement userManagement;
+    @Spy private final OrganizationDatabase _odb = new OrganizationDatabase(_transaction);
+
+    @Spy private final Organization.Factory _factOrg = new Organization.Factory(_odb);
+
+    Organization validOrg = _factOrg.create(validOrgId);
+    Organization invalidOrg = _factOrg.create(invalidOrgId);
 
     @Before
     public void setup()
@@ -57,12 +59,8 @@ public class TestListUser extends AbstractTest
         // throw exceptions
         _transaction.begin();
 
-        Organization[] orgs = new Organization[] {
-                new Organization(validOrgId, "test"),
-                new Organization(nonQueriedOrgId, "dummy")
-        };
-
-        for (Organization org : orgs) _spdb.addOrganization(org);
+        _odb.addOrganization(validOrgId, "test");
+        _odb.addOrganization(nonQueriedOrgId, "dummy");
 
         setupUsers();
     }
@@ -105,7 +103,7 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         // search term null means search for all
-        UserListAndQueryCount pair = userManagement.listUsers(null, TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = validOrg.listUsers(null, TOTAL_USERS, 0);
         assertEquals(TOTAL_USERS, pair._userInfoList.size());
         assertEquals(TOTAL_USERS, pair._count);
     }
@@ -116,10 +114,8 @@ public class TestListUser extends AbstractTest
     {
         final int offset = 4;
         final int maxResults = 6;
-        UserListAndQueryCount subsetPair = userManagement.listUsers(null, maxResults,
-                offset, validOrgId);
-        UserListAndQueryCount allPair = userManagement.listUsers(null, TOTAL_USERS,
-                0, validOrgId);
+        UserListAndQueryCount subsetPair = validOrg.listUsers(null, maxResults, offset);
+        UserListAndQueryCount allPair = validOrg.listUsers(null, TOTAL_USERS, 0);
         assertEquals(maxResults, subsetPair._userInfoList.size());
         assertEquals(TOTAL_USERS, allPair._userInfoList.size());
 
@@ -134,7 +130,7 @@ public class TestListUser extends AbstractTest
     public void shouldFindNoUsersWhenOrgIdIsNotInDB()
             throws Exception
     {
-        UserListAndQueryCount pair = userManagement.listUsers(null, 10, 0, invalidOrgId);
+        UserListAndQueryCount pair = invalidOrg.listUsers(null, 10, 0);
         assertTrue(pair._userInfoList.isEmpty());
     }
 
@@ -146,7 +142,7 @@ public class TestListUser extends AbstractTest
     public void shouldListSubSetOfUsersThatMatchSearchKey()
             throws Exception
     {
-        UserListAndQueryCount pair = userManagement.listUsers("user", TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = validOrg.listUsers("user", TOTAL_USERS, 0);
         assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
         for (UserInfo user : pair._userInfoList) {
             assertTrue(user._userId.toString().contains("user"));
@@ -165,8 +161,8 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         // search term is null if we want to find all the users.
-        UserListAndQueryCount pair = userManagement.listUsersAuth(null, AuthorizationLevel.USER,
-                TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = validOrg.listUsersAuth(null, AuthorizationLevel.USER,
+                TOTAL_USERS, 0);
         assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
         for (UserInfo user : pair._userInfoList) {
             assertTrue(user._userId.toString().contains("user"));
@@ -183,8 +179,8 @@ public class TestListUser extends AbstractTest
     public void shouldListUser1ForSearchUsersWithAuthorization()
             throws Exception
     {
-        UserListAndQueryCount pair = userManagement.listUsersAuth("user1@", AuthorizationLevel.USER,
-                TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = validOrg.listUsersAuth("user1@", AuthorizationLevel.USER,
+                TOTAL_USERS, 0);
 
         assertEquals(1, pair._userInfoList.size());
         assertEquals(UserID.fromInternal("user1@test.com"), pair._userInfoList.get(0)._userId);
@@ -195,8 +191,8 @@ public class TestListUser extends AbstractTest
     public void shouldFindUsersWithPercentageSignForSearchUsersWithAuthorization()
             throws Exception
     {
-        UserListAndQueryCount pair = userManagement.listUsersAuth("user%", AuthorizationLevel.USER,
-                TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = validOrg.listUsersAuth("user%", AuthorizationLevel.USER,
+                TOTAL_USERS, 0);
 
         assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
     }
@@ -205,8 +201,8 @@ public class TestListUser extends AbstractTest
     public void shouldNotFindUserWhenSearchCouldMatchButAuthLevelDiffers()
             throws Exception
     {
-        UserListAndQueryCount pair = userManagement.listUsersAuth("user1",
-                AuthorizationLevel.ADMIN, TOTAL_USERS, 0, validOrgId);
+        UserListAndQueryCount pair = validOrg.listUsersAuth("user1",
+                AuthorizationLevel.ADMIN, TOTAL_USERS, 0);
 
         assertTrue(pair._userInfoList.isEmpty());
     }

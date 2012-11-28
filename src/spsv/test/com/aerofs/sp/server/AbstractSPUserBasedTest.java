@@ -10,8 +10,10 @@ import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
+import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
@@ -40,14 +42,17 @@ public class AbstractSPUserBasedTest extends AbstractSPServiceTest
     // Mock invitation emailer for use with sp.shareFolder calls
     protected final InvitationEmailer.Factory factEmailer = mock(InvitationEmailer.Factory.class);
 
-    protected final UserDatabase udb = new UserDatabase(transaction);
-    protected final User.Factory factUser = new Factory(udb);
+    protected final OrganizationDatabase odb = new OrganizationDatabase(transaction);
+    protected final Organization.Factory factOrg = new Organization.Factory(odb);
 
-    @Spy UserManagement userManagement = new UserManagement(db, db, factUser, factEmailer, null);
+    protected final UserDatabase udb = new UserDatabase(transaction);
+    protected final User.Factory factUser = new Factory(udb, factOrg);
+
+    @Spy UserManagement userManagement = new UserManagement(db, factUser, factEmailer, null);
     @Spy OrganizationManagement organizationManagement =
             new OrganizationManagement(db);
     @Spy SharedFolderManagement sharedFolderManagement = new SharedFolderManagement(db,
-            userManagement, organizationManagement, factEmailer, factUser);
+            userManagement, factEmailer, factUser, factOrg);
 
     protected static final UserID TEST_USER_1 = UserID.fromInternal("user_1");
     protected static final byte[] TEST_USER_1_CRED = "CREDENTIALS".getBytes();
