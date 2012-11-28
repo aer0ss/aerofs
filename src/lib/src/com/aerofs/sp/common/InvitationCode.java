@@ -24,16 +24,19 @@ public class InvitationCode
      */
     public static enum CodeType
     {
-        TARGETED_SIGNUP(8),
-        SHARE_FOLDER(8),
-        INVALID(0);
+        // We pick suffix chars arbitrarily
+        TARGETED_SIGNUP(8, 'b'),
+        SHARE_FOLDER(8, 'c'),
+        INVALID(0, '\0');
 
         // Number of characters for the code type (i.e. length of the string)
         private final int _length;
+        private final char _suffix;
 
-        private CodeType(int length)
+        private CodeType(int length, char suffix)
         {
             _length = length;
+            _suffix = suffix;
         }
     }
 
@@ -79,7 +82,6 @@ public class InvitationCode
     {
         int length = code.length();
         char suffix = code.charAt(length - 1);
-        return (suffix == Base62CodeGenerator.BASE62_CHARS[expected.ordinal()] && length ==
-                expected._length);
+        return suffix == expected._suffix && length == expected._length;
     }
 }
