@@ -23,7 +23,7 @@ public class Base62CodeGenerator
         return sb.toString();
     }
 
-    public static final char[] BASE62_CHARS;
+    private static final char[] BASE62_CHARS;
     static {
         BASE62_CHARS = new char[62];
         int idx = 0;
