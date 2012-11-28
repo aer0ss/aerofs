@@ -59,10 +59,10 @@ def valid_password_test(request, password, password_confirmation):
 # Exception processing functions
 
 def get_error(exception): # parse RPC errors into something more user friendly
-    ''' Returns a localized error message for the given protobuf exception.
+    ''' Returns an error message for the given protobuf exception.
         Expects the exception to be of type 'ExceptionReply'
     '''
-    return exception.reply.localized_message
+    return exception.reply.plain_text_message
 
 def parse_rpc_error_exception(request, e):
     ''' Reads an exception of any sort generated when making an RPC call

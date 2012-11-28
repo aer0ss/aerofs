@@ -18,6 +18,7 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.SPDatabase.ResolveTargetedSignUpCodeResult;
@@ -412,6 +413,19 @@ class SPService implements ISPService
         return createReply(unsubscribeEmail);
 
 
+    }
+
+    @Override
+    public ListenableFuture<GetAuthorizationLevelReply> getAuthorizationLevel()
+            throws Exception
+    {
+        _transaction.begin();
+
+        AuthorizationLevel level = _sessionUser.get().getLevel();
+
+        _transaction.commit();
+
+        return createReply(GetAuthorizationLevelReply.newBuilder().setLevel(level.toPB()).build());
     }
 
     @Override

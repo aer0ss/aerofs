@@ -376,6 +376,13 @@ service SPService {
      *
      */
     rpc UnsubscribeEmail(SetUnsubscribeEmailCall) returns (GetUnsubscribeEmailReply);
+
+    /**
+     * Return the auth level of the current user
+     *
+     * Required Auth Level: none
+     */
+    rpc GetAuthorizationLevel(Void) returns (GetAuthorizationLevelReply);
 }
 
 message SignUpCall {
@@ -576,6 +583,10 @@ message ListUsersAuthCall {
     required int32 offset = 4;
 }
 
+message GetAuthorizationLevelReply {
+    required PBAuthorizationLevel level = 1;
+}
+
 message PBUser {
     // N.B. the user_email is assumed to be the user's unique ID on the SP Database
     required string user_email = 1;
@@ -589,8 +600,8 @@ message SetAuthorizationLevelCall {
 }
 
 enum PBAuthorizationLevel {
-    USER       = 1;
-    ADMIN      = 2;
+    USER       = 0;
+    ADMIN      = 1;
 }
 
 message AddOrganizationCall {
