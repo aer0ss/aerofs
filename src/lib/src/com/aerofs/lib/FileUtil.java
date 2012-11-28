@@ -4,6 +4,8 @@ import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -229,7 +232,18 @@ public abstract class FileUtil
 
     public static void delete(File file) throws IOException
     {
-        if (!file.delete()) throw new ExFileIO("couldn't delete file", file);
+        if (!file.delete()) {
+            final String prefix = "couldn't delete file {}";
+
+            // Throw file- or directory-specific exception
+            @Nullable File[] children = file.listFiles();
+            if (children == null || children.length == 0) throw new ExFileIO(prefix, file);
+            else {
+                final String suffix = "w children";
+                throw new ExFileIO(prefix + suffix, ImmutableList.<File>builder().add(file)
+                        .addAll(Arrays.asList(children)).build());
+            }
+        }
     }
 
     public static void mkdir(File dir) throws IOException
@@ -419,9 +433,9 @@ public abstract class FileUtil
                 throw new ExFileIO("cannot create file {}. it might already exist", to);
             }
 
-            for (int i = 0; i < children.length; i++) {
-                File fChildFrom = new File(from, children[i]);
-                File fChildTo = new File(to, children[i]);
+            for (String child : children) {
+                File fChildFrom = new File(from, child);
+                File fChildTo = new File(to, child);
                 copyRecursively(fChildFrom, fChildTo, exclusive, keepMTime);
             }
         } else {

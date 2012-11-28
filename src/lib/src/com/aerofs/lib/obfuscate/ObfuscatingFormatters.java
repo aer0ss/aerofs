@@ -11,6 +11,7 @@ import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -30,11 +31,17 @@ public final class ObfuscatingFormatters
      */
     public static FormattedMessage formatFileMessage(String message, File... files)
     {
-        return appendFileAttributes(_fileObjectFormatter.format(message, files), files);
+        return appendFileAttributes(_fileObjectFormatter.format(message, files),
+                Arrays.asList(files));
+    }
+
+    public static FormattedMessage formatFileMessage(String message, Iterable<File> files)
+    {
+        return appendFileAttributes(_fileObjectFormatter.format(message, files.iterator()), files);
     }
 
     private static FormattedMessage appendFileAttributes(FormattedMessage formattedMessage,
-            File[] files)
+            Iterable<File> files)
     {
         StringBuilder obfuscatedBuilder = new StringBuilder(formattedMessage._obfuscated);
 
