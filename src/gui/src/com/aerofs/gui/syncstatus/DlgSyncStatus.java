@@ -172,8 +172,13 @@ public class DlgSyncStatus extends AeroFSDialog
             return;
         }
 
+        if (reply.getStatusList().size() == 0) {
+            addLabelPreImage(S.SYNC_STATUS_LOCAL, Images.get(Images.ICON_WARNING), c);
+            return;
+        }
+
         boolean myDev = false, otherUsers = false;
-        for (PBSyncStatus pbs : reply.getStatusListList()) {
+        for (PBSyncStatus pbs : reply.getStatusList()) {
             if (pbs.hasDeviceName()) {
                 if (!myDev) {
                     myDev = true;
