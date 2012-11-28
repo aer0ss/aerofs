@@ -56,10 +56,7 @@ public class InvitationCode
         }
 
         // Generate the random code and add a type-specific suffix
-        // - assume the codeType ordinals do not exceed BASE62_CHARS.length.
-        // - taking the modulo would be safer, but probably unnecessary
-        return Base62CodeGenerator.newRandomBase62String(codeType._length - 1)
-                + Base62CodeGenerator.BASE62_CHARS[codeType.ordinal()];
+        return Base62CodeGenerator.newRandomBase62String(codeType._length - 1) + codeType._suffix;
     }
 
     public static CodeType getType(@Nullable String code)
