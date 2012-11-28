@@ -45,9 +45,6 @@ class PreCommitFIDConsistencyVerifier extends AbstractTransListener
     public void committing_(Trans t)
             throws SQLException
     {
-        assert _ds != null || _soidsToVerify.isEmpty() : _ds + " " + _soidsToVerify;
-        if (_ds == null) return;
-
         List<OA> inconsistentObjects = Lists.newArrayListWithCapacity(_soidsToVerify.size());
         for (SOID soid : _soidsToVerify) {
             OA oa = _ds.getOANullable_(soid);

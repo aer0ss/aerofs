@@ -293,7 +293,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
                 } finally {
                     boolean wasRemoved = _soidAncestorChain.remove(soid);
-                    assert wasRemoved : soid + " " + _soidAncestorChain;
+                    if (!wasRemoved) _fds.logSendAsync(oa + " not in set: " + _soidAncestorChain);
                 }
             }
         };
