@@ -20,7 +20,8 @@ include common::logs
         "default-jdk",
         "htop",
         "dstat",
-        "ntp"
+        "ntp",
+        "iftop"
         ]:
         ensure => latest,
     }
