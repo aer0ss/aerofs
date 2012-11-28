@@ -3,7 +3,9 @@ package com.aerofs.shell;
 import java.io.File;
 import java.io.PrintStream;
 
+import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.proto.Ritual.ExportConflictReply;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -30,21 +32,23 @@ public class CmdExport implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "export a file to the local file system at its current version or at a" +
-                " past version";
+        return "export a file to the local file system (current, past or conflict version)";
     }
 
     @Override
     public Options getOpts()
     {
-        return new Options().addOption("h", "history", true, "export a past version. the argument" +
-                " specifies the version index. see also 'ls -h' and 'vh' commands");
+        return new Options()
+                .addOption("h", "history", true, "export a past version. the argument" +
+                        " specifies the version index. see also 'ls -h' and 'vh' commands")
+                .addOption("b", "branch", true, "export a conflict branch. the argument" +
+                        " specifies the conflict branch. see also 'conflicts' command");
     }
 
     @Override
     public String getOptsSyntax()
     {
-        return "SOURCE DEST_FOLDER";
+        return "SOURCE DEST";
     }
 
     class Downloader
@@ -106,6 +110,11 @@ public class CmdExport implements IShellCommand<ShProgram>
         if (args.length != 2) throw new ExBadArgs();
 
         String revIndex = cl.getOptionValue('h');
+        String conflict = cl.getOptionValue('b');
+
+        if (revIndex != null && conflict != null) {
+            throw new ExBadArgs("history and conflict options are mutually exclusive");
+        }
 
         Path source = new Path(s.d().buildPathElemList_(args[0]));
         File dest = new File(args[1]);
@@ -116,6 +125,12 @@ public class CmdExport implements IShellCommand<ShProgram>
         if (revIndex != null) {
             ExportRevisionReply reply = s.d().getRitualClient_()
                     .exportRevision(source.toPB(), ByteString.copyFromUtf8(revIndex));
+            FileUtil.moveInOrAcrossFileSystem(new File(reply.getDest()), dest);
+        } else if (conflict != null) {
+            int kidx = Integer.valueOf(conflict);
+            if (kidx == KIndex.MASTER.getInt()) throw new ExBadArgs("");
+            ExportConflictReply reply = s.d().getRitualClient_()
+                    .exportConflict(source.toPB(), kidx);
             FileUtil.moveInOrAcrossFileSystem(new File(reply.getDest()), dest);
         } else {
             Downloader downloader = new Downloader(s);

@@ -3,6 +3,7 @@ package com.aerofs.shell;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.aerofs.lib.Util;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -57,13 +58,13 @@ public class CmdList implements IShellCommand<ShProgram>
             } else {
                 char c1 = '-';
                 char c2 = oa.getExcluded() ? 'X' : '-';
-                String c3 = " ";
+                char c3 = ' ';
                 switch (oa.getType()) {
                 case FILE:
                     if (!oa.getExcluded() && oa.getBranchCount() == 0) {
                         c2 = 'x';
                     } else if (oa.getBranchCount() > 1) {
-                        c3 = String.valueOf(oa.getBranch(0).getKidx());
+                        c3 = 'c';
                     }
                     break;
                 case FOLDER:
@@ -80,13 +81,17 @@ public class CmdList implements IShellCommand<ShProgram>
 
                 sb.append(' ').append(name);
 
-                s.out().println(sb);
-
-                // print branches
+                // print size and mtime of MASTER branch, if available
+                // other branches are exposed through the "conflicts" command
                 for (PBBranch b : oa.getBranchList()) {
-                    if (b.getKidx() == KIndex.MASTER.getInt()) continue;
-                    s.out().println("" + c1 + c2 + b.getKidx());
+                    if (b.getKidx() == KIndex.MASTER.getInt()) {
+                        sb.append(' ').append(Util.formatSize(b.getLength()));
+                        sb.append(' ').append(Util.formatAbsoluteTime(b.getMtime()));
+                        break;
+                    }
                 }
+
+                s.out().println(sb);
             }
         }
     }
