@@ -12,15 +12,12 @@ import javax.annotation.Nullable;
  * - get the type of a given code (from string format)
  *
  * Code types are distinguished by i) string length, and ii) the suffix character. For
- * example, all batch signup codes will end with the same character,
- * 'a'.  The suffix character is determined according to the ordinal of the code type.
+ * example, all signup codes will end with the same character, 'b'.
  */
 public class InvitationCode
 {
     /**
      * The different types of Invitation codes
-     * N.B. reordering these will cause codes generated from previous revisions to fail the
-     *      getType method, as the suffix character is determined from the enum ordinal.
      */
     public static enum CodeType
     {
