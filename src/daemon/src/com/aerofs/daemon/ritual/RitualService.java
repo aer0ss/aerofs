@@ -478,7 +478,7 @@ public class RitualService implements IRitualService
         ev.execute(PRIO);
         GetSyncStatusReply.Builder bd = GetSyncStatusReply.newBuilder();
         bd.setIsServerUp(ev._isServerUp);
-        for (PBSyncStatus dss : ev._peers) bd.addStatusList(dss);
+        for (PBSyncStatus dss : ev._peers) bd.addStatus(dss);
         return createReply(bd.build());
     }
 

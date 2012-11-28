@@ -98,4 +98,5 @@ public class S
     public static final String MODIFIED = "updated";
 
     public static final String SYNC_STATUS_DOWN = "Sync status is temporarily unavailable.";
+    public static final String SYNC_STATUS_LOCAL = "Not synced with other devices.";
 }

@@ -432,7 +432,7 @@ message GetSyncStatusCall {
 message GetSyncStatusReply {
     // no sync status should be shown to the user when the server is know to be down
     required bool is_server_up = 1;
-    repeated PBSyncStatus status_list = 2;
+    repeated PBSyncStatus status = 2;
 }
 
 message GetPathStatusCall {
