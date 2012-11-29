@@ -159,33 +159,25 @@ public final class SVClient
     //
     //-------------------------------------------------------------------------
 
-    public static void sendCoreDatabaseAsync()
+    public static void sendCoreDatabaseSync()
     {
         l.debug("send dump");
-
-        startDaemonThread("send-defect", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    doLogSendDefect(
-                            true,
-                            "core db",
-                            null,
-                            newHeader(),
-                            Cfg.dumpDb(),
-                            absRTRoot(),
-                            null,
-                            true,
-                            false,
-                            true,
-                            false);
-                } catch (Exception e) {
-                    l.warn("can't dump err:", e);
-                }
-            }
-        });
+        try {
+            doLogSendDefect(
+                    true,
+                    "core db",
+                    null,
+                    newHeader(),
+                    Cfg.dumpDb(),
+                    absRTRoot(),
+                    null,
+                    true,
+                    false,
+                    true,
+                    false);
+        } catch (Exception e) {
+            l.warn("can't dump err:", e);
+        }
     }
 
     //-------------------------------------------------------------------------
@@ -254,15 +246,15 @@ public final class SVClient
     //
     //-------------------------------------------------------------------------
 
-    public static void logSendDefectAsync(boolean automatic, String desc)
+    public static void logSendDefectAsync(boolean isAutoBug, String desc)
     {
-        logSendDefectAsync(automatic, desc, null);
+        logSendDefectAsync(isAutoBug, desc, null);
     }
 
     /*
      * @param cause may be null if stack trace is not needed
      */
-    public static void logSendDefectAsync(final boolean automatic, final String desc, @Nullable final Throwable cause)
+    public static void logSendDefectAsync(final boolean isAutoBug, final String desc, @Nullable final Throwable cause)
     {
         final PBSVHeader header = newHeader(); // make header here so we can get correct event time
 
@@ -273,7 +265,7 @@ public final class SVClient
             {
                 try {
                     doLogSendDefect(
-                            automatic,
+                            isAutoBug,
                             desc,
                             cause,
                             header,
@@ -294,11 +286,11 @@ public final class SVClient
     /**
      * @param secret the string that should be hidden from the log files
      */
-    public static void logSendDefectSync(boolean automatic, String desc, @Nullable Throwable cause, @Nullable String secret)
+    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause, @Nullable String secret)
             throws IOException, AbstractExWirable
     {
         doLogSendDefect(
-                automatic,
+                isAutoBug,
                 desc,
                 cause,
                 newHeader(),
@@ -311,20 +303,20 @@ public final class SVClient
                 true);
     }
 
-    public static void logSendDefectSyncIgnoreErrors(boolean automatic, String context, Throwable cause)
+    public static void logSendDefectSyncIgnoreErrors(boolean isAutoBug, String context, Throwable cause)
     {
         try {
-            logSendDefectSync(automatic, context, cause, null);
+            logSendDefectSync(isAutoBug, context, cause, null);
         } catch (Throwable t) {
             l.error("can't send defect err:", t);
         }
     }
 
-    public static void logSendDefectSyncNoLogsIgnoreErrors(boolean automatic, String context, Throwable cause)
+    public static void logSendDefectSyncNoLogsIgnoreErrors(boolean isAutoBug, String context, Throwable cause)
     {
         try {
             doLogSendDefect(
-                    automatic,
+                    isAutoBug,
                     context,
                     cause,
                     newHeader(),
@@ -340,12 +332,12 @@ public final class SVClient
         }
     }
 
-    public static void logSendDefectSyncNoCfgIgnoreErrors(boolean automatic, String context,
+    public static void logSendDefectSyncNoCfgIgnoreErrors(boolean isAutoBug, String context,
             Throwable cause, UserID user, String rtRoot)
     {
         try {
             doLogSendDefect(
-                    automatic,
+                    isAutoBug,
                     context,
                     cause,
                     newHeader(user, null, rtRoot),
@@ -375,7 +367,7 @@ public final class SVClient
      * if the error is OutOfMemory
      */
     private static void doLogSendDefect(
-            boolean automatic,
+            boolean isAutoBug,
             String desc,
             @Nullable Throwable cause,
             PBSVHeader header,
@@ -403,8 +395,9 @@ public final class SVClient
             return;
         }
 
-        // always send non-automatic defects
-        boolean isLastSent = automatic && isLastSentDefect(cause.getMessage(), stackTrace);
+        // always send non-automatic defects and database requests
+        boolean isLastSent = isAutoBug
+                && isLastSentDefect(cause.getMessage(), stackTrace) && !sendDB;
         l.error((isLastSent ? "repeating last" : "sending") + " defect: " + desc + ": " +
                 Util.e(cause));
         if (isLastSent) return;
@@ -429,7 +422,7 @@ public final class SVClient
 
         PBSVDefect.Builder bdDefect = PBSVDefect
                 .newBuilder()
-                .setAutomatic(automatic)
+                .setAutomatic(isAutoBug)
                 .setDescription(sbDesc.toString())
                 .setStacktrace(stackTrace);
 
@@ -523,8 +516,12 @@ public final class SVClient
                                 {
                                     // Note: the core database consists of three files:
                                     // db, db-wal, and db-shm.
-                                    return (sendLogs && arg1.endsWith(C.LOG_FILE_EXT)) ||
-                                            (sendDB && arg1.startsWith(C.CORE_DATABASE)) ||
+                                    return (sendLogs && arg1.endsWith(C.LOG_FILE_EXT))
+                                            ||
+                                            (sendDB && (arg1.startsWith(C.OBF_CORE_DATABASE) ||
+                                                                arg1.endsWith("wal")        ||
+                                                                arg1.endsWith("shm")))
+                                            ||
                                             (sendHeapDumps && arg1.endsWith(C.HPROF_FILE_EXT));
                                 }
                             });
@@ -561,7 +558,6 @@ public final class SVClient
                 .build();
 
         l.debug("send defect");
-
         try {
             getRpcClient().doRPC(call, defectFilesZip);
         } finally {

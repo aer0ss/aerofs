@@ -30,6 +30,7 @@ public class Main {
     private static final Object CONTROLLER_NAME = "controller";
     private static final Object DAEMON_NAME = "daemon";
     private static final Object FSCK_NAME = "fsck";
+    private static final Object UMDC_NAME = "umdc";
 
     // for windows. used by eclipse.exe
     // args: <"gui" or invitation file> [-rtroot <rtroot>]
@@ -162,6 +163,7 @@ public class Main {
         else if (controller) cls = Class.forName("com.aerofs.controller.ControllerProgram");
         else if (prog.equals(DAEMON_NAME)) cls = com.aerofs.daemon.DaemonProgram.class;
         else if (prog.equals(FSCK_NAME)) cls = com.aerofs.fsck.FSCKProgram.class;
+        else if (prog.equals(UMDC_NAME)) cls = com.aerofs.umdc.UMDCProgram.class;
         else cls = null;
 
         // fail over to UI programs

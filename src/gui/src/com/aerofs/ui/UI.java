@@ -36,6 +36,7 @@ public class UI
     private static final UINotifier s_notifier = new UINotifier();
     private static final RitualNotificationClient s_rnc = new RitualNotificationClient();
     private static final RootAnchorPoller s_rap = new RootAnchorPoller();
+    private static final InfoCollector s_ic = new InfoCollector();
 
     private static ControllerClient s_controller;
 
@@ -61,4 +62,5 @@ public class UI
         return IDaemonMonitor.Factory.get();
     }
 
+    public static InfoCollector ic() { return s_ic; }
 }
