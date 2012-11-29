@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -27,12 +28,14 @@ import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.BitVector;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOKID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
@@ -91,7 +94,7 @@ import com.google.inject.Inject;
  *  some rare cases it is possible that the epoch cannot be rolled back far enough and a full
  *  bootstrap is necessary to ensure all lost version hashes are re-sent
  */
-public class SyncStatusSynchronizer implements IVersionControlListener
+public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersionControlListener
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
@@ -684,7 +687,59 @@ public class SyncStatusSynchronizer implements IVersionControlListener
 
         // add object to push queue
         assert !v.isZero_() : sockid;
-        assert !sockid.oid().isRoot() : sockid;
+        assert !(sockid.oid().isRoot() || sockid.oid().isTrash()) : sockid;
         _tlModified.get(t).add(sockid.soid());
     }
+
+    @Override
+    public void objectCreated_(SOID obj, OID parent, Path pathTo, Trans t) throws SQLException
+    {
+        /**
+         * Make sure we send version hash for new objects
+         *
+         * Although there is currently no case where an object is created and its version vector
+         * remains empty, this assumption may not hold forever (in particular the ACL push required
+         * by the team server will most likely change that to avoid false META conflicts). Avoid
+         * coupling by making SyncStatusSynchronizer more robust.
+         */
+        if (!(obj.oid().isRoot() || obj.oid().isTrash())) _tlModified.get(t).add(obj);
+    }
+
+    @Override
+    public void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectMoved_(SOID obj, OID parentFrom, OID parentTo, Path pathFrom, Path pathTo,
+            Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectContentCreated_(SOKID obj, Path path, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectContentDeleted_(SOKID obj, Path path, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectExpelled_(SOID obj, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectAdmitted_(SOID obj, Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus,
+            Trans t) throws SQLException
+    {}
+
+    @Override
+    public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t) throws SQLException
+    {}
 }
