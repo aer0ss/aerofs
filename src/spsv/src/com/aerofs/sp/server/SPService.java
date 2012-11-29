@@ -12,6 +12,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
+import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
@@ -620,21 +621,20 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> sendEmailVerification()
-            throws Exception
     {
         throw new NotImplementedException();
     }
 
     @Override
     public ListenableFuture<Void> verifyEmail(String verificationCode)
-            throws Exception
     {
         throw new NotImplementedException();
     }
 
     @Override
     public ListenableFuture<ResolveTargetedSignUpCodeReply>
-            resolveTargetedSignUpCode(String tsc) throws Exception
+            resolveTargetedSignUpCode(String tsc)
+            throws SQLException, ExNotFound
     {
         l.info("tsc: " + tsc);
 
@@ -650,7 +650,8 @@ class SPService implements ISPService
     @Override
     public ListenableFuture<Void> inviteUser(List<String> userIdStrings,
             Boolean inviteToDefaultOrg)
-            throws Exception
+            throws ExNoPerm, SQLException, ExNotFound, ExEmailSendingFailed, ExAlreadyExist,
+                IOException
     {
         if (userIdStrings.isEmpty()) throw new ExNoPerm("Must specify one or more invitee");
 
@@ -686,7 +687,7 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
-            throws Exception
+            throws SQLException, ExNoPerm
     {
         // TODO (WW) move business logic to SharedFolderManagement
 

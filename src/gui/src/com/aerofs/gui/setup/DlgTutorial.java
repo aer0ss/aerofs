@@ -100,6 +100,9 @@ public class DlgTutorial extends AeroFSDialog
                     "You can share any folder in " + S.PRODUCT + " with friends or colleagues, " +
                             "even if they're not using " + S.PRODUCT + " yet.",
                     "tutorial3.png", null, null)
+
+            // Step 4
+            // TODO (MP) finish this (add sync status)...
     };
 
     public DlgTutorial(Shell parentShell)

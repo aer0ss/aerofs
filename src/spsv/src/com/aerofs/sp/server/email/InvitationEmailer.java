@@ -16,6 +16,7 @@ import com.aerofs.sp.server.lib.SPParam;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
@@ -27,7 +28,8 @@ public class InvitationEmailer
     {
         public InvitationEmailer createUserInvitation(@Nullable final String from, final String to,
                 final String fromPerson, @Nullable final String folderName,
-                @Nullable final String note, final String signupCode) throws Exception
+                @Nullable final String note, final String signupCode)
+                throws IOException
         {
             String url = SPParam.getWebDownloadLink(signupCode);
 

@@ -9,6 +9,7 @@ import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Maps;
+import org.apache.log4j.Logger;
 
 import java.util.Map;
 
@@ -20,9 +21,13 @@ import java.util.Map;
  */
 public class SyncStatusSummary implements IAggregatedStatus
 {
+    private static final Logger l = Util.l(SyncStatusSummary.class);
+
     private final UserAndDeviceNames _udn;
     private final CfgLocalUser _user;
 
+    // N.B. these defaults are important. Merging a newly created sync status summary 'A' with
+    // existing sync status summary 'B' must result in no change to 'B'.
     private boolean _isPartiallySynced = false;
     private boolean _allInSync = true;
     private boolean _empty = true;
@@ -82,10 +87,13 @@ public class SyncStatusSummary implements IAggregatedStatus
     public void mergeStore_(IAggregatedStatus aggregated)
     {
         SyncStatusSummary o = (SyncStatusSummary)aggregated;
-        // aggregation accross children is always AND (take worst)
-        _isPartiallySynced &= o._isPartiallySynced;
-        _allInSync &= o._allInSync;
-        _empty = false;
+
+        // aggregation accross children is always AND (take worst).
+        if (!o.isEmpty()) {
+            _isPartiallySynced &= o._isPartiallySynced;
+            _allInSync &= o._allInSync;
+            _empty = false;
+        }
     }
 
     private UserID getOwner_(DID did)
@@ -94,7 +102,7 @@ public class SyncStatusSummary implements IAggregatedStatus
         try {
             owner = _udn.getDeviceOwnerNullable_(did);
         } catch (Exception e) {
-            Util.l(this).warn("owner lookup failed: " + did, e);
+            l.warn("owner lookup failed: " + did, e);
         }
         return owner;
     }

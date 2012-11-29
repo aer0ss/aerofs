@@ -102,7 +102,7 @@ public class LocalSyncStatus implements IStoreDeletionOperator
         public void mergeDevices_(DeviceBitMap dbm, BitVector status);
 
         /**
-         * Aggregate status of child store
+         * Aggregate status of child store.
          */
         public void mergeStore_(IAggregatedStatus aggregatedStatus);
     }
@@ -140,7 +140,6 @@ public class LocalSyncStatus implements IStoreDeletionOperator
         }
     }
 
-
     /**
      * Generic sync status aggregation across store boundaries
      * @pre {@code soid} must not be expelled
@@ -161,6 +160,7 @@ public class LocalSyncStatus implements IStoreDeletionOperator
         OA oa = _ds.getOA_(soid);
         l.debug("aggregate across stores " + soid);
         aggregateWithinStore_(soid, oa.isDir(), aggregated);
+
         if (oa.isDir()) {
             // aggregate stores strictly under this directory
             aggregateDescendants_(soid, aggregated);
