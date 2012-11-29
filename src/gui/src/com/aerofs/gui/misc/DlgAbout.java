@@ -28,7 +28,6 @@ import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Composite;
 
@@ -85,7 +84,7 @@ public class DlgAbout extends AeroFSDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                Program.launch(e.text.equals("Web site") ? SP.WEB_BASE :
+                GUIUtil.launch(e.text.equals("Web site") ? SP.WEB_BASE :
                         "http://support.aerofs.com/knowledgebase/articles/93285-release-notes");
             }
         });

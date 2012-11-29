@@ -1,6 +1,7 @@
 package com.aerofs.ui;
 
 import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.l.L;
@@ -29,7 +30,6 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
-import org.eclipse.swt.program.Program;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -292,7 +292,7 @@ public class UIUtil
                     @Override
                     public void run()
                     {
-                        Program.launch(Cfg.absRootAnchor());
+                        GUIUtil.launch(Cfg.absRootAnchor());
                     }
                 });
 

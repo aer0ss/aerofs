@@ -1,5 +1,6 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -19,7 +20,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Link;
@@ -78,7 +78,7 @@ public class DlgDefect extends AeroFSJFaceDialog {
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                Program.launch(S.PRIVACY_URL);
+                GUIUtil.launch(S.PRIVACY_URL);
             }
         });
 

@@ -19,7 +19,6 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -311,7 +310,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                Program.launch(S.TOS_URL);
+                GUIUtil.launch(S.TOS_URL);
             }
         });
 
@@ -329,7 +328,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                Program.launch(S.PASSWORD_RESET_REQUEST_URL);
+                GUIUtil.launch(S.PASSWORD_RESET_REQUEST_URL);
             }
         });
 

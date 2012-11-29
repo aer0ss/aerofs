@@ -24,7 +24,6 @@ import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -156,7 +155,7 @@ public class DlgJoinSharedFolder extends AeroFSDialog
                         ritual.close();
                     }
 
-                    Program.launch(path.toAbsoluteString(Cfg.absRootAnchor()));
+                    GUIUtil.launch(path.toAbsoluteString(Cfg.absRootAnchor()));
 
                 } catch (Exception e) {
                     Util.l(this).warn("join store thru dlg: " + Util.e(e));

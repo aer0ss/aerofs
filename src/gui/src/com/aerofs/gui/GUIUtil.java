@@ -9,6 +9,7 @@ import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.syncstatus.DlgSyncStatus;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -27,6 +28,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -40,6 +42,8 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv;
 import com.swtdesigner.SWTResourceManager;
+
+import java.io.IOException;
 
 public class GUIUtil
 {
@@ -349,5 +353,26 @@ public class GUIUtil
                 new DlgDiagnosis(GUI.get().sh(), false).openDialog();
             }
         });
+    }
+
+    /**
+     * Open a folder or http or https URI in the appropriate application for the platform.
+     *
+     * @param pathOrUri a string
+     * @return true on success, false if the program failed to launch
+     */
+    public static boolean launch(String pathOrUri)
+    {
+        if (OSUtil.isLinux()) {
+            try {
+                SystemUtil.execBackground("xdg-open", pathOrUri);
+            } catch (IOException e) {
+                l.warn("Couldn't open " + pathOrUri + ": " + Util.e(e));
+                return false;
+            }
+            return true;
+        } else {
+            return Program.launch(pathOrUri);
+        }
     }
 }

@@ -13,7 +13,6 @@ import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MenuListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
@@ -164,7 +163,7 @@ public class TrayMenu
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        Program.launch(Cfg.absRootAnchor());
+                        GUIUtil.launch(Cfg.absRootAnchor());
                     }
                 });
 
@@ -486,7 +485,7 @@ public class TrayMenu
             @Override
             protected void handleEventImpl(Event event)
             {
-                Program.launch("http://support.aerofs.com/forums/67721-feature-requests");
+                GUIUtil.launch("http://support.aerofs.com/forums/67721-feature-requests");
             }
         });
 
@@ -494,7 +493,7 @@ public class TrayMenu
             @Override
             protected void handleEventImpl(Event event)
             {
-                Program.launch("http://support.aerofs.com");
+                GUIUtil.launch("http://support.aerofs.com");
             }
         });
 

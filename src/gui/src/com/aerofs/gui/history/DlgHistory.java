@@ -555,7 +555,7 @@ public class DlgHistory extends AeroFSDialog
 
         // Make sure users won't try to make changes to the temp file: their changes would be lost
         new File(version.tmpFile).setReadOnly();
-        Program.launch(version.tmpFile);
+        GUIUtil.launch(version.tmpFile);
     }
 
     private void saveVersionAs(HistoryModel.Version version)
