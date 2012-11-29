@@ -212,10 +212,27 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     {
         try {
             // nautilus is the default file manager for Gnome
-            // TODO (GS): On KDE, should use dolphin
-            // Or better yet: we should expose an option so that our linux friends can specify their
-            // favorite file manager.
-            SystemUtil.execBackground("nautilus", path);
+            // dolphin is the default file manager for KDE
+            //
+            // We won't officially support others for now, but users can override the file browser
+            // by exporting AEROFS_FILE_BROWSER in their environment to be the absolute path to an
+            // executable that accepts one argument: the path to the file to be selected.
+            String userSpecifiedFileBrowser = System.getenv("AEROFS_FILE_BROWSER");
+            if (userSpecifiedFileBrowser != null) {
+                SystemUtil.execBackground(userSpecifiedFileBrowser, path);
+            } else {
+                // Try to pick a decent filebrowser by default
+                String kdeFullSession = System.getenv("KDE_FULL_SESSION");
+                if (kdeFullSession != null && kdeFullSession.equals("true")) {
+                    SystemUtil.execBackground("dolphin", "--select", path);
+                } else {
+                    // technically you're supposed to detect GNOME by seeing if
+                    // org.gnome.SessionManager exists on the session bus, but we'll just
+                    // assume GNOME if not KDE for now, which won't be a regression from assuming
+                    // GNOME all the time
+                    SystemUtil.execBackground("nautilus", path);
+                }
+            }
         } catch (IOException e) {
             l.warn("showInFolder failed: " + Util.e(e));
         }
