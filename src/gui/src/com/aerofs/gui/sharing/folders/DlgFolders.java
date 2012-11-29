@@ -9,9 +9,7 @@ import org.eclipse.swt.layout.FillLayout;
 
 public class DlgFolders extends AeroFSDialog
 {
-    /**
-     * @param path the path to the folder to be shared, relative to the root anchor path.
-     */
+
     public DlgFolders(Shell parent)
     {
         super(parent, "Select Folder", false, true);
