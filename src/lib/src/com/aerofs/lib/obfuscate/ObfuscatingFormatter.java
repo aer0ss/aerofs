@@ -56,7 +56,11 @@ public class ObfuscatingFormatter<T>
      */
     public FormattedMessage format(String message, T... objects)
     {
-        Iterator<T> objectIter = Iterators.forArray(objects);
+        return format(message, Iterators.forArray(objects));
+    }
+
+    public FormattedMessage format(String message, Iterator<T> objectIter)
+    {
         StringBuilder obfuscatedBuilder = new StringBuilder();
         StringBuilder plainBuilder = new StringBuilder();
 

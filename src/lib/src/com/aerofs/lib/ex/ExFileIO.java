@@ -33,7 +33,16 @@ import java.io.IOException;
      */
     public ExFileIO(String message, File... files)
     {
-        FormattedMessage formattedMessage = ObfuscatingFormatters.formatFileMessage(message, files);
+        this(ObfuscatingFormatters.formatFileMessage(message, files));
+    }
+
+    public ExFileIO(String message, Iterable<File> files)
+    {
+        this(ObfuscatingFormatters.formatFileMessage(message, files));
+    }
+
+    private ExFileIO(FormattedMessage formattedMessage)
+    {
         _obfuscatedMessage = formattedMessage._obfuscated;
         _plainTextMessage = formattedMessage._plainText;
     }
