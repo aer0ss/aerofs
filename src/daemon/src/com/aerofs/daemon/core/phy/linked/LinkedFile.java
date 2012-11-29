@@ -146,13 +146,7 @@ public class LinkedFile implements IPhysicalFile
     @Override
     public InputStream newInputStream_() throws FileNotFoundException
     {
-        try {
-            return new FileInputStream(_f.getImplementation());
-        } catch (FileNotFoundException e) {
-            Exception ex = new ExFileIO("LF no file", _f.getImplementation());
-            fds.logSendAsync("LF no file", ex);
-            throw e;
-        }
+        return new FileInputStream(_f.getImplementation());
     }
 
     @Override
