@@ -114,7 +114,7 @@ public final class CommandNotificationSubscriber
                 try {
                     switch (cmd.getType()) {
                     case UPLOAD_DATABASE:
-                        uploadDatabase();
+                        UI.ic().startUploadDatabase();
                         break;
                     case CHECK_UPDATE:
                         checkUpdate();
@@ -175,12 +175,6 @@ public final class CommandNotificationSubscriber
         {
             l.info("cmd: send defect");
             SVClient.logSendDefectAsync(true, "cmd call");
-        }
-
-        private void uploadDatabase()
-        {
-            l.info("cmd: upload database");
-            SVClient.sendCoreDatabaseAsync();
         }
 
         private void checkUpdate()

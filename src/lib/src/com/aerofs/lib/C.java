@@ -27,6 +27,7 @@ public class C
     public static final String DEVICE_KEY              = "key";
     public static final String CA_CERT                 = "cacert.pem";
     public static final String CORE_DATABASE           = "db";
+    public static final String OBF_CORE_DATABASE       = "obf-db";
     public static final String CFG_DATABASE            = "conf";
     public static final String ICONS_DIR               = "/icons/";
     public static final String UPDATE_DIR              = "update";
