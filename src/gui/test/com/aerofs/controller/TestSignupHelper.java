@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
@@ -34,7 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TestSPSignupHelper extends AbstractTest
+public class TestSignupHelper extends AbstractTest
 {
     private final InvitationEmailer.Factory factEmail = mock(InvitationEmailer.Factory.class);
 
@@ -42,12 +43,13 @@ public class TestSPSignupHelper extends AbstractTest
             new LocalSPServiceReactorCaller(factEmail);
 
     @Spy SPServiceBlockingStub _sp = new SPServiceBlockingStub(serviceReactorCaller);
-    @InjectMocks SPSignupHelper _spSignupHelper;
+    @InjectMocks SignupHelper _signupHelper;
 
     private static final UserID USER_ID = UserID.fromInternal("user1@company.com");
     private static final byte[] SCRYPT_PASSWORD = SecUtil.scrypt("temp123".toCharArray(), USER_ID);
     private static final String INVALID_TARGETED_CODE
             = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+    private FullName fullName = new FullName("first", "last");
 
     @Before
     public void setup()
@@ -68,7 +70,7 @@ public class TestSPSignupHelper extends AbstractTest
     {
         // The INVALID_TARGETED_CODE has not been added to sp, so this test should fail with
         // ExNotFound.
-        _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, INVALID_TARGETED_CODE, "first", "last");
+        _signupHelper.signUp(USER_ID, SCRYPT_PASSWORD, INVALID_TARGETED_CODE, fullName);
     }
 
     @Test
@@ -79,7 +81,7 @@ public class TestSPSignupHelper extends AbstractTest
         String signUpCode = inviteUserToDefaultOrg(USER_ID);
 
         // Setting up a new user with valid signUpCode should not throw any exceptions
-        _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode, "first", "last");
+        _signupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode, fullName);
 
         // The user should be able to successfully sign in
         _sp.signIn(USER_ID.toString(), ByteString.copyFrom(SCRYPT_PASSWORD));
@@ -96,8 +98,8 @@ public class TestSPSignupHelper extends AbstractTest
         String signUpCode2 = inviteUserToDefaultOrg(USER_ID);
 
         // Sign up a new user using both codes
-        _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode1, "first", "last");
-        _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode2, "first", "last");
+        _signupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode1, fullName);
+        _signupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode2, fullName);
 
         _sp.signIn(USER_ID.toString(), ByteString.copyFrom(SCRYPT_PASSWORD));
 
@@ -113,12 +115,12 @@ public class TestSPSignupHelper extends AbstractTest
         String signUpCode2 = inviteUserToDefaultOrg(USER_ID);
 
         // Sign up a new user using the first code
-        _spSignupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode1, "first", "last");
+        _signupHelper.signUp(USER_ID, SCRYPT_PASSWORD, signUpCode1, fullName);
 
         // This second sign up uses an incorrect password
         byte [] invalidPassword = "INVALID_PASSWORD".getBytes();
         assertFalse(Arrays.equals(invalidPassword, SCRYPT_PASSWORD));
-        _spSignupHelper.signUp(USER_ID, invalidPassword, signUpCode2, "first", "last");
+        _signupHelper.signUp(USER_ID, invalidPassword, signUpCode2, fullName);
     }
 
     /**

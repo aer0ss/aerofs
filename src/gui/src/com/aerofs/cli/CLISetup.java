@@ -106,7 +106,7 @@ public class CLISetup
                 userID = UserID.fromInternal(UI.controller().resolveSignUpCode(signUpCode)
                         .getEmail());
             }
-            if (userID == null || userID.toString().isEmpty()) {
+            if (userID == null) {
                 userID = UserID.fromExternal(props.getProperty(PROP_USERID));
             }
             passwd = props.getProperty(PROP_PASSWORD).toCharArray();
@@ -151,11 +151,8 @@ public class CLISetup
                         cli.progress("Verifying invitation code");
                         userID = UserID.fromInternal(UI.controller().resolveSignUpCode(signUpCode)
                                 .getEmail());
-                        if (!userID.toString().isEmpty()) {
-                            cli.show(MessageType.INFO, S.SETUP_USER_ID + ": " + userID);
-                        } else {
-                            userID = getUser(cli);
-                        }
+                        assert !userID.toString().isEmpty();
+                        cli.show(MessageType.INFO, S.SETUP_USER_ID + ": " + userID);
                         break;
                     } catch (Exception e) {
                         cli.show(MessageType.ERROR, S.SETUP_CANT_VERIFY_IIC + UIUtil.e2msg(e));

@@ -83,7 +83,8 @@ public class CredentialUtil
         UI.dm().start();
     }
 
-    static DID generateDeviceKeys(UserID userId, byte[] scrypted, SPBlockingClient sp)
+    static DID generateAndCertifyAndWriteDeviceKeys(UserID userId, byte[] scrypted,
+            SPBlockingClient sp)
             throws Exception
     {
         OutArg<PublicKey> pubKey = new OutArg<PublicKey>();

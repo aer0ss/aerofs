@@ -141,8 +141,8 @@ public class ControllerService implements IControllerService
             String lastName, PBS3Config s3config)
             throws Exception
     {
-        _setup.setupNewUser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor, deviceName,
-                signUpCode, firstName, lastName, s3config);
+        _setup.setupNewUser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
+                deviceName, signUpCode, firstName, lastName, s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 

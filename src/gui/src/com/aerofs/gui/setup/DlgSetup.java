@@ -410,7 +410,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             {
                 try {
                     _invitedUser = UI.controller().resolveSignUpCode(ic).getEmail();
-                    _isTargetedInvite = !_invitedUser.isEmpty();
+                    _isTargetedInvite = true;
                 } catch (Exception e) {
                     _isTargetedInvite = false;
                     throw e;

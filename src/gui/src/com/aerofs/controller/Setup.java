@@ -9,13 +9,18 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.TreeMap;
 
-import javax.annotation.Nullable;
-
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.cfg.ExNotSetup;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
@@ -86,8 +91,7 @@ class Setup
     }
 
     /**
-     * Returns the name of the user invited in the signup code, or an empty string if it's a
-     * batch invitation.
+     * Return the name of the user invited in the signup code.
      *
      * @throws ExNotFound if the signup code was not found
      */
@@ -101,155 +105,214 @@ class Setup
         }
     }
 
-    void setupExistingUser(UserID userId, char[] password, String rootAnchorPath,
-            String deviceName, PBS3Config s3config)
-            throws Exception
-    {
-        run(userId, password, rootAnchorPath, deviceName, true, null, null, null, s3config);
-    }
-
+    /**
+     * Run setup for new users
+     *
+     * @throws ExAlreadyExist if the desired anchor root already exists.
+     * @throws ExNoPerm if we couldn't read/write to the anchor root
+     *
+     * TODO: needs organization
+     * TODO: gui needs to handle case where a no-invite user has signed up already
+     */
     void setupNewUser(UserID userId, char[] password, String rootAnchorPath,
             String deviceName, String signUpCode, String firstName, String lastName,
             PBS3Config s3config)
             throws Exception
     {
-        run(userId, password, rootAnchorPath, deviceName, false, signUpCode, firstName, lastName,
-                s3config);
-    }
-
-    /**
-     * Runs the setup
-     *
-     * @param returning whether we are signing-up an existing user or a new user
-     * Note: all params after returning are ignored and should be null if returning is true
-     *
-     * @throws ExAlreadyExist if the desired anchor root already exists.
-     * @throws ExNoPerm if we couldn't read/write to the anchor root
-     */
-    // TODO: needs organization
-    // TODO: gui needs to handle case where a no-invite user has signed up already
-    private void run(UserID userId, char[] password, String rootAnchorPath, String deviceName,
-            boolean returning, @Nullable String signUpCode, @Nullable String firstName,
-            @Nullable String lastName, @Nullable PBS3Config s3config)
-            throws Exception
-    {
         try {
             // basic preconditions - all of these should be enforced at the UI level
             // new sign ups must have a decent password length
-            assert returning || password.length >= Param.MIN_PASSWD_LENGTH;
-            assert !rootAnchorPath.isEmpty();
-            assert deviceName != null; // can be empty, but can't be null
-            if (!returning) {
-                assert signUpCode != null; // can be empty, but can't be null
-                assert !firstName.isEmpty();
-                assert !lastName.isEmpty();
-            }
+            assert password.length >= Param.MIN_PASSWD_LENGTH;
+            assert signUpCode != null; // can be empty, but can't be null
+            assert !firstName.isEmpty();
+            assert !lastName.isEmpty();
 
-            l.info("userId:" + userId + " returning:" + returning);
-            RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, true);
+            PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
+            FullName fullName = new FullName(firstName, lastName);
+            new SignupHelper(res._sp).signUp(userId, res._scrypted, signUpCode, fullName);
+
+            setupCommon(userId, rootAnchorPath, deviceName, s3config, res._scrypted, res._sp);
+
+            SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + userId);
+        } catch (Exception e) {
+            handleSetupException(userId, e);
+        }
+    }
+
+    /**
+     * Runs setup for existing users.
+     *
+     * @throws ExAlreadyExist if the desired anchor root already exists.
+     * @throws ExNoPerm if we couldn't read/write to the anchor root
+     *
+     * TODO: needs organization
+     * TODO: gui needs to handle case where a no-invite user has signed up already
+     */
+    void setupExistingUser(UserID userId, char[] password, String rootAnchorPath,
+            String deviceName, PBS3Config s3config)
+            throws Exception
+    {
+        try {
             /**
              * Returning user & setup in a non-empty root-anchor is likely to be a reinstall (or a
              * "seeded" install which is pretty much equivalent for us). Log that event to determine
              * how badly we need to restore shared folders unpon reinstall.
              */
-            if (returning && _factFile.create(rootAnchorPath).list() != null) {
+            if (_factFile.create(rootAnchorPath).list() != null) {
                 SVClient.sendEventAsync(Type.REINSTALL);
             }
 
-            // Create the setup flag file. Ignore errors if the file already exists.
-            // This file is used to mark the completion of the set up so that we
-            // never run into a partially set up system.
-            InjectableFile fSettingUp = _factFile.create(_rtRoot, C.SETTING_UP);
-            try {
-                fSettingUp.createNewFile();
-            } catch (IOException e) {
-                if (!fSettingUp.exists()) throw e; // ignore errors if file already exists
-            }
+            PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            byte[] scrypted = SecUtil.scrypt(password, userId);
+            setupCommon(userId, rootAnchorPath, deviceName, s3config, res._scrypted, res._sp);
 
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-            if (!returning) {
-                SPSignupHelper signupHelper = new SPSignupHelper(sp);
-                signupHelper.signUp(userId, scrypted, signUpCode, firstName, lastName);
-            }
-            // always sign in, regardless of whether we had to sign up first or not
-            sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
+            SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
-            DID did = CredentialUtil.generateDeviceKeys(userId, scrypted, sp);
-
-            // initialize config database.
-            CfgDatabase db = Cfg.db();
-            db.recreateSchema_();
-            TreeMap<CfgDatabase.Key, String> map = Maps.newTreeMap();
-            map.put(CfgDatabase.Key.USER_ID, userId.toString());
-            map.put(CfgDatabase.Key.DEVICE_ID, did.toStringFormal());
-            map.put(CfgDatabase.Key.CRED, Cfg.scrypted2encryptedBase64(scrypted));
-            map.put(CfgDatabase.Key.ROOT, rootAnchorPath);
-            map.put(CfgDatabase.Key.LAST_VER, Cfg.ver());
-            map.put(CfgDatabase.Key.DAEMON_POST_UPDATES,
-                    Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
-            map.put(CfgDatabase.Key.UI_POST_UPDATES,
-                    Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
-            if (s3config != null) {
-                map.put(CfgDatabase.Key.S3_BUCKET_ID, s3config.getBucketId());
-                map.put(CfgDatabase.Key.S3_ACCESS_KEY, s3config.getAccessKey());
-                map.put(CfgDatabase.Key.S3_SECRET_KEY, s3config.getSecretKey());
-                map.put(CfgDatabase.Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
-            }
-            db.set(map);
-
-            Cfg.writePortbase(_rtRoot, findPortBase());
-
-            Cfg.init_(_rtRoot, true);
-
-            // clean up the running daemon if any. it is needed as the daemon
-            // process may lock files in cache and aerofs.db
-            try {
-                UI.dm().stop();
-            } catch (IOException e) {
-                l.warn("cleaning up the old daemon failed: " + Util.e(e));
-            }
-
-            // clear auxiliary folders under the default auxroot so files from the previous install
-            // aren't carried to the new install. we don't need to clear files under non-default
-            // auxroot since they are scoped by device ids.
-            for (C.AuxFolder af : C.AuxFolder.values()) {
-                InjectableFile f = _factFile.create(Util.join(Cfg.absDefaultAuxRoot(), af._name));
-                f.deleteOrThrowIfExistRecursively();
-            }
-
-            // remove database file (the daemon will setup the schema if it detects a missing DB)
-            InjectableFile fDB = _factFile.create(_rtRoot, C.CORE_DATABASE);
-            fDB.deleteOrThrowIfExist();
-
-            // setup root anchor
-            InjectableFile fRootAnchor = _factFile.create(Cfg.absRootAnchor());
-            if (!fRootAnchor.exists()) fRootAnchor.mkdirs();
-
-            UI.dm().start();
-
-            // indicates that the user is fully setup
-            fSettingUp.deleteOrOnExit();
-
-            // Proceed with AeroFS launch
-            new Launcher(_rtRoot).launch(true);
-
-            runNonEssential(userId, did, deviceName, returning, sp);
-        } catch (ExBadCredential e) {
-            // Don't send SV defect for bad credentials
-            UI.dm().stopIgnoreException();
-            throw e;
         } catch (Exception e) {
-            UI.dm().stopIgnoreException();
+            handleSetupException(userId, e);
+        }
+    }
+
+    private void handleSetupException(UserID userId, Exception e)
+            throws Exception
+    {
+        UI.dm().stopIgnoreException();
+
+        // Don't send SV defect for bad credentials
+        if (!(e instanceof ExBadCredential)) {
             if (Cfg.inited()) {
                 SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
             } else {
                 SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
             }
-            throw e;
         }
+
+        throw e;
+    }
+
+    private static class PreSetupResult
+    {
+        // scrypt'ed password
+        byte[] _scrypted;
+        SPBlockingClient _sp;
+    }
+
+    /**
+     * Perform pre-setup sanity checks and generate information needed by later setup steps
+     */
+    private PreSetupResult preSetup(UserID userID, char[] password, String rootAnchorPath)
+            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExBadArgs
+    {
+        assert !rootAnchorPath.isEmpty();
+
+        RootAnchorUtil.checkRootAnchor(rootAnchorPath, _rtRoot, true);
+
+        createSettingUpFlagFile();
+
+        PreSetupResult res = new PreSetupResult();
+        res._scrypted = SecUtil.scrypt(password, userID);
+        res._sp = SPClientFactory.newBlockingClient(SP.URL, userID);
+
+        return res;
+    }
+
+    private void setupCommon(UserID userId, String rootAnchorPath, String deviceName,
+            PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
+            throws Exception
+    {
+        assert deviceName != null; // can be empty, but can't be null
+
+        sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
+
+        DID did = CredentialUtil.generateAndCertifyAndWriteDeviceKeys(userId, scrypted, sp);
+
+        initializeConfiguration(userId, rootAnchorPath, s3config, scrypted, did);
+
+        initializeAndLaunchDaemon();
+
+        // indicates that the user is fully setup
+        _factFile.create(_rtRoot, C.SETTING_UP).deleteOrOnExit();
+
+        // Proceed with AeroFS launch
+        new Launcher(_rtRoot).launch(true);
+
+        runNonEssential(did, deviceName, sp);
+    }
+
+    /**
+     * Create the setup flag file. Ignore errors if the file already exists.
+     * This file is used to mark the completion of the set up so that we never run into a partially
+     * set up system.
+     */
+    private void createSettingUpFlagFile()
+            throws IOException
+    {
+        InjectableFile fSettingUp = _factFile.create(_rtRoot, C.SETTING_UP);
+        try {
+            fSettingUp.createNewFile();
+        } catch (IOException e) {
+            if (!fSettingUp.exists()) throw e; // ignore errors if file already exists
+        }
+    }
+
+    private void initializeAndLaunchDaemon()
+            throws Exception
+    {// clean up the running daemon if any. it is needed as the daemon
+        // process may lock files in cache and aerofs.db
+        try {
+            UI.dm().stop();
+        } catch (IOException e) {
+            l.warn("cleaning up the old daemon failed: " + Util.e(e));
+        }
+
+        // clear auxiliary folders under the default auxroot so files from the previous install
+        // aren't carried to the new install. we don't need to clear files under non-default
+        // auxroot since they are scoped by device ids.
+        for (C.AuxFolder af : C.AuxFolder.values()) {
+            InjectableFile f = _factFile.create(Util.join(Cfg.absDefaultAuxRoot(), af._name));
+            f.deleteOrThrowIfExistRecursively();
+        }
+
+        // remove database file (the daemon will setup the schema if it detects a missing DB)
+        InjectableFile fDB = _factFile.create(_rtRoot, C.CORE_DATABASE);
+        fDB.deleteOrThrowIfExist();
+
+        // setup root anchor
+        InjectableFile fRootAnchor = _factFile.create(Cfg.absRootAnchor());
+        if (!fRootAnchor.exists()) fRootAnchor.mkdirs();
+
+        UI.dm().start();
+    }
+
+    /**
+     * initialize the configuration database and the in-memory Cfg object
+     */
+    private void initializeConfiguration(UserID userId, String rootAnchorPath, PBS3Config s3config,
+            byte[] scrypted, DID did)
+            throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
+    {
+        CfgDatabase db = Cfg.db();
+        db.recreateSchema_();
+        TreeMap<Key, String> map = Maps.newTreeMap();
+        map.put(Key.USER_ID, userId.toString());
+        map.put(Key.DEVICE_ID, did.toStringFormal());
+        map.put(Key.CRED, Cfg.scrypted2encryptedBase64(scrypted));
+        map.put(Key.ROOT, rootAnchorPath);
+        map.put(Key.LAST_VER, Cfg.ver());
+        map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
+        map.put(Key.UI_POST_UPDATES, Integer.toString(PostUpdate.UI_POST_UPDATE_TASKS));
+        if (s3config != null) {
+            map.put(Key.S3_BUCKET_ID, s3config.getBucketId());
+            map.put(Key.S3_ACCESS_KEY, s3config.getAccessKey());
+            map.put(Key.S3_SECRET_KEY, s3config.getSecretKey());
+            map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
+        }
+        db.set(map);
+
+        Cfg.writePortbase(_rtRoot, findPortBase());
+
+        Cfg.init_(_rtRoot, true);
     }
 
     /**
@@ -257,8 +320,7 @@ class Setup
      * wait for them before start using AeroFS, and therefore we put these tasks into a separate
      * thread.
      */
-    private void runNonEssential(final UserID userId, final DID did, final String deviceName,
-            final boolean returning, final SPBlockingClient sp)
+    private void runNonEssential(final DID did, final String deviceName, final SPBlockingClient sp)
     {
         ThreadUtil.startDaemonThread("setup-non-essential", new Runnable()
         {
@@ -278,12 +340,6 @@ class Setup
                 }
 
                 setRootAnchorIcon();
-
-                if (returning) {
-                    SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
-                } else {
-                    SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + userId);
-                }
             }
         });
     }
