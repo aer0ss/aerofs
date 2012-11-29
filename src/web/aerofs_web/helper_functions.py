@@ -3,7 +3,8 @@ Helper functions for AeroFS website
 '''
 
 import re
-from aerofs.connection import ExceptionReply, SyncConnectionService
+from aerofs.connection import SyncConnectionService
+from aerofs.exception import ExceptionReply
 from aerofs.gen.sp_pb2 import SPServiceRpcStub
 
 
