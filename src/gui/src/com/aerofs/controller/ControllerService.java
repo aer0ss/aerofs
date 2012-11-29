@@ -156,6 +156,17 @@ public class ControllerService implements IControllerService
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
+
+    @Override
+    public ListenableFuture<Common.Void> setupTeamServer(String userId, String password,
+            String rootAnchor, String deviceName, PBS3Config s3config)
+            throws Exception
+    {
+        _setup.setupTeamServer(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
+                deviceName, s3config);
+        return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
+    }
+
     @Override
     public ListenableFuture<Common.Void> sendPasswordResetEmail(String userId)
         throws Exception

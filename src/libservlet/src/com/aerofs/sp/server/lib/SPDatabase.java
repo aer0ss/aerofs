@@ -979,18 +979,6 @@ public class SPDatabase
     }
 
     @Override
-    public void moveUserToOrganization(UserID userId, OrgID orgId)
-            throws SQLException
-    {
-        PreparedStatement psMoveToOrg = prepareStatement(
-                DBUtil.updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
-
-        psMoveToOrg.setInt(1, orgId.getInt());
-        psMoveToOrg.setString(2, userId.toString());
-        Util.verify(psMoveToOrg.executeUpdate() == 1);
-    }
-
-    @Override
     public Set<SubscriptionCategory> getEmailSubscriptions(String email)
             throws SQLException
     {

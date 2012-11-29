@@ -6,6 +6,7 @@ package com.aerofs.sp.server.lib.device;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
@@ -25,14 +26,23 @@ import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
-import com.aerofs.sp.server.lib.device.Device.ExDeviceNameAlreadyExist;
-import com.aerofs.sp.server.lib.device.Device.ExDeviceIDAlreadyExist;
 
 /**
  * N.B. only User.java may refer to this class
  */
 public class DeviceDatabase extends AbstractSQLDatabase
 {
+    // Do not inherit from ExAleadyExist to avoid misclassification of this exception by the client
+    public static class ExDeviceNameAlreadyExist extends Exception
+    {
+        private static final long serialVersionUID = 1L;
+
+        private ExDeviceNameAlreadyExist()
+        {
+            super();
+        }
+    }
+
     public DeviceDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);

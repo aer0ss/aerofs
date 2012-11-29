@@ -107,6 +107,18 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
+    public void setOrgID(UserID userId, OrgID orgId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
+
+        ps.setInt(1, orgId.getInt());
+        ps.setString(2, userId.toString());
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+
     public @Nonnull FullName getFullName(UserID userId)
             throws SQLException, ExNotFound
     {

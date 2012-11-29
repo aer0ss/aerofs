@@ -24,6 +24,7 @@ public class Organization
     public static class Factory
     {
         private final OrganizationDatabase _db;
+        private final Organization _default = create(OrgID.DEFAULT);
 
         public Factory(OrganizationDatabase db)
         {
@@ -33,6 +34,14 @@ public class Organization
         public Organization create(@Nonnull OrgID id)
         {
             return new Organization(_db, id);
+        }
+
+        /**
+         * @return the default organization
+         */
+        public Organization getDefault()
+        {
+            return _default;
         }
 
         /**

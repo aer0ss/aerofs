@@ -14,7 +14,6 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.ISharedFolderDatabase;
-import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -97,13 +96,11 @@ public class SharedFolderManagement
             throws Exception
     {
         InvitationEmailer emailer;
-        Organization shareeOrg;
         final User sharee = _factUser.create(shareeId);
         if (!sharee.exists()) {  // Sharing with a non-AeroFS user.
-            shareeOrg = _factOrg.create(OrgID.DEFAULT);
             createFolderInvitation(sharer.id(), shareeId, sid, folderName);
-            emailer = _userManagement.inviteOneUser(sharer, shareeId, shareeOrg, folderName,
-                    note);
+            emailer = _userManagement.inviteOneUser(sharer, shareeId, _factOrg.getDefault(),
+                    folderName, note);
         } else if (!sharee.id().equals(sharer.id())) {
             final String code = createFolderInvitation(sharer.id(), sharee.id(), sid, folderName);
             emailer = _emailerFactory.createFolderInvitation(sharer.id().toString(),

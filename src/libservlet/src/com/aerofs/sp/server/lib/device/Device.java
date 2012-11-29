@@ -8,11 +8,13 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.device.DeviceDatabase.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -27,28 +29,6 @@ import java.sql.SQLException;
 
 public class Device
 {
-    // Do not inherit from ExAleadyExist to avoid misclassification of this exception by the client
-    public static class ExDeviceNameAlreadyExist extends Exception
-    {
-        private static final long serialVersionUID = 1L;
-
-        public ExDeviceNameAlreadyExist()
-        {
-            super();
-        }
-    }
-
-    // Do not inherit from ExAleadyExist to avoid misclassification of this exception by the client
-    public static class ExDeviceIDAlreadyExist extends Exception
-    {
-        private static final long serialVersionUID = 1L;
-
-        public ExDeviceIDAlreadyExist()
-        {
-            super();
-        }
-    }
-
     public static class Factory
     {
         private final DeviceDatabase _db;

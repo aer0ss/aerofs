@@ -5,17 +5,13 @@
 package com.aerofs.sp.server.organization;
 
 import com.aerofs.lib.acl.SubjectRolePair;
-import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase.SharedFolder;
 import com.aerofs.sp.server.lib.organization.OrgID;
-import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -44,15 +40,6 @@ public class OrganizationManagement
         else if (maxResults < 0) return 0;
 
         else return maxResults;
-    }
-
-    public void moveUserToOrganization(User user, OrgID orgId)
-            throws SQLException, IOException, ExNotFound, ExBadArgs
-    {
-        if (!user.getOrganization().id().equals(OrgID.DEFAULT)) {
-            throw new ExBadArgs("user " + user + " already belongs to an organization.");
-        }
-        _db.moveUserToOrganization(user.id(), orgId);
     }
 
     public List<PBSharedFolder> listSharedFolders(OrgID orgId, Integer maxResults, Integer offset)

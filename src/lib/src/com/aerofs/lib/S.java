@@ -6,6 +6,7 @@ import com.aerofs.lib.Param.SP;
 public class S
 {
     public static final String PRODUCT                  = L.get().product();
+    public static final String TEAM_SERVER              = "Team Server";
     public static final String PREFERENCES              = "Preferences";
     public static final String TRANSFERS                = "Transfers";
 
@@ -51,7 +52,6 @@ public class S
     public static final String GUI_LOADING              = "Loading...";
 
     public static final String BAD_CREDENTIAL_CAP       = "Username/password combination is incorrect";
-    public static final String BAD_CREDENTIAL           = BAD_CREDENTIAL_CAP.toLowerCase();
 
     public static final String DONT_SHOW_THIS_MESSAGE_AGAIN = "Don't show me again.";
     public static final String FILE_OPEN_FAIL = "The file couldn't be opened.";

@@ -10,6 +10,7 @@ import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -18,6 +19,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
+import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
@@ -77,6 +79,9 @@ import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -317,16 +322,15 @@ class SPService implements ISPService
             throw new ExNoPerm("organization mismatch");
         }
 
-        // Verify caller's authorization level dominates the subject's
-        if (requester.getLevel() != AuthorizationLevel.ADMIN) {
-            throw new ExNoPerm(requester + " cannot change authorization of " + subject);
-        }
-
         if (requester.id().equals(subject.id())) {
             throw new ExNoPerm("cannot change authorization for yourself");
         }
 
-        // Verify caller's authorization level dominates or matches the new level
+        if (requester.getLevel().covers(AuthorizationLevel.ADMIN)) {
+            throw new ExNoPerm(requester + " cannot change authorization");
+        }
+
+        // Verify caller's authorization level covers the new level
         if (!requester.getLevel().covers(newAuth)) {
             throw new ExNoPerm("cannot change authorization to " + authLevel);
         }
@@ -343,23 +347,7 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-
-        // TODO: verify the calling user is allowed to create an organization
-        // (check with the payment system)
-
-        User user = _sessionUser.get();
-
-        // only users in the default organization or admins can add organizations.
-        if (!user.getOrganization().id().equals(OrgID.DEFAULT) ||
-                     user.getLevel() != AuthorizationLevel.ADMIN) {
-            throw new ExNoPerm("API meant for internal use by AeroFS employees only");
-        }
-
-        Organization org = _factOrg.add(orgName);
-
-        _organizationManagement.moveUserToOrganization(user, org.id());
-        user.setLevel(AuthorizationLevel.ADMIN);
-
+        _sessionUser.get().addAndMoveToOrganization(orgName);
         _transaction.commit();
 
         return createVoidReply();
@@ -414,8 +402,6 @@ class SPService implements ISPService
                 .build();
 
         return createReply(unsubscribeEmail);
-
-
     }
 
     @Override
@@ -429,6 +415,64 @@ class SPService implements ISPService
         _transaction.commit();
 
         return createReply(GetAuthorizationLevelReply.newBuilder().setLevel(level.toPB()).build());
+    }
+
+    @Override
+    public ListenableFuture<GetTeamServerUserIDReply> getTeamServerUserID()
+            throws SQLException, ExNoPerm, ExNotFound
+    {
+        _transaction.begin();
+
+        User user = _sessionUser.get();
+
+        // Create the organzation if necessary
+        if (user.getOrganization().equals(_factOrg.getDefault())) {
+            user.addAndMoveToOrganization("An Awesome Team");
+        } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
+            throw new ExNoPerm("only admins can setup team servers");
+        }
+
+        UserID tsUserID = user.getOrganization().id().toTeamServerUserID();
+
+        GetTeamServerUserIDReply reply = GetTeamServerUserIDReply.newBuilder()
+                .setId(tsUserID.toString())
+                .build();
+
+        _transaction.commit();
+
+        return createReply(reply);
+    }
+
+    @Override
+    public ListenableFuture<CertifyDeviceReply> certifyTeamServerDevice(
+            ByteString deviceId, ByteString csr)
+            throws ExNoPerm, ExNotFound, ExAlreadyExist, ExDeviceIDAlreadyExist, SQLException,
+            SignatureException, IOException, ExBadArgs, NoSuchAlgorithmException,
+            CertificateException
+    {
+        _transaction.begin();
+
+        User user = _sessionUser.get();
+        user.throwIfNotAdmin();
+
+        Organization org = user.getOrganization();
+        User tsUser = _factUser.create(org.id().toTeamServerUserID());
+
+        // Create the team server user if not found
+        if (!tsUser.exists()) {
+            // Use an invalid password hash to prevent attackers from logging in as Team Server
+            // using any password. Also see C.TEAM_SERVER_LOCAL_PASSWORD.
+            tsUser.add(new byte[0], new FullName("Team", "Server"), org);
+        }
+
+        // Certify device
+        Device device = _factDevice.create(deviceId);
+        device.add(tsUser, UNKNOWN_NAME);
+        CertifyDeviceReply reply = certifyDevice(csr, device);
+
+        _transaction.commit();
+
+        return createReply(reply);
     }
 
     @Override
@@ -463,7 +507,7 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<CertifyDeviceReply> certifyDevice(final ByteString deviceId,
-            final ByteString csrBytes, final Boolean recertify)
+            final ByteString csr, final Boolean recertify)
             throws Exception
     {
         _transaction.begin();
@@ -482,16 +526,23 @@ class SPService implements ISPService
             device.add(user, UNKNOWN_NAME);
         }
 
-        Certificate cert = device.certify(new PKCS10(csrBytes.toByteArray()));
-
-        CertifyDeviceReply reply = CertifyDeviceReply.newBuilder()
-                .setCert(cert.toString())
-                .build();
+        CertifyDeviceReply reply = certifyDevice(csr, device);
 
         _transaction.commit();
 
         return createReply(reply);
     }
+
+    private CertifyDeviceReply certifyDevice(ByteString csr, Device device)
+            throws SignatureException, IOException, NoSuchAlgorithmException, ExBadArgs, ExNotFound,
+            ExAlreadyExist, SQLException, CertificateException
+    {
+        Certificate cert = device.certify(new PKCS10(csr.toByteArray()));
+        return CertifyDeviceReply.newBuilder()
+                .setCert(cert.toString())
+                .build();
+    }
+
 
     @Override
     public ListenableFuture<Void> shareFolder(String folderName, ByteString shareId,
@@ -634,8 +685,7 @@ class SPService implements ISPService
             _db.setFolderlessInvitesQuota(user.id(), left);
         }
 
-        Organization org = inviteToDefaultOrg ? _factOrg.create(OrgID.DEFAULT) :
-                user.getOrganization();
+        Organization org = inviteToDefaultOrg ? _factOrg.getDefault() : user.getOrganization();
 
         // Invite all invitees to Organization "org"
         // The sending of invitation emails is deferred to the end of the transaction to ensure
@@ -792,7 +842,9 @@ class SPService implements ISPService
         _transaction.begin();
 
         User user = _factUser.createFromExternalID(userIdString);
-        user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
+
+        // TODO (WW) remove this check
+        if (!user.id().isTeamServerID()) user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
 
         _sessionUser.set(user);
 
@@ -809,11 +861,11 @@ class SPService implements ISPService
         if (!Util.isValidEmailAddress(userIdString)) throw new ExBadArgs("invalid email address");
 
         User user = _factUser.createFromExternalID(userIdString);
-        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
         FullName fullName = new FullName(firstName, lastName);
 
         _transaction.begin();
-        user.add(shaedSP, fullName, OrgID.DEFAULT);
+        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
+        user.add(shaedSP, fullName, _factOrg.getDefault());
         //unsubscribe user from the aerofs invitation reminder mailing list
         _db.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         _transaction.commit();
@@ -870,7 +922,7 @@ class SPService implements ISPService
         ResolveTargetedSignUpCodeResult result = _db.getTargetedSignUp(targetedInvite);
         User user = _factUser.create(result._userId);
 
-        user.add(shaedSP, fullName, result._orgId);
+        user.add(shaedSP, fullName, _factOrg.create(result._orgId));
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified
         user.setVerified();

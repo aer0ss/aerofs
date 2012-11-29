@@ -74,13 +74,15 @@ public class Exceptions
         case TIMEOUT:               return new ExTimeout(pb);
         case DEVICE_OFFLINE:        return new ExDeviceOffline(pb);
         case UPDATE_IN_PROGRESS:    return new ExUpdateInProgress(pb);
-        case NO_COMPONENT_WITH_SPECIFIED_VERSION:
-                                    return new ExNoComponentWithSpecifiedVersion(pb);
         case NO_AVAIL_DEVICE:       return new ExNoAvailDevice(pb);
         case NOT_SHARED:            return new ExNotShared(pb);
         case BAD_CREDENTIAL:        return new ExBadCredential(pb);
         case EXCLUDED:              return new ExExpelled(pb);
         case UI_MESSAGE:            return new ExUIMessage(pb);
+        case DEVICE_ID_ALREADY_EXIST:
+                                    return new ExDeviceIDAlreadyExist(pb);
+        case NO_COMPONENT_WITH_SPECIFIED_VERSION:
+                                    return new ExNoComponentWithSpecifiedVersion(pb);
         default: assert false : "unsupported PBException type"; return null;
         }
     }

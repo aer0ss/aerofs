@@ -35,7 +35,7 @@ import static com.aerofs.sp.server.lib.SPSchema.T_ORG;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 /**
- * N.B. only User.java may refer to this class
+ * N.B. only Organization.java may refer to this class
  */
 public class OrganizationDatabase extends AbstractSQLDatabase
 {

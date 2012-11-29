@@ -10,6 +10,8 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Map;
 import java.util.TreeMap;
 
 import com.aerofs.lib.FullName;
@@ -116,7 +118,7 @@ class Setup
      */
     void setupNewUser(UserID userId, char[] password, String rootAnchorPath,
             String deviceName, String signUpCode, String firstName, String lastName,
-            PBS3Config s3config)
+            PBS3Config s3cfg)
             throws Exception
     {
         try {
@@ -129,10 +131,11 @@ class Setup
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
+            // sign up the user
             FullName fullName = new FullName(firstName, lastName);
             new SignupHelper(res._sp).signUp(userId, res._scrypted, signUpCode, fullName);
 
-            setupCommon(userId, rootAnchorPath, deviceName, s3config, res._scrypted, res._sp);
+            setupRegularClient(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + userId);
         } catch (Exception e) {
@@ -143,14 +146,10 @@ class Setup
     /**
      * Runs setup for existing users.
      *
-     * @throws ExAlreadyExist if the desired anchor root already exists.
-     * @throws ExNoPerm if we couldn't read/write to the anchor root
-     *
-     * TODO: needs organization
-     * TODO: gui needs to handle case where a no-invite user has signed up already
+     * See setupNewUser's comments for more.
      */
-    void setupExistingUser(UserID userId, char[] password, String rootAnchorPath,
-            String deviceName, PBS3Config s3config)
+    void setupExistingUser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
+            PBS3Config s3cfg)
             throws Exception
     {
         try {
@@ -165,7 +164,7 @@ class Setup
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupCommon(userId, rootAnchorPath, deviceName, s3config, res._scrypted, res._sp);
+            setupRegularClient(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
@@ -174,27 +173,26 @@ class Setup
         }
     }
 
-    private void handleSetupException(UserID userId, Exception e)
+    void setupTeamServer(UserID userId, char[] password, String rootAnchorPath, String deviceName,
+            PBS3Config s3cfg)
             throws Exception
     {
-        UI.dm().stopIgnoreException();
+        try {
+            PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-        // Don't send SV defect for bad credentials
-        if (!(e instanceof ExBadCredential)) {
-            if (Cfg.inited()) {
-                SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
-            } else {
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
-            }
+            setupTeamServer(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+
+        } catch (Exception e) {
+            handleSetupException(userId, e);
         }
-
-        throw e;
     }
 
     private static class PreSetupResult
     {
         // scrypt'ed password
         byte[] _scrypted;
+
+        // N.B. the returned sp has not signed in
         SPBlockingClient _sp;
     }
 
@@ -217,18 +215,52 @@ class Setup
         return res;
     }
 
-    private void setupCommon(UserID userId, String rootAnchorPath, String deviceName,
+    /**
+     * @param sp must have been signed in
+     */
+    private void setupRegularClient(UserID userID, String rootAnchorPath, String deviceName,
             PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
 
-        sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
+        signIn(userID, scrypted, sp);
 
-        DID did = CredentialUtil.generateAndCertifyAndWriteDeviceKeys(userId, scrypted, sp);
+        DID did = CredentialUtil.certifyAndSaveDeviceKeys(userID, scrypted, sp);
 
-        initializeConfiguration(userId, rootAnchorPath, s3config, scrypted, did);
+        initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted,
+                Collections.<Key, String>emptyMap());
 
+        setupCommon(did, deviceName, sp);
+    }
+
+    private void setupTeamServer(UserID userID, String rootAnchorPath, String deviceName,
+            PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
+            throws Exception
+    {
+        assert deviceName != null; // can be empty, but can't be null
+
+        signIn(userID, scrypted, sp);
+
+        // Retrieve the team server user ID
+        UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());
+        byte[] tsScrypted = SecUtil.scrypt(C.TEAM_SERVER_LOCAL_PASSWORD, tsUserId);
+
+        DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
+
+        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted,
+                Collections.singletonMap(Key.MULTIUSER, Boolean.toString(true)));
+
+        // sign in with the team server's user ID
+        SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
+        signIn(tsUserId, tsScrypted, tsSP);
+
+        setupCommon(tsDID, deviceName, tsSP);
+    }
+
+    private void setupCommon(DID did, String deviceName, SPBlockingClient sp)
+            throws Exception
+    {
         initializeAndLaunchDaemon();
 
         // indicates that the user is fully setup
@@ -238,6 +270,29 @@ class Setup
         new Launcher(_rtRoot).launch(true);
 
         runNonEssential(did, deviceName, sp);
+    }
+
+    private void signIn(UserID userId, byte[] scrypted, SPBlockingClient sp)
+            throws Exception
+    {
+        sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
+    }
+
+    private void handleSetupException(UserID userId, Exception e)
+            throws Exception
+    {
+        UI.dm().stopIgnoreException();
+
+        // Don't send SV defect for bad credentials
+        if (!(e instanceof ExBadCredential)) {
+            if (Cfg.inited()) {
+                SVClient.logSendDefectSyncIgnoreErrors(true, "setup", e);
+            } else {
+                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "setup", e, userId, _rtRoot);
+            }
+        }
+
+        throw e;
     }
 
     /**
@@ -288,12 +343,10 @@ class Setup
     /**
      * initialize the configuration database and the in-memory Cfg object
      */
-    private void initializeConfiguration(UserID userId, String rootAnchorPath, PBS3Config s3config,
-            byte[] scrypted, DID did)
+    private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
+            PBS3Config s3config, byte[] scrypted, Map<Key, String> extraCfgTuples)
             throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
     {
-        CfgDatabase db = Cfg.db();
-        db.recreateSchema_();
         TreeMap<Key, String> map = Maps.newTreeMap();
         map.put(Key.USER_ID, userId.toString());
         map.put(Key.DEVICE_ID, did.toStringFormal());
@@ -308,6 +361,10 @@ class Setup
             map.put(Key.S3_SECRET_KEY, s3config.getSecretKey());
             map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
         }
+        map.putAll(extraCfgTuples);
+
+        CfgDatabase db = Cfg.db();
+        db.recreateSchema_();
         db.set(map);
 
         Cfg.writePortbase(_rtRoot, findPortBase());

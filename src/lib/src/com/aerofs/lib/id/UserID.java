@@ -11,6 +11,8 @@ import java.util.List;
 
 public class UserID extends StringID
 {
+    public final static char TEAM_SERVER_PREFIX = ':';
+
     public final static UserID UNKNOWN = UserID.fromInternal("(unknown)");
 
     /**
@@ -53,6 +55,11 @@ public class UserID extends StringID
     private static boolean isNormalized(String str)
     {
         return str.toLowerCase().equals(str);
+    }
+
+    public boolean isTeamServerID()
+    {
+        return toString().charAt(0) == TEAM_SERVER_PREFIX;
     }
 
     /**

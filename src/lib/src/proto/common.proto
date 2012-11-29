@@ -87,6 +87,7 @@ message PBException {
         ////////////////////////////////////////////////////
 
         BAD_CREDENTIAL = 400;
+        DEVICE_ID_ALREADY_EXIST = 401;
     }
 
     required Type type = 1;

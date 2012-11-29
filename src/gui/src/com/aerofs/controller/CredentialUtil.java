@@ -13,10 +13,11 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.proto.Sp.CertifyDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UI;
@@ -83,34 +84,80 @@ public class CredentialUtil
         UI.dm().start();
     }
 
-    static DID generateAndCertifyAndWriteDeviceKeys(UserID userId, byte[] scrypted,
+    /**
+     * Call this method only to setup a team server. After setup, the team server can use
+     * certifyAndSaveDeviceKeys. See sp.proto:CertifyTeamServerDevice for detail.
+     *
+     * See certifyAndSaveDeviceKeys for the parameter list
+     */
+    static DID certifyAndSaveTeamServerDeviceKeys(UserID certUserId, byte[] scrypted,
             SPBlockingClient sp)
+            throws Exception
+    {
+        return certifyAndSaveDeviceKeysImpl(certUserId, scrypted, sp, new ISPCertifyDeviceCaller()
+        {
+            @Override
+            public CertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+                    throws Exception
+            {
+                return sp.certifyTeamServerDevice(did, csr);
+            }
+        });
+    }
+
+    /**
+     * @param sp must have signed in
+     * @param certUserId used only to generate the certificate's CNAME, but not to sign in
+     * @param scrypted used only to encrypt the private key but not to sign in
+     */
+    static DID certifyAndSaveDeviceKeys(UserID certUserId, byte[] scrypted, SPBlockingClient sp)
+            throws Exception
+    {
+        return certifyAndSaveDeviceKeysImpl(certUserId, scrypted, sp, new ISPCertifyDeviceCaller()
+        {
+            @Override
+            public CertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+                    throws Exception
+            {
+                return sp.certifyDevice(did, csr, false);
+            }
+        });
+    }
+
+    static DID certifyAndSaveDeviceKeysImpl(UserID certUserId, byte[] scrypted, SPBlockingClient sp,
+            ISPCertifyDeviceCaller caller)
             throws Exception
     {
         OutArg<PublicKey> pubKey = new OutArg<PublicKey>();
         OutArg<PrivateKey> privKey = new OutArg<PrivateKey>();
         SecUtil.newRSAKeyPair(pubKey, privKey);
 
-        DID did = new DID(UniqueID.generate());
         while (true) {
+            DID did = new DID(UniqueID.generate());
             try {
-                certifyAndWriteDeviceKeys(userId, did, pubKey.get(), privKey.get(), scrypted, sp);
-                break;
-            } catch (ExAlreadyExist e) {
+                certifyAndSaveDeviceKeys(certUserId, did, pubKey.get(), privKey.get(), scrypted, sp,
+                        caller);
+                return did;
+            } catch (ExDeviceIDAlreadyExist e) {
                 l.info("device id " + did.toStringFormal() + " exists. generate a new one");
-                did = new DID(UniqueID.generate());
             }
         }
-        return did;
     }
 
-    private static void certifyAndWriteDeviceKeys(UserID userId, DID did, PublicKey pubKey,
-            PrivateKey privKey, byte[] scrypted, SPBlockingClient sp)
+    private static interface ISPCertifyDeviceCaller
+    {
+        CertifyDeviceReply call(SPBlockingClient sp, ByteString did, ByteString csr)
+                throws Exception;
+    }
+
+    private static void certifyAndSaveDeviceKeys(UserID certUserId, DID did, PublicKey pubKey,
+            PrivateKey privKey, byte[] scrypted, SPBlockingClient sp, ISPCertifyDeviceCaller caller)
             throws Exception
     {
-        byte[] csr = SecUtil.newCSR(pubKey, privKey, userId, did).getEncoded();
+        byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
 
-        String cert = sp.certifyDevice(did.toPB(), ByteString.copyFrom(csr), false).getCert();
+        String cert = caller.call(sp, did.toPB(), ByteString.copyFrom(csr))
+                .getCert();
 
         // write encrypted private key
         writePrivateKey(scrypted, privKey);

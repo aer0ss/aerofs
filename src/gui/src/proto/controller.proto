@@ -47,6 +47,13 @@ service ControllerService {
     rpc SetupExistingUser(SetupExistingUserCall) returns(Void);
 
     /**
+     * Sets up an existing (returning) AeroFS user
+     *
+     * TODO (GS) Document what exceptions this can throw
+     */
+    rpc SetupTeamServer(SetupExistingUserCall) returns(Void);
+
+    /**
      * Resets the password of an AeroFS user
      *
      * Throws:

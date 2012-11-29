@@ -61,7 +61,7 @@ public class User
     public void throwIfNotAdmin()
             throws ExNoPerm, ExNotFound, SQLException
     {
-        if (getLevel() != AuthorizationLevel.ADMIN) {
+        if (!getLevel().covers(AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm("User " + id() + " does not have administrator privileges");
         }
     }
@@ -162,7 +162,7 @@ public class User
      * Add the user to the database
      * @throws ExAlreadyExist if the user ID already exists.
      */
-    public void add(byte[] shaedSP, FullName fullName, OrgID orgID)
+    public void add(byte[] shaedSP, FullName fullName, Organization org)
             throws ExAlreadyExist, SQLException
     {
         Util.l(this).info(this + " attempts signup");
@@ -171,7 +171,7 @@ public class User
         // the signup_code table
         // TODO write a test to verify that after one successful signup,
         // other codes fail/do not exist
-        _db.addUser(_id, fullName, shaedSP, orgID, AuthorizationLevel.USER);
+        _db.addUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
     }
 
     /**
@@ -194,5 +194,37 @@ public class User
             throw new ExBadCredential();
         }
     }
+
+    /**
+     * Add a new organization O, move the user to O, and set the user as O's admin.
+     *
+     * @throws ExNoPerm if the user is a non-admin in a non-default organization
+     */
+    public void addAndMoveToOrganization(String orgName)
+            throws ExNoPerm, SQLException, ExNotFound
+    {
+        // TODO: verify the calling user is allowed to create an organization
+        // (check with the payment system)
+
+        // only users in the default organization or admins can add organizations.
+        if (!getOrganization().id().equals(OrgID.DEFAULT) &&
+                getLevel() != AuthorizationLevel.ADMIN) {
+            throw new ExNoPerm("you have no permission to create new teams");
+        }
+
+        Organization org = _factOrg.add(orgName);
+        setOrganization(org);
+        setLevel(AuthorizationLevel.ADMIN);
+    }
+
+    /**
+     * Move the user to a new organization
+     */
+    private void setOrganization(Organization org)
+            throws SQLException
+    {
+        _db.setOrgID(_id, org.id());
+    }
+
 
 }

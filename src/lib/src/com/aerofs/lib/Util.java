@@ -496,7 +496,7 @@ public abstract class Util
                      '=', '?', '^', '_', '`', '{', '|', '}', '~' };
 
     // the caller should throw ExInvalidCharacter if exception is needed
-    private static boolean isValidEmailAddressToken(String part)
+    public static boolean isValidEmailAddressToken(String part)
     {
         if (part.isEmpty()) return false;
         for (int i = 0; i < part.length(); i++) {

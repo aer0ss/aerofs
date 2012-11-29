@@ -108,12 +108,10 @@ public class C
 
     public static final long TRANSPORT_DIAGNOSIS_STATE_PENDING = -1;
 
-    public static final int    S3_DELETED_FILE_LEN      = -1;
     public static final String GUI_NAME                 = "gui";
     public static final String CLI_NAME                 = "cli";
     public static final String SH_NAME                  = "sh";
     public static final String TOOLS_NAME               = "tools";
-    public static final String S3_CACHE_DIR             = "cache";
     public static final String END_OF_DEFECT_MESSAGE    = "---EOM---";
 
     public static final InetAddress LOCALHOST_ADDR;
@@ -137,4 +135,10 @@ public class C
 
     // Command Server
     public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd/";
+
+    // Team Server password: Team Servers use certificates to login to servers. Therefore, they do
+    // not need a password for remote communication. However, a password is still needed to retrieve
+    // private keys locally. (SP  disables password login for team servers by storing invalid
+    // password values.)
+    public static final char[] TEAM_SERVER_LOCAL_PASSWORD = "password".toCharArray();
 }

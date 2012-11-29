@@ -13,6 +13,8 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.ShellAdapter;
+import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.events.VerifyEvent;
@@ -128,43 +130,16 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(final SelectionEvent ev)
             {
-                boolean r = _btnIsExistingUser.getSelection();
-                _txtPasswd2.setVisible(!r);
-                _lblPasswd2.setVisible(!r);
-                _txtFirstName.setVisible(!r);
-                _txtLastName.setVisible(!r);
-                _lblFirstName.setVisible(!r);
-                _lblLastName.setVisible(!r);
-
-                if (_lblIC != null) {
-                    _lblIC.setVisible(!r);
-                    _txtIC.setVisible(!r);
-                }
-
-                _compSpinIC.setVisible(!r);
-
-                if (r) {
-                    _layoutStack.topControl = _compForgotPassword;
-                } else {
-                    _layoutStack.topControl = _compTOS;
-                    _txtUserID.setText(_isTargetedInvite ? _invitedUser : "");
-                }
-                _compStack.layout();
-
-                if (!r && (_forceInvite || _isTargetedInvite)) {
-                    _txtUserID.setEnabled(false);
-                } else {
-                    _txtUserID.setEnabled(true);
-                }
-
-                if (r) _txtUserID.setFocus();
-                else _txtIC.setFocus();
-
-                verify(null);
+                layoutUIForNewOrExistingUser();
             }
         });
 
         _btnIsExistingUser.setText("I already have an " + S.PRODUCT + " account");
+
+        if (Cfg.isTeamServer()) {
+            _btnIsExistingUser.setSelection(true);
+            _btnIsExistingUser.setVisible(false);
+        }
 
         if (_forceInvite && !_isTargetedInvite) {
             new Label(container, SWT.NONE);
@@ -347,7 +322,9 @@ public class DlgSetup extends AeroFSTitleAreaDialog
 
         setTitleImage(Images.get(Images.IMG_SETUP));
 
-        setTitle("Setup " + S.PRODUCT + " (beta) " + (Cfg.staging() ? " staging" : ""));
+        setTitle("Setup " + S.PRODUCT + " "
+                + (Cfg.isTeamServer() ? S.TEAM_SERVER : "") + " (beta) "
+                + (Cfg.staging() ? "staging" : ""));
 
         if (_forceInvite && !_isTargetedInvite) _txtIC.setFocus();
         else if (_txtUserID.getText().isEmpty()) _txtUserID.setFocus();
@@ -370,7 +347,53 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             }
         });
 
+        getShell().addShellListener(new ShellAdapter()
+        {
+            @Override
+            public void shellActivated(ShellEvent shellEvent)
+            {
+                layoutUIForNewOrExistingUser();
+            }
+        });
+
         return area;
+    }
+
+    private void layoutUIForNewOrExistingUser()
+    {
+        boolean r = _btnIsExistingUser.getSelection();
+        _txtPasswd2.setVisible(!r);
+        _lblPasswd2.setVisible(!r);
+        _txtFirstName.setVisible(!r);
+        _txtLastName.setVisible(!r);
+        _lblFirstName.setVisible(!r);
+        _lblLastName.setVisible(!r);
+
+        if (_lblIC != null) {
+            _lblIC.setVisible(!r);
+            _txtIC.setVisible(!r);
+        }
+
+        _compSpinIC.setVisible(!r);
+
+        if (r) {
+            _layoutStack.topControl = _compForgotPassword;
+        } else {
+            _layoutStack.topControl = _compTOS;
+            _txtUserID.setText(_isTargetedInvite ? _invitedUser : "");
+        }
+        _compStack.layout();
+
+        if (!r && (_forceInvite || _isTargetedInvite)) {
+            _txtUserID.setEnabled(false);
+        } else {
+            _txtUserID.setEnabled(true);
+        }
+
+        if (r) _txtUserID.setFocus();
+        else _txtIC.setFocus();
+
+        verify(null);
     }
 
     private void setStatus(String error, String status)
@@ -576,7 +599,11 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             public void run()
                     throws Exception
             {
-                if (_isExistingUser) {
+                if (Cfg.isTeamServer()) {
+                    UI.controller()
+                            .setupTeamServer(userID, new String(passwd), _absRootAnchor,
+                                    _deviceName, null);
+                } else if (_isExistingUser) {
                     UI.controller()
                             .setupExistingUser(userID, new String(passwd), _absRootAnchor,
                                     _deviceName, null);
@@ -585,6 +612,8 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                             .setupNewUser(userID, new String(passwd), _absRootAnchor, _deviceName,
                                     ic, firstName, lastName, null);
                 }
+
+                // TODO (WW) disable shell extension and shellext service for team servers
 
                 // setup shell extension
                 while (true) {

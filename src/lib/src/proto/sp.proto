@@ -105,6 +105,7 @@ service SPService {
      *   ExNoPerm    if you are trying to recertify a device that does not belong to you.
      *   ExBadArgs   if the cname does not match the required format (hashed concatenation of user
      *               email, did).
+     *   ExDeviceIDAlreadyExist if the device ID already exists
      */
     rpc CertifyDevice(CertifyDeviceCall) returns (CertifyDeviceReply);
 
@@ -389,6 +390,37 @@ service SPService {
      * Required Auth Level: none
      */
     rpc GetAuthorizationLevel(Void) returns (GetAuthorizationLevelReply);
+
+    /**
+     * Setup the team server account:
+     *
+     *  1. If the user is in default organization, create a new organization.
+     *     Else, if the user is not an admin, throw ExNoPerm.
+     *  2. If the organization doesn't have a team server user account, create the user.
+     *  3. Return the user ID.
+     *
+     * See the Team Server design doc for design rationale.
+     *
+     * Required Auth Level: (see below, same as AddOrganization)
+     *
+     * throws:
+     * - ExNoPerm   if the user calling is not a member of the default organization or is not
+     *                  an admin
+     */
+    rpc GetTeamServerUserID(Void) returns (GetTeamServerUserIDReply);
+
+    /**
+     * Certify a Team Server's device certificate. It is different from the CertifyDevice call in
+     * that the this call allows the user to certify the device under a user ID different from his
+     * own ID. This call is needed only for setting up the team server. After setup, the server can
+     * call CertifyDevice on its own.
+     *
+     * Required Auth Level: Admin
+     *
+     * throws:
+     * - ExDeviceIDAlreadyExist if the device ID already exists
+     */
+    rpc CertifyTeamServerDevice(CertifyTeamServerDeviceCall) returns (CertifyDeviceReply);
 }
 
 message SignUpCall {
@@ -424,7 +456,7 @@ message VerifyBatchSignUpCodeCall {
 
 message CertifyDeviceCall {
     required bytes device_id = 1;
-    required bytes csr_bytes = 2;
+    required bytes csr = 2;
     required bool recertify = 3;
 }
 
@@ -550,7 +582,14 @@ message VerifyEmailCall {
     required string verification_code = 1;
 }
 
-/////////////////
+message GetTeamServerUserIDReply {
+    required string id = 1;
+}
+
+message CertifyTeamServerDeviceCall {
+    required bytes device_id = 1;
+    required bytes csr = 2;
+}
 
 message ListUsersCall {
     // Return only users whose name match this string. Empty string matches all users.

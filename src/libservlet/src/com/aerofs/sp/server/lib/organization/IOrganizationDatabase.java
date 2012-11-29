@@ -6,7 +6,6 @@ package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UserID;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -20,13 +19,6 @@ import java.util.List;
  */
 public interface IOrganizationDatabase
 {
-    /**
-     * Moves the given user into the given organization
-     */
-    void moveUserToOrganization(UserID userId, OrgID orgId)
-            throws SQLException;
-
-
     /**
      * Counts the total number of shared folders viewable by calls to listSharedFolders
      * @param orgId organization
