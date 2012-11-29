@@ -5,13 +5,12 @@ from flask import json
 from flask import request
 from flask import jsonify
 from pyelasticsearch import ElasticSearch
-from unobfuscator import Unobfuscator, ObfName
+from retrace_client import RetraceClient
 
 app = Flask("rocklog")
 app.debug = False
 
 es = ElasticSearch('http://localhost:9200/')
-unobf = Unobfuscator(1000)
 
 @app.route("/")
 def home():
@@ -25,10 +24,12 @@ def defects():
     defect = request.json
 
     if 'exception' in defect:
-        unobf.unobfuscate_and_cache(find_obfuscated_names(defect['exception']), defect['version'])
-        defect['exception'] = decode_exception(defect['exception'], defect['version'])
+        retracer = RetraceClient(50123, defect['version'])
+        defect['exception'] = decode_exception(defect['exception'], retracer)
+        retracer.close()
 
         if not '@message' in defect:
+            # If no message for this defect, use the first line of the exception
             defect['@message'] = defect['exception'].split('\n')[0]
 
     # Save the defect into Elastic Search
@@ -49,37 +50,24 @@ def success_response():
     resp.status_code = 200
     return resp
 
-def decode_exception(exception, version):
+def decode_exception(exception, rc):
     """
     Takes a JSON exception object (with a stacktrace and possibly nested exceptions), unobfuscate the elements, and
     converts everything into a string.
+    rc: RetraceClient instance
     """
     if not exception: return ""
 
-    result = exception['type'] + ': ' + exception['message'] + '\n'
-    result += '\n'.join([unobf.get_unobfuscated(obfname, version) for obfname in obfnames_from_exception(exception)])
+    result = rc.retrace(exception['type'])['classname'] + ': ' + exception['message'] + '\n'
+    result += '\n'.join([stackframe_to_string(frame, rc) for frame in exception.get('stacktrace', [])])
     if exception.get('cause', {}):
-        result += '\n\nCaused by: ' +  decode_exception(exception['cause'], version)
+        result += '\n\nCaused by: ' +  decode_exception(exception['cause'], rc)
 
     return result
 
-
-def find_obfuscated_names(exception):
-    """
-    Traverses an exception object recursively and return a list with the obfuscated classes and methods
-    """
-    result = []
-
-    if exception:
-        result.append(ObfName(exception['type'], None, None))
-        result.extend(obfnames_from_exception(exception))
-        result.extend(find_obfuscated_names(exception.get('cause', {})))
-
-    return result
-
-def obfnames_from_exception(exception):
-    return [ObfName(e['class'], e['method'], e['line']) for e in exception.get('stacktrace', [])]
-
+def stackframe_to_string(frame, rc):
+    r = rc.retrace(frame['class'], frame['method'], frame['line'])
+    return r['classname'] + '.' + r['methodname'] + ':' + str(frame['line'])
 
 if __name__ == "__main__":
     app.run()
