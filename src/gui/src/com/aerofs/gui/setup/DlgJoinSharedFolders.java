@@ -3,6 +3,7 @@ package com.aerofs.gui.setup;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -36,7 +37,6 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -240,7 +240,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 @Override
                 public void run()
                 {
-                    Program.launch(Cfg.absRootAnchor());
+                    GUIUtil.launch(Cfg.absRootAnchor());
                 }
             });
         } finally {

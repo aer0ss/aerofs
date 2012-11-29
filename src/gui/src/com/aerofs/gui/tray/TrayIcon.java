@@ -1,5 +1,6 @@
 package com.aerofs.gui.tray;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition.Orientation;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -9,7 +10,6 @@ import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Tray;
 import org.eclipse.swt.widgets.TrayItem;
@@ -63,7 +63,7 @@ public class TrayIcon
                 @Override
                 public void handleEventImpl(Event event)
                 {
-                    Program.launch(Cfg.absRootAnchor());
+                    GUIUtil.launch(Cfg.absRootAnchor());
                 }
             });
         }

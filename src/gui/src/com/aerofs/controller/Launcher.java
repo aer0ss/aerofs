@@ -10,13 +10,13 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.sql.SQLException;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.ex.ExAlreadyRunning;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.program.Program;
 
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.AppRoot;
@@ -236,7 +236,7 @@ class Launcher
                     new File(failedFile).length()));
             UI.get().show(MessageType.ERROR, msg);
 
-            if (UI.isGUI()) Program.launch(url);
+            if (UI.isGUI()) GUIUtil.launch(url);
 
             throw new ExAborted();
         }

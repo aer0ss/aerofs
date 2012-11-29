@@ -21,7 +21,6 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.events.DisposeEvent;
@@ -328,7 +327,7 @@ public class CompUnsyncableFiles extends Composite {
     private void browse()
     {
         for (Entry en : getSelectedEntries()) {
-            Program.launch(_factFile.create(en._path).getParent());
+            GUIUtil.launch(_factFile.create(en._path).getParent());
         }
     }
 

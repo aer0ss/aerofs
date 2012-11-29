@@ -383,7 +383,7 @@ public class CompConflictFiles extends Composite
     {
         for (Entry en : getSelectedEntries()) {
             String path = en._path.toAbsoluteString(Cfg.absRootAnchor());
-            if (!Program.launch(path)) {
+            if (!GUIUtil.launch(path)) {
                 throw new Exception(S.FILE_OPEN_FAIL);
             }
         }
@@ -395,7 +395,7 @@ public class CompConflictFiles extends Composite
 
         try {
             for (Entry en : getSelectedEntries()) {
-                if (!Program.launch(en.getExportedFilePath(ritual))) {
+                if (!GUIUtil.launch(en.getExportedFilePath(ritual))) {
                     throw new Exception(S.FILE_OPEN_FAIL);
                 }
             }
