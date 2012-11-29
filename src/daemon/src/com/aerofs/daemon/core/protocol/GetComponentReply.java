@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
@@ -279,13 +278,7 @@ public class GetComponentReply
             case CONTENT:
                 // TODO merge/delete branches (variable kidcs), including their prefix files, that
                 // are dominated by the new version
-
-                // N.B. kidxOld appears to only be used to detect if prefix files should be
-                // accepted, migrated, or rejected in applyContent_(). It's unclear to me (DF)
-                // how kidxOld would ever acquire a value other than MASTER.
-                KIndex kidxOld = KIndex.MASTER;
-
-                t = _ru.applyContent_(msg, targetBranch, kidxOld, vRemote, cr, tk);
+                t = _ru.applyContent_(msg, targetBranch, vRemote, cr, tk);
                 break;
 
             default:

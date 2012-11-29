@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.ex.ExFileIO;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -29,7 +27,6 @@ import com.aerofs.lib.Path;
 public class LinkedFile implements IPhysicalFile
 {
     private static final Logger l = Util.l(LinkedFile.class);
-    private static final FrequentDefectSender fds = new FrequentDefectSender();
 
     private final LinkedStorage _s;
     private final IFIDMaintainer _fidm;

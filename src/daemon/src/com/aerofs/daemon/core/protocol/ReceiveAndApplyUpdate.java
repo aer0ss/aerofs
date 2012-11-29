@@ -674,7 +674,6 @@ public class ReceiveAndApplyUpdate
      *
      * @param prefix The prefix file to open for writing
      * @param k The SOCKID of the prefix file
-     * @param kidxOld The previous KIndex
      * @param vRemote The version vector of the remote object
      * @param prefixLength The amount of data we already have in the prefix file
      * @param contentPresentLocally Whether the content for the remote object is present locally
@@ -682,7 +681,7 @@ public class ReceiveAndApplyUpdate
      * @return an OutputStream that writes to the prefix file
      */
     private OutputStream createPrefixOutputStreamAndUpdatePrefixState_(IPhysicalPrefix prefix,
-            SOCKID k, KIndex kidxOld, Version vRemote, long prefixLength,
+            SOCKID k, Version vRemote, long prefixLength,
             boolean contentPresentLocally, boolean isStreaming)
             throws ExNotFound, SQLException, IOException
     {
@@ -695,7 +694,7 @@ public class ReceiveAndApplyUpdate
             // This truncates the file to size zero
             return prefix.newOutputStream_(false);
 
-        } else if (kidxOld.equals(k.kidx())) {
+        } else if (KIndex.MASTER.equals(k.kidx())) {
             // if vPrefixOld != vRemote, the prefix version must be updated in the
             // persistent store (see above).
             Version vPrefixOld = _pvc.getPrefixVersion_(k.soid(), k.kidx());
@@ -712,11 +711,9 @@ public class ReceiveAndApplyUpdate
             // new conflict. we in this case reuse the prefix file for the new
             // branch. the following assertion is because local peers should
             // only be able to change the MASTER branch.
-            assert kidxOld.equals(KIndex.MASTER) : kidxOld + " " + k;
+            movePrefixFile_(k.socid(), KIndex.MASTER, k.kidx(), vRemote);
 
-            movePrefixFile_(k.socid(), kidxOld, k.kidx(), vRemote);
-
-            l.debug("prefix transferred " + kidxOld + "->" + k.kidx() + ": " + prefixLength);
+            l.debug("prefix transferred " + KIndex.MASTER + "->" + k.kidx() + ": " + prefixLength);
             return prefix.newOutputStream_(true);
         }
     }
@@ -746,7 +743,7 @@ public class ReceiveAndApplyUpdate
     }
 
     private void writeContentToPrefixFile_(IPhysicalPrefix pfPrefix, DigestedMessage msg,
-            final long totalFileLength, final long prefixLength, SOCKID k, KIndex kidxOld,
+            final long totalFileLength, final long prefixLength, SOCKID k,
             Version vRemote, @Nullable KIndex localBranchWithMatchingContent, Token tk)
             throws ExOutOfSpace, ExNotFound, ExStreamInvalid, ExAborted, ExNoResource, ExTimeout,
             SQLException, IOException, DigestException
@@ -754,7 +751,7 @@ public class ReceiveAndApplyUpdate
         final boolean isStreaming = msg.streamKey() != null;
 
         // Open the prefix file for writing, updating it as required
-        final OutputStream os = createPrefixOutputStreamAndUpdatePrefixState_(pfPrefix, k, kidxOld,
+        final OutputStream os = createPrefixOutputStreamAndUpdatePrefixState_(pfPrefix, k,
                 vRemote, prefixLength, localBranchWithMatchingContent != null, isStreaming);
 
         try {
@@ -812,6 +809,17 @@ public class ReceiveAndApplyUpdate
         }
     }
 
+    /**
+     * Computes the content hash for the downloaded SOCKID. If the remote sent us the content hash
+     * then use that, otherwise try computing the content hash for conflict branches. We do not
+     * compute the hash for the master branch because it might change often (local edits).
+     *
+     * @param k The SOCKID of the downloaded file
+     * @param prefix The physical temporary file which holds the SOCKID's content
+     * @param remoteHash The content hash the remote sent us for this SOCKID
+     * @param tk A token to use when releasing the CoreLock
+     * @return The content hash of the downloaded file, or null if no hash will be calculated
+     */
     private @Nullable ContentHash computeNewContentHash_(SOCKID k, IPhysicalPrefix prefix,
             @Nullable ContentHash remoteHash, Token tk)
             throws IOException, ExAborted, ExTimeout, DigestException
@@ -832,7 +840,7 @@ public class ReceiveAndApplyUpdate
         return h;
     }
 
-    public Trans applyContent_(DigestedMessage msg, SOCKID k, KIndex kidxOld, Version vRemote,
+    public Trans applyContent_(DigestedMessage msg, SOCKID k, Version vRemote,
             CausalityResult res, Token tk)
             throws SQLException, IOException, ExDependsOn, ExTimeout, ExAborted, ExStreamInvalid,
             ExNoResource, ExOutOfSpace, ExNotFound, DigestException
@@ -859,7 +867,7 @@ public class ReceiveAndApplyUpdate
 
         // Write the new content to the prefix file
         writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),
-                reply.getPrefixLength(), k, kidxOld, vRemote, localBranchWithMatchingContent, tk);
+                reply.getPrefixLength(), k, vRemote, localBranchWithMatchingContent, tk);
 
         @Nullable ContentHash newContentHash = computeNewContentHash_(k, pfPrefix, res._hash, tk);
 
