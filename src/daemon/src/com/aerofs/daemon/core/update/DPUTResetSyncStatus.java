@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.update;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.lib.C;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
@@ -15,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
+import static com.aerofs.daemon.core.update.DPUTUpdateSchemaForSyncStatus.*;
 
 /**
  * The DB of @aerofs.com users got pretty dirty and possibly inconsistent during the successive
@@ -66,7 +66,6 @@ public class DPUTResetSyncStatus implements IDaemonPostUpdateTask
             }
             setEpoch(s, T_EPOCH, C_EPOCH_SYNC_PUSH, pushEpoch);
 
-
             // reset status data
             resetBlobColumn(s, T_OA, C_OA_SYNC);
             resetBlobColumn(s, T_OA, C_OA_AG_SYNC);
@@ -75,7 +74,7 @@ public class DPUTResetSyncStatus implements IDaemonPostUpdateTask
             // clear bootstrap table to avoid duplicate SVH
             s.executeUpdate("delete from " + T_SSBS);
             // fill bootstrap table again
-            SyncStatusDatabase.fillBootstrapTable(c);
+            DPUTUpdateSchemaForSyncStatus.fillBootstrapTable(s);
         } finally {
             s.close();
         }

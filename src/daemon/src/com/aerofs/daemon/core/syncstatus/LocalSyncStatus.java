@@ -16,7 +16,6 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
@@ -227,14 +226,6 @@ public class LocalSyncStatus implements IStoreDeletionOperator
     }
 
     /**
-     * see {@link ISyncStatusDatabase#setPullEpoch_}
-     */
-    public void setPullEpoch_(long newEpoch, Trans t) throws SQLException
-    {
-        _ssdb.setPullEpoch_(newEpoch, t);
-    }
-
-    /**
      * see {@link ISyncStatusDatabase#getPushEpoch_}
      */
     public long getPushEpoch_() throws SQLException
@@ -242,34 +233,9 @@ public class LocalSyncStatus implements IStoreDeletionOperator
         return _ssdb.getPushEpoch_();
     }
 
-    /**
-     * see {@link ISyncStatusDatabase#setPushEpoch_}
-     */
-    public void setPushEpoch_(long newIndex, Trans t) throws SQLException
-    {
-        _ssdb.setPushEpoch_(newIndex, t);
-    }
-
-    /**
-     * see {@link ISyncStatusDatabase#getBootstrapSOIDs_}
-     */
-    public IDBIterator<SOID> getBootstrapSOIDs_() throws SQLException
-    {
-        return _ssdb.getBootstrapSOIDs_();
-    }
-
-    /**
-     * see {@link ISyncStatusDatabase#removeBootstrapSOID_}
-     */
-    public void removeBootsrapSOID_(SOID soid, Trans t) throws SQLException
-    {
-        _ssdb.removeBootstrapSOID_(soid, t);
-    }
-
     @Override
-    public void deleteStore_(SIndex sidx, Trans t)
-            throws SQLException
+    public void deleteStore_(SIndex sidx, Trans t)  throws SQLException
     {
-        _ssdb.deleteBootstrapSOIDsForStore_(sidx, t);
+        _ssdb.deleteModifiedObjectsForStore_(sidx, t);
     }
 }

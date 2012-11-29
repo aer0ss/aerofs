@@ -6,7 +6,6 @@ import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATI
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -14,6 +13,7 @@ import java.util.Set;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
+import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
@@ -28,9 +28,9 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OID;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -55,7 +55,7 @@ import com.google.common.collect.Sets;
  * Fortunately, most transactions only deal with a small number of objects at a time. Transactions
  * by the scanner may be big, but its size is limited by ScanSession.CONTINUATION_UPDATES_THRESHOLD.
  */
-public class ActivityLog implements IDirectoryServiceListener
+public class ActivityLog implements IDirectoryServiceListener, IVersionControlListener
 {
     // the per-object entry for the trans-local map
     private static class ActivityEntry
@@ -81,22 +81,10 @@ public class ActivityLog implements IDirectoryServiceListener
                 {
                     final Map<SOID, ActivityEntry> map = Maps.newTreeMap();
                     t.addListener_(new AbstractTransListener() {
-                        private boolean _activitiesAdded = false;
-
                         @Override
                         public void committing_(Trans t) throws SQLException
                         {
-                            _activitiesAdded = ActivityLog.this.committing_(map, t);
-                        }
-
-                        @Override
-                        public void committed_() {
-                            // we can't start the scan before the transaction is committed
-                            if (_activitiesAdded) {
-                                for (IActivityLogListener listener : _listeners) {
-                                    listener.activitiesAdded_();
-                                }
-                            }
+                            ActivityLog.this.committing_(map, t);
                         }
                     });
 
@@ -105,25 +93,6 @@ public class ActivityLog implements IDirectoryServiceListener
             };
 
     private IActivityLogDatabase _aldb;
-
-    /**
-     * Interface for ActivityLog listener
-     */
-    public interface IActivityLogListener
-    {
-        /**
-         * Whenever a transaction adds new rows to the activity log table, this method will be
-         * called from the commited_() callback of an ITransListener
-         */
-        void activitiesAdded_();
-    }
-
-    private final List<IActivityLogListener> _listeners = Lists.newArrayList();
-
-    public void addListener_(IActivityLogListener listener)
-    {
-        _listeners.add(listener);
-    }
 
     @Inject
     public ActivityLog(DirectoryService ds, IActivityLogDatabase aldb)
@@ -226,16 +195,15 @@ public class ActivityLog implements IDirectoryServiceListener
             Trans t) throws SQLException
     {}
 
-    public void localVersionAdded_(SOID soid, Version vLocalAdded, Trans t)
+    @Override
+    public void localVersionAdded_(SOCKID sockid, Version vLocalAdded, Trans t)  throws SQLException
     {
-        ActivityEntry en = getEntry_(soid, t);
+        ActivityEntry en = getEntry_(sockid.soid(), t);
         en._dids.addAll(vLocalAdded.getAll_().keySet());
     }
 
-    private boolean committing_(Map<SOID, ActivityEntry> map, Trans t)
-            throws SQLException
+    private void committing_(Map<SOID, ActivityEntry> map, Trans t) throws SQLException
     {
-        int activitiesAdded = 0;
         for (Entry<SOID, ActivityEntry> en : map.entrySet()) {
             ActivityEntry ae = en.getValue();
 
@@ -255,9 +223,7 @@ public class ActivityLog implements IDirectoryServiceListener
             }
 
             _aldb.addActivity_(en.getKey(), ae._type, ae._path, ae._pathTo, ae._dids, t);
-            ++activitiesAdded;
         }
-        return activitiesAdded > 0;
     }
 
     /**

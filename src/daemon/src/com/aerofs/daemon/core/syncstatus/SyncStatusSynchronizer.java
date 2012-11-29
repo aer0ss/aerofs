@@ -9,10 +9,9 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.Callable;
 
-import com.aerofs.daemon.core.ActivityLog;
-import com.aerofs.daemon.core.ActivityLog.IActivityLogListener;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.DeviceBitMap;
@@ -23,9 +22,12 @@ import com.aerofs.daemon.core.syncstatus.SyncStatusConnection.ExSignIn;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.daemon.lib.db.AbstractTransListener;
+import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
+import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
+import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
@@ -46,8 +48,6 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.db.IActivityLogDatabase;
-import com.aerofs.daemon.lib.db.IActivityLogDatabase.ModifiedObject;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.SecUtil;
@@ -63,15 +63,16 @@ import com.google.inject.Inject;
 /**
  * This class keeps local sync status information in sync with the central server.
  *
- * There are three main aspects to the sync status synchronizer logic :
+ * There are four main aspects to the sync status synchronizer logic:
  *
- *  1) push: Whenever a new changes happen locally (catched by the ActivityLog) the synchronizer
- *  will scan the activity log table for modified SOIDs, compute their new version hash and send it
- *  to the server (which should result in a new epoch being received from verkher soon after). After
- *  successful push of a version hash, the local push epoch is updated. This epoch is basically the
- *  index of the last row of the activity log table successfully pushed.
+ *  1) push: Whenever a new changes happen locally (NativeVersionControl listener) the synchronizer
+ *  will add modified SOIDs to the push queue and schedule a scan of that table. The scan will
+ *  compute new version hashes for objects in the push queue and send them to the server (which will
+ *  result in a new epoch being received from verkher soon after). After successful push of a
+ *  version hash, the local push epoch is updated. This epoch is basically the index of the last row
+ *  of the push queue table successfully pushed.
  *
- *  2) pull : Whenever a new pull epoch is received through {@link SyncStatusNotificationSubscriber}
+ *  2) pull: Whenever a new pull epoch is received through {@link SyncStatusNotificationSubscriber}
  *  the synchronizer compares it to the last known pull epoch and initiates pull from the server if
  *  needed. The pull epoch is assigned by the syncstatus server at device granularity and increases
  *  with every change made that could result in an out-of-sync state between two devices.
@@ -79,28 +80,32 @@ import com.google.inject.Inject;
  *  can be included in the notification, allowing the client to update its DB without an extra round
  *  trip if the epoch difference is exactly one.
  *
- *  3) startup : The startup phase is responsible for flushing any local information not yet
+ *  3) startup: The startup phase is responsible for flushing any local information not yet
  *  transmitted to the sync status server and pulling the server for new information (to account
  *  for dropped verkher notifications).
+ *
+ *  4) epoch rollback: On successful connection, the syncstat server tell the client the epoch of
+ *  the last push it received. This is used to recover from server-side data loss. When this epoch
+ *  is smaller than the client's own push epoch, a rollback is required to re-send the version hash
+ *  lost by the server. Because the push queue is regularly truncated to avoid unbounded growth, in
+ *  some rare cases it is possible that the epoch cannot be rolled back far enough and a full
+ *  bootstrap is necessary to ensure all lost version hashes are re-sent
  */
-public class SyncStatusSynchronizer
+public class SyncStatusSynchronizer implements IVersionControlListener
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
     private final TC _tc;
     private final CoreQueue _q;
     private final TransManager _tm;
-    private final LocalSyncStatus _lsync;
+    private final ISyncStatusDatabase _ssdb;
     private final SyncStatusConnection _ssc;
-    private final IActivityLogDatabase _aldb;
     private final NativeVersionControl _nvc;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final MapSIndex2DeviceBitMap _sidx2dbm;
     private final DirectoryService _ds;
     private final ExponentialRetry _er;
-
-    private boolean _startupDone;
 
     public static interface IListener
     {
@@ -111,36 +116,24 @@ public class SyncStatusSynchronizer
 
     @Inject
     public SyncStatusSynchronizer(CoreQueue q, CoreScheduler sched, TC tc, TransManager tm,
-            LocalSyncStatus lsync, DirectoryService ds, SyncStatusConnection ssc,
+            DirectoryService ds, SyncStatusConnection ssc, ISyncStatusDatabase ssdb,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, MapSIndex2DeviceBitMap sidx2dbm,
-            ActivityLog al, IActivityLogDatabase aldb, NativeVersionControl nvc,
-            CfgLocalUser localUser)
+            NativeVersionControl nvc)
     {
         _q = q;
         _tc = tc;
         _tm = tm;
         _ds = ds;
         _ssc = ssc;
-        _lsync = lsync;
-        _aldb = aldb;
+        _ssdb = ssdb;
         _nvc = nvc;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
 
-        // only schedule new scans once the startup sequence is over
-        al.addListener_(new IActivityLogListener()
-        {
-            @Override
-            public void activitiesAdded_()
-            {
-                if (_startupDone) scanActivityLog_();
-            }
-        });
+        nvc.addListener_(this);
 
-        // 1) process items in the bootstrap table, if any
-        // 2) process items in the activity log left by a previous run
         scheduleStartup();
     }
 
@@ -154,7 +147,7 @@ public class SyncStatusSynchronizer
      */
     void notificationReceived_(PBSyncStatNotification notification) throws SQLException
     {
-        long localEpoch = _lsync.getPullEpoch_();
+        long localEpoch = _ssdb.getPullEpoch_();
         long serverEpoch = notification.getSsEpoch();
 
         if (serverEpoch > localEpoch) {
@@ -183,93 +176,20 @@ public class SyncStatusSynchronizer
 
     private void scheduleStartup()
     {
-        final Callable<Void> startUp = new Callable<Void>() {
-            @Override
-            public Void call() throws Exception
-            {
-                bootstrap_();
-                scanActivityLog_();
-                _startupDone = true;
-                return null;
-            }
-        };
-
         _q.enqueueBlocking(new AbstractEBSelfHandling() {
             @Override
-            public void handle_() {
-                _er.retry("SyncStatStart", startUp);
+            public void handle_()
+            {
+                _er.retry("SyncStatStart", new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception
+                    {
+                        scanPushQueue_();
+                        return null;
+                    }
+                });
             }
         }, Prio.LO);
-    }
-
-    /**
-     * @return a batch of bootstrap SOIDS from the DB
-     */
-    private Map<SIndex, Set<OID>> getBootstrapBatch_() throws SQLException
-    {
-        final int BOOTSTRAP_BATCH_MAX_SIZE = 100;
-        Map<SIndex, Set<OID>> batch = Maps.newHashMap();
-        int oidCounter = 0;
-        IDBIterator<SOID> soids = _lsync.getBootstrapSOIDs_();
-        try {
-            while (soids.next_() && ++oidCounter < BOOTSTRAP_BATCH_MAX_SIZE) {
-                SOID soid = soids.get_();
-                Set<OID> oids = batch.get(soid.sidx());
-                if (oids == null) {
-                    oids = Sets.newHashSet();
-                    batch.put(soid.sidx(), oids);
-                }
-                oids.add(soid.oid());
-            }
-        } finally {
-            soids.close_();
-        }
-        return batch;
-    }
-
-    /**
-     * Bootstrap sync status :
-     * When a client with existing files updates AeroFS to a version that enables
-     * sync status we cannot afford to wait on activity log to report them to us.
-     * A post update task will populate a bootstrap table with existing OIDs and
-     * they will be sent to the server in the background.
-     */
-    private void bootstrap_() throws Exception
-    {
-        // batch DB reads
-        Map<SIndex, Set<OID>> batch = getBootstrapBatch_();
-        while (!batch.isEmpty()) {
-            // push version hashes to server
-            try {
-                pushVersionHashBatch_(batch, 0L, 0L);
-            } catch (ExSignIn e) {
-                // TODO: if bootstrap table is repopulated due to rollback + truncated activity log
-                // we'll need to restart the bootstrap from scratch instead of resending the current
-                // batch
-                // NOTE: no need to explicitely schedule an activity log scan as bootstrap only
-                // happen in th startup sequence which always ends by an activity log scan
-                onSignIn_(e._epoch);
-
-                // immediately retry making the call now that we're signed-in
-                continue;
-            }
-
-            // remove SOIDs whose hashes were pushed from the bootstrap table
-            Trans t = _tm.begin_();
-            try {
-                for (Entry<SIndex, Set<OID>> e : batch.entrySet()) {
-                    for (OID oid : e.getValue()) {
-                        _lsync.removeBootsrapSOID_(new SOID(e.getKey(), oid), t);
-                    }
-                }
-                t.commit_();
-            } finally {
-                t.end_();
-            }
-
-            // batch DB reads
-            batch = getBootstrapBatch_();
-        }
     }
 
     /**
@@ -332,7 +252,7 @@ public class SyncStatusSynchronizer
         boolean more = true;
 
         while (more) {
-            long localEpoch = _lsync.getPullEpoch_();
+            long localEpoch = _ssdb.getPullEpoch_();
             l.debug("pull " + localEpoch);
 
             GetSyncStatusReply reply;
@@ -342,7 +262,7 @@ public class SyncStatusSynchronizer
             } catch (ExSignIn e) {
                 if (onSignIn_(e._epoch)) {
                     // need to schedule a new scan to resend vh after epoch rollback
-                    scanActivityLog_();
+                    scanPushQueue_();
                 }
                 // immediately retry making the call now that we're signed-in
                 continue;
@@ -350,7 +270,7 @@ public class SyncStatusSynchronizer
 
             if (reply == null) return;
 
-            long localEpochAfterCall = _lsync.getPullEpoch_();
+            long localEpochAfterCall = _ssdb.getPullEpoch_();
             long newEpoch = reply.getServerEpoch();
             // Check whether this pull bring us any new information
             if (newEpoch <= localEpochAfterCall) {
@@ -430,7 +350,7 @@ public class SyncStatusSynchronizer
             }
 
             // update epoch to avoid re-downloading the information
-            _lsync.setPullEpoch_(newPullEpoch, t);
+            _ssdb.setPullEpoch_(newPullEpoch, t);
             t.commit_();
         } finally {
             t.end_();
@@ -452,7 +372,7 @@ public class SyncStatusSynchronizer
         final int MODIFIED_OBJECT_BATCH_MAX_SIZE = 100;
         long lastEpoch = pushEpoch;
         soids.clear();
-        IDBIterator<ModifiedObject> it = _aldb.getModifiedObjects_(pushEpoch);
+        IDBIterator<ModifiedObject> it = _ssdb.getModifiedObjects_(pushEpoch);
         int oidsCounter = 0;
         try {
             while (it.next_() && oidsCounter++ < MODIFIED_OBJECT_BATCH_MAX_SIZE) {
@@ -479,13 +399,16 @@ public class SyncStatusSynchronizer
      * retry if a new scan comes in).
      */
     private long _scanSeq = 0;
-    private void scanActivityLog_()
+    private boolean _scanInProgress = false;
+    private void scanPushQueue_()
     {
+        if (_scanInProgress) return;
+
         schedule_(new AbstractEBSelfHandling() {
             @Override
             public void handle_() {
-                // to avoid unbounded queueing of failing scans when connection to server is lost, each call
-                // added to the exp retry is assigned a sequence number
+                // to avoid unbounded queueing of failing scans when connection to server is lost,
+                // each call added to the exp retry is assigned a sequence number
                 final long _seq = ++_scanSeq;
 
                 // exp retry (w/ forced server reconnect) in case of failure
@@ -496,7 +419,7 @@ public class SyncStatusSynchronizer
                     public Void call() throws Exception
                     {
                         if (_scanSeq != _seq) return null;
-                        scanActivityLogInternal_();
+                        scanPushQueueInternal_();
                         return null;
                     }
                 });
@@ -504,9 +427,8 @@ public class SyncStatusSynchronizer
         });
     }
 
-    private boolean _scanInProgress = false;
     private boolean _abortScan = false;
-    private void scanActivityLogInternal_() throws Exception
+    private void scanPushQueueInternal_() throws Exception
     {
         // avoid concurrent scans : this method is called with the core lock held
         // but pushVersionHash release the core lock during the RPC call so we
@@ -516,7 +438,7 @@ public class SyncStatusSynchronizer
 
         try {
             long lastIndex;
-            long nextIndex = _lsync.getPushEpoch_();
+            long nextIndex = _ssdb.getPushEpoch_();
             Map<SIndex, Set<OID>> soids = Maps.newHashMap();
             while (true) {
                 // batch DB reads
@@ -534,14 +456,14 @@ public class SyncStatusSynchronizer
                     // epoch was rolled back, we need to restart from the rollback point
                     if (_abortScan) {
                         _abortScan = false;
-                        nextIndex = _lsync.getPushEpoch_();
+                        nextIndex = _ssdb.getPushEpoch_();
                         continue;
                     }
                 } catch (ExSignIn e) {
                     // restart scan in case of push epoch rollback
                     if (onSignIn_(e._epoch)) {
                         _abortScan = false;
-                        nextIndex = _lsync.getPushEpoch_();
+                        nextIndex = _ssdb.getPushEpoch_();
                     } else {
                         nextIndex = lastIndex;
                     }
@@ -564,7 +486,7 @@ public class SyncStatusSynchronizer
     {
         Trans t = _tm.begin_();
         try {
-            _lsync.setPushEpoch_(idx, t);
+            _ssdb.setPushEpoch_(idx, t);
             t.commit_();
         } finally {
             t.end_();
@@ -680,39 +602,89 @@ public class SyncStatusSynchronizer
     {
         l.debug("connected: " + clientEpoch);
         try {
-            /**
-             * Always reset the pull epoch on sign-in to prevent server-side data loss from causing
-             * client side data loss.
-             *
-             * Resetting the epoch ensures that the first getSyncStatus will fetch the last epoch
-             * from the server which is crucial to avoid accidentally discarding notifications after
-             * server-side data loss.
-             */
+            boolean rollback = false;
             Trans t = _tm.begin_();
             try {
-                _lsync.setPullEpoch_(0L, t);
+                /*
+                 * Always reset the pull epoch on sign-in to prevent server-side data loss from
+                 * causing client side data loss.
+                 *
+                 * Resetting the epoch ensures that the first getSyncStatus will fetch the last
+                 * epoch from the server which is crucial to avoid accidentally discarding
+                 * notifications after server-side data loss.
+                 */
+                _ssdb.setPullEpoch_(0L, t);
+
+                /*
+                 * Truncate push queue to avoid unbounded growth
+                 */
+                _ssdb.removeModifiedObjects_(clientEpoch - 1, t);
+
+                long pushEpoch = _ssdb.getPushEpoch_();
+                if (clientEpoch < pushEpoch) {
+                    l.warn("rollback from " + pushEpoch + " to " + clientEpoch);
+
+                    // rollback push epoch to recover from server data loss
+                    _ssdb.setPushEpoch_(clientEpoch, t);
+
+                    /*
+                     * if the push queue has already been truncated too much (i.e significant server
+                     * data loss after last successful connection) we need to fill the bootstrap
+                     * table to recover
+                     */
+                    IDBIterator<ModifiedObject> mo = _ssdb.getModifiedObjects_(clientEpoch);
+                    if (!mo.next_() || mo.get_()._idx > clientEpoch) {
+                        l.warn("rebootstrap");
+                        _ssdb.bootstrap_(t);
+                        _ssdb.setPushEpoch_(0, t);
+                    }
+
+                    if (_scanInProgress) _abortScan = true;
+
+                    rollback = true;
+                }
+
                 t.commit_();
             } finally {
                 t.end_();
             }
-
-            long pushEpoch = _lsync.getPushEpoch_();
-            if (clientEpoch < pushEpoch) {
-                l.debug("rollback from " + pushEpoch);
-                // rollback push epoch to recover from server data loss
-                setPushEpoch_(clientEpoch);
-
-                // TODO: repopulate bootstrap if push epoch cannot be rolled back far enough
-                // NB: only a concern in case of truncated activity log, currently not implemented
-
-                if (_scanInProgress) _abortScan = true;
-
-                return true;
-            }
-
-            return false;
+            return rollback;
         } catch (SQLException e) {
             throw SystemUtil.fatalWithReturn(e);
         }
+    }
+
+    private final TransLocal<Set<SOID>> _tlModified = new TransLocal<Set<SOID>>() {
+        @Override
+        protected Set<SOID> initialValue(Trans t)
+        {
+            final Set<SOID> set = Sets.newHashSet();
+            t.addListener_(new AbstractTransListener() {
+                @Override
+                public void committing_(Trans t) throws SQLException
+                {
+                    for (SOID soid : set) _ssdb.addToModifiedObjects_(soid, t);
+                }
+
+                @Override
+                public void committed_()
+                {
+                    scanPushQueue_();
+                }
+            });
+            return set;
+        }
+    };
+
+    @Override
+    public void localVersionAdded_(SOCKID sockid, Version v, Trans t) throws SQLException
+    {
+        // ignore conflict branches
+        if (!sockid.kidx().equals(KIndex.MASTER)) return;
+
+        // add object to push queue
+        assert !v.isZero_() : sockid;
+        assert !sockid.oid().isRoot() : sockid;
+        _tlModified.get(t).add(sockid.soid());
     }
 }

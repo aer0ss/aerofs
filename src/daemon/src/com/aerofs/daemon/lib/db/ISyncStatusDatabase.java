@@ -68,21 +68,46 @@ public interface ISyncStatusDatabase
     void setPushEpoch_(long newIndex, Trans t) throws SQLException;
 
     /**
-     * Bootstrap SOIDs are SOIDs that existed before sync status was implemented
-     * @return a bootstrap SOID, null if bootstrap table is empty
+     * Mark all non-expelled objects as modified (to force re-sending vh)
      */
-    IDBIterator<SOID> getBootstrapSOIDs_() throws SQLException;
+    void bootstrap_(Trans t) throws SQLException;
 
     /**
-     * Remove an OID from the bootstrap table
-     * <br/>
-     * <br/>
-     * <strong>IMPORTANT:</strong> this method should not be called directly! The only place from
-     * which this method should be used is {@link com.aerofs.daemon.core.syncstatus.SyncStatusSynchronizer}.
-     * Use the methods defined there; they will update the epoch number correctly
-     * @throws SQLException
+     * Iterate over push queue, in order of insertion
+     *
+     * Do not use outside of SyncStatusSynchronizer
      */
-    void removeBootstrapSOID_(SOID soid, Trans t) throws SQLException;
+    public static class ModifiedObject {
+        // the index of the row in the database. used for paging
+        public final long _idx;
 
-    void deleteBootstrapSOIDsForStore_(SIndex sidx, Trans t) throws SQLException;
+        // the identifier of the subject of the activity
+        public final SOID _soid;
+
+        public ModifiedObject(long idx, SOID soid) {
+            _idx = idx;
+            _soid = soid;
+        }
+    }
+    /**
+     * Return all object IDs with activities more recent than {@code from}.
+     * @param from set to Long.MAX_VALUE to return all the activities
+     */
+    IDBIterator<ModifiedObject> getModifiedObjects_(long from) throws SQLException;
+
+    /**
+     * Add an SOID to the push queue (i.e. schedule sending a version hash)
+     *
+     * Do not use outside of SyncStatusSynchronizer
+     */
+    void addToModifiedObjects_(SOID soid, Trans t) throws SQLException;
+
+    /**
+     * Remove all push queue entries up to given index (including)
+     *
+     * Do not use outside of SyncStatusSynchronizer
+     */
+    void removeModifiedObjects_(long idx, Trans t) throws SQLException;
+
+    void deleteModifiedObjectsForStore_(SIndex sidx, Trans t) throws SQLException;
 }

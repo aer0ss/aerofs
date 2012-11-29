@@ -16,7 +16,6 @@ import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.id.UniqueID;
-import com.google.common.collect.Lists;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -38,7 +37,6 @@ import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
-import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.DID;
@@ -172,7 +170,7 @@ public class TestLocalSyncStatus extends AbstractTest
     public void shouldUpdatePullEpoch() throws SQLException
     {
         Assert.assertEquals(0, lsync.getPullEpoch_());
-        lsync.setPullEpoch_(42, t);
+        ssdb.setPullEpoch_(42, t);
         Assert.assertEquals(42, lsync.getPullEpoch_());
     }
 
@@ -180,42 +178,7 @@ public class TestLocalSyncStatus extends AbstractTest
     public void shouldUpdatePushEpoch() throws SQLException
     {
         Assert.assertEquals(0, lsync.getPushEpoch_());
-        lsync.setPushEpoch_(42, t);
+        ssdb.setPushEpoch_(42, t);
         Assert.assertEquals(42, lsync.getPushEpoch_());
-    }
-
-    private void addBootstrapSOIDs(SOID... soids) throws SQLException
-    {
-        SyncStatusDatabase.addBootstrapSOIDs(dbcw.getConnection(),
-                Lists.newArrayList(soids));
-    }
-
-    private void assertBootstrapSeq(SOID... expected) throws SQLException
-    {
-        IDBIterator<SOID> it = lsync.getBootstrapSOIDs_();
-        try {
-            for (SOID soid : expected) {
-                Assert.assertTrue(it.next_());
-                Assert.assertEquals(soid, it.get_());
-            }
-            Assert.assertTrue(!it.next_());
-        } finally {
-            it.close_();
-        }
-    }
-
-    @Test
-    public void shouldListAndRemoveBootstrapSOIDs() throws SQLException
-    {
-        assertBootstrapSeq();
-        addBootstrapSOIDs(o1, o2, o3);
-
-        assertBootstrapSeq(o1, o2, o3);
-        lsync.removeBootsrapSOID_(o1, t);
-        assertBootstrapSeq(o2, o3);
-        lsync.removeBootsrapSOID_(o2, t);
-        assertBootstrapSeq(o3);
-        lsync.removeBootsrapSOID_(o3, t);
-        assertBootstrapSeq();
     }
 }

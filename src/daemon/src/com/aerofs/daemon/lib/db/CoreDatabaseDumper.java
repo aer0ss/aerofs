@@ -110,7 +110,7 @@ public class CoreDatabaseDumper extends AbstractDatabase
         ps.println();
         dumpAL_(ps, formal);
         ps.println();
-        dumpSyncStatBootstrap_(ps, formal);
+        dumpSyncStatPushQueue_(ps, formal);
         ps.println();
     }
 
@@ -213,16 +213,16 @@ public class CoreDatabaseDumper extends AbstractDatabase
         }
     }
 
-    public void dumpSyncStatBootstrap_(PrintStream ps, boolean formal) throws SQLException
+    public void dumpSyncStatPushQueue_(PrintStream ps, boolean formal) throws SQLException
     {
         StringBuilder sbNullFID = new StringBuilder("null");
         for (int i = 0; i < _dr.getFIDLength() * 2 - 4; i++) sbNullFID.append(' ');
 
         ResultSet rs = c().createStatement().executeQuery(
-                "select " + C_SSBS_SIDX + "," + C_SSBS_OID + " from " + T_SSBS +
-                        " order by " + C_SSBS_SIDX + ", " + C_SSBS_OID);
-        ps.println("================== " + T_SSBS + " =====================");
-        ps.println(C_SSBS_SIDX + "\t" + C_SSBS_OID);
+                "select " + C_SSPQ_SIDX + "," + C_SSPQ_OID + " from " + T_SSPQ +
+                        " order by " + C_SSPQ_IDX);
+        ps.println("================== " + T_SSPQ + " =====================");
+        ps.println(C_SSPQ_SIDX + "\t" + C_SSPQ_OID);
         ps.println("------------------------------------------");
 
         while (rs.next()) {
