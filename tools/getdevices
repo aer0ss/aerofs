@@ -1,0 +1,4 @@
+#!/bin/bash -u -e
+
+echo "getting devices via sp..."
+ssh sp.aerofs.com "getdev $@"

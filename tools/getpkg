@@ -29,7 +29,7 @@ esac
 
 LINUX_PKG_NAME=aerofs-installer.deb
 WIN_PKG_NAME=AeroFSInstall.exe
-MAC_PKG_NAME=AeroFSInstaller.dmg
+MAC_PKG_NAME=AeroFSInstall.dmg
 
 case "$2" in
 LINUX) URL="$URL$LINUX_PKG_NAME"

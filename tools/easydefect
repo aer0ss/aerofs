@@ -1,0 +1,23 @@
+#!/bin/bash -u -e
+# This script retrives a defect and retraces it; it infers what the version number should be
+
+if [ $# -ne 1 ]; then
+    echo "usage: $0 [defect #]"
+    echo
+    echo "example: $0 370499"
+    exit 1
+fi
+
+echo "inferring version number via sp..."
+DEFECT="$1"
+VER=$( ssh sp.aerofs.com "getver $DEFECT" )
+
+if [ x"$VER" == "x" ]; then
+    echo "no version for defect!"
+    exit 1
+else
+    echo "defect has client version $VER"
+fi
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+"$SCRIPT_DIR"/getdefects $VER $DEFECT
