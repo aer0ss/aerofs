@@ -125,11 +125,7 @@ public class SQLThreadLocalTransaction
     public void cleanUp()
             throws SQLException
     {
-        if (isInTransaction()) {
-            rollback();
-
-            // Still in a transaction - did you forget to call commit?
-            assert false;
-        }
+        // Still in a transaction - did you forget to call commit?
+        assert !isInTransaction();
     }
 }
