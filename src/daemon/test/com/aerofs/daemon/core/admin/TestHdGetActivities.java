@@ -16,6 +16,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.Set;
 
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.lib.id.UserID;
@@ -68,7 +69,7 @@ public class TestHdGetActivities extends AbstractTest
     @Mock TransManager tm;
     @Mock Trans t;
     @Mock UserAndDeviceNameDatabase udndb;
-    @Mock SyncStatusSynchronizer sync;
+    @Mock NativeVersionControl nvc;
 
     HdGetActivities hd;
 
@@ -105,7 +106,7 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(CREATION_VALUE, new Path("a"), null, did1, did2, did3);
         addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b"), did1, did2, did3);
 
-        al = new ActivityLog(ds, aldb);
+        al = new ActivityLog(ds, nvc, aldb);
         UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tm, d2u, udndb, factSP);
 
         hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID);

@@ -95,9 +95,10 @@ public class ActivityLog implements IDirectoryServiceListener, IVersionControlLi
     private IActivityLogDatabase _aldb;
 
     @Inject
-    public ActivityLog(DirectoryService ds, IActivityLogDatabase aldb)
+    public ActivityLog(DirectoryService ds, NativeVersionControl nvc, IActivityLogDatabase aldb)
     {
         ds.addListener_(this);
+        nvc.addListener_(this);
         _aldb = aldb;
     }
 
