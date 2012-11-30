@@ -284,7 +284,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                         l.info("aliased " + soid);
                         assert _ds.hasAliasedOA_(soid);
                     } else {
-                        l.warn("delete " + soid + " " + ObfuscatingFormatters.obfuscatePath(
+                        l.info("delete " + soid + " " + ObfuscatingFormatters.obfuscatePath(
                                 _ds.getOA_(soid).name()));
                         _od.delete_(soid, PhysicalOp.MAP, null, t);
                         deletedSOIDs.add(soid);

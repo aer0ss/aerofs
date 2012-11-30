@@ -108,6 +108,10 @@ public class VersionUpdater
         }
 
         _updated.add(k);
+        // TODO (DF) : This doesn't need to happen unless the transaction commits, which
+        // means this should probably be a transaction commit listener or refactored down into
+        // VersionAssistant.  There's no need to re-announce your latest tick if you failed to
+        // download something.
         _dsNewUpdateMessage.schedule_();
     }
 }

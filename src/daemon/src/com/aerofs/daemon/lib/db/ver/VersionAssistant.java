@@ -74,6 +74,11 @@ public class VersionAssistant extends AbstractTransListener
     public void localVersionAdded_(SOCID socid, Version v)
     {
         assert !_committed;
+        // There's a safe ordering and an unsafe ordering here.
+        // It's safe to update an object in a store, then delete the store,
+        // but it's not safe to delete the store and then add an object under it.
+        // This is why we make this assertion early instead of at commit time.
+        assertSidxNotContainedInDeletedStores(socid.sidx());
         _changed.add(socid);
         _addedLocal.add(socid.soid());
     }
@@ -89,8 +94,8 @@ public class VersionAssistant extends AbstractTransListener
     }
 
     /**
-     * For debugging only: stores should not be deleted in same transaction
-     * as versions are modified
+     * For debugging only: stores should not be deleted in the same transaction
+     * as versions on objects within that store are modified
      */
     public void storeDeleted_(SIndex sidx)
     {
@@ -123,28 +128,31 @@ public class VersionAssistant extends AbstractTransListener
         // _deletedPermanently must be a subset of _changed.
         assert _changed.containsAll(_deletedPermanently);
         for (SOCID socid : _deletedPermanently) {
-            assertSidxNotContainedInDeletedStores(socid.sidx());
+            assertSocidVersionIsZeroOrNotUnderDeletedStore(socid);
             _nvdb.deleteMaxTicks_(socid, t);
             _ivdb.deleteImmigrantTicks_(socid, t);
         }
 
         for (SOCID socid : _changed) {
-            assertSidxNotContainedInDeletedStores(socid.sidx());
+            assertSocidVersionIsZeroOrNotUnderDeletedStore(socid);
             _nvdb.updateMaxTicks_(socid, t);
         }
 
         for (SOID soid : _addedLocal) {
-            assertSidxNotContainedInDeletedStores(soid.sidx());
-            // s shouldn't disappear within the transaction where the soid is added
-            Store s = _sidx2s.get_(soid.sidx());
-            s.senderFilters().objectUpdated_(soid.oid(), t);
+            // It's possible that we added a new object locally, then went and deleted the
+            // containing store.  For such stores, we needn't dispatch objectUpdated events on
+            // commit, since we no longer track that store anyway.
+            // There's an assertion above to make sure the named events happen in the safe order.
+            Store s = _sidx2s.getNullable_(soid.sidx());
+            if (s != null) {
+                s.senderFilters().objectUpdated_(soid.oid(), t);
+            }
         }
     }
 
     /**
      * Due to complexity of deleting vs. backing up versions, no version
-     * should be modified/added/deleted in the same transaction as its
-     * container store is deleted.
+     * should be modified/added/deleted after its container store is deleted.
      * Specifically, if a version is updated *after* its store is deleted
      * the version will not be deleted from the correct table, and it will
      * correspondingly not be backed up.  This would leave the DB in a somewhat
@@ -154,5 +162,19 @@ public class VersionAssistant extends AbstractTransListener
     private void assertSidxNotContainedInDeletedStores(SIndex sidx)
     {
         assert !(_deletedStores.contains(sidx));
+    }
+
+    /**
+     * It's possible to update a version in the same transaction as its
+     * object's store is deleted.  We just need to make sure that the object's
+     * version was deleted correctly.
+     */
+    private void assertSocidVersionIsZeroOrNotUnderDeletedStore(SOCID socid)
+            throws SQLException
+    {
+        if (_deletedStores.contains(socid.sidx())) {
+            Version v = _nvdb.getAllVersions_(socid);
+            assert v.isZero_() : socid + " " + v;
+        }
     }
 }
