@@ -178,7 +178,6 @@ public class UserDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
-
     public void setLevel(UserID userId, AuthorizationLevel authLevel)
             throws SQLException
     {
@@ -187,6 +186,20 @@ public class UserDatabase extends AbstractSQLDatabase
 
         ps.setInt(1, authLevel.ordinal());
         ps.setString(2, userId.toString());
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    public void setName(UserID userId, FullName fullName)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=?", C_USER_FIRST_NAME, C_USER_LAST_NAME));
+
+        // TODO (WW) instead of doing trim here, normalize the FullName at entry points.
+        // See UserID.fromInternal/fromExternal
+        ps.setString(1, fullName._first.trim());
+        ps.setString(2, fullName._last.trim());
+        ps.setString(3, userId.toString());
         Util.verify(ps.executeUpdate() == 1);
     }
 }

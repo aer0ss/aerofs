@@ -72,10 +72,11 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
+    // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setName(OrgID orgID, String name)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_ORG, C_USER_ID + "=?", C_ORG_NAME));
+        PreparedStatement ps = prepareStatement(updateWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
 
         ps.setInt(1, orgID.getInt());
         ps.setString(2, name);

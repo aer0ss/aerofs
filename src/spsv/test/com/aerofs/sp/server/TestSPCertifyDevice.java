@@ -11,9 +11,12 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
+import org.mockito.Mock;
+
 import java.util.Set;
 import static org.junit.Assert.assertTrue;
 
@@ -22,6 +25,10 @@ import static org.junit.Assert.assertTrue;
  */
 public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
 {
+    // Add inject to a second certificate other than the one mocked in
+    // AbstractSPCertificateBasedTest
+    @Mock Certificate certificate2;
+
     /**
      * Test that the certificate is successfully created when all params supplied are correct.
      */

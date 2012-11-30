@@ -8,7 +8,6 @@ import java.util.TimeZone;
 
 import com.aerofs.lib.S;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -18,7 +17,6 @@ import java.util.Calendar;
 import com.aerofs.lib.db.DBUtil;
 
 import com.aerofs.lib.acl.SubjectRolePair;
-import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -31,8 +29,6 @@ import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.server.lib.organization.IOrganizationDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -49,7 +45,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Date;
 
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
 import static com.aerofs.lib.db.DBUtil.insertOnDuplicateUpdate;
@@ -61,7 +56,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class SPDatabase
-       extends AbstractSQLDatabase
+        extends AbstractSQLDatabase
         implements IOrganizationDatabase, ISharedFolderDatabase, IEmailSubscriptionDatabase
 {
     private final static Logger l = Util.l(SPDatabase.class);
@@ -230,19 +225,6 @@ public class SPDatabase
         ps.executeUpdate();
     }
 
-    public void setUserName(UserID userId, String firstName, String lastName)
-            throws SQLException
-    {
-        PreparedStatement psSUN = prepareStatement("update " + T_USER +
-                " set " + C_USER_FIRST_NAME + "=?, " + C_USER_LAST_NAME + "=? where " + C_USER_ID +
-                "=?");
-
-        psSUN.setString(1, firstName.trim());
-        psSUN.setString(2, lastName.trim());
-        psSUN.setString(3, userId.toString());
-        Util.verify(psSUN.executeUpdate() == 1);
-    }
-
     public void addPasswordResetToken(UserID userId, String token)
         throws SQLException
     {
@@ -329,6 +311,7 @@ public class SPDatabase
     }
 
     /**
+     * TODO (WW) refactor this method. move it to DeviceDatabase
      * Get the device info for a given device ID.
      *
      * Note: we're not using the getDevice() method here because it does not include the first and
@@ -488,22 +471,6 @@ public class SPDatabase
         }
 
         return result;
-    }
-
-    public void setDeviceInfo(DID did, String deviceName)
-            throws SQLException, ExAlreadyExist
-    {
-        try {
-            PreparedStatement psSDI = prepareStatement("update " + T_DEVICE +
-                    " set " + C_DEVICE_NAME + "=? where " + C_DEVICE_ID + "=?");
-
-            psSDI.setString(1, deviceName.trim());
-            psSDI.setString(2, did.toStringFormal());
-            Util.verify(psSDI.executeUpdate() == 1);
-        } catch (SQLException e) {
-            throwOnConstraintViolation(e);
-            throw e;
-        }
     }
 
     public void addTargetedSignupCode(String code, UserID from, UserID to, OrgID orgId, long time)
@@ -709,209 +676,6 @@ public class SPDatabase
 
         // update returns 0 when name hasn't changed, 1 for insert, and 2 for update in place
         Util.verify(psSetFolderName.executeUpdate() <= 2);
-    }
-
-    // TODO (WW) use the Device class instead
-    public static class DeviceRow
-    {
-        public final DID _did;
-        public final String _name;
-
-        // User ID of the device owner.
-        public final UserID _ownerID;
-
-        public DeviceRow(DID did, String name, UserID ownerID)
-        {
-            _did = did;
-            _ownerID = ownerID;
-            _name = name;
-        }
-    }
-
-    /**
-     * @return null if the device is not found
-     */
-    public @Nullable DeviceRow getDevice(DID did)
-            throws SQLException
-    {
-        PreparedStatement psGetDeviceUser = prepareStatement("select " +
-                C_DEVICE_NAME + "," + C_DEVICE_OWNER_ID + " from " + T_DEVICE + " where " +
-                C_DEVICE_ID + " = ?");
-
-        psGetDeviceUser.setString(1, did.toStringFormal());
-        ResultSet rs = psGetDeviceUser.executeQuery();
-        try {
-            if (rs.next()) {
-                return new DeviceRow(did, rs.getString(1), UserID.fromInternal(rs.getString(2)));
-            } else {
-                return null;
-            }
-        } finally {
-            rs.close();
-        }
-    }
-
-
-
-    public void addDevice(DeviceRow dr)
-            throws SQLException, ExAlreadyExist
-    {
-        try {
-            PreparedStatement psAddDev = prepareStatement("insert into " + T_DEVICE
-                    + "(" + C_DEVICE_ID + "," + C_DEVICE_NAME + "," + C_DEVICE_OWNER_ID + ")" +
-                    " values (?,?,?)");
-            psAddDev.setString(1, dr._did.toStringFormal());
-            psAddDev.setString(2, dr._name);
-            psAddDev.setString(3, dr._ownerID.toString());
-            psAddDev.executeUpdate();
-        } catch (SQLException e) {
-            if (isConstraintViolation(e) && e.getMessage().contains(CO_DEVICE_NAME_OWNER)) {
-                throw new ExDeviceNameAlreadyExist();
-            }
-            throw e;
-        }
-    }
-
-    /**
-     * Add a certificate row to the certificate table.
-     *
-     * @param serial the serial number of this new certificate.
-     * @param did the device which owns this certificate.
-     * @param expireTs the date (in the future) at which this certificate expires.
-     */
-    public void addCertificate(long serial, DID did, Date expireTs)
-            throws SQLException, ExAlreadyExist
-    {
-        try {
-            PreparedStatement psAddCert = prepareStatement("insert into " + T_CERT +
-                    "(" + C_CERT_SERIAL + "," + C_CERT_DEVICE_ID + "," + C_CERT_EXPIRE_TS +
-                    ") values (?,?,?)");
-
-            psAddCert.setString(1, String.valueOf(serial));
-            psAddCert.setString(2, did.toStringFormal());
-            psAddCert.setTimestamp(3, new Timestamp(expireTs.getTime()));
-            psAddCert.executeUpdate();
-        } catch (SQLException e) {
-            throwOnConstraintViolation(e);
-            throw e;
-        }
-    }
-
-    /**
-     * Revoke the certificates belonging to a single device.
-     *
-     * Important note: this should be called within a transaction!
-     *
-     * @param did the device whose certificates we are going to revoke.
-     */
-    public ImmutableList<Long> revokeDeviceCertificate(final DID did)
-            throws SQLException
-    {
-        // Find the affected serial in the certificate table.
-        PreparedStatement psRevokeDeviceCertificate = prepareStatement("select " +
-                C_CERT_SERIAL + " from " + T_CERT + " where " + C_CERT_DEVICE_ID +
-                " = ? and " + C_CERT_REVOKE_TS + " = 0");
-
-        psRevokeDeviceCertificate.setString(1, did.toStringFormal());
-
-        ResultSet rs = psRevokeDeviceCertificate.executeQuery();
-        try {
-            Builder<Long> builder = ImmutableList.builder();
-
-            // Sigh... result set does not have a size member.
-            int count = 0;
-            while (rs.next()) {
-                builder.add(rs.getLong(1));
-                count++;
-            }
-
-            // Verify that indeed we only have one device cert.
-            assert count == 0 || count == 1 : ("too many device certs: " + count);
-
-            ImmutableList<Long> serials = builder.build();
-            revokeCertificatesBySerials(serials);
-            return serials;
-        } finally {
-            rs.close();
-        }
-    }
-
-    /**
-     * Revoke all certificates belonging to user.
-     *
-     * Important note: this should be called within a transaction!
-     *
-     * @param userId the user whose certificates we are going to revoke.
-     */
-    public ImmutableList<Long> revokeUserCertificates(UserID userId)
-            throws SQLException
-    {
-        // Find all unrevoked serials for the device.
-        PreparedStatement ps = prepareStatement("select " +
-                C_CERT_SERIAL + " from " + T_CERT + " " + "join " + T_DEVICE + " on " +
-                T_CERT + "." + C_CERT_DEVICE_ID + " = " + T_DEVICE + "." + C_DEVICE_ID +
-                " where " + T_DEVICE + "." + C_DEVICE_OWNER_ID + " = ? and " +
-                C_CERT_REVOKE_TS + " = 0");
-
-        ps.setString(1, userId.toString());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            Builder<Long> builder = ImmutableList.builder();
-
-            while (rs.next()) {
-                builder.add(rs.getLong(1));
-            }
-
-            ImmutableList<Long> serials = builder.build();
-            revokeCertificatesBySerials(serials);
-
-            return serials;
-        } finally {
-            rs.close();
-        }
-    }
-
-    private void revokeCertificatesBySerials(ImmutableList<Long> serials)
-            throws SQLException
-    {
-        // Update the revoke timestamp in the certificate table.
-        PreparedStatement psRevokeCertificatesBySerials = prepareStatement("update "
-                + T_CERT + " set " + C_CERT_REVOKE_TS + " = current_timestamp, " +
-                C_CERT_EXPIRE_TS + " = " + C_CERT_EXPIRE_TS + " where " + C_CERT_REVOKE_TS +
-                " = 0 and " + C_CERT_SERIAL + " = ?");
-
-        for (Long serial : serials) {
-            psRevokeCertificatesBySerials.setLong(1, serial);
-            psRevokeCertificatesBySerials.addBatch();
-        }
-
-        executeBatchWarn(psRevokeCertificatesBySerials, serials.size(), 1);
-    }
-
-    /**
-     * Get a a list of revoked certificate serial numbers. The returned certificates have an
-     * expiry date that is in the future.
-     *
-     * @return list of revoked certificates.
-     */
-    public ImmutableList<Long> getCRL()
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement("select " + C_CERT_SERIAL +
-                " from " + T_CERT + " where " + C_CERT_EXPIRE_TS + " > current_timestamp and " +
-                C_CERT_REVOKE_TS + " != 0");
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            Builder<Long> builder = ImmutableList.builder();
-            while (rs.next()) {
-                builder.add(rs.getLong(1));
-            }
-            return builder.build();
-        } finally {
-            rs.close();
-        }
     }
 
     public ACLReturn getACL(long userEpoch, UserID user)
@@ -1224,49 +988,6 @@ public class SPDatabase
         psMoveToOrg.setInt(1, orgId.getInt());
         psMoveToOrg.setString(2, userId.toString());
         Util.verify(psMoveToOrg.executeUpdate() == 1);
-    }
-
-    private class ExSizeMismatch extends Exception
-    {
-        private static final long serialVersionUID = -661574306785445012L;
-
-        ExSizeMismatch(String s) { super(s); }
-    }
-
-    /**
-     * Same as executeBatch but simply log a warning on size mismatches instead of throwing an
-     * ExSizeMismatch exception
-     */
-    private void executeBatchWarn(PreparedStatement ps, int batchSize,
-            int expectedRowsAffectedPerBatchEntry)
-            throws SQLException
-    {
-        try {
-            executeBatch(ps, batchSize, expectedRowsAffectedPerBatchEntry);
-        } catch (ExSizeMismatch e) {
-            l.warn("Batch size mismatch", e);
-        }
-    }
-
-    /**
-     * Execute a batch DB update and check for size mismatch in the result
-     */
-    private void executeBatch(PreparedStatement ps, int batchSize,
-            int expectedRowsAffectedPerBatchEntry)
-            throws SQLException, ExSizeMismatch
-    {
-        int[] batchUpdates = ps.executeBatch();
-        if (batchUpdates.length != batchSize) {
-            throw new ExSizeMismatch("mismatch in batch size exp:" + batchSize + " act:"
-                    + batchUpdates.length);
-        }
-
-        for (int rowsPerBatchEntry : batchUpdates) {
-            if (rowsPerBatchEntry != expectedRowsAffectedPerBatchEntry) {
-                throw new ExSizeMismatch("unexpected number of affected rows " +
-                    "exp:" + expectedRowsAffectedPerBatchEntry + " act:" + rowsPerBatchEntry);
-            }
-        }
     }
 
     @Override

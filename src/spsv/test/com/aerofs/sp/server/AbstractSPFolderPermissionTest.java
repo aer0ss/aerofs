@@ -14,7 +14,7 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import java.util.Collections;
 import java.util.List;
 
-public class AbstractSPFolderPermissionTest extends AbstractSPUserBasedTest
+public class AbstractSPFolderPermissionTest extends AbstractSPServiceTest
 {
     protected static final SID TEST_SID_1 = new SID(UniqueID.generate());
     protected static final SID TEST_SID_2 = new SID(UniqueID.generate());

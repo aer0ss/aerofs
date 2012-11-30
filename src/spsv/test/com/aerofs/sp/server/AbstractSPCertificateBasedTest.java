@@ -9,8 +9,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.cert.Certificate;
-import com.aerofs.sp.server.cert.ICertificateGenerator;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import org.junit.Before;
 import org.mockito.Mock;
 import sun.security.pkcs.PKCS10;
@@ -25,16 +24,10 @@ import static org.mockito.Mockito.when;
 /**
  * A class used to initialize tests related to certificates and certificate revocation.
  */
-public class AbstractSPCertificateBasedTest extends AbstractSPUserBasedTest
+public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
 {
-    // Inject a certificate generator.
-    @Mock ICertificateGenerator certificateGenerator;
-
     // And inject a certificate as well.
     @Mock Certificate certificate;
-
-    // Add inject to a second certificate.
-    @Mock Certificate certificate2;
 
     // Private static finals.
     protected static final String RETURNED_CERT = "returned_cert";
@@ -77,14 +70,14 @@ public class AbstractSPCertificateBasedTest extends AbstractSPUserBasedTest
     public void mockCertificate(Certificate cert) throws Exception
     {
         // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
-        when(certificateGenerator.createCertificate(any(UserID.class), any(DID.class),
+        when(certgen.createCertificate(any(UserID.class), any(DID.class),
                 any(PKCS10.class))).thenReturn(cert);
 
         when(cert.toString()).thenReturn(RETURNED_CERT);
         when(cert.getSerial()).thenReturn(++_lastSerialNumber);
 
         // Just need some time in the future - say, one year.
-        when(cert.getExpireTs()).thenReturn(new Timestamp(System.currentTimeMillis() +
+        when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() +
                 1000L*60L*60L*24L*365L));
     }
 

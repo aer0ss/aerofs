@@ -12,11 +12,14 @@ import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
@@ -52,16 +55,23 @@ public class SPServlet extends AeroServlet
 
     private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
     private final SQLThreadLocalTransaction _spTrans = new SQLThreadLocalTransaction(_conProvider);
+
     private final SPDatabase _db = new SPDatabase(_spTrans);
-    private final UserDatabase _udb = new UserDatabase(_spTrans);
     private final OrganizationDatabase _odb = new OrganizationDatabase(_spTrans);
+    private final UserDatabase _udb = new UserDatabase(_spTrans);
+    private final DeviceDatabase _ddb = new DeviceDatabase(_spTrans);
+    private final CertificateDatabase _certdb = new CertificateDatabase(_spTrans);
 
     private final ThreadLocalHttpSessionUser _sessionUserID = new ThreadLocalHttpSessionUser();
 
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
+    private final CertificateGenerator _certgen = new CertificateGenerator();
+
     private final Organization.Factory _factOrg = new Organization.Factory(_odb);
     private final User.Factory _factUser = new User.Factory(_udb, _factOrg);
+    private final Device.Factory _factDevice = new Device.Factory(_ddb, _factUser, _certdb,
+            _certgen);
 
     private final UserManagement _userManagement =
             new UserManagement(_db, _factUser, _factEmailer, new PasswordResetEmailer());
@@ -70,11 +80,9 @@ public class SPServlet extends AeroServlet
     private final SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(
             _db, _userManagement, _factEmailer, _factUser, _factOrg);
 
-    private final CertificateGenerator _certificateGenerator = new CertificateGenerator();
-
     private final SPService _service = new SPService(_db, _spTrans, _sessionUserID, _userManagement,
-            _organizationManagement, _sharedFolderManagement, _certificateGenerator, _factUser,
-            _factOrg);
+            _organizationManagement, _sharedFolderManagement, _factUser, _factOrg, _factDevice,
+            _certdb);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
@@ -86,7 +94,7 @@ public class SPServlet extends AeroServlet
         super.init(config);
         init_();
 
-        _certificateGenerator.setCAURL_(getServletContext().getInitParameter("ca_url"));
+        _certgen.setCAURL_(getServletContext().getInitParameter("ca_url"));
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
 
         String dbResourceName =

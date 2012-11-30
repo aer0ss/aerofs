@@ -326,6 +326,12 @@ service SPService {
     /**
      * Revoke the certificates belonging to one user. This will trigger a verkehr notification.
      *
+     * A. Why is this needed? Isn't it sufficient to manage users only by the ACL system?
+     * Q. Consider the case where a user quits AeroFS and we revoke all privileges via ACLs. Their
+     * certs will still be valid but it won't matter due to the fact that they lack ACLs.
+     * But then consider that the user could re-join aerofs with the same email address, then these
+     * certs will be valid again, which would be bad.
+     *
      * Required Auth Level: user
      */
     rpc RevokeUserCertificates(Void) returns(Void);

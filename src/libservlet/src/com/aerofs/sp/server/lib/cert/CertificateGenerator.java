@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.cert;
+package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.Util;

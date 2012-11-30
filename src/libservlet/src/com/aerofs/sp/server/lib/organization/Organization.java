@@ -9,6 +9,7 @@ import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.List;
@@ -29,7 +30,7 @@ public class Organization
             _db = db;
         }
 
-        public Organization create(OrgID id)
+        public Organization create(@Nonnull OrgID id)
         {
             return new Organization(_db, id);
         }
@@ -37,7 +38,7 @@ public class Organization
         /**
          * Add a new organization to the DB
          */
-        public Organization add(String name)
+        public Organization add(@Nonnull String name)
                 throws SQLException
         {
             while (true) {

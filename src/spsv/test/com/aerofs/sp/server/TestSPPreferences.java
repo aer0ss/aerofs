@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.sp.server.lib.SPDatabase.DeviceRow;
 import org.junit.Test;
 
 import com.aerofs.lib.id.DID;
@@ -16,7 +15,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * A class to test saving and fetching preferences
  */
-public class TestSPPreferences extends AbstractSPUserBasedTest
+public class TestSPPreferences extends AbstractSPServiceTest
 {
     private final DID _did = new DID(UniqueID.generate());
 
@@ -26,7 +25,7 @@ public class TestSPPreferences extends AbstractSPUserBasedTest
         // Set the session user before we try to set preferences.
         setSessionUser(TEST_USER_1);
         transaction.begin();
-        db.addDevice(new DeviceRow(_did, "name", TEST_USER_1));
+        ddb.addDevice(_did, TEST_USER_1, "name");
         transaction.commit();
         service.setPreferences("   first ", " last   ", _did.toPB(), "  device names  ").get();
         GetPreferencesReply reply = service.getPreferences(_did.toPB()).get();

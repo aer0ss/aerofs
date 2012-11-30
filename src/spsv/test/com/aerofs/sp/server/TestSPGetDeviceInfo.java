@@ -12,7 +12,6 @@ import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
-import com.aerofs.sp.server.lib.SPDatabase.DeviceRow;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A class to test the get device info SP call.
  */
-public class TestSPGetDeviceInfo extends AbstractSPUserBasedTest
+public class TestSPGetDeviceInfo extends AbstractSPServiceTest
 {
     private static final SID TEST_SID_1 = new SID(UniqueID.generate());
 
@@ -49,19 +48,19 @@ public class TestSPGetDeviceInfo extends AbstractSPUserBasedTest
         transaction.begin();
 
         // User 1
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A01", TEST_USER_1));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A02", TEST_USER_1));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device A03", TEST_USER_1));
+        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A01");
+        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A02");
+        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A03");
 
         // User 2
         _deviceB01 = new DID(UniqueID.generate());
-        db.addDevice(new DeviceRow(_deviceB01, "Device B01", TEST_USER_2));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device B02", TEST_USER_2));
+        ddb.addDevice(_deviceB01, TEST_USER_2, "Device B01");
+        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_2, "Device B02");
 
         // User 3
         _deviceC01 = new DID(UniqueID.generate());
-        db.addDevice(new DeviceRow(_deviceC01, "Device C01", TEST_USER_3));
-        db.addDevice(new DeviceRow(new DID(UniqueID.generate()), "Device C02", TEST_USER_3));
+        ddb.addDevice(_deviceC01, TEST_USER_3, "Device C01");
+        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_3, "Device C02");
 
         transaction.commit();
 
