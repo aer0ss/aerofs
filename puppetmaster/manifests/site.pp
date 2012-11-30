@@ -39,9 +39,13 @@ include common::logs
         key_server  => "pgp.mit.edu",
     }
 
-    #remove default user
+    # remove default user
     user { "ubuntu":
         ensure => absent
+    }
+
+    group { "admin":
+        ensure => present
     }
 
     # run apt-get update every time.
