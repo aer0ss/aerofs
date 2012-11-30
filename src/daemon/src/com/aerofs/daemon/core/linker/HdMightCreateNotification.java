@@ -9,6 +9,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExNotFound;
 import com.google.inject.Inject;
@@ -49,16 +50,21 @@ class HdMightCreateNotification implements IEventHandler<EIMightCreateNotificati
                  res = _mc.mightCreate_(new PathCombo(_cfgAbsRootAnchor, ev._absPath),
                          _globalBuffer, t);
                  t.commit_();
-            } catch (ExNotFound e) {
+            } catch (ExFileNotFound e) {
                 // We may get a not found exception if a file was created and deleted or moved very
                 // soon thereafter, and we didn't get around to checking it out until it was already
                 // gone. We simply ignore the error in this situation to avoid frequent rescans
                 // and thus cpu hogging when editors create and delete/move temporary files.
-                l.warn("ignored by MCN: " + Util.e(e, ExNotFound.class));
-                return;
-            } catch (ExFileNotFound e) {
-                // Same conditon as for ExNotFound exception
                 l.warn("ignored by MCN: " + Util.e(e, ExFileNotFound.class));
+                return;
+            } catch (ExFileNoPerm e) {
+                // We can also safely ignore files which we have no permission to access.
+                // It's not like we can sync them anyway.
+                l.warn("ignored by MCN: " + Util.e(e, ExFileNoPerm.class));
+                return;
+            } catch (ExNotFound e) {
+                // Same conditon as for ExFileNotFound exception
+                l.warn("ignored by MCN: " + Util.e(e, ExNotFound.class));
                 return;
             } finally {
                 t.end_();

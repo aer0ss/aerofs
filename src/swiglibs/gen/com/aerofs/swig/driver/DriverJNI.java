@@ -10,6 +10,7 @@ package com.aerofs.swig.driver;
 
 public class DriverJNI {
   public final static native int LDEBUG_get();
+  public final static native int DRIVER_FAILURE_WITH_ERRNO_get();
   public final static native int DRIVER_FAILURE_get();
   public final static native int DRIVER_SUCCESS_get();
   public final static native int GETFID_FILE_get();

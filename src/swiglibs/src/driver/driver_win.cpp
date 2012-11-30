@@ -63,7 +63,13 @@ static tstring getPrefixedPath(tstring path)
 {
     // Forces Unicode paths (with extended length).  See the notes on lpFileName at
     // http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx
-    return tstring(_T("\\\\?\\")) + path;
+    // Correctly handle UNC paths.
+    if (path.size() > 2 && path[0] == L'\\' && path[1] == L'\\') {
+        // This is a UNC path (like \\SERVERNAME\sharename\AeroFS )
+        // We want to return "\\?\UNC\SERVERNAME\sharename\AeroFS"
+        return tstring(_T("\\\\?\\UNC\\")) + path.substr(2);
+    }
+    return tstring( _T("\\\\?\\")) + path;
 }
 
 int getFid(JNIEnv * j, jstring jpath, void * buffer)
@@ -81,7 +87,20 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         0);
     if (h == INVALID_HANDLE_VALUE) {
         FWARN("1: " << GetLastError());
-        return DRIVER_FAILURE;
+        h = CreateFile(long_path.c_str(),
+            0,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            0,
+            OPEN_EXISTING,
+            0,
+            0);
+        if (h != INVALID_HANDLE_VALUE) {
+            FWARN("nobackup: success");
+            // And continue with the valid handle.
+        } else {
+            PACK_ERROR_IN(buffer, GetLastError());
+            return DRIVER_FAILURE_WITH_ERRNO;
+        }
     }
 
     BY_HANDLE_FILE_INFORMATION info;
@@ -90,7 +109,8 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
 
     if (!ret) {
         FWARN("2: " << GetLastError());
-        return DRIVER_FAILURE;
+        PACK_ERROR_IN(buffer, GetLastError());
+        return DRIVER_FAILURE_WITH_ERRNO;
     }
 
     if (buffer) {

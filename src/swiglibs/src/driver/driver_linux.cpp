@@ -8,6 +8,7 @@
 #include <cctype>
 #include <cstdio>
 #include <vector>
+#include <cstdlib>          /* for atoi() */
 #include <errno.h>
 
 namespace Driver {

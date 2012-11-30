@@ -75,7 +75,8 @@ int getFid(JNIEnv * j, jstring jpath, void * buffer)
         // change the value as a side-effect.
         int errsv = errno;
         FERROR(": " << errsv);
-        return DRIVER_FAILURE;
+        PACK_ERROR_IN(buffer, errsv);
+        return DRIVER_FAILURE_WITH_ERRNO;
     }
 
     mode_t type = st.st_mode & S_IFMT;
