@@ -88,10 +88,16 @@ public class SyncStatusSummary implements IAggregatedStatus
     {
         SyncStatusSummary o = (SyncStatusSummary)aggregated;
 
-        // aggregation accross children is always AND (take worst).
+        // Aggregation accross children is always AND (take worst).
+        // N.B. empty object A merged with non-empty object B results in A = B.
         if (!o.isEmpty()) {
-            _isPartiallySynced &= o._isPartiallySynced;
-            _allInSync &= o._allInSync;
+            if (isEmpty()) {
+                _isPartiallySynced = o.isPartiallySynced();
+                _allInSync = o.allInSync();
+            } else {
+                _isPartiallySynced &= o.isPartiallySynced();
+                _allInSync &= o.allInSync();
+            }
             _empty = false;
         }
     }
