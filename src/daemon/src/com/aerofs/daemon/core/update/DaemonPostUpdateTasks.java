@@ -43,6 +43,7 @@ public class DaemonPostUpdateTasks
             new DPUTResetSyncStatus(dbcw), // new run to account for aliasing related crash.
             new DPUTMorphStoreTables(dbcw),
             new DPUTMigrateS3Schema(dbcw, _cfgDB),
+            null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
             new DPUTBreakSyncStatActivityLogDependency(dbcw)
             // new tasks go here
         };
