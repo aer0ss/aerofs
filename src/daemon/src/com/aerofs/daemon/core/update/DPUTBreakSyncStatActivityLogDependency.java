@@ -4,12 +4,13 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
-import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import static com.aerofs.daemon.lib.db.CoreSchema.*;
@@ -34,22 +35,25 @@ public class DPUTBreakSyncStatActivityLogDependency implements IDaemonPostUpdate
     @Override
     public void run() throws Exception
     {
-        Connection c = _dbcw.getConnection();
-        assert !c.getAutoCommit();
-        Statement s = c.createStatement();
+        DPUTUtil.runDatabaseOperationAtomically_(_dbcw, new IDatabaseOperation()
+        {
+            @Override
+            public void run_(Statement s) throws SQLException
+            {
+                // drop obsolete table
+                if (_dbcw.tableExists(DPUTUpdateSchemaForSyncStatus.T_SSBS)) {
+                    s.executeUpdate("drop table " + DPUTUpdateSchemaForSyncStatus.T_SSBS);
+                }
 
-        try {
-            // drop obsolete table
-            s.executeUpdate("drop table " + DPUTUpdateSchemaForSyncStatus.T_SSBS);
+                if (!_dbcw.tableExists(T_SSPQ)) {
+                    // create new table
+                    CoreSchema.createSyncStatusPushQueueTable(s, _dbcw);
 
-            // create new table
-            CoreSchema.createSyncStatusPushQueueTable(s, _dbcw);
-
-            // re-send version hashes for all non-expelled objects
-            SyncStatusDatabase.markAllAdmittedObjectsAsModified(c);
-            s.executeUpdate("update " + T_EPOCH + " set " + C_EPOCH_SYNC_PUSH + "=0");
-        } finally {
-            s.close();
-        }
+                    // re-send version hashes for all non-expelled objects
+                    SyncStatusDatabase.markAllAdmittedObjectsAsModified(_dbcw.getConnection());
+                    s.executeUpdate("update " + T_EPOCH + " set " + C_EPOCH_SYNC_PUSH + "=0");
+                }
+            }
+        });
     }
 }
