@@ -1,7 +1,6 @@
 package com.aerofs.gui.shellext;
 
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBPath;
@@ -141,10 +140,9 @@ public class ShellextService
     private void greeting(GreetingCall call)
     {
         if (call.getProtocolVersion() != PROTOCOL_VERSION) {
-            ExProtocolError e = new ExProtocolError("Trying to communicate with a different " +
+            l.warn("Trying to communicate with a different " +
                     "version of the shell extension. GUI: " + PROTOCOL_VERSION + " ShellExt: " +
                     call.getProtocolVersion());
-            SVClient.logSendDefectAsync(true, e.getMessage(), e);
         }
 
         notifyRootAnchor();
