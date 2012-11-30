@@ -183,7 +183,7 @@ class SPService implements ISPService
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
-                .setDeviceName(device.exists() ? "" : device.getName())
+                .setDeviceName(device.exists() ? device.getName() : "")
                 .build();
 
         _transaction.commit();

@@ -94,13 +94,16 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
+    /**
+     * Trim the name before saving it to the db
+     */
     public void setName(DID did, String name)
             throws SQLException, ExDeviceNameAlreadyExist, ExNotFound
     {
         PreparedStatement ps = prepareStatement(
                 updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_NAME));
 
-        ps.setString(1, name);
+        ps.setString(1, name.trim());
         ps.setString(2, did.toStringFormal());
 
         try {
