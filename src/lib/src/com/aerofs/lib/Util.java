@@ -1,9 +1,11 @@
 package com.aerofs.lib;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
+import java.util.Stack;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1019,6 +1022,50 @@ public abstract class Util
             return path.substring(0, path.length() - 1);
         } else {
             return path;
+        }
+    }
+
+    public static File createNameMapFile()
+    {
+        try {
+            File f = File.createTempFile("name", "map");
+
+            BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+            writeFileNames(bw);
+            bw.close();
+
+            f.deleteOnExit();
+            return f;
+        } catch (IOException e) {
+            l.warn("create temp file failed: " + e(e));
+            return null;
+        }
+    }
+
+    /**
+     * DFS on the AeroFS folder and write every file name with its crc32 version.
+     */
+    private static void writeFileNames(BufferedWriter bw) throws IOException
+    {
+        Stack<String> stack = new Stack<String>();
+        stack.push(Cfg.absRootAnchor());
+
+        while (!stack.isEmpty()) {
+            String currentPath = stack.pop();
+            File currentFile = new File(currentPath);
+            String encodedName = Base64.encodeBytes(currentFile.getName().getBytes("UTF-8"));
+            bw.write(crc32(currentFile.getName())+ " " + encodedName + "\n");
+
+            String[] children = currentFile.list();
+            if (children == null) {
+                // currentFile is of type file.
+                continue;
+            }
+
+            for (String child : children) {
+                String childPath = join(currentPath, child);
+                stack.push(childPath);
+            }
         }
     }
 }

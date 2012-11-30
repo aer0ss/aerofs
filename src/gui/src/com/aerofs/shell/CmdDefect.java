@@ -48,7 +48,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
 
         try {
             SVClient.logSendDefectSync(false, message + "\n" + C.END_OF_DEFECT_MESSAGE, null,
-                    daemonStatus);
+                    daemonStatus, dumpDaemonStatus);
             UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
         } catch (Exception e) {
             l.warn("submit defect: " + Util.e(e));

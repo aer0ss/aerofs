@@ -37,6 +37,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,6 +47,7 @@ import java.util.zip.ZipOutputStream;
 import static com.aerofs.lib.C.LAST_SENT_DEFECT;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
+import static com.aerofs.lib.Util.createNameMapFile;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
 import static com.aerofs.lib.Util.join;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
@@ -174,6 +176,7 @@ public final class SVClient
                     true,
                     false,
                     true,
+                    false,
                     false);
         } catch (Exception e) {
             l.warn("can't dump err:", e);
@@ -275,7 +278,8 @@ public final class SVClient
                             true,
                             true,
                             false,
-                            true);
+                            true,
+                            false);
                 } catch (Throwable e) {
                     l.warn("can't send defect err:", e);
                 }
@@ -286,7 +290,8 @@ public final class SVClient
     /**
      * @param secret the string that should be hidden from the log files
      */
-    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause, @Nullable String secret)
+    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause,
+            @Nullable String secret, boolean sendFileNames)
             throws IOException, AbstractExWirable
     {
         doLogSendDefect(
@@ -300,13 +305,14 @@ public final class SVClient
                 true,
                 true,
                 false,
-                true);
+                true,
+                sendFileNames);
     }
 
     public static void logSendDefectSyncIgnoreErrors(boolean isAutoBug, String context, Throwable cause)
     {
         try {
-            logSendDefectSync(isAutoBug, context, cause, null);
+            logSendDefectSync(isAutoBug, context, cause, null, false);
         } catch (Throwable t) {
             l.error("can't send defect err:", t);
         }
@@ -323,6 +329,7 @@ public final class SVClient
                     Cfg.dumpDb(),
                     absRTRoot(),
                     null,
+                    false,
                     false,
                     false,
                     false,
@@ -346,6 +353,7 @@ public final class SVClient
                     null,
                     true,
                     true,
+                    false,
                     false,
                     false);
         } catch (Throwable t) {
@@ -377,7 +385,8 @@ public final class SVClient
             boolean verbose,
             final boolean sendLogs,
             final boolean sendDB,
-            final boolean sendHeapDumps)
+            final boolean sendHeapDumps,
+            final boolean sendFileNames)
             throws IOException, AbstractExWirable
     {
         l.debug("build defect");
@@ -506,7 +515,7 @@ public final class SVClient
             //
 
             // don't send defect log for SP or staging
-            if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps)) {
+            if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps || sendFileNames)) {
                 try {
                     // add log files
                     File[] files = new File(rtRoot).listFiles(
@@ -531,12 +540,22 @@ public final class SVClient
                         files = new File[0];
                     }
 
+                    if (sendFileNames) {
+                        // Send base64encoded(utf8 encoded <filename>)> crc32(<filename>) mapping.
+                        File nameMap = createNameMapFile();
+                        if (nameMap != null) {
+                            files = Arrays.copyOf(files, files.length + 1);
+                            files[files.length - 1] = nameMap;
+                        }
+                    }
+
                     l.debug("compressing " + files.length + " logs/db/hprof files");
 
                     OutputStream os = null;
                     try {
                         os = new FileOutputStream(defectFilesZip);
                         compress(files, os);
+
                     } finally {
                         if (os != null) os.close();
                     }

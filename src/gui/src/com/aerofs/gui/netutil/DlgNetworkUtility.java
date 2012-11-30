@@ -126,7 +126,7 @@ public class DlgNetworkUtility extends AeroFSJFaceDialog {
                 RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                 try {
                     SVClient.logSendDefectSync(false, "network diagnosis results",
-                            new Exception(), InternalDiagnostics.dumpFullDaemonStatus(ritual));
+                            new Exception(), InternalDiagnostics.dumpFullDaemonStatus(ritual), false);
                 } finally {
                     ritual.close();
                 }

@@ -576,7 +576,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> testLogSendDefect() throws Exception
     {
-        SVClient.logSendDefectSync(false, "testing sv defect reporting", null, null);
+        SVClient.logSendDefectSync(false, "testing sv defect reporting", null, null, false);
         return createVoidReply();
     }
 
