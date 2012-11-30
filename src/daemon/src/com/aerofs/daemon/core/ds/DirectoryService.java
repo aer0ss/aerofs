@@ -11,6 +11,7 @@ import java.util.Set;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
+import com.aerofs.daemon.core.phy.linked.LinkedStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
@@ -73,7 +74,15 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
             assert _fds != null;
             PreCommitFIDConsistencyVerifier verifier
                     = new PreCommitFIDConsistencyVerifier(DirectoryService.this, _fds);
-            t.addListener_(verifier);
+            // TODO (MJ) this is a hack to support non-linked storage, which doesn't want to
+            // verify consistency of FIDs. For non-linked storage, memory is wasted and cpu cycles
+            // burned unnecessarily, but at least the consistency will never be verified.
+            // * An alternate solution is to recognize that LinkedStorage cares about FID<->CA
+            // consistency, and cares about FIDs at all, whereas NonLinked Storage doesn't use
+            // FIDs. This suggests that we may want 2 (mostly similar) implementations of
+            // DirectoryService that are injected depending on the type of Storage. One would
+            // define setFID, etc. and would also run a consistency verifier. The other would not.
+            if (_ps instanceof LinkedStorage) t.addListener_(verifier);
             return verifier;
         }
     };
