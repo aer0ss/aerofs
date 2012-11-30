@@ -16,6 +16,13 @@ class servlet::syncstat(
         ]
     }
 
+    package{"aerofs-syncstat-tools":
+        ensure => latest,
+        require => [
+            Apt::Source["aerofs"]
+        ]
+    }
+
     class{"servlet::config::syncstat":
         mysql_sp_password       => $mysql_sp_password,
         mysql_endpoint          => $mysql_endpoint,

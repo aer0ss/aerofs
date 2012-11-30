@@ -17,6 +17,7 @@ PACKAGES= \
 	sp \
 	sv \
 	syncstat \
+	syncstat-tools \
 	verkehr \
 	vmhost \
 	web \
