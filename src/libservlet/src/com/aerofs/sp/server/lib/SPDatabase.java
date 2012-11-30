@@ -8,6 +8,7 @@ import java.util.TimeZone;
 
 import com.aerofs.lib.S;
 import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -47,7 +48,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
-import static com.aerofs.lib.db.DBUtil.insertOnDuplicateUpdate;
+import static com.aerofs.lib.db.DBUtil.insert;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.*;
@@ -516,24 +517,6 @@ public class SPDatabase
         }
     }
 
-    @Override
-    public void addShareFolderCode(String code, UserID from, UserID to, SID sid,
-            String folderName)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement("insert into " + T_FI
-                + " (" + C_FI_FIC + "," + C_FI_FROM + "," + C_FI_TO + "," + C_FI_SID + ","
-                + C_FI_FOLDER_NAME + ") " + "values (?,?,?,?,?)");
-
-        ps.setString(1, code);
-        ps.setString(2, from.toString());
-        ps.setString(3, to.toString());
-        ps.setBytes(4, sid.getBytes());
-        ps.setString(5, folderName);
-
-        ps.executeUpdate();
-    }
-
     public static class ResolveTargetedSignUpCodeResult
     {
         public UserID _userId;
@@ -566,36 +549,47 @@ public class SPDatabase
         }
     }
 
-    public static class FolderInvitation
+    @Override
+    public void removeFolderInvitation(String code) throws SQLException
     {
-        public final SID _sid;
-        public final String _folderName;
-        public final UserID _invitee;
+        PreparedStatement ps = prepareStatement(deleteWhere(T_FI, C_FI_FIC + "=?"));
+        ps.setString(1, code);
+        Util.verify(ps.executeUpdate() == 1);
+    }
 
-        private FolderInvitation(SID sid, String folderName, UserID invitee)
-        {
-            _sid = sid;
-            _folderName = folderName;
-            _invitee = invitee;
-        }
+    @Override
+    public void addFolderInvitation(UserID from, FolderInvitation invitation)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(insert(T_FI,
+                C_FI_FIC, C_FI_FROM, C_FI_TO, C_FI_SID, C_FI_FOLDER_NAME, C_FI_ROLE));
+
+        ps.setString(1, invitation._code);
+        ps.setString(2, from.toString());
+        ps.setString(3, invitation._invitee.toString());
+        ps.setBytes(4, invitation._sid.getBytes());
+        ps.setString(5, invitation._folderName);
+        ps.setInt(6, invitation._role.ordinal());
+
+        ps.executeUpdate();
     }
 
     /**
      * @param code the invitation code
      * @return null if not found
      */
-    public FolderInvitation getFolderInvitation(String code)
-            throws SQLException
+    @Override
+    public FolderInvitation getFolderInvitation(String code) throws SQLException
     {
-        PreparedStatement psGetFI = prepareStatement("select " + C_FI_SID + ", " +
-                C_FI_FOLDER_NAME + ", " + C_FI_TO + " from " + T_FI + " where " + C_FI_FIC + "=?");
+        PreparedStatement psGetFI = prepareStatement(
+                selectWhere(T_FI, C_FI_FIC + "=?", C_FI_SID, C_FI_FOLDER_NAME, C_FI_TO, C_FI_ROLE));
 
         psGetFI.setString(1, code);
         ResultSet rs = psGetFI.executeQuery();
         try {
             if (rs.next()) {
                 return new FolderInvitation(new SID(rs.getBytes(1)), rs.getString(2),
-                        UserID.fromInternal(rs.getString(3)));
+                        UserID.fromInternal(rs.getString(3)), Role.fromOrdinal(rs.getInt(4)), code);
             } else {
                 return null;
             }
@@ -604,12 +598,12 @@ public class SPDatabase
         }
     }
 
-    public List<FolderInvitation> listPendingFolderInvitations(UserID to)
-            throws SQLException
+    @Override
+    public List<FolderInvitation> listPendingFolderInvitations(UserID to) throws SQLException
     {
         PreparedStatement psListPFI = prepareStatement("select " + C_FI_FROM + ", "
-                + C_FI_FOLDER_NAME + ", " + C_FI_SID + " from " + T_FI + " where " + C_FI_TO +
-                " = ? group by " + C_FI_SID);
+                + C_FI_FOLDER_NAME + ", " + C_FI_SID + ", " + C_FI_ROLE + ", " + C_FI_FIC  +
+                " from " + T_FI + " where " + C_FI_TO + " = ? group by " + C_FI_SID);
 
         psListPFI.setString(1, to.toString());
         ResultSet rs = psListPFI.executeQuery();
@@ -619,7 +613,9 @@ public class SPDatabase
                 invitations.add(new FolderInvitation(
                         new SID(rs.getBytes(3)),
                         rs.getString(2),
-                        UserID.fromInternal(rs.getString(1))));
+                        UserID.fromInternal(rs.getString(1)),
+                        Role.fromOrdinal(rs.getInt(4)),
+                        rs.getString(5)));
             }
             return invitations;
         } finally {
@@ -632,9 +628,7 @@ public class SPDatabase
     public String getOnePendingFolderInvitationCode(UserID to)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                        DBUtil.selectWhere(T_TI, C_TI_TO + "=?",
-                                C_TI_TIC));
+        PreparedStatement ps = prepareStatement(selectWhere(T_TI, C_TI_TO + "=?", C_TI_TIC));
 
         ps.setString(1, to.toString());
         ResultSet rs = ps.executeQuery();
@@ -646,36 +640,33 @@ public class SPDatabase
         }
     }
 
-    /**
-     * Add the given sid to the shared folder table with a null name. No-op if the entry already
-     * exists.
-     */
     @Override
-    public void addSharedFolder(SID sid)
-           throws SQLException
+    public boolean exists(SID sid) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                insertOnDuplicateUpdate(T_SF, C_SF_ID + "=" + C_SF_ID, C_SF_ID));
+        PreparedStatement ps = prepareStatement(selectWhere(T_SF, C_SF_ID + "=?", C_SF_NAME));
 
         ps.setBytes(1, sid.getBytes());
-
-        // Update returns 0 on duplicate key and 1 on successful insert
-        Util.verify(ps.executeUpdate() < 2);
+        ResultSet rs = ps.executeQuery();
+        try {
+            return rs.next();
+        } finally {
+            rs.close();
+        }
     }
 
+    /**
+     * Add the given sid to the shared folder table
+     */
     @Override
-    public void setFolderName(SID sid, String folderName)
-            throws SQLException
+    public void addSharedFolder(SID sid, String name) throws SQLException
     {
-        PreparedStatement psSetFolderName = prepareStatement("insert into " + T_SF +
-                " (" + C_SF_ID + ", " + C_SF_NAME + ") values (?, ?) on duplicate key update " +
-                C_SF_NAME + "=values(" + C_SF_NAME + ")");
+        PreparedStatement ps = prepareStatement(insert(T_SF, C_SF_ID, C_SF_NAME));
 
-        psSetFolderName.setBytes(1, sid.getBytes());
-        psSetFolderName.setString(2, folderName);
+        ps.setBytes(1, sid.getBytes());
+        ps.setString(2, name);
 
-        // update returns 0 when name hasn't changed, 1 for insert, and 2 for update in place
-        Util.verify(psSetFolderName.executeUpdate() <= 2);
+        // Update returns 1 on successful insert
+        Util.verify(ps.executeUpdate() == 1);
     }
 
     public ACLReturn getACL(long userEpoch, UserID user)
@@ -780,43 +771,65 @@ public class SPDatabase
         return serverEpochs;
     }
 
-    @Override public void createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm
+    @Override
+    public void createACL(SID sid, Iterable<SubjectRolePair> pairs)
+            throws SQLException, ExAlreadyExist
     {
-        PreparedStatement psReplaceRole = prepareStatement("insert into " + T_AC +
-                " (" + C_AC_STORE_ID + "," + C_AC_USER_ID + "," + C_AC_ROLE + ") values (?, ?, ?) "
-                + "on duplicate key update " + C_AC_ROLE + "= values (" + C_AC_ROLE + ")");
+        PreparedStatement ps = prepareStatement(insert(T_AC,
+                C_AC_STORE_ID, C_AC_USER_ID, C_AC_ROLE));
 
+        int pairCount = 0;
         for (SubjectRolePair pair : pairs) {
-            psReplaceRole.setBytes(1, sid.getBytes());
-            psReplaceRole.setString(2, pair._subject.toString());
-            psReplaceRole.setInt(3, pair._role.ordinal());
-            psReplaceRole.addBatch();
+            ps.setBytes(1, sid.getBytes());
+            ps.setString(2, pair._subject.toString());
+            ps.setInt(3, pair._role.ordinal());
+            ps.addBatch();
+            ++pairCount;
         }
 
-        executeBatchWarn(psReplaceRole, pairs.size(), 1); // update the roles for all users
+        try {
+            // throw if any query's affected rows != 1, meaning ACL entry already exists
+            executeBatch(ps, pairCount, 1); // update the roles for all users
+        } catch (ExSizeMismatch e) {
+            /**
+             * We enforce a strict API distinction between ACL creation and ACL update
+             * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
+             * existing permissions and updateACL should not give access to new users (as it would
+             * leave the DB in an intermediate state where users have access to a folder but did not
+             * receive an email about it)
+             */
+            throw new ExAlreadyExist();
+        }
     }
 
     @Override
-    public void updateACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm
+    public void updateACL(SID sid, Iterable<SubjectRolePair> pairs)
+            throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
                 C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
 
+        int pairCount = 0;
         for (SubjectRolePair pair : pairs) {
             ps.setInt(1, pair._role.ordinal());
             ps.setBytes(2, sid.getBytes());
             ps.setString(3, pair._subject.toString());
             ps.addBatch();
+            ++pairCount;
         }
 
         try {
             // throw if any query's affected rows != 1, meaning ACL entry doesn't exist
-            executeBatch(ps, pairs.size(), 1); // update the roles for all users
+            executeBatch(ps, pairCount, 1); // update the roles for all users
         } catch (ExSizeMismatch e) {
-            // TODO (WW) What??
-            throw new ExNoPerm("not permitted to create new ACLs when updating ACLs");
+            /**
+             * We enforce a strict API distinction between ACL creation and ACL update
+             * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
+             * existing permissions and updateACL should not give access to new users (as it would
+             * leave the DB in an intermediate state where users have access to a folder but did not
+             * receive an email about it)
+             */
+            throw new ExNotFound();
         }
     }
 
@@ -908,7 +921,7 @@ public class SPDatabase
 
     @Override
     public void deleteACL(UserID userId, SID sid, Collection<UserID> subjects)
-            throws SQLException
+            throws ExNotFound, SQLException
     {
         PreparedStatement ps = prepareStatement(
                 deleteWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?"));
@@ -919,18 +932,51 @@ public class SPDatabase
             ps.addBatch();
         }
 
-        executeBatchWarn(ps, subjects.size(), 1);
+        try {
+            executeBatch(ps, subjects.size(), 1);
+        } catch (ExSizeMismatch e) {
+            throw new ExNotFound();
+        }
     }
 
     @Override
-    public void deleteACL(SID sid)
+    public void deleteSharedFolder(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
+        PreparedStatement ps;
 
+        // remove all ACLs
+        ps = prepareStatement(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
+        ps.setBytes(1, sid.getBytes());
+        Util.verify(ps.executeUpdate() > 0);
+
+        // remove all invitations
+        ps = prepareStatement(DBUtil.deleteWhere(T_FI, C_FI_SID + "=?"));
+        ps.setBytes(1, sid.getBytes());
+        Util.verify(ps.executeUpdate() > 0);
+
+        // remove shared folder
+        ps = prepareStatement(DBUtil.deleteWhere(T_SF, C_SF_ID + "=?"));
+        ps.setBytes(1, sid.getBytes());
+        Util.verify(ps.executeUpdate() > 0);
+    }
+
+    @Override
+    public @Nullable String getSharedFolderName(SID sid) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.selectWhere(T_SF, C_SF_ID + "=?", C_SF_NAME));
         ps.setBytes(1, sid.getBytes());
 
-        Util.verify(ps.executeUpdate() > 0);
+        ResultSet rs = ps.executeQuery();
+        try {
+            if (rs.next()) {
+                return rs.getString(1);
+            }
+            return null;
+        } finally {
+            rs.close();
+        }
     }
 
     @Override
@@ -955,7 +1001,7 @@ public class SPDatabase
     }
 
     @Override
-    public @Nullable Role getUserPermissionForStore(SID sid, UserID userId)
+    public @Nullable Role getUserRoleForStore(SID sid, UserID userId)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement("select " +

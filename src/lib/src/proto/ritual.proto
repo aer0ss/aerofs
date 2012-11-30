@@ -42,7 +42,7 @@ service RitualService {
     // the shared folder. If the folder is already shared, the method only adds the users specified
     // in the list. Roles of these users will be overwritten if they already exist.
     //
-    rpc ShareFolder(ShareFolderCall) returns(ShareFolderReply);
+    rpc ShareFolder(ShareFolderCall) returns(Void);
 
     // Unshare a shared folder and remove all the users from the folder. Nop if the folder is
     // already unshared.
@@ -226,14 +226,9 @@ message GetExcludedFoldersReply {
 }
 
 message ShareFolderCall {
-    required string user = 1;
-    required PBPath path = 2;
-    repeated PBSubjectRolePair subject_role = 3;
-    required string note = 4;
-}
-
-message ShareFolderReply {
-    required bytes share_id = 1;
+    required PBPath path = 1;
+    repeated PBSubjectRolePair subject_role = 2;
+    required string note = 3;
 }
 
 message UnshareFolderCall {
@@ -242,9 +237,7 @@ message UnshareFolderCall {
 }
 
 message JoinSharedFolderCall {
-    required string user = 1;
-    required bytes share_id = 2;
-    required PBPath path = 3;
+    required string code = 1;
 }
 
 message ListSharedFoldersReply {

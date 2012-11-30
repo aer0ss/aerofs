@@ -95,7 +95,7 @@ public class C
 
     // Make sure to update development.ini and production.ini in src/web and syncdet_test/lib/param.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 15;
+    public static final int SP_PROTOCOL_VERSION         = 16;
     public static final int SS_PROTOCOL_VERSION         = 5;
 
     public static final byte[] ROOT_SID_SALT       = new byte[]

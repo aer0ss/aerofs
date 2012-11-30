@@ -1,13 +1,10 @@
 package com.aerofs.gui.sharing;
 
-import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
-import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
@@ -15,7 +12,6 @@ import org.eclipse.swt.widgets.Shell;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
@@ -144,18 +140,17 @@ public class DlgJoinSharedFolder extends AeroFSDialog
             @Override
             public void run()
             {
-                Path path;
                 Object prog = UI.get().addProgress("Joining the folder", true);
                 try {
-                    SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
                     RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
                     try {
-                        path = UIUtil.joinSharedFolder(sp, ritual, ic);
+                        ritual.joinSharedFolder(ic);
                     } finally {
                         ritual.close();
                     }
 
-                    GUIUtil.launch(path.toAbsoluteString(Cfg.absRootAnchor()));
+                    // TODO: use Ritual notifications to open shared folders when joined
+                    //GUIUtil.launch(path.toAbsoluteString(Cfg.absRootAnchor()));
 
                 } catch (Exception e) {
                     Util.l(this).warn("join store thru dlg: " + Util.e(e));

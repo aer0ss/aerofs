@@ -4,8 +4,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.ui.UIUtil;
-
 
 public class CmdAccept implements IShellCommand<ShProgram>
 {
@@ -16,7 +14,7 @@ public class CmdAccept implements IShellCommand<ShProgram>
         if (cl.getArgs().length == 0) throw new ExBadArgs();
 
         for (String arg : cl.getArgs()) {
-            UIUtil.joinSharedFolder(s.d().getSPClient_(), s.d().getRitualClient_(), arg);
+            s.d().getRitualClient_().joinSharedFolder(arg);
         }
     }
 

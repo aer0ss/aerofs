@@ -12,8 +12,7 @@ INSERT INTO `sp_organization` (`o_id`, `o_name`)
 
 CREATE TABLE `sp_shared_folder` (
   `sf_id` BINARY(16) NOT NULL,
-  `sf_name` VARCHAR(255) CHARSET utf8 DEFAULT NULL,
-  -- todo: When sp.SetACL is moved into sp.ShareFolder, make sf_name NOT NULL
+  `sf_name` VARCHAR(255) CHARSET utf8 NOT NULL,
   INDEX sf_name_idx (`sf_name`),
   PRIMARY KEY (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -89,6 +88,7 @@ CREATE TABLE `sp_shared_folder_code` (
   `f_share_id` BINARY(16) NOT NULL,
   `f_folder_name` VARCHAR(255) CHARSET utf8 NOT NULL, -- important UTF8
   `f_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `f_role` TINYINT NOT NULL DEFAULT 1,  -- 1 is Role.EDITOR
   INDEX folder_to_idx (`f_to`),
   PRIMARY KEY (`f_code`),
   CONSTRAINT `f_from_foreign` FOREIGN KEY (`f_from`) REFERENCES `sp_user` (`u_id`),

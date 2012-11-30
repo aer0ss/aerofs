@@ -1,5 +1,6 @@
 package com.aerofs.sp.client;
 
+import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -29,6 +30,11 @@ public class SPBlockingClient extends SPServiceBlockingStub
         public SPBlockingClient create_(URL spURL, UserID user)
         {
             return new SPBlockingClient(new SPClientHandler(spURL), user);
+        }
+
+        public SPBlockingClient create_(UserID user)
+        {
+            return new SPBlockingClient(new SPClientHandler(SP.URL), user);
         }
     }
 

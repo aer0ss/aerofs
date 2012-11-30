@@ -5,16 +5,13 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.sp.server.lib.SPDatabase.UserDevice;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -22,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * A class to test whether the get interested devices call works as expected.
  */
-public class TestSPGetInterestedDevices extends AbstractSPServiceTest
+public class TestSPGetInterestedDevices extends AbstractSPFolderPermissionTest
 {
     private static final SID TEST_SID_1 = new SID(UniqueID.generate());
 
@@ -58,14 +55,8 @@ public class TestSPGetInterestedDevices extends AbstractSPServiceTest
 
         transaction.commit();
 
-        // User 1 shares with User 2, but not with User 3
-        ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
-
         setSessionUser(TEST_USER_1);
-        pair.add(new SubjectRolePair(TEST_USER_1, Role.OWNER).toPB());
-        pair.add(new SubjectRolePair(TEST_USER_2, Role.EDITOR).toPB());
-
-        service.shareFolder(TEST_SID_1.toString(), TEST_SID_1.toPB(), pair, "").get();
+        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
     }
 
     /**

@@ -2,9 +2,7 @@ package com.aerofs.daemon.core.fs;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -14,6 +12,8 @@ import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
+
+import static com.aerofs.daemon.core.phy.PhysicalOp.APPLY;
 import static com.aerofs.daemon.core.phy.PhysicalOp.MAP;
 import static com.aerofs.daemon.core.phy.PhysicalOp.NOP;
 
@@ -50,9 +50,12 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
+    private final static Logger l = Util.l(HdShareFolder.class);
+
     private final LocalACL _lacl;
     private final TC _tc;
     private final TransManager _tm;
@@ -86,6 +89,8 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     @Override
     protected void handleThrows_(EIShareFolder ev, Prio prio) throws Exception
     {
+        l.info("sharing: " + ev._path);
+
         OA oa = checkSanity_(ev._path);
 
         checkACL_(ev.user(), ev._path);
@@ -101,7 +106,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         } else {
             throw new ExNotDir();
         }
-
 
         //
         // IMPORTANT: the order of operations in the following code matters
@@ -130,26 +134,12 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         // while remote failures will prevent the system from being in a half-state
         //
 
-        shareFolderThroughSP_(ev._subject2role, ev._emailNote, ev.user(), ev._path.last(), sid,
-                alreadyShared);
+        callSP_(sid, ev._path.last(), SubjectRolePairs.mapToPB(ev._subject2role), ev._emailNote);
 
         if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
 
+        l.info("shared: " + ev._path + " -> " + sid.toStringFormal());
         ev.setResult_(sid);
-    }
-
-    private void shareFolderThroughSP_(Map<UserID, Role> subject2role, String emailNote,
-            UserID user, String folderName, SID sid, boolean alreadyShared) throws Exception
-    {
-        // always add the user as the owner
-        if (!alreadyShared) {
-            subject2role = new TreeMap<UserID, Role>(subject2role);
-            subject2role.put(user, Role.OWNER);
-        }
-
-        if (!subject2role.isEmpty()) {
-            callSP_(sid, folderName, SubjectRolePairs.mapToPB(subject2role), emailNote);
-        }
     }
 
     private OA checkSanity_(Path path)
@@ -181,20 +171,6 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _lacl.checkThrows_(user, pathParent, Role.OWNER);
     }
 
-    private void convertToSharedFolder_(Path path, OA oa, SID sid)
-            throws Exception
-    {
-        assert oa.isDir();
-
-        Trans t = _tm.begin_();
-        try {
-            converttoSharedFolderImpl_(oa.soid(), oa.parent(), sid, path, t);
-            t.commit_();
-        } finally {
-            t.end_();
-        }
-    }
-
     /**
      * Pseudo-pause and make a call to SP to share the folder
      */
@@ -214,10 +190,54 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         }
     }
 
+    private void convertToSharedFolder_(Path path, OA oa, SID sid)
+            throws Exception
+    {
+        assert oa.isDir();
+
+        SOID soid = oa.soid();
+
+        cleanupAnchorCreatedByAutoJoin_(soid.sidx(), sid);
+
+        Trans t = _tm.begin_();
+        try {
+            convertToSharedFolderImpl_(soid, oa.parent(), sid, path, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
+
+    /*
+     * As we release the core lock when making the SP call to join the shared folder it is
+     * possible that the new ACLs propagate before we regain the core lock. In this case
+     * we end up with an improperly named anchor associated with a superfluous physical
+     * directory. We need to fix this before we can proceed with the conversion.
+     *
+     * Due to some assertion enforced by VersionAssistant the deletion of this object may
+     * not take place in the transaction that does the actual migration.
+     */
+    private void cleanupAnchorCreatedByAutoJoin_(SIndex parentStore, SID sid) throws Exception
+    {
+        SOID anchor = new SOID(parentStore, SID.storeSID2anchorOID(sid));
+        OA oaAnchor = _ds.getOANullable_(anchor);
+        if (oaAnchor == null) return;
+
+        l.debug("cleanup auto-join " + sid + " " + oaAnchor.name());
+
+        Trans t = _tm.begin_();
+        try {
+            _od.delete_(anchor, APPLY, null, t);
+            t.commit_();
+        } finally {
+            t.end_();
+        }
+    }
+
     /**
      * Convert an existing folder into a store.
      */
-    private void converttoSharedFolderImpl_(SOID soid, OID oidParent, SID sid, Path path, Trans t)
+    private void convertToSharedFolderImpl_(SOID soid, OID oidParent, SID sid, Path path, Trans t)
             throws Exception
     {
         // Step 1: rename the folder into a temporary name, without incrementing its version.
@@ -229,8 +249,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _om.moveInSameStore_(soid, oidParent, pathTemp.last(), NOP, false, false, t);
 
         // Step 2: create the new store with a derived SID
-        SOID soidAnchor = new SOID(soid.sidx(), SID.storeSID2anchorOID(sid));
-        _oc.createMeta_(ANCHOR, soidAnchor, oidParent, path.last(), 0, MAP, true, true, t);
+        createNewStore(soid, oidParent, sid, path, t);
 
         // Step 3: migrate files
         SIndex sidxTo = _sid2sidx.get_(sid);
@@ -243,5 +262,24 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         // Step 4: delete the root folder
         _od.delete_(soid, NOP, sid, t);
+    }
+
+    private void createNewStore(SOID soid, OID oidParent, SID sid, Path path, final Trans t)
+            throws Exception
+    {
+        l.debug("new store: " + sid + " " + path);
+        SOID soidAnchor = new SOID(soid.sidx(), SID.storeSID2anchorOID(sid));
+
+        OA oaAnchor = _ds.getOANullable_(soidAnchor);
+        if (oaAnchor != null) {
+            // any conflicting anchor created by auto-join upon ACL update should have been cleaned
+            // before starting the conversion process
+            assert oaAnchor.isExpelled() : oaAnchor;
+            // move anchor to appropriate path (does not affect physical objects)
+            _om.moveInSameStore_(oaAnchor.soid(), oidParent, path.last(), MAP, false, true, t);
+        } else {
+            // create anchor, root and trash, ...
+            _oc.createMeta_(ANCHOR, soidAnchor, oidParent, path.last(), 0, MAP, true, true, t);
+        }
     }
 }

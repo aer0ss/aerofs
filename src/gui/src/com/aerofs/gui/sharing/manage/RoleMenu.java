@@ -122,7 +122,7 @@ public class RoleMenu
             String note = CompInviteUsers.getDefaultInvitationNote(_path.last(), fromPerson);
             RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
-                ritual.shareFolder(Cfg.user().toString(), _path.toPB(), Collections.singletonList(
+                ritual.shareFolder(_path.toPB(), Collections.singletonList(
                         new SubjectRolePair(_subject, _role).toPB()), note);
             } finally {
                 ritual.close();

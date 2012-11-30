@@ -9,7 +9,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.sp.client.SPClient;
@@ -69,6 +68,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
 
     public void showDialogIfNeeded()
     {
+        // TODO: go through Ritual, only the daemon should access SP...
         Futures.addCallback(_sp.listPendingFolderInvitations(),
                 new FutureCallback<ListPendingFolderInvitationsReply>()
                 {
@@ -229,7 +229,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         try {
             for (PBFolderInvitation inv : invitations) {
                 try {
-                    UIUtil.joinSharedFolder(ritual, new SID(inv.getShareId()), inv.getFolderName());
+                    ritual.joinSharedFolder(inv.getSharedFolderCode());
                 } catch (Exception e) {
                     Util.l(this).warn("join folder " + inv.getFolderName() + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "

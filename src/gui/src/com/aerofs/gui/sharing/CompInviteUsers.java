@@ -262,7 +262,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     for (UserID subject : subjects) {
                         srps.add(new SubjectRolePair(subject, Role.EDITOR).toPB());
                     }
-                    ritual.shareFolder(Cfg.user().toString(), pbpath, srps, note);
+                    ritual.shareFolder(pbpath, srps, note);
                 } finally {
                     ritual.close();
                 }

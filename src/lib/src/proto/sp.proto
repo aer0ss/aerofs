@@ -9,7 +9,7 @@ import "sync_status.proto";
 /**
  * NOTE: When modifying the service declaration below, if you are not appending your new RPC
  * calls at the end of the declaration make sure to increment the SP_PROTOCOL_VERSION parameter
- * in C.java and the sp.version parameter in development.ini and production.ini (in java/web/)
+ * in C.java and the sp.version parameter in development.ini and production.ini (in src/web/)
  */
 
 service SPService {
@@ -135,8 +135,10 @@ service SPService {
      * If the user doesn't exist yet, this method will automatically call InviteUser
      * If the invitee email address is outside the organization's allowed domain, he
      * will be invited to the default organization. If the user is authorized to share
-     * with the invitee, ACLs will be set for them and they will be sent an email
-     * notification.
+     * with the invitee, they will be sent an email notification.
+     *
+     * Only the sharer is added to the ACL for the newly created store. Invitees will be added
+     * later, when they join the folder.
      *
      * TODO: this function currently accepts sharing with several people at once to ease
      *       transition. Make it single-person in the future.
@@ -153,8 +155,10 @@ service SPService {
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
     /**
-     * Retrieves the shareId and folderName associated with a shared folder code.
-     * Without this information, a client can't join a shared folder.
+     * Add the user to the shared folder corresponding to the invite code and returns its shareId
+     * and folderName.
+     *
+     * NB: pushes ACL update to clients
      *
      * Calling this function with a valid shared folder code will set the user's email address
      * as verified.
@@ -165,7 +169,7 @@ service SPService {
      *   ExNotFound if the shared folder code wasn't found
      *   ExNoPerm if the user email address doesn't match the email address specified in the invitation
      */
-    rpc ResolveSharedFolderCode(ResolveSharedFolderCodeCall) returns(ResolveSharedFolderCodeReply);
+    rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
 
     /**
      * Returns a list of pending shared folder invitations for the user
@@ -421,6 +425,13 @@ service SPService {
      * - ExDeviceIDAlreadyExist if the device ID already exists
      */
     rpc CertifyTeamServerDevice(CertifyTeamServerDeviceCall) returns (CertifyDeviceReply);
+
+    /*
+     * Fetch shared folder names
+     *
+     * Required Auth Level: user, ACL on all shared folders in request
+     */
+     rpc GetSharedFolderNames(GetSharedFolderNamesCall) returns(GetSharedFolderNamesReply);
 }
 
 message SignUpCall {
@@ -491,13 +502,8 @@ message ShareFolderCall {
     optional string note = 4;
 }
 
-message ResolveSharedFolderCodeCall {
+message JoinSharedFolderCall {
     required string shared_folder_code = 1;
-}
-
-message ResolveSharedFolderCodeReply {
-    required string folder_name = 2;
-    required bytes share_id = 1;
 }
 
 message ListPendingFolderInvitationsReply {
@@ -505,7 +511,7 @@ message ListPendingFolderInvitationsReply {
     message PBFolderInvitation {
         required string sharer = 1;       // email address of the sharer
         required string folder_name = 2;
-        required bytes share_id = 3;
+        required string shared_folder_code = 3;
     }
 
     repeated PBFolderInvitation invitations = 1;
@@ -518,7 +524,7 @@ message EmailUserCall {
 }
 
 message GetHeartInvitesQuotaReply {
-        required uint32 count = 1;
+    required uint32 count = 1;
 }
 
 message GetPreferencesCall {
@@ -737,4 +743,12 @@ message SetUnsubscribeEmailCall {
 
 message GetUnsubscribeEmailReply {
     required string email_id = 1;
+}
+
+message GetSharedFolderNamesCall {
+    repeated bytes shared_id = 1;
+}
+
+message GetSharedFolderNamesReply {
+    repeated string folder_name = 1;
 }

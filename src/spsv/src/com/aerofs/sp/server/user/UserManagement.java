@@ -53,7 +53,7 @@ public class UserManagement
      */
     public InvitationEmailer inviteOneUser(User inviter, UserID inviteeId, Organization inviteeOrg,
             @Nullable String folderName, @Nullable String note)
-            throws ExAlreadyExist, SQLException, ExNotFound, IOException
+            throws ExAlreadyExist, ExNotFound, SQLException, IOException
     {
         assert inviteeId != null;
 

@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantDetector;
@@ -33,5 +34,7 @@ public class SingleuserModule extends AbstractModule
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);
         bind(IImmigrantCreator.class).to(ImmigrantCreator.class);
         bind(IImmigrantDetector.class).to(ImmigrantDetector.class);
+
+        bind(IStoreJoiner.class).to(SingleuserStoreJoiner.class);
     }
 }

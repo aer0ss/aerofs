@@ -48,6 +48,7 @@ public final class SPSchema
             C_FI_TO                         = "f_to",
             C_FI_SID                        = "f_share_id",
             C_FI_FOLDER_NAME                = "f_folder_name",
+            C_FI_ROLE                       = "f_role",
 
             T_PASSWORD_RESET                = "sp_password_reset_token",
             C_PASS_TOKEN                    = "r_token",

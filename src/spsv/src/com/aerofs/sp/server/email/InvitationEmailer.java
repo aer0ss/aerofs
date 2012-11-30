@@ -105,7 +105,7 @@ public class InvitationEmailer
         public InvitationEmailer createFolderInvitation(@Nonnull final String from, final String to,
                 final String fromPerson, @Nullable final String folderName,
                 @Nullable final String note, final String shareFolderCode)
-                throws Exception
+                throws IOException
         {
             final String subject = "Join my " + S.PRODUCT + " folder";
 

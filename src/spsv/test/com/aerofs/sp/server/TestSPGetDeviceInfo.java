@@ -5,19 +5,17 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 import static org.junit.Assert.assertEquals;
@@ -27,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A class to test the get device info SP call.
  */
-public class TestSPGetDeviceInfo extends AbstractSPServiceTest
+public class TestSPGetDeviceInfo extends AbstractSPFolderPermissionTest
 {
     private static final SID TEST_SID_1 = new SID(UniqueID.generate());
 
@@ -65,13 +63,7 @@ public class TestSPGetDeviceInfo extends AbstractSPServiceTest
         transaction.commit();
 
         // User 1 shares with User 2, but not with User 3
-        ArrayList<PBSubjectRolePair> pair = new ArrayList<PBSubjectRolePair>();
-
-        setSessionUser(TEST_USER_1);
-        pair.add(new SubjectRolePair(TEST_USER_1, Role.OWNER).toPB());
-        pair.add(new SubjectRolePair(TEST_USER_2, Role.EDITOR).toPB());
-
-        service.shareFolder(TEST_SID_1.toString(), TEST_SID_1.toPB(), pair, "").get();
+        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
     }
 
     /**
@@ -82,10 +74,7 @@ public class TestSPGetDeviceInfo extends AbstractSPServiceTest
     public void shouldSucceedWhenUsersShareFiles()
             throws Exception
     {
-        // Verify that User 1 can resolve User 2's devices.
-        LinkedList<ByteString> dids = new LinkedList<ByteString>();
-        dids.add(_deviceB01.toPB());
-        GetDeviceInfoReply reply = service.getDeviceInfo(dids).get();
+        GetDeviceInfoReply reply = service.getDeviceInfo(ImmutableList.of(_deviceB01.toPB())).get();
 
         List<PBDeviceInfo> deviceInfoList = reply.getDeviceInfoList();
         assertEquals(deviceInfoList.size(), 1);

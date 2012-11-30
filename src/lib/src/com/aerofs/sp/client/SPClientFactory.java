@@ -11,9 +11,6 @@ import java.net.URL;
  */
 public class SPClientFactory
 {
-    // TODO (WW) use injection and remove this test stub. See SPBlockingClient.Factory
-    public static SPServiceStubCallbacks s_testCallbacks = null;
-
     public static SPClient newClient(URL spURL, UserID user)
     {
         SPServiceStubCallbacks callbacks = new SPClientHandler(spURL);
@@ -22,16 +19,6 @@ public class SPClientFactory
 
     public static SPBlockingClient newBlockingClient(URL spURL, UserID user)
     {
-        SPServiceStubCallbacks callbacks;
-
-        // This static variable will be non-null when a junit test sets it to circumvent the
-        // SPClientHandler. Otherwise, use the standard SPClientHandler which contacts the SP
-        // Servlet
-        if (s_testCallbacks != null) {
-            callbacks = s_testCallbacks;
-        } else {
-            callbacks = new SPClientHandler(spURL);
-        }
-        return new SPBlockingClient(callbacks, user);
+        return new SPBlockingClient(new SPClientHandler(spURL), user);
     }
 }

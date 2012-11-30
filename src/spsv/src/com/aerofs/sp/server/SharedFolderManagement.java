@@ -7,22 +7,30 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.ISharedFolderDatabase;
+import com.aerofs.sp.server.lib.ISharedFolderDatabase.FolderInvitation;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.user.UserManagement;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,15 +59,6 @@ public class SharedFolderManagement
         _factOrg = factOrg;
     }
 
-    private void updateSharedFolderName(SID sid, String folderName, UserID userId)
-            throws SQLException
-    {
-        // Update the folder name only when an owner changes it
-        if (_db.getUserPermissionForStore(sid, userId) == Role.OWNER) {
-            _db.setFolderName(sid, folderName);
-        }
-    }
-
     /**
      * Shares the given folder with the given set of subject-role pairs.
      * @param emails invitation emails to be sent once the transaction is committed (out arg)
@@ -67,7 +66,7 @@ public class SharedFolderManagement
      */
     public Map<UserID, Long> shareFolder(String folderName, SID sid, UserID userId,
             List<SubjectRolePair> rolePairs, @Nullable String note, List<InvitationEmailer> emails)
-            throws Exception
+            throws ExNoPerm, ExNotFound, ExAlreadyExist, SQLException, IOException
     {
         User sharer = _factUser.create(userId);
         sharer.throwIfNotFound();
@@ -79,30 +78,66 @@ public class SharedFolderManagement
             throw new ExNoPerm("user " + userId + " is not yet verified");
         }
 
-        // Move forward with setting ACLs and sharing the folder
-        // NB: if any user fails business rules check, the whole transaction is rolled back
-        Map<UserID, Long> epochs = createACL(userId, sid, rolePairs);
-        updateSharedFolderName(sid, folderName, userId);
+        Map<UserID, Long> epochs;
 
+        if (_db.exists(sid)) {
+            // folder already exists, check that the sender is an owner
+            if (!_db.isOwner(sid, userId)) throw new ExNoPerm("Only owner can add new users");
+
+            // no ACL change until sharees accept invite...
+            epochs = Maps.newHashMap();
+        } else {
+            // create shared folder
+            _db.addSharedFolder(sid, folderName);
+
+            // add sharer as OWNER
+            _db.createACL(sid, Lists.newArrayList(new SubjectRolePair(userId, Role.OWNER)));
+
+            // increment ACL epoch for sharer
+            epochs = _db.incrementACLEpoch(Collections.singleton(userId));
+        }
+
+        // build email notifications, enforcing business checks as we go
+        // it's safe to do that step last as the whole operation is done transactionally and all
+        // DB changes will be rolled back if any business checks fails
         for (SubjectRolePair rolePair : rolePairs) {
-            emails.add(shareFolderWithOne(sharer, rolePair._subject, folderName, sid, note));
+            emails.add(shareFolderWithOne(sharer, rolePair._subject, rolePair._role, folderName,
+                    sid, note));
         }
 
         return epochs;
     }
 
-    private InvitationEmailer shareFolderWithOne(final User sharer, UserID shareeId,
+    public Map<UserID, Long> joinSharedFolder(SID sid, UserID userId, Role role)
+            throws ExAlreadyExist, ExNoPerm, SQLException
+    {
+        if (_db.getUserRoleForStore(sid, userId) != null) {
+            // old invite/join workflow: ACL added on invite
+            // TODO: remove this codepath after transition period...
+            return Collections.emptyMap();
+        } else {
+            _db.createACL(sid, Lists.newArrayList(new SubjectRolePair(userId, role)));
+
+            // increment ACL epoch for all users currently sharing the folder
+            // making the modification to the database, and then getting the current acl list should
+            // be done in a single atomic operation. Otherwise, it is possible for us to send out a
+            // notification that is newer than what it should be (i.e. we skip an update
+            return _db.incrementACLEpoch(_db.getACLUsers(sid));
+        }
+    }
+
+    private InvitationEmailer shareFolderWithOne(final User sharer, UserID shareeId, Role role,
             final String folderName, SID sid, @Nullable final String note)
-            throws Exception
+            throws ExNotFound, ExAlreadyExist, SQLException, IOException
     {
         InvitationEmailer emailer;
         final User sharee = _factUser.create(shareeId);
         if (!sharee.exists()) {  // Sharing with a non-AeroFS user.
-            createFolderInvitation(sharer.id(), shareeId, sid, folderName);
+            createFolderInvitation(sharer.id(), shareeId, role, sid, folderName);
             emailer = _userManagement.inviteOneUser(sharer, shareeId, _factOrg.getDefault(),
                     folderName, note);
         } else if (!sharee.id().equals(sharer.id())) {
-            final String code = createFolderInvitation(sharer.id(), sharee.id(), sid, folderName);
+            String code = createFolderInvitation(sharer.id(), sharee.id(), role, sid, folderName);
             emailer = _emailerFactory.createFolderInvitation(sharer.id().toString(),
                     sharee.id().toString(), sharer.getFullName()._first, folderName, note, code);
         } else {
@@ -119,7 +154,7 @@ public class SharedFolderManagement
      * Creates a folder invitation in the database
      * @return the share folder code
      */
-    private String createFolderInvitation(UserID sharerId, UserID shareeId, SID sid,
+    private String createFolderInvitation(UserID sharerId, UserID shareeId, Role role, SID sid,
             String folderName)
             throws SQLException
     {
@@ -127,71 +162,65 @@ public class SharedFolderManagement
 
         String code = InvitationCode.generate(CodeType.SHARE_FOLDER);
 
-        _db.addShareFolderCode(code, sharerId, shareeId, sid, folderName);
+        // TODO: prevent multiple invitation?
+
+        _db.addFolderInvitation(sharerId,
+                new FolderInvitation(sid, folderName, shareeId, role, code));
 
         return code;
     }
 
-    /**
-     * Create ACLs for a store.
-     * @return new ACL epochs for each affected user id, to be published via verkehr
-     */
-    private Map<UserID, Long> createACL(UserID requester, SID sid, List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm
+
+    public List<String> getSharedFolderNames(UserID userId, List<ByteString> sids)
+            throws ExNoPerm, ExNotFound, SQLException
     {
-        l.info(requester + " create roles for s:" + sid);
+        List<String> names = Lists.newArrayListWithCapacity(sids.size());
 
-        checkUserPermissionsAndClearACLForHijackedRootStore(requester, sid, pairs);
+        for (ByteString b : sids) {
+            SID sid = new SID(b);
+            if (_db.getUserRoleForStore(sid, userId) == null) {
+                throw new ExNoPerm(sid.toStringFormal());
+            }
 
-        // to satisfy foreign key constraints add the sid before creating ACLs
-        // TODO (WW) this smells. Remove it.
-        _db.addSharedFolder(sid);
+            String name = _db.getSharedFolderName(sid);
 
-        l.info(requester + " creating " + pairs.size() + " roles for s:" + sid);
+            if (name == null) {
+                throw new ExNotFound(sid.toStringFormal());
+            }
 
-        _db.createACL(requester, sid, pairs);
+            names.add(name);
+        }
 
-        // making the modification to the database, and then getting the current acl list should
-        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
-
-        return _db.incrementACLEpoch(_db.getACLUsers(sid));
+        return names;
     }
 
     /**
-     * This method checks whether the user has the right permissions needed to modify the
-     * given store, and if not performs checks to detect malicious changes to permissions and
-     * attempts to repair the store's permissions if needed. Updates pairs in place during the
-     * repair process.
+     * It is possible for a malicious user to create a shared folder whose SID collide with the
+     * SID of somebody's root store. When a new user signs up we can check if such a colliding
+     * folder exists and delete it to prevent malicious users from gaining access to other users'
+     * root stores.
+     *
+     * TODO:
+     * Ideally we should  also register root stores in SP to make sure creation of colliding shared
+     * folder is impossible *after* the targeted user signs up. This is not currently done but will
+     * have to be done regardless of security considerations to support the team server (the only
+     * legitimate case where a root store need to be accessed by another user)
+     *
+     * NB: this check used to be done when creating/updating ACLs but that did not make sense as ACL
+     * are never created/updated for root stores
      */
-    private void checkUserPermissionsAndClearACLForHijackedRootStore(UserID userId, SID sid,
-            /* outarg */ List<SubjectRolePair> pairs)
-            throws SQLException, ExNoPerm
+    public void checkForRootStoreCollision(UserID userId) throws SQLException
     {
-        if (canUserModifyACL(userId, sid)) return;
+        SID sid = SID.rootSID(userId);
+        if (!_db.exists(sid)) return;
 
-        // apparently the user cannot modify the ACL - check if an attacker maliciously
-        // overwrote their permissions and repair the store if necessary
+        // Looks like somebody created a shared folder that collides with somebody else's root store
+        // NB: here we assume a malicious collision for eavesdropping intent however there is a
+        // small but not necessarily negligible probability that real collision will occur. What we
+        // should do in this case is left as an exercise to the reader.
+        l.warn("Existing shared folder collides with root store id for user: " + userId.toString());
 
-        l.info(userId + " cannot modify acl for s:" + sid);
-
-        if (!SID.rootSID(userId).equals(sid)) {
-            throw new ExNoPerm(userId + " not owner"); // nope - just a regular store
-        }
-
-        l.info(sid + " matches " + userId + " root store - delete existing acl");
-
-        _db.deleteACL(sid);
-
-        // add the userId as owner of the store
-        boolean foundOwner = false;
-        for (SubjectRolePair pair : pairs) {
-            if (pair._subject.equals(userId) && pair._role.equals(Role.OWNER)) {
-                foundOwner = true;
-            }
-        }
-
-        if (!foundOwner) pairs.add(new SubjectRolePair(userId, Role.OWNER));
+        _db.deleteSharedFolder(sid);
     }
 
     /**
@@ -249,19 +278,17 @@ public class SharedFolderManagement
 
     /**
      * Update ACLs for a store
-     * @throws ExNoPerm if trying to add new users to the store
+     * @throws ExNotFound if trying to add new users to the store
      * @return new ACL epochs for each affected user id, to be published via verkehr
      */
     public Map<UserID, Long> updateACL(UserID requester, SID sid, List<SubjectRolePair> srps)
-            throws ExNoPerm, SQLException, ExBadArgs
+            throws ExBadArgs, ExNoPerm, ExNotFound, SQLException
     {
         l.info(requester + " updating " + srps.size() + " roles for " + sid);
 
         if (srps.isEmpty()) throw new ExBadArgs("Must specify one or more subjects");
 
-        checkUserPermissionsAndClearACLForHijackedRootStore(requester, sid, srps);
-
-        _db.updateACL(requester, sid, srps);
+        _db.updateACL(sid, srps);
 
         if (!_db.hasOwner(sid)) throw new ExNoPerm("Cannot demote all admins");
 
@@ -273,7 +300,7 @@ public class SharedFolderManagement
     }
 
     public Map<UserID, Long> deleteACL(UserID requester, SID sid, Collection<UserID> subjects)
-            throws SQLException, ExNoPerm, ExBadArgs
+            throws SQLException, ExNotFound, ExNoPerm, ExBadArgs
     {
         l.info(requester + " delete roles for " + sid + ": " + subjects);
 

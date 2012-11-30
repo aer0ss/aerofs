@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.Stores;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantCreator;
@@ -42,5 +43,7 @@ public class MultiuserModule extends AbstractModule
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);
         bind(IImmigrantCreator.class).to(NullImmigrantCreator.class);
         bind(IImmigrantDetector.class).to(NullImmigrantDetector.class);
+
+        bind(IStoreJoiner.class).to(MultiuserStoreJoiner.class);
     }
 }

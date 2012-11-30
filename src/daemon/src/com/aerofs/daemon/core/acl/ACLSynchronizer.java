@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.acl;
 
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
+import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -9,29 +11,34 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.sp.client.SPBlockingClient;
-import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.collect.Maps.newHashMapWithExpectedSize;
 
@@ -49,31 +56,43 @@ public class ACLSynchronizer
     private final TransManager _tm;
     private final IACLDatabase _adb;
     private final LocalACL _lacl;
+    private final IStores _stores;
+    private final IStoreJoiner _storeJoiner;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
+    private final CfgLocalUser _cfgLocalUser;
+    private final SPBlockingClient.Factory _factSP;
 
     private class ServerACLReturn
     {
         final long  _serverEpoch;
         final Map<SID, Map<UserID, Role>> _acl;
+        final Map<SID, String> _newStoreNames;
 
-        private ServerACLReturn(long serverEpoch, Map<SID, Map<UserID, Role>> acl)
+        private ServerACLReturn(long serverEpoch, Map<SID, Map<UserID, Role>> acl,
+                Map<SID, String> newStoreNames)
         {
             _serverEpoch = serverEpoch;
             _acl = acl;
+            _newStoreNames = newStoreNames;
         }
     }
 
     @Inject
-    public ACLSynchronizer(TC tc, TransManager tm, IACLDatabase adb, LocalACL lacl,
-            IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex)
+    public ACLSynchronizer(TC tc, TransManager tm, IACLDatabase adb, LocalACL lacl, IStores stores,
+            IStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
+            CfgLocalUser cfgLocalUser, SPBlockingClient.Factory factSP)
     {
         _tc = tc;
         _tm = tm;
         _adb = adb;
         _lacl = lacl;
+        _stores = stores;
+        _storeJoiner = storeJoiner;
         _sidx2sid = sIndex2SID;
         _sid2sidx = sid2SIndex;
+        _cfgLocalUser = cfgLocalUser;
+        _factSP = factSP;
     }
 
     private void commitToLocal_(SIndex sidx, Map<UserID, Role> subject2role)
@@ -161,21 +180,25 @@ public class ACLSynchronizer
 
         Trans t = _tm.begin_();
         try {
+            Set<SIndex> previouslyAccessibleStores = Sets.newHashSet();
+            for (SIndex sidx : _stores.getAll_()) {
+                if (_lacl.get_(sidx).get(_cfgLocalUser.get()) != null) {
+                    previouslyAccessibleStores.add(sidx);
+                }
+            }
+
             _lacl.clear_(t);
 
             for (Map.Entry<SID, Map<UserID, Role>> entry : serverACLReturn._acl.entrySet()) {
-
-                // gets the sidx; an sidx is created if it doesn't exist
-
                 SID sid = entry.getKey();
-                SIndex sidx = _sid2sidx.getNullable_(sid);
-                if (sidx == null) {
-                    sidx = _sid2sidx.getAbsent_(sid, t);
-                }
+                Map<UserID, Role> roles = entry.getValue();
 
-                // add entries for this store to the db
+                SIndex sidx = getOrCreateSIndex_(sid, t);
 
-                _lacl.set_(sidx, entry.getValue(), t); // invalidates the cache
+                joinOrLeaveStore(sidx, sid, serverACLReturn._newStoreNames.get(sid), roles,
+                        previouslyAccessibleStores, t);
+
+                _lacl.set_(sidx, roles, t); // invalidates the cache
             }
 
             _adb.setEpoch_(serverACLReturn._serverEpoch, t);
@@ -186,15 +209,36 @@ public class ACLSynchronizer
         }
     }
 
+    private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception
+    {
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+        return sidx != null ? sidx : _sid2sidx.getAbsent_(sid, t);
+    }
+
+    private void joinOrLeaveStore(SIndex sidx, SID sid, @Nullable String newName,
+            Map<UserID, Role> roles, Set<SIndex> previouslyAccessibleStores, Trans t)
+            throws Exception
+    {
+        boolean nowAccessible = roles.containsKey(_cfgLocalUser.get());
+        boolean previouslyAccessible = previouslyAccessibleStores.contains(sidx);
+        if (nowAccessible && !previouslyAccessible) {
+            assert newName != null : sid + " " + roles;
+            _storeJoiner.joinStore(sidx, sid, newName, t);
+        } else if (!nowAccessible && previouslyAccessible) {
+            _storeJoiner.leaveStore(sidx, sid, t);
+        }
+    }
+
     private ServerACLReturn getServerACL_(long localEpoch)
             throws Exception
     {
         GetACLReply aclReply;
         Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
         TCB tcb = null;
+        SPBlockingClient sp;
         try {
             tcb = tk.pseudoPause_("spacl");
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
             aclReply = sp.getACL(localEpoch);
         } finally {
@@ -206,9 +250,12 @@ public class ACLSynchronizer
         l.info("server return acl with epoch:" + serverEpoch);
 
         if (aclReply.getStoreAclCount() == 0) {
-            return new ServerACLReturn(serverEpoch, Collections.<SID, Map<UserID, Role>>emptyMap());
+            return new ServerACLReturn(serverEpoch, Collections.<SID, Map<UserID, Role>>emptyMap(),
+                    Collections.<SID, String>emptyMap());
         }
 
+        // keep track of new stores: we need to query their names from SP
+        List<ByteString> newStores = Lists.newArrayList();
         Map<SID, Map<UserID, Role>> acl = newHashMapWithExpectedSize(aclReply.getStoreAclCount());
         for (PBStoreACL storeACL : aclReply.getStoreAclList()) {
             SID sid = new SID(storeACL.getStoreId());
@@ -219,6 +266,10 @@ public class ACLSynchronizer
 
             if (!acl.containsKey(sid)) {
                 acl.put(sid, new HashMap<UserID, Role>(storeACL.getSubjectRoleCount()));
+                if (isNewStore_(sid)) {
+                    l.info("new store " + sid);
+                    newStores.add(sid.toPB());
+                }
             }
 
             Map<UserID, Role> subjectToRoleMap = acl.get(sid);
@@ -228,7 +279,36 @@ public class ACLSynchronizer
             }
         }
 
-        return new ServerACLReturn(serverEpoch, acl);
+        return new ServerACLReturn(serverEpoch, acl, getStoreNames_(sp, newStores));
+    }
+
+    private boolean isNewStore_(SID sid) throws ExNotFound, SQLException
+    {
+        SIndex sidx = _sid2sidx.getNullable_(sid);
+        return (sidx == null || _lacl.get_(sidx).get(_cfgLocalUser.get()) == null);
+    }
+
+    private Map<SID, String> getStoreNames_(SPBlockingClient sp, List<ByteString> storeIds)
+            throws Exception
+    {
+        Map<SID, String> storeNames = Maps.newHashMap();
+        if (!storeIds.isEmpty()) {
+            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spfoldername");
+            TCB tcb = null;
+            try {
+                tcb = tk.pseudoPause_("spfoldername");
+                GetSharedFolderNamesReply reply = sp.getSharedFolderNames(storeIds);
+                assert storeIds.size() == reply.getFolderNameCount();
+                for (int i = 0; i < storeIds.size(); ++i) {
+                    storeNames.put(new SID(storeIds.get(i)), reply.getFolderName(i));
+                    l.info("store name: " + reply.getFolderName(i));
+                }
+            } finally {
+                if (tcb != null) tcb.pseudoResumed_();
+                tk.reclaim_();
+            }
+        }
+        return storeNames;
     }
 
     /**
@@ -247,7 +327,7 @@ public class ACLSynchronizer
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
             sp.updateACL(sid.toPB(), roles);
         } finally {
@@ -273,7 +353,7 @@ public class ACLSynchronizer
         TCB tcb = null;
         try {
             tcb = tk.pseudoPause_("spacl");
-            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            SPBlockingClient sp = _factSP.create_(_cfgLocalUser.get());
             sp.signInRemote();
             sp.deleteACL(sid.toPB(), UserID.toStrings(subjects));
         } finally {

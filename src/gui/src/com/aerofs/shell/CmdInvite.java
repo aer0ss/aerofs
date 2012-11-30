@@ -66,7 +66,6 @@ public class CmdInvite implements IShellCommand<ShProgram>
         String note = CompInviteUsers.getDefaultInvitationNote(name, Cfg.user().toString());
 
         RitualBlockingClient ritual = s.d().getRitualClient_();
-        ritual.shareFolder(Cfg.user().toString(), path, Collections.singletonList(srp.toPB()),
-                note);
+        ritual.shareFolder(path, Collections.singletonList(srp.toPB()), note);
     }
 }

@@ -21,10 +21,12 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
+import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.ISharedFolderDatabase.FolderInvitation;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.SPDatabase.ResolveTargetedSignUpCodeResult;
@@ -54,7 +56,6 @@ import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
-import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -62,7 +63,6 @@ import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.lib.ACLReturn;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.SPDatabase.FolderInvitation;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -477,6 +477,19 @@ class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<GetSharedFolderNamesReply> getSharedFolderNames(
+            List<ByteString> sharedId)
+            throws Exception
+    {
+        _transaction.begin();
+        UserID userId = _sessionUser.get().id();
+        List<String> names = _sharedFolderManagement.getSharedFolderNames(userId, sharedId);
+        _transaction.commit();
+
+        return createReply(GetSharedFolderNamesReply.newBuilder().addAllFolderName(names).build());
+    }
+
+    @Override
     public ListenableFuture<Void> emailUser(String userId, String body)
             throws Exception
     {
@@ -566,7 +579,7 @@ class SPService implements ISPService
         _transaction.begin();
         Map<UserID, Long> epochs =
                 _sharedFolderManagement.shareFolder(folderName, sid, userId, srps, note, emailers);
-        // send verkehr notification as part of the transaction
+        // send verkehr notification as part of the transaction (sharer only)
         publish_(epochs);
         _transaction.commit();
 
@@ -577,8 +590,7 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<ResolveSharedFolderCodeReply> resolveSharedFolderCode(String code)
-            throws Exception
+    public ListenableFuture<Void> joinSharedFolder(String code) throws Exception
     {
         _transaction.begin();
 
@@ -593,17 +605,22 @@ class SPService implements ISPService
                         invitation._invitee);
             }
 
-            ResolveSharedFolderCodeReply reply = ResolveSharedFolderCodeReply.newBuilder()
-                    .setShareId(invitation._sid.toPB())
-                    .setFolderName(invitation._folderName)
-                    .build();
-
             // Because the folder code is valid and was received by email, the user is verified.
             user.setVerified();
 
+            // create ACL entry for invitee
+            Map<UserID, Long> epochs =
+                    _sharedFolderManagement.joinSharedFolder(invitation._sid, invitation._invitee,
+                            invitation._role);
+            // send verkehr notifications as part of the transaction
+            publish_(epochs);
+
+            // TODO: figure out when, if ever, it becomes safe to delete folder invitations
+            //_db.removeFolderInvitation(code);
+
             _transaction.commit();
 
-            return createReply(reply);
+            return createVoidReply();
         } else {
             throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
         }
@@ -630,7 +647,7 @@ class SPService implements ISPService
                 ListPendingFolderInvitationsReply.newBuilder();
         for (FolderInvitation fi : invitations) {
             builder.addInvitations(PBFolderInvitation.newBuilder()
-                    .setShareId(fi._sid.toPB())
+                    .setSharedFolderCode(fi._code)
                     .setFolderName(fi._folderName)
                     .setSharer(fi._invitee.toString()));
         }
@@ -870,6 +887,9 @@ class SPService implements ISPService
         _transaction.begin();
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
         user.add(shaedSP, fullName, _factOrg.getDefault());
+
+        _sharedFolderManagement.checkForRootStoreCollision(user.id());
+
         //unsubscribe user from the aerofs invitation reminder mailing list
         _db.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         _transaction.commit();
@@ -930,6 +950,8 @@ class SPService implements ISPService
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified
         user.setVerified();
+
+        _sharedFolderManagement.checkForRootStoreCollision(result._userId);
 
         // TODO (WW) don't we need to unsubscribe the user from the reminder mailing list, similar
         // to signUp()?

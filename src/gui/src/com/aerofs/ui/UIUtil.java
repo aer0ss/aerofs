@@ -12,18 +12,14 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
-import com.aerofs.sp.client.SPBlockingClient;
 
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
-import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.IUI.SetupType;
 import com.google.common.util.concurrent.FutureCallback;
@@ -122,38 +118,6 @@ public class UIUtil
             }
         }
         return false;
-    }
-
-    /**
-     * @param code share folder code
-     */
-    public static Path joinSharedFolder(SPBlockingClient sp, RitualBlockingClient ritual,
-            String code) throws Exception
-    {
-        sp.signInRemote();
-        ResolveSharedFolderCodeReply reply = sp.resolveSharedFolderCode(code);
-        Path path = joinSharedFolder(ritual, new SID(reply.getShareId()), reply.getFolderName());
-        return path;
-    }
-
-    public static Path joinSharedFolder(RitualBlockingClient ritual, SID sid, String folderName)
-            throws Exception
-    {
-        // no code generates empty folder names, but just in case...
-        if (folderName.isEmpty()) folderName = S.UNNAMED_SHARED_FOLDER;
-
-        Path path = new Path(folderName);
-        // keep trying until finding an unused path
-        while (true) {
-            try {
-                ritual.joinSharedFolder(Cfg.user().toString(), sid.toPB(), path.toPB());
-                break;
-            } catch (ExAlreadyExist e) {
-                path = new Path(Util.nextFileName(path.last()));
-            }
-        }
-
-        return path;
     }
 
     // this is used to sort user lists

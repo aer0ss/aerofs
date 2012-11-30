@@ -55,7 +55,6 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
@@ -81,7 +80,6 @@ import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Ritual.PBBranch;
 import com.aerofs.proto.Ritual.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBSyncStatus;
-import com.aerofs.proto.Ritual.ShareFolderReply;
 import com.aerofs.proto.Ritual.TestGetObjectIdentifierReply;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Ritual.TransportFloodQueryReply;
@@ -124,33 +122,27 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<ShareFolderReply> shareFolder(String user, PBPath path,
-            List<PBSubjectRolePair> srps, String emailNote)
+    public ListenableFuture<Void> shareFolder(PBPath path, List<PBSubjectRolePair> srps,
+            String emailNote)
             throws Exception
     {
         Map<UserID, Role> acl = Maps.newTreeMap();
         for (PBSubjectRolePair srp : srps) {
             acl.put(UserID.fromExternal(srp.getSubject()), Role.fromPB(srp.getRole()));
         }
-        EIShareFolder ev = new EIShareFolder(UserID.fromExternal(user), new Path(path), acl,
+        EIShareFolder ev = new EIShareFolder(Cfg.user(), new Path(path), acl,
                 emailNote);
         ev.execute(PRIO);
 
-        ShareFolderReply reply = ShareFolderReply.newBuilder()
-                .setShareId(ev._sid.toPB())
-                .build();
-        return createReply(reply);
+        return createVoidReply();
     }
 
     @Override
-    public ListenableFuture<Void> joinSharedFolder(String user, ByteString shareID, PBPath path)
+    public ListenableFuture<Void> joinSharedFolder(String code)
             throws Exception
     {
-        SID sid = new SID(shareID);
-        EIJoinSharedFolder ev = new EIJoinSharedFolder(UserID.fromExternal(user), new Path(path),
-                sid);
+        EIJoinSharedFolder ev = new EIJoinSharedFolder(code);
         ev.execute(PRIO);
-
         return createVoidReply();
     }
 

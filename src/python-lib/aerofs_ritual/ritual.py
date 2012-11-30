@@ -19,7 +19,7 @@ from lib import convert
 from lib import param
 from aerofs_common import exception
 from lib import app
-from gen import ritual_pb2
+from gen import common_pb2, ritual_pb2
 from gen.common_pb2 import PBException, PBSubjectRolePair
 
 def connect(rpc_host_addr = 'localhost', rpc_host_port = 50197, user = None):
@@ -57,12 +57,14 @@ class _RitualServiceWrapper(object):
         @param acl a dict of {subject:role}
         """
         pbpath = self.wait_path(path)
+        # folder sharing requires at least one invitee
+        if not acl:
+            acl = {"foo@bar.baz": common_pb2.EDITOR}
         srps = self._convert_acl(acl)
-        return self._service.share_folder(self._user, pbpath, srps, note)
+        return self._service.share_folder(pbpath, srps, note)
 
-    def join_shared_folder(self, share_id, path):
-        pbpath = convert.absolute_to_pbpath(path)
-        return self._service.join_shared_folder(self._user, share_id, pbpath)
+    def join_shared_folder(self, shared_folder_code):
+        self._service.join_shared_folder(shared_folder_code)
 
     def exclude_folder(self, path):
         pbpath = self.wait_path(path)
