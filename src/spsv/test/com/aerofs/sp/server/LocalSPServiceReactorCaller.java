@@ -16,9 +16,12 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.device.Device;
+import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.*;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -71,6 +74,11 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         assert factEmailer != null;
 
         Factory factUser = new Factory(udb, factOrg);
+        DeviceDatabase ddb = new DeviceDatabase(transaction);
+        CertificateDatabase certdb = new CertificateDatabase(transaction);
+        Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb,
+                new CertificateGenerator());
+
         SPDatabase db = new SPDatabase(transaction);
         UserManagement userManagement =
                 new UserManagement(db, factUser, factEmailer, mock(PasswordResetEmailer.class));
@@ -79,7 +87,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         SPService service = new SPService(db, transaction, new MockSessionUser(),
                 userManagement, organizationManagement,
                 new SharedFolderManagement(db, userManagement, factEmailer, factUser, factOrg),
-                new CertificateGenerator(), factUser, factOrg);
+                factUser, factOrg, factDevice, certdb);
 
         reactor = new SPServiceReactor(service);
     }

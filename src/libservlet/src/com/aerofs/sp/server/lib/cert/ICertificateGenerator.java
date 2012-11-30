@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.cert;
+package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
@@ -14,6 +14,7 @@ import java.security.cert.CertificateException;
 
 /**
  * This interface is only necessary to enable mocking in SPService.
+ * TODO (WW) use concrete object mocking and remove this interface
  */
 public interface ICertificateGenerator
 {

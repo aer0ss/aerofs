@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.cert;
+package com.aerofs.sp.server.lib.cert;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -52,7 +52,7 @@ public class Certificate
     /**
      * @return the expire timestamp of this certificate.
      */
-    public Date getExpireTs()
+    public Date getExpiry()
     {
         return _x509.getNotAfter();
     }

@@ -16,6 +16,7 @@ import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.sql.SQLException;
 import java.util.Arrays;
 
@@ -39,12 +40,12 @@ public class User
             _factOrg = factOrg;
         }
 
-        public User create(UserID id)
+        public User create(@Nonnull UserID id)
         {
             return new User(_db, _factOrg, id);
         }
 
-        public User createFromExternalID(String str)
+        public User createFromExternalID(@Nonnull String str)
         {
             return create(UserID.fromExternal(str));
         }
@@ -138,15 +139,23 @@ public class User
         return _db.getLevel(_id);
     }
 
+    // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setLevel(AuthorizationLevel auth)
             throws SQLException
     {
         _db.setLevel(_id, auth);
     }
 
+    // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setVerified() throws SQLException
     {
         _db.setVerified(_id);
+    }
+
+    // TODO (WW) throw ExNotFound if the user doesn't exist?
+    public void setName(FullName fullName) throws SQLException
+    {
+        _db.setName(_id, fullName);
     }
 
     /**

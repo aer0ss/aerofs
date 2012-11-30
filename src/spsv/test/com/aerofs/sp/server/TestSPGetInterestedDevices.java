@@ -10,7 +10,6 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.sp.server.lib.SPDatabase.DeviceRow;
 import com.aerofs.sp.server.lib.SPDatabase.UserDevice;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * A class to test whether the get interested devices call works as expected.
  */
-public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
+public class TestSPGetInterestedDevices extends AbstractSPServiceTest
 {
     private static final SID TEST_SID_1 = new SID(UniqueID.generate());
 
@@ -48,14 +47,14 @@ public class TestSPGetInterestedDevices extends AbstractSPUserBasedTest
         transaction.begin();
 
         // User 1
-        db.addDevice(new DeviceRow(_deviceA1, "Device A1", TEST_USER_1));
-        db.addDevice(new DeviceRow(_deviceA2, "Device A2", TEST_USER_1));
+        ddb.addDevice(_deviceA1, TEST_USER_1, "Device A1");
+        ddb.addDevice(_deviceA2, TEST_USER_1, "Device A2");
 
         // User 2
-        db.addDevice(new DeviceRow(_deviceB1, "Device B1", TEST_USER_2));
+        ddb.addDevice(_deviceB1, TEST_USER_2, "Device B1");
 
         // User 3
-        db.addDevice(new DeviceRow(_deviceC1, "Device C2", TEST_USER_3));
+        ddb.addDevice(_deviceC1, TEST_USER_3, "Device C2");
 
         transaction.commit();
 

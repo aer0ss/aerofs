@@ -2,7 +2,6 @@ package com.aerofs.sp.server;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.S;
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
@@ -11,7 +10,6 @@ import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.ex.ExDeviceNameAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -21,6 +19,9 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.lib.cert.Certificate;
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.SPDatabase.ResolveTargetedSignUpCodeResult;
@@ -54,13 +55,10 @@ import com.aerofs.proto.Sp.ResolveSharedFolderCodeReply;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.cert.Certificate;
-import com.aerofs.sp.server.cert.ICertificateGenerator;
 import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.sp.server.lib.ACLReturn;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.SPDatabase.DeviceRow;
 import com.aerofs.sp.server.lib.SPDatabase.FolderInvitation;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -104,6 +102,7 @@ class SPService implements ISPService
     private static final String UNKNOWN_NAME = "(unknown)";
 
     private final SPDatabase _db;
+    private final CertificateDatabase _certdb;
     private final IThreadLocalTransaction<SQLException> _transaction;
 
     private VerkehrPublisher _verkehrPublisher;
@@ -119,28 +118,29 @@ class SPService implements ISPService
     private final UserManagement _userManagement;
     private final OrganizationManagement _organizationManagement;
     private final SharedFolderManagement _sharedFolderManagement;
-    private final ICertificateGenerator _certificateGenerator;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
+    private final Device.Factory _factDevice;
 
     SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
             ISessionUser sessionUser, UserManagement userManagement,
             OrganizationManagement organizationManagement,
             SharedFolderManagement sharedFolderManagement,
-            ICertificateGenerator certificateGenerator,
-            User.Factory factUser, Organization.Factory factOrg)
+            User.Factory factUser, Organization.Factory factOrg, Device.Factory factDevice,
+            CertificateDatabase certdb)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
         _db = db;
+        _certdb = certdb;
         _transaction = transaction;
         _sessionUser = sessionUser;
         _userManagement = userManagement;
         _organizationManagement = organizationManagement;
         _sharedFolderManagement = sharedFolderManagement;
-        _certificateGenerator = certificateGenerator;
         _factUser = factUser;
         _factOrg = factOrg;
+        _factDevice = factDevice;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -178,40 +178,34 @@ class SPService implements ISPService
 
         User user = _sessionUser.get();
         FullName fn = user.getFullName();
-        DeviceRow dr = _db.getDevice(new DID(deviceId));
-
-        _transaction.commit();
+        Device device = _factDevice.create(deviceId);
 
         GetPreferencesReply reply = GetPreferencesReply.newBuilder()
                 .setFirstName(fn._first)
                 .setLastName(fn._last)
-                .setDeviceName(dr == null ? "" : dr._name)
+                .setDeviceName(device.exists() ? "" : device.getName())
                 .build();
+
+        _transaction.commit();
 
         return createReply(reply);
     }
 
     @Override
-    public ListenableFuture<Void> setPreferences(String userFirstName, String userLastName,
+    public ListenableFuture<Void> setPreferences(String firstName, String lastName,
             ByteString deviceId, String deviceName)
             throws Exception
     {
         _transaction.begin();
 
-        if (userFirstName != null || userLastName != null) {
-            if (userFirstName == null || userLastName == null)
+        if (firstName != null || lastName != null) {
+            if (firstName == null || lastName == null)
                 throw new ExBadArgs("First and last name must both be non-null or both null");
-            _db.setUserName(_sessionUser.getID(), userFirstName, userLastName);
+            _sessionUser.get().setName(new FullName(firstName, lastName));
         }
+
         if (deviceId != null) {
-            while (true) {
-                try {
-                    _db.setDeviceInfo(new DID(deviceId), deviceName);
-                    break;
-                } catch (ExDeviceNameAlreadyExist e) {
-                    deviceName = Util.nextName(deviceName, "");
-                }
-            }
+            _factDevice.create(deviceId).setName(deviceName);
         }
 
         _transaction.commit();
@@ -474,52 +468,25 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        UserID userId = _sessionUser.getID();
-        DID did = new DID(deviceId);
+        User user = _sessionUser.get();
+        Device device = _factDevice.create(deviceId);
 
         // Test the device id's availability/validity
         if (recertify) {
-            DeviceRow dr = _db.getDevice(did);
-            if (dr == null) {
-                throw new ExNotFound("Recertify a non-existing device: " + did);
-            } else {
-                if (!dr._ownerID.equals(userId)) {
-                    throw new ExNoPerm("Recertify a device by a different owner: " +
-                            userId + " != " + dr._ownerID);
-                }
+            User owner = device.getOwner();
+            if (!owner.equals(user)) {
+                throw new ExNoPerm("Recertify a device by a different owner: " +
+                        user + " != " + owner);
             }
         } else {
-            String deviceName = UNKNOWN_NAME;
-            while (true) {
-                try {
-                    _db.addDevice(new DeviceRow(did, deviceName, userId));
-                    break;
-                } catch (ExDeviceNameAlreadyExist e) {
-                    deviceName = Util.nextName(deviceName, "");
-                }
-            }
-
+            device.add(user, UNKNOWN_NAME);
         }
 
-        // Verify the device ID and user ID matches what is specified in CSR.
-        PKCS10 csr = new PKCS10(csrBytes.toByteArray());
-        String cname = csr.getSubjectName().getCommonName();
+        Certificate cert = device.certify(new PKCS10(csrBytes.toByteArray()));
 
-        if (!cname.equals(SecUtil.getCertificateCName(userId, did))) {
-            throw new ExBadArgs("cname doesn't match: hash(" + userId + " + " +
-                    did.toStringFormal() + ") != " + cname);
-        }
-
-        Certificate cert = _certificateGenerator.createCertificate(userId, did, csr);
-        CertifyDeviceReply reply = CertifyDeviceReply.newBuilder().setCert(cert.toString()).build();
-
-        // Create the required entry in the certificate table. If this operation fails then
-        // the CA will still have a record of the certificate, but we will not return it.
-        // This is okay, since the DRL (device revocation list) is maintained by the SP and
-        // not the CA anyway.
-        _db.addCertificate(cert.getSerial(), did, cert.getExpireTs());
-        l.info("created certificate for " + did.toStringFormal() + " with serial " +
-                cert.getSerial() + " (expires on " + cert.getExpireTs().toString() + ")");
+        CertifyDeviceReply reply = CertifyDeviceReply.newBuilder()
+                .setCert(cert.toString())
+                .build();
 
         _transaction.commit();
 
@@ -937,7 +904,7 @@ class SPService implements ISPService
         ImmutableList<Long> crl;
 
         _transaction.begin();
-        crl = _db.getCRL();
+        crl = _certdb.getCRL();
         _transaction.commit();
 
         GetCRLReply reply = GetCRLReply.newBuilder()
@@ -953,20 +920,16 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        UserID userId = _sessionUser.getID();
-        DID did = new DID(deviceId);
+        User user = _sessionUser.get();
+        Device device = _factDevice.create(deviceId);
+        User owner = device.getOwner();
 
-        DeviceRow dr = _db.getDevice(did);
-        if (dr == null) {
-            throw new ExNotFound("Cannot revoke cert for non-existing device: " + did);
-        } else {
-            if (!dr._ownerID.equals(userId)) {
-                throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
-                        userId + " != " + dr._ownerID);
-            }
+        if (!owner.equals(user)) {
+            throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
+                    user + " != " + owner);
         }
 
-        ImmutableList<Long> serials = _db.revokeDeviceCertificate(did);
+        ImmutableList<Long> serials = device.revokeCertificates();
 
         // Push revoked serials to verkehr.
         updateCRL_(serials);
@@ -985,7 +948,7 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        ImmutableList<Long> serials = _db.revokeUserCertificates(_sessionUser.getID());
+        ImmutableList<Long> serials = _certdb.revokeUserCertificates(_sessionUser.getID());
 
         // Push revoked serials to verkehr.
         updateCRL_(serials);
