@@ -79,6 +79,11 @@ public class Organization
         return _id;
     }
 
+    public boolean isDefault()
+    {
+        return _id.equals(OrgID.DEFAULT);
+    }
+
     public String getName()
             throws ExNotFound, SQLException
     {

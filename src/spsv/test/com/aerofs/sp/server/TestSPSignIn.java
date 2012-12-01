@@ -15,8 +15,6 @@ import com.google.protobuf.ByteString;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.security.KeyPair;
-
 public class TestSPSignIn extends AbstractSPServiceTest
 {
     @Test(expected = ExBadCredential.class)
@@ -54,14 +52,11 @@ public class TestSPSignIn extends AbstractSPServiceTest
     private UserID setupTeamServer()
             throws Exception
     {
-        mockCertificateGeneratorAndIncrementSerialNumber();
-
         UserID tsUserID = UserID.fromInternal(service.getTeamServerUserID().get().getId());
         DID tsDID = new DID(UniqueID.generate());
 
-        KeyPair kp = SecUtil.newRSAKeyPair();
-        byte[] csr = SecUtil.newCSR(kp.getPublic(), kp.getPrivate(), tsUserID, tsDID).getEncoded();
-        service.certifyTeamServerDevice(tsDID.toPB(), ByteString.copyFrom(csr));
+        mockCertificateGeneratorAndIncrementSerialNumber();
+        service.certifyTeamServerDevice(tsDID.toPB(), newCSR(tsUserID, tsDID));
         return tsUserID;
     }
 

@@ -426,10 +426,10 @@ class SPService implements ISPService
         User user = _sessionUser.get();
 
         // Create the organzation if necessary
-        if (user.getOrganization().equals(_factOrg.getDefault())) {
+        if (user.getOrganization().isDefault()) {
             user.addAndMoveToOrganization("An Awesome Team");
         } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
-            throw new ExNoPerm("only admins can setup team servers");
+            throw new ExNoPerm("only admins can setup " + S.TEAM_SERVERS);
         }
 
         UserID tsUserID = user.getOrganization().id().toTeamServerUserID();

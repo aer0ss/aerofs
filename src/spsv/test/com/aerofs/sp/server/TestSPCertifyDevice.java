@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -15,11 +14,15 @@ import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
+import sun.security.pkcs.PKCS10;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Set;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
 
 /**
  * A class to test the business logic in the certify device sp.proto RPC.
@@ -30,14 +33,17 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
      * Test that the certificate is successfully created when all params supplied are correct.
      */
     @Test
-    public void shouldCreateCertificateWhenAllParamsAreGood()
+    public void shouldAddDeviceAndCreateCertificate()
             throws Exception
     {
-        // All params are correct (i.e. user/did match what is in the cname).
-        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
-
         String cert;
-        cert = service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr),false).get().getCert();
+        cert = service.certifyDevice(_did.toPB(), newCSR(_did), false).get().getCert();
+
+        transaction.begin();
+        assertTrue(ddb.hasDevice(_did));
+        transaction.commit();
+
+        verify(certgen).createCertificate(eq(TEST_1_USER), eq(_did), any(PKCS10.class));
 
         // Make sure the cert is valid (what we expect).
         assertTrue(cert.equals(RETURNED_CERT));
@@ -52,9 +58,8 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Provide the incorrect user, and clean up after the uncommitted transaction.
-        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, UserID.fromInternal("garbage"), _did)
-                .getEncoded();
-        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
+        ByteString csr = newCSR(UserID.fromInternal("garbage"), _did);
+        service.certifyDevice(_did.toPB(), csr, false).get().getCert();
     }
 
     /**
@@ -65,8 +70,7 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     public void shouldNotCreateCertificateWhenRecertifyNonExistingDevice()
         throws Exception
     {
-        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
-        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
+        service.certifyDevice(_did.toPB(), newCSR(_did), true).get().getCert();
     }
 
     /**
@@ -131,8 +135,7 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     private ByteString newCSR(DID did)
             throws IOException, GeneralSecurityException
     {
-        return ByteString.copyFrom(
-                SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, did).getEncoded());
+        return newCSR(TEST_1_USER, did);
     }
 
     /**

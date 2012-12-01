@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -13,7 +12,6 @@ import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Common.Void;
 import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -39,11 +37,8 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
     public void setupTestDevice()
         throws Exception
     {
-        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
-
-        String cert;
-        cert = service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr),
-                false).get().getCert();
+        String cert = service.certifyDevice(_did.toPB(), newCSR(TEST_1_USER, _did), false)
+                .get().getCert();
 
         assertTrue(cert.equals(RETURNED_CERT));
     }

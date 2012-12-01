@@ -33,6 +33,7 @@ import com.aerofs.sp.server.user.UserManagement;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.InjectMocks;
@@ -40,12 +41,16 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import sun.security.pkcs.PKCS10;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -57,7 +62,6 @@ public class AbstractSPServiceTest extends AbstractTest
     @Mock protected VerkehrPublisher verkehrPublisher;
     @Mock protected VerkehrAdmin verkehrAdmin;
 
-    // Inject a real (spy) local test SP database into the SPService of AbstractSPServiceTest.
     protected final SPDatabaseParams dbParams = new SPDatabaseParams();
     @Spy protected final SQLThreadLocalTransaction transaction =
             new SQLThreadLocalTransaction(dbParams.getProvider());
@@ -65,9 +69,13 @@ public class AbstractSPServiceTest extends AbstractTest
     @Spy protected DeviceDatabase ddb = new DeviceDatabase(transaction);
     @Spy protected UserDatabase udb = new UserDatabase(transaction);
     @Spy protected CertificateDatabase certdb = new CertificateDatabase(transaction);
-    @Spy protected OrganizationDatabase odb = new OrganizationDatabase(transaction);
 
+    // Can't use @Spy as Device.Factory's constructor needs a non-null certgen object.
+    protected OrganizationDatabase odb = spy(new OrganizationDatabase(transaction));
+
+    // Can't use @Mock as Device.Factory's constructor needs a non-null certgen object.
     protected CertificateGenerator certgen = mock(CertificateGenerator.class);
+
     @Spy protected Organization.Factory factOrg = new Organization.Factory(odb);
     @Spy protected User.Factory factUser = new User.Factory(udb, factOrg);
     @Spy protected Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb, certgen);
@@ -182,4 +190,13 @@ public class AbstractSPServiceTest extends AbstractTest
         when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() +
                 1000L*60L*60L*24L*365L));
     }
+
+    protected static ByteString newCSR(UserID userID, DID did)
+            throws IOException, GeneralSecurityException
+    {
+        KeyPair kp = SecUtil.newRSAKeyPair();
+        return ByteString.copyFrom(SecUtil.newCSR(kp.getPublic(), kp.getPrivate(), userID, did)
+                .getEncoded());
+    }
+
 }

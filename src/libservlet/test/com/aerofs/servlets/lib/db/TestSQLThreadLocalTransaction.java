@@ -6,7 +6,6 @@ package com.aerofs.servlets.lib.db;
 
 import com.aerofs.testlib.AbstractTest;
 import junit.framework.Assert;
-import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -183,40 +182,36 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
         _transaction.commit();
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void shouldAssertOnNestedTransactions() throws Exception
     {
-        try {
-            _transaction.begin();
-            _transaction.begin(); // should cause AE
-        } catch (AssertionError e) {
-            _transaction.handleException();
-        }
+        _transaction.begin();
+        _transaction.begin();
     }
 
     @Test(expected = AssertionError.class)
     public void shouldAssertOnCleanupWhenTransactionIsOpen() throws Exception
     {
         _transaction.begin();
-        _transaction.cleanUp(); // should cause an AE
+        _transaction.cleanUp();
     }
 
     @Test(expected = AssertionError.class)
     public void shouldAssertOnGetConnectionWhenNotInTransaction() throws Exception
     {
-        _transaction.getConnection(); // should cause an AE
+        _transaction.getConnection();
     }
 
     @Test(expected = AssertionError.class)
     public void shouldAssertOnCommitWhenNotInTransaction() throws Exception
     {
-        _transaction.commit(); // should cause an AE
+        _transaction.commit();
     }
 
     @Test(expected = AssertionError.class)
     public void shouldAssertOnRollbackWhenNotInTransaction() throws Exception
     {
-        _transaction.rollback(); // should cause an AE
+        _transaction.rollback();
     }
 
     @Test

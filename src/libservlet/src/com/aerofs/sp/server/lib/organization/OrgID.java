@@ -35,4 +35,10 @@ public class OrgID extends IntegerID
         sb.append(Integer.toHexString(getInt()));
         return UserID.fromInternal(sb.toString());
     }
+
+    @Override
+    public String toString()
+    {
+        return Integer.toHexString(getInt());
+    }
 }

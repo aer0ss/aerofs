@@ -88,7 +88,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_ORG, C_ORG_ID + "=?", fields));
-        ps.setString(1, orgID.toString());
+        ps.setInt(1, orgID.getInt());
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
             rs.close();

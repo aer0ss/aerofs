@@ -7,6 +7,7 @@ public class S
 {
     public static final String PRODUCT                  = L.get().product();
     public static final String TEAM_SERVER              = "Team Server";
+    public static final String TEAM_SERVERS             = "Team Servers";
     public static final String PREFERENCES              = "Preferences";
     public static final String TRANSFERS                = "Transfers";
 
