@@ -272,8 +272,9 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
             // A set of SOIDs visited to resolve each OA query. We want to avoid losing
             // information upon StackOverflowErrors in the DirectoryService, so crash if duplicate
             // SOIDs are visited (i.e. a cycle exists) or if the set becomes too large.
-            // TODO (MJ) remove this slightly-hackish variable when StackOverflows are less frequent
-            private final Set<SOID> _soidAncestorChain = Sets.newHashSet();
+            // N.B. use a Linked HashSet to maintain the ordering in which SOIDs were added
+            // (keeping ancestral relationships)
+            private final Set<SOID> _soidAncestorChain = Sets.newLinkedHashSet();
 
             @Override
             @Nullable public OA read_(final SOID soid) throws SQLException
@@ -286,7 +287,6 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
                     // nor should the set of visited SOIDs become too large
                     boolean isUniqueToSet = _soidAncestorChain.add(soid);
                     assert isUniqueToSet : oa + " " + _soidAncestorChain;
-                    assert _soidAncestorChain.size() <= 100 : oa + " " + _soidAncestorChain;
 
                     Path path = resolve_(oa);
                     if (oa.isFile()) {
