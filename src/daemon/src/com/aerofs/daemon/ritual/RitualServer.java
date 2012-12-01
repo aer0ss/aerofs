@@ -66,7 +66,7 @@ public class RitualServer
                 new InetSocketAddress(port) : new InetSocketAddress(host, port);
         bootstrap.bind(address);
 
-        l.debug("The ritual has begun on " + AddressUtils.printaddr(address));
+        l.info("The ritual has begun on " + AddressUtils.printaddr(address));
     }
 
     /**
