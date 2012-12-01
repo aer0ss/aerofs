@@ -229,13 +229,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         // get the editor to try and make some role changes
-        try {
-            shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
-        } catch (Exception e) {
-            // make sure we clean up after uncommitted transaction(s)
-            transaction.handleException();
-            throw e;
-        }
+        shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
     }
 
     @Test
@@ -334,13 +328,8 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         // get the editor to try to delete the owner
-        try {
-            setSessionUser(TEST_USER_2);
-            service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1.toString())).get();
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        setSessionUser(TEST_USER_2);
+        service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1.toString())).get();
     }
 
     @Test
@@ -449,6 +438,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             // should fail with ExNoPerm
             service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_3, Role.OWNER));
         } catch (Exception e) {
+            // make sure we clean up after uncommitted transaction(s)
             transaction.handleException();
             ex = e;
         }
@@ -487,6 +477,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             // should fail with ExNoPerm
             service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_1, Role.EDITOR));
         } catch (Exception e) {
+            // make sure we clean up after uncommitted transaction(s)
             transaction.handleException();
             ex = e;
         }

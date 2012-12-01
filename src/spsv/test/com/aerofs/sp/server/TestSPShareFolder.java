@@ -83,13 +83,8 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
     {
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
-        try {
-            // should throw ExNoPerm because user 2 is an editor
-            shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_3, Role.EDITOR);
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        // should throw ExNoPerm because user 2 is an editor
+        shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_3, Role.EDITOR);
     }
 
     @Test(expected = ExNoPerm.class)
@@ -104,12 +99,7 @@ public class TestSPShareFolder extends AbstractSPFolderPermissionTest
 
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
 
-        try {
-            // should throw ExNoPerm because user 4 is unverified
-            shareFolder(TEST_USER_4, TEST_SID_1, TEST_USER_2, Role.EDITOR);
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        // should throw ExNoPerm because user 4 is unverified
+        shareFolder(TEST_USER_4, TEST_SID_1, TEST_USER_2, Role.EDITOR);
     }
 }

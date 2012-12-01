@@ -79,8 +79,8 @@ public class Exceptions
         case BAD_CREDENTIAL:        return new ExBadCredential(pb);
         case EXCLUDED:              return new ExExpelled(pb);
         case UI_MESSAGE:            return new ExUIMessage(pb);
-        case DEVICE_ID_ALREADY_EXIST:
-                                    return new ExDeviceIDAlreadyExist(pb);
+        case DEVICE_ID_ALREADY_EXISTS:
+                                    return new ExDeviceIDAlreadyExists(pb);
         case NO_COMPONENT_WITH_SPECIFIED_VERSION:
                                     return new ExNoComponentWithSpecifiedVersion(pb);
         default: assert false : "unsupported PBException type"; return null;

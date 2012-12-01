@@ -7,16 +7,16 @@ package com.aerofs.lib.ex;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
-public class ExDeviceIDAlreadyExist extends AbstractExWirable
+public class ExDeviceIDAlreadyExists extends AbstractExWirable
 {
     private static final long serialVersionUID = 0L;
 
-    public ExDeviceIDAlreadyExist()
+    public ExDeviceIDAlreadyExists()
     {
         super();
     }
 
-    public ExDeviceIDAlreadyExist(PBException pb)
+    public ExDeviceIDAlreadyExists(PBException pb)
     {
         super(pb);
     }
@@ -24,6 +24,6 @@ public class ExDeviceIDAlreadyExist extends AbstractExWirable
     @Override
     public Type getWireType()
     {
-        return Type.DEVICE_ID_ALREADY_EXIST;
+        return Type.DEVICE_ID_ALREADY_EXISTS;
     }
 }

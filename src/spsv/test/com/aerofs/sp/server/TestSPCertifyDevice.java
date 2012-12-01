@@ -6,17 +6,18 @@ package com.aerofs.sp.server;
 
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.cert.Certificate;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
-import org.mockito.Mock;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Set;
 import static org.junit.Assert.assertTrue;
 
@@ -25,10 +26,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
 {
-    // Add inject to a second certificate other than the one mocked in
-    // AbstractSPCertificateBasedTest
-    @Mock Certificate certificate2;
-
     /**
      * Test that the certificate is successfully created when all params supplied are correct.
      */
@@ -55,14 +52,9 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Provide the incorrect user, and clean up after the uncommitted transaction.
-        try {
-            byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, UserID.fromInternal("garbage"), _did)
-                    .getEncoded();
-            service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, UserID.fromInternal("garbage"), _did)
+                .getEncoded();
+        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), false).get().getCert();
     }
 
     /**
@@ -73,13 +65,8 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     public void shouldNotCreateCertificateWhenRecertifyNonExistingDevice()
         throws Exception
     {
-        try {
-            byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
-            service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        byte[] csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
+        service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
     }
 
     /**
@@ -92,16 +79,13 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     {
         boolean noExceptionCaught = true;
         String cert = null;
-        byte[] csr = null;
+        ByteString csr = newCSR(_did);
 
         // Need a try catch here, because without one if the first certifyDevice call fails with
         // ExNoPerm the test would still pass, which would be incorrect.
         try {
             // Create a cert and expect the creation to succeed.
-            csr = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, _did).getEncoded();
-
-            cert = service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr),
-                    false).get().getCert();
+            cert = service.certifyDevice(_did.toPB(), csr, false).get().getCert();
         }
         catch (ExNoPerm e) {
             noExceptionCaught = false;
@@ -111,13 +95,8 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
         assertTrue(cert.equals(RETURNED_CERT));
 
         // Try to recertify using the wrong session user.
-        try {
-            setSessionUser(TEST_2_USER);
-            service.certifyDevice(_did.toPB(), ByteString.copyFrom(csr), true).get().getCert();
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        setSessionUser(TEST_2_USER);
+        service.certifyDevice(_did.toPB(), csr, true).get().getCert();
     }
 
     @Test
@@ -126,20 +105,34 @@ public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
     {
         // Certify device1
         DID did1 = _did;
-        byte[] csr1 = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, did1).getEncoded();
         String cert1;
-        cert1 = service.certifyDevice(did1.toPB(), ByteString.copyFrom(csr1),false).get().getCert();
+        cert1 = service.certifyDevice(did1.toPB(), newCSR(did1), false).get().getCert();
         assertTrue(cert1.equals(RETURNED_CERT));
 
-        // Modify certificate returned for device2 to be certificate2
-        mockCertificate(certificate2);
+        // Modify the certificate's serial number returned for device2.
+        mockCertificateGeneratorAndIncrementSerialNumber();
 
         // Certify device2
         DID did2 = getNextDID(Sets.newHashSet(_did));
-        byte[] csr2 = SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, did2).getEncoded();
         String cert2;
-        cert2 = service.certifyDevice(did2.toPB(), ByteString.copyFrom(csr2),false).get().getCert();
+        cert2 = service.certifyDevice(did2.toPB(), newCSR(did2),false).get().getCert();
         assertTrue(cert2.equals(RETURNED_CERT));
+    }
+
+    @Test(expected = ExDeviceIDAlreadyExists.class)
+    public void shouldThrowIfDeviceIDAlreadyExists()
+            throws Exception
+    {
+        DID did = new DID(UniqueID.generate());
+        service.certifyDevice(did.toPB(), newCSR(did), false);
+        service.certifyDevice(did.toPB(), newCSR(did), false);
+    }
+
+    private ByteString newCSR(DID did)
+            throws IOException, GeneralSecurityException
+    {
+        return ByteString.copyFrom(
+                SecUtil.newCSR(_publicKey, _privateKey, TEST_1_USER, did).getEncoded());
     }
 
     /**

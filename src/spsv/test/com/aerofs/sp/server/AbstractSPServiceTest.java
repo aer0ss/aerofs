@@ -8,12 +8,14 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.device.Device;
@@ -36,8 +38,10 @@ import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import sun.security.pkcs.PKCS10;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -120,6 +124,7 @@ public class AbstractSPServiceTest extends AbstractTest
     public void tearDownAbstractSPServiceTest()
             throws SQLException
     {
+        if (transaction.isInTransaction()) transaction.rollback();
         transaction.cleanUp();
     }
 
@@ -160,5 +165,21 @@ public class AbstractSPServiceTest extends AbstractTest
     protected void setSessionUser(UserID userId)
     {
         sessionUser.set(factUser.create(userId));
+    }
+
+    protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception
+    {
+        Certificate cert = mock(Certificate.class);
+
+        // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
+        when(certgen.createCertificate(any(UserID.class), any(DID.class),
+                any(PKCS10.class))).thenReturn(cert);
+
+        when(cert.toString()).thenReturn(AbstractSPCertificateBasedTest.RETURNED_CERT);
+        when(cert.getSerial()).thenReturn(++AbstractSPCertificateBasedTest._lastSerialNumber);
+
+        // Just need some time in the future - say, one year.
+        when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() +
+                1000L*60L*60L*24L*365L));
     }
 }

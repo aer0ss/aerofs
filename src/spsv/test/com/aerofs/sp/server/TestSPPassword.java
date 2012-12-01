@@ -24,7 +24,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TestSPUserManagement extends AbstractTest
+public class TestSPPassword extends AbstractTest
 {
     @Mock SPDatabase db;
     @Mock User.Factory factUser;
