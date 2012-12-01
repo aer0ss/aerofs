@@ -66,6 +66,7 @@ public class RitualServer
                 new InetSocketAddress(port) : new InetSocketAddress(host, port);
         bootstrap.bind(address);
 
+        // TODO (EK) move log back to debug once arkoot's bug is fixed.
         l.info("The ritual has begun on " + AddressUtils.printaddr(address));
     }
 
