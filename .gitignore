@@ -8,3 +8,4 @@ out.*
 /classes
 .gradle
 dump.rdb
+env
