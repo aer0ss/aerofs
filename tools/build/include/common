@@ -71,11 +71,11 @@ readonly OSX_AEROFS_INSTALLER_VOLUME_DIR="/Volumes/AeroFS Installer"
 #
 ###############################################################################
 # First do a sanity check and make sure that we either specified PROD or STAGING
-if [[ "$1" != "PROD" && "$1" != "STAGING" ]]; then
-    echo "error: invalid build mode $1. Expected STAGING or PROD." >&2
+readonly MODE="${1:-}"
+if [[ "$MODE" != "PROD" && "$MODE" != "STAGING" ]]; then
+    echo "error: invalid build mode $MODE. Expected STAGING or PROD." >&2
     exit $ERRBADMODE
 fi
-readonly MODE="$1"
 readonly LOWERCASE_MODE="$(echo $MODE | tr '[A-Z]' '[a-z]')"
 
 ###############################################################################
