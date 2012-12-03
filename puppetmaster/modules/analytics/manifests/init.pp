@@ -16,6 +16,13 @@ class analytics {
         group   =>  "root"
     }
 
+    file { "${analytics_dir}/analytics.sql":
+        content => template("analytics/analytics.sql.erb"),
+        mode    => "755",
+        owner   => "root",
+        group   => "root"
+    }
+
     file { "/usr/local/bin/support_updates":
         content => template("analytics/support_updates.erb"),
         mode    => "755",

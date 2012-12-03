@@ -103,7 +103,7 @@ TMP_TASQL=`mktemp -t trailing_analytics.XXXX`
 ###########################
 # RUN THE ANALYTICS QUERY #
 ###########################
-#mysql $DATABASE < trailing_analytics.sql
+mysql $DATABASE < trailing_analytics.sql
 
 THIS_COHORT=$(mysql -sN -e "SELECT YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL ${COHORT_AGE} DAY))")
 LAST_COHORT=$(mysql -sN -e "SELECT YEARWEEK(DATE_SUB(CURRENT_DATE(), INTERVAL ${COHORT_AGE}+${COHORT_SIZE} DAY))")
