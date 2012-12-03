@@ -635,8 +635,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                      * data loss after last successful connection) we need to fill the bootstrap
                      * table to recover
                      */
-                    IDBIterator<ModifiedObject> mo = _ssdb.getModifiedObjects_(clientEpoch);
-                    if (!mo.next_() || mo.get_()._idx > clientEpoch) {
+                    if (needBootstrap(clientEpoch)) {
                         l.warn("rebootstrap");
                         _ssdb.bootstrap_(t);
                         _ssdb.setPushEpoch_(0, t);
@@ -656,6 +655,17 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
             throw SystemUtil.fatalWithReturn(e);
         }
     }
+
+    private boolean needBootstrap(long clientEpoch) throws SQLException
+    {
+        IDBIterator<ModifiedObject> mo = _ssdb.getModifiedObjects_(clientEpoch);
+        try {
+            return (!mo.next_() || mo.get_()._idx > clientEpoch);
+        } finally {
+            mo.close_();
+        }
+    }
+
 
     private final TransLocal<Set<SOID>> _tlModified = new TransLocal<Set<SOID>>() {
         @Override
