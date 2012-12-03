@@ -137,6 +137,8 @@ public class Version
      */
     public Version sub_(@Nonnull Version v)
     {
+        if (v.isZero_()) return new Version(this);
+
         Version ret = new Version();
         for (Entry<DID, Tick> en : this._map.entrySet()) {
             Tick mine = en.getValue();

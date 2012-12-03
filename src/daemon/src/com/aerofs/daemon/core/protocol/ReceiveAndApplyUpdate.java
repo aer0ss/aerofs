@@ -127,28 +127,26 @@ public class ReceiveAndApplyUpdate
 
         @Nullable public final ContentHash _hash;
 
-        // TODO (MJ) this shouldn't be Nullable as there are users of this Version that expect it
-        // to be non-null (e.g. Version.sub_). Unfortunately some callers of the constructor
-        // pass in a null object for unknown reasons (specifically in computeCausalityForContent_)
-        @Nullable public final Version _vLocal;
+        public final Version _vLocal;
 
         CausalityResult(KIndex kidx, Version vAddLocal, Version vLocal)
         {
-            this(kidx, vAddLocal, null, false, null, vLocal);
+            this(kidx, vAddLocal, Collections.<KIndex>emptyList(), false, null, vLocal);
         }
 
-        CausalityResult(KIndex kidx, Version vAddLocal,
-            @Nullable Collection<KIndex> kidcsDel, boolean incrementVersion,
-            @Nullable ContentHash h, @Nullable Version vLocal)
+        CausalityResult(@Nonnull KIndex kidx, @Nonnull Version vAddLocal,
+            @Nonnull Collection<KIndex> kidcsDel, boolean incrementVersion,
+            @Nullable ContentHash h, @Nonnull Version vLocal)
         {
             _kidx = kidx;
             _vAddLocal = vAddLocal;
             _incrementVersion = incrementVersion;
-            if (kidcsDel == null) _kidcsDel = Collections.emptyList();
-            else _kidcsDel = kidcsDel;
+            _kidcsDel = kidcsDel;
             _hash = h;
             _vLocal = vLocal;
             _conflictRename = false;
+
+            assert _vLocal != null;
         }
 
         @Override
@@ -220,7 +218,8 @@ public class ReceiveAndApplyUpdate
                 return null;
             } else {
                 l.debug("true meta conflict. l < r. merge");
-                return new CausalityResult(KIndex.MASTER, vR_L, null, true, null, vLocal);
+                return new CausalityResult(KIndex.MASTER, vR_L, Collections.<KIndex>emptyList(),
+                        true, null, vLocal);
             }
         }
     }
@@ -324,7 +323,7 @@ public class ReceiveAndApplyUpdate
 
         Version vAddLocal = new Version(vRemote);
         KIndex kidxApply = null;
-        Version vApply = null;
+        @Nullable Version vApply = null;
         List<KIndex> kidcsDel = Lists.newArrayList();
 
         OA remoteOA = _ds.getOAThrows_(soid);
@@ -401,11 +400,17 @@ public class ReceiveAndApplyUpdate
             // No subordinate branch was found. Create a new branch.
             SortedMap<KIndex, CA> cas = remoteOA.cas();
             kidxApply = cas.isEmpty() ? KIndex.MASTER : cas.lastKey().increment();
-        } else {
-            // It's necessary to compute diff of the vector being added
-            // from the branch to which vector will be applied.
-            vAddLocal = vAddLocal.sub_(vApply);
+
+            // The local version should be empty since we have no local branch
+            vApply = _nvc.getLocalVersion_(new SOCKID(soid, CID.CONTENT, kidxApply));
+            assert vApply.isZero_() : vApply + " " + soid;
         }
+
+        // To change a version, we must add the diff of what is to be applied, from the version
+        // currently stored locally. Thus the value of vAddLocal up to this point represented
+        // the entire version to be applied locally. Now we reset it to be the diff for the sake
+        // of version arithmetic.
+        vAddLocal = vAddLocal.sub_(vApply);
 
         if (l.isDebugEnabled()) {
             l.debug("Final vAddLocal: " + vAddLocal + " kApply: " + kidxApply);
@@ -961,27 +966,8 @@ public class ReceiveAndApplyUpdate
         }
 
         // check if the local version has changed during our pauses
-        //
-        // N.B. (MJ) it appears that if vKLocal is empty, it is possible that res._vLocal can
-        // be null. The following could be replaced with a simpler
-        //  if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_())
-        //     throw new ExAborted(k + " version changed locally.");
-        // but because res._vLocal can be null, I want to assert that it is not (when it is safe to
-        // do so).
-        Version vKLocal = _nvc.getLocalVersion_(k);
-        if (vKLocal.isZero_()) {
-            // no-op -- the local version is zero, so hasn't changed during the pauses.
-            // N.B. (markj) I think res._vLocal is permitted to be null here. I *think* it is
-            // because the local version at the beginning of processing was zero, though I can't
-            // guarantee that.
-        } else {
-            // the local version is non-zero, so subtract the version recorded in the causality
-            // result from before the processing of this update started.
-            assert !vKLocal.isZero_();
-            assert res._vLocal != null : k + " " + vRemote + " " + vKLocal + " " + res;
-            if (!vKLocal.sub_(res._vLocal).isZero_()) {
-                throw new ExAborted(k + " version changed locally.");
-            }
+        if (!_nvc.getLocalVersion_(k).sub_(res._vLocal).isZero_()) {
+            throw new ExAborted(k + " version changed locally.");
         }
 
         // update version vectors
