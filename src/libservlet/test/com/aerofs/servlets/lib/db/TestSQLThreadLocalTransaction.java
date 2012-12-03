@@ -6,6 +6,7 @@ package com.aerofs.servlets.lib.db;
 
 import com.aerofs.testlib.AbstractTest;
 import junit.framework.Assert;
+import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +63,9 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
     public void tearDown()
             throws Exception
     {
-        _transaction.cleanUp(); // run cleanup here to check that connections are all closed
+        // run cleanup here to check that connections are all closed
+        if (_transaction.isInTransaction()) _transaction.rollback();
+        _transaction.cleanUp();
     }
 
     /**
@@ -191,41 +194,29 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
         }
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void shouldAssertOnCleanupWhenTransactionIsOpen() throws Exception
     {
-        try {
-            _transaction.begin();
-            _transaction.cleanUp(); // should cause an AE
-            Assert.fail();
-        } catch (AssertionError e) {}
+        _transaction.begin();
+        _transaction.cleanUp(); // should cause an AE
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void shouldAssertOnGetConnectionWhenNotInTransaction() throws Exception
     {
-        try {
-            _transaction.getConnection(); // should cause an AE
-            Assert.fail();
-        } catch (AssertionError e) {}
+        _transaction.getConnection(); // should cause an AE
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void shouldAssertOnCommitWhenNotInTransaction() throws Exception
     {
-        try {
-            _transaction.commit(); // should cause an AE
-            Assert.fail();
-        } catch (AssertionError e) {}
+        _transaction.commit(); // should cause an AE
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void shouldAssertOnRollbackWhenNotInTransaction() throws Exception
     {
-        try {
-            _transaction.rollback(); // should cause an AE
-            Assert.fail();
-        } catch (AssertionError e) {}
+        _transaction.rollback(); // should cause an AE
     }
 
     @Test

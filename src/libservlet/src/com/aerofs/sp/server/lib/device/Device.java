@@ -8,7 +8,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.sp.server.lib.cert.Certificate;
@@ -132,7 +132,7 @@ public class Device
      * Add the device to the db, rename using Util.nextName() if a device with the same name exists.
      */
     public void add(User owner, String name)
-            throws SQLException, ExDeviceIDAlreadyExist
+            throws SQLException, ExDeviceIDAlreadyExists
     {
         while (true) {
             try {

@@ -6,7 +6,7 @@ package com.aerofs.sp.server.lib.device;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
@@ -49,7 +49,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
     }
 
     public void addDevice(DID did, UserID ownerID, String name)
-            throws SQLException, ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExist
+            throws SQLException, ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExists
     {
         try {
             PreparedStatement ps = prepareStatement(
@@ -127,13 +127,13 @@ public class DeviceDatabase extends AbstractSQLDatabase
     }
 
     private static void throwOnDeviceIDOrNameConstraintViolation(SQLException e)
-            throws ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExist, SQLException
+            throws ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExists, SQLException
     {
         if (isConstraintViolation(e)) {
             if (e.getMessage().contains(CONSTRAINT_DEVICE_NAME_OWNER)) {
                 throw new ExDeviceNameAlreadyExist();
-            } else if (e.getMessage().contains(C_DEVICE_ID)) {
-                throw new ExDeviceIDAlreadyExist();
+            } else if (e.getMessage().contains("for key 'PRIMARY'")) {
+                throw new ExDeviceIDAlreadyExists();
             } else {
                 assert false;
             }

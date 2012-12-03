@@ -78,8 +78,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
 
-        ps.setInt(1, orgID.getInt());
-        ps.setString(2, name);
+        ps.setString(1, name);
+        ps.setInt(2, orgID.getInt());
 
         Util.verify(ps.executeUpdate() == 1);
     }

@@ -86,14 +86,8 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
     public void shouldNotRevokeDeviceCertificateWhenDeviceDoesNotExist()
             throws Exception
     {
-        // Try to revoke the certificate without first certifying the device, and make sure to clean
-        // up after uncommitted transactions.
-        try {
-            service.revokeDeviceCertificate(new DID(UniqueID.generate()).toPB());
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        // Try to revoke the certificate without first certifying the device
+        service.revokeDeviceCertificate(new DID(UniqueID.generate()).toPB());
     }
 
     @Test(expected = ExNoPerm.class)
@@ -101,13 +95,8 @@ public class TestSPCRL extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Switch to a different user and try to revoke the previous user's device.
-        try {
-            setSessionUser(TEST_2_USER);
-            service.revokeDeviceCertificate(_did.toPB());
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        setSessionUser(TEST_2_USER);
+        service.revokeDeviceCertificate(_did.toPB());
     }
 
     //

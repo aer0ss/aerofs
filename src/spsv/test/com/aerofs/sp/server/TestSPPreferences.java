@@ -47,12 +47,7 @@ public class TestSPPreferences extends AbstractSPServiceTest
     public void shouldThrowIfDeviceDoesntExistWhenSettingName()
             throws Exception
     {
-        try {
-            service.setPreferences("first", "last", _did.toPB(), "device").get();
-        } catch (Exception e) {
-            transaction.handleException();
-            throw e;
-        }
+        service.setPreferences("first", "last", _did.toPB(), "device").get();
     }
 
     @Test

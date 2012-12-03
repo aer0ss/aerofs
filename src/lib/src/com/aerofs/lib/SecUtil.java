@@ -180,15 +180,12 @@ public abstract class SecUtil
         return request;
     }
 
-    public static void newRSAKeyPair(OutArg<PublicKey> pubKey,
-        OutArg<PrivateKey> privKey)
+    public static KeyPair newRSAKeyPair()
         throws GeneralSecurityException
     {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         generator.initialize(KEY_STRENGTH);
-        KeyPair kp = generator.generateKeyPair();
-        pubKey.set(kp.getPublic());
-        privKey.set(kp.getPrivate());
+        return generator.generateKeyPair();
     }
 
     public static PrivateKey decryptPrivateKey(byte[] encryptedKey, char[] passwd)

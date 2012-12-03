@@ -6,14 +6,13 @@ package com.aerofs.controller;
 
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.C;
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
@@ -29,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -128,17 +128,15 @@ public class CredentialUtil
             ISPCertifyDeviceCaller caller)
             throws Exception
     {
-        OutArg<PublicKey> pubKey = new OutArg<PublicKey>();
-        OutArg<PrivateKey> privKey = new OutArg<PrivateKey>();
-        SecUtil.newRSAKeyPair(pubKey, privKey);
+        KeyPair kp = SecUtil.newRSAKeyPair();
 
         while (true) {
             DID did = new DID(UniqueID.generate());
             try {
-                certifyAndSaveDeviceKeys(certUserId, did, pubKey.get(), privKey.get(), scrypted, sp,
-                        caller);
+                certifyAndSaveDeviceKeys(certUserId, did, kp.getPublic(), kp.getPrivate(), scrypted,
+                        sp, caller);
                 return did;
-            } catch (ExDeviceIDAlreadyExist e) {
+            } catch (ExDeviceIDAlreadyExists e) {
                 l.info("device id " + did.toStringFormal() + " exists. generate a new one");
             }
         }

@@ -4,31 +4,23 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.cert.Certificate;
 import org.junit.Before;
-import org.mockito.Mock;
-import sun.security.pkcs.PKCS10;
 
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.sql.Timestamp;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
 
 /**
  * A class used to initialize tests related to certificates and certificate revocation.
+ *
+ * TODO (WW) merge this class with AbstractSPServiceTest
  */
 public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
 {
-    // And inject a certificate as well.
-    @Mock Certificate certificate;
-
     // Private static finals.
     protected static final String RETURNED_CERT = "returned_cert";
     protected static final UserID TEST_1_USER = UserID.fromInternal("test1@aerofs.com");
@@ -54,31 +46,14 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
         addTestUser(TEST_2_USER);
         transaction.commit();
 
-        mockCertificate(certificate);
+        mockCertificateGeneratorAndIncrementSerialNumber();
 
         // Set up test user and create pub/priv key pair.
         setSessionUser(TEST_1_USER);
 
-        OutArg<PublicKey> publicKey = new OutArg<PublicKey>();
-        OutArg<PrivateKey> privateKey = new OutArg<PrivateKey>();
-        SecUtil.newRSAKeyPair(publicKey, privateKey);
-
-        _publicKey = publicKey.get();
-        _privateKey = privateKey.get();
-    }
-
-    public void mockCertificate(Certificate cert) throws Exception
-    {
-        // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
-        when(certgen.createCertificate(any(UserID.class), any(DID.class),
-                any(PKCS10.class))).thenReturn(cert);
-
-        when(cert.toString()).thenReturn(RETURNED_CERT);
-        when(cert.getSerial()).thenReturn(++_lastSerialNumber);
-
-        // Just need some time in the future - say, one year.
-        when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() +
-                1000L*60L*60L*24L*365L));
+        KeyPair kp = SecUtil.newRSAKeyPair();
+        _privateKey = kp.getPrivate();
+        _publicKey = kp.getPublic();
     }
 
     protected long getLastSerialNumber()
