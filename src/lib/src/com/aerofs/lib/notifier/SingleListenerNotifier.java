@@ -6,12 +6,13 @@ package com.aerofs.lib.notifier;
 
 import com.aerofs.lib.async.UncancellableFuture;
 import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.google.common.util.concurrent.Futures.addCallback;
 
 public final class SingleListenerNotifier<ListenerType>
 {
@@ -21,6 +22,15 @@ public final class SingleListenerNotifier<ListenerType>
     public static <ListenerType> SingleListenerNotifier<ListenerType> create()
     {
         return new SingleListenerNotifier<ListenerType>();
+    }
+
+    public static <ListenerType> SingleListenerNotifier<ListenerType> create(
+            ListenerType listener,
+            Executor callbackExecutor)
+    {
+        SingleListenerNotifier<ListenerType> notifier = new SingleListenerNotifier<ListenerType>();
+        notifier.setListener(listener, callbackExecutor);
+        return notifier;
     }
 
     private SingleListenerNotifier()
@@ -39,7 +49,7 @@ public final class SingleListenerNotifier<ListenerType>
         ListenableFuture<List<Void>> future = _notifier.notifyOnOtherThreads(visitor);
 
         final UncancellableFuture<Void> returnedFuture = UncancellableFuture.create();
-        Futures.addCallback(future, new FutureCallback<List<Void>>()
+        addCallback(future, new FutureCallback<List<Void>>()
         {
             @Override
             public void onSuccess(List<Void> voids)

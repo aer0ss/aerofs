@@ -4,7 +4,6 @@
 
 package com.aerofs.lib.notifier;
 
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -12,8 +11,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+
+import static com.google.common.collect.Maps.newConcurrentMap;
+import static com.google.common.util.concurrent.Futures.allAsList;
 
 /**
  * TODO (WW) this class is duplicate with ConcurrentlyModifiableListeners in functionality.
@@ -22,8 +24,7 @@ import java.util.concurrent.Executor;
  */
 public final class Notifier<ListenerType>
 {
-    private final ConcurrentHashMap<ListenerType, Executor> _listeners =
-            new ConcurrentHashMap<ListenerType, Executor>();
+    private final ConcurrentMap<ListenerType, Executor> _listeners = newConcurrentMap();
 
     public static <ListenerType> Notifier<ListenerType> create()
     {
@@ -81,7 +82,8 @@ public final class Notifier<ListenerType>
                 }
             });
         }
-        return Futures.allAsList(futures);
+
+        return allAsList(futures);
     }
 
 }
