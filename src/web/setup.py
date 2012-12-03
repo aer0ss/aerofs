@@ -45,7 +45,7 @@ setup(name='web',
       zip_safe=False,
       install_requires=requires,
       tests_require=requires,
-      test_suite="web",
+      test_suite="unittests",
       entry_points = """\
       [paste.app_factory]
       main = web:main
