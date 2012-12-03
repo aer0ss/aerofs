@@ -99,4 +99,11 @@ public class S
 
     public static final String SYNC_STATUS_DOWN = "Sync status is temporarily unavailable.";
     public static final String SYNC_STATUS_LOCAL = "Not synced with other devices.";
+
+    public static final String
+            SS_IN_SYNC_TOOLTIP      = "Remote peer has the same version.",
+            SS_IN_PROGRESS_TOOLTIP  = "Remote peer has a different version and is currently online. " +
+                    "This may happen if the remote peer is using selective sync.",
+            SS_OFFLINE_TOOLTIP      = "Remote peer has a different version and is currently offline.";
+
 }
