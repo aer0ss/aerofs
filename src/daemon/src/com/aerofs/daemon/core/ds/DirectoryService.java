@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -31,7 +32,7 @@ import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -271,10 +272,10 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
             // A set of SOIDs visited to resolve each OA query. We want to avoid losing
             // information upon StackOverflowErrors in the DirectoryService, so crash if duplicate
-            // SOIDs are visited (i.e. a cycle exists) or if the set becomes too large.
-            // N.B. use a Linked HashSet to maintain the ordering in which SOIDs were added
+            // SOIDs are visited (i.e. a cycle exists)
+            // N.B. use a Linked HashMap to maintain the ordering in which SOIDs were added
             // (keeping ancestral relationships)
-            private final Set<SOID> _soidAncestorChain = Sets.newLinkedHashSet();
+            private final Map<SOID, OA> _soidAncestorChain = Maps.newLinkedHashMap();
 
             @Override
             @Nullable public OA read_(final SOID soid) throws SQLException
@@ -284,9 +285,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
                 try {
                     // Should never visit the same SOID twice on the same DirectoryService query
-                    // nor should the set of visited SOIDs become too large
-                    boolean isUniqueToSet = _soidAncestorChain.add(soid);
-                    assert isUniqueToSet : oa + " " + _soidAncestorChain;
+                    OA oldOA = _soidAncestorChain.put(soid, oa);
+                    assert oldOA == null : oldOA + " " + _soidAncestorChain;
 
                     Path path = resolve_(oa);
                     if (oa.isFile()) {
@@ -301,8 +301,10 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
                     return oa;
 
                 } finally {
-                    boolean wasRemoved = _soidAncestorChain.remove(soid);
-                    if (!wasRemoved) _fds.logSendAsync(oa + " not in set: " + _soidAncestorChain);
+                    OA oaRemoved = _soidAncestorChain.remove(soid);
+                    if (oaRemoved == null) {
+                        _fds.logSendAsync(soid + " not in set: " + _soidAncestorChain);
+                    }
                 }
             }
         };
