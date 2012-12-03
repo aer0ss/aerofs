@@ -11,6 +11,7 @@ import com.aerofs.lib.id.UserID;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -102,14 +103,15 @@ public class SyncStatusSummary implements IAggregatedStatus
         }
     }
 
-    private UserID getOwner_(DID did)
+    private @Nonnull UserID getOwner_(DID did)
     {
-        UserID owner = UserID.UNKNOWN;
+        UserID owner;
         try {
             owner = _udn.getDeviceOwnerNullable_(did);
         } catch (Exception e) {
             l.warn("owner lookup failed: " + did, e);
+            owner = null;
         }
-        return owner;
+        return owner == null ? UserID.UNKNOWN : owner;
     }
 }
