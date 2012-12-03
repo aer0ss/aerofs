@@ -9,7 +9,7 @@
     </extension>
     <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrPublisherClient" />
     <option name="VM_PARAMETERS" value="-ea" />
-    <option name="PROGRAM_PARAMETERS" value="localhost 9090 cacert.pem" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 9293 cacert.pem" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../src/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />

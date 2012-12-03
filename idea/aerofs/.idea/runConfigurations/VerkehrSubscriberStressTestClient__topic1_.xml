@@ -8,8 +8,8 @@
       </pattern>
     </extension>
     <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.client.benchmark.VerkehrSubscriberStressTestClient" />
-    <option name="VM_PARAMETERS" value="-ea -Xmx1024m -Djavax.net.debug=ssl:handshake:sessioncache:sslctx" />
-    <option name="PROGRAM_PARAMETERS" value="localhost 9091 topic1 10000 10 client.crt client.key cacert.pem" />
+    <option name="VM_PARAMETERS" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 29438 topic1 10000 10 client.crt client.key cacert.pem" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../src/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
