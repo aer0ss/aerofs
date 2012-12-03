@@ -44,7 +44,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
          * if on remove() or invalidate*()
          */
         void evicted_(K k, V v);
-    };
+    }
 
     public static interface IDataReader<K, V> {
         /**
@@ -57,7 +57,7 @@ public class LRUCache<K, V> implements IDumpStatMisc
     private final Impl _impl;
     private final int _capacity;
     private final boolean _cacheNull;
-    private final IEvictionListener<K, V> _el;
+    private final @Nullable IEvictionListener<K, V> _el;
 
     private int _miss;
     private int _hit;
