@@ -7,10 +7,11 @@ import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExist;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -446,9 +447,9 @@ class SPService implements ISPService
     @Override
     public ListenableFuture<CertifyDeviceReply> certifyTeamServerDevice(
             ByteString deviceId, ByteString csr)
-            throws ExNoPerm, ExNotFound, ExAlreadyExist, ExDeviceIDAlreadyExist, SQLException,
-            SignatureException, IOException, ExBadArgs, NoSuchAlgorithmException,
-            CertificateException
+            throws ExNoPerm, ExNotFound, ExAlreadyExist, SQLException, SignatureException,
+            IOException, ExBadArgs, NoSuchAlgorithmException, CertificateException,
+            ExDeviceIDAlreadyExists
     {
         _transaction.begin();
 
@@ -843,8 +844,11 @@ class SPService implements ISPService
 
         User user = _factUser.createFromExternalID(userIdString);
 
+        // Bypass password check only for staging team servers.
         // TODO (WW) remove this check
-        if (!user.id().isTeamServerID()) user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
+        if (!(Cfg.staging() && user.id().isTeamServerID())) {
+            user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
+        }
 
         _sessionUser.set(user);
 

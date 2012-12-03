@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -12,7 +13,6 @@ import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.google.protobuf.ByteString;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class TestSPSignIn extends AbstractSPServiceTest
@@ -21,12 +21,12 @@ public class TestSPSignIn extends AbstractSPServiceTest
     public void shouldNotAllowNonExistingUserIDToSignIn()
             throws Exception
     {
+        // Set AppRoot since SPService depends on Cfg which in turn depends on AppRoot.
+        // TODO (WW) remove the dependency of SPService on Cfg.
+        AppRoot.set("/non-existing");
         service.signIn(TEST_USER_1.toString(), ByteString.copyFrom(TEST_USER_1_CRED));
     }
 
-    @Ignore("bring it back ASAP to reduce security risks. Right now we blindly allow team server " +
-            "IDs to pass through. It's not a big issue yet since we don't allow people signing up" +
-            " with malformed email addresses, and team server IDs are all intentionally malformed.")
     @Test(expected = ExBadCredential.class)
     public void shouldNotAllowNonExistingTeamServerIDToSignIn()
             throws Exception
@@ -37,7 +37,6 @@ public class TestSPSignIn extends AbstractSPServiceTest
         service.signIn(tsUserID.toString(), tsUserPass);
     }
 
-    @Ignore("see above")
     @Test(expected = ExBadCredential.class)
     public void shouldNotAllowTeamServerIDToSignInWithPasswords()
             throws Exception
