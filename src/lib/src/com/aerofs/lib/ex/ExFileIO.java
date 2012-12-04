@@ -4,6 +4,7 @@
 
 package com.aerofs.lib.ex;
 
+import com.aerofs.lib.Path;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
 
@@ -39,6 +40,11 @@ import java.io.IOException;
     public ExFileIO(String message, Iterable<File> files)
     {
         this(ObfuscatingFormatters.formatFileMessage(message, files));
+    }
+
+    public ExFileIO(String message, Path... paths)
+    {
+        this(ObfuscatingFormatters.formatPathMessage(message, paths));
     }
 
     private ExFileIO(FormattedMessage formattedMessage)

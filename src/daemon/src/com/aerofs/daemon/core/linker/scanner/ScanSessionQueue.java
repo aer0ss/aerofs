@@ -11,8 +11,12 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableSystem;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
+import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -86,7 +90,20 @@ public class ScanSessionQueue implements IDumpStatMisc
         @Override
         public String toString()
         {
-            return ObfuscatingFormatters.obfuscatePaths(_absPaths) + ":" + _recursive;
+            return FluentIterable.from(ImmutableSet.copyOf(_absPaths))
+                    .transform(new Function<String, String>()
+                    {
+                        @Nullable
+                        @Override
+                        public String apply(@Nullable String path)
+                        {
+                            if (path != null) {
+                                return ObfuscatingFormatters.obfuscatePath(path);
+                            }
+                            return null;
+                        }
+                    })
+                    .toString() + ":" + _recursive;
         }
     }
 

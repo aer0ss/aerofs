@@ -2,19 +2,12 @@ package com.aerofs.lib.injectable;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Set;
 
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.CfgLocalUser;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExFileIO;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
-import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.driver.Driver;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 
 import javax.annotation.Nullable;
@@ -27,16 +20,14 @@ import static com.aerofs.swig.driver.DriverConstants.*;
 public class InjectableDriver
 {
     private final int _lenFID;
-    private final CfgLocalUser _cfgLocalUser;
 
     @Inject
-    public InjectableDriver(CfgLocalUser cfgLocalUser)
+    public InjectableDriver()
     {
         OSUtil.get().loadLibrary("aerofsd");
 
         // cache the result to avoid unecessary JNI calls
         _lenFID = Driver.getFidLength();
-        _cfgLocalUser = cfgLocalUser;
     }
 
     public int getFIDLength()
@@ -59,7 +50,7 @@ public class InjectableDriver
      * @return null on OS-specific files
      */
     public @Nullable FIDAndType getFIDAndType(String absPath)
-            throws IOException, ExNotFound
+            throws IOException
     {
         File f = new File(absPath);
         assert f.isAbsolute() : absPath;
@@ -75,52 +66,23 @@ public class InjectableDriver
      */
     final public @Nullable FID getFID(String absPath) throws IOException
     {
-        try {
-            FIDAndType fnt = getFIDAndType(absPath);
-            return fnt == null ? null : fnt._fid;
-        } catch (ExNotFound e) {
-            // TODO (MJ) this is a hack: for some reason, getFID and getFIDAndType diverged in the
-            // exception types thrown. Previously they were copy-pasted differing mainly in
-            // Driver-failure handling. Perhaps callers of getFID can handle ExNotFound being
-            // thrown, but I don't want to find out now.
-            throw new IOException(e);
-        }
+        FIDAndType fnt = getFIDAndType(absPath);
+        return fnt == null ? null : fnt._fid;
     }
 
     /**
-     * @throws ExNotFound if the object is not present
-     * @throws IOException if getFID failed for other reasons
+     * If the file does not exist, then throw a detailed ExFileNotFound exception. Otherwise,
+     * throws a generic ExFileIO exception.
+     *
+     * @param f The file to check for existence
      */
-    private void throwNotFoundOrIOException(File f)
-            throws IOException, ExNotFound
+    private void throwNotFoundOrIOException(File f) throws IOException
     {
-        if (f.exists()) throwIOException(f);
-        else throw new ExNotFound(FileUtil.debugString(f));
-    }
-
-    private static final Set<String> verboseLoggingUserCRCs = ImmutableSet.of(
-            "cdd85529", // daniel@iswech.de
-            "2a1a2221"  // hola@hoyesmiercoles.com
-            );
-
-    private void throwIOException(File f) throws IOException
-    {
-        // TODO (DF/MJ): remove after you're done debugging daniel@iswech.de and
-        // hola@hoyesmiercoles.com
-        UserID user = _cfgLocalUser.get();
-        if (user != null && verboseLoggingUserCRCs.contains(Util.crc32(user.toString()))) {
-            String[] children = f.getParentFile().list();
-            String[] encodedChildren = new String[children.length + 1];
-            // Log the parent folder bytes
-            encodedChildren[0] = Util.hexEncode(Util.string2utf(f.getParentFile().getPath()));
-            // And the
-            for (int i = 0; i < children.length ; i++) {
-                encodedChildren[i+1] = Util.hexEncode(Util.string2utf(children[i]));
-            }
-            throw new IOException("getFid: " + FileUtil.debugString(f) + " " +
-                    Joiner.on("\n").join(encodedChildren));
+        if (f.exists()) {
+            throw new ExFileIO("getFid: {}", f);
+        } else {
+            throw new ExFileNotFound(f);
         }
-        throw new ExFileIO("getFid: {}", f);
     }
 
     public void setFolderIcon(String folderPath, String iconName)

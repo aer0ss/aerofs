@@ -5,7 +5,6 @@
 package com.aerofs.lib.obfuscate;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.Iterators;
 
 import java.util.Iterator;
 
@@ -27,7 +26,7 @@ public class ObfuscatingFormatter<T>
         public final String _obfuscated;
         public final String _plainText;
 
-        FormattedMessage(String obfuscated, String plainText)
+        public FormattedMessage(String obfuscated, String plainText)
         {
             this._obfuscated = obfuscated;
             this._plainText = plainText;
@@ -54,13 +53,10 @@ public class ObfuscatingFormatter<T>
      * @param objects The objects to insert into the message
      * @return A tuple of obfuscated and plain text formatted messages
      */
-    public FormattedMessage format(String message, T... objects)
+    public FormattedMessage format(String message, Iterable<T> objects)
     {
-        return format(message, Iterators.forArray(objects));
-    }
+        Iterator<T> objectIter = objects.iterator();
 
-    public FormattedMessage format(String message, Iterator<T> objectIter)
-    {
         StringBuilder obfuscatedBuilder = new StringBuilder();
         StringBuilder plainBuilder = new StringBuilder();
 

@@ -3,6 +3,10 @@ package com.aerofs.lib.ex;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Common.PBException.Type;
 
+/**
+ * A generic wirable exception which indicates that a particular
+ * resource was not found.
+ */
 public class ExNotFound extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
@@ -12,9 +16,23 @@ public class ExNotFound extends AbstractExWirable
         super();
     }
 
-    public ExNotFound(String string)
+    public ExNotFound(String message)
     {
-        super(string);
+        super(message);
+    }
+
+    /**
+     * Wraps the exception that caused this generic ExNotFound to be
+     * thrown.
+     *
+     * TODO(AL): A specific exception is more suitable than wrapping an exception. Many callers
+     * expect ExNotFound when they shouldn't, so for now we will wrap specific exceptions.
+     *
+     * @param cause The cause of this ExNotFound
+     */
+    public ExNotFound(Throwable cause)
+    {
+        super(cause);
     }
 
     public ExNotFound(PBException pb)

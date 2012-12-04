@@ -12,16 +12,6 @@ public class ExNotShared extends AbstractExWirable
         super();
     }
 
-    public ExNotShared(String msg)
-    {
-        super(msg);
-    }
-
-    public ExNotShared(Throwable cause)
-    {
-        super(cause);
-    }
-
     public ExNotShared(PBException pb)
     {
         super(pb);

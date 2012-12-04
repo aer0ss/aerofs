@@ -4,29 +4,29 @@
 
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.ex.ExFileNotFound;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static org.mockito.Mockito.when;
 
 public class TestMightCreate_OtherCases extends AbstractTestMightCreate
 {
-    @Test(expected = ExNotFound.class)
-    public void shouldThrowNotFoundWithNonExistingPhysicalFiles()
+    @Test(expected = ExFileNotFound.class)
+    public void shouldThrowFileNotFoundWithNonExistingPhysicalFiles()
         throws Exception
     {
         String physicalObj = "non-existing";
-        mockGetFIDThrowingNotFoundException(physicalObj);
+        mockGetFIDThrowingFileNotFoundException(physicalObj);
 
         mightCreate(physicalObj, null);
     }
 
-    protected void mockGetFIDThrowingNotFoundException(String physicalObj)
-            throws IOException, ExNotFound
+    protected void mockGetFIDThrowingFileNotFoundException(String physicalObj)
+            throws Exception
     {
-        when(dr.getFIDAndType(Util.join(pRoot, physicalObj))).thenThrow(new ExNotFound());
+        when(dr.getFIDAndType(Util.join(pRoot, physicalObj))).thenThrow(
+                new ExFileNotFound(new Path("dummy/path")));
     }
 }

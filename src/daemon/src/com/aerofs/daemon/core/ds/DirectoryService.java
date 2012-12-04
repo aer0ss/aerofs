@@ -28,6 +28,8 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.ex.ExFileNotFound;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 
 import com.google.common.base.Joiner;
@@ -44,7 +46,6 @@ import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -200,7 +201,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         throws SQLException, ExNotFound
     {
         SOID soid = resolveNullable_(path);
-        if (soid == null) throw new ExNotFound(path.toString());
+        if (soid == null) throw new ExNotFound(new ExFileNotFound(path));
         return soid;
     }
 

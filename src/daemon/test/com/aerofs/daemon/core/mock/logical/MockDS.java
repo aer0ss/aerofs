@@ -20,6 +20,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.C;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
@@ -313,7 +314,7 @@ public class MockDS
                 when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
                         .thenReturn(null);
                 when(_ds.resolveThrows_(argThat(new IsEqualPathIgnoringCase(path))))
-                        .thenThrow(new ExNotFound(path.toString()));
+                        .thenThrow(new ExNotFound(new ExFileNotFound(path)));
             } else {
                 when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
                         .thenReturn(soid);

@@ -17,7 +17,6 @@ import java.util.TreeMap;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -406,7 +405,7 @@ class Setup
         if (OSUtil.isLinux()) return;
 
         // TODO use real dependency injection
-        InjectableDriver dr = new InjectableDriver(new CfgLocalUser());
+        InjectableDriver dr = new InjectableDriver();
         dr.setFolderIcon(Cfg.absRootAnchor(), OSUtil.getIconPath(Icon.RootAnchor));
     }
 

@@ -7,11 +7,6 @@ public class ExOutOfSpace extends AbstractExWirable
 {
     private static final long serialVersionUID = 1L;
 
-    public ExOutOfSpace(String msg)
-    {
-        super(msg);
-    }
-
     public ExOutOfSpace()
     {
         super();

@@ -9,6 +9,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExNotFound;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -54,6 +55,10 @@ class HdMightCreateNotification implements IEventHandler<EIMightCreateNotificati
                 // gone. We simply ignore the error in this situation to avoid frequent rescans
                 // and thus cpu hogging when editors create and delete/move temporary files.
                 l.warn("ignored by MCN: " + Util.e(e, ExNotFound.class));
+                return;
+            } catch (ExFileNotFound e) {
+                // Same conditon as for ExNotFound exception
+                l.warn("ignored by MCN: " + Util.e(e, ExFileNotFound.class));
                 return;
             } finally {
                 t.end_();

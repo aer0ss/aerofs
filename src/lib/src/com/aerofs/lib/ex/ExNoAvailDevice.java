@@ -12,11 +12,6 @@ public class ExNoAvailDevice extends AbstractExWirable
         super();
     }
 
-    public ExNoAvailDevice(String msg)
-    {
-        super(msg);
-    }
-
     public ExNoAvailDevice(PBException pb)
     {
         super(pb);
