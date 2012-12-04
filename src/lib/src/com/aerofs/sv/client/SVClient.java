@@ -4,9 +4,9 @@ import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Base64;
 import com.aerofs.lib.C;
-import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -51,11 +51,11 @@ import java.util.zip.ZipOutputStream;
 import static com.aerofs.lib.C.LAST_SENT_DEFECT;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
-import static com.aerofs.lib.Util.e;
+import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.lib.Util.crc32;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
+import static com.aerofs.lib.Util.e;
 import static com.aerofs.lib.Util.join;
-import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
 import static com.aerofs.lib.cfg.CfgDatabase.Key.ROOT;
 
@@ -178,13 +178,12 @@ public final class SVClient
                     Cfg.dumpDb(),
                     absRTRoot(),
                     null,
-                    true,
                     false,
                     true,
                     false,
                     false);
-        } catch (Exception e) {
-            l.warn("can't dump err:", e);
+        } catch (Throwable t) {
+            l.warn("can't dump err:", t);
         }
     }
 
@@ -243,8 +242,8 @@ public final class SVClient
 
         try {
             getRpcClient().doRPC(call, null);
-        } catch (Exception e) {
-            l.warn("can't send event err:", e);
+        } catch (Throwable t) {
+            l.warn("can't send event err:", t);
         }
     }
 
@@ -281,7 +280,6 @@ public final class SVClient
                             absRTRoot(),
                             null,
                             true,
-                            true,
                             false,
                             true,
                             false);
@@ -307,7 +305,6 @@ public final class SVClient
                 Cfg.dumpDb(),
                 absRTRoot(),
                 secret,
-                true,
                 true,
                 false,
                 true,
@@ -337,7 +334,6 @@ public final class SVClient
                     false,
                     false,
                     false,
-                    false,
                     false);
         } catch (Throwable t) {
             l.error("can't send defect err:", t);
@@ -357,7 +353,6 @@ public final class SVClient
                     rtRoot,
                     null,
                     true,
-                    true,
                     false,
                     false,
                     false);
@@ -373,7 +368,6 @@ public final class SVClient
     //-------------------------------------------------------------------------
 
     /**
-     * @param verbose false to collect as less data as possible
      * @param cause may be null if no exception is available
      *
      * this method doesn't reference Cfg if it's not inited. exit the program
@@ -387,11 +381,10 @@ public final class SVClient
             @Nonnull Map<Key, String> cfgDB,
             String rtRoot,
             @Nullable String secret,
-            boolean verbose,
             final boolean sendLogs,
             final boolean sendDB,
             final boolean sendHeapDumps,
-            final boolean sendFileNames)
+            final boolean sendUnobfuscatedFileMapping)
             throws IOException, AbstractExWirable
     {
         l.debug("build defect");
@@ -410,11 +403,9 @@ public final class SVClient
         }
 
         // always send non-automatic defects and database requests
-        boolean isLastSent = isAutoBug
-                && isLastSentDefect(cause.getMessage(), stackTrace) && !sendDB;
-        l.error((isLastSent ? "repeating last" : "sending") + " defect: " + desc + ": " +
-                Util.e(cause));
-        if (isLastSent) return;
+        boolean ignoreDefect = isAutoBug && isLastSentDefect(cause.getMessage(), stackTrace) && !sendDB;
+        l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
+        if (ignoreDefect) return;
 
         // Send the defect to RockLog
         if (header.getUser().endsWith("@aerofs.com")) {
@@ -440,29 +431,20 @@ public final class SVClient
                 .setDescription(sbDesc.toString())
                 .setStacktrace(stackTrace);
 
-        File defectFilesZip = File.createTempFile("$$$", "zip");
+        try {
+            bdDefect.addJavaEnvName("os full name");
+            bdDefect.addJavaEnvValue(OSUtil.get().getFullOSName());
+        } catch (Throwable t) {
+            // ignored
+        }
 
-        if (verbose) {
-
-            //
-            // environment and other local information
-            //
-
-            StringBuilder sbCfgDB = new StringBuilder();
-            for (Entry<Key, String> en : cfgDB.entrySet()) {
-                sbCfgDB.append(en.getKey());
-                sbCfgDB.append(": ");
-                sbCfgDB.append(en.getValue());
-                sbCfgDB.append('\n');
-            }
-            bdDefect.setCfgDb(sbCfgDB.toString());
-
+        if (!OSUtil.isWindows()) {
             // "uname -a" result
             OutArg<String> uname = new OutArg<String>();
             uname.set("n/a");
             try {
                 SystemUtil.execForeground(uname, "uname", "-a");
-            } catch (IOException e) {
+            } catch (Throwable t) {
                 // ignored
             }
             bdDefect.addJavaEnvName("uname -a");
@@ -473,12 +455,26 @@ public final class SVClient
             fileRes.set("n/a");
             try {
                 SystemUtil.execForeground(fileRes, "file", "-L", "/bin/ls");
-            } catch (IOException e) {
+            } catch (Throwable t) {
                 //ignored
             }
             bdDefect.addJavaEnvName("file bin/ls");
             bdDefect.addJavaEnvValue(fileRes.get());
 
+            // "df" result
+            OutArg<String> df = new OutArg<String>();
+            df.set("n/a");
+            try {
+                SystemUtil.execForeground(df, "df");
+            } catch (Throwable t) {
+                // ignored
+            }
+            bdDefect.addJavaEnvName("df");
+            bdDefect.addJavaEnvValue(df.get());
+        }
+
+        if (rtRoot != null) {
+            // XXX (AG): well, I hope and pray that since we have an rtroot Cfg is actually in a good state
             // filesystem type
             if (Cfg.inited()) {
                 bdDefect.addJavaEnvName("fs");
@@ -486,92 +482,107 @@ public final class SVClient
                     OutArg<Boolean> remote = new OutArg<Boolean>();
                     String fs = OSUtil.get().getFileSystemType(Cfg.db().getNullable(ROOT), remote);
                     bdDefect.addJavaEnvValue(fs + ", remote " + remote.get());
-                } catch (IOException e) {
-                    bdDefect.addJavaEnvValue(e.toString());
+                } catch (Throwable t) {
+                    bdDefect.addJavaEnvValue(t.toString());
                 }
             }
 
+            // free space on the rtroot partition
+            bdDefect.addJavaEnvName("free");
             try {
-                bdDefect.addJavaEnvName("os full name");
-                bdDefect.addJavaEnvValue(OSUtil.get().getFullOSName());
+                String freeSpace = listFreeSpaceOnPartition(rtRoot);
+                l.debug("free space:" + freeSpace);
+                bdDefect.addJavaEnvValue(freeSpace);
             } catch (Throwable t) {
-                // ignored
+                bdDefect.addJavaEnvValue("n/a");
             }
 
-            // "df" result
-            OutArg<String> df = new OutArg<String>();
-            df.set("n/a");
+            // files and their sizes in rtroot
+            bdDefect.addJavaEnvName("files");
             try {
-                SystemUtil.execForeground(df, "df");
-            } catch (Exception e) {
-                // ignored
+                String fileSizes = listTopLevelContents(rtRoot);
+                l.debug("file sizes:" + fileSizes);
+                bdDefect.addJavaEnvValue(fileSizes);
+            } catch (Throwable t) {
+                bdDefect.addJavaEnvValue("n/a");
             }
-            bdDefect.addJavaEnvName("df");
-            bdDefect.addJavaEnvValue(df.get());
+        }
 
-            // java env
-            for (Entry<Object, Object> en : System.getProperties().entrySet()) {
-                bdDefect.addJavaEnvName(en.getKey().toString());
-                bdDefect.addJavaEnvValue(en.getValue().toString());
-            }
+        // java env
+        for (Entry<Object, Object> en : System.getProperties().entrySet()) {
+            bdDefect.addJavaEnvName(en.getKey().toString());
+            bdDefect.addJavaEnvValue(en.getValue().toString());
+        }
 
-            //
-            // zip defect logs
-            //
+        //
+        // Cfg values
+        //
 
-            // don't send defect log for SP or staging
-            if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps || sendFileNames)) {
-                try {
-                    // add log files
-                    File[] files = new File(rtRoot).listFiles(
-                            new FilenameFilter() {
-                                @Override
-                                public boolean accept(File arg0, String arg1)
-                                {
-                                    // Note: the core database consists of three files:
-                                    // db, db-wal, and db-shm.
-                                    return (sendLogs && arg1.endsWith(C.LOG_FILE_EXT))
-                                            ||
-                                            (sendDB && (arg1.startsWith(C.OBF_CORE_DATABASE) ||
-                                                                arg1.endsWith("wal")        ||
-                                                                arg1.endsWith("shm")))
-                                            ||
-                                            (sendHeapDumps && arg1.endsWith(C.HPROF_FILE_EXT));
-                                }
-                            });
+        StringBuilder sbCfgDB = new StringBuilder();
+        for (Entry<Key, String> en : cfgDB.entrySet()) {
+            sbCfgDB.append(en.getKey());
+            sbCfgDB.append(": ");
+            sbCfgDB.append(en.getValue());
+            sbCfgDB.append('\n');
+        }
+        bdDefect.setCfgDb(sbCfgDB.toString());
 
-                    if (files == null) {
-                        l.error("rtroot not found");
-                        files = new File[0];
-                    }
+        //
+        // zip defect logs
+        //
 
-                    if (sendFileNames) {
-                        // Send base64encoded(utf8 encoded <filename>)> crc32(<filename>) mapping.
-                        File nameMap = createNameMapFile();
-                        if (nameMap != null) {
-                            files = Arrays.copyOf(files, files.length + 1);
-                            files[files.length - 1] = nameMap;
-                        }
-                    }
+        File defectFilesZip = null;
+        if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps || sendUnobfuscatedFileMapping)) {
+            try {
+                // add log files
+                File[] files = new File(rtRoot).listFiles(
+                        new FilenameFilter() {
+                            @Override
+                            public boolean accept(File arg0, String arg1)
+                            {
+                                // Note: the core database consists of three files:
+                                // db, db-wal, and db-shm.
+                                return (sendLogs && arg1.endsWith(C.LOG_FILE_EXT))
+                                        ||
+                                        (sendDB && (arg1.startsWith(C.OBF_CORE_DATABASE) ||
+                                                            arg1.endsWith("wal")        ||
+                                                            arg1.endsWith("shm")))
+                                        ||
+                                        (sendHeapDumps && arg1.endsWith(C.HPROF_FILE_EXT));
+                            }
+                        });
 
-                    l.debug("compressing " + files.length + " logs/db/hprof files");
-
-                    OutputStream os = null;
-                    try {
-                        os = new FileOutputStream(defectFilesZip);
-                        compress(files, os);
-
-                    } finally {
-                        if (os != null) os.close();
-                    }
-                } catch (IOException e) {
-                    l.error("can't compress defect logs; send them as is err:", cause);
+                if (files == null) {
+                    l.error("rtroot not found");
+                    files = new File[0];
                 }
+
+                if (sendUnobfuscatedFileMapping) {
+                    // Send base64encoded(utf8 encoded <filename>)> crc32(<filename>) mapping.
+                    File nameMap = createNameMapFile();
+                    if (nameMap != null) {
+                        files = Arrays.copyOf(files, files.length + 1);
+                        files[files.length - 1] = nameMap;
+                    }
+                }
+
+                l.debug("compressing " + files.length + " logs/db/hprof files");
+
+                OutputStream os = null;
+                try {
+                    defectFilesZip = File.createTempFile("$$$", "zip");
+                    os = new FileOutputStream(defectFilesZip);
+                    compress(files, os);
+                } finally {
+                    if (os != null) os.close();
+                }
+            } catch (Throwable t) {
+                l.error("can't compress defect logs; send them as is err:", cause);
             }
         }
 
         //
-        // make the client call
+        // construct the defect report
         //
 
         PBSVCall call = PBSVCall
@@ -581,11 +592,18 @@ public final class SVClient
                 .setDefect(bdDefect)
                 .build();
 
+        //
+        // make the rpc call
+        //
+
         l.debug("send defect");
+
         try {
             getRpcClient().doRPC(call, defectFilesZip);
         } finally {
-            deleteOrOnExit(defectFilesZip);
+            if (defectFilesZip != null) {
+                deleteOrOnExit(defectFilesZip);
+            }
         }
 
         l.debug("complete send defect");
@@ -611,6 +629,74 @@ public final class SVClient
     // PRIVATE UTILITY METHODS
     //
     //-------------------------------------------------------------------------
+
+    /**
+     * List free space for the partition in which this path resides
+     */
+    private static String listFreeSpaceOnPartition(String path)
+            throws IOException
+    {
+        File dir = new File(path);
+        if (!dir.exists()) {
+            throw new IOException(path + " path for rtroot does not exist");
+        }
+
+        return "[F:" + dir.getFreeSpace() + " U:" + dir.getUsableSpace() + "]/" + dir.getTotalSpace() + "]";
+    }
+
+    /**
+     * List files (along with their sizes) in the path
+     * FIXME (AG): what happens if the user has put AeroFS in a bad place (i.e. under cache, etc)
+     */
+    private static String listTopLevelContents(String path)
+            throws IOException
+    {
+        StringBuilder bd = new StringBuilder();
+
+        File dir = new File(path);
+        if (!dir.isDirectory()) {
+            throw new IOException(path + " is not a directory");
+        }
+
+        File[] children = dir.listFiles();
+        if (children == null || children.length == 0) {
+            bd.append("empty");
+            return bd.toString();
+        }
+
+        for (File f : children) {
+            // skip the AeroFS folder (could be arbitrarily deep), but log it
+            if (f.isDirectory() && f.getName().equalsIgnoreCase("AeroFS")) {
+                bd.append(f.getName()).append(": ").append("IGNORED");
+            } else {
+                bd.append(f.getName()).append(": ").append(getSize(f));
+            }
+
+            bd.append('\n');
+        }
+
+        return bd.toString();
+    }
+
+    private static long getSize(File f)
+    {
+        if (!f.exists() || (!f.isDirectory() && !f.isFile())) return 0;
+        if (f.isFile()) return f.length();
+
+        File[] children = f.listFiles();
+        if (children == null || children.length == 0) return 0;
+
+        long dirSize = 0;
+        for (File child : children) {
+            if (child.isFile()) {
+                dirSize += child.length();
+            } else {
+                dirSize += getSize(child);
+            }
+        }
+
+        return dirSize;
+    }
 
     /**
      * Compress multiple files into a single {@link OutputStream}
