@@ -2,6 +2,7 @@ package com.aerofs.sp.server;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.S;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
@@ -23,14 +24,17 @@ import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.SharedFolder.Factory;
+import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
+import com.aerofs.sp.server.lib.SPDatabase.ResolveSignUpInvitationCodeResult;
+import com.aerofs.sp.server.lib.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.SharedFolderDatabase.GetACLResult;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.ISharedFolderDatabase.FolderInvitation;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
-import com.aerofs.sp.server.lib.SPDatabase.ResolveTargetedSignUpCodeResult;
-import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -59,9 +63,7 @@ import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.organization.OrganizationManagement;
-import com.aerofs.sp.server.user.UserManagement;
-import com.aerofs.sp.server.lib.ACLReturn;
+import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -84,6 +86,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -105,10 +109,14 @@ class SPService implements ISPService
     private static final Logger l = Util.l(SPService.class);
 
     // the temporary user or device name used before SetPreferences is called
-    private static final String UNKNOWN_NAME = "(unknown)";
+    private static final String UNKNOWN_DEVICE_NAME = "(unknown)";
 
+    // TODO (WW) remove dependency to these database objects
     private final SPDatabase _db;
+    private final SharedFolderDatabase _sfdb;
     private final CertificateDatabase _certdb;
+    private final EmailSubscriptionDatabase _esdb;
+
     private final IThreadLocalTransaction<SQLException> _transaction;
 
     private VerkehrPublisher _verkehrPublisher;
@@ -121,32 +129,37 @@ class SPService implements ISPService
     // Note that the session is set externally in SPServlet.
     private final ISessionUser _sessionUser;
 
-    private final UserManagement _userManagement;
-    private final OrganizationManagement _organizationManagement;
-    private final SharedFolderManagement _sharedFolderManagement;
+    private final PasswordManagement _passwordManagement;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
     private final Device.Factory _factDevice;
+    private final SharedFolder.Factory _factSharedFolder;
+    private final SharedFolderInvitation.Factory _factSFI;
+    private final InvitationEmailer.Factory _factEmailer;
 
-    SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
-            ISessionUser sessionUser, UserManagement userManagement,
-            OrganizationManagement organizationManagement,
-            SharedFolderManagement sharedFolderManagement,
+    SPService(SPDatabase db, SharedFolderDatabase sfdb,
+            IThreadLocalTransaction<SQLException> transaction,
+            ISessionUser sessionUser, PasswordManagement passwordManagement,
             User.Factory factUser, Organization.Factory factOrg, Device.Factory factDevice,
-            CertificateDatabase certdb)
+            CertificateDatabase certdb, EmailSubscriptionDatabase esdb, Factory factSharedFolder,
+            SharedFolderInvitation.Factory factSFI, InvitationEmailer.Factory factEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
         _db = db;
+        _sfdb = sfdb;
         _certdb = certdb;
+
         _transaction = transaction;
         _sessionUser = sessionUser;
-        _userManagement = userManagement;
-        _organizationManagement = organizationManagement;
-        _sharedFolderManagement = sharedFolderManagement;
+        _passwordManagement = passwordManagement;
         _factUser = factUser;
         _factOrg = factOrg;
         _factDevice = factDevice;
+        _esdb = esdb;
+        _factSharedFolder = factSharedFolder;
+        _factSFI = factSFI;
+        _factEmailer = factEmailer;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -291,20 +304,53 @@ class SPService implements ISPService
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
-        OrgID orgID = user.getOrganization().id();
+        Organization org = user.getOrganization();
 
-        int sharedFolderCount = _organizationManagement.countSharedFolders(orgID);
-        List<PBSharedFolder> sharedFolderList =
-                _organizationManagement.listSharedFolders(orgID, maxResults, offset);
+        int sharedFolderCount = org.countSharedFolders();
+        Collection<SharedFolderInfo> sfis = org.listSharedFolders(sanitizeMaxResults(maxResults),
+                sanitizeOffset(offset));
+
+        List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfis.size());
+        for (SharedFolderInfo sfi : sfis) {
+            List<PBSubjectRolePair> pbsrps = Lists.newArrayListWithCapacity(sfi._acl.size());
+            for (SubjectRolePair srp : sfi._acl) {
+                pbsrps.add(PBSubjectRolePair.newBuilder()
+                        .setSubject(srp._subject.toString())
+                        .setRole(srp._role.toPB())
+                        .build());
+            }
+
+            pbs.add(PBSharedFolder.newBuilder()
+                    .setStoreId(sfi._sid.toPB())
+                    .setName(sfi._name)
+                    .addAllSubjectRole(pbsrps)
+                    .build());
+        }
 
         _transaction.commit();
 
-        ListSharedFoldersResponse response = ListSharedFoldersResponse.newBuilder()
-                .addAllSharedFolders(sharedFolderList)
+        return createReply(ListSharedFoldersResponse.newBuilder()
+                .addAllSharedFolders(pbs)
                 .setTotalCount(sharedFolderCount)
-                .build();
+                .build());
+    }
 
-        return createReply(response);
+    private int sanitizeOffset(Integer offset)
+    {
+        return offset == null || offset < 0 ? 0 : offset;
+    }
+
+    private static int sanitizeMaxResults(Integer maxResults)
+    {
+        // TODO (WW) force the client to always provide a max result. after all determine the max
+        // result is UI's responsibility.
+        final int DEFAULT_MAX_RESULTS = 100;
+        // To avoid DoS attacks forbid listSharedFolders queries exceeding 1000 returned results
+        final int ABSOLUTE_MAX_RESULTS = 1000;
+
+        if (maxResults == null || maxResults < 0) return DEFAULT_MAX_RESULTS;
+        else if (maxResults > ABSOLUTE_MAX_RESULTS) return ABSOLUTE_MAX_RESULTS;
+        else return maxResults;
     }
 
     @Override
@@ -394,8 +440,8 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        String email = _db.getEmail(unsubscribeToken);
-        _db.removeEmailSubscription(unsubscribeToken);
+        String email = _esdb.getEmail(unsubscribeToken);
+        _esdb.removeEmailSubscription(unsubscribeToken);
         _transaction.commit();
 
         GetUnsubscribeEmailReply unsubscribeEmail = GetUnsubscribeEmailReply.newBuilder()
@@ -468,7 +514,7 @@ class SPService implements ISPService
 
         // Certify device
         Device device = _factDevice.create(deviceId);
-        device.add(tsUser, UNKNOWN_NAME);
+        device.add(tsUser, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = certifyDevice(csr, device);
 
         _transaction.commit();
@@ -478,12 +524,17 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetSharedFolderNamesReply> getSharedFolderNames(
-            List<ByteString> sharedId)
+            List<ByteString> shareIds)
             throws Exception
     {
         _transaction.begin();
-        UserID userId = _sessionUser.get().id();
-        List<String> names = _sharedFolderManagement.getSharedFolderNames(userId, sharedId);
+
+        User user = _sessionUser.get();
+        List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
+        for (ByteString shareId : shareIds) {
+            names.add(_factSharedFolder.create_(shareId).getName(user));
+        }
+
         _transaction.commit();
 
         return createReply(GetSharedFolderNamesReply.newBuilder().addAllFolderName(names).build());
@@ -511,7 +562,7 @@ class SPService implements ISPService
         _transaction.begin();
 
         GetHeartInvitesQuotaReply reply = GetHeartInvitesQuotaReply.newBuilder()
-                .setCount(_db.getFolderlessInvitesQuota(_sessionUser.getID()))
+                .setCount(_sessionUser.get().getSignUpInvitationsQuota())
                 .build();
 
         _transaction.commit();
@@ -537,7 +588,7 @@ class SPService implements ISPService
                         user + " != " + owner);
             }
         } else {
-            device.add(user, UNKNOWN_NAME);
+            device.add(user, UNKNOWN_DEVICE_NAME);
         }
 
         CertifyDeviceReply reply = certifyDevice(csr, device);
@@ -563,30 +614,113 @@ class SPService implements ISPService
             List<PBSubjectRolePair> rolePairs, @Nullable String note)
             throws Exception
     {
-        SID sid = new SID(shareId);
-        UserID userId = _sessionUser.getID();
+        SharedFolder sf = _factSharedFolder.create_(shareId);
+        User sharer = _sessionUser.get();
+        List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
-        l.info("user:" + userId + " attempt to share folder with subjects:" + rolePairs.size());
+        l.info(sharer + " shares " + sf + " with " + srps.size() + " users");
+        if (srps.isEmpty()) throw new ExNoPerm("must specify one or more sharee");
 
-        if (rolePairs.isEmpty()) throw new ExNoPerm("Must specify one or more sharee");
+        _transaction.begin();
 
+        Map<UserID, Long> epochs = addSharedFolderIfNecessary(folderName, sf, sharer);
+
+        List<InvitationEmailer> emailers = createFolderInvitationAndEmailer(folderName, note, sf,
+                sharer, srps);
+
+        // send verkehr notification as the last step of the transaction
+        publish_(epochs);
+
+        _transaction.commit();
+
+        for (InvitationEmailer emailer : emailers) emailer.send();
+
+        return createVoidReply();
+    }
+
+    private Map<UserID, Long> addSharedFolderIfNecessary(String folderName, SharedFolder sf,
+            User sharer)
+            throws ExNotFound, SQLException, ExNoPerm, ExAlreadyExist, IOException
+    {
+        // Only verified users can share
+        if (!sharer.isVerified()) {
+            // TODO (GS): We want to throw a specific exception if the inviter isn't verified
+            // to allow easier error handling on the client-side
+            throw new ExNoPerm(sharer + " is not yet verified");
+        }
+
+        Map<UserID, Long> epochs;
+        if (sf.exists()) {
+            sf.throwIfNoPermission(sharer, Role.OWNER);
+            epochs = Collections.emptyMap();
+        } else {
+            // The store doesn't exist. Create it and add the user as the owner
+            sf.add(folderName);
+            epochs = sf.addACL(sharer, Role.OWNER);
+        }
+        return epochs;
+    }
+
+    private List<InvitationEmailer> createFolderInvitationAndEmailer(String folderName, String note,
+            SharedFolder sf, User sharer, List<SubjectRolePair> srps)
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist
+    {
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
         List<InvitationEmailer> emailers = Lists.newLinkedList();
 
-        List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
+        // create invitations
+        for (SubjectRolePair srp : srps) {
+            User sharee = _factUser.create(srp._subject);
+            if (sharee.equals(sharer)) {
+                l.warn(sharer + " tried to invite himself");
+                continue;
+            }
 
-        _transaction.begin();
-        Map<UserID, Long> epochs =
-                _sharedFolderManagement.shareFolder(folderName, sid, userId, srps, note, emailers);
-        // send verkehr notification as part of the transaction (sharer only)
-        publish_(epochs);
-        _transaction.commit();
+            emailers.add(createFolderInvitationAndEmailer(sf, sharer, sharee, srp._role, note,
+                    folderName));
+        }
 
-        l.info(userId + " completed share folder for s:" + sid);
+        return emailers;
+    }
 
-        InvitationEmailer.sendAll(emailers);
-        return createVoidReply();
+    private InvitationEmailer createFolderInvitationAndEmailer(SharedFolder sf, User sharer,
+            User sharee, Role role, String note, String folderName)
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist
+    {
+        SharedFolderInvitation sfi = _factSFI.createWithGeneratedCode();
+        sfi.add(sharer, sharee, sf, role, folderName);
+
+        InvitationEmailer emailer;
+        if (sharee.exists()) {
+            // send foler invitation email
+            emailer = _factEmailer.createFolderInvitationEmailer(sharer.id().toString(),
+                    sharee.id().toString(), sharer.getFullName()._first, folderName, note,
+                    sfi.code());
+        } else {
+            emailer = inviteToSignUp(sharee, _factOrg.getDefault(), sharer, folderName, note);
+        }
+        return emailer;
+    }
+
+    private InvitationEmailer inviteToSignUp(User invitee, Organization org, User inviter,
+            @Nullable String folderName, @Nullable String note)
+            throws SQLException, IOException, ExNotFound
+    {
+        return inviteToSignUp(invitee, org, inviter, inviter.getFullName()._first, folderName,
+                note);
+    }
+
+    InvitationEmailer inviteToSignUp(User invitee, Organization org, User inviter,
+            String inviterName, @Nullable String folderName, @Nullable String note)
+            throws SQLException, IOException
+    {
+        String code = invitee.addSignUpInvitationCode(inviter, org);
+
+        _esdb.addEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+
+        return _factEmailer.createSignUpInvitationEmailer(inviter.id().toString(),
+                invitee.id().toString(), inviterName, folderName, note, code);
     }
 
     @Override
@@ -594,36 +728,32 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        l.info("shared folder code: " + code);
         User user = _sessionUser.get();
+        SharedFolderInvitation sfi = _factSFI.create(code);
 
-        FolderInvitation invitation = _db.getFolderInvitation(code);
-        if (invitation != null) {
+        l.info(user + " joins " + sfi);
 
-            if (!user.id().equals(invitation._invitee)) {
-                throw new ExNoPerm("Your email " + user.id() + " does not match the expected " +
-                        invitation._invitee);
-            }
-
-            // Because the folder code is valid and was received by email, the user is verified.
-            user.setVerified();
-
-            // create ACL entry for invitee
-            Map<UserID, Long> epochs =
-                    _sharedFolderManagement.joinSharedFolder(invitation._sid, invitation._invitee,
-                            invitation._role);
-            // send verkehr notifications as part of the transaction
-            publish_(epochs);
-
-            // TODO: figure out when, if ever, it becomes safe to delete folder invitations
-            //_db.removeFolderInvitation(code);
-
-            _transaction.commit();
-
-            return createVoidReply();
-        } else {
-            throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
+        User sharee = sfi.getSharee();
+        if (!user.equals(sharee)) {
+            throw new ExNoPerm("your email " + user.id() + " does not match the expected " +
+                    sharee.id());
         }
+
+        // Because the folder code is valid and was received by email, the user is verified.
+        user.setVerified();
+
+        // create ACL entry for invitee
+        Map<UserID, Long> epochs = sfi.getSharedFolder().addACL(sharee, sfi.getRole());
+
+        // TODO: figure out when, if ever, it becomes safe to delete folder invitations
+        //_db.removeFolderInvitation(code);
+
+        // send verkehr notifications as the last step of the transaction
+        publish_(epochs);
+
+        _transaction.commit();
+
+        return createVoidReply();
     }
 
     @Override
@@ -632,25 +762,26 @@ class SPService implements ISPService
     {
         _transaction.begin();
 
-        User u = _sessionUser.get();
+        User user = _sessionUser.get();
 
-        List<FolderInvitation> invitations = _db.listPendingFolderInvitations(u.id());
+        Collection<SharedFolderInvitation> sfis = _factSFI.listAll(user);
 
-        // Only throw ExNoPerm if user isn't verified AND there are shared folder invitations to accept
-        if (!invitations.isEmpty() && !u.isVerified()) {
+        // Throw ExNoPerm only if user isn't verified AND there are shared folder invitations to
+        // accept.
+        if (!sfis.isEmpty() && !user.isVerified()) {
             throw new ExNoPerm("email address not verified");
         }
 
-        _transaction.commit();
-
         ListPendingFolderInvitationsReply.Builder builder =
                 ListPendingFolderInvitationsReply.newBuilder();
-        for (FolderInvitation fi : invitations) {
+        for (SharedFolderInvitation sfi : sfis) {
             builder.addInvitations(PBFolderInvitation.newBuilder()
-                    .setSharedFolderCode(fi._code)
-                    .setFolderName(fi._folderName)
-                    .setSharer(fi._invitee.toString()));
+                    .setSharedFolderCode(sfi.code())
+                    .setFolderName(sfi.getFolderName())
+                    .setSharer(sfi.getSharer().id().toString()));
         }
+
+        _transaction.commit();
 
         return createReply(builder.build());
     }
@@ -675,7 +806,7 @@ class SPService implements ISPService
         l.info("tsc: " + tsc);
 
         _transaction.begin();
-        ResolveTargetedSignUpCodeResult result = _db.getTargetedSignUp(tsc);
+        ResolveSignUpInvitationCodeResult result = _db.getSignUpInvitation(tsc);
         _transaction.commit();
 
         return createReply(ResolveTargetedSignUpCodeReply.newBuilder()
@@ -684,39 +815,38 @@ class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> inviteUser(List<String> userIdStrings,
-            Boolean inviteToDefaultOrg)
+    public ListenableFuture<Void> inviteUser(List<String> userIds, Boolean toDefaultOrg)
             throws ExNoPerm, SQLException, ExNotFound, ExEmailSendingFailed, ExAlreadyExist,
                 IOException
     {
-        if (userIdStrings.isEmpty()) throw new ExNoPerm("Must specify one or more invitee");
+        if (userIds.isEmpty()) throw new ExNoPerm("Must specify one or more invitee");
 
         _transaction.begin();
 
-        User user = _sessionUser.get();
+        User inviter = _sessionUser.get();
 
-        // check and set storeless invite quota
-        int left = _db.getFolderlessInvitesQuota(user.id()) - userIdStrings.size();
-        if (left < 0) {
-            throw new ExNoPerm();
-        } else {
-            _db.setFolderlessInvitesQuota(user.id(), left);
-        }
+        // check and set invitation quota
+        int left = inviter.getSignUpInvitationsQuota() - userIds.size();
+        if (left < 0) throw new ExNoPerm();
 
-        Organization org = inviteToDefaultOrg ? _factOrg.getDefault() : user.getOrganization();
+        inviter.setSignUpInvitationQuota(left);
+
+        Organization org = toDefaultOrg ? _factOrg.getDefault() : inviter.getOrganization();
 
         // Invite all invitees to Organization "org"
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
         List<InvitationEmailer> emailers = Lists.newLinkedList();
-        for (String inviteeString : userIdStrings) {
-            UserID invitee = UserID.fromExternal(inviteeString);
-            emailers.add(_userManagement.inviteOneUser(user, invitee, org, null, null));
+        for (String inviteeString : userIds) {
+            User invitee = _factUser.createFromExternalID(inviteeString);
+            if (invitee.exists()) throw new ExAlreadyExist("user already exists");
+            emailers.add(inviteToSignUp(invitee, org, inviter, null, null));
         }
 
         _transaction.commit();
 
-        InvitationEmailer.sendAll(emailers);
+        for (InvitationEmailer emailer : emailers) emailer.send();
+
         return createVoidReply();
     }
 
@@ -724,20 +854,19 @@ class SPService implements ISPService
     public ListenableFuture<GetACLReply> getACL(final Long epoch)
             throws SQLException, ExNoPerm
     {
-        // TODO (WW) move business logic to SharedFolderManagement
-
         _transaction.begin();
-        ACLReturn result = _db.getACL(epoch, _sessionUser.getID());
+        // TODO (WW) refactor as mentinoed in _sfdb.getACL().
+        GetACLResult result = _sfdb.getACL(epoch, _sessionUser.getID());
         _transaction.commit(); // commit right away to avoid holding read locks
 
         // this means that no acl changes have occurred
-        if (result.getEpoch() == epoch) {
+        if (result._epoch == epoch) {
             l.info("no updates - matching epoch:" + epoch);
             return createReply(GetACLReply.newBuilder().setEpoch(epoch).build());
         }
 
         GetACLReply.Builder getACLBuilder = GetACLReply.newBuilder();
-        for (Map.Entry<SID, List<SubjectRolePair>> entry : result.getSidToPairs().entrySet()) {
+        for (Map.Entry<SID, List<SubjectRolePair>> entry : result._sid2srps.entrySet()) {
             PBStoreACL.Builder storeAclBuilder = PBStoreACL.newBuilder();
 
             l.info("add s:" + entry.getKey());
@@ -753,7 +882,7 @@ class SPService implements ISPService
 
             getACLBuilder.addStoreAcl(storeAclBuilder);
         }
-        getACLBuilder.setEpoch(result.getEpoch());
+        getACLBuilder.setEpoch(result._epoch);
 
         return createReply(getACLBuilder.build());
     }
@@ -763,8 +892,9 @@ class SPService implements ISPService
             final List<PBSubjectRolePair> subjectRoleList)
             throws Exception
     {
-        UserID userId = _sessionUser.getID();
-        SID sid = new SID(storeId);
+        User user = _sessionUser.get();
+        SharedFolder sharedFolder = _factSharedFolder.create_(storeId);
+
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(subjectRoleList);
 
         // making the modification to the database, and then getting the current acl list should
@@ -772,8 +902,8 @@ class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
 
         _transaction.begin();
-        Map<UserID, Long> epochs = _sharedFolderManagement.updateACL(userId, sid, srps);
-        // send verkehr notification as part of the transaction
+        Map<UserID, Long> epochs = sharedFolder.updateACL(user, srps);
+        // send verkehr notification as the last step of the transaction
         publish_(epochs);
         _transaction.commit();
 
@@ -785,12 +915,14 @@ class SPService implements ISPService
             final List<String> subjectList)
             throws Exception
     {
-        UserID userId = _sessionUser.getID();
-        SID sid = new SID(storeId.toByteArray());
+        User user = _sessionUser.get();
+        SharedFolder sharedFolder = _factSharedFolder.create_(storeId);
+
         List<UserID> subjects = UserID.fromExternal(subjectList);
 
         _transaction.begin();
-        Map<UserID, Long> updatedEpochs = _sharedFolderManagement.deleteACL(userId, sid, subjects);
+        Map<UserID, Long> updatedEpochs = sharedFolder.deleteACL(user, subjects);
+        // send verkehr notification as the last step of the transaction
         publish_(updatedEpochs);
         _transaction.commit();
 
@@ -883,15 +1015,16 @@ class SPService implements ISPService
 
         User user = _factUser.createFromExternalID(userIdString);
         FullName fullName = new FullName(firstName, lastName);
+        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
 
         _transaction.begin();
-        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
+
         user.add(shaedSP, fullName, _factOrg.getDefault());
 
-        _sharedFolderManagement.checkForRootStoreCollision(user.id());
+        checkForRootStoreCollision(user);
 
         //unsubscribe user from the aerofs invitation reminder mailing list
-        _db.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
         _transaction.commit();
 
         return createVoidReply();
@@ -902,7 +1035,7 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        _userManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
+        _passwordManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
         _transaction.commit();
 
         return createVoidReply();
@@ -914,7 +1047,7 @@ class SPService implements ISPService
         throws Exception
     {
         _transaction.begin();
-        _userManagement.resetPassword(password_reset_token,new_credentials);
+        _passwordManagement.resetPassword(password_reset_token,new_credentials);
         _transaction.commit();
 
         return createVoidReply();
@@ -926,7 +1059,7 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        _userManagement.changePassword(_sessionUser.getID(),old_credentials,new_credentials);
+        _passwordManagement.changePassword(_sessionUser.getID(),old_credentials,new_credentials);
         _transaction.commit();
 
         return createVoidReply();
@@ -943,7 +1076,7 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        ResolveTargetedSignUpCodeResult result = _db.getTargetedSignUp(targetedInvite);
+        ResolveSignUpInvitationCodeResult result = _db.getSignUpInvitation(targetedInvite);
         User user = _factUser.create(result._userId);
 
         user.add(shaedSP, fullName, _factOrg.create(result._orgId));
@@ -951,7 +1084,7 @@ class SPService implements ISPService
         // mark the user as verified
         user.setVerified();
 
-        _sharedFolderManagement.checkForRootStoreCollision(result._userId);
+        checkForRootStoreCollision(user);
 
         // TODO (WW) don't we need to unsubscribe the user from the reminder mailing list, similar
         // to signUp()?
@@ -959,6 +1092,39 @@ class SPService implements ISPService
         _transaction.commit();
 
         return createVoidReply();
+    }
+
+    /**
+     * It is possible for a malicious user to create a shared folder whose SID collide with the
+     * SID of somebody's root store. When a new user signs up we can check if such a colliding
+     * folder exists and delete it to prevent malicious users from gaining access to other users'
+     * root stores.
+     *
+     * TODO:
+     * Ideally we should also register root stores in SP to make sure creation of colliding shared
+     * folder is impossible *after* the targeted user signs up. This is not currently done but will
+     * have to be done regardless of security considerations to support the team server (the only
+     * legitimate case where a root store need to be accessed by another user)
+     *
+     * TODO (WW) when needed, create a RootStore class that inherits SharedFolder, and have this
+     * method part of the new class. Alternatively, move this method to User.
+     *
+     * NB: this check used to be done when creating/updating ACLs but that did not make sense as ACL
+     * are never created/updated for root stores
+     */
+    private void checkForRootStoreCollision(User user) throws SQLException
+    {
+        SharedFolder sharedFolder = _factSharedFolder.create_(SID.rootSID(user.id()));
+
+        if (!sharedFolder.exists()) return;
+
+        // Looks like somebody created a shared folder that collides with somebody else's root store
+        // NB: here we assume a malicious collision for eavesdropping intent however there is a
+        // small but not necessarily negligible probability that real collision will occur. What we
+        // should do in this case is left as an exercise to the reader.
+        l.warn("Existing shared folder collides with root store id for " + user);
+
+        sharedFolder.delete();
     }
 
     @Override

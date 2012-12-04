@@ -5,6 +5,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.apache.log4j.Logger;
@@ -12,6 +13,7 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 
 public class Organization
@@ -55,7 +57,7 @@ public class Organization
                 // orgs. It is NOT a security measure.
                 OrgID orgID = new OrgID(Util.rand().nextInt());
                 try {
-                    _db.addOrganization(orgID, name);
+                    _db.add(orgID, name);
                     l.info("org #" + orgID + " created");
                     return create(orgID);
                 } catch (ExAlreadyExist e) {
@@ -202,4 +204,20 @@ public class Organization
         if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
         else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
     }
+
+    public int countSharedFolders()
+            throws SQLException
+    {
+        return _db.countSharedFolders(_id);
+    }
+
+    /**
+     * TODO (WW) return a collection of SharedFolder objects instead.
+     */
+    public Collection<SharedFolderInfo> listSharedFolders(int maxResults, int offset)
+            throws SQLException
+    {
+        return _db.listSharedFolders(_id, maxResults, offset);
+    }
+
 }

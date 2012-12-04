@@ -25,9 +25,8 @@ import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
-import com.aerofs.sp.server.lib.user.User.Factory;
-import com.aerofs.sp.server.organization.OrganizationManagement;
-import com.aerofs.sp.server.user.UserManagement;
+import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
@@ -48,13 +47,11 @@ import static org.mockito.Mockito.mock;
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
     private final SPDatabaseParams _dbParams = new SPDatabaseParams();
-    private final SQLThreadLocalTransaction transaction =
+    private final SQLThreadLocalTransaction trans =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    private final UserDatabase udb = new UserDatabase(transaction);
     private final SPServiceReactor reactor;
 
-    protected final OrganizationDatabase odb = new OrganizationDatabase(transaction);
-    protected final Organization.Factory factOrg = new Organization.Factory(odb);
+    private final UserDatabase udb = new UserDatabase(trans);
 
     // On initialization, a single admin is added to the sp database to enable authenticated calls
     public static final UserID ADMIN_ID = UserID.fromInternal("testadmin@company.com");
@@ -67,27 +64,34 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         // - local JUnitSPDatabaseParams
         // - local ThreadLocalTransaction
         // - mock SessionUserID (no thread-local variables; tests should be single-threaded)
-        // - real UserManagement class (using a local database).
+        // - real PasswordManagement class (using a local database).
         // - mock OrganizationManagement class
         // - injected InvitationEmailer
 
         assert factEmailer != null;
 
-        Factory factUser = new Factory(udb, factOrg);
-        DeviceDatabase ddb = new DeviceDatabase(transaction);
-        CertificateDatabase certdb = new CertificateDatabase(transaction);
+        SPDatabase db = new SPDatabase(trans);
+        DeviceDatabase ddb = new DeviceDatabase(trans);
+        CertificateDatabase certdb = new CertificateDatabase(trans);
+        EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
+        SharedFolderInvitationDatabase sfidb = new SharedFolderInvitationDatabase(trans);
+        OrganizationDatabase odb = new OrganizationDatabase(trans);
+        SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
+
+        Organization.Factory factOrg = new Organization.Factory(odb);
+        SharedFolder.Factory factSharedFolder = new SharedFolder.Factory(sfdb);
+        User.Factory factUser = new User.Factory(udb, factOrg);
         Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb,
                 new CertificateGenerator());
+        SharedFolderInvitation.Factory factSFI = new SharedFolderInvitation.Factory(sfidb, factUser,
+                factSharedFolder);
 
-        SPDatabase db = new SPDatabase(transaction);
-        UserManagement userManagement =
-                new UserManagement(db, factUser, factEmailer, mock(PasswordResetEmailer.class));
-        OrganizationManagement organizationManagement = mock(OrganizationManagement.class);
+        PasswordManagement passwordManagement =
+                new PasswordManagement(db, factUser, mock(PasswordResetEmailer.class));
 
-        SPService service = new SPService(db, transaction, new MockSessionUser(),
-                userManagement, organizationManagement,
-                new SharedFolderManagement(db, userManagement, factEmailer, factUser, factOrg),
-                factUser, factOrg, factDevice, certdb);
+        SPService service = new SPService(db, sfdb, trans, new MockSessionUser(),
+                passwordManagement, factUser, factOrg, factDevice, certdb, esdb, factSharedFolder,
+                factSFI, factEmailer);
 
         reactor = new SPServiceReactor(service);
     }
@@ -106,11 +110,11 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 .toByteArray());
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService
-        transaction.begin();
+        trans.begin();
         udb.addUser(ADMIN_ID, new FullName("first", "last"), cred, OrgID.DEFAULT,
                 AuthorizationLevel.ADMIN);
         udb.setVerified(ADMIN_ID);
-        transaction.commit();
+        trans.commit();
     }
 
     @Override

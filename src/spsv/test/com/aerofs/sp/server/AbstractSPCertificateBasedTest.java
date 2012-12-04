@@ -33,10 +33,10 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
             throws Exception
     {
         Log.info("Add test users to sp_user to satisfy foreign key constraints for d_owner_id");
-        transaction.begin();
+        trans.begin();
         addTestUser(TEST_1_USER);
         addTestUser(TEST_2_USER);
-        transaction.commit();
+        trans.commit();
 
         mockCertificateGeneratorAndIncrementSerialNumber();
 

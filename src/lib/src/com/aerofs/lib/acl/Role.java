@@ -5,12 +5,13 @@ import com.aerofs.proto.Common.PBRole;
 
 import javax.annotation.Nonnull;
 
-// TODO (WW) remove this class, and use PBRole instead where this class is used. Conversions between
-// strings and PBRole should be done by methods only available to UI.
 public enum Role
 {
     // N.B. roles with more permissions must go after those with less. This is required for
     // {@link covers(Role)} to work properly.
+
+    // N.B. the ordinals of these enums are stored in the databases.
+    // Be VERY CAREFUL when shifting them!
 
     VIEWER("VIEWER", PBRole.VIEWER),
     EDITOR("EDITOR", PBRole.EDITOR),

@@ -14,11 +14,13 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.SPParam;
-import com.aerofs.sp.server.lib.IEmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
+
+import javax.inject.Inject;
 
 public class EmailReminder
 {
@@ -27,7 +29,7 @@ public class EmailReminder
     private final InvitationReminderEmailer.Factory _emailFactory;
 
     private final SQLThreadLocalTransaction _trans;
-    private final IEmailSubscriptionDatabase _db;
+    private final EmailSubscriptionDatabase _db;
     /**
      * Remind at intervals of 2 days, 10 days, and 30 days
      */
@@ -48,7 +50,8 @@ public class EmailReminder
      */
     private static final int MAX_USERS = 100;
 
-    public EmailReminder(final IEmailSubscriptionDatabase db, final SQLThreadLocalTransaction trans,
+    @Inject
+    public EmailReminder(final EmailSubscriptionDatabase db, final SQLThreadLocalTransaction trans,
             final InvitationReminderEmailer.Factory emailFactory)
     {
         _db = db;

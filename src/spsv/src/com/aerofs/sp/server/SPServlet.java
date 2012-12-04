@@ -4,14 +4,15 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.common.InvitationCode;
-import com.aerofs.sp.common.InvitationCode.CodeType;
-import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.SharedFolderDatabase;
+import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -22,12 +23,10 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sp.server.organization.OrganizationManagement;
 import com.aerofs.sp.server.sp.EmailReminder;
-import com.aerofs.sp.server.user.UserManagement;
+import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.ThreadLocalHttpSessionUser;
@@ -54,35 +53,37 @@ public class SPServlet extends AeroServlet
     private static final long serialVersionUID = 1L;
 
     private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
-    private final SQLThreadLocalTransaction _spTrans = new SQLThreadLocalTransaction(_conProvider);
+    private final SQLThreadLocalTransaction _trans = new SQLThreadLocalTransaction(_conProvider);
 
-    private final SPDatabase _db = new SPDatabase(_spTrans);
-    private final OrganizationDatabase _odb = new OrganizationDatabase(_spTrans);
-    private final UserDatabase _udb = new UserDatabase(_spTrans);
-    private final DeviceDatabase _ddb = new DeviceDatabase(_spTrans);
-    private final CertificateDatabase _certdb = new CertificateDatabase(_spTrans);
+    // TODO (WW) remove dependency on these database classes
+    private final SPDatabase _db = new SPDatabase(_trans);
+    private final OrganizationDatabase _odb = new OrganizationDatabase(_trans);
+    private final UserDatabase _udb = new UserDatabase(_trans);
+    private final DeviceDatabase _ddb = new DeviceDatabase(_trans);
+    private final CertificateDatabase _certdb = new CertificateDatabase(_trans);
+    private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_trans);
+    private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_trans);
+    private final SharedFolderInvitationDatabase _sfidb =
+            new SharedFolderInvitationDatabase(_trans);
 
-    private final ThreadLocalHttpSessionUser _sessionUserID = new ThreadLocalHttpSessionUser();
-
-    private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
-
+    private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
     private final CertificateGenerator _certgen = new CertificateGenerator();
 
     private final Organization.Factory _factOrg = new Organization.Factory(_odb);
     private final User.Factory _factUser = new User.Factory(_udb, _factOrg);
     private final Device.Factory _factDevice = new Device.Factory(_ddb, _factUser, _certdb,
             _certgen);
+    private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory(_sfdb);
+    private final SharedFolderInvitation.Factory _factSFI =
+            new SharedFolderInvitation.Factory(_sfidb, _factUser, _factSharedFolder);
+    private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
-    private final UserManagement _userManagement =
-            new UserManagement(_db, _factUser, _factEmailer, new PasswordResetEmailer());
-    private final OrganizationManagement _organizationManagement = new OrganizationManagement(_db);
+    private final PasswordManagement _passwordManagement =
+            new PasswordManagement(_db, _factUser, new PasswordResetEmailer());
 
-    private final SharedFolderManagement _sharedFolderManagement = new SharedFolderManagement(
-            _db, _userManagement, _factEmailer, _factUser, _factOrg);
-
-    private final SPService _service = new SPService(_db, _spTrans, _sessionUserID, _userManagement,
-            _organizationManagement, _sharedFolderManagement, _factUser, _factOrg, _factDevice,
-            _certdb);
+    private final SPService _service = new SPService(_db, _sfdb, _trans, _sessionUser,
+            _passwordManagement, _factUser, _factOrg, _factDevice, _certdb, _esdb,
+            _factSharedFolder, _factSFI, _factEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
@@ -108,7 +109,7 @@ public class SPServlet extends AeroServlet
 
         InvitationReminderEmailer.Factory emailReminderFactory = new Factory();
 
-        EmailReminder er = new EmailReminder(_db, _spTrans, emailReminderFactory);
+        EmailReminder er = new EmailReminder(_esdb, _trans, emailReminderFactory);
         er.start();
     }
 
@@ -126,7 +127,7 @@ public class SPServlet extends AeroServlet
     protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
         throws IOException
     {
-        _sessionUserID.setSession(req.getSession());
+        _sessionUser.setSession(req.getSession());
 
         // Receive protocol version number.
         int protocol = _postDelegate.getProtocolVersion(req);
@@ -143,7 +144,7 @@ public class SPServlet extends AeroServlet
         byte [] bytes;
         try {
             bytes = _reactor.react(decodedMessage).get();
-            _spTrans.cleanUp();
+            _trans.cleanUp();
         } catch (Exception e) {
             l.warn("exception in reactor: " + Util.e(e));
             throw new IOException(e.getCause());
@@ -152,7 +153,28 @@ public class SPServlet extends AeroServlet
         _postDelegate.sendReply(resp, bytes);
     }
 
-    protected void handleTargetedInvite(HttpServletRequest req, HttpServletResponse rsp)
+    // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>
+    //               or: aerofs=lotsoflove&inviteCount=<N>
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
+            throws IOException
+    {
+        try {
+            _trans.begin();
+            if ("love".equals(req.getParameter("aerofs"))) {
+                handleSignUpInvite(req, rsp);
+            }
+            _trans.commit();
+        } catch (SQLException e) {
+            _trans.handleException();
+            throw new IOException(e);
+        } catch (IOException e) {
+            _trans.handleException();
+            throw e;
+        }
+    }
+
+    protected void handleSignUpInvite(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException
     {
         String fromPerson = req.getParameter("fromPerson");
@@ -168,7 +190,7 @@ public class SPServlet extends AeroServlet
         } catch (ExAlreadyExist e) {
             rsp.getWriter().println("skip " + to);
         } catch (Exception e) {
-            l.error("handleTargetedInvite: ", e);
+            l.error("handleSignUpInvite: ", e);
             throw new IOException(e);
         }
     }
@@ -178,10 +200,10 @@ public class SPServlet extends AeroServlet
      * This exists only to support the invitation artifact script.
      * TODO it should be removed when the tools/invite script is removed
      * Perhaps it can be dumped into an Invite.java if it is ever created.
-     * @param fromPerson inviter's name
+     * @param inviterName inviter's name
      */
-    private void inviteFromScript(@Nonnull String fromPerson, @Nonnull String inviteeIdString)
-            throws Exception
+    private void inviteFromScript(@Nonnull String inviterName, @Nonnull String inviteeIdString)
+            throws ExAlreadyExist, SQLException, IOException, ExEmailSendingFailed
     {
         User invitee = _factUser.createFromExternalID(inviteeIdString);
 
@@ -189,36 +211,11 @@ public class SPServlet extends AeroServlet
         if (invitee.exists()) throw new ExAlreadyExist("user already exists");
 
         // Check that we haven't already invited this user
-        if (_db.isAlreadyInvited(invitee.id())) throw new ExAlreadyExist("user already invited");
+        if (invitee.isInvitedToSignUp()) throw new ExAlreadyExist("user already invited");
 
-        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _db.addTargetedSignupCode(code, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), invitee.id(),
-                OrgID.DEFAULT);
-
-        _factEmailer.createUserInvitation(SV.SUPPORT_EMAIL_ADDRESS, invitee.id().toString(),
-                fromPerson, null, null, code).send();
-
-        _db.addEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-    }
-
-    // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>
-    //               or: aerofs=lotsoflove&inviteCount=<N>
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
-        throws IOException
-    {
-        try {
-            _spTrans.begin();
-            if ("love".equals(req.getParameter("aerofs"))) {
-                handleTargetedInvite(req, rsp);
-            }
-            _spTrans.commit();
-        } catch (SQLException e) {
-            _spTrans.handleException();
-            throw new IOException(e);
-        } catch (IOException e) {
-            _spTrans.handleException();
-            throw e;
-        }
+        User inviter = _factUser.create(UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS));
+        InvitationEmailer emailer = _service.inviteToSignUp(invitee, _factOrg.getDefault(), inviter,
+                inviterName, null, null);
+        emailer.send();
     }
 }

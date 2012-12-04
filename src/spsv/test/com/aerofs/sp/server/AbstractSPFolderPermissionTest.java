@@ -61,7 +61,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPServiceTest
         try {
             reply = service.listPendingFolderInvitations().get();
         } catch (ExNotFound e) {
-            transaction.handleException();
+            trans.handleException();
             reply = null;
         }
         if (reply != null) {

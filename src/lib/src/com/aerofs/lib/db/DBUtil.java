@@ -1,5 +1,6 @@
 package com.aerofs.lib.db;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -207,5 +208,36 @@ public class DBUtil
             return new SQLiteDBCW(params.url(), params.autoCommit(),
                     params.sqliteExclusiveLocking(), params.sqliteWALMode());
         }
+    }
+
+    /**
+     * This method examines the result for "select count(*)" queries, asserts the result is either
+     * zero or one, and return true if the count is one. See count() for example usage.
+     */
+    public static boolean binaryCount(ResultSet rs)
+            throws SQLException
+    {
+        int count = count(rs);
+        assert count == 0 || count == 1;
+        return count == 1;
+    }
+
+    /**
+     * This method returns the result of "select count(*)" queries. Example:
+     *
+     *  ResultSet rs = ps.executeQuery();
+     *  try {
+     *      return count(rs);
+     *  } finally {
+     *      rs.close();
+     *  }
+     */
+    public static int count(ResultSet rs)
+            throws SQLException
+    {
+        Util.verify(rs.next());
+        int count = rs.getInt(1);
+        assert !rs.next();
+        return count;
     }
 }

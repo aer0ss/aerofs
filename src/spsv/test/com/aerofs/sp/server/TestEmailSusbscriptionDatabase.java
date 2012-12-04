@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import org.junit.After;
 
 import org.junit.Before;
@@ -18,11 +19,8 @@ import java.util.EnumSet;
 
 import com.aerofs.testlib.AbstractTest;
 
-import com.aerofs.sp.server.lib.IEmailSubscriptionDatabase;
-
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
-import com.aerofs.sp.server.lib.SPDatabase;
 
 import java.util.Set;
 
@@ -41,7 +39,7 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
     protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
     protected final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    protected IEmailSubscriptionDatabase db = new SPDatabase(_transaction);
+    protected EmailSubscriptionDatabase db = new EmailSubscriptionDatabase(_transaction);
 
     @Before
     public void beginTx() throws SQLException { _transaction.begin(); }

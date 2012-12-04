@@ -26,8 +26,10 @@ import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
+import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.google.common.collect.Sets;
 import org.junit.Before;
@@ -51,6 +53,8 @@ public class TestSPEmailReminder extends AbstractTest {
     @Spy protected final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
     @Spy protected SPDatabase _db = new SPDatabase(_transaction);
+    @Spy protected UserDatabase _udb = new UserDatabase(_transaction);
+    @Spy protected EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_transaction);
     @Spy protected OrganizationDatabase _odb = new OrganizationDatabase(_transaction);
 
     @InjectMocks private EmailReminder er;
@@ -87,7 +91,7 @@ public class TestSPEmailReminder extends AbstractTest {
 
         _transaction.begin();
         Log.info("add default organization");
-        _odb.addOrganization(ORG_ID, "Test Organization");
+        _odb.add(ORG_ID, "Test Organization");
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
@@ -110,16 +114,14 @@ public class TestSPEmailReminder extends AbstractTest {
         for (UserID user: users) {
             Log.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-            _db.addTargetedSignupCode(signupCode,
-                    UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS),
-                    user, ORG_ID,
-                    System.currentTimeMillis()-age);
+            _udb.addSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
+                    ORG_ID, System.currentTimeMillis() - age);
 
-            _db.addEmailSubscription(user,
+            _esdb.addEmailSubscription(user,
                     SubscriptionCategory.AEROFS_INVITATION_REMINDER,
-                    System.currentTimeMillis()-age);
+                    System.currentTimeMillis() - age);
 
-            assertNotNull(_db.getTargetedSignUp(signupCode));
+            assertNotNull(_db.getSignUpInvitation(signupCode));
         }
 
         return users;
@@ -136,7 +138,7 @@ public class TestSPEmailReminder extends AbstractTest {
 
         do {
             _transaction.begin();
-            users = _db.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT, NUM_USERS_TO_RETURN_IN_SET,
+            users = _esdb.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT, NUM_USERS_TO_RETURN_IN_SET,
                       offset);
             _transaction.commit();
 
@@ -176,7 +178,7 @@ public class TestSPEmailReminder extends AbstractTest {
     {
         for (UserID user: users) {
             _transaction.begin();
-            String tokenId = _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+            String tokenId = _esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
             _transaction.commit();
 
             verify(_emailFactory, mode).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),

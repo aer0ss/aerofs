@@ -108,11 +108,11 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // set up TEST_USER_4
-        transaction.begin();
+        trans.begin();
         udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
                 TEST_USER_4_CRED, OrgID.DEFAULT, AuthorizationLevel.USER);
         udb.setVerified(TEST_USER_4);
-        transaction.commit();
+        trans.commit();
     }
 
     //
@@ -133,7 +133,8 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         assertEquals(1, getAcl.getStoreAclCount());
         assertEquals(TEST_SID_1, new SID(getAcl.getStoreAcl(0).getStoreId()));
         assertEquals(1, getAcl.getStoreAcl(0).getSubjectRoleCount());
-        assertEquals(TEST_USER_1, UserID.fromInternal(getAcl.getStoreAcl(0).getSubjectRole(0).getSubject()));
+        assertEquals(TEST_USER_1,
+                UserID.fromInternal(getAcl.getStoreAcl(0).getSubjectRole(0).getSubject()));
         assertEquals(Role.OWNER, Role.fromPB(getAcl.getStoreAcl(0).getSubjectRole(0).getRole()));
 
         verify(verkehrPublisher).publish_(eq(TEST_USER_1.toString()), any(byte[].class));
@@ -196,7 +197,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             shareAndJoinFolder(TEST_USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         } catch (ExNoPerm e) {
             // make sure we clean up after uncommitted transaction(s)
-            transaction.handleException();
+            trans.handleException();
             ok = true;
         }
         Assert.assertTrue(ok);
@@ -273,7 +274,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
         try {
             service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_2.toString())).get();
         } catch (ExNotFound e) {
-            transaction.handleException();
+            trans.handleException();
             ok = true;
         }
         Assert.assertTrue(ok);
@@ -412,7 +413,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_3, Role.OWNER));
         } catch (Exception e) {
             // make sure we clean up after uncommitted transaction(s)
-            transaction.handleException();
+            trans.handleException();
             ok = true;
         }
         assertTrue(ok);
@@ -449,7 +450,7 @@ public class TestSPACL extends AbstractSPFolderPermissionTest
             service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_1, Role.EDITOR));
         } catch (Exception e) {
             // make sure we clean up after uncommitted transaction(s)
-            transaction.handleException();
+            trans.handleException();
             ex = e;
         }
 

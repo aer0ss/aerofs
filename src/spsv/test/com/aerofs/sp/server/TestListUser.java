@@ -59,8 +59,8 @@ public class TestListUser extends AbstractTest
         // throw exceptions
         _transaction.begin();
 
-        _odb.addOrganization(validOrgId, "test");
-        _odb.addOrganization(nonQueriedOrgId, "dummy");
+        _odb.add(validOrgId, "test");
+        _odb.add(nonQueriedOrgId, "dummy");
 
         setupUsers();
     }

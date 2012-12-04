@@ -15,7 +15,6 @@ import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.LocalSPServiceReactorCaller;
 import com.aerofs.testlib.AbstractTest;
-import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,12 +23,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -56,10 +56,10 @@ public class TestSignupHelper extends AbstractTest
         throws Exception
     {
         // return stub invitation emails to avoid NPE
-        when(factEmail.createUserInvitation(anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString())).thenReturn(new InvitationEmailer());
-        when(factEmail.createFolderInvitation(anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString())).thenReturn(new InvitationEmailer());
+        when(factEmail.createSignUpInvitationEmailer(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString())).then(RETURNS_MOCKS);
+        when(factEmail.createFolderInvitationEmailer(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString())).then(RETURNS_MOCKS);
 
         serviceReactorCaller.init_();
     }
@@ -134,14 +134,12 @@ public class TestSignupHelper extends AbstractTest
         _sp.signIn(LocalSPServiceReactorCaller.ADMIN_ID.toString(),
                 ByteString.copyFrom(LocalSPServiceReactorCaller.ADMIN_CRED));
 
-        List<String> emails = Lists.newArrayList();
-        emails.add(userId.toString());
-        _sp.inviteUser(emails, true);
+        _sp.inviteUser(Collections.singletonList(userId.toString()), true);
 
         // Verify an invitation email would have been sent: from the ADMIN_ID to userId.
         // Capture the code to return to the caller.
         ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
-        verify(factEmail, atLeastOnce()).createUserInvitation(
+        verify(factEmail, atLeastOnce()).createSignUpInvitationEmailer(
                 eq(LocalSPServiceReactorCaller.ADMIN_ID.toString()), eq(userId.toString()),
                 anyString(), anyString(), anyString(), code.capture());
 

@@ -44,10 +44,10 @@ public class TestSPCertifyTeamServerCertificate extends AbstractSPServiceTest
             throws Exception
     {
         // make sure the user is setup properly
-        transaction.begin();
+        trans.begin();
         assertTrue(user.getOrganization().isDefault());
         assertFalse(user.getLevel().covers(AuthorizationLevel.ADMIN));
-        transaction.commit();
+        trans.commit();
 
         certifyTeamServerDevice(OrgID.DEFAULT.toTeamServerUserID());
     }
@@ -59,10 +59,10 @@ public class TestSPCertifyTeamServerCertificate extends AbstractSPServiceTest
         // this moves the user to a new organization
         UserID tsUserID = getTeamServerUserID();
 
-        transaction.begin();
+        trans.begin();
         assertFalse(user.getOrganization().isDefault());
         user.setLevel(AuthorizationLevel.USER);
-        transaction.commit();
+        trans.commit();
 
         certifyTeamServerDevice(tsUserID);
     }
@@ -76,9 +76,9 @@ public class TestSPCertifyTeamServerCertificate extends AbstractSPServiceTest
 
         // Can't conveniently use verify() since udb.addUser() may be called many times during test
         // initialization.
-        transaction.begin();
+        trans.begin();
         assertTrue(udb.hasUser(tsUserID));
-        transaction.commit();
+        trans.commit();
     }
 
     @Test
@@ -92,9 +92,9 @@ public class TestSPCertifyTeamServerCertificate extends AbstractSPServiceTest
 
         // Can't conveniently use verify() since ddb.addDevice() may be called many times during
         // test initialization.
-        transaction.begin();
+        trans.begin();
         assertTrue(ddb.hasDevice(tsDID));
-        transaction.commit();
+        trans.commit();
     }
 
     private void certifyTeamServerDevice(UserID userID)

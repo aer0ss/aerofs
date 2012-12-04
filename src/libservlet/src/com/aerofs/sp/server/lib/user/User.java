@@ -11,6 +11,8 @@ import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.common.InvitationCode;
+import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -226,5 +228,36 @@ public class User
         _db.setOrgID(_id, org.id());
     }
 
+    /**
+     * generate a signup invitation code and add it to the database
+     * @return the signup code
+     * @pre the user doesn't exist
+     */
+    public String addSignUpInvitationCode(User inviter, Organization org)
+            throws SQLException
+    {
+        assert !exists();
 
+        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+        _db.addSignupCode(code, inviter.id(), _id, org.id());
+        return code;
+    }
+
+    public int getSignUpInvitationsQuota()
+            throws ExNotFound, SQLException
+    {
+        return _db.getSignUpInvitationsQuota(_id);
+    }
+
+    public void setSignUpInvitationQuota(int quota)
+            throws SQLException
+    {
+        _db.setSignUpInvitationsQuota(_id, quota);
+    }
+
+    public boolean isInvitedToSignUp()
+            throws SQLException
+    {
+        return _db.isInvitedToSignUp(_id);
+    }
 }

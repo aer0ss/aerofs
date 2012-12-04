@@ -7,7 +7,7 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.user.UserManagement;
+import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
@@ -29,7 +29,7 @@ public class TestSPPassword extends AbstractTest
     @Mock SPDatabase db;
     @Mock User.Factory factUser;
     @Mock PasswordResetEmailer passwordResetEmailer;
-    @InjectMocks UserManagement userManagement;
+    @InjectMocks PasswordManagement _passwordManagement;
 
     @Mock User user;
 
@@ -73,14 +73,14 @@ public class TestSPPassword extends AbstractTest
         throws Exception
     {
         mockNonexistingUser();
-        userManagement.sendPasswordResetEmail(user);
+        _passwordManagement.sendPasswordResetEmail(user);
         verify(user).exists();
     }
     @Test
     public void shouldCallDatabaseToAddPasswordResetToken()
         throws Exception
     {
-        userManagement.sendPasswordResetEmail(user);
+        _passwordManagement.sendPasswordResetEmail(user);
         verify(db).addPasswordResetToken(eq(user.id()), anyString());
     }
 
@@ -88,7 +88,7 @@ public class TestSPPassword extends AbstractTest
     public void shouldSendPasswordResetEmail()
         throws Exception
     {
-        userManagement.sendPasswordResetEmail(user);
+        _passwordManagement.sendPasswordResetEmail(user);
         verify(passwordResetEmailer).sendPasswordResetEmail(eq(user.id()),anyString());
     }
 
@@ -100,7 +100,7 @@ public class TestSPPassword extends AbstractTest
     {
         mockSPDatabaseGetUserByPasswordResetTokenNoUser();
         mockNonexistingUser();
-        userManagement.resetPassword("dummy token", ByteString.copyFrom(("dummy new " +
+        _passwordManagement.resetPassword("dummy token", ByteString.copyFrom(("dummy new " +
                 "password").getBytes()));
     }
 
@@ -108,7 +108,7 @@ public class TestSPPassword extends AbstractTest
     public void shouldCallDatabaseUpdateUserCredentials()
         throws Exception
     {
-        userManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
+        _passwordManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
         verify(db).updateUserCredentials(user.id(), SPParam.getShaedSP("test123".getBytes()));
     }
 
@@ -116,7 +116,7 @@ public class TestSPPassword extends AbstractTest
     public void shouldCallDatabaseInvalidatePasswordResetToken()
         throws Exception
     {
-        userManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
+        _passwordManagement.resetPassword("dummy token", ByteString.copyFrom("test123".getBytes()));
         verify(db).deletePasswordResetToken("dummy token");
     }
 
@@ -126,7 +126,7 @@ public class TestSPPassword extends AbstractTest
     public void shouldCheckUserExistence()
         throws Exception
     {
-        userManagement.changePassword(user.id(),
+        _passwordManagement.changePassword(user.id(),
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );
@@ -137,7 +137,7 @@ public class TestSPPassword extends AbstractTest
     public void shouldCallDatabaseTestAndCheckUserCredentials()
         throws Exception
     {
-        userManagement.changePassword(user.id(),
+        _passwordManagement.changePassword(user.id(),
                 ByteString.copyFrom("old password".getBytes()),
                 ByteString.copyFrom("new password".getBytes())
         );

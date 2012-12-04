@@ -19,15 +19,26 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * Extendable (mockable) class that sends invitation emails
- */
+// TODO (WW) the pattern of this class is inconsistent with PasswordResetEmailer. Need refactoring
+// and/or merging.
 public class InvitationEmailer
 {
     public static class Factory
     {
-        public InvitationEmailer createUserInvitation(@Nullable final String from, final String to,
-                final String fromPerson, @Nullable final String folderName,
+        public InvitationEmailer createNullEmailer()
+        {
+            return new InvitationEmailer(new Callable<Void>()
+            {
+                @Override
+                public Void call()
+                {
+                    return null;
+                }
+            });
+        }
+
+        public InvitationEmailer createSignUpInvitationEmailer(@Nullable final String inviter,
+                final String invitee, final String inviterName, @Nullable final String folderName,
                 @Nullable final String note, final String signupCode)
                 throws IOException
         {
@@ -45,8 +56,9 @@ public class InvitationEmailer
             String body;
             final Email email = new Email(subject, false, null);
 
-            if (from != null) {
-                String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
+            if (inviter != null) {
+                String nameAndEmail = inviterName.isEmpty() ? inviter : inviterName + " (" +
+                        inviter + ")";
                 body = "\n" + nameAndEmail + " has invited you to "
                     + (folderName != null ? "a shared " + S.PRODUCT + " folder" : S.PRODUCT)
                     + (note != null ? ":\n\n" + note : ".") + "\n\n"
@@ -55,7 +67,7 @@ public class InvitationEmailer
                     "And when prompted, enter the following invitation code:\n\n" + signupCode;
 
                 // If fromPerson is empty (user didn't set his name), use his email address instead
-                String nameOrEmail = fromPerson.isEmpty() ? from : fromPerson;
+                String nameOrEmail = inviterName.isEmpty() ? inviter : inviterName;
                 email.addSection(nameOrEmail + " invited you to " + S.PRODUCT + "!",
                         HEADER_SIZE.H1, body);
 
@@ -79,7 +91,7 @@ public class InvitationEmailer
                         HEADER_SIZE.H1,
                         body);
 
-                email.addSignature("Happy Syncing :)", fromPerson,
+                email.addSignature("Happy Syncing :)", inviterName,
                         "p.s. Let us know what you think at " + SV.SUPPORT_EMAIL_ADDRESS +
                         ". We'd love to hear your feedback!");
             }
@@ -89,12 +101,12 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, fromPerson, to, null, subject,
+                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, inviterName, invitee, null, subject,
                             email.getTextEmail(), email.getHTMLEmail(), true,
                             EmailCategory.FOLDERLESS_INVITE);
 
                     EmailUtil.emailSPNotification(
-                            from + " invited " + to +
+                            inviter + " invited " + invitee +
                                     (folderName != null ? " to " + folderName : " folderless"),
                             "code " + signupCode);
                     return null;
@@ -102,8 +114,8 @@ public class InvitationEmailer
             });
         }
 
-        public InvitationEmailer createFolderInvitation(@Nonnull final String from, final String to,
-                final String fromPerson, @Nullable final String folderName,
+        public InvitationEmailer createFolderInvitationEmailer(@Nonnull final String from,
+                final String to, final String fromPerson, @Nullable final String folderName,
                 @Nullable final String note, final String shareFolderCode)
                 throws IOException
         {
@@ -154,30 +166,19 @@ public class InvitationEmailer
 
     private final Callable<Void> _c;
 
-    /**
-     * Stub
-     */
-    public InvitationEmailer()
-    {
-        _c = null;
-    }
-
     private InvitationEmailer(Callable<Void> c)
     {
         _c = c;
     }
 
-    public void send() throws Exception
+    public void send() throws ExEmailSendingFailed
     {
-        if (_c != null) _c.call();
-    }
-
-    public static void sendAll(Iterable<InvitationEmailer> emails) throws ExEmailSendingFailed
-    {
-        try {
-            for (InvitationEmailer email : emails) email.send();
-        } catch (Exception e) {
-            throw new ExEmailSendingFailed(e);
+        if (_c != null) {
+            try {
+                _c.call();
+            } catch (Exception e) {
+                throw new ExEmailSendingFailed(e);
+            }
         }
     }
 }

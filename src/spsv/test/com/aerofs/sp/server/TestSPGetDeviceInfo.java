@@ -43,7 +43,7 @@ public class TestSPGetDeviceInfo extends AbstractSPFolderPermissionTest
         // Before we proceed make sure verkehr is set up to publish successfully (for ACLs).
         setupMockVerkehrToSuccessfullyPublish();
 
-        transaction.begin();
+        trans.begin();
 
         // User 1
         ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A01");
@@ -60,7 +60,7 @@ public class TestSPGetDeviceInfo extends AbstractSPFolderPermissionTest
         ddb.addDevice(_deviceC01, TEST_USER_3, "Device C01");
         ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_3, "Device C02");
 
-        transaction.commit();
+        trans.commit();
 
         // User 1 shares with User 2, but not with User 3
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);

@@ -39,12 +39,12 @@ public class TestSPGetTeamServerUserID extends AbstractSPServiceTest
             throws Exception
     {
         // make sure the user is set up properly
-        transaction.begin();
+        trans.begin();
         assertTrue(user.getOrganization().isDefault());
-        transaction.commit();
+        trans.commit();
 
         getTeamServerUserID();
-        verify(odb).addOrganization(any(OrgID.class), anyString());
+        verify(odb).add(any(OrgID.class), anyString());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TestSPGetTeamServerUserID extends AbstractSPServiceTest
             throws Exception
     {
         UserID tsUserID = getTeamServerUserID();
-        verify(odb).addOrganization(capOrgID.capture(), anyString());
+        verify(odb).add(capOrgID.capture(), anyString());
         assertEquals(capOrgID.getValue().toTeamServerUserID(), tsUserID);
     }
 
@@ -62,9 +62,9 @@ public class TestSPGetTeamServerUserID extends AbstractSPServiceTest
     {
         service.addOrganization("test");
 
-        transaction.begin();
+        trans.begin();
         user.setLevel(AuthorizationLevel.USER);
-        transaction.commit();
+        trans.commit();
 
         getTeamServerUserID();
     }

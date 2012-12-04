@@ -11,6 +11,8 @@ import org.apache.log4j.Logger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Class needed to facilitate database transactions and database connection creation.
@@ -20,6 +22,10 @@ public abstract class AbstractSQLDatabase
     private final static Logger l = Util.l(AbstractSQLDatabase.class);
 
     private IDatabaseConnectionProvider<Connection> _provider;
+
+    // Not all subclasses need this. Added to here just for convenience.
+    protected static final Calendar UTC_CALANDER =
+            Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     public AbstractSQLDatabase(IDatabaseConnectionProvider<Connection> provider)
     {

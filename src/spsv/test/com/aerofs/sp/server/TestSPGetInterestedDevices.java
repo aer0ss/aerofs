@@ -41,7 +41,7 @@ public class TestSPGetInterestedDevices extends AbstractSPFolderPermissionTest
         // Before we proceed make sure verkehr is set up to publish successfully (for ACLs).
         setupMockVerkehrToSuccessfullyPublish();
 
-        transaction.begin();
+        trans.begin();
 
         // User 1
         ddb.addDevice(_deviceA1, TEST_USER_1, "Device A1");
@@ -53,7 +53,7 @@ public class TestSPGetInterestedDevices extends AbstractSPFolderPermissionTest
         // User 3
         ddb.addDevice(_deviceC1, TEST_USER_3, "Device C2");
 
-        transaction.commit();
+        trans.commit();
 
         setSessionUser(TEST_USER_1);
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
@@ -66,10 +66,10 @@ public class TestSPGetInterestedDevices extends AbstractSPFolderPermissionTest
     public void shouldGetCorrectSetOfInterestedDevices()
         throws Exception
     {
-        transaction.begin();
+        trans.begin();
         Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1.getBytes(),
                 sessionUser.getID());
-        transaction.commit();
+        trans.commit();
 
         // The size is correct (only the correct devices were returned).
         assertEquals(3, interested.size());

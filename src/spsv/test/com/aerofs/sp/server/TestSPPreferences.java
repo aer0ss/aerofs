@@ -31,9 +31,9 @@ public class TestSPPreferences extends AbstractSPServiceTest
     @Test
     public void shouldTrimUserAndDeviceNames() throws Exception
     {
-        transaction.begin();
+        trans.begin();
         ddb.addDevice(_did, TEST_USER_1, "name");
-        transaction.commit();
+        trans.commit();
 
         service.setPreferences("   first ", " last   ", _did.toPB(), "  device names  ").get();
         GetPreferencesReply reply = service.getPreferences(_did.toPB()).get();

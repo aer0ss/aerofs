@@ -15,7 +15,7 @@ public final class SPSchema
             C_USER_AUTHORIZATION_LEVEL      = "u_auth_level",
             C_USER_CREDS                    = "u_hashed_passwd",
             C_USER_VERIFIED                 = "u_verified",
-            C_USER_STORELESS_INVITES_QUOTA  = "u_storeless_invites_quota",
+            C_USER_SIGNUP_INVITATIONS_QUOTA = "u_storeless_invites_quota",
             C_USER_ACL_EPOCH                = "u_acl_epoch",
 
             T_ORG                           = "sp_organization",

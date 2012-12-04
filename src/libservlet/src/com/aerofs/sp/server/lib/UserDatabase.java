@@ -23,9 +23,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 
+import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_FROM;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_ORG_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
+import static com.aerofs.sp.server.lib.SPSchema.C_TI_TS;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_CREDS;
@@ -33,7 +40,9 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_INVITATIONS_QUOTA;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_VERIFIED;
+import static com.aerofs.sp.server.lib.SPSchema.T_TI;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 /**
@@ -174,7 +183,7 @@ public class UserDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
             rs.close();
-            throw new ExNotFound("user #" + userId);
+            throw new ExNotFound("user " + userId);
         } else {
             return rs;
         }
@@ -213,5 +222,71 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setString(2, fullName._last.trim());
         ps.setString(3, userId.toString());
         Util.verify(ps.executeUpdate() == 1);
+    }
+
+    // TODO (WW) move it to a different database class?
+    public void addSignupCode(String code, UserID from, UserID to, OrgID orgId)
+            throws SQLException
+    {
+        addSignupCode(code, from, to, orgId, System.currentTimeMillis());
+    }
+
+    // For testing only
+    // TODO (WW) use DI instead
+    public void addSignupCode(String code, UserID from, UserID to, OrgID orgId, long currentTime)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.insert(T_TI, C_TI_TIC, C_TI_FROM, C_TI_TO, C_TI_ORG_ID, C_TI_TS));
+
+        ps.setString(1, code);
+        ps.setString(2, from.toString());
+        ps.setString(3, to.toString());
+        ps.setInt(4, orgId.getInt());
+        ps.setTimestamp(5, new Timestamp(currentTime), UTC_CALANDER);
+        ps.executeUpdate();
+    }
+
+    // Return 0 if user not found.
+    public int getSignUpInvitationsQuota(UserID userId)
+            throws SQLException, ExNotFound
+    {
+        ResultSet rs = queryUser(userId, C_USER_SIGNUP_INVITATIONS_QUOTA);
+        try {
+            return rs.getInt(1);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setSignUpInvitationsQuota(UserID userId, int quota)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_USER, C_USER_ID + "=?", C_USER_SIGNUP_INVITATIONS_QUOTA));
+
+        ps.setInt(1, quota);
+        ps.setString(2, userId.toString());
+        ps.executeUpdate();
+    }
+
+
+    /**
+     * Check whether a user has already been invited (with a targeted signup code).
+     * This is used by us to avoid spamming people when doing mass-invite
+     */
+    public boolean isInvitedToSignUp(UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.selectWhere(T_TI, C_TI_TO + "=?", "count(*)"));
+
+        ps.setString(1, userId.toString());
+        ResultSet rs = ps.executeQuery();
+        try {
+            return count(rs) != 0;
+        } finally {
+            rs.close();
+        }
     }
 }

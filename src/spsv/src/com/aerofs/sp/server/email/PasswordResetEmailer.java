@@ -17,6 +17,8 @@ import java.io.IOException;
 
 import static com.aerofs.sp.server.SPParam.*;
 
+// TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring
+// and/or merging.
 public class PasswordResetEmailer
 {
     public void sendPasswordResetEmail(UserID userId, String reset_token)
