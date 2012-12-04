@@ -108,31 +108,17 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             final Set<Path> set = Sets.newHashSet();
             t.addListener_(new AbstractTransListener() {
                 @Override
+                public void committing_(Trans t) throws SQLException {
+                    // TODO (MP) disable once we're confident all bugs have been squashed.
+                    // (This completely destroys the performance benefits of maintanining
+                    // aggregated status as it essentially recomputes it...).
+                    // NB: make the check *before* the transaction is committed to prevent
+                    // corrupted data from being written
+                    aggressiveConsistencyCheck(set);
+                }
+
+                @Override
                 public void committed_() {
-                    l.warn("Path list updated by transaction:");
-                    for (Path p : set) {
-                        l.warn("  " + p);
-
-                        // Aggressive consistency checking.
-                        //
-                        // Need to be done at the end of the transaction to avoid false positives
-                        // due to two step updates (e.g move is delete+create).
-
-                        // TODO (MP) disable once we're confident all bugs have been squashed.
-                        // (This completely destroys the performance benefits of maintanining
-                        // aggregated status as it essentially recomputes it...).
-                        try {
-                            SOID soid = _ds.resolveNullable_(p);
-                            if (soid == null) continue;
-                            OA oa = _ds.getOA_(soid);
-                            if (!oa.isDir()) continue;
-                            checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
-                        } catch (SQLException e) {
-                            // bury exception
-                            l.error("Check syncstat consistency: " + e.toString());
-                        }
-                    }
-
                     for (IListener listener : _listeners) {
                         listener.syncStatusChanged_(set);
                     }
@@ -143,6 +129,33 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     };
 
     /**
+     * Aggressive consistency checking.
+     *
+     * Need to be done at the end of the transaction to avoid false positives due to two-step
+     * updates (e.g move is delete+create).
+     */
+    private void aggressiveConsistencyCheck(Set<Path> set) throws SQLException
+    {
+        l.warn("Path list updated by transaction:");
+        for (Path p : set) {
+            l.warn("  " + p);
+
+            SOID soid = _ds.resolveNullable_(p);
+            if (soid == null) continue;
+            OA oa = _ds.getOA_(soid);
+            // verify result of aggregate update
+            if (oa.isDir()) {
+                checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
+            }
+            // check parent to verify that cascading didn't stop too early
+            if (!soid.oid().isRoot()) {
+                soid = new SOID(soid.sidx(), oa.parent());
+                checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
+            }
+        }
+    }
+
+    /**
      * Local consistency-check of aggregate sync status
      *
      * Compares the result of upward incremental update to downward aggregation.
@@ -150,12 +163,14 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     private void checkAggregateConsistency(SOID soid, CounterVector expected) throws SQLException
     {
         SIndex sidx = soid.sidx();
+        int syncableChildCount = 0;
         CounterVector cv = new CounterVector();
         try {
             for (OID coid : _ds.getChildren_(soid)) {
                 OA coa = _ds.getOA_(new SOID(soid.sidx(), coid));
                 SOID csoid = new SOID(sidx, coid);
                 if (!coa.isExpelled()) {
+                    ++syncableChildCount;
                     BitVector cbv = _ds.getSyncStatus_(csoid);
                     if (coa.isDir()) {
                         cbv.andInPlace(getAggregateSyncStatusVector_(csoid));
@@ -170,7 +185,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         } catch (ExNotFound e) {
             assert false : soid;
         }
-        assert cv.equals(expected) : soid + " " + cv + " != " + expected;
+        assert cv.equals(expected) : soid + " " + cv + " != " + expected + " " + syncableChildCount;
     }
 
     /**
@@ -523,6 +538,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
          * objects whose aggregate status is affected by the deletion.
          */
         _tlStatusModified.get(t).remove(path);
+
+        if (l.isInfoEnabled()) l.info("update p on delete " + parent);
 
         updateRecursively_(parent, oldStatus, new BitVector(), -1, path.removeLast(), t);
     }

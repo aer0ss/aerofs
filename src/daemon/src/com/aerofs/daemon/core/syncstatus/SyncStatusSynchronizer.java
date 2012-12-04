@@ -154,7 +154,12 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
         long serverEpoch = notification.getSsEpoch();
 
         if (serverEpoch > localEpoch) {
-            if (notification.hasStatus()) {
+            if (notification.hasStatus() && notification.getStatus().getDevicesCount() > 0) {
+                // fast forward notification with empty device list is a violation of the protocol
+                // (except for the device making the setVersionHash call), unfortunately the server
+                // is currently sending such notifications...
+                //assert notification.getStatus().getDevicesCount() > 0;
+
                 boolean fastForward = serverEpoch == localEpoch + 1;
                 // always apply status change but only bump epoch if the difference between local
                 // epoch and server epoch is 1 (i.e. don't bump epoch if we missed a notification
@@ -164,10 +169,9 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 if (fastForward) {
                     l.debug("successful fast forward from " + localEpoch + " to " + serverEpoch);
                     return;
-                } else {
-                    l.debug("pull required to go from " + localEpoch + " to " + serverEpoch);
                 }
             }
+            l.debug("pull required to go from " + localEpoch + " to " + serverEpoch);
             schedulePull_();
         } else {
             // 1) corrupted DB?
