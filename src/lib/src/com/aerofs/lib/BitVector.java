@@ -146,7 +146,7 @@ public class BitVector implements Iterable<Boolean>
     public String toString()
     {
         StringBuilder bd = new StringBuilder();
-        bd.append("BitVector(");
+        bd.append("BVect(");
         for (int i = 0; i < _size; ++i)
             bd.append(test(i) ? "1" : "0");
         bd.append(")");

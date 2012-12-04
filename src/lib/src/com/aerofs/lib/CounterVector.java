@@ -112,7 +112,7 @@ public class CounterVector
     public String toString()
     {
         StringBuilder bd = new StringBuilder();
-        bd.append("CounterVector(");
+        bd.append("CVect(");
         for (int i = 0; i < _d.length; ++i) {
             if (i > 0) bd.append(", ");
             bd.append(_d[i]);

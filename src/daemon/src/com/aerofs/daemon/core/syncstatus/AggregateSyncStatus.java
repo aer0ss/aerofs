@@ -254,7 +254,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         parentDiffStatus.xorInPlace(parentNewStatus);
 
         if (parentDiffStatus.isEmpty()) {
-            if (l.isInfoEnabled()) l.info("cascading stopped");
+            if (l.isInfoEnabled()) l.info("casc stop");
             return;
         }
 
@@ -357,7 +357,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         OA oa = _ds.getOA_(soid);
         assert oa.isFile() : soid;
 
-        if (l.isInfoEnabled()) l.info("synced readmitted file " + soid + " " + status);
+        // readm=readmitted
+        if (l.isInfoEnabled()) l.info("synced readm file " + soid + " " + status);
 
         // keep track of new status for Ritual notifications
         _tlStatusModified.get(t).add(path);
@@ -394,7 +395,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         assert oa.isFile() && !oa.isExpelled() : soid;
 
-        if (l.isInfoEnabled()) l.info("removed master branch " + soid + " " + status);
+        if (l.isInfoEnabled()) l.info("rm master brch " + soid + " " + status);
 
         // keep track of new status for Ritual notifications
         _tlStatusModified.get(t).add(path);
@@ -565,7 +566,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             // the object being added has some sync status, full update required
             // this happens when objects are moved from one parent to another
 
-            if (l.isInfoEnabled()) l.info("update parent on creation " + parent);
+            if (l.isInfoEnabled()) l.info("up p on create " + parent);
 
             updateRecursively_(parent, status, status, 1, ppath, t);
         } else if (!parent.oid().isRoot()) {
@@ -578,14 +579,14 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             int deviceCount = _sidx2dbm.getDeviceMapping_(parent.sidx()).size();
 
             if (l.isInfoEnabled())
-                l.info("update grandparent on creation " + grandparent + " " + parentAggregate);
+                l.info("up gp on create " + grandparent + " " + parentAggregate);
 
             BitVector parentStatus = parentAggregate.elementsEqual(
                     getSyncableChildCount_(parent) - 1, deviceCount);
             parentStatus.andInPlace(_ds.getSyncStatus_(parent));
 
             if (parentStatus.isEmpty()) {
-                if (l.isInfoEnabled()) l.info("cascading stopped at grandparent " + grandparent);
+                if (l.isInfoEnabled()) l.info("casc stop at gp " + grandparent);
                 return;
             }
 
