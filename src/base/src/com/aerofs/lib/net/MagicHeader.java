@@ -22,7 +22,7 @@ import java.net.SocketAddress;
 
 public class MagicHeader
 {
-    static final Logger LOGGER = Loggers.getLogger(MagicHeader.class);
+    static final Logger l = Loggers.getLogger(MagicHeader.class);
 
     public static class ExBadMagicHeader extends IOException
     {
@@ -88,7 +88,7 @@ public class MagicHeader
             buffer.writeInt(_version);
             Channels.write(ctx, Channels.future(ctx.getChannel()), buffer);
             ctx.getPipeline().remove(this);
-//            LOGGER.debug("wrote magic header {} v{}", StringUtils.encodeHex(_magic), _version);
+//            l.debug("wrote magic header {} v{}", StringUtils.encodeHex(_magic), _version);
         }
     }
 
@@ -105,7 +105,7 @@ public class MagicHeader
                 buffer.readerIndex(readerIndex);
                 throw new ExBadMagicHeader();
             }
-//            LOGGER.debug("read magic header {} v{}", StringUtils.encodeHex(_magic), _version);
+//            l.debug("read magic header {} v{}", StringUtils.encodeHex(_magic), _version);
 
             if (buffer.readable()) {
                 return buffer;
@@ -122,10 +122,7 @@ public class MagicHeader
                 }
             }
             int version = buffer.readInt();
-            if (version != _version) {
-                return false;
-            }
-            return true;
+            return (version == _version);
         }
     }
 }

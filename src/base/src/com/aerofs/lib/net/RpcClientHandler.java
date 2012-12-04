@@ -51,7 +51,6 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
                 }
             }
         });
-        return;
     }
 
     @Override
