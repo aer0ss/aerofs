@@ -436,6 +436,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // end up being quite cumbersome. Therefore we simply reset aggregate sync status upon
         // expulsion resulting from deletion
         if (_ds.isDeleted_(oa)) {
+            if (l.isInfoEnabled()) l.info("expel deleted " + soid);
             if (oa.isDir()) _ds.setAggregateSyncStatus_(soid, new CounterVector(), t);
             return;
         }
