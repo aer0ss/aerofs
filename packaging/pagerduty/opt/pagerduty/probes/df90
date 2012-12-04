@@ -21,7 +21,7 @@ PORT=$2
 FS=$3
 THRESHOLD=90
 
-USED=`kssh -p $PORT $LOGIN df | grep $FS | awk '{print $5}' | sed -e 's/%//'`
+USED=`ssh -p $PORT $LOGIN df | grep $FS | awk '{print $5}' | sed -e 's/%//'`
 
 if [ x$USED == x ]; then
     # the filesystem is not found

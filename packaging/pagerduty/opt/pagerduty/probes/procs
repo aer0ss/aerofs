@@ -21,7 +21,7 @@ PORT=$2
 KEYWORD=$3
 EXPECTED=$4
 
-ACTUAL=`kssh -p $PORT $LOGIN "ps -ef | grep $KEYWORD | grep -v grep | wc -l"`
+ACTUAL=`ssh -p $PORT $LOGIN "ps -ef | grep $KEYWORD | grep -v grep | wc -l"`
 
 if [ x$ACTUAL == x ]; then
     # query failed
