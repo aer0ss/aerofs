@@ -30,7 +30,12 @@ $SSH_COMMAND ${PUPPET_MASTER} -C "gem install hiera"
 echo "Copying over puppet files"
 # rsync - recursuve/follow symlinks - use ssh -
 rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
-rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT}/local/ ${PUPPET_MASTER}:/etc/puppet
+if [ -d ${PUPPET_ROOT}/custom ]
+then
+    rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT}/custom/ ${PUPPET_MASTER}:/etc/puppet
+else
+    rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT}/local/ ${PUPPET_MASTER}:/etc/puppet
+fi
 echo "configuring puppetmaster to autosign certs"
 $SSH_COMMAND ${PUPPET_MASTER} -C "echo '*' > /etc/puppet/autosign.conf"
 echo "restarting puppetmaster service"
