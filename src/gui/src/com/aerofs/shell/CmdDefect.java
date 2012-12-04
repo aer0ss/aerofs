@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 public class CmdDefect implements IShellCommand<ShProgram>
 {
     public static void sendDefect(RitualBlockingClient ritual, String message,
-            boolean dumpDaemonStatus)
+            boolean dumpFileNames)
     {
         Logger l = Util.l(CmdDefect.class);
 
@@ -36,19 +36,15 @@ public class CmdDefect implements IShellCommand<ShProgram>
         if (cpuIssue) logThreads(ritual, l);
 
         String daemonStatus;
-        if (dumpDaemonStatus) {
-            try {
-                daemonStatus = InternalDiagnostics.dumpFullDaemonStatus(ritual);
-            } catch (Exception e) {
-                daemonStatus = "(cannot dump daemon status: " + Util.e(e) + ")";
-            }
-        } else {
-            daemonStatus = null;
+        try {
+            daemonStatus = InternalDiagnostics.dumpFullDaemonStatus(ritual);
+        } catch (Exception e) {
+            daemonStatus = "(cannot dump daemon status: " + Util.e(e) + ")";
         }
 
         try {
             SVClient.logSendDefectSync(false, message + "\n" + C.END_OF_DEFECT_MESSAGE, null,
-                    daemonStatus, dumpDaemonStatus);
+                    daemonStatus, dumpFileNames);
             UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
         } catch (Exception e) {
             l.warn("submit defect: " + Util.e(e));

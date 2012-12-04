@@ -2,6 +2,7 @@ package com.aerofs.sv.client;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.OutArg;
@@ -27,12 +28,14 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,13 +44,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.aerofs.lib.C.LAST_SENT_DEFECT;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
-import static com.aerofs.lib.Util.createNameMapFile;
+import static com.aerofs.lib.Util.e;
+import static com.aerofs.lib.Util.crc32;
 import static com.aerofs.lib.Util.deleteOldHeapDumps;
 import static com.aerofs.lib.Util.join;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
@@ -708,4 +713,51 @@ public final class SVClient
                 .setRtRoot(rtRoot)
                 .build();
     }
+
+    private static File createNameMapFile()
+    {
+        try {
+            File f = File.createTempFile("name", "map");
+
+            BufferedWriter bw = new BufferedWriter(new FileWriter(f));
+            writeFileNames(bw);
+            bw.close();
+
+            f.deleteOnExit();
+            return f;
+        } catch (IOException e) {
+            l.warn("create temp file failed: " + e(e));
+            return null;
+        }
+    }
+
+    /**
+     * DFS on the AeroFS folder and write every file name with its crc32 version.
+     */
+    private static void writeFileNames(BufferedWriter bw) throws IOException
+    {
+        Stack<String> stack = new Stack<String>();
+        stack.push(Cfg.absRootAnchor());
+
+        while (!stack.isEmpty()) {
+            String currentPath = stack.pop();
+            File currentFile = new File(currentPath);
+
+            // Send the base64 encoded version of filename to avoid the case of \n char in the name.
+            String encodedName = Base64.encodeBytes(currentFile.getName().getBytes("UTF-8"));
+            bw.write(crc32(currentFile.getName())+ " " + encodedName + "\n");
+
+            String[] children = currentFile.list();
+            if (children == null) {
+                // currentFile is of type file.
+                continue;
+            }
+
+            for (String child : children) {
+                String childPath = join(currentPath, child);
+                stack.push(childPath);
+            }
+        }
+    }
+
 }
