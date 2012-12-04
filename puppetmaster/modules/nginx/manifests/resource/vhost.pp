@@ -40,6 +40,7 @@ define nginx::resource::vhost(
   $ssl              = false,
   $ssl_cert         = undef,
   $ssl_key          = undef,
+  $ssl_client_cert  = undef,
   $proxy            = undef,
   $index_files      = ['index.html', 'index.htm', 'index.php'],
   $www_root         = undef,
@@ -62,8 +63,8 @@ define nginx::resource::vhost(
 
   # Check to see if SSL Certificates are properly defined.
   if ($ssl == 'true') {
-    if ($ssl_cert == undef) or ($ssl_key == undef) {
-      fail('nginx: SSL certificate/key (ssl_cert/ssl_cert) and/or SSL Private must be defined and exist on the target system(s)')
+    if ($ssl_cert == undef) or ($ssl_key == undef) or ($ssl_client_cert == undef) {
+      fail('nginx: SSL certificate/key (ssl_cert/ssl_cert) and client certificate (ssl_client_cert) must be defined and exist on the target system(s)')
     }
   }
 
