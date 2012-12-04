@@ -28,8 +28,11 @@ class nginx::params {
 
   $nx_proxy_redirect          = off
   $nx_proxy_set_header        = [
-    'Host $host', 'X-Real-IP $remote_addr',
+    'Host $host',
+    'X-Real-IP $remote_addr',
     'X-Forwarded-For $proxy_add_x_forwarded_for',
+    'Authorization $ssl_client_verify',
+    'From $ssl_client_serial',
   ]
 
   $nx_client_body_temp_path   = "${nx_run_dir}/client_body_temp"
