@@ -43,19 +43,9 @@ public class ObjectMover
             boolean emigrate, boolean updateVersion, Trans t)
             throws SQLException, ExAlreadyExist, ExNotDir, IOException, ExNotFound, ExStreamInvalid
     {
-        OA oaOld = _ds.getOANullable_(soid);
-        OA oaParent = _ds.getOANullable_(new SOID(soid.sidx(), oidParent));
-
         // The caller must guarantee the local existence of the object and its new parent
-        // N.B.
-        //  1) getOA_(...) would suffice for this assertion, but we want more information logged.
-        //  2) we print the OA using getAliasedOANullable instead of variables
-        //     because the result is the same if neither are aliased, and the results are more
-        //     informative if either is aliased
-        assert oaOld != null && oaParent != null : "soid " + soid + " oaAliased "
-                        + _ds.getAliasedOANullable_(soid) + " oidP " + oidParent
-                        + " oaPAliased "
-                        + _ds.getAliasedOANullable_(new SOID(soid.sidx(), oidParent));
+        OA oaOld = _ds.getOA_(soid);
+        OA oaParent = _ds.getOA_(new SOID(soid.sidx(), oidParent));
 
         final Path pOld = _ds.resolve_(oaOld);
 
