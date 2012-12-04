@@ -6,6 +6,7 @@ package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
 import sun.security.pkcs.PKCS10;
 
 import java.io.IOException;
@@ -28,6 +29,6 @@ public interface ICertificateGenerator
      * @throws IOException when there is an internal error creating the certificate.
      * @throws SignatureException when there is a problem with the given CSR.
      */
-    public Certificate createCertificate(UserID userId, DID did, PKCS10 csr)
+    public CertificateGenerationResult generateCertificate(UserID userId, DID did, PKCS10 csr)
         throws IOException, SignatureException, CertificateException;
 }

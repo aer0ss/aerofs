@@ -9,15 +9,19 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
@@ -38,14 +42,16 @@ public class User
     public static class Factory
     {
         private final UserDatabase _db;
+        private final Device.Factory _factDevice;
         private final Organization.Factory _factOrg;
         private final SharedFolder.Factory _factSharedFolder;
 
         @Inject
-        public Factory(UserDatabase db, Organization.Factory factOrg,
+        public Factory(UserDatabase db, Device.Factory factDevice, Organization.Factory factOrg,
                 SharedFolder.Factory factSharedFolder)
         {
             _db = db;
+            _factDevice = factDevice;
             _factOrg = factOrg;
             _factSharedFolder = factSharedFolder;
         }
@@ -60,6 +66,7 @@ public class User
             return create(UserID.fromExternal(str));
         }
     }
+
     private final UserID _id;
     private final Factory _f;
 
@@ -169,12 +176,24 @@ public class User
         _f._db.setName(_id, fullName);
     }
 
+    public ImmutableList<Device> getDevices()
+            throws SQLException, ExFormatError
+    {
+        ImmutableList.Builder<Device> builder = ImmutableList.builder();
+
+        for (DID did : _f._db.getDevices(id())) {
+            builder.add(_f._factDevice.create(did));
+        }
+
+        return builder.build();
+    }
+
     /**
      * Add the user to the database
      * @throws ExAlreadyExist if the user ID already exists.
      */
     public void createNewUser(byte[] shaedSP, FullName fullName, Organization org)
-            throws ExAlreadyExist, SQLException, IOException
+            throws ExAlreadyExist, SQLException, IOException, ExNoPerm
     {
         // TODO If successful, this method should delete all the user's existing signup codes from
         // the signup_code table
@@ -192,7 +211,7 @@ public class User
      * 2. avoid attackers hijacking existing users' root store with intentional store ID collisions.
      */
     private void addRootStoreAndCheckForCollision()
-            throws SQLException, IOException, ExAlreadyExist
+            throws SQLException, IOException, ExAlreadyExist, ExNoPerm
     {
         SharedFolder rootStore = _f._factSharedFolder.create_(SID.rootSID(_id));
 

@@ -88,7 +88,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         UserID tsUserID = getTeamServerUserID();
         certifyTeamServerDevice(tsUserID);
 
-        verify(certgen).createCertificate(eq(tsUserID), eq(tsDID), any(PKCS10.class));
+        verify(certgen).generateCertificate(eq(tsUserID), eq(tsDID), any(PKCS10.class));
 
         // Can't conveniently use verify() since ddb.addDevice() may be called many times during
         // test initialization.

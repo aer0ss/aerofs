@@ -14,6 +14,8 @@ import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
+import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -67,18 +69,23 @@ public class SPServlet extends AeroServlet
             new SharedFolderInvitationDatabase(_trans);
 
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
+
     private final CertificateGenerator _certgen = new CertificateGenerator();
+    private final ThreadLocalCertificateAuthenticator _certificateAuthenticator =
+            new ThreadLocalCertificateAuthenticator();
 
     private final Organization.Factory _factOrg = new Organization.Factory();
     private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
-    private final User.Factory _factUser = new User.Factory(_udb, _factOrg, _factSharedFolder);
+    private final Certificate.Factory _factCert = new Certificate.Factory(_certdb);
+    private final Device.Factory _factDevice = new Device.Factory();
+    private final User.Factory _factUser = new User.Factory(_udb, _factDevice, _factOrg,
+            _factSharedFolder);
     {
+        _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
         _factOrg.inject(_odb, _factUser);
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 
-    private final Device.Factory _factDevice = new Device.Factory(_ddb, _factUser, _certdb,
-            _certgen);
     private final SharedFolderInvitation.Factory _factSFI =
             new SharedFolderInvitation.Factory(_sfidb, _factUser, _factSharedFolder);
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
@@ -87,8 +94,8 @@ public class SPServlet extends AeroServlet
             new PasswordManagement(_db, _factUser, new PasswordResetEmailer());
 
     private final SPService _service = new SPService(_db, _sfdb, _trans, _sessionUser,
-            _passwordManagement, _factUser, _factOrg, _factDevice, _certdb, _esdb,
-            _factSharedFolder, _factSFI, _factEmailer);
+            _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factDevice,
+            _factCert, _certdb, _esdb, _factSharedFolder, _factSFI, _factEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
@@ -133,6 +140,7 @@ public class SPServlet extends AeroServlet
         throws IOException
     {
         _sessionUser.setSession(req.getSession());
+        initCertificateAuthenticator(req);
 
         // Receive protocol version number.
         int protocol = _postDelegate.getProtocolVersion(req);
@@ -156,6 +164,18 @@ public class SPServlet extends AeroServlet
         }
 
         _postDelegate.sendReply(resp, bytes);
+    }
+
+    private void initCertificateAuthenticator(HttpServletRequest req)
+    {
+        String authorization = req.getHeader("Authorization");
+        String serial = req.getHeader("From");
+
+        // The "Authorization" header corresponds to the nginx variable $ssl_client_verify which
+        // is set to "SUCCESS" when nginx mutual authentication is successful.
+        if (authorization != null && serial != null) {
+            _certificateAuthenticator.set(authorization.equalsIgnoreCase("SUCCESS"), serial);
+        }
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>

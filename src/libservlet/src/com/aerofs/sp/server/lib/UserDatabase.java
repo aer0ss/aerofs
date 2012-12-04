@@ -10,13 +10,16 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
@@ -34,6 +37,8 @@ import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_FROM;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
@@ -49,6 +54,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_INVITATIONS_QUOTA;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_VERIFIED;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
+import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 import static com.aerofs.sp.server.lib.SPSchema.T_TI;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
@@ -181,6 +187,28 @@ public class UserDatabase extends AbstractSQLDatabase
         } finally {
             rs.close();
         }
+    }
+
+    public ImmutableList<DID> getDevices(UserID userId)
+            throws SQLException, ExFormatError
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=?",
+                C_DEVICE_ID));
+
+        ps.setString(1, userId.toString());
+
+        ImmutableList.Builder<DID> builder = ImmutableList.builder();
+        ResultSet rs = ps.executeQuery();
+        try {
+            while (rs.next()) {
+                String didString = rs.getString(1);
+                builder.add(new DID(didString));
+            }
+        } finally {
+            rs.close();
+        }
+
+        return builder.build();
     }
 
     private ResultSet queryUser(UserID userId, String ... fields)

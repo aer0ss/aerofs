@@ -8,7 +8,6 @@ import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -31,8 +30,10 @@ import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
 import com.aerofs.sp.server.lib.SPDatabase.ResolveSignUpInvitationCodeResult;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase.GetACLResult;
+import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
@@ -121,17 +122,20 @@ public class SPService implements ISPService
     private final ISessionUser _sessionUser;
 
     private final PasswordManagement _passwordManagement;
+    private final ThreadLocalCertificateAuthenticator _certificateAuthenticator;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
     private final Device.Factory _factDevice;
+    private final Certificate.Factory _factCert;
     private final SharedFolder.Factory _factSharedFolder;
     private final SharedFolderInvitation.Factory _factSFI;
     private final InvitationEmailer.Factory _factEmailer;
 
     SPService(SPDatabase db, SharedFolderDatabase sfdb,
-            IThreadLocalTransaction<SQLException> transaction,
-            ISessionUser sessionUser, PasswordManagement passwordManagement,
-            User.Factory factUser, Organization.Factory factOrg, Device.Factory factDevice,
+            IThreadLocalTransaction<SQLException> transaction, ISessionUser sessionUser,
+            PasswordManagement passwordManagement,
+            ThreadLocalCertificateAuthenticator certificateAuthenticator, User.Factory factUser,
+            Organization.Factory factOrg, Device.Factory factDevice, Certificate.Factory factCert,
             CertificateDatabase certdb, EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             SharedFolderInvitation.Factory factSFI, InvitationEmailer.Factory factEmailer)
     {
@@ -144,9 +148,11 @@ public class SPService implements ISPService
         _transaction = transaction;
         _sessionUser = sessionUser;
         _passwordManagement = passwordManagement;
+        _certificateAuthenticator = certificateAuthenticator;
         _factUser = factUser;
         _factOrg = factOrg;
         _factDevice = factDevice;
+        _factCert = factCert;
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
         _factSFI = factSFI;
@@ -596,7 +602,7 @@ public class SPService implements ISPService
             throws SignatureException, IOException, NoSuchAlgorithmException, ExBadArgs, ExNotFound,
             ExAlreadyExist, SQLException, CertificateException
     {
-        Certificate cert = device.certify(new PKCS10(csr.toByteArray()));
+        CertificateGenerationResult cert = device.certify(new PKCS10(csr.toByteArray()));
         return CertifyDeviceReply.newBuilder()
                 .setCert(cert.toString())
                 .build();
@@ -991,9 +997,23 @@ public class SPService implements ISPService
 
         User user = _factUser.createFromExternalID(userIdString);
 
-        // Bypass password check only for staging team servers.
-        // TODO (WW) remove this check
-        if (!(Cfg.staging() && user.id().isTeamServerID())) {
+        if (user.id().isTeamServerID()) {
+            l.debug("TS login: " + user);
+
+            // Team servers use certificates (in this case the passed credentials don't matter).
+            if (!_certificateAuthenticator.isAuthenticated())
+            {
+                throw new ExBadCredential();
+            }
+
+            Certificate cert = _factCert.create(_certificateAuthenticator.getSerial());
+            if (cert.isRevoked()) {
+                throw new ExBadCredential();
+            }
+        } else {
+            l.debug("User login: " + userIdString);
+
+            // Regular users still use username/password credentials.
             user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
         }
 
@@ -1007,7 +1027,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUp(String userIdString, ByteString credentials,
             String firstName, String lastName)
-            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs, IOException
+            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs, IOException, ExNoPerm
     {
         if (!Util.isValidEmailAddress(userIdString)) throw new ExBadArgs("invalid email address");
 
@@ -1063,7 +1083,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUpWithTargeted(String targetedInvite, ByteString credentials,
             String firstName, String lastName)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException
+            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException, ExNoPerm
     {
         l.info("targeted sign-up: " + targetedInvite);
 
@@ -1121,7 +1141,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> revokeDeviceCertificate(final ByteString deviceId)
+    public ListenableFuture<Void> revokeUserDeviceCertificate(final ByteString deviceId)
         throws Exception
     {
         _transaction.begin();
@@ -1135,13 +1155,14 @@ public class SPService implements ISPService
                     user + " != " + owner);
         }
 
-        ImmutableList<Long> serials = device.revokeCertificates();
+        Certificate cert = device.getCertificate();
+        cert.revoke();
+
+        ImmutableList.Builder<Long> builder = ImmutableList.builder();
+        builder.add(cert.serial());
 
         // Push revoked serials to verkehr.
-        updateCRL_(serials);
-
-        // TODO (MP) update security epochs using serial list.
-        // TODO (MP) publish updated epochs to verkehr.
+        updateCRL_(builder.build());
 
         _transaction.commit();
 
@@ -1149,20 +1170,43 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> revokeUserCertificates()
+    public ListenableFuture<Void> revokeAllUserDeviceCertificates()
         throws Exception
     {
         _transaction.begin();
 
-        ImmutableList<Long> serials = _certdb.revokeUserCertificates(_sessionUser.getID());
+        User user = _sessionUser.get();
+
+        ImmutableList<Device> userDevices = user.getDevices();
+        ImmutableList.Builder<Long> serials = ImmutableList.builder();
+
+        for (Device device : userDevices) {
+            Certificate cert = device.getCertificate();
+
+            cert.revoke();
+            serials.add(cert.serial());
+        }
 
         // Push revoked serials to verkehr.
-        updateCRL_(serials);
-
-        // TODO (MP) update security epochs using serial list.
-        // TODO (MP) publish updated epochs to verkehr.
+        updateCRL_(serials.build());
 
         _transaction.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> revokeTeamServerDeviceCertificate(final ByteString deviceId)
+    {
+        // TODO (MP) finish this... when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> revokeAllTeamServerDeviceCertificates()
+    {
+        // TODO (MP) finish this... when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
 
         return createVoidReply();
     }

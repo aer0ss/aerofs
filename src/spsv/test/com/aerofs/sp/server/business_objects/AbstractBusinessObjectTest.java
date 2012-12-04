@@ -18,6 +18,7 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
@@ -36,7 +37,9 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
 
     @Spy protected final Organization.Factory factOrg = new Organization.Factory();
     @Spy protected final SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
-    @Spy protected final User.Factory factUser = new User.Factory(udb, factOrg, factSharedFolder);
+    @Spy protected final Device.Factory factDevice = new Device.Factory();
+    @Spy protected final User.Factory factUser = new User.Factory(udb, factDevice, factOrg,
+            factSharedFolder);
     {
         factOrg.inject(odb, factUser);
         factSharedFolder.inject(sfdb, factUser);
@@ -60,7 +63,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     }
 
     protected void createNewUser(User user, Organization org)
-            throws IOException, SQLException, ExAlreadyExist
+            throws IOException, SQLException, ExAlreadyExist, ExNoPerm
     {
         user.createNewUser(new byte[0], new FullName("first", "last"), org);
     }

@@ -98,7 +98,7 @@ public class C
     // 2) src/web/production.ini
     // 3) syncdet_test/lib/param.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 16;
+    public static final int SP_PROTOCOL_VERSION         = 17;
     public static final int SS_PROTOCOL_VERSION         = 5;
 
     public static final byte[] ROOT_SID_SALT       = new byte[]
