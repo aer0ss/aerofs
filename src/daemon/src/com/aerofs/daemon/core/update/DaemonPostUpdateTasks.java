@@ -40,11 +40,12 @@ public class DaemonPostUpdateTasks
             new DPUTMigrateRevisionSuffixToBase64(absAuxRoot),
             null, // used to be DPUTResetSyncStatus (for redis migation issue)
             null, // used to be DPUTRestSyncStatus (account for change in vh computation)
-            new DPUTResetSyncStatus(dbcw), // new run to account for aliasing related crash.
+            null, // used to be DPUTRestSyncStatus (account for aliasing related crash)
             new DPUTMorphStoreTables(dbcw),
             new DPUTMigrateS3Schema(dbcw, _cfgDB),
             null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
-            new DPUTBreakSyncStatActivityLogDependency(dbcw)
+            new DPUTBreakSyncStatActivityLogDependency(dbcw),
+            new DPUTResetSyncStatus(dbcw) // bug in AggregateSyncStatus.objectMoved_
             // new tasks go here
         };
 
