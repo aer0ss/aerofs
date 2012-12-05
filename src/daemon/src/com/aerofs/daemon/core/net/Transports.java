@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.net;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;
-import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -26,6 +25,7 @@ import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 import java.io.PrintStream;
 import java.net.NetworkInterface;
@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -41,6 +42,8 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
  */
 public class Transports implements IDumpStatMisc, IDumpStat, IStartable
 {
+    private static final Logger l = Util.l(Transports.class);
+
     // the more preferred the transport, the smaller value it has.
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
     {
@@ -102,7 +105,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
 
     private void add_(ITransport tp, int idx)
     {
-        Util.l(this).debug("add transport " + tp);
+        l.debug("add transport " + tp);
 
         _tps[idx] = tp;
         IIMCExecutor imce = new QueueBasedIMCExecutor(tp.q());
@@ -125,11 +128,13 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
                 // TODO (WW) re-run the event if the transport failed to handle it. the solution
                 // would be easier once we converted events to Futures.
                 try {
+                    l.info("notify tps of lsc");
                     CoreIMC.enqueueBlocking_(
-                            new EOLinkStateChanged(imce, previous, current, added, removed),
-                            _tc, Cat.UNLIMITED);
+                            new EOLinkStateChanged(imce, previous, current, added, removed), _tc,
+                            UNLIMITED);
+                    l.info("complete notify tps of lsc");
                 } catch (Exception e) {
-                    Util.l(this).error("failed to enqueue:" + tp.toString());
+                    l.error("failed to enqueue:" + tp.toString());
                 }
             }
 
@@ -147,6 +152,8 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     @Override
     public void start_()
     {
+        l.info("start all tps");
+
         for (ITransport tp : _tps) tp.start_();
     }
 
@@ -157,7 +164,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     {
         // because dumpStat on transports may block, we use pseudo pause
 
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "dumpStatMisc");
+        Token tk = _tc.acquireThrows_(UNLIMITED, "dumpStatMisc");
         try {
             TCB tcb = tk.pseudoPause_("dumpStatMisc");
             try {
@@ -181,7 +188,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     {
         // because dumpStat on transports may block, we use pseudo pause
 
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "dumpStat");
+        Token tk = _tc.acquireThrows_(UNLIMITED, "dumpStat");
         try {
             // according to ITransport's contract dumpStat() may block
             TCB tcb = tk.pseudoPause_("dumpStat");

@@ -293,8 +293,7 @@ public final class SVClient
     /**
      * @param secret the string that should be hidden from the log files
      */
-    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause,
-            @Nullable String secret, boolean sendFileNames)
+    public static void logSendDefectSync(boolean isAutoBug, String desc, @Nullable Throwable cause, @Nullable String secret, boolean sendFileNames)
             throws IOException, AbstractExWirable
     {
         doLogSendDefect(

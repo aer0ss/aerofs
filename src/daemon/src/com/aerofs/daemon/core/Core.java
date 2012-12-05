@@ -47,6 +47,7 @@ public class Core implements IModule
     private final RitualNotificationServer _notifier;
     private final DaemonPostUpdateTasks _dput;
     private final CoreDBSetup _dbsetup;
+    private final CoreProgressWatcher _cpw;
 
     @Inject
     public Core(
@@ -67,7 +68,8 @@ public class Core implements IModule
             ILinker linker,
             DaemonPostUpdateTasks dput,
             CoreDBSetup dbsetup,
-            IStores ss)
+            IStores ss,
+            CoreProgressWatcher cpw)
     {
         _imce2core = imce.imce();
         _tc = tc;
@@ -87,6 +89,7 @@ public class Core implements IModule
         _notifier = notifier;
         _dput = dput;
         _dbsetup = dbsetup;
+        _cpw = cpw;
     }
 
     @Override
@@ -134,8 +137,16 @@ public class Core implements IModule
     @Override
     public void start_()
     {
+        // core health
+
+        _cpw.start_();
+
+        // transports
+
         _tps.start_();
         _lss.start_();
+
+        // rest of the system
 
         // because events handling is kicked off once tc starts, and replying
         // to heart beats requires that everything is ready, tc should start last.

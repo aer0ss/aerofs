@@ -1,16 +1,18 @@
 package com.aerofs.daemon.core;
 
-import javax.inject.Inject;
-
 import com.aerofs.daemon.event.IEBIMC;
+import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 
+import javax.inject.Inject;
 import java.util.Set;
 
 public class CoreEventDispatcher extends EventDispatcher
 {
+    private volatile long _executedEventCount;
+
     @Inject
     public CoreEventDispatcher(Set<ICoreEventHandlerRegistrar> registrars)
     {
@@ -34,6 +36,19 @@ public class CoreEventDispatcher extends EventDispatcher
                 throw new ExNotSupported();
             }
         });
+    }
+
+    @Override
+    public void dispatch_(IEvent ev, Prio prio)
+    {
+        _executedEventCount++;
+
+        super.dispatch_(ev, prio);
+    }
+
+    public long getExecutedEventCount()
+    {
+        return _executedEventCount;
     }
 
     private static class ExNotSupported extends Exception
