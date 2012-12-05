@@ -97,11 +97,10 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     }
 
     /**
-     * Track set of SOIDs whose status is affected by a transaction to be able to send relevant
-     * ritual notifications when the transaction is commited.
+     * Track set of path whose status is affected by a transaction to be able to send relevant
+     * Ritual notifications when the transaction is commited.
      */
-    private final TransLocal<Set<Path>> _tlStatusModified
-            = new TransLocal<Set<Path>>() {
+    private final TransLocal<Set<Path>> _tlStatusModified = new TransLocal<Set<Path>>() {
         @Override
         protected Set<Path> initialValue(Trans t)
         {
@@ -113,7 +112,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
                     // (This completely destroys the performance benefits of maintanining
                     // aggregated status as it essentially recomputes it...).
                     // NB: make the check *before* the transaction is committed to prevent
-                    // corrupted data from being written
+                    // corrupted data from persisting
                     aggressiveConsistencyCheck(set);
                 }
 
@@ -136,23 +135,28 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
      */
     private void aggressiveConsistencyCheck(Set<Path> set) throws SQLException
     {
-        l.warn("Path list updated by transaction:");
-        for (Path p : set) {
-            l.warn("  " + p);
-
+        for (Path p : addParents(set)) {
             SOID soid = _ds.resolveNullable_(p);
             if (soid == null) continue;
             OA oa = _ds.getOA_(soid);
+            if (!oa.isDir()) continue;
             // verify result of aggregate update
-            if (oa.isDir()) {
-                checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
-            }
-            // check parent to verify that cascading didn't stop too early
-            if (!soid.oid().isRoot()) {
-                soid = new SOID(soid.sidx(), oa.parent());
-                checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
-            }
+            checkAggregateConsistency(soid, _ds.getAggregateSyncStatus_(soid));
         }
+    }
+
+    /**
+     * To ensure that cascading didn't stop too early we not only checks all objects whose sync
+     * status was changed during the transaction but also their immediate parent.
+     */
+    private Set<Path> addParents(Set<Path> paths)
+    {
+        Set<Path> r = Sets.newHashSet();
+        for (Path p : paths) {
+            r.add(p);
+            if (!p.isEmpty()) r.add(p.removeLast());
+        }
+        return r;
     }
 
     /**
@@ -350,8 +354,21 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
         if (l.isInfoEnabled()) l.info("moved " + soid + " " + parentFrom + " " + parentTo);
 
-        updateParentAggregateOnDeletion_(soid, new SOID(soid.sidx(), parentFrom), pathFrom, true, t);
-        updateParentAggregateOnCreation_(soid, new SOID(soid.sidx(), parentTo), pathTo, t);
+        /**
+         * Because we're doing a 2-step update we need to make sure that the first step doesn't
+         * propagate to nodes that need the second step to be performed first to preserve
+         * consistency. Mostly this means that the upward propagation expects the number of
+         * syncable children to make sense and the easiest way to enforce that is to order the
+         * steps correctly: always perform the operation that touches the topmost path first.
+         */
+        SIndex sidx = soid.sidx();
+        if (pathTo.elements().length < pathFrom.elements().length) {
+            updateParentAggregateOnCreation_(soid, new SOID(sidx, parentTo), pathTo, t);
+            updateParentAggregateOnDeletion_(soid, new SOID(sidx, parentFrom), pathFrom, true, t);
+        } else {
+            updateParentAggregateOnDeletion_(soid, new SOID(sidx, parentFrom), pathFrom, true, t);
+            updateParentAggregateOnCreation_(soid, new SOID(sidx, parentTo), pathTo, t);
+        }
     }
 
     /**

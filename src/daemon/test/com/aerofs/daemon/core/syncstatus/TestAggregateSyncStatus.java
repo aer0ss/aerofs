@@ -542,4 +542,70 @@ public class TestAggregateSyncStatus extends AbstractTest
         assertAggregateSyncStatusVectorEquals("foo", true, false, false);
         assertAggregateSyncStatusVectorEquals("", true, false, false);
     }
+
+    /**
+     * Moves are resolved via a 2-step update: delete+create
+     *
+     * This is all fine and dandy until the first step propagates upward and touches objects that
+     * are in an inconsistent state that can only be corrected by the second step. To make sure this
+     * doesn't happen we have to order the steps by the depth of the path they touch. Which means
+     * we need to test to exercise this behavior: upward and downward move
+     */
+    @Test
+    public void shouldUpdateOnUpwardMove() throws Exception
+    {
+        // initial state
+        mds.root().agss(0, 0, 0)
+                .dir("foo").ss(false, false, true).agss(1, 1, 2)
+                        .dir("bar").ss(false, false, true).agss(0, 0, 0)
+                                .file("baz").ss(false, false, false).parent().parent()
+                        .file("hello").ss(false, false, true).parent()
+                        .file("world").ss(true, true, true);
+
+        // check that aggregate status vector is derived properly from aggregate status counters
+        assertAggregateSyncStatusVectorEquals("foo/bar", false, false, false);
+        assertAggregateSyncStatusVectorEquals("foo", false, false, false);
+        assertAggregateSyncStatusVectorEquals("", false, false, false);
+
+        // state change
+        mds.move("foo/bar/baz", "foo/baz", t, agsync);
+
+        verifySetAggregateSyncStatus("foo/bar", 0, 0, 0);
+        verifySetAggregateSyncStatus("foo", 1, 1, 3);
+
+        // check that aggregate status vector is derived properly from aggregate status counters
+        assertAggregateSyncStatusVectorEquals("foo/bar", true, true, true);
+        assertAggregateSyncStatusVectorEquals("foo", false, false, false);
+        assertAggregateSyncStatusVectorEquals("", false, false, false);
+    }
+
+    @Test
+    public void shouldUpdateOnDownwardMove() throws Exception
+    {
+        // initial state
+        mds.root().agss(0, 0, 0)
+                .dir("foo").ss(false, false, true).agss(1, 1, 3)
+                        .dir("bar").ss(false, false, true).agss(0, 0, 0).parent()
+                        .file("baz").ss(false, false, false).parent()
+                        .file("hello").ss(false, false, true).parent()
+                        .file("world").ss(true, true, true);
+
+        // check that aggregate status vector is derived properly from aggregate status counters
+        assertAggregateSyncStatusVectorEquals("foo/bar", true, true, true);
+        assertAggregateSyncStatusVectorEquals("foo", false, false, false);
+        assertAggregateSyncStatusVectorEquals("", false, false, false);
+
+        // state change
+        mds.move("foo/baz", "foo/bar/baz", t, agsync);
+
+        verifySetAggregateSyncStatus("foo", 1, 1, 3);
+        verifySetAggregateSyncStatus("", 0, 0, 1);
+        verifySetAggregateSyncStatus("foo", 1, 1, 2);
+        verifySetAggregateSyncStatus("", 0, 0, 0);
+
+        // check that aggregate status vector is derived properly from aggregate status counters
+        assertAggregateSyncStatusVectorEquals("foo/bar", false, false, false);
+        assertAggregateSyncStatusVectorEquals("foo", false, false, false);
+        assertAggregateSyncStatusVectorEquals("", false, false, false);
+    }
 }
