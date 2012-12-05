@@ -63,7 +63,7 @@ def get_error(exception): # parse RPC errors into something more user friendly
     ''' Returns an error message for the given protobuf exception.
         Expects the exception to be of type 'ExceptionReply'
     '''
-    return exception.reply.plain_text_message
+    return str(exception.reply.message)
 
 def parse_rpc_error_exception(request, e):
     ''' Reads an exception of any sort generated when making an RPC call
