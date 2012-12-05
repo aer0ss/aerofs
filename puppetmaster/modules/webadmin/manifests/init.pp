@@ -19,16 +19,39 @@
 # Copyright 2012 Air Computing Inc, unless otherwise noted.
 #
 class webadmin {
-    package{"aerofs-web":
-        ensure => latest,
-        require => Apt::Source["aerofs"],
+    include nginx
+    file {"/etc/nginx/certs":
+        ensure => directory,
+        owner  => "root",
+        group  => "root",
+        mode   => "0400",
+    }
+     file {"/etc/nginx/certs/ssl.key":
+        ensure  => present,
+        owner   => "root",
+        group   => "root",
+        mode    => "0400",
+        source  => "puppet:///aerofs_ssl/ssl.key",
+        require => File["/etc/nginx/certs"],
+        notify  => Service["nginx"]
     }
 
-    # PH nginx gets installed and configured implicitly by aerofs-web
-    # TODO Move configuration into puppet.
-    service{"nginx":
-        ensure => running,
-        require => Package["aerofs-web"]
+    file {"/etc/nginx/certs/ssl.cert":
+        ensure  => present,
+        owner   => "root",
+        group   => "root",
+        mode    => "0400",
+        source  => "puppet:///aerofs_ssl/ssl.cert",
+        require => File["/etc/nginx/certs"],
+        notify  => Service["nginx"]
+    }
+
+    package{"aerofs-web":
+        ensure => latest,
+        require => [
+            Apt::Source["aerofs"],
+            Class["nginx"]
+        ]
     }
 
     service{"uwsgi":
