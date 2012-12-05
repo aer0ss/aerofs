@@ -36,21 +36,23 @@ then
     DEST="prod"
 fi
 
+DEBS_FOLDER=debs-$DEST
+
 # Copy the debs over and add them to the apt repository. Make sure the deb
 # dropbox is clean before we perform the update (and clean up when we're done).
-ssh $APT_SERVER "rm -f ~/debs/*"
-scp debs/* $APT_SERVER:~/debs/
+ssh $APT_SERVER "rm -f ~/$DEBS_FOLDER/*"
+scp debs/* $APT_SERVER:~/$DEBS_FOLDER/
 ssh $APT_SERVER \
     "set -e;
     cd /var/www/ubuntu/$DEST/; \
-    for deb in \$(ls ~/debs/*.deb); \
+    for deb in \$(ls ~/$DEBS_FOLDER/*.deb); \
     do \
         echo signing \$deb; \
         dpkg-sig --sign builder \$deb; \
     done; \
-    reprepro includedeb precise ~/debs/*.deb; \
-    cp ~/debs/*.ver /var/www/ubuntu/$DEST/versions; \
-    rm -f ~/debs/*"
+    reprepro includedeb precise ~/$DEBS_FOLDER/*.deb; \
+    cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$DEST/versions; \
+    rm -f ~/$DEBS_FOLDER/*"
 
 if [ $MODE != "STAGING" ]
 then
