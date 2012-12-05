@@ -4,11 +4,9 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.Util;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
@@ -17,7 +15,6 @@ import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -29,8 +26,6 @@ import java.util.Set;
 
 public class SharedFolder
 {
-    private static final Logger l = Util.l(SharedFolder.class);
-
     public static class Factory
     {
         private final SharedFolderDatabase _db;
@@ -87,12 +82,15 @@ public class SharedFolder
     }
 
     /**
-     * Add the shared folder to db.
+     * Add the shared folder to db. Also add {@code owner} as the first owner.
+     * @return A map of user IDs to epochs to be published via verkehr.
      */
-    public void add(String folderName)
+    public Map<UserID, Long> add(String folderName, User owner)
             throws ExNoPerm, ExNotFound, ExAlreadyExist, SQLException, IOException
     {
         _f._db.add(_sid, folderName);
+
+        return addACL(owner, Role.OWNER);
     }
 
     public void delete()
@@ -106,7 +104,7 @@ public class SharedFolder
      * @throws ExAlreadyExist if the user is already added.
      */
     public Map<UserID, Long> addACL(User user, Role role)
-            throws ExAlreadyExist, ExNoPerm, SQLException
+            throws ExAlreadyExist, SQLException
     {
         // TODO (WWW) reconsider permission check here.
 
@@ -129,16 +127,12 @@ public class SharedFolder
      * @return new ACL epochs for each affected user id, to be published via verkehr
      * @throws ExNotFound if trying to add new users to the store
      */
-    public Map<UserID, Long> updateACL(User requester, List<SubjectRolePair> srps)
-            throws ExBadArgs, ExNoPerm, ExNotFound, SQLException
+    public Map<UserID, Long> updateACL(List<SubjectRolePair> srps)
+            throws ExNoPerm, ExNotFound, SQLException
     {
-        l.info(requester + " updating " + srps.size() + " roles for " + this);
-
-        throwIfNotOwnwerOrNothingToModify(requester, srps);
-
         _f._db.updateACL(_sid, srps);
 
-        throwIfNoOwner();
+        throwIfNoOwnerLeft();
 
         // making the modification to the database, and then getting the current acl list should
         // be done in a single atomic operation. Otherwise, it is possible for us to send out a
@@ -147,20 +141,16 @@ public class SharedFolder
         return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
     }
 
-    public Map<UserID, Long> deleteACL(User requester, Collection<UserID> subjects)
-            throws SQLException, ExNotFound, ExNoPerm, ExBadArgs
+    public Map<UserID, Long> deleteACL(Collection<UserID> subjects)
+            throws SQLException, ExNotFound, ExNoPerm
     {
-        l.info(requester + " delete ACL for " + this + ": " + subjects);
-
-        throwIfNotOwnwerOrNothingToModify(requester, subjects);
-
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the deleted ones will get notifications.
         Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
 
         _f._db.deleteACL(_sid, subjects);
 
-        throwIfNoOwner();
+        throwIfNoOwnerLeft();
 
         // making the modification to the database, and then getting the current acl list should
         // be done in a single atomic operation. Otherwise, it is possible for us to send out a
@@ -169,24 +159,16 @@ public class SharedFolder
         return _f._db.incrementACLEpoch(affectedUsers);
     }
 
-    private <T> void throwIfNotOwnwerOrNothingToModify(User user, Collection<T> subjects)
-            throws SQLException, ExNoPerm, ExBadArgs
-    {
-        if (subjects.isEmpty()) throw new ExBadArgs("must specify one or more users");
-
-        throwIfNoPermission(user, Role.OWNER);
-    }
-
-    private void throwIfNoOwner()
+    private void throwIfNoOwnerLeft()
             throws ExNoPerm, SQLException
     {
         if (!_f._db.hasOwner(_sid)) throw new ExNoPerm("cannot demote all admins");
     }
 
-    public void throwIfNoPermission(User user, Role requiredRole)
+    public void throwIfNotOwner(User user)
             throws SQLException, ExNoPerm
     {
         Role role = _f._db.getRoleNullable(_sid, user.id());
-        if (role == null || !role.covers(requiredRole)) throw new ExNoPerm();
+        if (role == null || !role.covers(Role.OWNER)) throw new ExNoPerm();
     }
 }

@@ -651,12 +651,11 @@ class SPService implements ISPService
 
         Map<UserID, Long> epochs;
         if (sf.exists()) {
-            sf.throwIfNoPermission(sharer, Role.OWNER);
+            sf.throwIfNotOwner(sharer);
             epochs = Collections.emptyMap();
         } else {
-            // The store doesn't exist. Create it and add the user as the owner
-            sf.add(folderName);
-            epochs = sf.addACL(sharer, Role.OWNER);
+            // The store doesn't exist. Create it and add the user as the owner.
+            epochs = sf.add(folderName, sharer);
         }
         return epochs;
     }
@@ -893,7 +892,7 @@ class SPService implements ISPService
             throws Exception
     {
         User user = _sessionUser.get();
-        SharedFolder sharedFolder = _factSharedFolder.create_(storeId);
+        SharedFolder sf = _factSharedFolder.create_(storeId);
 
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(subjectRoleList);
 
@@ -902,7 +901,8 @@ class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
 
         _transaction.begin();
-        Map<UserID, Long> epochs = sharedFolder.updateACL(user, srps);
+        sf.throwIfNotOwner(user);
+        Map<UserID, Long> epochs = sf.updateACL(srps);
         // send verkehr notification as the last step of the transaction
         publish_(epochs);
         _transaction.commit();
@@ -916,12 +916,13 @@ class SPService implements ISPService
             throws Exception
     {
         User user = _sessionUser.get();
-        SharedFolder sharedFolder = _factSharedFolder.create_(storeId);
+        SharedFolder sf = _factSharedFolder.create_(storeId);
 
         List<UserID> subjects = UserID.fromExternal(subjectList);
 
         _transaction.begin();
-        Map<UserID, Long> updatedEpochs = sharedFolder.deleteACL(user, subjects);
+        sf.throwIfNotOwner(user);
+        Map<UserID, Long> updatedEpochs = sf.deleteACL(subjects);
         // send verkehr notification as the last step of the transaction
         publish_(updatedEpochs);
         _transaction.commit();
