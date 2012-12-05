@@ -50,18 +50,16 @@ node "z.arrowfs.org" inherits default {
   }
 
   #sss only (temp)
-  pagerduty::probe::base{[
-    "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1"
-  ]:
+  pagerduty::probe::base{"morning sss probe":
+    command => "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1",
     hour => "9",
-    minute => "0",
+    minute => "0"
     require => Class["pagerduty"]
   }
-  pagerduty::probe::base{[
-    "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1"
-  ]:
+  pagerduty::probe::base{"evening sss probe":
+    command => "sss df90 pagerduty@sss.aerofs.com 22 /dev/xvda1",
     hour => "19",
-    minute => "0",
+    minute => "0"
     require => Class["pagerduty"]
   }
 
