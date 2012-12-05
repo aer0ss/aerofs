@@ -1,7 +1,7 @@
 import unittest
+from aerofs_common import exception
 
-from aerofs import exception
-from aerofs.gen import common_pb2
+from aerofs_common._gen import common_pb2
 
 class RegularMessagePBExceptionTest(unittest.TestCase):
     def runTest(self):

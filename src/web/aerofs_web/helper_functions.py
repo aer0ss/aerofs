@@ -3,9 +3,9 @@ Helper functions for AeroFS website
 '''
 
 import re
-from aerofs.connection import SyncConnectionService
-from aerofs.exception import ExceptionReply
-from aerofs.gen.sp_pb2 import SPServiceRpcStub
+from aerofs_sp.connection import SyncConnectionService
+from aerofs_common.exception import ExceptionReply
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
 
 # Form validation functions

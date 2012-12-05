@@ -1,7 +1,7 @@
 <%inherit file="layout.mako"/>
 
 <%
-    from aerofs.gen.sp_pb2 import ADMIN, USER
+    from aerofs_sp.gen.sp_pb2 import ADMIN, USER
 %>
 
 <h1>AeroFS Web Interface</h1>

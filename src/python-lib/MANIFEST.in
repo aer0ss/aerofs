@@ -1,1 +1,1 @@
-recursive-include aerofs *.dylib *.so
+recursive-include aerofs_* *.dylib *.so

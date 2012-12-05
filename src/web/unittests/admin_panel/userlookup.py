@@ -2,7 +2,7 @@ import unittest
 from pyramid import testing
 from mock import Mock
 from aerofs_web import helper_functions
-from aerofs.gen.sp_pb2 import SPServiceRpcStub
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
 class PBUser(object):
     def __init__(self, email, firstname, lastname):
