@@ -4,21 +4,16 @@ Run AeroFS website in a virtual environment
 ================================================
 First install virtualenv, then:
 
-$ virtualenv ~/env
-$ ~/env/bin/pip install protobuf pycrypto
+virtualenv ~/env && ~/env/bin/pip install protobuf pycrypto
 
 Now, install AeroFS python library:
-$ cd ~/repos/aerofs/src/python-lib
-$ ~/env/bin/python setup.py develop
+cd ~/repos/aerofs/src/python-lib && ~/env/bin/python setup.py develop
 
 Finally, install and run AeroFS website:
-$ cd ~/repos/aerofs/src/web
-$ ~/env/bin/python setup.py develop
-$ ~/env/bin/pserve development.ini
+cd ~/repos/aerofs/src/web && ~/env/bin/python setup.py develop && ~/env/bin/pserve development.ini
 
 To run test cases:
-$ cd ~/repos/aerofs/src/web
-$ ~/env/bin/python setup.py test -q
+cd ~/repos/aerofs/src/web && ~/env/bin/python setup.py test -q
 
 Creating new modules for AeroFS website
 ================================================
