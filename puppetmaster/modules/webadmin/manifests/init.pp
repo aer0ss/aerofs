@@ -19,7 +19,10 @@
 # Copyright 2012 Air Computing Inc, unless otherwise noted.
 #
 class webadmin {
-    include nginx
+    #
+    # TODO puppet should configure nginx (the deb package currently does this).
+    #
+
     file {"/etc/nginx/certs":
         ensure => directory,
         owner  => "root",
@@ -32,8 +35,7 @@ class webadmin {
         group   => "root",
         mode    => "0400",
         source  => "puppet:///aerofs_ssl/ssl.key",
-        require => File["/etc/nginx/certs"],
-        notify  => Service["nginx"]
+        require => File["/etc/nginx/certs"]
     }
 
     file {"/etc/nginx/certs/ssl.cert":
@@ -42,15 +44,13 @@ class webadmin {
         group   => "root",
         mode    => "0400",
         source  => "puppet:///aerofs_ssl/ssl.cert",
-        require => File["/etc/nginx/certs"],
-        notify  => Service["nginx"]
+        require => File["/etc/nginx/certs"]
     }
 
     package{"aerofs-web":
         ensure => latest,
         require => [
-            Apt::Source["aerofs"],
-            Class["nginx"]
+            Apt::Source["aerofs"]
         ]
     }
 

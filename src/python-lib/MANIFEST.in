@@ -1,2 +1,1 @@
-include *.txt *.ini *.cfg *.rst
-recursive-include aerofs *.ico *.png *.css *.gif *.jpg *.pt *.txt *.mak *.mako *.js *.html *.xml *.dylib *.so
+recursive-include aerofs *.dylib *.so

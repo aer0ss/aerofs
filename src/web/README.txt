@@ -3,7 +3,6 @@ web README
 Run AeroFS website in a virtual environment
 ================================================
 First install virtualenv, then:
-
 virtualenv ~/env && ~/env/bin/pip install protobuf pycrypto
 
 Now, install AeroFS python library:

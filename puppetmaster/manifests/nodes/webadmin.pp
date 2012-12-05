@@ -1,4 +1,4 @@
-node "webadmin.arrowfs.org" inherits default {
+node "webadmin.aerofs.com" inherits default {
 
     class{"webadmin":
         require => Exec["apt-get update"]
