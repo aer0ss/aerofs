@@ -8,6 +8,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.Lists;

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.lib;
 
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
@@ -11,7 +11,6 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;

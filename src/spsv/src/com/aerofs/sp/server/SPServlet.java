@@ -11,6 +11,7 @@ import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
