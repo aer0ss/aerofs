@@ -2,6 +2,7 @@ package com.aerofs.daemon.lib.db.ver;
 
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.id.DID;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -19,6 +20,8 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 
+import java.sql.SQLException;
+
 public class TestVersionAssistant extends AbstractTest
 {
     @Mock INativeVersionDatabase nvdb;
@@ -32,16 +35,21 @@ public class TestVersionAssistant extends AbstractTest
     SOCID socid;
 
     @Before
-    public void setup()
+    public void setup() throws SQLException
     {
         SIndex sidx = new SIndex(7);
         OID oid = new OID(UniqueID.generate());
         CID cid = new CID(1);
         socid = new SOCID(sidx, oid, cid);
+        DID did = new DID(UniqueID.generate());
+        Version versionNonZero = new Version();
+        versionNonZero.set_(did, 3);
+        // We pretend that some change left nonzero versions lying around even after store deletion
+        when(nvdb.getAllVersions_(any(SOCID.class))).thenReturn(versionNonZero);
     }
 
     @Test
-    public void shouldDeleteMaxTicksAndImmOnFlushWhenVersDeletedPermanently()
+    public void shouldDeleteMaxTicksAndImmOnCommitWhenVersDeletedPermanently()
         throws Exception
     {
         va.versionDeletedPermanently_(socid, v);
@@ -52,82 +60,85 @@ public class TestVersionAssistant extends AbstractTest
     }
 
     @Test
-    public void shouldNotAssertOnFlushWhenDifferentStoreDeletedAndVersDeletedPermanently()
+    public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndVersDeletedPermanently()
         throws Exception
     {
         va.versionDeletedPermanently_(socid, v);
-        deleteArbitrarySIndexAndFlush();
+        deleteArbitrarySIndexAndCommit();
     }
 
     @Test(expected = AssertionError.class)
-    public void shouldAssertOnFlushWhenSameStoreDeletedAndVersionDeletedPermanently()
+    public void shouldAssertOnCommitWhenSameStoreDeletedAndVersionDeletedPermanently()
         throws Exception
     {
         va.versionDeletedPermanently_(socid, v);
-        deleteSIndexAndFlush(socid.sidx());
+        deleteSIndexAndCommit(socid.sidx());
     }
 
     @Test(expected = AssertionError.class)
-    public void shouldAssertOnFlushWhenSameStoreDeletedAndKMLAdded() throws Exception
+    public void shouldAssertOnCommitWhenSameStoreDeletedAndKMLAdded()
+            throws Exception
     {
         va.kmlVersionAdded_(socid, v);
-        deleteSIndexAndFlush(socid.sidx());
+        deleteSIndexAndCommit(socid.sidx());
     }
 
     @Test
-    public void shouldNotAssertOnFlushWhenDifferentStoreDeletedAndKMLAdded()
+    public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndKMLAdded()
         throws Exception
     {
         va.kmlVersionAdded_(socid, v);
-        deleteArbitrarySIndexAndFlush();
+        deleteArbitrarySIndexAndCommit();
     }
 
     @Test(expected = AssertionError.class)
-    public void shouldAssertOnFlushWhenSameStoreDeletedAndLocalVersionAdded()
+    public void shouldAssertOnLocalVersionAddedAfterStoreDeleted()
         throws Exception
     {
+        va.storeDeleted_(socid.sidx());
         va.localVersionAdded_(socid, v);
-        deleteSIndexAndFlush(socid.sidx());
+        va.committing_(t);
     }
 
     // FIXME This test requires more thorough mocking of VersionAssistant
     // dependencies and is beyond the scope of markj's test
     @Ignore@Test
-    public void shouldNotAssertOnFlushWhenDifferentStoreDeletedAndLocalVersionAdded()
+    public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndLocalVersionAdded()
         throws Exception
     {
         va.localVersionAdded_(socid, v);
-        deleteArbitrarySIndexAndFlush();
+        deleteArbitrarySIndexAndCommit();
     }
 
     @Test(expected = AssertionError.class)
-    public void shouldAssertOnFlushWhenSameStoreDeletedAndVersionDeleted()
+    public void shouldAssertOnCommitWhenSameStoreDeletedAndVersionDeleted()
         throws Exception
     {
+        va.storeDeleted_(socid.sidx());
         va.versionDeleted_(socid, v);
-        deleteSIndexAndFlush(socid.sidx());
+        va.committing_(t);
     }
 
     @Test
-    public void shouldNotAssertOnFlushWhenDifferentStoreDeletedAndVersionDeleted()
+    public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndVersionDeleted()
         throws Exception
     {
         va.versionDeleted_(socid, v);
-        deleteArbitrarySIndexAndFlush();
+        deleteArbitrarySIndexAndCommit();
     }
 
     /**
      * This method is used when the caller doesn't care what SIndex is
      * deleted, only that it is not equal to socid.sidx()
      */
-    private void deleteArbitrarySIndexAndFlush() throws Exception
+    private void deleteArbitrarySIndexAndCommit() throws Exception
     {
         SIndex sidx = new SIndex(5);
         assertFalse(sidx == socid.sidx());
-        deleteSIndexAndFlush(sidx);
+        deleteSIndexAndCommit(sidx);
     }
 
-    private void deleteSIndexAndFlush(SIndex sidx) throws Exception
+    private void deleteSIndexAndCommit(SIndex sidx) throws Exception
     {
         va.storeDeleted_(sidx);
         va.committing_(t);
