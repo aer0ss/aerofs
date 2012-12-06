@@ -12,9 +12,9 @@ sys.path.append(python_aerofs_lib)
 config = ConfigParser.ConfigParser()
 config.readfp(open('../src/web/development.ini'))
 
-from aerofs.scrypt import scrypt
-from aerofs import connection
-from aerofs.gen import sp_pb2
+from aerofs_sp.scrypt import scrypt
+from aerofs_sp import connection
+from aerofs_sp.gen import sp_pb2
 
 class Credentials:
     user_id = None

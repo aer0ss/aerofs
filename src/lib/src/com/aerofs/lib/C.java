@@ -93,7 +93,7 @@ public class C
     public static final int CORE_MAGIC                  = 0x637265BE;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
-    // Make sure to update development.ini and production.ini in src/web and tools/sp_runner.py
+    // Make sure to update development.ini and production.ini in src/web and syncdet_test/lib/param.py
     // when incrementing SP_PROTOCOL_VERSION
     public static final int SP_PROTOCOL_VERSION         = 15;
     public static final int SS_PROTOCOL_VERSION         = 5;
