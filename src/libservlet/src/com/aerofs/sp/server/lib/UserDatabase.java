@@ -11,11 +11,13 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -24,10 +26,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Collection;
+import java.util.List;
 
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_FROM;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
@@ -42,6 +48,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_INVITATIONS_QUOTA;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_VERIFIED;
+import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_TI;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
@@ -285,6 +292,23 @@ public class UserDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         try {
             return count(rs) != 0;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public Collection<SID> getSharedFolders(UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_USER_ID + "=?",
+                C_AC_STORE_ID));
+
+        ps.setString(1, userId.toString());
+        ResultSet rs = ps.executeQuery();
+        try {
+            List<SID> sids = Lists.newArrayList();
+            while (rs.next()) sids.add(new SID(rs.getBytes(1)));
+            return sids;
         } finally {
             rs.close();
         }

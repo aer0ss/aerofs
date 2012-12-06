@@ -10,41 +10,49 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class User
 {
     private final static Logger l = Util.l(User.class);
 
-    private final UserID _id;
-
-    private final UserDatabase _db;
-    private final Organization.Factory _factOrg;
-
     public static class Factory
     {
         private final UserDatabase _db;
         private final Organization.Factory _factOrg;
+        private final SharedFolder.Factory _factSharedFolder;
 
-        public Factory(UserDatabase db, Organization.Factory factOrg)
+        @Inject
+        public Factory(UserDatabase db, Organization.Factory factOrg,
+                SharedFolder.Factory factSharedFolder)
         {
             _db = db;
             _factOrg = factOrg;
+            _factSharedFolder = factSharedFolder;
         }
 
         public User create(@Nonnull UserID id)
         {
-            return new User(_db, _factOrg, id);
+            return new User(this, id);
         }
 
         public User createFromExternalID(@Nonnull String str)
@@ -52,12 +60,13 @@ public class User
             return create(UserID.fromExternal(str));
         }
     }
+    private final UserID _id;
+    private final Factory _f;
 
-    private User(UserDatabase db, Organization.Factory factOrg, UserID id)
+    private User(Factory f, UserID id)
     {
+        _f = f;
         _id = id;
-        _db = db;
-        _factOrg = factOrg;
     }
 
     public void throwIfNotAdmin()
@@ -98,7 +107,7 @@ public class User
     public boolean exists()
             throws SQLException
     {
-        return _db.hasUser(_id);
+        return _f._db.hasUser(_id);
     }
 
     public void throwIfNotFound()
@@ -111,13 +120,13 @@ public class User
             throws ExNotFound, SQLException
     {
         // Do not cache the created object in memory to avoid db/mem inconsistency
-        return _factOrg.create(_db.getOrgID(_id));
+        return _f._factOrg.create(_f._db.getOrgID(_id));
     }
 
     public FullName getFullName()
             throws ExNotFound, SQLException
     {
-        return _db.getFullName(_id);
+        return _f._db.getFullName(_id);
     }
 
     /**
@@ -126,38 +135,38 @@ public class User
     public byte[] getShaedSP()
             throws ExNotFound, SQLException
     {
-        return _db.getShaedSP(_id);
+        return _f._db.getShaedSP(_id);
     }
 
     public boolean isVerified()
             throws ExNotFound, SQLException
     {
-        return _db.isVerified(_id);
+        return _f._db.isVerified(_id);
     }
 
     public AuthorizationLevel getLevel()
             throws ExNotFound, SQLException
     {
-        return _db.getLevel(_id);
+        return _f._db.getLevel(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setLevel(AuthorizationLevel auth)
             throws SQLException
     {
-        _db.setLevel(_id, auth);
+        _f._db.setLevel(_id, auth);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setVerified() throws SQLException
     {
-        _db.setVerified(_id);
+        _f._db.setVerified(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setName(FullName fullName) throws SQLException
     {
-        _db.setName(_id, fullName);
+        _f._db.setName(_id, fullName);
     }
 
     /**
@@ -165,7 +174,7 @@ public class User
      * @throws ExAlreadyExist if the user ID already exists.
      */
     public void add(byte[] shaedSP, FullName fullName, Organization org)
-            throws ExAlreadyExist, SQLException
+            throws ExAlreadyExist, SQLException, ExNoPerm, IOException, ExNotFound
     {
         Util.l(this).info(this + " attempts signup");
 
@@ -173,7 +182,40 @@ public class User
         // the signup_code table
         // TODO write a test to verify that after one successful signup,
         // other codes fail/do not exist
-        _db.addUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
+        _f._db.addUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
+
+        addRootStoreAndCheckForCollision();
+    }
+
+    /**
+     * Add the root store for the user, to:
+     *
+     * 1. include the team server to the root store.
+     * 2. avoid attackers hijacking existing users' root store with intentional store ID collisions.
+     */
+    private void addRootStoreAndCheckForCollision()
+            throws SQLException, ExNoPerm, IOException, ExNotFound, ExAlreadyExist
+    {
+        SharedFolder rootStore = _f._factSharedFolder.create_(SID.rootSID(_id));
+
+        if (rootStore.exists()) {
+            /**
+             * It is possible for a malicious user to create a shared folder whose SID collide with
+             * the SID of somebody's root store. When a new user signs up we can check if such a
+             * colliding folder exists and delete it to prevent malicious users from gaining access
+             * to other users' root stores.
+             *
+             * NB: here we assume a malicious collision for eavesdropping intent however there is a
+             * small but not necessarily negligible probability that real collision will occur. What
+             * we should do in this case is left as an exercise to the reader.
+             */
+            l.warn("existing shared folder collides with root store id for " + this);
+            rootStore.delete();
+        }
+
+        // Ignore the return value and do not publish verkehr notifications, as this newly added
+        // user mustn't have any daemon running at this moment.
+        rootStore.add("root store: " + _id, this);
     }
 
     /**
@@ -202,11 +244,10 @@ public class User
      *
      * @throws ExNoPerm if the user is a non-admin in a non-default organization
      */
-    public void addAndMoveToOrganization(String orgName)
-            throws ExNoPerm, SQLException, ExNotFound
+    public Map<UserID, Long> addAndMoveToOrganization(String orgName)
+            throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist
     {
         // TODO: verify the calling user is allowed to create an organization
-        // (check with the payment system)
 
         // only users in the default organization or admins can add organizations.
         if (!getOrganization().id().equals(OrgID.DEFAULT) &&
@@ -214,18 +255,39 @@ public class User
             throw new ExNoPerm("you have no permission to create new teams");
         }
 
-        Organization org = _factOrg.add(orgName);
-        setOrganization(org);
+        Organization org = _f._factOrg.add(orgName);
         setLevel(AuthorizationLevel.ADMIN);
+        return setOrganization(org);
     }
 
     /**
-     * Move the user to a new organization
+     * Move the user to a new organization, and adjust ACLs of shared folders for the team server.
      */
-    private void setOrganization(Organization org)
+    private Map<UserID, Long> setOrganization(Organization org)
+            throws SQLException, ExNotFound, ExAlreadyExist
+    {
+        Collection<SharedFolder> sfs = getSharedFolders();
+
+        Map<UserID, Long> epochs = Maps.newHashMap();
+
+        for (SharedFolder sf : sfs) epochs.putAll(sf.deleteTeamServerACL(this));
+
+        _f._db.setOrgID(_id, org.id());
+
+        for (SharedFolder sf : sfs) epochs.putAll(sf.addTeamServerACL(this));
+
+        return epochs;
+    }
+
+    public Collection<SharedFolder> getSharedFolders()
             throws SQLException
     {
-        _db.setOrgID(_id, org.id());
+        Collection<SID> sids = _f._db.getSharedFolders(_id);
+        List<SharedFolder> sfs = Lists.newArrayListWithCapacity(sids.size());
+        for (SID sid : sids) {
+            sfs.add(_f._factSharedFolder.create_(sid));
+        }
+        return sfs;
     }
 
     /**
@@ -239,25 +301,25 @@ public class User
         assert !exists();
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _db.addSignupCode(code, inviter.id(), _id, org.id());
+        _f._db.addSignupCode(code, inviter.id(), _id, org.id());
         return code;
     }
 
     public int getSignUpInvitationsQuota()
             throws ExNotFound, SQLException
     {
-        return _db.getSignUpInvitationsQuota(_id);
+        return _f._db.getSignUpInvitationsQuota(_id);
     }
 
     public void setSignUpInvitationQuota(int quota)
             throws SQLException
     {
-        _db.setSignUpInvitationsQuota(_id, quota);
+        _f._db.setSignUpInvitationsQuota(_id, quota);
     }
 
     public boolean isInvitedToSignUp()
             throws SQLException
     {
-        return _db.isInvitedToSignUp(_id);
+        return _f._db.isInvitedToSignUp(_id);
     }
 }

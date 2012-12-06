@@ -395,7 +395,8 @@ class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        _sessionUser.get().addAndMoveToOrganization(orgName);
+        // send verkehr notification as the last step of the transaction
+        publish_(_sessionUser.get().addAndMoveToOrganization(orgName));
         _transaction.commit();
 
         return createVoidReply();
@@ -467,17 +468,21 @@ class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetTeamServerUserIDReply> getTeamServerUserID()
-            throws SQLException, ExNoPerm, ExNotFound
+            throws Exception
     {
         _transaction.begin();
 
         User user = _sessionUser.get();
 
+        Map<UserID, Long> epochs;
+
         // Create the organzation if necessary
         if (user.getOrganization().isDefault()) {
-            user.addAndMoveToOrganization("An Awesome Team");
+            epochs = user.addAndMoveToOrganization("An Awesome Team");
         } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
             throw new ExNoPerm("only admins can setup " + S.TEAM_SERVERS);
+        } else {
+            epochs = Collections.emptyMap();
         }
 
         UserID tsUserID = user.getOrganization().id().toTeamServerUserID();
@@ -485,6 +490,9 @@ class SPService implements ISPService
         GetTeamServerUserIDReply reply = GetTeamServerUserIDReply.newBuilder()
                 .setId(tsUserID.toString())
                 .build();
+
+        // send verkehr notification as the last step of the transaction
+        publish_(epochs);
 
         _transaction.commit();
 
@@ -533,7 +541,10 @@ class SPService implements ISPService
         User user = _sessionUser.get();
         List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
         for (ByteString shareId : shareIds) {
-            names.add(_factSharedFolder.create_(shareId).getName(user));
+            SharedFolder sf = _factSharedFolder.create_(shareId);
+            // throws ExNoPerm if the user doesn't have permission to view the name
+            sf.getRoleThrows(user);
+            names.add(sf.getName());
         }
 
         _transaction.commit();
@@ -1011,7 +1022,7 @@ class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUp(String userIdString, ByteString credentials,
             String firstName, String lastName)
-            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs
+            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs, ExNoPerm, IOException
     {
         if (!Util.isValidEmailAddress(userIdString)) throw new ExBadArgs("invalid email address");
 
@@ -1022,8 +1033,6 @@ class SPService implements ISPService
         _transaction.begin();
 
         user.add(shaedSP, fullName, _factOrg.getDefault());
-
-        checkForRootStoreCollision(user);
 
         //unsubscribe user from the aerofs invitation reminder mailing list
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
@@ -1069,8 +1078,7 @@ class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUpWithTargeted(String targetedInvite, ByteString credentials,
             String firstName, String lastName)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs
-    {
+            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, ExNoPerm, IOException {
         l.info("targeted sign-up: " + targetedInvite);
 
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
@@ -1082,11 +1090,10 @@ class SPService implements ISPService
         User user = _factUser.create(result._userId);
 
         user.add(shaedSP, fullName, _factOrg.create(result._orgId));
+
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified
         user.setVerified();
-
-        checkForRootStoreCollision(user);
 
         // TODO (WW) don't we need to unsubscribe the user from the reminder mailing list, similar
         // to signUp()?
@@ -1094,39 +1101,6 @@ class SPService implements ISPService
         _transaction.commit();
 
         return createVoidReply();
-    }
-
-    /**
-     * It is possible for a malicious user to create a shared folder whose SID collide with the
-     * SID of somebody's root store. When a new user signs up we can check if such a colliding
-     * folder exists and delete it to prevent malicious users from gaining access to other users'
-     * root stores.
-     *
-     * TODO:
-     * Ideally we should also register root stores in SP to make sure creation of colliding shared
-     * folder is impossible *after* the targeted user signs up. This is not currently done but will
-     * have to be done regardless of security considerations to support the team server (the only
-     * legitimate case where a root store need to be accessed by another user)
-     *
-     * TODO (WW) when needed, create a RootStore class that inherits SharedFolder, and have this
-     * method part of the new class. Alternatively, move this method to User.
-     *
-     * NB: this check used to be done when creating/updating ACLs but that did not make sense as ACL
-     * are never created/updated for root stores
-     */
-    private void checkForRootStoreCollision(User user) throws SQLException
-    {
-        SharedFolder sharedFolder = _factSharedFolder.create_(SID.rootSID(user.id()));
-
-        if (!sharedFolder.exists()) return;
-
-        // Looks like somebody created a shared folder that collides with somebody else's root store
-        // NB: here we assume a malicious collision for eavesdropping intent however there is a
-        // small but not necessarily negligible probability that real collision will occur. What we
-        // should do in this case is left as an exercise to the reader.
-        l.warn("Existing shared folder collides with root store id for " + user);
-
-        sharedFolder.delete();
     }
 
     @Override

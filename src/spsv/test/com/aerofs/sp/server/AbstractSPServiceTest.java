@@ -86,9 +86,13 @@ public class AbstractSPServiceTest extends AbstractTest
     protected CertificateGenerator certgen = mock(CertificateGenerator.class);
 
     @Spy protected Organization.Factory factOrg = new Organization.Factory(odb);
-    @Spy protected User.Factory factUser = new User.Factory(udb, factOrg);
+    @Spy protected SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
+    @Spy protected User.Factory factUser = new User.Factory(udb, factOrg, factSharedFolder);
+    {
+        factSharedFolder.inject(sfdb, factUser);
+    }
+
     @Spy protected Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb, certgen);
-    @Spy protected SharedFolder.Factory factSharedFolder = new SharedFolder.Factory(sfdb);
     @Spy protected SharedFolderInvitation.Factory factSFI =
             new SharedFolderInvitation.Factory(sfidb, factUser, factSharedFolder);
 

@@ -91,25 +91,6 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
-    public boolean isOwner(SID sid, UserID userId)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_ROLE + " = ?",
-                "count(*)"));
-
-        ps.setBytes(1, sid.getBytes());
-        ps.setString(2, userId.toString());
-        ps.setInt(3, Role.OWNER.ordinal());
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            return binaryCount(rs);
-        } finally {
-            rs.close();
-        }
-    }
-
     public void addACL(SID sid, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
@@ -318,7 +299,8 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         // remove all invitations
         ps = prepareStatement(DBUtil.deleteWhere(T_FI, C_FI_SID + "=?"));
         ps.setBytes(1, sid.getBytes());
-        Util.verify(ps.executeUpdate() > 0);
+        // do not verify the return value is one as we may not have invitations left.
+        ps.executeUpdate();
 
         // remove shared folder
         ps = prepareStatement(DBUtil.deleteWhere(T_SF, C_SF_ID + "=?"));

@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IStoreJoiner;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -22,22 +21,28 @@ import com.google.inject.Inject;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
 {
-    private final IStores _stores;
+    private final SingleuserStores _stores;
     private final ObjectCreator _oc;
     private final DirectoryService _ds;
+    private final CfgRootSID _cfgRootSID;
 
     @Inject
-    public SingleuserStoreJoiner(DirectoryService ds, IStores stores, ObjectCreator oc)
+    public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
+            CfgRootSID cfgRootSID)
     {
         _ds = ds;
         _oc = oc;
         _stores = stores;
+        _cfgRootSID = cfgRootSID;
     }
 
     @Override
     public void joinStore(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
     {
-        SIndex parent = ((SingleuserStores)_stores).getRoot_();
+        // ignore changes on the root store.
+        if (sid.equals(_cfgRootSID.get())) return;
+
+        SIndex parent = _stores.getRoot_();
 
         assert folderName != null : sidx + " " + sid.toStringFormal();
 
@@ -86,6 +91,9 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     @Override
     public void leaveStore(SIndex sidx, SID sid, Trans t) throws Exception
     {
+        // we should never be asked to leave the root store.
+        assert !sid.equals(_cfgRootSID.get());
+
         // TODO:
     }
 }

@@ -11,10 +11,14 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -27,12 +31,14 @@ public class SharedFolder
 {
     public static class Factory
     {
-        private final SharedFolderDatabase _db;
+        private SharedFolderDatabase _db;
+        private User.Factory _factUser;
 
         @Inject
-        public Factory(SharedFolderDatabase db)
+        public void inject(SharedFolderDatabase db, User.Factory factUser)
         {
             _db = db;
+            _factUser = factUser;
         }
 
         public SharedFolder create_(ByteString sid)
@@ -72,11 +78,9 @@ public class SharedFolder
         return _f._db.has(_sid);
     }
 
-    public String getName(User user)
+    public String getName()
             throws ExNoPerm, ExNotFound, SQLException
     {
-        if (_f._db.getRoleNullable(_sid, user.id()) == null) throw new ExNoPerm();
-
         return _f._db.getName(_sid);
     }
 
@@ -103,16 +107,16 @@ public class SharedFolder
      * @throws ExAlreadyExist if the user is already added.
      */
     public Map<UserID, Long> addACL(User user, Role role)
-            throws ExAlreadyExist, SQLException
+            throws ExAlreadyExist, SQLException, ExNotFound
     {
-        // TODO (WWW) reconsider permission check here.
-
-        if (_f._db.getRoleNullable(_sid, user.id()) != null) {
+        if (getRoleNullable(user) != null) {
             // old invite/join workflow: ACL added on invite
             // TODO: remove this codepath after transition period...
             return Collections.emptyMap();
         } else {
             _f._db.addACL(_sid, Collections.singletonList(new SubjectRolePair(user.id(), role)));
+
+            addTeamServerACLImpl(user);
 
             // increment ACL epoch for all users currently sharing the folder
             // making the modification to the database, and then getting the current acl list should
@@ -120,6 +124,106 @@ public class SharedFolder
             // notification that is newer than what it should be (i.e. we skip an update
             return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
         }
+    }
+
+    /**
+     * Add the user's team server ID to the ACL. No-op if the user belongs to the default org or
+     * there are other users on the shared folder belonging to the same team server.
+     */
+    public Map<UserID, Long> addTeamServerACL(User user)
+            throws ExNotFound, ExAlreadyExist, SQLException
+    {
+        if (addTeamServerACLImpl(user)) {
+            return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * @return whether actual operations are performed
+     */
+    private boolean addTeamServerACLImpl(User user)
+            throws ExNotFound, SQLException, ExAlreadyExist
+    {
+        Organization org = user.getOrganization();
+        if (org.isDefault()) return false;
+
+        User tsUser = _f._factUser.create(org.id().toTeamServerUserID());
+        if (getRoleNullable(tsUser) == null) {
+            SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
+            _f._db.addACL(_sid, Collections.singletonList(srp));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public Map<UserID, Long> deleteACL(Collection<UserID> subjects)
+            throws SQLException, ExNotFound, ExNoPerm
+    {
+        // retrieve the list of affected users _before_ performing the deletion, so that all the
+        // users including the deleted ones will get notifications.
+        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+
+        _f._db.deleteACL(_sid, subjects);
+
+        throwIfNoOwnerLeft();
+
+        for (UserID userID : subjects) {
+            deleteTeamServerACLImpl(_f._factUser.create(userID));
+        }
+
+        // making the modification to the database, and then getting the current acl list should
+        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
+        // notification that is newer than what it should be (i.e. we skip an update
+
+        return _f._db.incrementACLEpoch(affectedUsers);
+    }
+
+    /**
+     * Remove the user's team server ID to the ACL. No-op if the user belongs to the default org or
+     * there are other users on the shared folder belonging to the same team server.
+     */
+    public Map<UserID, Long> deleteTeamServerACL(User user)
+            throws SQLException, ExNotFound
+    {
+        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+
+        if (deleteTeamServerACLImpl(user)) {
+            return _f._db.incrementACLEpoch(affectedUsers);
+        } else {
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * @return whether actual operations are performed.
+     */
+    private boolean deleteTeamServerACLImpl(User user)
+            throws SQLException, ExNotFound
+    {
+        Organization org = user.getOrganization();
+        if (org.isDefault()) return false;
+
+        for (User otherUser : getUsers()) {
+            if (otherUser.equals(user)) continue;
+            if (otherUser.id().isTeamServerID()) continue;
+            if (otherUser.getOrganization().equals(org)) return false;
+        }
+
+        _f._db.deleteACL(_sid, Collections.singleton(org.id().toTeamServerUserID()));
+        return true;
+    }
+
+    public Collection<User> getUsers()
+            throws SQLException
+    {
+        List<User> users = Lists.newArrayList();
+        for (UserID userID : _f._db.getACLUsers(_sid)) {
+            users.add(_f._factUser.create(userID));
+        }
+        return users;
     }
 
     /**
@@ -140,22 +244,18 @@ public class SharedFolder
         return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
     }
 
-    public Map<UserID, Long> deleteACL(Collection<UserID> subjects)
-            throws SQLException, ExNotFound, ExNoPerm
+    public @Nullable Role getRoleNullable(User user)
+            throws SQLException
     {
-        // retrieve the list of affected users _before_ performing the deletion, so that all the
-        // users including the deleted ones will get notifications.
-        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+        return _f._db.getRoleNullable(_sid, user.id());
+    }
 
-        _f._db.deleteACL(_sid, subjects);
-
-        throwIfNoOwnerLeft();
-
-        // making the modification to the database, and then getting the current acl list should
-        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
-
-        return _f._db.incrementACLEpoch(affectedUsers);
+    public @Nonnull Role getRoleThrows(User user)
+            throws SQLException, ExNoPerm
+    {
+        Role role = getRoleNullable(user);
+        if (role == null) throw new ExNoPerm();
+        return role;
     }
 
     private void throwIfNoOwnerLeft()
@@ -167,7 +267,7 @@ public class SharedFolder
     public void throwIfNotOwner(User user)
             throws SQLException, ExNoPerm
     {
-        Role role = _f._db.getRoleNullable(_sid, user.id());
+        Role role = getRoleNullable(user);
         if (role == null || !role.covers(Role.OWNER)) throw new ExNoPerm();
     }
 }

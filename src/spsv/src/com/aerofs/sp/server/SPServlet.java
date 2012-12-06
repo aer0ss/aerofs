@@ -71,10 +71,14 @@ public class SPServlet extends AeroServlet
     private final CertificateGenerator _certgen = new CertificateGenerator();
 
     private final Organization.Factory _factOrg = new Organization.Factory(_odb);
-    private final User.Factory _factUser = new User.Factory(_udb, _factOrg);
+    private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
+    private final User.Factory _factUser = new User.Factory(_udb, _factOrg, _factSharedFolder);
+    {
+        _factSharedFolder.inject(_sfdb, _factUser);
+    }
+
     private final Device.Factory _factDevice = new Device.Factory(_ddb, _factUser, _certdb,
             _certgen);
-    private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory(_sfdb);
     private final SharedFolderInvitation.Factory _factSFI =
             new SharedFolderInvitation.Factory(_sfidb, _factUser, _factSharedFolder);
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();

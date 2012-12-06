@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SID;
 
-public class CfgRootSID
+class CfgRootSID
 {
     public SID get()
     {

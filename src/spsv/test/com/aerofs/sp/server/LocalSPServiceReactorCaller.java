@@ -79,8 +79,12 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
 
         Organization.Factory factOrg = new Organization.Factory(odb);
-        SharedFolder.Factory factSharedFolder = new SharedFolder.Factory(sfdb);
-        User.Factory factUser = new User.Factory(udb, factOrg);
+        SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
+        User.Factory factUser = new User.Factory(udb, factOrg, factSharedFolder);
+        {
+            factSharedFolder.inject(sfdb, factUser);
+        }
+
         Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb,
                 new CertificateGenerator());
         SharedFolderInvitation.Factory factSFI = new SharedFolderInvitation.Factory(sfidb, factUser,
