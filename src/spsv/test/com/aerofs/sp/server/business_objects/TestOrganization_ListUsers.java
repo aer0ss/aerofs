@@ -7,7 +7,7 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -23,11 +23,11 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     private final int NUMBER_OF_USERS = 10;
     private final int NUMBER_OF_ADMINS = 4;
     private final int TOTAL_USERS = NUMBER_OF_USERS + NUMBER_OF_ADMINS;
-    private final OrgID orgId = new OrgID(523);
-    private final OrgID invalidOrgId = new OrgID(876);
+    private final OrganizationID orgId = new OrganizationID(523);
+    private final OrganizationID invalidOrgId = new OrganizationID(876);
     // Organization containing users, but will not be queried.
     // We do not expect any of these users to be returned in the queries below.
-    private final OrgID nonQueriedOrgId = new OrgID(453);
+    private final OrganizationID nonQueriedOrgId = new OrganizationID(453);
 
     Organization org = factOrg.create(orgId);
     Organization invalidOrg = factOrg.create(invalidOrgId);

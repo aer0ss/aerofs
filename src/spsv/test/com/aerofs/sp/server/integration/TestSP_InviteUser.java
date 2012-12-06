@@ -21,7 +21,7 @@ public class TestSP_InviteUser extends AbstractSPTest
     {
         setSessionUser(TEST_USER_1);
 
-        service.inviteUser(Collections.<String>emptyList(), true);
+        service.inviteUser(Collections.<String>emptyList());
     }
 
     @Test(expected = ExAlreadyExist.class)
@@ -30,6 +30,6 @@ public class TestSP_InviteUser extends AbstractSPTest
     {
         setSessionUser(TEST_USER_1);
 
-        service.inviteUser(Collections.singletonList(TEST_USER_2.toString()), true);
+        service.inviteUser(Collections.singletonList(TEST_USER_2.toString()));
     }
 }

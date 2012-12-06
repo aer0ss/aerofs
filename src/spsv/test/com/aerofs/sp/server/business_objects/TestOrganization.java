@@ -6,7 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Test;
@@ -40,7 +40,7 @@ public class TestOrganization extends AbstractBusinessObjectTest
     public void setName_shouldAssertForNonExistingOrg()
             throws SQLException
     {
-        Organization org = factOrg.create(new OrgID(123));
+        Organization org = factOrg.create(new OrganizationID(123));
         org.setName("hoho");
     }
 
@@ -48,7 +48,7 @@ public class TestOrganization extends AbstractBusinessObjectTest
     public void getName_shouldThrowForNonExistingOrg()
             throws SQLException, ExNotFound
     {
-        factOrg.create(new OrgID(123)).getName();
+        factOrg.create(new OrganizationID(123)).getName();
     }
 
     @Test

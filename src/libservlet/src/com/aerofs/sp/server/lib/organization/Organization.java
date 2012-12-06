@@ -25,12 +25,12 @@ public class Organization
 {
     private final static Logger l = Util.l(Organization.class);
 
-    private final OrgID _id;
+    private final OrganizationID _id;
     private final OrganizationDatabase _db;
 
     public static class Factory
     {
-        private final Organization _default = create(OrgID.DEFAULT);
+        private final Organization _default = create(OrganizationID.DEFAULT);
 
         private OrganizationDatabase _db;
         private User.Factory _factUser;
@@ -42,7 +42,7 @@ public class Organization
             _factUser = factUser;
         }
 
-        public Organization create(@Nonnull OrgID id)
+        public Organization create(@Nonnull OrganizationID id)
         {
             return new Organization(_db, id);
         }
@@ -64,7 +64,7 @@ public class Organization
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
                 // orgs. It is NOT a security measure.
-                OrgID orgID = new OrgID(Util.rand().nextInt());
+                OrganizationID orgID = new OrganizationID(Util.rand().nextInt());
                 try {
                     _db.add(orgID, name);
                     Organization org = create(orgID);
@@ -90,20 +90,20 @@ public class Organization
         }
     }
 
-    private Organization(OrganizationDatabase db, OrgID id)
+    private Organization(OrganizationDatabase db, OrganizationID id)
     {
         _id = id;
         _db = db;
     }
 
-    public OrgID id()
+    public OrganizationID id()
     {
         return _id;
     }
 
     public boolean isDefault()
     {
-        return _id.equals(OrgID.DEFAULT);
+        return _id.equals(OrganizationID.DEFAULT);
     }
 
     public String getName()
@@ -239,5 +239,4 @@ public class Organization
     {
         return _db.listSharedFolders(_id, maxResults, offset);
     }
-
 }

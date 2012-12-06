@@ -14,7 +14,7 @@ import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +44,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
 
     @InjectMocks private EmailReminder er;
 
-    private static final OrgID ORG_ID = new OrgID(543);
+    private static final OrganizationID ORG_ID = new OrganizationID(543);
 
     private static final int TWO_DAYS_INT = 2;
     private static final long TWO_DAYS_IN_MILLISEC = TWO_DAYS_INT * C.DAY;
@@ -92,7 +92,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
             l.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
             udb.addSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
-                    ORG_ID, System.currentTimeMillis() - age);
+                    System.currentTimeMillis() - age);
 
             esdb.addEmailSubscription(user,
                     SubscriptionCategory.AEROFS_INVITATION_REMINDER,

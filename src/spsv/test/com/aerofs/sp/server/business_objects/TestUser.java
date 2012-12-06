@@ -73,7 +73,7 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldThrowIfCreatingUserWithoutOrg()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
-        createNewUser(newUser(), newOrg());
+        createNewUser(newUser(), newOrganization());
     }
 
     @Test(expected = ExAlreadyExist.class)
@@ -81,7 +81,7 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User user = newUser();
-        Organization org = createNewOrg();
+        Organization org = createNewOrganization();
         createNewUser(user, org);
         createNewUser(user, org);
     }
@@ -92,8 +92,8 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         // create the playground
-        Organization org = createNewOrg();
-        Organization org2 = createNewOrg();
+        Organization org = createNewOrganization();
+        Organization org2 = createNewOrganization();
 
         // create the players
         User attacker = newUser("attacker");
@@ -129,14 +129,14 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldThrowIfUserNoPermissionOnAddAndMoveToOrg()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
-        Organization org = createNewOrg();
+        Organization org = createNewOrganization();
         User user = newUser();
         createNewUser(user, org);
         user.addAndMoveToOrganization("test");
     }
 
     @Test
-    public void shouldSetUserAsAdminOnAddAndMoveToNewOrg()
+    public void shouldSetUserAsAdminOnAddAndMoveToNewOrganization()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User user = newUser();
@@ -152,7 +152,7 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User user = newUser();
-        Organization orgOld = createNewOrg();
+        Organization orgOld = createNewOrganization();
         createNewUser(user, orgOld);
         User tsUserOld = newUser(orgOld.id().toTeamServerUserID());
 
@@ -166,7 +166,7 @@ public class TestUser extends AbstractBusinessObjectTest
         assertEquals(sf1.getRoleNullable(tsUserOld), Role.EDITOR);
         assertEquals(sf2.getRoleNullable(tsUserOld), Role.EDITOR);
 
-        Organization orgNew = createNewOrg();
+        Organization orgNew = createNewOrganization();
         User tsUserNew = newUser(orgNew.id().toTeamServerUserID());
 
         user.setOrganization(orgNew);

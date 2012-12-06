@@ -15,7 +15,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.aerofs.sp.server.lib.organization.OrgID;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
@@ -288,28 +287,19 @@ public class SPDatabase extends AbstractSQLDatabase
         return result;
     }
 
-    public static class ResolveSignUpInvitationCodeResult
-    {
-        public UserID _userId;
-        public OrgID _orgId;
-    }
-
     /**
      * @param tsc the invitation code
      */
-    public @Nonnull ResolveSignUpInvitationCodeResult getSignUpInvitation(String tsc)
+    public @Nonnull UserID getSignUpInvitation(String tsc)
         throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(
-                DBUtil.selectWhere(T_TI, C_TI_TIC + "=?", C_TI_TO, C_TI_ORG_ID));
+        PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TI, C_TI_TIC + "=?", C_TI_TO));
 
         ps.setString(1, tsc);
         ResultSet rs = ps.executeQuery();
         try {
             if (rs.next()) {
-                ResolveSignUpInvitationCodeResult result = new ResolveSignUpInvitationCodeResult();
-                result._userId = UserID.fromInternal(rs.getString(1));
-                result._orgId = new OrgID(rs.getInt(2));
+                UserID result = UserID.fromInternal(rs.getString(1));
                 assert !rs.next();
                 return result;
             } else {

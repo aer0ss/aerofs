@@ -17,6 +17,11 @@ public class Email implements IEmail
     private final HTMLEmail _htmlEmail;
     private final TextEmail _textEmail;
 
+    public Email(String subject)
+    {
+        this(subject, false, null);
+    }
+
     public Email(final String subject, boolean unsubscribe, @Nullable String blobId)
     {
         _htmlEmail = new HTMLEmail(subject, unsubscribe, blobId);

@@ -17,10 +17,13 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -41,18 +44,24 @@ public class User
 
     public static class Factory
     {
-        private final UserDatabase _db;
+        private final UserDatabase _udb;
+        private final OrganizationInvitationDatabase _odb;
+
         private final Device.Factory _factDevice;
         private final Organization.Factory _factOrg;
+        private final OrganizationInvitation.Factory _factOrgInvite;
         private final SharedFolder.Factory _factSharedFolder;
 
         @Inject
-        public Factory(UserDatabase db, Device.Factory factDevice, Organization.Factory factOrg,
+        public Factory(UserDatabase udb, OrganizationInvitationDatabase odb, Device.Factory factDevice,
+                Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
                 SharedFolder.Factory factSharedFolder)
         {
-            _db = db;
+            _udb = udb;
+            _odb = odb;
             _factDevice = factDevice;
             _factOrg = factOrg;
+            _factOrgInvite = factOrgInvite;
             _factSharedFolder = factSharedFolder;
         }
 
@@ -114,7 +123,7 @@ public class User
     public boolean exists()
             throws SQLException
     {
-        return _f._db.hasUser(_id);
+        return _f._udb.hasUser(_id);
     }
 
     public void throwIfNotFound()
@@ -127,13 +136,13 @@ public class User
             throws ExNotFound, SQLException
     {
         // Do not cache the created object in memory to avoid db/mem inconsistency
-        return _f._factOrg.create(_f._db.getOrgID(_id));
+        return _f._factOrg.create(_f._udb.getOrganizationID(_id));
     }
 
     public FullName getFullName()
             throws ExNotFound, SQLException
     {
-        return _f._db.getFullName(_id);
+        return _f._udb.getFullName(_id);
     }
 
     /**
@@ -142,38 +151,38 @@ public class User
     public byte[] getShaedSP()
             throws ExNotFound, SQLException
     {
-        return _f._db.getShaedSP(_id);
+        return _f._udb.getShaedSP(_id);
     }
 
     public boolean isVerified()
             throws ExNotFound, SQLException
     {
-        return _f._db.isVerified(_id);
+        return _f._udb.isVerified(_id);
     }
 
     public AuthorizationLevel getLevel()
             throws ExNotFound, SQLException
     {
-        return _f._db.getLevel(_id);
+        return _f._udb.getLevel(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setLevel(AuthorizationLevel auth)
             throws SQLException
     {
-        _f._db.setLevel(_id, auth);
+        _f._udb.setLevel(_id, auth);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setVerified() throws SQLException
     {
-        _f._db.setVerified(_id);
+        _f._udb.setVerified(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setName(FullName fullName) throws SQLException
     {
-        _f._db.setName(_id, fullName);
+        _f._udb.setName(_id, fullName);
     }
 
     public ImmutableList<Device> getDevices()
@@ -181,11 +190,31 @@ public class User
     {
         ImmutableList.Builder<Device> builder = ImmutableList.builder();
 
-        for (DID did : _f._db.getDevices(id())) {
+        for (DID did : _f._udb.getDevices(id())) {
             builder.add(_f._factDevice.create(did));
         }
 
         return builder.build();
+    }
+
+    public List<OrganizationInvitation> getOrganizationInvitations()
+            throws SQLException, ExNotFound
+    {
+        Organization organization = getOrganization();
+
+        List<OrganizationID> allInvitedOrganizations = _f._odb.getAllInvitedOrganizations(id());
+        List<OrganizationInvitation> result = Lists.newLinkedList();
+
+        for (OrganizationID orgID : allInvitedOrganizations) {
+            if (organization.id().equals(orgID)) {
+                continue;
+            }
+
+            OrganizationInvitation invite = _f._factOrgInvite.create(id(), orgID);
+            result.add(invite);
+        }
+
+        return result;
     }
 
     /**
@@ -199,7 +228,7 @@ public class User
         // the signup_code table
         // TODO write a test to verify that after one successful signup,
         // other codes fail/do not exist
-        _f._db.addUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
+        _f._udb.addUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
 
         addRootStoreAndCheckForCollision();
     }
@@ -294,7 +323,7 @@ public class User
 
         for (SharedFolder sf : sfs) epochs.putAll(sf.deleteTeamServerACL(this));
 
-        _f._db.setOrgID(_id, org.id());
+        _f._udb.setOrganizationID(_id, org.id());
 
         for (SharedFolder sf : sfs) epochs.putAll(sf.addTeamServerACL(this));
 
@@ -304,7 +333,7 @@ public class User
     public Collection<SharedFolder> getSharedFolders()
             throws SQLException
     {
-        Collection<SID> sids = _f._db.getSharedFolders(_id);
+        Collection<SID> sids = _f._udb.getSharedFolders(_id);
         List<SharedFolder> sfs = Lists.newArrayListWithCapacity(sids.size());
         for (SID sid : sids) {
             sfs.add(_f._factSharedFolder.create_(sid));
@@ -317,31 +346,31 @@ public class User
      * @return the signup code
      * @pre the user doesn't exist
      */
-    public String addSignUpInvitationCode(User inviter, Organization org)
+    public String addSignUpInvitationCode(User inviter)
             throws SQLException
     {
         assert !exists();
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _f._db.addSignupCode(code, inviter.id(), _id, org.id());
+        _f._udb.addSignupCode(code, inviter.id(), _id);
         return code;
     }
 
     public int getSignUpInvitationsQuota()
             throws ExNotFound, SQLException
     {
-        return _f._db.getSignUpInvitationsQuota(_id);
+        return _f._udb.getSignUpInvitationsQuota(_id);
     }
 
     public void setSignUpInvitationQuota(int quota)
             throws SQLException
     {
-        _f._db.setSignUpInvitationsQuota(_id, quota);
+        _f._udb.setSignUpInvitationsQuota(_id, quota);
     }
 
     public boolean isInvitedToSignUp()
             throws SQLException
     {
-        return _f._db.isInvitedToSignUp(_id);
+        return _f._udb.isInvitedToSignUp(_id);
     }
 }

@@ -7,7 +7,6 @@ from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
 
-
 # Form validation functions
 
 def userid_sanity_check(userid):
@@ -56,7 +55,6 @@ def valid_password_test(request, password, password_confirmation):
     else:
         return (True, "")
 
-
 # Exception processing functions
 
 def get_error(exception): # parse RPC errors into something more user friendly
@@ -75,7 +73,6 @@ def parse_rpc_error_exception(request, e):
     else: # Internal server error
         return _("Internal server error: ${error}", mapping={'error': str(e)})
 
-
 # SP RPC helpers
 
 def get_rpc_stub(request):
@@ -88,7 +85,6 @@ def get_rpc_stub(request):
     else:
         con = SyncConnectionService(settings['sp.url'], settings['sp.version'])
     return SPServiceRpcStub(con)
-
 
 # Message reporting functions (for message bar)
 

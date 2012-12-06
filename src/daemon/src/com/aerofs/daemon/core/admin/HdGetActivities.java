@@ -245,7 +245,7 @@ public class HdGetActivities extends AbstractHdIMC<EIGetActivities>
                 // owner's names through SP.GetDeviceInfo.
                 unresolvedDIDs.add(en.getValue());
             } else {
-                sb.append(brief ? fullName._first : fullName.combine());
+                sb.append(brief ? fullName._first : fullName.toString());
             }
         }
 

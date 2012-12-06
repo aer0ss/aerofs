@@ -8,6 +8,7 @@
 <p>Welcome to the AeroFS Web Interface!</p>
 <ul class="nav">
     <li><a href="${request.route_path('request_password_reset')}">Reset Your Password</a></li>
+    <li><a href="${request.route_path('accept')}">Join An Organization</a></li>
     %if request.session['group'] == ADMIN:
         <li><a href="${request.route_path('dashboard')}">Admin Panel</a></li>
     %endif

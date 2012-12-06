@@ -11,7 +11,7 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;
 import org.junit.Test;
@@ -88,7 +88,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         // set up TEST_USER_4
         trans.begin();
         udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
-                TEST_USER_4_CRED, OrgID.DEFAULT, AuthorizationLevel.USER);
+                TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
         udb.setVerified(TEST_USER_4);
         trans.commit();
     }

@@ -9,6 +9,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
@@ -20,6 +21,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
+import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.PBUser;
@@ -27,7 +29,6 @@ import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
-import com.aerofs.sp.server.lib.SPDatabase.ResolveSignUpInvitationCodeResult;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase.GetACLResult;
 import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
@@ -38,6 +39,8 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Common.PBException;
@@ -125,6 +128,7 @@ public class SPService implements ISPService
     private final ThreadLocalCertificateAuthenticator _certificateAuthenticator;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
+    private final OrganizationInvitation.Factory _factOrgInvite;
     private final Device.Factory _factDevice;
     private final Certificate.Factory _factCert;
     private final SharedFolder.Factory _factSharedFolder;
@@ -135,8 +139,9 @@ public class SPService implements ISPService
             IThreadLocalTransaction<SQLException> transaction, ISessionUser sessionUser,
             PasswordManagement passwordManagement,
             ThreadLocalCertificateAuthenticator certificateAuthenticator, User.Factory factUser,
-            Organization.Factory factOrg, Device.Factory factDevice, Certificate.Factory factCert,
-            CertificateDatabase certdb, EmailSubscriptionDatabase esdb, Factory factSharedFolder,
+            Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
+            Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
+            EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             SharedFolderInvitation.Factory factSFI, InvitationEmailer.Factory factEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
@@ -151,6 +156,7 @@ public class SPService implements ISPService
         _certificateAuthenticator = certificateAuthenticator;
         _factUser = factUser;
         _factOrg = factOrg;
+        _factOrgInvite = factOrgInvite;
         _factDevice = factDevice;
         _factCert = factCert;
         _esdb = esdb;
@@ -175,8 +181,16 @@ public class SPService implements ISPService
         if (!(e instanceof ExNoPerm) &&
                 !(e instanceof ExBadCredential) &&
                 !(e instanceof ExBadArgs) &&
+                !(e instanceof ExAlreadyExist) &&
                 !(e instanceof ExNotFound)) {
-            l.warn("user: " + _sessionUser + ": " + Util.e(e));
+            String user;
+            try {
+                user = _sessionUser.get().id().toString();
+            } catch (ExNoPerm enp) {
+                user = UNKNOWN_DEVICE_NAME;
+            }
+
+            l.error("user: " + user + ": " + Util.e(e));
         }
 
         // Notify SPTransaction that an exception occurred.
@@ -399,18 +413,49 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<GetOrganizationInvitationsReply> getOrganizationInvitations()
+            throws Exception
+    {
+        _transaction.begin();
+
+        User user = _sessionUser.get();
+
+        List<OrganizationInvitation> invitations = user.getOrganizationInvitations();
+
+        List<GetOrganizationInvitationsReply.OrganizationInvitation> invitationsWireable =
+                Lists.newArrayList();
+
+        for (OrganizationInvitation invite :invitations) {
+            GetOrganizationInvitationsReply.OrganizationInvitation.Builder builder =
+                    GetOrganizationInvitationsReply.OrganizationInvitation.newBuilder();
+
+            builder.setInviter(invite.getInviter().id().toString());
+            builder.setOrganizationName(invite.getOrganization().getName());
+            builder.setOrganizationId(invite.getOrganization().id().getInt());
+
+            invitationsWireable.add(builder.build());
+        }
+
+        GetOrganizationInvitationsReply reply = GetOrganizationInvitationsReply.newBuilder()
+                .addAllOrganizationInvitations(invitationsWireable)
+                .build();
+
+        _transaction.commit();
+
+        return createReply(reply);
+    }
+
+    @Override
     public ListenableFuture<GetOrgPreferencesReply> getOrgPreferences()
         throws Exception
     {
         _transaction.begin();
 
         User user = _sessionUser.get();
-        user.throwIfNotAdmin();
-
         Organization org = user.getOrganization();
 
         GetOrgPreferencesReply orgPreferences = GetOrgPreferencesReply.newBuilder()
-                .setOrgName(org.getName())
+                .setOrganizationName(org.getName())
                 .build();
 
         _transaction.commit();
@@ -698,26 +743,26 @@ public class SPService implements ISPService
                     sharee.id().toString(), sharer.getFullName()._first, folderName, note,
                     sfi.code());
         } else {
-            emailer = inviteToSignUp(sharee, _factOrg.getDefault(), sharer, folderName, note);
+            emailer = inviteToSignUp(sharee, sharer, folderName, note);
         }
         return emailer;
     }
 
-    private InvitationEmailer inviteToSignUp(User invitee, Organization org, User inviter,
+    private InvitationEmailer inviteToSignUp(User invitee, User inviter,
             @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException, ExNotFound
     {
-        return inviteToSignUp(invitee, org, inviter, inviter.getFullName()._first, folderName, note);
+        return inviteToSignUp(invitee, inviter, inviter.getFullName()._first, folderName, note);
     }
 
     /**
      * Call this method to use an inviter name from inviter.getFullName()._first
      */
-    InvitationEmailer inviteToSignUp(User invitee, Organization org, User inviter,
-            String inviterName, @Nullable String folderName, @Nullable String note)
+    InvitationEmailer inviteToSignUp(User invitee, User inviter, String inviterName,
+            @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException
     {
-        String code = invitee.addSignUpInvitationCode(inviter, org);
+        String code = invitee.addSignUpInvitationCode(inviter);
 
         _esdb.addEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
@@ -808,46 +853,112 @@ public class SPService implements ISPService
         l.info("tsc: " + tsc);
 
         _transaction.begin();
-        ResolveSignUpInvitationCodeResult result = _db.getSignUpInvitation(tsc);
+        UserID result = _db.getSignUpInvitation(tsc);
         _transaction.commit();
 
         return createReply(ResolveTargetedSignUpCodeReply.newBuilder()
-                .setEmailAddress(result._userId.toString())
+                .setEmailAddress(result.toString())
                 .build());
     }
 
     @Override
-    public ListenableFuture<Void> inviteUser(List<String> userIds, Boolean toDefaultOrg)
-            throws ExNoPerm, SQLException, ExNotFound, ExEmailSendingFailed, ExAlreadyExist,
-            IOException, ExBadArgs
+    public ListenableFuture<Void> inviteUser(List<String> userIdStrings)
+            throws SQLException, ExBadArgs, ExAlreadyExist, ExEmailSendingFailed,
+            ExNotFound, IOException, ExNoPerm
     {
-        if (userIds.isEmpty()) throw new ExBadArgs("Must specify one or more invitee");
+        if (userIdStrings.isEmpty()) {
+            throw new ExBadArgs("Must specify one or more invitees");
+        }
 
         _transaction.begin();
 
         User inviter = _sessionUser.get();
+        l.info("Send " + userIdStrings.size() + " invite(s) by " + inviter);
 
         // check and set invitation quota
-        int left = inviter.getSignUpInvitationsQuota() - userIds.size();
+        int left = inviter.getSignUpInvitationsQuota() - userIdStrings.size();
         if (left < 0) throw new ExNoPerm();
 
         inviter.setSignUpInvitationQuota(left);
 
-        Organization org = toDefaultOrg ? _factOrg.getDefault() : inviter.getOrganization();
-
-        // Invite all invitees to Organization "org"
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
         List<InvitationEmailer> emailers = Lists.newLinkedList();
-        for (String inviteeString : userIds) {
+        for (String inviteeString : userIdStrings) {
             User invitee = _factUser.createFromExternalID(inviteeString);
-            if (invitee.exists()) throw new ExAlreadyExist("user already exists");
-            emailers.add(inviteToSignUp(invitee, org, inviter, null, null));
+
+            if (invitee.exists()) {
+                throw new ExAlreadyExist("user already exists (" + invitee + ")");
+            }
+
+            emailers.add(inviteToSignUp(invitee, inviter, null, null));
         }
 
         _transaction.commit();
 
         for (InvitationEmailer emailer : emailers) emailer.send();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> inviteToOrganization(String userIdString)
+            throws SQLException, ExNoPerm, ExNotFound, IOException, ExEmailSendingFailed,
+            ExAlreadyExist, ExAlreadyInvited
+    {
+        _transaction.begin();
+
+        User inviter = _sessionUser.get();
+        inviter.throwIfNotAdmin();
+
+        User invitee = _factUser.create(UserID.fromExternal(userIdString));
+        Organization org = inviter.getOrganization();
+
+        l.info("Send organization invite by " + inviter + " to " + invitee);
+
+        if (invitee.getOrganization().equals(org)) {
+            throw new ExAlreadyExist();
+        }
+
+        OrganizationInvitation invite = _factOrgInvite.create(invitee.id(), org.id());
+
+        if (invite.exists()) {
+            throw new ExAlreadyInvited();
+        }
+
+        _factOrgInvite.createNewOrganizationInvitation(inviter.id(), invitee.id(), org.id());
+        _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
+
+        _transaction.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> acceptOrganizationInvitation(Integer organizationID)
+            throws SQLException, ExNoPerm, ExNotFound, ExAlreadyExist
+    {
+        _transaction.begin();
+
+        User accepter = _sessionUser.get();
+        Organization organization = _factOrg.create(new OrganizationID(organizationID));
+        l.info("Accept org invite by " + accepter);
+
+        OrganizationInvitation invite = _factOrgInvite.create(accepter.id(), organization.id());
+
+        // Check to see if the user was actually invited to this organization.
+        if (invite.getInviter().id().toString().isEmpty()) {
+            throw new ExNoPerm();
+        }
+
+        // Are we already part of the target organization?
+        if (accepter.getOrganization().equals(organization)) {
+            throw new ExAlreadyExist();
+        }
+
+        accepter.setOrganization(invite.getOrganization());
+
+        _transaction.commit();
 
         return createVoidReply();
     }
@@ -1092,10 +1203,11 @@ public class SPService implements ISPService
 
         _transaction.begin();
 
-        ResolveSignUpInvitationCodeResult result = _db.getSignUpInvitation(targetedInvite);
-        User user = _factUser.create(result._userId);
+        UserID userID  = _db.getSignUpInvitation(targetedInvite);
+        User user = _factUser.create(userID);
 
-        user.createNewUser(shaedSP, fullName, _factOrg.create(result._orgId));
+        // All new users start in the default organization.
+        user.createNewUser(shaedSP, fullName, _factOrg.getDefault());
 
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified

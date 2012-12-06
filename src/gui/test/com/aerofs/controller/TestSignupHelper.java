@@ -134,7 +134,7 @@ public class TestSignupHelper extends AbstractTest
         _sp.signIn(LocalSPServiceReactorCaller.ADMIN_ID.toString(),
                 ByteString.copyFrom(LocalSPServiceReactorCaller.ADMIN_CRED));
 
-        _sp.inviteUser(Collections.singletonList(userId.toString()), true);
+        _sp.inviteUser(Collections.singletonList(userId.toString()));
 
         // Verify an invitation email would have been sent: from the ADMIN_ID to userId.
         // Capture the code to return to the caller.

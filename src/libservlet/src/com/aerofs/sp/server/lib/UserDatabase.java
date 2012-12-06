@@ -17,7 +17,7 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -40,7 +40,6 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_FROM;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TS;
@@ -73,7 +72,7 @@ public class UserDatabase extends AbstractSQLDatabase
      *
      * @throws ExAlreadyExist if the user ID already exists
      */
-    public void addUser(UserID id, FullName fullName, byte[] shaedSP, OrgID orgID,
+    public void addUser(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
             AuthorizationLevel level)
             throws SQLException, ExAlreadyExist
     {
@@ -120,18 +119,18 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public @Nonnull OrgID getOrgID(UserID userId)
+    public @Nonnull OrganizationID getOrganizationID(UserID userId)
             throws SQLException, ExNotFound
     {
         ResultSet rs = queryUser(userId, C_USER_ORG_ID);
         try {
-            return new OrgID(rs.getInt(1));
+            return new OrganizationID(rs.getInt(1));
         } finally {
             rs.close();
         }
     }
 
-    public void setOrgID(UserID userId, OrgID orgId)
+    public void setOrganizationID(UserID userId, OrganizationID orgId)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
@@ -261,25 +260,24 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     // TODO (WW) move it to a different database class?
-    public void addSignupCode(String code, UserID from, UserID to, OrgID orgId)
+    public void addSignupCode(String code, UserID from, UserID to)
             throws SQLException
     {
-        addSignupCode(code, from, to, orgId, System.currentTimeMillis());
+        addSignupCode(code, from, to, System.currentTimeMillis());
     }
 
     // For testing only
     // TODO (WW) use DI instead
-    public void addSignupCode(String code, UserID from, UserID to, OrgID orgId, long currentTime)
+    public void addSignupCode(String code, UserID from, UserID to, long currentTime)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_TI, C_TI_TIC, C_TI_FROM, C_TI_TO, C_TI_ORG_ID, C_TI_TS));
+                DBUtil.insert(T_TI, C_TI_TIC, C_TI_FROM, C_TI_TO, C_TI_TS));
 
         ps.setString(1, code);
         ps.setString(2, from.toString());
         ps.setString(3, to.toString());
-        ps.setInt(4, orgId.getInt());
-        ps.setTimestamp(5, new Timestamp(currentTime), UTC_CALANDER);
+        ps.setTimestamp(4, new Timestamp(currentTime), UTC_CALANDER);
         ps.executeUpdate();
     }
 

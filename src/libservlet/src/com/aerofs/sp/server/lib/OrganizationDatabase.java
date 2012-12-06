@@ -14,7 +14,7 @@ import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.Lists;
 
@@ -59,7 +59,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     /**
      * @throws ExAlreadyExist if the organization ID already exists
      */
-    public void add(OrgID orgID, String name)
+    public void add(OrganizationID orgID, String name)
             throws SQLException, ExAlreadyExist
     {
         try {
@@ -74,7 +74,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    public @Nonnull String getName(OrgID orgID)
+    public @Nonnull String getName(OrganizationID orgID)
             throws SQLException, ExNotFound
     {
         ResultSet rs = queryOrg(orgID, C_ORG_NAME);
@@ -86,7 +86,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
-    public void setName(OrgID orgID, String name)
+    public void setName(OrganizationID orgID, String name)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
@@ -97,7 +97,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
-    private ResultSet queryOrg(OrgID orgID, String field)
+    private ResultSet queryOrg(OrganizationID orgID, String field)
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_ORG, C_ORG_ID + "=?", field));
@@ -151,7 +151,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @return List of users under the organization {@code orgId}
      * between [offset, offset + maxResults].
      */
-    public List<UserInfo> listUsers(OrgID orgId, int offset, int maxResults)
+    public List<UserInfo> listUsers(OrganizationID orgId, int offset, int maxResults)
             throws SQLException
     {
         PreparedStatement psLU = prepareStatement(
@@ -182,7 +182,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    public List<UserInfo> searchUsers(OrgID orgId, int offset, int maxResults, String search)
+    public List<UserInfo> searchUsers(OrganizationID orgId, int offset, int maxResults, String search)
             throws SQLException
     {
         PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + "," +
@@ -211,7 +211,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @return List of users with the given authorization level {@code authLevel} under
      * the organization {@code orgId} between [offset, offset + maxResults].
      */
-    public List<UserInfo> listUsersWithAuthorization(OrgID orgId, int offset, int maxResults,
+    public List<UserInfo> listUsersWithAuthorization(OrganizationID orgId, int offset, int maxResults,
             AuthorizationLevel authLevel)
             throws SQLException
     {
@@ -247,7 +247,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    public List<UserInfo> searchUsersWithAuthorization(OrgID orgId, int offset,
+    public List<UserInfo> searchUsersWithAuthorization(OrganizationID orgId, int offset,
             int maxResults, AuthorizationLevel authLevel, String search)
             throws SQLException
     {
@@ -278,7 +278,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param orgId ID of the organization.
      * @return Number of users in the organization {@code orgId}.
      */
-    public int listUsersCount(OrgID orgId)
+    public int listUsersCount(OrganizationID orgId)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement("select count(*) from " +
@@ -299,7 +299,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @return Number of users in the organization {@code orgId}
      * with user ids containing the search term {@code search}.
      */
-    public int searchUsersCount(OrgID orgId, String search)
+    public int searchUsersCount(OrganizationID orgId, String search)
             throws SQLException
     {
         PreparedStatement psSCU = prepareStatement("select count(*) from " +
@@ -321,7 +321,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param orgId ID of the organization.
      * @return Number of users in the organization with the given authorization level.
      */
-    public int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, OrgID orgId)
+    public int listUsersWithAuthorizationCount(AuthorizationLevel authlevel, OrganizationID orgId)
             throws SQLException
     {
         PreparedStatement psLUAC = prepareStatement("select count(*) from " +
@@ -347,7 +347,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * containing the search term {@code search} and authorization level {@code authLevel}.
      */
     public int searchUsersWithAuthorizationCount(AuthorizationLevel authLevel,
-            OrgID orgId, String search)
+            OrganizationID orgId, String search)
             throws SQLException
     {
         PreparedStatement psSUAC = prepareStatement(
@@ -414,7 +414,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      *
      * TODO (WW) the query is too complicated. This indicates misdesign at the application layer.
      */
-    public Collection<SharedFolderInfo> listSharedFolders(OrgID orgId, int maxResults, int offset)
+    public Collection<SharedFolderInfo> listSharedFolders(OrganizationID orgId, int maxResults, int offset)
             throws SQLException
     {
         // This massive sql statement is the result of our complicated DB schema around
@@ -492,7 +492,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         return sfis;
     }
 
-    public int countSharedFolders(OrgID orgId)
+    public int countSharedFolders(OrganizationID orgId)
             throws SQLException
     {
         // The statement here is taken from listSharedFolders above, but the outermost

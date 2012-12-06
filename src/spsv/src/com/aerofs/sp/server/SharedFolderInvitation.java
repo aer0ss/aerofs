@@ -36,7 +36,7 @@ public class SharedFolderInvitation
         }
 
         /**
-         * Return a SharedFolderInvitation object with a newly genearted code.
+         * Return a SharedFolderInvitation object with a newly generated code.
          */
         public SharedFolderInvitation createWithGeneratedCode()
         {

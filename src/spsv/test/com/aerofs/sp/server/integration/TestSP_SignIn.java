@@ -12,7 +12,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
@@ -44,7 +44,7 @@ public class TestSP_SignIn extends AbstractSPTest
     public void shouldNotAllowNonExistingTeamServerIDToSignIn()
             throws Exception
     {
-        UserID tsUserID = new OrgID(123).toTeamServerUserID();
+        UserID tsUserID = new OrganizationID(123).toTeamServerUserID();
         ByteString tsUserPass = getTeamServerLocalPassword(tsUserID);
 
         mockCertificateAuthenticatorSetUnauthorizedState();

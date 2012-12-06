@@ -8,7 +8,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
@@ -49,7 +49,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         assertFalse(user.getLevel().covers(AuthorizationLevel.ADMIN));
         trans.commit();
 
-        certifyTeamServerDevice(OrgID.DEFAULT.toTeamServerUserID());
+        certifyTeamServerDevice(OrganizationID.DEFAULT.toTeamServerUserID());
     }
 
     @Test(expected = ExNoPerm.class)

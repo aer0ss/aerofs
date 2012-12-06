@@ -13,19 +13,19 @@ public class TestFullName
     @Test
     public void shouldTrimEmptyNames()
     {
-        assertEquals(new FullName("Foo", "").combine(), "Foo");
-        assertEquals(new FullName("", "Bar").combine(), "Bar");
+        assertEquals(new FullName("Foo", "").toString(), "Foo");
+        assertEquals(new FullName("", "Bar").toString(), "Bar");
     }
 
     @Test
     public void shouldOutputUnknownUserForEmptyFullName()
     {
-        assertEquals(new FullName("", "").combine(), "Unknown User");
+        assertEquals(new FullName("", "").toString(), "Unknown User");
     }
 
     @Test
     public void shouldCombine()
     {
-        assertEquals(new FullName("A", "B").combine(), "A B");
+        assertEquals(new FullName("A", "B").toString(), "A B");
     }
 }

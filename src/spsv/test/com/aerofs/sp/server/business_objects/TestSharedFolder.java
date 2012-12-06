@@ -37,7 +37,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         createNewUserAndOrgAndSharedFolder(sid);
 
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
         createNewSharedFolder(sid, user);
     }
 
@@ -49,7 +49,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         SharedFolder sf = newSharedFolder();
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
         sf.createNewSharedFolder(NAME, user);
         assertEquals(sf.getName(), NAME);
     }
@@ -85,7 +85,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
 
         sf.addACL(user, Role.EDITOR);
 
@@ -100,13 +100,13 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
-        createNewUser(owner, createNewOrg());
+        createNewUser(owner, createNewOrganization());
         SharedFolder sf = createNewSharedFolder(owner);
 
         assertEquals(sf.getRoleNullable(getTeamServerUser(owner)), Role.EDITOR);
 
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
 
         // why 4? owner, user, owner's team server, user's team server id
         assertEquals(sf.addACL(user, Role.EDITOR).size(), 4);
@@ -138,7 +138,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     {
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
-        Organization org = createNewOrg();
+        Organization org = createNewOrganization();
         User user1 = newUser();
         createNewUser(user1, org);
 
@@ -160,11 +160,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
-        createNewUser(owner, createNewOrg());
+        createNewUser(owner, createNewOrganization());
         SharedFolder sf = createNewSharedFolder(owner);
 
         User user1 = newUser();
-        createNewUser(user1, createNewOrg());
+        createNewUser(user1, createNewOrganization());
         sf.addACL(user1, Role.OWNER);
         sf.updateACL(singleSRP(owner, Role.EDITOR));
 
@@ -178,7 +178,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
 
         sf.deleteACL(Collections.singleton(user.id()));
     }
@@ -190,7 +190,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user1 = newUser();
-        createNewUser(user1, createNewOrg());
+        createNewUser(user1, createNewOrganization());
         User tsUser = getTeamServerUser(user1);
 
         User user2 = newUser();
@@ -243,7 +243,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
 
         sf.deleteTeamServerACL(user);
     }
@@ -255,7 +255,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user1 = newUser();
-        createNewUser(user1, createNewOrg());
+        createNewUser(user1, createNewOrganization());
         sf.addACL(user1, Role.OWNER);
 
         User user2 = newUser();
@@ -284,11 +284,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
-        createNewUser(owner, createNewOrg());
+        createNewUser(owner, createNewOrganization());
         SharedFolder sf = createNewSharedFolder(owner);
 
         User user1 = newUser();
-        createNewUser(user1, createNewOrg());
+        createNewUser(user1, createNewOrganization());
         sf.addACL(user1, Role.OWNER);
 
         // why 4? owner, user, owner's team server, user's team server
@@ -304,7 +304,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user = newUser();
-        createNewUser(user, createNewOrg());
+        createNewUser(user, createNewOrganization());
 
         sf.updateACL(singleSRP(user, Role.EDITOR));
     }
@@ -316,11 +316,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         SharedFolder sf = createNewUserAndOrgAndSharedFolder();
 
         User user1 = newUser();
-        createNewUser(user1, createNewOrg());
+        createNewUser(user1, createNewOrganization());
         sf.addACL(user1, Role.EDITOR);
 
         User user2 = newUser();
-        createNewUser(user2, createNewOrg());
+        createNewUser(user2, createNewOrganization());
         sf.addACL(user2, Role.OWNER);
 
         // intentionally make a no-op change
@@ -354,7 +354,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
-        createNewUser(owner, createNewOrg());
+        createNewUser(owner, createNewOrganization());
         return createNewSharedFolder(sid, owner);
     }
 }

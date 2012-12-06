@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.lib.cert;
 
+import com.aerofs.lib.C;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.UserID;
@@ -111,6 +112,9 @@ public class CertificateGenerator implements ICertificateGenerator
             throw new IOException(e.toString());
         }
 
+        // 5 sec timeout should be more than enough. The default is way too long.
+        Long timeout = 5 * C.SEC;
+        conn.setConnectTimeout(timeout.intValue());
         conn.setDoOutput(true);
         conn.connect();
 

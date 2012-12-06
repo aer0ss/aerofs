@@ -58,9 +58,9 @@ message PBException {
         NO_AVAIL_DEVICE = 15;
         CHILD_ALREADY_SHARED = 16;
         PARENT_ALREADY_SHARED = 17;
-
         // This type requires the UI to display the error message as is, without adding extra text.
         UI_MESSAGE = 18;
+        ALREADY_INVITED = 19;
 
         ////////////////////////////////////////////////////
         // Core exception types

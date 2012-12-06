@@ -13,13 +13,15 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import org.mockito.Spy;
 
@@ -33,12 +35,17 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     @Spy protected final UserDatabase udb = new UserDatabase(trans);
     @Spy protected final SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
     @Spy protected final EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
+    @Spy protected final OrganizationInvitationDatabase oidb =
+            new OrganizationInvitationDatabase(trans);
 
     @Spy protected final Organization.Factory factOrg = new Organization.Factory();
     @Spy protected final SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
     @Spy protected final Device.Factory factDevice = new Device.Factory();
-    @Spy protected final User.Factory factUser = new User.Factory(udb, factDevice, factOrg,
-            factSharedFolder);
+    @Spy protected final OrganizationInvitation.Factory factOrgInvite =
+            new OrganizationInvitation.Factory();
+
+    @Spy protected final User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
+            factOrgInvite, factSharedFolder);
     {
         factOrg.inject(odb, factUser);
         factSharedFolder.inject(sfdb, factUser);
@@ -67,14 +74,14 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         user.createNewUser(new byte[0], new FullName("first", "last"), org);
     }
 
-    private int nextOrgID = 123;
+    private int nextOrganizationID = 123;
 
-    protected Organization newOrg()
+    protected Organization newOrganization()
     {
-        return factOrg.create(new OrgID(nextOrgID++));
+        return factOrg.create(new OrganizationID(nextOrganizationID++));
     }
 
-    protected Organization createNewOrg()
+    protected Organization createNewOrganization()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
         return factOrg.createNewOrganization("test org");

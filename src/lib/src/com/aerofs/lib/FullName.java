@@ -23,10 +23,18 @@ public class FullName
     /**
      * @return a string with first and last name combined
      */
-    public String combine()
+    public String toString()
     {
         // call trim() in case the first or last name is empty.
         String ret = (_first + " " + _last).trim();
         return ret.isEmpty() ? "Unknown User" : ret;
+    }
+
+    /**
+     * @return true if one of the first or last name is null.
+     */
+    public boolean isFirstOrLastNameEmpty()
+    {
+        return _first.isEmpty() || _last.isEmpty();
     }
 }

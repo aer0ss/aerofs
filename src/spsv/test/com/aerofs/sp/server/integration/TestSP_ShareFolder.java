@@ -10,7 +10,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import junit.framework.Assert;
 import org.junit.Before;
@@ -173,7 +173,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         // add user 4 to db but don't verify their account
         trans.begin();
         udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
-                TEST_USER_4_CRED, OrgID.DEFAULT, AuthorizationLevel.USER);
+                TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
         trans.commit();
 
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);

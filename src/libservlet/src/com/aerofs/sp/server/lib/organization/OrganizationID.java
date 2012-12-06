@@ -13,10 +13,10 @@ import com.aerofs.lib.id.UserID;
  *
  * Since clients are oblivious to organization IDs, this class should be only visible to servers.
  */
-public class OrgID extends IntegerID
+public class OrganizationID extends IntegerID
 {
     // The default organization value must be identical to the default id specified in sp.sql.
-    static public OrgID DEFAULT = new OrgID(0);
+    static public OrganizationID DEFAULT = new OrganizationID(0);
 
     static {
         // assert the team server prefix is an invalid email address char. This check can be done
@@ -24,7 +24,7 @@ public class OrgID extends IntegerID
         assert !Util.isValidEmailAddressToken(String.valueOf(UserID.TEAM_SERVER_PREFIX));
     }
 
-    public OrgID(int i)
+    public OrganizationID(int i)
     {
         super(i);
     }

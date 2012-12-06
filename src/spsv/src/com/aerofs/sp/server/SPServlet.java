@@ -11,6 +11,7 @@ import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
@@ -27,6 +28,7 @@ import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.servlets.lib.DoPostDelegate;
@@ -67,6 +69,7 @@ public class SPServlet extends AeroServlet
     private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_trans);
     private final SharedFolderInvitationDatabase _sfidb =
             new SharedFolderInvitationDatabase(_trans);
+    private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_trans);
 
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
 
@@ -78,11 +81,14 @@ public class SPServlet extends AeroServlet
     private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
     private final Certificate.Factory _factCert = new Certificate.Factory(_certdb);
     private final Device.Factory _factDevice = new Device.Factory();
-    private final User.Factory _factUser = new User.Factory(_udb, _factDevice, _factOrg,
-            _factSharedFolder);
+    private final OrganizationInvitation.Factory _factOrgInvite =
+            new OrganizationInvitation.Factory();
+    private final User.Factory _factUser = new User.Factory(_udb, _oidb, _factDevice, _factOrg,
+            _factOrgInvite, _factSharedFolder);
     {
         _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
         _factOrg.inject(_odb, _factUser);
+        _factOrgInvite.inject(_oidb, _factUser, _factOrg);
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 
@@ -94,8 +100,8 @@ public class SPServlet extends AeroServlet
             new PasswordManagement(_db, _factUser, new PasswordResetEmailer());
 
     private final SPService _service = new SPService(_db, _sfdb, _trans, _sessionUser,
-            _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factDevice,
-            _factCert, _certdb, _esdb, _factSharedFolder, _factSFI, _factEmailer);
+            _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factOrgInvite,
+            _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factSFI, _factEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
@@ -238,8 +244,8 @@ public class SPServlet extends AeroServlet
         if (invitee.isInvitedToSignUp()) throw new ExAlreadyExist("user already invited");
 
         User inviter = _factUser.create(UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS));
-        InvitationEmailer emailer = _service.inviteToSignUp(invitee, _factOrg.getDefault(), inviter,
-                inviterName, null, null);
+        InvitationEmailer emailer = _service.inviteToSignUp(invitee, inviter, inviterName, null,
+                null);
         emailer.send();
     }
 }

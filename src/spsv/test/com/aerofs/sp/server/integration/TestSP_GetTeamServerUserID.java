@@ -6,7 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 
 public class TestSP_GetTeamServerUserID extends AbstractSPTest
 {
-    @Captor ArgumentCaptor<OrgID> capOrgID;
+    @Captor ArgumentCaptor<OrganizationID> capOrganizationID;
 
     User user;
 
@@ -44,16 +44,16 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
         trans.commit();
 
         getTeamServerUserID();
-        verify(odb).add(any(OrgID.class), anyString());
+        verify(odb).add(any(OrganizationID.class), anyString());
     }
 
     @Test
-    public void shouldCreateUserIDThatIsConsistentWithOrgID()
+    public void shouldCreateUserIDThatIsConsistentWithOrganizationID()
             throws Exception
     {
         UserID tsUserID = getTeamServerUserID();
-        verify(odb).add(capOrgID.capture(), anyString());
-        assertEquals(capOrgID.getValue().toTeamServerUserID(), tsUserID);
+        verify(odb).add(capOrganizationID.capture(), anyString());
+        assertEquals(capOrganizationID.getValue().toTeamServerUserID(), tsUserID);
     }
 
     @Test(expected = ExNoPerm.class)

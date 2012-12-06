@@ -24,8 +24,9 @@ import com.aerofs.sp.server.lib.*;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -77,6 +78,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         SharedFolderInvitationDatabase sfidb = new SharedFolderInvitationDatabase(trans);
         OrganizationDatabase odb = new OrganizationDatabase(trans);
         SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
+        OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(trans);
 
         CertificateGenerator certgen = new CertificateGenerator();
 
@@ -84,13 +86,17 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
         Certificate.Factory factCert = new Certificate.Factory(certdb);
         Device.Factory factDevice = new Device.Factory();
+        OrganizationInvitation.Factory factOrgInvite = new OrganizationInvitation.Factory();
 
-        User.Factory factUser = new User.Factory(udb, factDevice, factOrg, factSharedFolder);
+        User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg, factOrgInvite,
+                factSharedFolder);
         {
             factDevice.inject(ddb, certdb, certgen, factUser, factCert);
             factOrg.inject(odb, factUser);
+            factOrgInvite.inject(oidb, factUser, factOrg);
             factSharedFolder.inject(sfdb, factUser);
         }
+
 
         SharedFolderInvitation.Factory factSFI = new SharedFolderInvitation.Factory(sfidb, factUser,
                 factSharedFolder);
@@ -101,8 +107,8 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 new ThreadLocalCertificateAuthenticator();
 
         SPService service = new SPService(db, sfdb, trans, new MockSessionUser(),
-                passwordManagement, certificateAuthenticator, factUser, factOrg, factDevice,
-                factCert, certdb, esdb, factSharedFolder, factSFI, factEmailer);
+                passwordManagement, certificateAuthenticator, factUser, factOrg, factOrgInvite,
+                factDevice, factCert, certdb, esdb, factSharedFolder, factSFI, factEmailer);
 
         reactor = new SPServiceReactor(service);
     }
@@ -122,7 +128,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService
         trans.begin();
-        udb.addUser(ADMIN_ID, new FullName("first", "last"), cred, OrgID.DEFAULT,
+        udb.addUser(ADMIN_ID, new FullName("first", "last"), cred, OrganizationID.DEFAULT,
                 AuthorizationLevel.ADMIN);
         udb.setVerified(ADMIN_ID);
         trans.commit();

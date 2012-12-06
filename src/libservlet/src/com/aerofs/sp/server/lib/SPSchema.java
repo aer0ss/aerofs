@@ -22,6 +22,11 @@ public final class SPSchema
             C_ORG_ID                        = "o_id",
             C_ORG_NAME                      = "o_name",
 
+            T_OI                            = "sp_organization_invite",
+            C_OI_INVITER                    = "m_from",
+            C_OI_INVITEE                    = "m_to",
+            C_OI_ORG_ID                     = "m_org_id",
+
             T_DEVICE                        = "sp_device",
             C_DEVICE_ID                     = "d_id",
             C_DEVICE_NAME                   = "d_name",
@@ -33,7 +38,6 @@ public final class SPSchema
             C_TI_TIC                        = "t_code",
             C_TI_FROM                       = "t_from",
             C_TI_TO                         = "t_to",
-            C_TI_ORG_ID                     = "t_org_id",
             C_TI_TS                         = "t_ts", //auto generated
 
             T_CERT                          = "sp_cert",

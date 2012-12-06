@@ -15,9 +15,10 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
-import com.aerofs.sp.server.SharedFolderInvitation.Factory;
+import com.aerofs.sp.server.SharedFolderInvitation;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
@@ -31,12 +32,12 @@ import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
-import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.protobuf.ByteString;
@@ -53,8 +54,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -76,6 +75,7 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
     @Spy protected SharedFolderInvitationDatabase sfidb =
             new SharedFolderInvitationDatabase(trans);
+    @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(trans);
 
     // Can't use @Spy as Device.Factory's constructor needs a non-null certgen object.
     protected OrganizationDatabase odb = spy(new OrganizationDatabase(trans));
@@ -87,22 +87,26 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy protected SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
     @Spy protected Certificate.Factory factCert = new Certificate.Factory(certdb);
     @Spy protected Device.Factory factDevice = new Device.Factory();
-    @Spy protected User.Factory factUser = new User.Factory(udb, factDevice, factOrg,
-            factSharedFolder);
+    @Spy protected OrganizationInvitation.Factory factOrgInvite =
+            new OrganizationInvitation.Factory();
+
+    @Spy protected User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
+            factOrgInvite, factSharedFolder);
     {
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, factUser);
         factOrg.inject(odb, factUser);
+        factOrgInvite.inject(oidb, factUser, factOrg);
     }
 
-    @Spy protected Factory factSFI =
-            new Factory(sfidb, factUser, factSharedFolder);
+    @Spy protected SharedFolderInvitation.Factory factSFI =
+            new SharedFolderInvitation.Factory(sfidb, factUser, factSharedFolder);
 
     @Spy protected ThreadLocalCertificateAuthenticator certificateAuthenticator =
             mock(ThreadLocalCertificateAuthenticator.class);
 
-    // Mock invitation emailer for use with sp.shareFolder calls
-    protected final InvitationEmailer.Factory factEmailer = mock(InvitationEmailer.Factory.class);
+    // Mock invitation emailer for use with sp.shareFolder calls and organization movement tests.
+    @Spy protected MockInvitationEmailerFactory factEmailer;
 
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSessionUser(UserID)
     @Spy protected MockSessionUser sessionUser;
@@ -134,13 +138,7 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         // Verkehr setup.
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
 
-        // return stub invitation emails to avoid NPE
-        when(factEmailer.createSignUpInvitationEmailer(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).then(RETURNS_MOCKS);
-        when(factEmailer.createFolderInvitationEmailer(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).then(RETURNS_MOCKS);
-
-        OrgID orgId = OrgID.DEFAULT;
+        OrganizationID orgId = OrganizationID.DEFAULT;
         AuthorizationLevel level = AuthorizationLevel.USER;
 
         // Add all the users to the db.
@@ -161,7 +159,7 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
             throws ExAlreadyExist, SQLException
     {
         udb.addUser(userId, new FullName("first", "last"), SecUtil.newRandomBytes(10),
-                OrgID.DEFAULT, AuthorizationLevel.USER);
+                OrganizationID.DEFAULT, AuthorizationLevel.USER);
     }
 
     protected void addTestUser(UserID userId)

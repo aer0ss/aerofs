@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
 
-public class TestSP_OrgPreferences extends AbstractSPTest
+public class TestSP_OrganizationPreferences extends AbstractSPTest
 {
     @Before
     public void setup()
@@ -26,10 +26,10 @@ public class TestSP_OrgPreferences extends AbstractSPTest
 
         service.addOrganization(oldName);
 
-        assertEquals(service.getOrgPreferences().get().getOrgName(), oldName);
+        assertEquals(service.getOrgPreferences().get().getOrganizationName(), oldName);
 
         service.setOrgPreferences(newName);
 
-        assertEquals(service.getOrgPreferences().get().getOrgName(), newName);
+        assertEquals(service.getOrgPreferences().get().getOrganizationName(), newName);
     }
 }

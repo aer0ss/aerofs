@@ -4,19 +4,25 @@
 
 package com.aerofs.sp.server.email;
 
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
+import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.sp.server.AdminPanelParam;
+import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.SPParam;
+import com.aerofs.sp.server.lib.user.User;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
 // TODO (WW) the pattern of this class is inconsistent with PasswordResetEmailer. Need refactoring
@@ -158,6 +164,52 @@ public class InvitationEmailer
 
                     EmailUtil.emailSPNotification(from + " shared " + folderName + " with " + to,
                             "code " + shareFolderCode);
+
+                    return null;
+                }
+            });
+        }
+
+        // TODO (MP) this email needs to be tweaked and beautified. Go go Linda/Yuri/Greg!
+
+        public InvitationEmailer createOrganizationInvitationEmailer(@Nonnull final User inviter,
+                @Nonnull final User invitee, @Nonnull Organization organization)
+                throws IOException, SQLException, ExNotFound
+        {
+            final String organizationName = organization.getName();
+            final String subject = "Join the \"" + organizationName + "\" organization!";
+
+            final Email email = new Email(subject);
+
+
+            final FullName inviterFullName = inviter.getFullName();
+            final String inviterName = inviterFullName.isFirstOrLastNameEmpty() ?
+                    inviter.id().toString() : inviterFullName.toString();
+
+            String body = "\n" + inviterName + " has invited you to join the \"" +
+                    organizationName + "\" organization.\n\nClick on this link to accept the " +
+                    "invitation: " + AdminPanelParam.ADMIN_ORG_ACCEPT_LINK + "\n\nIf you do not " +
+                    "with to join this organization, simply ignore this email.";
+
+            email.addSection(subject, HEADER_SIZE.H1, body);
+            email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team", Email.DEFAULT_PS);
+
+            return new InvitationEmailer(new Callable<Void>()
+            {
+                @Override
+                public Void call() throws Exception
+                {
+                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,
+                            inviter.id().toString(),
+                            invitee.id().toString(),
+                            null,
+                            subject,
+                            email.getTextEmail(),
+                            email.getHTMLEmail(),
+                            true,
+                            EmailCategory.ORGANIZATION_INVITATION
+                    );
+
                     return null;
                 }
             });
@@ -166,7 +218,7 @@ public class InvitationEmailer
 
     private final Callable<Void> _c;
 
-    private InvitationEmailer(Callable<Void> c)
+    private InvitationEmailer(@Nullable Callable<Void> c)
     {
         _c = c;
     }
