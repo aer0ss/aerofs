@@ -1017,10 +1017,15 @@ public class SPDatabase
         ps.setString(1, userId.toString());
         ps.setString(2, token);
         ps.setInt(3, sc.getCategoryID());
-        ps.setTimestamp(4, new Timestamp(time), _calendar);
-        ps.setTimestamp(5,new Timestamp(time), _calendar);
 
-        Util.verify(ps.executeUpdate() == 1);
+        Timestamp t = new Timestamp(time);
+        ps.setTimestamp(4, t, _calendar);
+        ps.setTimestamp(5, t, _calendar);
+
+        int result = ps.executeUpdate();
+
+        l.info("Result of executeUpdate( " + ps.toString() + "): " + result);
+        Util.verify(result == 1);
 
         return token;
     }
