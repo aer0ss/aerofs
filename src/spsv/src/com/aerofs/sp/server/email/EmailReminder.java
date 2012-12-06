@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.sp;
+package com.aerofs.sp.server.email;
 
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -18,7 +18,6 @@ import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
-import com.aerofs.sp.server.email.InvitationReminderEmailer;
 
 import javax.inject.Inject;
 
@@ -72,9 +71,10 @@ public class EmailReminder
         },0,1, TimeUnit.DAYS);
     }
 
-    protected void remind(int[] reminders) {
+    public void remind(int[] intervals)
+    {
         try {
-            for (int interval : reminders) {
+            for (int interval : intervals) {
                 l.info("Checking for users not signed up after " + interval + " days");
 
                 Set<UserID> users;

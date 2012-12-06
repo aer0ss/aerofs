@@ -2,12 +2,12 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
@@ -24,7 +24,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class TestSPPassword extends AbstractTest
+public class TestSP_Password extends AbstractTest
 {
     @Mock SPDatabase db;
     @Mock User.Factory factUser;

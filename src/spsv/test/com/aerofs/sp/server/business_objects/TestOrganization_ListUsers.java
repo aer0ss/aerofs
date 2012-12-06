@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.id.UserID;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 // TODO (WW) use AbstractSP*Test class
-public class TestListUser extends AbstractTest
+public class TestOrganization_ListUsers extends AbstractTest
 {
     private final int NUMBER_OF_USERS = 10;
     private final int NUMBER_OF_ADMINS = 4;
@@ -56,7 +56,7 @@ public class TestListUser extends AbstractTest
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 
-    Organization validOrg = _factOrg.create(validOrgId);
+    Organization org = _factOrg.create(validOrgId);
     Organization invalidOrg = _factOrg.create(invalidOrgId);
 
     @Before
@@ -113,7 +113,7 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         // search term null means search for all
-        UserListAndQueryCount pair = validOrg.listUsers(null, TOTAL_USERS, 0);
+        UserListAndQueryCount pair = org.listUsers(null, TOTAL_USERS, 0);
         assertEquals(TOTAL_USERS, pair._userInfoList.size());
         assertEquals(TOTAL_USERS, pair._count);
     }
@@ -124,8 +124,8 @@ public class TestListUser extends AbstractTest
     {
         final int offset = 4;
         final int maxResults = 6;
-        UserListAndQueryCount subsetPair = validOrg.listUsers(null, maxResults, offset);
-        UserListAndQueryCount allPair = validOrg.listUsers(null, TOTAL_USERS, 0);
+        UserListAndQueryCount subsetPair = org.listUsers(null, maxResults, offset);
+        UserListAndQueryCount allPair = org.listUsers(null, TOTAL_USERS, 0);
         assertEquals(maxResults, subsetPair._userInfoList.size());
         assertEquals(TOTAL_USERS, allPair._userInfoList.size());
 
@@ -152,7 +152,7 @@ public class TestListUser extends AbstractTest
     public void shouldListSubSetOfUsersThatMatchSearchKey()
             throws Exception
     {
-        UserListAndQueryCount pair = validOrg.listUsers("user", TOTAL_USERS, 0);
+        UserListAndQueryCount pair = org.listUsers("user", TOTAL_USERS, 0);
         assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
         for (UserInfo user : pair._userInfoList) {
             assertTrue(user._userId.toString().contains("user"));
@@ -171,7 +171,7 @@ public class TestListUser extends AbstractTest
             throws Exception
     {
         // search term is null if we want to find all the users.
-        UserListAndQueryCount pair = validOrg.listUsersAuth(null, AuthorizationLevel.USER,
+        UserListAndQueryCount pair = org.listUsersAuth(null, AuthorizationLevel.USER,
                 TOTAL_USERS, 0);
         assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
         for (UserInfo user : pair._userInfoList) {
@@ -189,7 +189,7 @@ public class TestListUser extends AbstractTest
     public void shouldListUser1ForSearchUsersWithAuthorization()
             throws Exception
     {
-        UserListAndQueryCount pair = validOrg.listUsersAuth("user1@", AuthorizationLevel.USER,
+        UserListAndQueryCount pair = org.listUsersAuth("user1@", AuthorizationLevel.USER,
                 TOTAL_USERS, 0);
 
         assertEquals(1, pair._userInfoList.size());
@@ -201,7 +201,7 @@ public class TestListUser extends AbstractTest
     public void shouldFindUsersWithPercentageSignForSearchUsersWithAuthorization()
             throws Exception
     {
-        UserListAndQueryCount pair = validOrg.listUsersAuth("user%", AuthorizationLevel.USER,
+        UserListAndQueryCount pair = org.listUsersAuth("user%", AuthorizationLevel.USER,
                 TOTAL_USERS, 0);
 
         assertEquals(NUMBER_OF_USERS, pair._userInfoList.size());
@@ -211,7 +211,7 @@ public class TestListUser extends AbstractTest
     public void shouldNotFindUserWhenSearchCouldMatchButAuthLevelDiffers()
             throws Exception
     {
-        UserListAndQueryCount pair = validOrg.listUsersAuth("user1",
+        UserListAndQueryCount pair = org.listUsersAuth("user1",
                 AuthorizationLevel.ADMIN, TOTAL_USERS, 0);
 
         assertTrue(pair._userInfoList.isEmpty());

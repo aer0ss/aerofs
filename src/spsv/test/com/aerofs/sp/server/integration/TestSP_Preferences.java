@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.ex.ExNotFound;
 import org.junit.Before;
@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A class to test saving and fetching preferences
  */
-public class TestSPPreferences extends AbstractSPServiceTest
+public class TestSP_Preferences extends AbstractSPTest
 {
     private final DID _did = new DID(UniqueID.generate());
 

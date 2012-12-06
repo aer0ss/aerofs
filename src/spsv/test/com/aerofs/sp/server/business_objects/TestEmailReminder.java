@@ -2,7 +2,38 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.sp;
+package com.aerofs.sp.server.business_objects;
+
+import com.aerofs.lib.C;
+import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.id.UserID;
+import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servlets.lib.db.SPDatabaseParams;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.common.InvitationCode;
+import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.server.SPParam;
+import com.aerofs.sp.server.email.EmailReminder;
+import com.aerofs.sp.server.email.InvitationReminderEmailer;
+import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
+import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.OrganizationDatabase;
+import com.aerofs.sp.server.lib.SPDatabase;
+import com.aerofs.sp.server.lib.UserDatabase;
+import com.aerofs.sp.server.lib.organization.OrgID;
+import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.Sets;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.verification.VerificationMode;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Set;
 
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -10,44 +41,15 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Set;
-
-import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.id.UserID;
-import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servlets.lib.db.SPDatabaseParams;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
-import com.aerofs.sp.server.SPParam;
-import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
-import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.sp.server.lib.organization.OrgID;
-import com.google.common.collect.Sets;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
-
-import com.aerofs.lib.C;
-import com.aerofs.sp.common.InvitationCode;
-import com.aerofs.sp.common.InvitationCode.CodeType;
-import com.aerofs.sp.server.email.InvitationReminderEmailer;
-import com.aerofs.testlib.AbstractTest;
-import org.mockito.verification.VerificationMode;
-
-public class TestSPEmailReminder extends AbstractTest {
-
-    @Mock private final InvitationReminderEmailer.Factory _emailFactory = new Factory();
+// TODO (WW) As a test for business objects, it should not operate on database objects directly
+// other than setting up the test.
+public class TestEmailReminder extends AbstractTest
+{
+    @Mock private final Factory _emailFactory = new Factory();
 
     protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
     @Spy protected final SQLThreadLocalTransaction _transaction =
@@ -86,11 +88,11 @@ public class TestSPEmailReminder extends AbstractTest {
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
-        Log.info("initialize database");
+        l.info("initialize database");
         LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
 
         _transaction.begin();
-        Log.info("add default organization");
+        l.info("add default organization");
         _odb.add(ORG_ID, "Test Organization");
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
@@ -112,7 +114,7 @@ public class TestSPEmailReminder extends AbstractTest {
         }
 
         for (UserID user: users) {
-            Log.info("adding signup code for: " + user);
+            l.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
             _udb.addSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
                     ORG_ID, System.currentTimeMillis() - age);
@@ -131,7 +133,6 @@ public class TestSPEmailReminder extends AbstractTest {
     public void shouldReturnCorrectUserSetWhenCheckingNonSignedUpUsers()
         throws Exception
     {
-
         int offset = 0;
 
         Set<UserID> users;
@@ -150,12 +151,11 @@ public class TestSPEmailReminder extends AbstractTest {
         } while (!users.isEmpty());
 
         assertEquals(offset, _twoDayUsers.size());
-
     }
 
     @Test
     public void shouldEmailRemindersOnlyOnceInAFourtyEightHourPeriod()
-        throws Exception
+            throws Exception
     {
 
         final int[] interval = { 2 };

@@ -2,14 +2,14 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
 
-public class TestSPOrganization extends AbstractSPServiceTest
+public class TestSP_OrgPreferences extends AbstractSPTest
 {
     @Before
     public void setup()

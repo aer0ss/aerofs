@@ -88,7 +88,7 @@ public class TestHashStream extends AbstractTest
         byte[] bytes = new byte[size];
         _random.nextBytes(bytes);
         out.write(bytes);
-        Log.trace("wrote " + size + " bytes");
+        l.trace("wrote " + size + " bytes");
     }
 
     private void runTest(RandomWriter rw) throws Exception {
@@ -102,7 +102,7 @@ public class TestHashStream extends AbstractTest
         }
         Assert.assertEquals(tempFile.length(), outHashStream.getLength());
         _outHashAttrib = outHashStream.getHashAttrib();
-        Log.debug("outHashAttrib: " + _outHashAttrib);
+        l.debug("outHashAttrib: " + _outHashAttrib);
 
         HashStream inHashStream = HashStream.newFileHasher();
         InputStream in = inHashStream.wrap(new FileInputStream(tempFile));
@@ -112,9 +112,9 @@ public class TestHashStream extends AbstractTest
             in.close();
         }
         _inHashAttrib = inHashStream.getHashAttrib();
-        Log.debug("inHashAttrib:  " + _outHashAttrib);
+        l.debug("inHashAttrib:  " + _outHashAttrib);
 
-        Log.debug("hasherAttrib:  " + _hasherAttrib);
+        l.debug("hasherAttrib:  " + _hasherAttrib);
 
         Assert.assertEquals(_hasherAttrib, _outHashAttrib);
         Assert.assertArrayEquals(_hasherAttrib.getBytes(), _outHashAttrib.getBytes());

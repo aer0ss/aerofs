@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
@@ -23,9 +23,9 @@ import static org.mockito.Mockito.verify;
 
 /**
  * Test basic functionality and permission enforcement of SP's shareFolder call, but don't test its
- * ability to set ACL entries (that testing is done by TestSPACL)
+ * ability to set ACL entries (that testing is done by TestSP_ACL)
  */
-public class TestSPShareFolder extends AbstractSPFolderPermissionTest
+public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
 {
     // don't register this one, use it to test sharing with non-AeroFS users
     private UserID TEST_USER_4 = UserID.fromInternal("user_4");

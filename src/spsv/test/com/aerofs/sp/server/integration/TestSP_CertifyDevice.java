@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 /**
  * A class to test the business logic in the certify device sp.proto RPC.
  */
-public class TestSPCertifyDevice extends AbstractSPCertificateBasedTest
+public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
 {
     /**
      * Test that the certificate is successfully created when all params supplied are correct.

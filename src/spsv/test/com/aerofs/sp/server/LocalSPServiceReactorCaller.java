@@ -26,7 +26,6 @@ import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;

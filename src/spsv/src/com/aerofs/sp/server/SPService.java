@@ -64,7 +64,6 @@ import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -105,7 +104,7 @@ import static com.aerofs.sp.server.SPParam.SP_EMAIL_NAME;
  * ******************************************************************
  */
 
-class SPService implements ISPService
+public class SPService implements ISPService
 {
     private static final Logger l = Util.l(SPService.class);
 
@@ -711,8 +710,7 @@ class SPService implements ISPService
             @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException, ExNotFound
     {
-        return inviteToSignUp(invitee, org, inviter, inviter.getFullName()._first, folderName,
-                note);
+        return inviteToSignUp(invitee, org, inviter, inviter.getFullName()._first, folderName, note);
     }
 
     /**

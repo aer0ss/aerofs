@@ -1,4 +1,4 @@
-package com.aerofs.sp.server.user;
+package com.aerofs.sp.server;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.DID;
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * A class to test whether the get interested devices call works as expected.
  */
-public class TestSPGetInterestedDevices extends AbstractSPFolderPermissionTest
+public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
 {
     private static final SID TEST_SID_1 = new SID(UniqueID.generate());
 

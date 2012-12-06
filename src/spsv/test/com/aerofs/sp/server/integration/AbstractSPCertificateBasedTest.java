@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
@@ -12,9 +12,9 @@ import org.junit.Before;
 /**
  * A class used to initialize tests related to certificates and certificate revocation.
  *
- * TODO (WW) merge this class with AbstractSPServiceTest
+ * TODO (WW) merge this class with AbstractSPTest
  */
-public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
+public class AbstractSPCertificateBasedTest extends AbstractSPTest
 {
     // Private static finals.
     protected static final String RETURNED_CERT = "returned_cert";
@@ -32,7 +32,7 @@ public class AbstractSPCertificateBasedTest extends AbstractSPServiceTest
     public void setup()
             throws Exception
     {
-        Log.info("Add test users to sp_user to satisfy foreign key constraints for d_owner_id");
+        l.info("Add test users to sp_user to satisfy foreign key constraints for d_owner_id");
         trans.begin();
         addTestUser(TEST_1_USER);
         addTestUser(TEST_2_USER);

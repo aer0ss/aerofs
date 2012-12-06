@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.UserID;
@@ -20,7 +20,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
-public class TestSPGetTeamServerUserID extends AbstractSPServiceTest
+public class TestSP_GetTeamServerUserID extends AbstractSPTest
 {
     @Captor ArgumentCaptor<OrgID> capOrgID;
 

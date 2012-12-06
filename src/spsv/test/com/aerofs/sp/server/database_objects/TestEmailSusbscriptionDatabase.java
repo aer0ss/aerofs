@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.database_objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,7 +39,7 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
     protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
     protected final SQLThreadLocalTransaction _transaction =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
-    protected EmailSubscriptionDatabase db = new EmailSubscriptionDatabase(_transaction);
+    protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(_transaction);
 
     @Before
     public void beginTx() throws SQLException { _transaction.begin(); }
@@ -52,9 +52,9 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
             throws SQLException {
         SubscriptionCategory sc = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
 
-        db.addEmailSubscription(TEST_USER1, sc);
+        esdb.addEmailSubscription(TEST_USER1, sc);
 
-        assertTrue(db.isSubscribed(TEST_USER1, sc));
+        assertTrue(esdb.isSubscribed(TEST_USER1, sc));
     }
 
     @Test
@@ -63,21 +63,21 @@ public class TestEmailSusbscriptionDatabase extends AbstractTest
         SubscriptionCategory sc1 = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
         SubscriptionCategory sc2 = SubscriptionCategory.NEWSLETTER;
 
-        db.addEmailSubscription(TEST_USER2,sc1);
-        db.addEmailSubscription(TEST_USER2,sc2);
+        esdb.addEmailSubscription(TEST_USER2, sc1);
+        esdb.addEmailSubscription(TEST_USER2, sc2);
 
-        Set<SubscriptionCategory> subscriptions = db.getEmailSubscriptions(TEST_USER2.toString());
+        Set<SubscriptionCategory> subscriptions = esdb.getEmailSubscriptions(TEST_USER2.toString());
 
         //sanity check token management
-        String subscriptionToken = db.getTokenId(TEST_USER2, sc1);
-        String emailFromToken = db.getEmail(subscriptionToken);
+        String subscriptionToken = esdb.getTokenId(TEST_USER2, sc1);
+        String emailFromToken = esdb.getEmail(subscriptionToken);
         assertEquals(emailFromToken, TEST_USER2.toString());
 
         assertEquals(EnumSet.of(sc1,sc2), subscriptions);
 
-        db.removeEmailSubscription(TEST_USER2, sc2);
+        esdb.removeEmailSubscription(TEST_USER2, sc2);
 
-        assertFalse(db.isSubscribed(TEST_USER2, sc2));
-        assertTrue(db.isSubscribed(TEST_USER2, sc1));
+        assertFalse(esdb.isSubscribed(TEST_USER2, sc2));
+        assertTrue(esdb.isSubscribed(TEST_USER2, sc1));
     }
 }

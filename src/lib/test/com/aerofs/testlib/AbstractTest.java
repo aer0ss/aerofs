@@ -1,16 +1,9 @@
 package com.aerofs.testlib;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -47,26 +40,17 @@ public abstract class AbstractTest
         }
     }
 
-
-    // TODO: deprecate this oddly named field, yo
-    protected final Logger Log;
-    protected final Logger l;
+    protected static final Logger l = Util.l(AbstractTest.class);
 
     @Rule
     public TestName _testName = new TestName();
 
     private Collection<Thread> _threads = new HashSet<Thread>(getAllThreads());
 
-    public AbstractTest()
-    {
-        Log = l = Util.l(getClass());
-    }
-
     @Before
     public void beforeAbstractTest()
     {
         l.info("running test " + _testName.getMethodName());
-//        logThreads();
     }
 
     @After
@@ -79,76 +63,12 @@ public abstract class AbstractTest
                 l.debug("started thread: " + t);
             }
         }
-//        logThreads();
     }
 
     @Before
     public void initMocks()
     {
         MockitoAnnotations.initMocks(this);
-    }
-
-    public static long getRandomSeed()
-    {
-        // TODO: get seed from system property?
-        return 42;
-    }
-
-
-    public void logThreads()
-    {
-        if (l.isDebugEnabled()) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw, false);
-            logThreads(pw);
-            pw.close();
-            int len = sw.getBuffer().length();
-            if (len > 0) sw.getBuffer().setLength(len - 1);
-            l.debug("threads:\n" + sw);
-        }
-    }
-
-    public static void logThreads(PrintWriter pw) {
-        List<Thread> threads = getAllThreads();
-        ThreadGroup root = Thread.currentThread().getThreadGroup();
-
-        final Map<Thread, String> nameMap = new IdentityHashMap<Thread, String>(threads.size());
-
-        Iterator<Thread> it = threads.iterator();
-        while (it.hasNext()) {
-            Thread t = it.next();
-            ThreadGroup group = t.getThreadGroup();
-            if (group == null) {
-                it.remove();
-                continue;
-            }
-            String name = "";
-            while (group != null && group != root) {
-                name = group.getName() + '.' + name;
-                group = group.getParent();
-            }
-            name += t.getName();
-            nameMap.put(t, name);
-        }
-        Collections.sort(threads, new Comparator<Thread>() {
-            @Override
-            public int compare(Thread o1, Thread o2)
-            {
-                String n1 = nameMap.get(o1);
-                String n2 = nameMap.get(o2);
-                return n1.compareTo(n2);
-            }
-        });
-        for (Thread t : threads) {
-            String name = nameMap.get(t);
-            pw.print("  ");
-            pw.print(name);
-            pw.print('(');
-            pw.print(t.getPriority());
-            pw.print("): ");
-            pw.print(t.getState());
-            pw.println();
-        }
     }
 
     private static List<Thread> getAllThreads()

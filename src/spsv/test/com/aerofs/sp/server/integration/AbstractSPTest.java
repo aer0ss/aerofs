@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
@@ -14,6 +14,9 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.PasswordManagement;
+import com.aerofs.sp.server.SPService;
+import com.aerofs.sp.server.SharedFolderInvitation.Factory;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -33,7 +36,6 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.sp.server.user.PasswordManagement;
 import com.aerofs.testlib.AbstractTest;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -61,7 +63,7 @@ import static org.mockito.Mockito.when;
 /**
  * A base class for all tests using the SPService as the "seam"
  */
-public class AbstractSPServiceTest extends AbstractTest
+public class AbstractSPTest extends AbstractTest
 {
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
@@ -94,8 +96,8 @@ public class AbstractSPServiceTest extends AbstractTest
     }
 
     @Spy protected Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb, certgen);
-    @Spy protected SharedFolderInvitation.Factory factSFI =
-            new SharedFolderInvitation.Factory(sfidb, factUser, factSharedFolder);
+    @Spy protected Factory factSFI =
+            new Factory(sfidb, factUser, factSharedFolder);
 
     // Mock invitation emailer for use with sp.shareFolder calls
     protected final InvitationEmailer.Factory factEmailer = mock(InvitationEmailer.Factory.class);

@@ -374,7 +374,7 @@ public class TestHdGetActivities extends AbstractTest
     void printResult()
     {
         for (PBActivity a : ev._activities) {
-            Log.warn(a.getMessage());
+            l.warn(a.getMessage());
         }
     }
 

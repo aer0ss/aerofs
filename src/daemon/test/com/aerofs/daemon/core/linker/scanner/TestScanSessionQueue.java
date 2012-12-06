@@ -32,12 +32,12 @@ public class TestScanSessionQueue extends AbstractTest
     @Test
     public void shouldScheduleFirstRequest()
     {
-        Log.warn("TODO implement the test");
+        l.warn("TODO implement the test");
     }
 
     @Test
     public void shouldReplaceExistingRequest()
     {
-        Log.warn("TODO implement the test");
+        l.warn("TODO implement the test");
     }
 }

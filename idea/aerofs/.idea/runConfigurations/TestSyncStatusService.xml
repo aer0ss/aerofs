@@ -4,8 +4,8 @@
     <module name="syncstat" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
-    <option name="PACKAGE_NAME" value="com.aerofs.syncstat.server.test" />
-    <option name="MAIN_CLASS_NAME" value="com.aerofs.syncstat.server.test.TestSyncStatusService" />
+    <option name="PACKAGE_NAME" value="com.aerofs.syncstat.server.unit" />
+    <option name="MAIN_CLASS_NAME" value="com.aerofs.syncstat.server.unit.TestSyncStatusService" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea" />

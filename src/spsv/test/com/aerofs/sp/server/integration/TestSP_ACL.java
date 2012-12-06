@@ -1,4 +1,4 @@
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.FullName;
@@ -35,9 +35,9 @@ import static org.mockito.Matchers.eq;
 
 /**
  * Test the functionality of our ACL system, including SP.shareFolder's ability to set ACLs, but
- * don't bother testing shareFolder more deeply here (see TestSPShareFolder)
+ * don't bother testing shareFolder more deeply here (see TestSP_ShareFolder)
  */
-public class TestSPACL extends AbstractSPFolderPermissionTest
+public class TestSP_ACL extends AbstractSPFolderPermissionTest
 {
     // Another random person (in addition to the ones created by our parent).
     private static final UserID TEST_USER_4 = UserID.fromInternal("user_4");

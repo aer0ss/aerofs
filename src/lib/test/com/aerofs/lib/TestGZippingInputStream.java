@@ -40,7 +40,7 @@ public class TestGZippingInputStream extends AbstractTest
 
     private void checkData(byte[] buf) throws IOException
     {
-        Log.info("original: " + Util.hexEncode(buf));
+        l.info("original: " + Util.hexEncode(buf));
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -61,7 +61,7 @@ public class TestGZippingInputStream extends AbstractTest
         byte[] compressed = baos.toByteArray();
         Assert.assertEquals(baos.size(), compressed.length);
         baos.reset();
-        Log.info("compressed: " + Util.hexEncode(compressed));
+        l.info("compressed: " + Util.hexEncode(compressed));
 
         {
             InputStream in = new GZippingInputStream(new ByteArrayInputStream(buf));
@@ -74,7 +74,7 @@ public class TestGZippingInputStream extends AbstractTest
 
         byte[] compressed2 = baos.toByteArray();
         baos.reset();
-        Log.info("compressed: " + Util.hexEncode(compressed2));
+        l.info("compressed: " + Util.hexEncode(compressed2));
 
         {
             InputStream in = new GZIPInputStream(new ByteArrayInputStream(compressed));
@@ -86,7 +86,7 @@ public class TestGZippingInputStream extends AbstractTest
         }
 
         byte[] uncompressed = baos.toByteArray();
-        Log.info("uncompressed: " + Util.hexEncode(uncompressed));
+        l.info("uncompressed: " + Util.hexEncode(uncompressed));
 
         Assert.assertArrayEquals(buf, uncompressed);
     }

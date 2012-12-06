@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -24,7 +24,7 @@ import static org.mockito.Matchers.any;
  * A class to test certificate revocation list operations on the SP (revocation of certificates,
  * access to the revocation list, etc.).
  */
-public class TestSPCRL extends AbstractSPCertificateBasedTest
+public class TestSP_CRL extends AbstractSPCertificateBasedTest
 {
     //
     // Utilities

@@ -219,7 +219,7 @@ public class TestLinkedRevProvider extends AbstractTest
 
     private void println(Object o)
     {
-        Log.info(o);
+        l.info(o);
     }
 
     void listRecursively(InjectableFile f)

@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server;
+package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
@@ -15,7 +15,7 @@ import com.aerofs.sp.server.lib.organization.OrgID;
 import com.google.protobuf.ByteString;
 import org.junit.Test;
 
-public class TestSPSignIn extends AbstractSPServiceTest
+public class TestSP_SignIn extends AbstractSPTest
 {
     @Test(expected = ExBadCredential.class)
     public void shouldNotAllowNonExistingUserIDToSignIn()
