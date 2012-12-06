@@ -21,6 +21,9 @@ import javax.annotation.Nullable;
 public class OA
 {
     public static enum Type {
+        // N.B. Only append to this list.  If you change ordinals,
+        // you will change the meaning of existing DBs.
+        // That would be bad.
         FILE,
         DIR,
         ANCHOR;
