@@ -238,7 +238,7 @@ public abstract class FileUtil
             @Nullable File[] children = file.listFiles();
             if (children == null || children.length == 0) throw new ExFileIO(prefix, file);
             else {
-                final String suffix = "w children";
+                final String suffix = " w children";
                 throw new ExFileIO(prefix + suffix, ImmutableList.<File>builder().add(file)
                         .addAll(Arrays.asList(children)).build());
             }

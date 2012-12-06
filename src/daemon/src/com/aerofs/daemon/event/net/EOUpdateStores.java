@@ -10,18 +10,18 @@ import com.aerofs.lib.id.SID;
  */
 public class EOUpdateStores extends AbstractEBIMC
 {
-    public final SID[] _sidAdded;
-    public final SID[] _sidRemoved;
+    public final SID[] _sidsAdded;
+    public final SID[] _sidsRemoved;
 
     /**
      * @param sidsAdded must be immutable
      * @param sidsRemoved must be immutable
      */
-    public EOUpdateStores(IIMCExecutor imce, SID[] sidAdded,
-            SID[] sidRemoved)
+    public EOUpdateStores(IIMCExecutor imce, SID[] sidsAdded,
+            SID[] sidsRemoved)
     {
         super(imce);
-        _sidAdded = sidAdded;
-        _sidRemoved = sidRemoved;
+        _sidsAdded = sidsAdded;
+        _sidsRemoved = sidsRemoved;
     }
 }

@@ -16,6 +16,6 @@ class HdUpdateStores implements IEventHandler<EOUpdateStores> {
     @Override
     public void handle_(EOUpdateStores ev, Prio prio)
     {
-        _tp.updateStores_(ev._sidAdded, ev._sidRemoved);
+        _tp.updateStores_(ev._sidsAdded, ev._sidsRemoved);
     }
 }
