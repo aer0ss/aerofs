@@ -515,7 +515,7 @@ class SPService implements ISPService
 
         // Certify device
         Device device = _factDevice.create(deviceId);
-        device.add(tsUser, UNKNOWN_DEVICE_NAME);
+        device.createNewDevice(tsUser, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = certifyDevice(csr, device);
 
         _transaction.commit();
@@ -592,7 +592,7 @@ class SPService implements ISPService
                         user + " != " + owner);
             }
         } else {
-            device.add(user, UNKNOWN_DEVICE_NAME);
+            device.createNewDevice(user, UNKNOWN_DEVICE_NAME);
         }
 
         CertifyDeviceReply reply = certifyDevice(csr, device);
@@ -659,14 +659,14 @@ class SPService implements ISPService
             epochs = Collections.emptyMap();
         } else {
             // The store doesn't exist. Create it and add the user as the owner.
-            epochs = sf.add(folderName, sharer);
+            epochs = sf.createNewSharedFolder(folderName, sharer);
         }
         return epochs;
     }
 
     private List<InvitationEmailer> createFolderInvitationAndEmailer(String folderName, String note,
             SharedFolder sf, User sharer, List<SubjectRolePair> srps)
-            throws SQLException, IOException, ExNotFound, ExAlreadyExist
+            throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExBadArgs
     {
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -676,6 +676,7 @@ class SPService implements ISPService
         for (SubjectRolePair srp : srps) {
             User sharee = _factUser.create(srp._subject);
             if (sharee.equals(sharer)) {
+                // TODO (WW) change to: throw new ExBadArgs("are you trying to invite yourself?");
                 l.warn(sharer + " tried to invite himself");
                 continue;
             }
@@ -692,7 +693,7 @@ class SPService implements ISPService
             throws SQLException, IOException, ExNotFound, ExAlreadyExist
     {
         SharedFolderInvitation sfi = _factSFI.createWithGeneratedCode();
-        sfi.add(sharer, sharee, sf, role, folderName);
+        sfi.createNewSharedFolderInvitation(sharer, sharee, sf, role, folderName);
 
         InvitationEmailer emailer;
         if (sharee.exists()) {
@@ -714,6 +715,9 @@ class SPService implements ISPService
                 note);
     }
 
+    /**
+     * Call this method to use an inviter name from inviter.getFullName()._first
+     */
     InvitationEmailer inviteToSignUp(User invitee, Organization org, User inviter,
             String inviterName, @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException
@@ -1024,7 +1028,7 @@ class SPService implements ISPService
 
         _transaction.begin();
 
-        user.add(shaedSP, fullName, _factOrg.getDefault());
+        user.createNewUser(shaedSP, fullName, _factOrg.getDefault());
 
         //unsubscribe user from the aerofs invitation reminder mailing list
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
@@ -1081,7 +1085,7 @@ class SPService implements ISPService
         ResolveSignUpInvitationCodeResult result = _db.getSignUpInvitation(targetedInvite);
         User user = _factUser.create(result._userId);
 
-        user.add(shaedSP, fullName, _factOrg.create(result._orgId));
+        user.createNewUser(shaedSP, fullName, _factOrg.create(result._orgId));
 
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified

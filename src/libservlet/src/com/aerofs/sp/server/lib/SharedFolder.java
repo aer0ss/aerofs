@@ -88,7 +88,7 @@ public class SharedFolder
      * Add the shared folder to db. Also add {@code owner} as the first owner.
      * @return A map of user IDs to epochs to be published via verkehr.
      */
-    public Map<UserID, Long> add(String folderName, User owner)
+    public Map<UserID, Long> createNewSharedFolder(String folderName, User owner)
             throws ExNoPerm, ExNotFound, ExAlreadyExist, SQLException, IOException
     {
         _f._db.add(_sid, folderName);

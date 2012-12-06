@@ -160,7 +160,6 @@ public class SPServlet extends AeroServlet
     }
 
     // parameter format: aerofs=love&from=<email>&from=<email>&to=<email>
-    //               or: aerofs=lotsoflove&inviteCount=<N>
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse rsp)
             throws IOException

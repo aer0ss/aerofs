@@ -103,9 +103,8 @@ public class AbstractSPServiceTest extends AbstractTest
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSessionUser(UserID)
     @Spy protected MockSessionUser sessionUser;
 
-
-    @Spy PasswordResetEmailer pre = mock(PasswordResetEmailer.class);
-    @Spy PasswordManagement _passwordManagement = new PasswordManagement(db, factUser, pre);
+    @Spy PasswordManagement _passwordManagement = new PasswordManagement(db, factUser,
+            mock(PasswordResetEmailer.class));
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,

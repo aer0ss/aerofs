@@ -17,7 +17,6 @@ import com.aerofs.sp.server.LocalSPServiceReactorCaller;
 import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;

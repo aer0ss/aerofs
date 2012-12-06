@@ -131,7 +131,7 @@ public class Device
     /**
      * Add the device to the db, rename using Util.nextName() if a device with the same name exists.
      */
-    public void add(User owner, String name)
+    public void createNewDevice(User owner, String name)
             throws SQLException, ExDeviceIDAlreadyExists
     {
         while (true) {

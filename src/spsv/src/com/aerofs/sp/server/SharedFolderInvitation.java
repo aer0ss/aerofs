@@ -97,7 +97,8 @@ public class SharedFolderInvitation
     /**
      * Add the invitation to the database
      */
-    void add(User sharer, User sharee, SharedFolder sf, Role role, String folderName)
+    void createNewSharedFolderInvitation(User sharer, User sharee, SharedFolder sf, Role role,
+            String folderName)
             throws SQLException
     {
         _f._db.add(sharer.id(), sharee.id(), sf.id(), folderName, role, _code);

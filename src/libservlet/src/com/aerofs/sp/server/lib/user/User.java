@@ -173,7 +173,7 @@ public class User
      * Add the user to the database
      * @throws ExAlreadyExist if the user ID already exists.
      */
-    public void add(byte[] shaedSP, FullName fullName, Organization org)
+    public void createNewUser(byte[] shaedSP, FullName fullName, Organization org)
             throws ExAlreadyExist, SQLException, ExNoPerm, IOException, ExNotFound
     {
         Util.l(this).info(this + " attempts signup");
@@ -215,7 +215,7 @@ public class User
 
         // Ignore the return value and do not publish verkehr notifications, as this newly added
         // user mustn't have any daemon running at this moment.
-        rootStore.add("root store: " + _id, this);
+        rootStore.createNewSharedFolder("root store: " + _id, this);
     }
 
     /**
@@ -255,7 +255,7 @@ public class User
             throw new ExNoPerm("you have no permission to create new teams");
         }
 
-        Organization org = _f._factOrg.add(orgName);
+        Organization org = _f._factOrg.createNewOrganization(orgName);
         setLevel(AuthorizationLevel.ADMIN);
         return setOrganization(org);
     }
