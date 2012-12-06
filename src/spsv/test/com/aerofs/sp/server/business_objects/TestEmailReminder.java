@@ -10,22 +10,16 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
 import com.aerofs.sp.server.email.InvitationReminderEmailer.Factory;
-import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.verification.VerificationMode;
 
 import java.io.IOException;
@@ -44,14 +38,9 @@ import static org.mockito.Mockito.when;
 
 // TODO (WW) As a test for business objects, it should not operate on database objects directly
 // other than setting up the test.
-public class TestEmailReminder extends AbstractTestWithSPDatabase
+public class TestEmailReminder extends AbstractBusinessObjectTest
 {
     @Mock private final Factory _emailFactory = new Factory();
-
-    @Spy protected SPDatabase _db = new SPDatabase(trans);
-    @Spy protected UserDatabase _udb = new UserDatabase(trans);
-    @Spy protected EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(trans);
-    @Spy protected OrganizationDatabase _odb = new OrganizationDatabase(trans);
 
     @InjectMocks private EmailReminder er;
 
@@ -81,15 +70,11 @@ public class TestEmailReminder extends AbstractTestWithSPDatabase
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
-        trans.begin();
-        l.info("add default organization");
-        _odb.add(ORG_ID, "Test Organization");
+        odb.add(ORG_ID, "Test Organization");
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
                                     THREE_DAY_USERS_PREFIX);
-        trans.commit();
-
     }
 
     private Set<UserID> setupUsers(final int count, final long age,
@@ -106,14 +91,14 @@ public class TestEmailReminder extends AbstractTestWithSPDatabase
         for (UserID user: users) {
             l.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-            _udb.addSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
+            udb.addSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
                     ORG_ID, System.currentTimeMillis() - age);
 
-            _esdb.addEmailSubscription(user,
+            esdb.addEmailSubscription(user,
                     SubscriptionCategory.AEROFS_INVITATION_REMINDER,
                     System.currentTimeMillis() - age);
 
-            assertNotNull(_db.getSignUpInvitation(signupCode));
+            assertNotNull(db.getSignUpInvitation(signupCode));
         }
 
         return users;
@@ -128,10 +113,8 @@ public class TestEmailReminder extends AbstractTestWithSPDatabase
         Set<UserID> users;
 
         do {
-            trans.begin();
-            users = _esdb.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT, NUM_USERS_TO_RETURN_IN_SET,
+            users = esdb.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT, NUM_USERS_TO_RETURN_IN_SET,
                       offset);
-            trans.commit();
 
             // assert that the returned set of users is a subset of the full set of two-day users
             assertTrue(Sets.difference(users, _twoDayUsers).isEmpty());
@@ -153,8 +136,15 @@ public class TestEmailReminder extends AbstractTestWithSPDatabase
         // remind should send emails the first time, and should simply
         // return the second time.
 
+        // commit the current transaction as we are in auto-transaction mode. See
+        // (AbstractAutoTransactionedTestWithSPDatabase)
+        trans.commit();
+
         er.remind(interval);
         er.remind(interval);
+
+        // see the above comment for trans.commit().
+        trans.begin();
 
         //verify that a user only would have one email sent to them
         verifyEmailRemindersForUsers(_twoDayUsers, times(1));
@@ -167,9 +157,7 @@ public class TestEmailReminder extends AbstractTestWithSPDatabase
             throws SQLException, IOException
     {
         for (UserID user: users) {
-            trans.begin();
-            String tokenId = _esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-            trans.commit();
+            String tokenId = esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
             verify(_emailFactory, mode).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),
                     eq(SPParam.SP_EMAIL_NAME), eq(user.toString()), anyString(), eq(tokenId));

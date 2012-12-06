@@ -68,8 +68,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             ps.setInt(1, orgID.getInt());
             ps.setString(2, name);
             ps.executeUpdate();
-        } catch (SQLException aue) {
-            throwOnConstraintViolation(aue);
+        } catch (SQLException e) {
+            throwOnConstraintViolation(e);
+            throw e;
         }
     }
 

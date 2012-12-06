@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -16,7 +17,6 @@ import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
-import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -92,7 +92,7 @@ public class User
     @Override
     public String toString()
     {
-        return "user #" + _id.toString();
+        return "user " + _id.toString();
     }
 
     /**
@@ -174,10 +174,8 @@ public class User
      * @throws ExAlreadyExist if the user ID already exists.
      */
     public void createNewUser(byte[] shaedSP, FullName fullName, Organization org)
-            throws ExAlreadyExist, SQLException, ExNoPerm, IOException, ExNotFound
+            throws ExAlreadyExist, SQLException, IOException
     {
-        Util.l(this).info(this + " attempts signup");
-
         // TODO If successful, this method should delete all the user's existing signup codes from
         // the signup_code table
         // TODO write a test to verify that after one successful signup,
@@ -194,7 +192,7 @@ public class User
      * 2. avoid attackers hijacking existing users' root store with intentional store ID collisions.
      */
     private void addRootStoreAndCheckForCollision()
-            throws SQLException, ExNoPerm, IOException, ExNotFound, ExAlreadyExist
+            throws SQLException, IOException, ExAlreadyExist
     {
         SharedFolder rootStore = _f._factSharedFolder.create_(SID.rootSID(_id));
 
@@ -215,7 +213,13 @@ public class User
 
         // Ignore the return value and do not publish verkehr notifications, as this newly added
         // user mustn't have any daemon running at this moment.
-        rootStore.createNewSharedFolder("root store: " + _id, this);
+        try {
+            rootStore.createNewSharedFolder("root store: " + _id, this);
+        } catch (ExNotFound e) {
+            // The method throws ExNotFound only if the user doesn't exist, which is guaranteed not
+            // to happen.
+            SystemUtil.fatal(e);
+        }
     }
 
     /**
@@ -250,8 +254,7 @@ public class User
         // TODO (WW) move permission check to the upper layer?
 
         // only users in the default organization or admins can add organizations.
-        if (!getOrganization().id().equals(OrgID.DEFAULT) &&
-                getLevel() != AuthorizationLevel.ADMIN) {
+        if (!getOrganization().isDefault() && getLevel() != AuthorizationLevel.ADMIN) {
             throw new ExNoPerm("you have no permission to create new teams");
         }
 
@@ -263,7 +266,7 @@ public class User
     /**
      * Move the user to a new organization, and adjust ACLs of shared folders for the team server.
      */
-    private Map<UserID, Long> setOrganization(Organization org)
+    public Map<UserID, Long> setOrganization(Organization org)
             throws SQLException, ExNotFound, ExAlreadyExist
     {
         Collection<SharedFolder> sfs = getSharedFolders();

@@ -69,7 +69,7 @@ public class Organization
                     _db.add(orgID, name);
                     Organization org = create(orgID);
                     createNewTeamServerUser(org);
-                    l.info("org #" + orgID + " created");
+                    l.info(org + " created");
                     return org;
                 } catch (ExAlreadyExist e) {
                     // Ideally we should use return value rather than exceptions on expected

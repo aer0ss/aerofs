@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -67,6 +68,18 @@ public class SharedFolder
     }
 
     @Override
+    public int hashCode()
+    {
+        return _sid.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        return o == this || (o != null && (((SharedFolder)o)._sid.equals(_sid)));
+    }
+
+    @Override
     public String toString()
     {
         return "shared folder " + _sid.toString();
@@ -89,11 +102,15 @@ public class SharedFolder
      * @return A map of user IDs to epochs to be published via verkehr.
      */
     public Map<UserID, Long> createNewSharedFolder(String folderName, User owner)
-            throws ExNoPerm, ExNotFound, ExAlreadyExist, SQLException, IOException
+            throws ExNotFound, SQLException, IOException, ExAlreadyExist
     {
         _f._db.add(_sid, folderName);
 
-        return addACL(owner, Role.OWNER);
+        try {
+            return addACL(owner, Role.OWNER);
+        } catch (ExAlreadyExist e) {
+            throw SystemUtil.fatalWithReturn(e);
+        }
     }
 
     public void delete()

@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -21,9 +20,6 @@ public class TestSP_SignIn extends AbstractSPTest
     public void shouldNotAllowNonExistingUserIDToSignIn()
             throws Exception
     {
-        // Set AppRoot since SPService depends on Cfg which in turn depends on AppRoot.
-        // TODO (WW) remove the dependency of SPService on Cfg.
-        AppRoot.set("/non-existing");
         service.signIn(TEST_USER_1.toString(), ByteString.copyFrom(TEST_USER_1_CRED));
     }
 

@@ -71,27 +71,29 @@ public class UserDatabase extends AbstractSQLDatabase
             AuthorizationLevel level)
             throws SQLException, ExAlreadyExist
     {
+        // we always create a user with initial epoch + 1 to ensure that the first time
+        // a device is created it gets any acl updates that were made while the user
+        // didn't have an entry in the user table
+
+        PreparedStatement ps = prepareStatement(
+                DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
+                        C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
+                        C_USER_ACL_EPOCH));
+
+        ps.setString(1, id.toString());
+        ps.setString(2, Base64.encodeBytes(shaedSP));
+        ps.setString(3, fullName._first);
+        ps.setString(4, fullName._last);
+        ps.setInt(5, orgID.getInt());
+        ps.setInt(6, level.ordinal());
+        //noinspection PointlessArithmeticExpression
+        ps.setInt(7, C.INITIAL_ACL_EPOCH + 1);
+
         try {
-            // we always create a user with initial epoch + 1 to ensure that the first time
-            // a device is created it gets any acl updates that were made while the user
-            // didn't have an entry in the user table
-
-            PreparedStatement psAU = prepareStatement(
-                    DBUtil.insert(T_USER, C_USER_ID, C_USER_CREDS, C_USER_FIRST_NAME,
-                            C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
-                            C_USER_ACL_EPOCH));
-
-            psAU.setString(1, id.toString());
-            psAU.setString(2, Base64.encodeBytes(shaedSP));
-            psAU.setString(3, fullName._first);
-            psAU.setString(4, fullName._last);
-            psAU.setInt(5, orgID.getInt());
-            psAU.setInt(6, level.ordinal());
-            //noinspection PointlessArithmeticExpression
-            psAU.setInt(7, C.INITIAL_ACL_EPOCH + 1);
-            psAU.executeUpdate();
-        } catch (SQLException aue) {
-            throwOnConstraintViolation(aue);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throwOnConstraintViolation(e);
+            throw e;
         }
     }
 
@@ -133,7 +135,6 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setString(2, userId.toString());
         Util.verify(ps.executeUpdate() == 1);
     }
-
 
     public @Nonnull FullName getFullName(UserID userId)
             throws SQLException, ExNotFound

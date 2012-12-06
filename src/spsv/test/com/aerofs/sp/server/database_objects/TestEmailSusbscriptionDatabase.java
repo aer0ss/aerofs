@@ -32,13 +32,6 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
 
     protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
 
-    @Before
-    public void setup()
-    {
-        // This is to workaround Labeling class initialization issue in SubscriptionParams
-        AppRoot.set("/not-exist");
-    }
-
     @Test
     public void shouldSubscribeUserToOneCategory()
             throws SQLException {

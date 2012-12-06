@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.lib.AppRoot;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
@@ -31,6 +32,9 @@ public class AbstractTestWithSPDatabase extends AbstractTest
     public final void setupDatabaseSchema()
             throws IOException, ClassNotFoundException, SQLException, InterruptedException
     {
+        // This is to workaround Labeling class initialization issues in various derived classes.
+        AppRoot.set("/not-exist");
+
         LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
     }
 

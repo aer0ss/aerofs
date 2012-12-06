@@ -634,7 +634,7 @@ public class SPService implements ISPService
 
     private Map<UserID, Long> addSharedFolderIfNecessary(String folderName, SharedFolder sf,
             User sharer)
-            throws ExNotFound, SQLException, ExNoPerm, ExAlreadyExist, IOException
+            throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
         // Only verified users can share
         if (!sharer.isVerified()) {
@@ -1007,7 +1007,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUp(String userIdString, ByteString credentials,
             String firstName, String lastName)
-            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs, ExNoPerm, IOException
+            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs, IOException
     {
         if (!Util.isValidEmailAddress(userIdString)) throw new ExBadArgs("invalid email address");
 
@@ -1063,7 +1063,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUpWithTargeted(String targetedInvite, ByteString credentials,
             String firstName, String lastName)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, ExNoPerm, IOException {
+            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException
+    {
         l.info("targeted sign-up: " + targetedInvite);
 
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());

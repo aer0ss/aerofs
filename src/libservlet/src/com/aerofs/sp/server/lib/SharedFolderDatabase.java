@@ -77,10 +77,9 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
     /**
      * Add the given sid to the shared folder table
-     *
-     * @pre the SID doesn't exist
      */
-    public void add(SID sid, String name) throws SQLException
+    public void add(SID sid, String name)
+            throws SQLException, ExAlreadyExist
     {
         PreparedStatement ps = prepareStatement(insert(T_SF, C_SF_ID, C_SF_NAME));
 
@@ -88,7 +87,12 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps.setString(2, name);
 
         // Update returns 1 on successful insert
-        Util.verify(ps.executeUpdate() == 1);
+        try {
+            Util.verify(ps.executeUpdate() == 1);
+        } catch (SQLException e) {
+            throwOnConstraintViolation(e);
+            throw e;
+        }
     }
 
     public void addACL(SID sid, Iterable<SubjectRolePair> pairs)
