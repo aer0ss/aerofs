@@ -11,9 +11,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
-import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servlets.lib.db.SPDatabaseParams;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.SharedFolderInvitation.Factory;
@@ -36,11 +34,9 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.sp.server.email.InvitationEmailer;
-import com.aerofs.testlib.AbstractTest;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.protobuf.ByteString;
-import org.junit.After;
 import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -63,15 +59,12 @@ import static org.mockito.Mockito.when;
 /**
  * A base class for all tests using the SPService as the "seam"
  */
-public class AbstractSPTest extends AbstractTest
+public class AbstractSPTest extends AbstractTestWithSPDatabase
 {
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
     @Mock protected VerkehrAdmin verkehrAdmin;
 
-    protected final SPDatabaseParams dbParams = new SPDatabaseParams();
-    @Spy protected final SQLThreadLocalTransaction trans =
-            new SQLThreadLocalTransaction(dbParams.getProvider());
     @Spy protected SPDatabase db = new SPDatabase(trans);
     @Spy protected DeviceDatabase ddb = new DeviceDatabase(trans);
     @Spy protected UserDatabase udb = new UserDatabase(trans);
@@ -124,42 +117,11 @@ public class AbstractSPTest extends AbstractTest
     protected static final UserID TEST_USER_3 = UserID.fromInternal("user_3");
     protected static final byte[] TEST_USER_3_CRED = "CREDENTIALS".getBytes();
 
-    public static void addTestUser(UserDatabase udb, UserID userId)
-            throws ExAlreadyExist, SQLException
-    {
-        udb.addUser(userId, new FullName("first", "last"), SecUtil.newRandomBytes(10),
-                OrgID.DEFAULT, AuthorizationLevel.USER);
-    }
-
-    protected void addTestUser(UserID userId)
-            throws ExAlreadyExist, SQLException
-    {
-        addTestUser(udb, userId);
-    }
-
-    // User based tests will probably need to mock verkehr publishes, so include this utility here.
-    protected void setupMockVerkehrToSuccessfullyPublish()
-    {
-        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
-                .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
-    }
-
-    @After
-    public void tearDownAbstractSPServiceTest()
-            throws SQLException
-    {
-        if (trans.isInTransaction()) trans.rollback();
-        trans.cleanUp();
-    }
-
     // Use a method name that is unlikely to conflict with setup methods in subclasses
     @Before
     public void setupAbstractSPServiceTest()
             throws Exception
     {
-        // Database setup.
-        LocalTestDatabaseConfigurator.initializeLocalDatabase(dbParams);
-
         // Verkehr setup.
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
 
@@ -184,6 +146,26 @@ public class AbstractSPTest extends AbstractTest
                 TEST_USER_3_CRED, orgId, level);
         udb.setVerified(TEST_USER_3);
         trans.commit();
+    }
+
+    public static void addTestUser(UserDatabase udb, UserID userId)
+            throws ExAlreadyExist, SQLException
+    {
+        udb.addUser(userId, new FullName("first", "last"), SecUtil.newRandomBytes(10),
+                OrgID.DEFAULT, AuthorizationLevel.USER);
+    }
+
+    protected void addTestUser(UserID userId)
+            throws ExAlreadyExist, SQLException
+    {
+        addTestUser(udb, userId);
+    }
+
+    // User based tests will probably need to mock verkehr publishes, so include this utility here.
+    protected void setupMockVerkehrToSuccessfullyPublish()
+    {
+        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
+                .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 
     protected void setSessionUser(UserID userId)

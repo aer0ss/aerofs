@@ -8,44 +8,36 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.UserID;
+import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import org.junit.After;
-
-import org.junit.Before;
 
 import java.util.EnumSet;
-
-import com.aerofs.testlib.AbstractTest;
-
-import com.aerofs.servlets.lib.db.SPDatabaseParams;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 
 import java.util.Set;
 
 import java.sql.SQLException;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.aerofs.sp.common.SubscriptionCategory;
 
-
-public class TestEmailSusbscriptionDatabase extends AbstractTest
+public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTestWithSPDatabase
 {
     private static final UserID TEST_USER1 = UserID.fromInternal("test@test.com");
     private static final UserID TEST_USER2 = UserID.fromInternal("test2@test.com");
 
-    protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
-    protected final SQLThreadLocalTransaction _transaction =
-            new SQLThreadLocalTransaction(_dbParams.getProvider());
-    protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(_transaction);
+    protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
 
     @Before
-    public void beginTx() throws SQLException { _transaction.begin(); }
-
-    @After
-    public void commitTx() throws SQLException { _transaction.commit(); }
+    public void setup()
+    {
+        // This is to workaround Labeling class initialization issue in SubscriptionParams
+        AppRoot.set("/not-exist");
+    }
 
     @Test
     public void shouldSubscribeUserToOneCategory()

@@ -7,12 +7,10 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servlets.lib.db.SPDatabaseParams;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.common.SubscriptionCategory;
+import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.SPParam;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -22,7 +20,6 @@ import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
-import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,17 +44,14 @@ import static org.mockito.Mockito.when;
 
 // TODO (WW) As a test for business objects, it should not operate on database objects directly
 // other than setting up the test.
-public class TestEmailReminder extends AbstractTest
+public class TestEmailReminder extends AbstractTestWithSPDatabase
 {
     @Mock private final Factory _emailFactory = new Factory();
 
-    protected final SPDatabaseParams _dbParams = new SPDatabaseParams();
-    @Spy protected final SQLThreadLocalTransaction _transaction =
-            new SQLThreadLocalTransaction(_dbParams.getProvider());
-    @Spy protected SPDatabase _db = new SPDatabase(_transaction);
-    @Spy protected UserDatabase _udb = new UserDatabase(_transaction);
-    @Spy protected EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_transaction);
-    @Spy protected OrganizationDatabase _odb = new OrganizationDatabase(_transaction);
+    @Spy protected SPDatabase _db = new SPDatabase(trans);
+    @Spy protected UserDatabase _udb = new UserDatabase(trans);
+    @Spy protected EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(trans);
+    @Spy protected OrganizationDatabase _odb = new OrganizationDatabase(trans);
 
     @InjectMocks private EmailReminder er;
 
@@ -83,22 +77,18 @@ public class TestEmailReminder extends AbstractTest
     public void setupTestSpEmailReminder()
             throws Exception
     {
-
         when(_emailFactory.createReminderEmail(anyString(), anyString(), anyString(),
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
-        l.info("initialize database");
-        LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
-
-        _transaction.begin();
+        trans.begin();
         l.info("add default organization");
         _odb.add(ORG_ID, "Test Organization");
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
                                     THREE_DAY_USERS_PREFIX);
-        _transaction.commit();
+        trans.commit();
 
     }
 
@@ -138,10 +128,10 @@ public class TestEmailReminder extends AbstractTest
         Set<UserID> users;
 
         do {
-            _transaction.begin();
+            trans.begin();
             users = _esdb.getUsersNotSignedUpAfterXDays(TWO_DAYS_INT, NUM_USERS_TO_RETURN_IN_SET,
                       offset);
-            _transaction.commit();
+            trans.commit();
 
             // assert that the returned set of users is a subset of the full set of two-day users
             assertTrue(Sets.difference(users, _twoDayUsers).isEmpty());
@@ -177,9 +167,9 @@ public class TestEmailReminder extends AbstractTest
             throws SQLException, IOException
     {
         for (UserID user: users) {
-            _transaction.begin();
+            trans.begin();
             String tokenId = _esdb.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-            _transaction.commit();
+            trans.commit();
 
             verify(_emailFactory, mode).createReminderEmail(eq(SV.SUPPORT_EMAIL_ADDRESS),
                     eq(SPParam.SP_EMAIL_NAME), eq(user.toString()), anyString(), eq(tokenId));

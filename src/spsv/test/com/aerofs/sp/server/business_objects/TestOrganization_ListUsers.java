@@ -6,9 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.id.UserID;
-import com.aerofs.servlets.lib.db.SPDatabaseParams;
-import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -19,8 +17,6 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
-import com.aerofs.testlib.AbstractTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Spy;
@@ -29,8 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-// TODO (WW) use AbstractSP*Test class
-public class TestOrganization_ListUsers extends AbstractTest
+public class TestOrganization_ListUsers extends AbstractAutoTransactionedTestWithSPDatabase
 {
     private final int NUMBER_OF_USERS = 10;
     private final int NUMBER_OF_ADMINS = 4;
@@ -41,12 +36,9 @@ public class TestOrganization_ListUsers extends AbstractTest
     // We do not expect any of these users to be returned in the queries below.
     private final OrgID nonQueriedOrgId = new OrgID(453);
 
-    private final SPDatabaseParams _dbParams = new SPDatabaseParams();
-    @Spy private final SQLThreadLocalTransaction _transaction =
-            new SQLThreadLocalTransaction(_dbParams.getProvider());
-    @Spy private final UserDatabase _udb = new UserDatabase(_transaction);
-    @Spy private final OrganizationDatabase _odb = new OrganizationDatabase(_transaction);
-    @Spy private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_transaction);
+    @Spy private final UserDatabase _udb = new UserDatabase(trans);
+    @Spy private final OrganizationDatabase _odb = new OrganizationDatabase(trans);
+    @Spy private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(trans);
 
     @Spy private final Organization.Factory _factOrg = new Organization.Factory();
     @Spy private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
@@ -63,23 +55,10 @@ public class TestOrganization_ListUsers extends AbstractTest
     public void setup()
         throws Exception
     {
-        LocalTestDatabaseConfigurator.initializeLocalDatabase(_dbParams);
-
-        // we can manage the transaction at this level because none of the tests are expected to
-        // throw exceptions
-        _transaction.begin();
-
         _odb.add(validOrgId, "test");
         _odb.add(nonQueriedOrgId, "dummy");
 
         setupUsers();
-    }
-
-    @After
-    public void tearDown()
-        throws Exception
-    {
-        _transaction.commit();
     }
 
     private void setupUsers()
