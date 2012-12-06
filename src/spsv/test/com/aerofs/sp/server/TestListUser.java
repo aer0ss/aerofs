@@ -11,11 +11,14 @@ import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
+import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrgID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;
@@ -43,8 +46,15 @@ public class TestListUser extends AbstractTest
             new SQLThreadLocalTransaction(_dbParams.getProvider());
     @Spy private final UserDatabase _udb = new UserDatabase(_transaction);
     @Spy private final OrganizationDatabase _odb = new OrganizationDatabase(_transaction);
+    @Spy private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_transaction);
 
-    @Spy private final Organization.Factory _factOrg = new Organization.Factory(_odb);
+    @Spy private final Organization.Factory _factOrg = new Organization.Factory();
+    @Spy private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
+    @Spy private final User.Factory _factUser = new User.Factory(_udb, _factOrg, _factSharedFolder);
+    {
+        _factOrg.inject(_odb, _factUser);
+        _factSharedFolder.inject(_sfdb, _factUser);
+    }
 
     Organization validOrg = _factOrg.create(validOrgId);
     Organization invalidOrg = _factOrg.create(invalidOrgId);

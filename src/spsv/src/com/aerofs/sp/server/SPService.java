@@ -511,15 +511,7 @@ class SPService implements ISPService
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
 
-        Organization org = user.getOrganization();
-        User tsUser = _factUser.create(org.id().toTeamServerUserID());
-
-        // Create the team server user if not found
-        if (!tsUser.exists()) {
-            // Use an invalid password hash to prevent attackers from logging in as Team Server
-            // using any password. Also see C.TEAM_SERVER_LOCAL_PASSWORD.
-            tsUser.add(new byte[0], new FullName("Team", "Server"), org);
-        }
+        User tsUser = _factUser.create(user.getOrganization().id().toTeamServerUserID());
 
         // Certify device
         Device device = _factDevice.create(deviceId);

@@ -1,17 +1,22 @@
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.lib.user.User;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.inject.Inject;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
@@ -25,12 +30,16 @@ public class Organization
 
     public static class Factory
     {
-        private final OrganizationDatabase _db;
         private final Organization _default = create(OrgID.DEFAULT);
 
-        public Factory(OrganizationDatabase db)
+        private OrganizationDatabase _db;
+        private User.Factory _factUser;
+
+        @Inject
+        public void inject(OrganizationDatabase db, User.Factory factUser)
         {
             _db = db;
+            _factUser = factUser;
         }
 
         public Organization create(@Nonnull OrgID id)
@@ -47,10 +56,10 @@ public class Organization
         }
 
         /**
-         * Add a new organization to the DB
+         * Add a new organization as well as its team server account to the DB
          */
         public Organization add(@Nonnull String name)
-                throws SQLException
+                throws SQLException, ExNoPerm, IOException, ExNotFound
         {
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
@@ -58,8 +67,10 @@ public class Organization
                 OrgID orgID = new OrgID(Util.rand().nextInt());
                 try {
                     _db.add(orgID, name);
+                    Organization org = create(orgID);
+                    addTeamServerUserToDatabase(org);
                     l.info("org #" + orgID + " created");
-                    return create(orgID);
+                    return org;
                 } catch (ExAlreadyExist e) {
                     // Ideally we should use return value rather than exceptions on expected
                     // conditions.
@@ -68,6 +79,15 @@ public class Organization
             }
         }
 
+        private void addTeamServerUserToDatabase(Organization org)
+                throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
+        {
+            User tsUser = _factUser.create(org.id().toTeamServerUserID());
+
+            // Use an invalid password hash to prevent attackers from logging in as Team Server
+            // using _any_ password. Also see C.TEAM_SERVER_LOCAL_PASSWORD.
+            tsUser.add(new byte[0], new FullName("Team", "Server"), org);
+        }
     }
 
     private Organization(OrganizationDatabase db, OrgID id)

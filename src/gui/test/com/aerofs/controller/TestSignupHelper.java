@@ -36,7 +36,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Ignore
 public class TestSignupHelper extends AbstractTest
 {
     private final InvitationEmailer.Factory factEmail = mock(InvitationEmailer.Factory.class);

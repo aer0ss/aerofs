@@ -212,7 +212,13 @@ public class SharedFolder
             if (otherUser.getOrganization().equals(org)) return false;
         }
 
-        _f._db.deleteACL(_sid, Collections.singleton(org.id().toTeamServerUserID()));
+        try {
+            _f._db.deleteACL(_sid, Collections.singleton(org.id().toTeamServerUserID()));
+        } catch (ExNotFound e) {
+            // the team server id must exists.
+            assert false : this + " " + user;
+        }
+
         return true;
     }
 

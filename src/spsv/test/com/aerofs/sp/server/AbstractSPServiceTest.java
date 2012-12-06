@@ -85,11 +85,12 @@ public class AbstractSPServiceTest extends AbstractTest
     // Can't use @Mock as Device.Factory's constructor needs a non-null certgen object.
     protected CertificateGenerator certgen = mock(CertificateGenerator.class);
 
-    @Spy protected Organization.Factory factOrg = new Organization.Factory(odb);
+    @Spy protected Organization.Factory factOrg = new Organization.Factory();
     @Spy protected SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
     @Spy protected User.Factory factUser = new User.Factory(udb, factOrg, factSharedFolder);
     {
         factSharedFolder.inject(sfdb, factUser);
+        factOrg.inject(odb, factUser);
     }
 
     @Spy protected Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb, certgen);

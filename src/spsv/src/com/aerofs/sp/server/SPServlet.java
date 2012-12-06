@@ -70,10 +70,11 @@ public class SPServlet extends AeroServlet
     private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
     private final CertificateGenerator _certgen = new CertificateGenerator();
 
-    private final Organization.Factory _factOrg = new Organization.Factory(_odb);
+    private final Organization.Factory _factOrg = new Organization.Factory();
     private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
     private final User.Factory _factUser = new User.Factory(_udb, _factOrg, _factSharedFolder);
     {
+        _factOrg.inject(_odb, _factUser);
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 

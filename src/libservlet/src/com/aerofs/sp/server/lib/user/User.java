@@ -245,9 +245,9 @@ public class User
      * @throws ExNoPerm if the user is a non-admin in a non-default organization
      */
     public Map<UserID, Long> addAndMoveToOrganization(String orgName)
-            throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist
+            throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException
     {
-        // TODO: verify the calling user is allowed to create an organization
+        // TODO (WW) move permission check to the upper layer?
 
         // only users in the default organization or admins can add organizations.
         if (!getOrganization().id().equals(OrgID.DEFAULT) &&
