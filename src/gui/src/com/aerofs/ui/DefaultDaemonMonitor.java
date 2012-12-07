@@ -31,6 +31,7 @@ import static com.aerofs.lib.SystemUtil.ExitCode.*;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 
@@ -305,6 +306,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                         }
                         return;
                     }
+                } catch (SocketException e) {
+                    l.warn("socket closed");
+                    break;
                 }
             }
         } finally {
