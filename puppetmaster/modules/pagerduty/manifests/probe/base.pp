@@ -5,7 +5,7 @@ define pagerduty::probe::base(
   $hour,
   $minute
 ) {
-  cron{$command:
+  cron{$title:
     command => "/opt/pagerduty/probe ${command}",
     user => root,
     hour => $hour,
