@@ -10,6 +10,7 @@ import "sync_status.proto";
  * NOTE: When modifying the service declaration below, if you are not appending your new RPC
  * calls at the end of the declaration make sure to increment the SP_PROTOCOL_VERSION parameter
  * in C.java and the sp.version parameter in development.ini and production.ini (in src/web/)
+ * and syncdet_test/lib/param.py
  */
 
 service SPService {
