@@ -95,7 +95,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
             ResultSet rs = _psAE.executeQuery();
             try {
                 Util.verify(rs.next());
-                assert rs.getInt(1) == 1;
+                assert rs.getInt(1) == 1 : sidx;
                 assert !rs.next();
             } finally {
                 rs.close();
