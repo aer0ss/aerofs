@@ -80,7 +80,7 @@ public class CertificateDatabase extends AbstractSQLDatabase
             ps.addBatch();
         }
 
-        executeBatchWarn(ps, serials.size(), 1);
+        executeBatch(ps, serials.size(), 1);
     }
 
     /**

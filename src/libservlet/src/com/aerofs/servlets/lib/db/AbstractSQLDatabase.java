@@ -62,26 +62,11 @@ public abstract class AbstractSQLDatabase
         return getConnection().prepareStatement(sql);
     }
 
-    protected static class ExSizeMismatch extends Exception
+    protected static class ExBatchSizeMismatch extends SQLException
     {
         private static final long serialVersionUID = 0;
 
-        ExSizeMismatch(String s) { super(s); }
-    }
-
-    /**
-     * Same as executeBatch but simply log a warning on size mismatches instead of throwing an
-     * ExSizeMismatch exception
-     */
-    protected static void executeBatchWarn(PreparedStatement ps, int batchSize,
-            int expectedRowsAffectedPerBatchEntry)
-            throws SQLException
-    {
-        try {
-            executeBatch(ps, batchSize, expectedRowsAffectedPerBatchEntry);
-        } catch (ExSizeMismatch e) {
-            l.warn("Batch size mismatch", e);
-        }
+        ExBatchSizeMismatch(String s) { super(s); }
     }
 
     /**
@@ -89,17 +74,17 @@ public abstract class AbstractSQLDatabase
      */
     protected static void executeBatch(PreparedStatement ps, int batchSize,
             int expectedRowsAffectedPerBatchEntry)
-            throws SQLException, ExSizeMismatch
+            throws SQLException
     {
         int[] batchUpdates = ps.executeBatch();
         if (batchUpdates.length != batchSize) {
-            throw new ExSizeMismatch("mismatch in batch size exp:" + batchSize + " act:"
+            throw new ExBatchSizeMismatch("mismatch in batch size exp:" + batchSize + " act:"
                     + batchUpdates.length);
         }
 
         for (int rowsPerBatchEntry : batchUpdates) {
             if (rowsPerBatchEntry != expectedRowsAffectedPerBatchEntry) {
-                throw new ExSizeMismatch("unexpected number of affected rows " +
+                throw new ExBatchSizeMismatch("unexpected number of affected rows " +
                         "exp:" + expectedRowsAffectedPerBatchEntry + " act:" + rowsPerBatchEntry);
             }
         }

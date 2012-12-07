@@ -113,7 +113,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         try {
             // throw if any query's affected rows != 1, meaning ACL entry already exists
             executeBatch(ps, pairCount, 1); // update the roles for all users
-        } catch (ExSizeMismatch e) {
+        } catch (ExBatchSizeMismatch e) {
             /**
              * We enforce a strict API distinction between ACL creation and ACL update
              * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
@@ -178,7 +178,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             ps.addBatch();
         }
 
-        executeBatchWarn(ps, users.size(), 1);
+        executeBatch(ps, users.size(), 1);
 
         return getACLEpochs(users);
     }
@@ -238,7 +238,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         try {
             executeBatch(ps, subjects.size(), 1);
-        } catch (ExSizeMismatch e) {
+        } catch (ExBatchSizeMismatch e) {
             throw new ExNotFound();
         }
     }
@@ -278,7 +278,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         try {
             // throw if any query's affected rows != 1, meaning ACL entry doesn't exist
             executeBatch(ps, pairCount, 1); // update the roles for all users
-        } catch (ExSizeMismatch e) {
+        } catch (ExBatchSizeMismatch e) {
             /**
              * We enforce a strict API distinction between ACL creation and ACL update
              * To ensure that SP calls are not abused (i.e shareFolder should not be used to change
