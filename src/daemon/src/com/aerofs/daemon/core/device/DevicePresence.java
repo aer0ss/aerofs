@@ -262,20 +262,15 @@ public class DevicePresence implements IDumpStatMisc
                 }
             };
 
-        if (_tc.isCoreThread()) {
-            _cer.retry("updateStores", callable);
-
-        } else {
-            // the current thread is not a core thread. can't directly run the callable code above
-            // since the CoreIMC.enqueueBlocking requires core threads.
-            _sched.schedule(new AbstractEBSelfHandling() {
-                @Override
-                public void handle_()
-                {
-                    _cer.retry("updateStores", callable);
-                }
-            }, 0);
-        }
+        // Always run the task in a separate core context as this method may be called in a
+        // transaction and the CoreIMC.enqueueBlocking above may yield the core lock.
+        _sched.schedule(new AbstractEBSelfHandling() {
+            @Override
+            public void handle_()
+            {
+                _cer.retry("updateStores", callable);
+            }
+        }, 0);
     }
 
     @Override
