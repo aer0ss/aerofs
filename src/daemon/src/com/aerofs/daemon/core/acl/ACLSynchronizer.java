@@ -201,7 +201,7 @@ public class ACLSynchronizer
 
             for (Map.Entry<SID, Map<UserID, Role>> entry : serverACLReturn._acl.entrySet()) {
                 SID sid = entry.getKey();
-                Map<UserID, Role> roles = entry.getValue();
+                Map<UserID, Role> newRoles = entry.getValue();
 
                 // did we already know about that store (shouldn't try to join a deleted store)
                 boolean known = (_sid2sidx.getLocalOrAbsentNullable_(sid) != null);
@@ -210,20 +210,20 @@ public class ACLSynchronizer
                 SIndex sidx = getOrCreateSIndex_(sid, t);
 
                 // join or leave store as needed when ACL entry changes
-                boolean accessible = roles.containsKey(_cfgLocalUser.get());
+                boolean accessible = newRoles.containsKey(_cfgLocalUser.get());
                 if (stores.contains(sidx) && !accessible) {
                     // locally present and no longer accessible: auto-leave
-                    _storeJoiner.leaveStore(sidx, sid, t);
+                    _storeJoiner.leaveStore_(sidx, sid, newRoles, t);
                 } else if (!known && accessible && !noAutoJoin) {
                     // not known and accessible: auto-join
                     assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
                     String folderName = serverACLReturn._newStoreNames.get(sid);
-                    _storeJoiner.joinStore(sidx, sid, folderName, t);
+                    _storeJoiner.joinStore_(sidx, sid, folderName, newRoles, t);
                 }
                 stores.remove(sidx);
 
                 // invalidates the cache
-                _lacl.set_(sidx, roles, t);
+                _lacl.set_(sidx, newRoles, t);
             }
 
             // TODO: if ACL entry disappears completely, convert back to regular folder?

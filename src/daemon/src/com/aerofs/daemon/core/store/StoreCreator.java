@@ -47,19 +47,28 @@ public class StoreCreator
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx == null) {
-            sidx = createStore_(sid, path, t);
-            assert _ss.getParents_(sidx).isEmpty();
+            sidx = createStoreImpl_(sid, path, t);
+            assert _ss.getParents_(sidx).isEmpty() : sidx + " " + sid;
         } else {
-            assert !_ss.getParents_(sidx).isEmpty();
+            assert !_ss.getParents_(sidx).isEmpty() : sidx + " " + sid;
         }
         _ss.addParent_(sidx, sidxParent, t);
+    }
+
+    /**
+     * Create a store with no parent. See comments in IStores for detail
+     */
+    public void createRootStore_(SID sid, Path rootStorePath, Trans t)
+            throws SQLException, IOException, ExAlreadyExist
+    {
+        createStoreImpl_(sid, rootStorePath, t);
     }
 
     /**
      * Create a store.
      * @param path the location where the
      */
-    public SIndex createStore_(SID sid, Path path, Trans t)
+    private SIndex createStoreImpl_(SID sid, Path path, Trans t)
             throws SQLException, ExAlreadyExist, IOException
     {
         // Note that during store creation, all in-memory data structures may not be fully set up

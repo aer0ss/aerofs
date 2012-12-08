@@ -25,12 +25,12 @@ public interface IStoreDatabase
     void delete_(SIndex sidx, Trans t) throws SQLException;
 
     /**
-     * @pre the parent doesn't exist
+     * @pre the parenthood relation doesn't exist
      */
     void addParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 
     /**
-     * @pre the parent exists
+     * @pre the parenthood relation exists
      */
     void deleteParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 

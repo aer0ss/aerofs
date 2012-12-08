@@ -134,7 +134,8 @@ class Setup
             FullName fullName = new FullName(firstName, lastName);
             new SignupHelper(res._sp).signUp(userId, res._scrypted, signUpCode, fullName);
 
-            setupRegularClient(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupRegularClientImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted,
+                    res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + userId);
         } catch (Exception e) {
@@ -163,7 +164,8 @@ class Setup
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupRegularClient(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupRegularClientImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted,
+                    res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
@@ -179,7 +181,7 @@ class Setup
         try {
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupTeamServer(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupTeamServerImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -217,7 +219,7 @@ class Setup
     /**
      * @param sp must have been signed in
      */
-    private void setupRegularClient(UserID userID, String rootAnchorPath, String deviceName,
+    private void setupRegularClientImpl(UserID userID, String rootAnchorPath, String deviceName,
             PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
@@ -233,7 +235,7 @@ class Setup
         setupCommon(did, deviceName, sp);
     }
 
-    private void setupTeamServer(UserID userID, String rootAnchorPath, String deviceName,
+    private void setupTeamServerImpl(UserID userID, String rootAnchorPath, String deviceName,
             PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {

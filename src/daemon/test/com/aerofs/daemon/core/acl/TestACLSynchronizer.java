@@ -35,6 +35,7 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.Before;
@@ -46,6 +47,7 @@ import org.mockito.stubbing.Answer;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -266,7 +268,12 @@ public class TestACLSynchronizer extends AbstractTest
         aclsync.syncToLocal_();
 
         verify(spClient).getACL(anyLong());
-        verify(storeJoiner).joinStore(eq(sidx), eq(sid1), eq("shared"), eq(t));
+
+        Map<UserID, Role> newRoles = Maps.newHashMap();
+        newRoles.put(user1, Role.OWNER);
+        newRoles.put(user2, Role.EDITOR);
+
+        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq("shared"), eq(newRoles), eq(t));
     }
 
     @Test
@@ -284,7 +291,7 @@ public class TestACLSynchronizer extends AbstractTest
         aclsync.syncToLocal_();
 
         verify(spClient).getACL(anyLong());
-        verify(storeJoiner).leaveStore(sidx, sid1, t);
+        verify(storeJoiner).leaveStore_(sidx, sid1, Collections.<UserID, Role>emptyMap(), t);
     }
 
     @Test

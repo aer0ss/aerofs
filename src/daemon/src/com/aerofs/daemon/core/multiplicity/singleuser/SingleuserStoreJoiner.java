@@ -12,12 +12,16 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.lib.id.UserID;
 import com.google.inject.Inject;
+
+import java.util.Map;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
 {
@@ -37,7 +41,8 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     }
 
     @Override
-    public void joinStore(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
+    public void joinStore_(SIndex sidx, SID sid, String folderName, Map<UserID, Role> newRoles,
+            Trans t) throws Exception
     {
         // ignore changes on the root store.
         if (sid.equals(_cfgRootSID.get())) return;
@@ -89,7 +94,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     }
 
     @Override
-    public void leaveStore(SIndex sidx, SID sid, Trans t) throws Exception
+    public void leaveStore_(SIndex sidx, SID sid, Map<UserID, Role> newRoles, Trans t) throws Exception
     {
         // we should never be asked to leave the root store.
         assert !sid.equals(_cfgRootSID.get());
