@@ -35,6 +35,7 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
+import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.common.base.Joiner;
@@ -145,8 +146,6 @@ public class ReceiveAndApplyUpdate
             _hash = h;
             _vLocal = vLocal;
             _conflictRename = false;
-
-            assert _vLocal != null;
         }
 
         @Override
@@ -765,19 +764,29 @@ public class ReceiveAndApplyUpdate
                 l.debug("reading content from local branch");
 
                 // Stop the stream since we will not be reading it from now on
-                if (isStreaming) {
-                    _iss.end_(msg.streamKey());
-                }
+                _iss.end_(msg.streamKey());
 
                 // Use the content from the local branch
                 IPhysicalFile file = _ds.getOA_(k.soid()).ca(localBranchWithMatchingContent)
                         .physicalFile();
 
-                InputStream is = file.newInputStream_();
                 try {
-                    Util.copy(is, os);
-                } finally {
-                    is.close();
+                    InputStream is = file.newInputStream_();
+                    try {
+                        Util.copy(is, os);
+                    } finally {
+                        is.close();
+                    }
+
+                } catch (ExFileNotFound e) {
+                    // Only a master branch can be temporarily inconsistent with the Database
+                    assert localBranchWithMatchingContent.equals(KIndex.MASTER) :
+                            "conflict file was not found but db reports its existence "
+                            + e.getMessage();
+
+                    l.warn("can't copy content from master branch " + k.soid());
+
+                    throw new ExAborted(e.getMessage());
                 }
 
             } else {

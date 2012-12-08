@@ -12,10 +12,10 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.SOKID;
 import org.apache.log4j.Logger;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -87,7 +87,7 @@ class BlockFile implements IPhysicalFile
     {
         try {
             FileInfo info = _s.getFileInfo_(_sokid);
-            if (!FileInfo.exists(info)) throw new FileNotFoundException(toString());
+            if (!FileInfo.exists(info)) throw new ExFileNotFound(_path);
             return _s.readChunks(info._chunks);
         } catch (SQLException e) {
             throw new IOException(e);
