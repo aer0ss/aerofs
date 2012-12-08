@@ -16,6 +16,7 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
+import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -261,6 +262,10 @@ public class AliasingMover
         assert _ds.getOA_(target).isDir();
 
         Path targetPath = _ds.resolve_(target);
+        Path aliasPath = _ds.resolve_(alias);
+
+        assert !targetPath.isUnder(aliasPath)
+                : Joiner.on(' ').join(target, alias, targetPath, aliasPath);
 
         // Files/dirs directly under the target dir will retain their names, whereas files/dirs
         // directly under the alias dir are renamed to avoid name conflict

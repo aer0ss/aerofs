@@ -731,17 +731,16 @@ public class ReceiveAndApplyUpdate
      * @param remoteHash The hash of the remote object's content
      * @return The branch with the same content as the remote, or null
      */
-    private @Nullable KIndex findBranchWithMatchingContent_(SOID object, ContentHash remoteHash)
+    private @Nullable KIndex findBranchWithMatchingContent_(SOID object,
+            @Nonnull ContentHash remoteHash)
             throws ExNotFound, SQLException
     {
         // See if we have the same content in one of our branches
-        if (remoteHash != null) {
-            for (KIndex branch : _ds.getOAThrows_(object).cas().keySet()) {
-                SOKID branchObject = new SOKID(object, branch);
-                ContentHash localHash = _ds.getCAHash_(branchObject);
-                if (localHash != null && localHash.equals(remoteHash)) {
-                    return branch;
-                }
+        for (KIndex branch : _ds.getOAThrows_(object).cas().keySet()) {
+            SOKID branchObject = new SOKID(object, branch);
+            ContentHash localHash = _ds.getCAHash_(branchObject);
+            if (localHash != null && localHash.equals(remoteHash)) {
+                return branch;
             }
         }
         return null;
@@ -868,7 +867,8 @@ public class ReceiveAndApplyUpdate
 
         final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
 
-        KIndex localBranchWithMatchingContent = findBranchWithMatchingContent_(k.soid(), res._hash);
+        KIndex localBranchWithMatchingContent = res._hash == null ? null :
+                findBranchWithMatchingContent_(k.soid(), res._hash);
 
         // Write the new content to the prefix file
         writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),
