@@ -35,7 +35,6 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
-import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.proto.Core.PBGetComReply;
 import com.aerofs.proto.Core.PBMeta;
 import com.google.common.base.Joiner;
@@ -48,6 +47,7 @@ import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -778,7 +778,7 @@ public class ReceiveAndApplyUpdate
                         is.close();
                     }
 
-                } catch (ExFileNotFound e) {
+                } catch (FileNotFoundException e) {
                     // Only a master branch can be temporarily inconsistent with the Database
                     assert localBranchWithMatchingContent.equals(KIndex.MASTER) :
                             "conflict file was not found but db reports its existence "

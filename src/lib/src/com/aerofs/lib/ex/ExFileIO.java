@@ -4,7 +4,6 @@
 
 package com.aerofs.lib.ex;
 
-import com.aerofs.lib.Path;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
 
@@ -19,7 +18,6 @@ import java.io.IOException;
 {
     private static final long serialVersionUID = 1L;
 
-    private final String _obfuscatedMessage;
     private final String _plainTextMessage;
 
     /**
@@ -42,21 +40,10 @@ import java.io.IOException;
         this(ObfuscatingFormatters.formatFileMessage(message, files));
     }
 
-    public ExFileIO(String message, Path... paths)
-    {
-        this(ObfuscatingFormatters.formatPathMessage(message, paths));
-    }
-
     private ExFileIO(FormattedMessage formattedMessage)
     {
-        _obfuscatedMessage = formattedMessage._obfuscated;
+        super(formattedMessage._obfuscated);
         _plainTextMessage = formattedMessage._plainText;
-    }
-
-    @Override
-    public String getMessage()
-    {
-        return _obfuscatedMessage;
     }
 
     @Override
