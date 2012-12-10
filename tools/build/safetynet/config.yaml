@@ -6,7 +6,7 @@ actor_defaults:
     root: ~/syncdet
 actors:
     -
-        address: 192.168.1.14
+        address: sn-ubuntu.local
         aero_app_root: ~/.aerofs-bin
         aero_rt_root: ~/.aerofs
         details:
@@ -14,14 +14,14 @@ actors:
             distribution: Ubuntu 11.04 natty
             java: Java(TM) SE Runtime Environment (build 1.7.0_01-b08)
     -
-        address: 192.168.1.15
+        address: sn-windows7.local
         aero_app_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFSExec
         aero_rt_root: /cygdrive/c/Users/aerofstest/AppData/Roaming/AeroFS
         details:
             os: Windows 7 Professional x64
             java: Java(TM) SE Runtime Environment (build 1.7.0_07-b11)
     -
-        address: 192.168.1.16
+        address: sn-osx-sl.local
         login: safetynet
         aero_app_root: /Applications/AeroFS.app/Contents/Resources/Java
         aero_rt_root: "~/Library/Application Support/AeroFS"
@@ -29,7 +29,7 @@ actors:
             os: OSX Snow Leopard 10.6.3
             java: Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-10M3811)
     -
-        address: 192.168.1.17
+        address: sn-windowsxp.local
         login: Administrator
         aero_app_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFSExec"
         aero_rt_root: "/cygdrive/c/Documents and Settings/Administrator/Application Data/AeroFS"
