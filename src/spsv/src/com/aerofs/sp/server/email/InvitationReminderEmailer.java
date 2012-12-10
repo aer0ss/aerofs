@@ -33,9 +33,9 @@ public class InvitationReminderEmailer
                     " (" + SP.WEB_BASE + ") \n\n " +
                     "We realize you might be quite busy and may have missed our invitation email " +
                     "so we want to remind you that your invitation is still " +
-                    "waiting!.\n\n" +
+                    "waiting!\n\n" +
                     "As a quick refresher: " + S.PRODUCT + " allows you to sync, share, and " +
-                    "collaborate on files privately and securely.\n Any data that you put inside your "+
+                    "collaborate on files privately and securely.\n\n Any data that you put inside your "+
                     S.PRODUCT + " will be synced *only* with your personal devices, and anyone you " +
                     "invite to share with you.\n\n Please keep in mind that " + S.PRODUCT +
                     " is still in beta! We release updates regularly and appreciate any and all " +
