@@ -41,6 +41,12 @@ public class Param
         return address;
     }
 
+    public static class Daemon
+    {
+        public static final long HEARTBEAT_TIMEOUT = 1 * C.MIN; // heartbeats can timeout under load
+        public static final long HEARTBEAT_INTERVAL = 5 * C.MIN;
+    }
+
     public static class PostUpdate
     {
         // These variables are saved here rather than *PostUpdateTasks classes so that both

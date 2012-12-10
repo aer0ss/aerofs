@@ -15,13 +15,16 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.google.inject.Inject;
+import net.contentobjects.jnotify.JNotifyException;
+import org.apache.log4j.Logger;
+
 import java.util.Collections;
 import java.util.Set;
 
-import net.contentobjects.jnotify.JNotifyException;
-
 public class Linker implements ILinker
 {
+    private static final Logger l = Util.l(Linker.class);
+
     // The priority used across the linker
     public static final Prio PRIO = Prio.LO;
 
@@ -102,6 +105,7 @@ public class Linker implements ILinker
     {
         try {
             // start the notifier before scanning to avoid losing notifications.
+            l.info("start notifier");
             _notifier.start_();
         } catch (JNotifyException e) {
             // Notifier failed to start, either because the root anchor is missing or AeroFS
@@ -109,9 +113,10 @@ public class Linker implements ILinker
             // user about the issue. We don't want to throw it out because 1) start() methods are
             // not supposed to throw, and 2) we'd like to warn the user and proceed instead of
             // terminating the daemon process.
-            Util.l(this).warn("ignored: " + Util.e(e));
+            l.warn("ignored: " + Util.e(e));
         }
 
+        l.info("begin scan");
         fullScan();
     }
 
@@ -120,7 +125,7 @@ public class Linker implements ILinker
      */
     void testResume_()
     {
-        Util.l(this).warn("resumed");
+        l.debug("resumed");
 
         setHandlers_();
 
@@ -134,6 +139,6 @@ public class Linker implements ILinker
     {
         resetHandlers_();
 
-        Util.l(this).warn("paused");
+        l.debug("paused");
     }
 }

@@ -1,11 +1,16 @@
 package com.aerofs.daemon.lib;
 
 import com.aerofs.lib.C;
+import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 
 public class DaemonParam
 {
+    static {
+        assert Daemon.HEARTBEAT_TIMEOUT > Jingle.CALL_TIMEOUT;
+    }
+
     public static final int QUEUE_LENGTH_DEFAULT        = 1024;
 
     //

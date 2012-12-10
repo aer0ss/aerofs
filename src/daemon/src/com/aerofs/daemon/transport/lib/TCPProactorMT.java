@@ -83,7 +83,7 @@ public class TCPProactorMT
 
     public void start_()
     {
-        l.info(_name + ": listening port " + getListeningPort());
+        l.info("start " + _name + ": listening port " + getListeningPort());
 
         new Thread(new Runnable() {
             @Override

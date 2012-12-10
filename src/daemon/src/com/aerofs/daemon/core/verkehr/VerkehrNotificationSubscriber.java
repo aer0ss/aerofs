@@ -78,7 +78,7 @@ public class VerkehrNotificationSubscriber extends AbstractConnectionStatusNotif
 
     public void start_()
     {
-        l.debug("started verkehr notification subscriber");
+        l.info("start vk subscriber");
         _started = true;
         _subscriber.start();
     }

@@ -7,6 +7,7 @@ package com.aerofs.ui;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
@@ -264,7 +265,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
         RitualClient ritual = RitualClientFactory.newClient();
         try {
             Uninterruptibles.getUninterruptibly(ritual.heartbeat(),
-                    UIParam.DM_HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
+                    Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             _fdsHeartbeatGone.logSendAsync("daemon hb gone. kill: " + e);
             return false;
@@ -284,7 +285,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
     {
         Socket s = new Socket(C.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
         try {
-            s.setSoTimeout((int) UIParam.DM_HEARTBEAT_INTERVAL);
+            s.setSoTimeout((int) Daemon.HEARTBEAT_INTERVAL);
             while (true) {
                 try {
                     // read() should get nothing and block

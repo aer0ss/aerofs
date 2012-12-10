@@ -80,6 +80,7 @@ public class GetVersReply
                     new BFOID(pb.getSenderFilter()) : null;
 
             SIndex sidx = msg.sidx();
+
             if (l.isDebugEnabled()) {
                 l.debug("recv from " + msg.ep() + " for " + sidx + " " + filter);
             }

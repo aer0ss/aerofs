@@ -9,13 +9,11 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
-import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-
 import org.apache.log4j.Logger;
 
 import java.net.Inet4Address;
@@ -25,6 +23,8 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.Executor;
+
+import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 
 /**
  * This class monitors the state of local NICs
@@ -84,7 +84,6 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         //
 
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
-//        l.debug("ls:ifs:");
 
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
                 e.hasMoreElements();) {
@@ -142,7 +141,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                 }
             }
 
-            l.debug(sb);
+            l.debug("ls:ifs:\n" + sb);
         }
 
         return ifaceBuilder.build();
@@ -154,7 +153,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         final ImmutableSet<NetworkInterface> previous = _ifaces;
         if (current.equals(previous)) return;
 
-        l.warn("ls prev " + previous.size() + " cur " + current.size());
+        l.info("ls prev " + previous.size() + " cur " + current.size());
 
         // notify listeners of the difference
         final Set<NetworkInterface> added = Sets.newHashSet(current);
@@ -178,7 +177,9 @@ public abstract class AbstractLinkStateService implements ILinkStateService
     @Override
     public final void start_()
     {
-        ThreadUtil.startDaemonThread("lss", new Runnable()
+        l.info("start lss thd");
+
+        startDaemonThread("lss", new Runnable()
         {
             @Override
             public void run()
@@ -209,9 +210,9 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                 // Otherwise, we should implement this method.
                 //
                 while (true) {
-                    // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
-                    if (OSUtil.isWindows()) l.warn("check link state");
+                    l.info("check link state");
                     execute(runCheckLinkState);
+                    // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
                     if (Driver.waitForNetworkInterfaceChange() != DriverConstants.DRIVER_SUCCESS) {
                         ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
                     }

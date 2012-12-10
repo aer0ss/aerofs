@@ -15,11 +15,6 @@ public class UIParam
     public static final int  DM_LAUNCH_PING_RETRIES     = 120;
     public static final long DM_LOG_ARCHIVE_STARTUP_DELAY = 15 * C.MIN;
     public static final long DM_LOG_ARCHIVE_INTERVAL    = 24 * C.HOUR;
-    // heartbeat may time out if the daemon is way overloaded.
-    // should be greater than DaemonParam.Jingle.JINGLE_CALL_TIMEOUT
-    public static final long DM_HEARTBEAT_TIMEOUT       = 1 * C.MIN;
-    public static final long DM_HEARTBEAT_INTERVAL      = 5 * C.MIN;
-    public static final long DM_STOP_TIMEOUT            = 30 * C.SEC;
     public static final long DM_RESTART_MONITORING_INTERVAL = 5 * C.SEC;
 
     public static final int DEFAULT_REFRESH_DELAY = 100;
