@@ -19,7 +19,6 @@ public class TestMightCreate_OtherCases extends AbstractTestMightCreate
     {
         String physicalObj = "non-existing";
         mockGetFIDThrowingFileNotFoundException(physicalObj);
-
         mightCreate(physicalObj, null);
     }
 

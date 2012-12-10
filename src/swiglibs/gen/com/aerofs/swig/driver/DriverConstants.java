@@ -9,6 +9,7 @@
 package com.aerofs.swig.driver;
 
 public interface DriverConstants {
+  public final static int DRIVER_FAILURE_WITH_ERRNO = DriverJNI.DRIVER_FAILURE_WITH_ERRNO_get();
   public final static int DRIVER_FAILURE = DriverJNI.DRIVER_FAILURE_get();
   public final static int DRIVER_SUCCESS = DriverJNI.DRIVER_SUCCESS_get();
   public final static int GETFID_FILE = DriverJNI.GETFID_FILE_get();

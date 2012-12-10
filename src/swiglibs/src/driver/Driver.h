@@ -6,6 +6,7 @@
 
 namespace Driver {
 
+#define DRIVER_FAILURE_WITH_ERRNO      -2
 #define DRIVER_FAILURE      -1
 #define DRIVER_SUCCESS      0
 

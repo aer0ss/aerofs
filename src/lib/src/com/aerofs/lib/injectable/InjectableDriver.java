@@ -3,6 +3,7 @@ package com.aerofs.lib.injectable;
 import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.id.FID;
@@ -35,6 +36,27 @@ public class InjectableDriver
         return _lenFID;
     }
 
+    // Note: these error lists are not intended to be complete, but simply a listing of certain
+    // error codes that are relevant for InjectableDriver that we can handle intelligently
+    // From http://msdn.microsoft.com/en-us/library/windows/desktop/ms681382(v=vs.85).aspx
+    private class WindowsErrnoList
+    {
+        public static final int FILE_NOT_FOUND = 2;     // Final path component didn't exist
+        public static final int PATH_NOT_FOUND = 3;     // Non-final path component didn't exist
+        public static final int ACCESS_DENIED = 5;      // User lacks permissions
+        public static final int SHARING_VIOLATION = 32; // File already opened exclusively
+    }
+
+    // From /usr/include/asm-generic/errno-base.h from a Linux box.
+    //   Base errno values are given by the UNIX specification.
+    private class NixErrnoList
+    {
+        public static final int EPERM = 1;   // Operation not permitted
+        public static final int ENOENT = 2;  // No such file or directory
+        public static final int EIO = 5;     // I/O error
+        public static final int EACCES = 13; // Permission denied
+    }
+
     public static class FIDAndType {
         public final FID _fid;
         public final boolean _dir;
@@ -56,9 +78,41 @@ public class InjectableDriver
         assert f.isAbsolute() : absPath;
         byte[] bs = new byte[getFIDLength()];
         int ret = Driver.getFid(null, absPath, bs);
+        if (ret == DRIVER_FAILURE_WITH_ERRNO) throwExceptionByErrno(errnoPackedInFid(bs), f);
         if (ret == DRIVER_FAILURE) throwNotFoundOrIOException(f);
         if (ret != GETFID_FILE && ret != GETFID_DIR) return null;
         return new FIDAndType(new FID(bs), ret == GETFID_DIR);
+    }
+
+    private void throwExceptionByErrno(int errno, File f)
+            throws IOException
+    {
+        if (OSUtil.isWindows()) {
+            switch (errno) {
+            case WindowsErrnoList.FILE_NOT_FOUND:
+                throw new ExFileNotFound(f);
+            case WindowsErrnoList.PATH_NOT_FOUND:
+                throw new ExFileNotFound(f);
+            case WindowsErrnoList.ACCESS_DENIED:
+                throw new ExFileNoPerm(f);
+            case WindowsErrnoList.SHARING_VIOLATION:
+                throw new ExFileIO("Another process has {} open", f);
+            default:
+                throw new ExFileIO("Unhandled error " + errno + " on {}", f);
+            }
+        } else {
+            switch (errno) {
+            case NixErrnoList.EACCES:
+            case NixErrnoList.EPERM:
+                throw new ExFileNoPerm(f);
+            case NixErrnoList.EIO:
+                throw new ExFileIO("IO failure on {}", f);
+            case NixErrnoList.ENOENT:
+                throw new ExFileNotFound(f);
+            default:
+                throw new ExFileIO("Unhandled error " + errno + " on {}", f);
+            }
+        }
     }
 
     /**
@@ -75,8 +129,17 @@ public class InjectableDriver
      * throws a generic ExFileIO exception.
      *
      * @param f The file to check for existence
+     * @throws ExFileIO if the object is not present
+     * @throws IOException if getFID failed for other reasons
      */
-    private void throwNotFoundOrIOException(File f) throws IOException
+    private void throwNotFoundOrIOException(File f)
+            throws IOException
+    {
+        if (f.exists()) throwIOException(f);
+        else throw new ExFileIO("file {} didn't exist", f);
+    }
+
+    private void throwIOException(File f) throws IOException
     {
         if (f.exists()) {
             throw new ExFileIO("getFid: {}", f);
@@ -93,5 +156,17 @@ public class InjectableDriver
     public int killDaemon()
     {
         return Driver.killDaemon();
+    }
+    private static int errnoPackedInFid(byte[] bs)
+    {
+        assert bs.length >= 4;
+        // Java doesn't have unsigned types.  FML.
+        // Driver guarantees that we pack the error code in as a big endian int in the first
+        // 4 bytes
+        int b1 = (0xff & (bs[0])) * 0x01000000;
+        int b2 = (0xff & (bs[1])) * 0x00010000;
+        int b3 = (0xff & (bs[2])) * 0x00000100;
+        int b4 = (0xff & (bs[3]));
+        return b1 + b2 + b3 + b4;
     }
 }
