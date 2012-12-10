@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e -u
 
 # Need to run proto commands, etc.
 echo "Preparing test environment..."

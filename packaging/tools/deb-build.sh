@@ -5,7 +5,9 @@
 #   $1 = the name of the debian package.
 #   $2 = the destination <staging|prod>.
 # Return:
-#   0 when the version number exists, on the server, non-zero otherwise.
+#   0 when the version number is successfully obtained from the server.
+#   1 when the version number does not exist on the server (new package).
+#   2 when there was some other error (missing wget?).
 # Echo:
 #   The current version number.
 function get_version_number()
@@ -15,13 +17,19 @@ function get_version_number()
         --no-check-certificate -q \
         --no-cache http://apt.aerofs.com/ubuntu/$2/versions/$1.current.ver
 
-    if [ $? -eq 0 ]
+    code=$?
+
+    if [ $code -eq 0 ]
     then
         cat $1.current.ver
         rm $1.current.ver
         return 0
-    else
+    elif [ $code -eq 8 ]
+    then
+        # not found (404). likely a new package.
         return 1
+    else
+        return 2
     fi
 }
 
@@ -45,16 +53,21 @@ test -d $debname
 if [ $? -ne 0 ]
 then
     echo "Don't know how to build '$debname'."
-    exit 1
+    exit 2
 fi
 
 # Pull the current version number.
 version=$(get_version_number aerofs-$debname $mode)
+code=$?
 
-if [ $? -ne 0 ]
+if [ $code -eq 1 ]
 then
     # Default version for new packages.
     version=1.0.0
+elif [ $code -eq 2 ]
+then
+    echo "Failed to get current version."
+    exit 3
 fi
 
 # Create the required control file with new build version to build the debian package.
@@ -86,7 +99,7 @@ EOF
 if [ $? -ne 0 ]
 then
     echo "Failure in fakeroot. (Do you have dpkg and fakeroot installed?)."
-    exit 1
+    exit 4
 fi
 
 rm -rf ${tmpdir}
