@@ -14,9 +14,9 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
 import com.aerofs.sp.server.lib.device.DeviceDatabase.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import sun.security.pkcs.PKCS10;
@@ -31,20 +31,22 @@ public class Device
 {
     public static class Factory
     {
-        private final DeviceDatabase _db;
-        private final CertificateDatabase _certdb;
-        private final CertificateGenerator _certgen;
+        private DeviceDatabase _db;
+        private CertificateDatabase _certdb;
+        private CertificateGenerator _certgen;
 
-        private final User.Factory _factUser;
+        private User.Factory _factUser;
+        private Certificate.Factory _factCert;
 
         @Inject
-        public Factory(DeviceDatabase db, User.Factory factUser, CertificateDatabase certdb,
-                CertificateGenerator certgen)
+        public void inject(DeviceDatabase db, CertificateDatabase certdb,
+                CertificateGenerator certgen, User.Factory factUser, Certificate.Factory factCert)
         {
             _db = db;
-            _factUser = factUser;
             _certdb = certdb;
             _certgen = certgen;
+            _factUser = factUser;
+            _factCert = factCert;
         }
 
         public Device create(@Nonnull DID did)
@@ -92,6 +94,13 @@ public class Device
             throws ExNotFound, SQLException
     {
         return _f._db.getName(_id);
+    }
+
+    public Certificate getCertificate()
+            throws ExNotFound, SQLException
+    {
+        long serial = _f._certdb.getSerial(_id);
+        return _f._factCert.create(serial);
     }
 
     /**
@@ -149,7 +158,7 @@ public class Device
      *
      * @throws ExNotFound if the device doesn't exist
      */
-    public Certificate certify(PKCS10 csr)
+    public CertificateGenerationResult certify(PKCS10 csr)
             throws IOException, ExNotFound, SQLException, ExBadArgs, ExAlreadyExist,
             SignatureException, CertificateException
     {
@@ -163,7 +172,7 @@ public class Device
                     _id.toStringFormal() + ") != " + cname);
         }
 
-        Certificate cert = _f._certgen.createCertificate(owner.id(), _id, csr);
+        CertificateGenerationResult cert = _f._certgen.generateCertificate(owner.id(), _id, csr);
 
         // Create the required entry in the certificate table. If this operation fails then
         // the CA will still have a record of the certificate, but we will not return it.
@@ -173,15 +182,7 @@ public class Device
 
         Util.l(this).info("created certificate for " + _id.toStringFormal() + " with serial " +
                 cert.getSerial() + " (expires on " + cert.getExpiry() + ")");
-        return cert;
-    }
 
-    /**
-     * Revoke all the certificates associated with the device
-     */
-    public ImmutableList<Long> revokeCertificates()
-            throws SQLException
-    {
-        return _f._certdb.revokeDeviceCertificates(_id);
+        return cert;
     }
 }

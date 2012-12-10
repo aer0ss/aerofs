@@ -16,6 +16,7 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
@@ -77,25 +78,31 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         OrganizationDatabase odb = new OrganizationDatabase(trans);
         SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
 
+        CertificateGenerator certgen = new CertificateGenerator();
+
         Organization.Factory factOrg = new Organization.Factory();
         SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
-        User.Factory factUser = new User.Factory(udb, factOrg, factSharedFolder);
+        Certificate.Factory factCert = new Certificate.Factory(certdb);
+        Device.Factory factDevice = new Device.Factory();
+
+        User.Factory factUser = new User.Factory(udb, factDevice, factOrg, factSharedFolder);
         {
+            factDevice.inject(ddb, certdb, certgen, factUser, factCert);
             factOrg.inject(odb, factUser);
             factSharedFolder.inject(sfdb, factUser);
         }
 
-        Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb,
-                new CertificateGenerator());
         SharedFolderInvitation.Factory factSFI = new SharedFolderInvitation.Factory(sfidb, factUser,
                 factSharedFolder);
 
         PasswordManagement passwordManagement =
                 new PasswordManagement(db, factUser, mock(PasswordResetEmailer.class));
+        ThreadLocalCertificateAuthenticator certificateAuthenticator =
+                new ThreadLocalCertificateAuthenticator();
 
         SPService service = new SPService(db, sfdb, trans, new MockSessionUser(),
-                passwordManagement, factUser, factOrg, factDevice, certdb, esdb, factSharedFolder,
-                factSFI, factEmailer);
+                passwordManagement, certificateAuthenticator, factUser, factOrg, factDevice,
+                factCert, certdb, esdb, factSharedFolder, factSFI, factEmailer);
 
         reactor = new SPServiceReactor(service);
     }

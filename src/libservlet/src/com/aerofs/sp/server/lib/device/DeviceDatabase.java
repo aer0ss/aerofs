@@ -104,7 +104,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
-    /**
+   /**
      * Trim the name before saving it to the db
      */
     public void setName(DID did, String name)

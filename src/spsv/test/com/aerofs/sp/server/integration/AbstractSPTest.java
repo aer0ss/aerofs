@@ -8,6 +8,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
@@ -21,9 +22,11 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
+import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
@@ -82,15 +85,21 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
 
     @Spy protected Organization.Factory factOrg = new Organization.Factory();
     @Spy protected SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
-    @Spy protected User.Factory factUser = new User.Factory(udb, factOrg, factSharedFolder);
+    @Spy protected Certificate.Factory factCert = new Certificate.Factory(certdb);
+    @Spy protected Device.Factory factDevice = new Device.Factory();
+    @Spy protected User.Factory factUser = new User.Factory(udb, factDevice, factOrg,
+            factSharedFolder);
     {
+        factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, factUser);
         factOrg.inject(odb, factUser);
     }
 
-    @Spy protected Device.Factory factDevice = new Device.Factory(ddb, factUser, certdb, certgen);
     @Spy protected Factory factSFI =
             new Factory(sfidb, factUser, factSharedFolder);
+
+    @Spy protected ThreadLocalCertificateAuthenticator certificateAuthenticator =
+            mock(ThreadLocalCertificateAuthenticator.class);
 
     // Mock invitation emailer for use with sp.shareFolder calls
     protected final InvitationEmailer.Factory factEmailer = mock(InvitationEmailer.Factory.class);
@@ -175,10 +184,10 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
 
     protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception
     {
-        Certificate cert = mock(Certificate.class);
+        CertificateGenerationResult cert = mock(CertificateGenerationResult.class);
 
         // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
-        when(certgen.createCertificate(any(UserID.class), any(DID.class),
+        when(certgen.generateCertificate(any(UserID.class), any(DID.class),
                 any(PKCS10.class))).thenReturn(cert);
 
         when(cert.toString()).thenReturn(AbstractSPCertificateBasedTest.RETURNED_CERT);
@@ -189,6 +198,21 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
                 1000L*60L*60L*24L*365L));
     }
 
+    protected void mockCertificateAuthenticatorSetAuthenticatedState()
+            throws ExBadCredential
+    {
+        when(certificateAuthenticator.isAuthenticated()).thenReturn(true);
+        when(certificateAuthenticator.getSerial())
+                .thenReturn(AbstractSPCertificateBasedTest._lastSerialNumber);
+    }
+
+    protected void mockCertificateAuthenticatorSetUnauthorizedState()
+            throws ExBadCredential
+    {
+        when(certificateAuthenticator.isAuthenticated()).thenReturn(false);
+        when(certificateAuthenticator.getSerial()).thenThrow(new ExBadCredential());
+    }
+
     protected static ByteString newCSR(UserID userID, DID did)
             throws IOException, GeneralSecurityException
     {
@@ -196,5 +220,4 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         return ByteString.copyFrom(SecUtil.newCSR(kp.getPublic(), kp.getPrivate(), userID, did)
                 .getEncoded());
     }
-
 }

@@ -43,7 +43,7 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
         assertTrue(ddb.hasDevice(_did));
         trans.commit();
 
-        verify(certgen).createCertificate(eq(TEST_1_USER), eq(_did), any(PKCS10.class));
+        verify(certgen).generateCertificate(eq(TEST_1_USER), eq(_did), any(PKCS10.class));
 
         // Make sure the cert is valid (what we expect).
         assertTrue(cert.equals(RETURNED_CERT));
