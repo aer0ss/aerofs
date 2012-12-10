@@ -122,7 +122,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
                 // DID from which it is pulling
                 DID didTo = to.pick_();
                 assert didTo != null;
-                Token tk = _f._tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "antiEntropy");
+                Token tk = _f._tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "AE");
                 try {
                     _f._pgvc.rpc_(_sidx, didTo, tk);
                 } finally {
