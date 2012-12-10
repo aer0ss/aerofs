@@ -37,7 +37,7 @@ import java.nio.channels.ClosedChannelException;
  */
 public class ZephyrPipeHandler extends SimpleChannelHandler
 {
-    private static final Logger LOGGER = Loggers.getLogger(ZephyrPipeHandler.class);
+    private static final Logger l = Loggers.getLogger(ZephyrPipeHandler.class);
 
     private int _localZid = ZEPHYR_INVALID_CHAN_ID;
     private int _remoteZid = ZEPHYR_INVALID_CHAN_ID;
@@ -338,7 +338,7 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         {
             int zid = decodeZephyrID(buffer);
             if (zid == ZEPHYR_INVALID_CHAN_ID) return null;
-            LOGGER.trace("receiveZid: {}", zid);
+            l.trace("receiveZid: {}", zid);
 
             // remove this handler after reading header
             ctx.getPipeline().remove(this);

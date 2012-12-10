@@ -486,7 +486,7 @@ message PBObjectAttributes {
 
 /**
  * Each Branch object describes the attributes of a branch of a file. Files that
- * haven't been downloaded has zero branches. Otherwise, they must have
+ * haven't been downloaded have zero branches. Otherwise, they must have
  * as least a master branch.
  */
 message PBBranch {

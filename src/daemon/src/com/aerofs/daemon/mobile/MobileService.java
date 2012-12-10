@@ -10,6 +10,7 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -35,6 +36,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -60,6 +62,7 @@ import java.util.Map.Entry;
 
 public class MobileService implements IMobileService
 {
+    private final static Logger l = Util.l(MobileService.class);
     private static final Prio PRIO = Prio.LO;
 
     private static final byte[] MAGIC_BYTES = "MOBL".getBytes();
@@ -109,6 +112,8 @@ public class MobileService implements IMobileService
 
         GetChildrenAttributesReply.Builder bd = GetChildrenAttributesReply.newBuilder();
         for (OA oa : ev._oas) {
+            // Skip this object if it doesn't have a master branch (file not yet downloaded)
+            if (oa.isFile() && oa.caMasterNullable() == null) continue;
             bd.addChildrenName(oa.name());
             bd.addChildrenAttributes(toPB(oa));
         }
@@ -203,8 +208,11 @@ public class MobileService implements IMobileService
             for (Entry<KIndex, CA> en : oa.cas().entrySet()) {
                 bd.addBranch(PBBranch.newBuilder()
                         .setKidx(en.getKey().getInt())
-                        .setLength(en.getValue().length()));
+                        .setLength(en.getValue().length())
+                        .setMtime(en.getValue().mtime()));
             }
+            // asserts that the first branch is indeed the master branch
+            if (bd.getBranchCount() > 0) assert bd.getBranch(0).getKidx() == KIndex.MASTER.getInt();
             break;
         default: assert false;
         }

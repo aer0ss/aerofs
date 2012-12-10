@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class NettyZephyrServer implements ChannelPipelineFactory
 {
-    private static final Logger LOGGER = Loggers.getLogger(NettyZephyrServer.class);
+    private static final Logger l = Loggers.getLogger(NettyZephyrServer.class);
 
     private static final boolean ENABLE_FLOW_CONTROL = true;
 
@@ -63,7 +63,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
         bootstrap.setOption("child.keepAlive", true);
         bootstrap.setPipelineFactory(this);
         _channel = bootstrap.bind();
-        LOGGER.info("listening on {}", _channel.getLocalAddress());
+        l.info("listening on {}", _channel.getLocalAddress());
         _channelGroup.add(_channel);
     }
 
@@ -134,7 +134,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
             public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
                     throws Exception
             {
-//                LOGGER.info("connection {}", conn());
+//                l.info("connection {}", conn());
 //                _channel.write(_id);
                 ctx.sendDownstream(new ZephyrPipeHandler.SendZephyrIDEvent(e.getChannel(), _id));
                 super.channelConnected(ctx, e);
@@ -156,7 +156,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
             public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e)
                     throws Exception
             {
-//                LOGGER.info("connection {} disconnected", conn());
+//                l.info("connection {} disconnected", conn());
                 e.getChannel().close();
             }
 
@@ -164,7 +164,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
             public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
                     throws Exception
             {
-//                LOGGER.info("connection " + conn() + " caught exception", e.getCause());
+//                l.info("connection " + conn() + " caught exception", e.getCause());
                 e.getChannel().close();
             }
         }
@@ -184,7 +184,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
                     synchronized (_trafficLock) {
                         peer._channel.write(e.getMessage());
                         if (!peer._channel.isWritable()) {
-//                            LOGGER.debug("{}: not writable", _peer);
+//                            l.debug("{}: not writable", _peer);
                             if (ENABLE_FLOW_CONTROL) {
                                 _channel.setReadable(false);
                                 // check for race condition
@@ -205,7 +205,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
                     if (ENABLE_FLOW_CONTROL && peer != null) {
                         synchronized (peer._trafficLock) {
                             if (_channel.isWritable()) {
-//                                LOGGER.debug("{} writable", conn());
+//                                l.debug("{} writable", conn());
                                 peer._channel.setReadable(true);
                             }
                         }
@@ -246,7 +246,7 @@ public class NettyZephyrServer implements ChannelPipelineFactory
                 close();
                 return;
             }
-            LOGGER.info("{}: got peer {}", conn(), _peer.conn());
+            l.info("{}: got peer {}", conn(), _peer.conn());
             boolean peerClosed;
             synchronized (_peer) {
                 peerClosed = _peer._closed;
