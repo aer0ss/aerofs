@@ -11,10 +11,12 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
@@ -32,7 +34,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
-import javax.annotation.Nullable;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -178,14 +180,22 @@ public class ACLSynchronizer
             return;
         }
 
+        /**
+         * Ugly hack: we currently offer no way to properly leave a shared folder. The auto-join
+         * workflow causes all shared folder to be recreated on every new install. For end-users
+         * this is unlikely to be a problem. For system tests however where the same user account
+         * is reused over and over again a huge number of shared folder are accumulated over time
+         * and re-joining them all causes all sort of troubles.
+         *
+         * The long term solution is to add the missing "leave" part of the sharing workflow but
+         * in the meantime we simply use a flag file to prevent auto-joining on the first ACL update
+         */
+        File noJoinFlagFile = new File(Cfg.absRTRoot(), "nojoin");
+        boolean noAutoJoin = noJoinFlagFile.exists();
+
         Trans t = _tm.begin_();
         try {
-            Set<SIndex> previouslyAccessibleStores = Sets.newHashSet();
-            for (SIndex sidx : _stores.getAll_()) {
-                if (_lacl.get_(sidx).get(_cfgLocalUser.get()) != null) {
-                    previouslyAccessibleStores.add(sidx);
-                }
-            }
+            Set<SIndex> stores = Sets.newHashSet(_stores.getAll_());
 
             _lacl.clear_(t);
 
@@ -193,13 +203,30 @@ public class ACLSynchronizer
                 SID sid = entry.getKey();
                 Map<UserID, Role> roles = entry.getValue();
 
+                // did we already know about that store (shouldn't try to join a deleted store)
+                boolean known = (_sid2sidx.getLocalOrAbsentNullable_(sid) != null);
+
+                // create a new SIndex if needed
                 SIndex sidx = getOrCreateSIndex_(sid, t);
 
-                joinOrLeaveStore(sidx, sid, serverACLReturn._newStoreNames.get(sid), roles,
-                        previouslyAccessibleStores, t);
+                // join or leave store as needed when ACL entry changes
+                boolean accessible = roles.containsKey(_cfgLocalUser.get());
+                if (stores.contains(sidx) && !accessible) {
+                    // locally present and no longer accessible: auto-leave
+                    _storeJoiner.leaveStore(sidx, sid, t);
+                } else if (!known && accessible && !noAutoJoin) {
+                    // not known and accessible: auto-join
+                    assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
+                    String folderName = serverACLReturn._newStoreNames.get(sid);
+                    _storeJoiner.joinStore(sidx, sid, folderName, t);
+                }
+                stores.remove(sidx);
 
-                _lacl.set_(sidx, roles, t); // invalidates the cache
+                // invalidates the cache
+                _lacl.set_(sidx, roles, t);
             }
+
+            // TODO: if ACL entry disappears completely, convert back to regular folder?
 
             _adb.setEpoch_(serverACLReturn._serverEpoch, t);
 
@@ -207,26 +234,15 @@ public class ACLSynchronizer
         } finally {
             t.end_();
         }
+
+        // delete flag file to allow further share/join operations to work as expected
+        FileUtil.delete(noJoinFlagFile);
     }
 
     private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception
     {
         SIndex sidx = _sid2sidx.getNullable_(sid);
         return sidx != null ? sidx : _sid2sidx.getAbsent_(sid, t);
-    }
-
-    private void joinOrLeaveStore(SIndex sidx, SID sid, @Nullable String newName,
-            Map<UserID, Role> roles, Set<SIndex> previouslyAccessibleStores, Trans t)
-            throws Exception
-    {
-        boolean nowAccessible = roles.containsKey(_cfgLocalUser.get());
-        boolean previouslyAccessible = previouslyAccessibleStores.contains(sidx);
-        if (nowAccessible && !previouslyAccessible) {
-            assert newName != null : sid + " " + roles;
-            _storeJoiner.joinStore(sidx, sid, newName, t);
-        } else if (!nowAccessible && previouslyAccessible) {
-            _storeJoiner.leaveStore(sidx, sid, t);
-        }
     }
 
     private ServerACLReturn getServerACL_(long localEpoch)
@@ -284,7 +300,7 @@ public class ACLSynchronizer
 
     private boolean isNewStore_(SID sid) throws ExNotFound, SQLException
     {
-        SIndex sidx = _sid2sidx.getNullable_(sid);
+        SIndex sidx = _sid2sidx.getLocalOrAbsentNullable_(sid);
         return (sidx == null || _lacl.get_(sidx).get(_cfgLocalUser.get()) == null);
     }
 
