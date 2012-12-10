@@ -26,6 +26,11 @@ public interface IMapSID2SIndex
     @Nonnull SIndex get_(SID sid);
 
     /**
+     * Get the corresponding SIndex for a locally present or expelled SID
+     */
+    @Nullable SIndex getLocalOrAbsentNullable_(SID sid) throws SQLException;
+
+    /**
      * Get the corresponding SIndex for SIDs that don't exist locally
      *
      * @pre the store doesn't exist locally.

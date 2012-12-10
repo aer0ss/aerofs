@@ -75,12 +75,16 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     }
 
     @Override
+    public @Nullable SIndex getLocalOrAbsentNullable_(SID sid) throws SQLException
+    {
+        return _db.getSIndex_(sid);
+    }
+
+    @Override
     public @Nonnull SIndex getAbsent_(SID sid, Trans t) throws SQLException
     {
         assert getNullable_(sid) == null : sid;
-
-        // because absent stores are queried less frequently, we don't cache the results in memory.
-        SIndex sidx = _db.getSIndex_(sid);
+        SIndex sidx = getLocalOrAbsentNullable_(sid);
         if (sidx == null) sidx = _db.addSID_(sid, t);
         return sidx;
     }
