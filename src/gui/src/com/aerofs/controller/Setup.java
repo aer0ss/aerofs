@@ -22,6 +22,7 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
@@ -199,7 +200,7 @@ class Setup
      * Perform pre-setup sanity checks and generate information needed by later setup steps
      */
     private PreSetupResult preSetup(UserID userID, char[] password, String rootAnchorPath)
-            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExBadArgs
+            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage
     {
         assert !rootAnchorPath.isEmpty();
 
