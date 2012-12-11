@@ -9,12 +9,15 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotDir;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 public abstract class RootAnchorUtil
 {
@@ -33,11 +36,11 @@ public abstract class RootAnchorUtil
      * @throws com.aerofs.lib.ex.ExNotDir if the root anchor path points to a file.
      * @throws com.aerofs.lib.ex.ExAlreadyExist if the root anchor is nonempty
      * @throws com.aerofs.lib.ex.ExNoPerm if AeroFS cannot read or write to root anchor
-     * @throws com.aerofs.lib.ex.ExBadArgs if root anchor filesystem is not supported
+     * @throws com.aerofs.lib.ex.ExUIMessage if root anchor filesystem is not supported
      */
     public static void checkRootAnchor(String rootAnchor, String rtRoot,
             boolean allowNonEmptyFolder)
-            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExBadArgs
+            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage
     {
         File fRootAnchor = new File(rootAnchor);
 
@@ -70,6 +73,9 @@ public abstract class RootAnchorUtil
         if (Cfg.useFSTypeCheck(rtRoot)) {
             OutArg<Boolean> remote = new OutArg<Boolean>();
             String type = OSUtil.get().getFileSystemType(fToCheck.getAbsolutePath(), remote);
+            if (unsupportedFsBetterNames.containsKey(type)) {
+                    type = unsupportedFsBetterNames.get(type);
+            }
             boolean supported = OSUtil.get().isFileSystemTypeSupported(type.toUpperCase(), remote.get());
             if (!supported) {
                 String r = remote.get() != null && remote.get() ? "remote " : "";
@@ -77,11 +83,16 @@ public abstract class RootAnchorUtil
                 SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
                         null, UserID.fromInternal("n/a"), rtRoot);
 
-                throw new ExBadArgs(S.PRODUCT + " doesn't support " + r + type +
+                throw new ExUIMessage(S.PRODUCT + " doesn't support " + r + type +
                         " filesystems on " + OSUtil.getOSName() + " at this moment");
             }
         }
     }
+
+    // We can add additional user-friendly name mappings, in case more users happen to
+    // try to use filesystems that stat doesn't know about.
+    private static Map<String, String> unsupportedFsBetterNames = ImmutableMap.of(
+            "UNKNOWN (0xf15f)", "ecryptfs");
 
     /**
      * Test if a new anchor root is valid against the old path. Use the format of
