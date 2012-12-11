@@ -57,8 +57,14 @@ public interface IMetaDatabase
      */
     @Nullable OA getOA_(SOID soid) throws SQLException;
 
-    void setOAParentAndName_(SIndex sidx, OID oid, OID parent,
-            String name, Trans t) throws SQLException, ExAlreadyExist;
+    void setOAParentAndName_(SIndex sidx, OID oid, OID parent, String name, Trans t)
+            throws SQLException, ExAlreadyExist;
+
+    void setOAParent_(SIndex sidx, OID oid, OID parent, Trans t)
+            throws SQLException, ExAlreadyExist;
+
+    void replaceOAOID_(SIndex sidx, OID oidOld, OID oidNew, Trans t)
+            throws SQLException, ExAlreadyExist;
 
     void setOAFlags_(SOID soid, int flags, Trans t) throws SQLException;
 

@@ -499,6 +499,8 @@ public class ReceiveAndApplyUpdate
             // The current approach to resolve this conflict is to move the to-be parent object
             // under the child's current parent. It's not beautiful but works and will reach
             // consistency  across devices.
+            l.debug("resolve remote parent is locally nested under child " + child + " "
+                    + remoteParent);
 
             try {
                 // Avoid a local name conflict in the new path of the remote parent object

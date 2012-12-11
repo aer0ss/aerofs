@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -17,7 +18,6 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
-import com.google.common.base.Joiner;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.security.DigestException;
 import java.sql.SQLException;
 import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Helper class for Aliasing.java that helps in moving version vectors, content etc.
@@ -259,14 +262,20 @@ public class AliasingMover
     public void moveChildrenFromAliasToTargetDir_(SIndex sidx, SOID alias, SOID target, Trans t)
         throws Exception
     {
-        assert _ds.getOA_(alias).isDir();
-        assert _ds.getOA_(target).isDir();
+        OA oaAlias = _ds.getOA_(alias);
+        checkArgument(oaAlias.isDir());
+        checkArgument(_ds.getOA_(target).isDir());
 
-        Path targetPath = _ds.resolve_(target);
-        Path aliasPath = _ds.resolve_(alias);
-
-        assert !targetPath.isUnder(aliasPath)
-                : Joiner.on(' ').join(target, alias, targetPath, aliasPath);
+        final Path targetPath = _ds.resolve_(target);
+        final Path aliasPath = _ds.resolve_(alias);
+        if (targetPath.isUnder(aliasPath)) {
+            // If the target object is under the alias, we cannot move children of the alias
+            // into the descendent target, lest horrible cycles result. Instead, swap the positions
+            // of the target and alias OIDs in the logical directory tree, then move children of
+            // the alias into the target folder
+            _ds.swapOIDsInSameStoreForAliasing_(sidx, alias.oid(), target.oid(), t);
+            checkState(_ds.getOA_(target).fid().equals(oaAlias.fid()));
+        }
 
         // Files/dirs directly under the target dir will retain their names, whereas files/dirs
         // directly under the alias dir are renamed to avoid name conflict
