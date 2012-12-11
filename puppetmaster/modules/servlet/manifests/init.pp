@@ -46,7 +46,7 @@ class servlet (
 
     $metrics = hiera("metrics")
 
-    include nginx
+    class{"nginx":}
 
     file {"/etc/nginx/certs":
         ensure => directory,
@@ -73,6 +73,15 @@ class servlet (
         source  => "puppet:///aerofs_ssl/ssl.cert",
         require => File["/etc/nginx/certs"],
         notify  => Service["nginx"]
+    }
+
+    file {"/etc/security/limits.d/nginx-max-files.conf":
+        ensure => present,
+        owner  => "root",
+        group  => "root",
+        mode   => "0644",
+        source => "puppet:///modules/servlet/nginx-max-files.conf",
+        notify => Service["nginx"],
     }
 
     # N.B. we are using a custom nginx module so that we can configure the proxy read and send
