@@ -53,23 +53,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     // UTILITY
     //
 
-    private Set<String> mockVerkehrToSuccessfullyPublishAndStoreSubscribers()
-    {
-        final Set<String> published = new HashSet<String>();
-        when(verkehrPublisher.publish_(any(String.class), any(byte[].class))).then(new
-        Answer<Object>()
-        {
-            @Override
-            public Object answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                published.add((String)invocation.getArguments()[0]);
-                return UncancellableFuture.createSucceeded(null);
-            }
-        });
-        return published;
-    }
-
     private List<PBSubjectRolePair> assertValidACLReplyAndGetPairs(GetACLReply getACLReply,
             long expectedEpoch, int numberOfACLEntries)
     {
@@ -125,7 +108,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         setupMockVerkehrToSuccessfullyPublish();
 
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
 
         GetACLReply getAcl = service.getACL(0L).get();
 
@@ -146,14 +129,14 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
-        // add yourself
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        // create shared folder and invite a first user
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
         assertEquals(1, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
         published.clear();
 
-        // add the second person
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
+        // inviteee joins
+        joinSharedFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2);
         assertEquals(2, published.size());
         assertTrue(published.contains(TEST_USER_1.toString()));
         assertTrue(published.contains(TEST_USER_2.toString()));
@@ -185,10 +168,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         setupMockVerkehrToSuccessfullyPublish();
 
-        // add the owner
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
-
-        // add an editor
+        // share folder and invitea new editor
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         // get the editor to try and make some role changes
@@ -209,11 +189,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
-        // add the owner
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
-        published.clear(); // don't care
-
-        // add a second person (as owner)
+        // share a folder and add a second person (as owner)
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.OWNER);
         published.clear(); // don't care
 
@@ -262,8 +238,8 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
-        // add the owner
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        // share folder
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         published.clear(); // don't care
 
         // now attempt to delete someone for whom the role doesn't exist
@@ -289,21 +265,24 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         assertACLContains(TEST_USER_1, Role.OWNER, pairs);
     }
 
-    @Test(expected = ExNoPerm.class)
+    @Test
     public void shouldReturnExNoPermIfNonOwnerAttemptsToDeleteACLEntry()
             throws Exception
     {
         setupMockVerkehrToSuccessfullyPublish();
 
-        // add the owner
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
-
-        // add an editor
+        // share folder with an editor
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
 
         // get the editor to try to delete the owner
         setSessionUser(TEST_USER_2);
-        service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1.toString())).get();
+        boolean ok = false;
+        try {
+            service.deleteACL(TEST_SID_1.toPB(), Arrays.asList(TEST_USER_1.toString())).get();
+        } catch (ExNoPerm e) {
+            ok = true;
+        }
+        assertTrue(ok);
     }
 
     @Test
@@ -312,16 +291,10 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         setupMockVerkehrToSuccessfullyPublish();
 
-        // add the owner for store # 1
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
-
-        // add the owner for store # 2
-        shareAndJoinFolder(TEST_USER_2, TEST_SID_2, TEST_USER_2, Role.OWNER);
-
-        // add an editor for store # 1
+        // share store # 1
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
 
-        // add an editor for store # 2
+        // share store # 2
         shareAndJoinFolder(TEST_USER_2, TEST_SID_2, TEST_USER_3, Role.EDITOR);
 
         // now have the editor do a getacl call
@@ -361,9 +334,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
-        // add the owner for store # 1
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
-
         // add user 3 as editor for store # 1
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
 
@@ -402,7 +372,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
         // add the owner for store # 1
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
+        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
         published.clear(); // throw away this notification
 
         // update ACL for user 3 as user 1
@@ -428,31 +398,28 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         assertEquals(0, reply.getStoreAclCount());
     }
 
-    @Test (expected = ExNoPerm.class) // thrown when editor tries to update ACL entry
+    @Test
     public void shouldForbidUpdateACLFromUserWithNonOwnerPermissions()
             throws Exception
     {
         Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
 
-        // add the owner for store # 1
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.OWNER);
-
         // add user 3 as editor for store # 1
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_3, Role.EDITOR);
-
         published.clear(); // throw away these notifications
 
         // try to edit user 1's ACL entry for store 1 as user 3
         setSessionUser(TEST_USER_3);
-        Exception ex = null;
+        boolean ok = false;
         try {
             // should fail with ExNoPerm
             service.updateACL(TEST_SID_1.toPB(), toPB(TEST_USER_1, Role.EDITOR));
-        } catch (Exception e) {
+        } catch (ExNoPerm e) {
             // make sure we clean up after uncommitted transaction(s)
             trans.handleException();
-            ex = e;
+            ok = true;
         }
+        assertTrue(ok);
 
         // ensure that nothing was published
         assertEquals(0, published.size());
@@ -465,8 +432,5 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         List<PBSubjectRolePair> pairs = reply.getStoreAcl(0).getSubjectRoleList();
         assertACLContains(TEST_USER_1, Role.OWNER, pairs);
         assertACLContains(TEST_USER_3, Role.EDITOR, pairs);
-
-        // rethrow exception caught above
-        if (ex != null) throw ex;
     }
 }
