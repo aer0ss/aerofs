@@ -8,50 +8,61 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.object.ObjectCreator;
+import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.id.OID;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UserID;
 import com.google.inject.Inject;
-
-import java.util.Map;
+import org.apache.log4j.Logger;
 
 public class SingleuserStoreJoiner implements IStoreJoiner
 {
+    private final static Logger l = Util.l(SingleuserStoreJoiner.class);
+
     private final SingleuserStores _stores;
     private final ObjectCreator _oc;
+    private final ObjectDeleter _od;
     private final DirectoryService _ds;
     private final CfgRootSID _cfgRootSID;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
-            CfgRootSID cfgRootSID)
+            ObjectDeleter od, CfgRootSID cfgRootSID)
     {
         _ds = ds;
         _oc = oc;
+        _od = od;
         _stores = stores;
         _cfgRootSID = cfgRootSID;
     }
 
     @Override
-    public void joinStore_(SIndex sidx, SID sid, String folderName, Map<UserID, Role> newRoles,
-            Trans t) throws Exception
+    public void joinStore_(SIndex sidx, SID sid, String folderName, Trans t) throws Exception
     {
         // ignore changes on the root store.
         if (sid.equals(_cfgRootSID.get())) return;
 
-        SIndex parent = _stores.getRoot_();
+        SIndex root = _stores.getRoot_();
+
+        /**
+         * If the original folder is already present in the root store we should not auto-join but
+         * instead wait for the conversion to propagate. We do not check for its presence in other
+         * stores as some migration scenarios could lead us to wrongly ignore explicit joins (e.g
+         * if a subfolder of a shared folder is moved up to the root store, shared and joined
+         * before the original move propagates)
+         */
+        OID oid = SID.convertedStoreSID2folderOID(sid);
+        if (_ds.hasOA_(new SOID(root, oid))) return;
 
         assert folderName != null : sidx + " " + sid.toStringFormal();
 
-        SOID anchor = new SOID(parent, SID.storeSID2anchorOID(sid));
+        SOID anchor = new SOID(root, SID.storeSID2anchorOID(sid));
         OA oaAnchor = _ds.getOANullable_(anchor);
 
         /*
@@ -70,7 +81,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             return;
         }
 
-        Util.l(this).info("joining share: " + sidx + " " + folderName);
+        l.info("joining share: " + sidx + " " + folderName);
 
         while (true) {
             try {
@@ -90,15 +101,29 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         // TODO: send path of joined folder via Ritual Notification
 
-        Util.l(this).debug("joined " + sid + " at " + folderName);
+        l.debug("joined " + sid + " at " + folderName);
     }
 
     @Override
-    public void leaveStore_(SIndex sidx, SID sid, Map<UserID, Role> newRoles, Trans t) throws Exception
+    public void leaveStore_(SIndex sidx, SID sid, Trans t) throws Exception
     {
-        // we should never be asked to leave the root store.
-        assert !sid.equals(_cfgRootSID.get());
+        /**
+         * Because there is currently no ACL stored for root stores, we will be asked to leave the
+         * root store on every ACL update. Simply ignore that for the time being. When we do store
+         * ACL for root stores (for team server's benefit) we should switch to an assert...
+         */
+        if (sid.equals(_cfgRootSID.get())) return;
 
-        // TODO:
+        SOID anchor = new SOID(_stores.getParent_(sidx), SID.storeSID2anchorOID(sid));
+        OA oa = _ds.getOA_(anchor);
+
+        // nothing to do if the anchor is already deleted...
+        // NB: isDeleted may be expensive and !expelled => !deleted
+        if (oa.isExpelled() && _ds.isDeleted_(oa)) return;
+
+        l.info("leaving share: " + sidx + " " + sid);
+        _od.delete_(anchor, PhysicalOp.APPLY, null, t);
+
+        // TODO: send path of folder left via Ritual notification?
     }
 }

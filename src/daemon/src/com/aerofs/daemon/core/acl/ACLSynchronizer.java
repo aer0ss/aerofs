@@ -189,47 +189,14 @@ public class ACLSynchronizer
          *
          * The long term solution is to add the missing "leave" part of the sharing workflow but
          * in the meantime we simply use a flag file to prevent auto-joining on the first ACL update
+         * TODO: implicitly leave shared folder when the user deletes
          */
         File noJoinFlagFile = new File(Cfg.absRTRoot(), "nojoin");
         boolean noAutoJoin = noJoinFlagFile.exists();
 
         Trans t = _tm.begin_();
         try {
-            Set<SIndex> stores = Sets.newHashSet(_stores.getAll_());
-
-            _lacl.clear_(t);
-
-            for (Map.Entry<SID, Map<UserID, Role>> entry : serverACLReturn._acl.entrySet()) {
-                SID sid = entry.getKey();
-                Map<UserID, Role> newRoles = entry.getValue();
-
-                // did we already know about that store (shouldn't try to join a deleted store)
-                boolean known = (_sid2sidx.getLocalOrAbsentNullable_(sid) != null);
-
-                // create a new SIndex if needed
-                SIndex sidx = getOrCreateSIndex_(sid, t);
-
-                // join or leave store as needed when ACL entry changes
-                boolean accessible = newRoles.containsKey(_cfgLocalUser.get());
-                if (stores.contains(sidx) && !accessible) {
-                    // locally present and no longer accessible: auto-leave
-                    _storeJoiner.leaveStore_(sidx, sid, newRoles, t);
-                } else if (!known && accessible && !noAutoJoin) {
-                    // not known and accessible: auto-join
-                    assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
-                    String folderName = serverACLReturn._newStoreNames.get(sid);
-                    _storeJoiner.joinStore_(sidx, sid, folderName, newRoles, t);
-                }
-                stores.remove(sidx);
-
-                // invalidates the cache
-                _lacl.set_(sidx, newRoles, t);
-            }
-
-            // TODO: if ACL entry disappears completely, convert back to regular folder?
-
-            _adb.setEpoch_(serverACLReturn._serverEpoch, t);
-
+            updateACLAndAutoJoinLeaveStores_(serverACLReturn, noAutoJoin, t);
             t.commit_();
         } finally {
             t.end_();
@@ -237,6 +204,43 @@ public class ACLSynchronizer
 
         // delete flag file to allow further share/join operations to work as expected
         if (noAutoJoin) FileUtil.delete(noJoinFlagFile);
+    }
+
+    private void updateACLAndAutoJoinLeaveStores_(ServerACLReturn serverACLReturn,
+            boolean noAutoJoin, Trans t) throws Exception
+    {
+        Set<SIndex> stores = Sets.newHashSet(_stores.getAll_());
+
+        _lacl.clear_(t);
+
+        for (Map.Entry<SID, Map<UserID, Role>> entry : serverACLReturn._acl.entrySet()) {
+            SID sid = entry.getKey();
+            Map<UserID, Role> roles = entry.getValue();
+
+            // did we already know about that store (shouldn't try to join a deleted store)
+            boolean known = (_sid2sidx.getLocalOrAbsentNullable_(sid) != null);
+
+            // create a new SIndex if needed
+            SIndex sidx = getOrCreateSIndex_(sid, t);
+
+            // the local user should always be present in the ACL for each store in the reply
+            assert roles.containsKey(_cfgLocalUser.get()) : roles;
+            if (!known && !noAutoJoin) {
+                // not known and accessible: auto-join
+                assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
+                String folderName = serverACLReturn._newStoreNames.get(sid);
+                _storeJoiner.joinStore_(sidx, sid, folderName, t);
+            }
+            stores.remove(sidx);
+
+            // invalidates the cache
+            _lacl.set_(sidx, roles, t);
+        }
+
+        // leave stores to which we no longer have access
+        for (SIndex sidx : stores) _storeJoiner.leaveStore_(sidx, _sidx2sid.get_(sidx), t);
+
+        _adb.setEpoch_(serverACLReturn._serverEpoch, t);
     }
 
     private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception

@@ -272,7 +272,7 @@ public class TestACLSynchronizer extends AbstractTest
         newRoles.put(user1, Role.OWNER);
         newRoles.put(user2, Role.EDITOR);
 
-        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq("shared"), eq(newRoles), eq(t));
+        verify(storeJoiner).joinStore_(eq(sidx), eq(sid1), eq("shared"), eq(t));
     }
 
     @Test
@@ -285,16 +285,16 @@ public class TestACLSynchronizer extends AbstractTest
         when(stores.getAll_()).thenReturn(ImmutableSet.of(sidx));
 
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
-        mockGetACL(42L, storeACL(sid1));
+        mockGetACL(42L);
 
         aclsync.syncToLocal_();
 
         verify(spClient).getACL(anyLong());
-        verify(storeJoiner).leaveStore_(sidx, sid1, Collections.<UserID, Role>emptyMap(), t);
+        verify(storeJoiner).leaveStore_(sidx, sid1, t);
     }
 
     @Test
-    public void shouldNotJoinFolderWhenAccessUnchanged() throws Exception
+    public void shouldNotJoinOrLeaveFolderWhenAccessUnchanged() throws Exception
     {
         SIndex sidx = new SIndex(2);
         when(sid2sidx.get_(sid1)).thenReturn(sidx);
@@ -305,24 +305,6 @@ public class TestACLSynchronizer extends AbstractTest
 
         mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user1, Role.OWNER),
                 new SubjectRolePair(user2, Role.EDITOR)));
-
-        aclsync.syncToLocal_();
-
-        verify(spClient).getACL(anyLong());
-        verifyNoMoreInteractions(storeJoiner);
-    }
-
-    @Test
-    public void shouldNotLeaveFolderWhenAccessUnchanged() throws Exception
-    {
-        SIndex sidx = new SIndex(2);
-        when(sid2sidx.getNullable_(sid1)).thenReturn(null);
-        when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
-        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
-        when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
-
-        mockGetSharedFolderNames(sid1, "shared");
-        mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user2, Role.EDITOR)));
 
         aclsync.syncToLocal_();
 

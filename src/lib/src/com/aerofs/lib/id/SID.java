@@ -63,7 +63,7 @@ public class SID extends UniqueID
         assert (v == 3 || v == 0) : toStringFormal();
     }
 
-    private boolean isRoot()
+    public boolean isRoot()
     {
         return getVersionNibble(getBytes()) == 3;
     }
