@@ -128,7 +128,7 @@ public class MockDS
 
         // mock root store
         SIndex sidx = new SIndex(_nextSidx++);
-        _sid = new SID(UniqueID.generate());
+        _sid = SID.generate(); // TODO: use valid root store id
         _root = new MockDSDir(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
         _trash = new MockDSDir(C.TRASH, _root, true, new SOID(sidx, OID.TRASH));
 
@@ -495,14 +495,14 @@ public class MockDS
             init();
         }
 
-        MockDSDir(String name, MockDSDir parent, SOID sidx) throws Exception
+        MockDSDir(String name, MockDSDir parent, SOID soid) throws Exception
         {
-            this(name, parent, false, sidx);
+            this(name, parent, false, soid);
         }
 
-        MockDSDir(String name, MockDSDir parent, Boolean expelled, SOID sidx) throws Exception
+        MockDSDir(String name, MockDSDir parent, Boolean expelled, SOID soid) throws Exception
         {
-            super(name, parent, expelled, sidx);
+            super(name, parent, expelled, soid);
 
             init();
         }
@@ -682,7 +682,8 @@ public class MockDS
 
         MockDSAnchor(String name, MockDSDir parent, Boolean expelled) throws Exception
         {
-            super(name, parent, expelled);
+            super(name, parent, expelled,
+                    new SOID(parent.soid().sidx(), SID.storeSID2anchorOID(SID.generate())));
 
             // DS mocking
             when(_oa.type()).thenReturn(Type.ANCHOR);

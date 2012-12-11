@@ -9,7 +9,6 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.AbstractAutoTransactionedTestWithSPDatabase;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -83,7 +82,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
 
     SharedFolder newSharedFolder()
     {
-        return newSharedFolder(new SID(UniqueID.generate()));
+        return newSharedFolder(SID.generate());
     }
 
     SharedFolder newSharedFolder(SID sid)
@@ -94,7 +93,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     SharedFolder createNewSharedFolder(User owner)
             throws ExNoPerm, IOException, ExNotFound, ExAlreadyExist, SQLException
     {
-        return createNewSharedFolder(new SID(UniqueID.generate()), owner);
+        return createNewSharedFolder(SID.generate(), owner);
     }
 
     SharedFolder createNewSharedFolder(SID sid, User owner)

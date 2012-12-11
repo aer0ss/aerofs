@@ -171,7 +171,7 @@ public class CoreSchema implements ISchema
             // Expulsion Table
             T_EX             = "e",
             C_EX_SIDX        = "e_s",       // SIndex
-            C_EX_OID         = "e_o",       // DID
+            C_EX_OID         = "e_o",       // OID
 
             // ACL Table
             T_ACL            = "a",

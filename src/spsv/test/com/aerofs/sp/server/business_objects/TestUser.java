@@ -11,7 +11,6 @@ import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -158,8 +157,8 @@ public class TestUser extends AbstractBusinessObjectTest
         User tsUserOld = newUser(orgOld.id().toTeamServerUserID());
 
         SharedFolder sfRoot = factSharedFolder.create_(SID.rootSID(user.id()));
-        SharedFolder sf1 = factSharedFolder.create_(new SID(UniqueID.generate()));
-        SharedFolder sf2 = factSharedFolder.create_(new SID(UniqueID.generate()));
+        SharedFolder sf1 = factSharedFolder.create_(SID.generate());
+        SharedFolder sf2 = factSharedFolder.create_(SID.generate());
         sf1.createNewSharedFolder("haha", user);
         sf2.createNewSharedFolder("haha", user);
 

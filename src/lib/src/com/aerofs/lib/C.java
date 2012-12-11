@@ -87,9 +87,7 @@ public class C
     public static final long GB = 1024 * MB;
 
     // This number increments every time the protocol is updated
-    // - whenever changing this number, the major version number also needs to
-    //   be incremented (on top of aerofs.daemon/tools/build)
-    public static final int CORE_MAGIC                  = 0x637265BE;
+    public static final int CORE_MAGIC                  = 0x637265BF;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
     // Make sure to also update:
@@ -97,8 +95,8 @@ public class C
     // 2) src/web/production.ini
     // 3) syncdet_test/lib/param.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 17;
-    public static final int SS_PROTOCOL_VERSION         = 5;
+    public static final int SP_PROTOCOL_VERSION         = 18;
+    public static final int SS_PROTOCOL_VERSION         = 6;
 
     public static final byte[] ROOT_SID_SALT       = new byte[]
         { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };

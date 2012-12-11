@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
 {
-    private static final SID TEST_SID_1 = new SID(UniqueID.generate());
+    private static final SID TEST_SID_1 = SID.generate();
 
     // Arbitrarily test with these devices.
     private DID _deviceB01;

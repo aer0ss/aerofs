@@ -10,7 +10,6 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
@@ -34,7 +33,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     public void createNewSharedFolder_shouldThrowOnDuplicate()
             throws ExNoPerm, IOException, ExNotFound, ExAlreadyExist, SQLException
     {
-        SID sid = new SID(UniqueID.generate());
+        SID sid = SID.generate();
         createNewUserAndOrgAndSharedFolder(sid);
 
         User user = newUser();
@@ -348,7 +347,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     private SharedFolder createNewUserAndOrgAndSharedFolder()
             throws ExNoPerm, IOException, ExNotFound, ExAlreadyExist, SQLException
     {
-        return createNewUserAndOrgAndSharedFolder(new SID(UniqueID.generate()));
+        return createNewUserAndOrgAndSharedFolder(SID.generate());
     }
 
     private SharedFolder createNewUserAndOrgAndSharedFolder(SID sid)

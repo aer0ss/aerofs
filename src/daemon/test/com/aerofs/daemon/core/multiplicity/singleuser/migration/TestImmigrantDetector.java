@@ -55,7 +55,7 @@ public class TestImmigrantDetector extends AbstractTest
     @InjectMocks ImmigrantDetector imd;
 
     SIndex sidxParent = new SIndex(-123);
-    OID oid = new OID(UniqueID.generate());
+    OID oid = SID.storeSID2anchorOID(SID.generate());
     SIndex sidxFrom = new SIndex(3);
     SIndex sidxFromExpelled1 = new SIndex(1);
     SIndex sidxFromExpelled2 = new SIndex(4);
@@ -66,8 +66,8 @@ public class TestImmigrantDetector extends AbstractTest
     SOID soidFromExpelled2 = new SOID(sidxFromExpelled2, oid);
     SOID soidTo = new SOID(sidxTo, oid);
     SOID soidAnchoredRoot = new SOID(sidxAnchored, OID.ROOT);
-    SID sidFrom = new SID(UniqueID.generate());
-    SID sidTo = new SID(UniqueID.generate());
+    SID sidFrom = SID.generate();
+    SID sidTo = SID.generate();
     SID sidAnchored = SID.anchorOID2storeSID(oid);
     Path pFrom = new Path("fooFrom", "barFrom", "bazFrom");
     Path pTo = new Path("fooTo", "barTo", "bazTo");

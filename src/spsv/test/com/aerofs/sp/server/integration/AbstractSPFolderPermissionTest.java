@@ -8,7 +8,6 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
@@ -29,8 +28,8 @@ import static org.mockito.Mockito.when;
 
 public class AbstractSPFolderPermissionTest extends AbstractSPTest
 {
-    protected static final SID TEST_SID_1 = new SID(UniqueID.generate());
-    protected static final SID TEST_SID_2 = new SID(UniqueID.generate());
+    protected static final SID TEST_SID_1 = SID.generate();
+    protected static final SID TEST_SID_2 = SID.generate();
 
     /**
      * Makes a protobuf-ready list of subject role pairs containing only the given sharee+role pair

@@ -84,9 +84,9 @@ public class TestStoreDeleter extends AbstractTest
     SIndex sidxRoot = new SIndex(3);
     SIndex sidxChild = new SIndex(2);
     SIndex sidxGrandChild = new SIndex(1);
-    SID sidRoot = new SID(UniqueID.generate());
-    SID sidChild = new SID(UniqueID.generate());
-    SID sidGrandChild = new SID(UniqueID.generate());
+    SID sidRoot = SID.generate();
+    SID sidChild = SID.generate();
+    SID sidGrandChild = SID.generate();
     SOID soidAnchorChild = new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild));
     SOID soidAnchorGrandChild = new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild));
 

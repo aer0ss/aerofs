@@ -32,10 +32,10 @@ public class TestEmigrantCreator extends AbstractTest
 
     @InjectMocks EmigrantCreator emc;
 
-    SID sidTarget = new SID(UniqueID.generate());
-    SID sidParent = new SID(UniqueID.generate());
-    SID sidGrandParent = new SID(UniqueID.generate());
-    SID sidGreatGrandParent = new SID(UniqueID.generate());
+    SID sidTarget = SID.generate();
+    SID sidParent = SID.generate();
+    SID sidGrandParent = SID.generate();
+    SID sidGreatGrandParent = SID.generate();
     SIndex sidxTarget = new SIndex(1);
     SIndex sidxParent = new SIndex(2);
     SIndex sidxGrandParent = new SIndex(3);

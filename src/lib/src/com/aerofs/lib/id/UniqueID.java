@@ -16,6 +16,31 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 {
     public static final int LENGTH = 16;
 
+    /**
+     * UniqueID obtained from generate() are UUID version 4 as specified by RFC 4122
+     *
+     * To distinguish different subtypes of unique ids we sometimes change the value of the version
+     * nibble (4 most significant bits of the 7th byte of the id).
+     * The following constants help manipulating the 4 bits in question.
+     */
+    public static final int VERSION_BYTE = 6;
+    public static final int VERSION_MASK = 0xf0;
+    public static final int VERSION_SHIFT = 4;
+
+    public static int getVersionNibble(byte[] bs)
+    {
+        assert bs.length == LENGTH;
+        return (bs[VERSION_BYTE] & VERSION_MASK) >> VERSION_SHIFT;
+    }
+
+    public static void setVersionNibble(byte[] bs, int value)
+    {
+        assert bs.length == LENGTH;
+        assert value >= 0 && value < 16;
+        bs[VERSION_BYTE] &= ~VERSION_MASK;
+        bs[VERSION_BYTE] |= value << VERSION_SHIFT;
+    }
+
     public static final UniqueID ZERO = new UniqueID(new byte[LENGTH]);
 
     private final byte[] _bs;
@@ -38,6 +63,19 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
         for(int i = 0; i < 8; i++){
             bs[LENGTH - 8 - 1 - i] = (byte)(v >>> (i * 8));
         }
+
+        /**
+         * The output of this code should be a version 4 UUID as specified by RFC 4122
+         *
+         * version 4 UUID as hex string: xxxxxxxxxxxxMxxxNxxxxxxxxxxxxxxx
+         * invariant 1: M = 4
+         * invariant 2: N in {8, 9, a, b}
+         *
+         * We rely on some of the 6 fixed bits specified by said RFC to distinguish various subtypes
+         * of unique ids so we assert that they are set as expected.
+         */
+        assert getVersionNibble(bs) == 4 : Util.hexEncode(bs);
+        assert (bs[VERSION_BYTE + 2] & 0xc0) == 0x80 : Util.hexEncode(bs);
 
         return new UniqueID(bs);
     }

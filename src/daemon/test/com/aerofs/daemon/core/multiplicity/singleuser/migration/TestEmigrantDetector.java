@@ -47,10 +47,10 @@ public class TestEmigrantDetector extends AbstractTest
     @Mock DID did;
     @Mock OA oa;
 
-    SID sidSource = new SID(UniqueID.generate());
-    SID sidTarget = new SID(UniqueID.generate());
-    SID sidTargetParent = new SID(UniqueID.generate());
-    SID sidTargetGrandParent = new SID(UniqueID.generate());
+    SID sidSource = SID.generate();
+    SID sidTarget = SID.generate();
+    SID sidTargetParent = SID.generate();
+    SID sidTargetGrandParent = SID.generate();
     SIndex sidxSource = new SIndex(1);
     SIndex sidxTarget = new SIndex(2);
     SIndex sidxTargetParent = new SIndex(3);

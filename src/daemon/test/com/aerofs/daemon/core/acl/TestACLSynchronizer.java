@@ -25,7 +25,6 @@ import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
@@ -86,7 +85,7 @@ public class TestACLSynchronizer extends AbstractTest
     UserID user1 = UserID.fromInternal("user1@foo.bar");
     UserID user2 = UserID.fromInternal("user2@foo.bar");
 
-    SID sid1 = new SID(UniqueID.generate());
+    SID sid1 = SID.generate();
 
     @Before
     public void setUp() throws Exception

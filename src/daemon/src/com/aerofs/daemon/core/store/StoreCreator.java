@@ -102,7 +102,9 @@ public class StoreCreator
     public boolean detectFolderToAnchorConversion_(OID oidLocal, OA.Type typeLocal, OID oidRemote,
             OA.Type typeRemote)
     {
-        return typeRemote == OA.Type.ANCHOR && typeLocal == OA.Type.DIR &&
-            SID.storeSID2anchorOID(SID.folderOID2convertedStoreSID(oidLocal)).equals(oidRemote);
+        if (!(typeRemote == OA.Type.ANCHOR && typeLocal == OA.Type.DIR)) return false;
+        SID sidRemote = SID.anchorOID2storeSID(oidRemote);
+        return SID.folderOID2convertedStoreSID(oidLocal).equals(sidRemote) ||
+                SID.folderOID2legacyConvertedStoreSID(oidLocal).equals(sidRemote);
     }
 }

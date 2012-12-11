@@ -12,6 +12,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.cfg.CfgLocalUser;
 
 /**
  * This class is structurally identical to UIPostUpdateTasks.
@@ -25,7 +26,7 @@ public class DaemonPostUpdateTasks
     @Inject
     public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, TransManager tm,
             IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm,
-            CfgAbsAuxRoot absAuxRoot)
+            CfgAbsAuxRoot absAuxRoot, CfgLocalUser cfgUser)
     {
         _cfgDB = cfgDB;
 
@@ -46,7 +47,8 @@ public class DaemonPostUpdateTasks
             null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
             new DPUTBreakSyncStatActivityLogDependency(dbcw),
             new DPUTResetSyncStatus(dbcw), // bug in AggregateSyncStatus.objectMoved_
-            new DPUTMigrateAuxRoot(absAuxRoot)
+            new DPUTMigrateAuxRoot(absAuxRoot),
+            new DPUTUpdateSIDGeneration(cfgUser, dbcw)
             // new tasks go here
         };
 
