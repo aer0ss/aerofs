@@ -4,6 +4,7 @@
 
 package com.aerofs.lib.net;
 
+import com.aerofs.lib.Loggers;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -15,6 +16,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
+import org.slf4j.Logger;
 
 import java.nio.channels.ClosedChannelException;
 import java.util.Queue;
@@ -22,6 +24,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class RpcClientHandler extends SimpleChannelUpstreamHandler
 {
+    private static final Logger l = Loggers.getLogger(RpcClientHandler.class);
+
     private ChannelHandlerContext _ctx;
     private final Queue<SettableFuture<byte[]>> _queue = new ConcurrentLinkedQueue<SettableFuture<byte[]>>();
 
@@ -34,7 +38,9 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
 
     public void doRPC(byte[] data, final SettableFuture<byte[]> rpcFuture)
     {
+        l.info("Doing the RPC");
         if (!_ctx.getChannel().isConnected()) {
+            l.info("not connected, sertting closed channel exception. we should wait intead");
             rpcFuture.setException(new ClosedChannelException());
             return;
         }
@@ -47,6 +53,7 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
                     throws Exception
             {
                 if (!future.isSuccess()) {
+                    l.info("ChannelFuture not successful");
                     rpcFuture.setException(future.getCause());
                 }
             }
@@ -57,6 +64,7 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
+        l.info("Channel open");
         _ctx = ctx;
         super.channelOpen(ctx, e);
     }
@@ -65,6 +73,7 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
             throws Exception
     {
+        l.info("Message received");
         ChannelBuffer cb = (ChannelBuffer)e.getMessage();
         byte[] data = cb.array();
         _queue.remove().set(data);
@@ -74,6 +83,7 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
             throws Exception
     {
+        l.info("Exception caught: " + e.getCause());
         SettableFuture<byte[]> future;
         while ((future = _queue.poll()) != null) {
             future.setException(e.getCause());
@@ -85,6 +95,7 @@ public class RpcClientHandler extends SimpleChannelUpstreamHandler
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e)
             throws Exception
     {
+        l.info("Channel closed");
         Exception ex = null;
         SettableFuture<byte[]> future;
         while ((future = _queue.poll()) != null) {

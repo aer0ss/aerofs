@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 
 public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHandler
 {
-    private static final Logger LOGGER = Loggers.getLogger(AbstractRpcServerHandler.class);
+    private static final Logger l = Loggers.getLogger(AbstractRpcServerHandler.class);
 
     protected abstract ListenableFuture<byte[]> react(byte[] data);
 
@@ -31,6 +31,8 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
     @Override
     public void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
+        l.info("MobileService: message received");
+
         try {
             ChannelBuffer cb = (ChannelBuffer)e.getMessage();
             byte[] message = toByteArray(cb);
@@ -62,7 +64,7 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
                         public void onFailure(Throwable throwable)
                         {
                             next.setException(throwable);
-                            LOGGER.warn("Received an exception from the reactor. This should never happen.");
+                            l.warn("Received an exception from the reactor. This should never happen.");
                             Channels.fireExceptionCaught(ctx.getChannel(), throwable);
                         }
                     });
@@ -70,7 +72,7 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
             }, MoreExecutors.sameThreadExecutor());
 
         } catch (Exception ex) {
-            LOGGER.warn("RPC error", ex);
+            l.warn("RPC error", ex);
             Channels.fireExceptionCaught(ctx.getChannel(), ex);
         }
     }
@@ -78,6 +80,7 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
+        l.info("MobileService: exception caught ");
         // Close the connection when an exception is raised
         e.getChannel().close();
     }

@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 
 public class TraceHandler implements ChannelUpstreamHandler, ChannelDownstreamHandler
 {
-    private static final Logger LOGGER = Loggers.getLogger(TraceHandler.class);
+    private static final Logger l = Loggers.getLogger(TraceHandler.class);
 
-    Logger _logger = LOGGER;
+    Logger _logger = l;
 
     private long _sending;
     private long _sent;

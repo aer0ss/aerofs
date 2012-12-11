@@ -848,6 +848,8 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
 
         String[] tokens = ID.tokenize(p.getFrom());
         if (!ID.isMUCAddress(tokens)) return;
+        // Ignore presence from mobile devices (they don't have a valid did)
+        if (tokens[1].startsWith("mobile_")) return;
 
         SID sid = ID.muc2sid(tokens[0]);
         DID did = ID.user2did(tokens[1]);
