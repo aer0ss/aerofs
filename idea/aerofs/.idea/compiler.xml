@@ -8,6 +8,8 @@
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <directory url="file://$PROJECT_DIR$/../../src/android/gen" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/android_test/gen" includeSubdirectories="true" />
+      <directory url="file://$PROJECT_DIR$/../../src/android-test/gen" includeSubdirectories="true" />
     </excludeFromCompile>
     <resourceExtensions />
     <wildcardResourcePatterns>
@@ -22,7 +24,11 @@
       <entry name="?*.tld" />
       <entry name="?*.ftl" />
     </wildcardResourcePatterns>
-    <annotationProcessing enabled="true" useClasspath="true" />
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="false">
+        <processorPath useClasspath="true" />
+      </profile>
+    </annotationProcessing>
   </component>
   <component name="EclipseCompilerSettings">
     <option name="ADDITIONAL_OPTIONS_STRING" value="-proceedOnError" />
