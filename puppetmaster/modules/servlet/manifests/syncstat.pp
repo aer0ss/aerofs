@@ -29,4 +29,12 @@ class servlet::syncstat(
         verkehr_host            => $verkehr_host,
         cacert_location         => $cacert_location
     }
+
+    # Java heap space for tomcat.
+    line{ "tomcat java heap space":
+         ensure => present,
+         file => "/etc/default/tomcat",
+         line => "JAVA_OPTS=\"-Djava.awt.headless=true -Xmx512m -XX:+UseConcMarkSweepGC\"",
+         require => Package["aerofs-syncstat"]
+    }
 }
