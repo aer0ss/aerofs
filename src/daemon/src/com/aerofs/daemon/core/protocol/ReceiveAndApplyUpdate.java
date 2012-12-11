@@ -779,12 +779,25 @@ public class ReceiveAndApplyUpdate
                     }
 
                 } catch (FileNotFoundException e) {
-                    // Only a master branch can be temporarily inconsistent with the Database
-                    assert localBranchWithMatchingContent.equals(KIndex.MASTER) :
-                            "conflict file was not found but db reports its existence "
-                            + e.getMessage();
+                    SOCKID conflict = new SOCKID(k.socid(), localBranchWithMatchingContent);
 
-                    l.warn("can't copy content from master branch " + k.soid());
+                    if (!localBranchWithMatchingContent.equals(KIndex.MASTER)) {
+                        // A conflict branch does not exist, even though there is an entry
+                        // in our database. This is an inconsistency, we must remove the
+                        // entry in our database. AeroFS will redownload the conflict at a later
+                        // point.
+                        l.error("known conflict branch has no associated file: " + conflict);
+
+                        Trans t = _tm.begin_();
+                        try {
+                            _bd.deleteBranch_(conflict, _nvc.getLocalVersion_(conflict), false, t);
+                            t.commit_();
+                        } finally {
+                            t.end_();
+                        }
+                    }
+
+                    l.warn("can't copy content from local branch " + conflict);
 
                     throw new ExAborted(e.getMessage());
                 }
