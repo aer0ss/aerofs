@@ -236,7 +236,7 @@ public class ACLSynchronizer
         }
 
         // delete flag file to allow further share/join operations to work as expected
-        FileUtil.delete(noJoinFlagFile);
+        if (noAutoJoin) FileUtil.delete(noJoinFlagFile);
     }
 
     private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception

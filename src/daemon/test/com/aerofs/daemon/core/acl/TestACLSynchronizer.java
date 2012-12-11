@@ -17,6 +17,7 @@ import com.aerofs.daemon.lib.db.ACLDatabase;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.CfgLocalUser;
@@ -88,6 +89,8 @@ public class TestACLSynchronizer extends AbstractTest
     @Before
     public void setUp() throws Exception
     {
+        AppRoot.set("/foo/bar");
+
         idbcw.init_();
 
         when(cfgLocalUser.get()).thenReturn(user1);
@@ -253,6 +256,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sid2sidx.getNullable_(sid1)).thenReturn(null);
         when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(null);
         when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
 
         mockGetSharedFolderNames(sid1, "shared");
@@ -271,6 +275,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
         when(stores.getAll_()).thenReturn(ImmutableSet.of(sidx));
 
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
@@ -288,6 +293,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sid2sidx.get_(sid1)).thenReturn(sidx);
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
         when(stores.getAll_()).thenReturn(ImmutableSet.of(sidx));
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
 
@@ -306,6 +312,7 @@ public class TestACLSynchronizer extends AbstractTest
         SIndex sidx = new SIndex(2);
         when(sid2sidx.getNullable_(sid1)).thenReturn(null);
         when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
         when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
 
         mockGetSharedFolderNames(sid1, "shared");
