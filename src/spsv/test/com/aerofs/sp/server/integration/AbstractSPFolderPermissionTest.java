@@ -4,8 +4,10 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.lib.Util;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePairs;
+import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.UniqueID;
@@ -13,9 +15,19 @@ import com.aerofs.lib.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 public class AbstractSPFolderPermissionTest extends AbstractSPTest
 {
@@ -31,6 +43,22 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
     }
 
 
+    protected Set<String> mockVerkehrToSuccessfullyPublishAndStoreSubscribers()
+    {
+        final Set<String> published = new HashSet<String>();
+        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
+                .then(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation)
+                            throws Throwable
+                    {
+                        published.add((String)invocation.getArguments()[0]);
+                        return UncancellableFuture.createSucceeded(null);
+                    }
+                });
+        return published;
+    }
+
     /**
      * Shares a folder through service.shareFolder with the given user and verifies that an
      * invitation email would've been sent.
@@ -38,8 +66,13 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
     protected void shareAndJoinFolder(UserID sharer, SID sid, UserID sharee, Role role)
             throws Exception
     {
+        assertFalse(sharer.equals(sharee));
+
         shareFolder(sharer, sid, sharee, role);
+        // for backward compat with existing tests, accept invite immediately to update ACLs
         joinSharedFolder(sharer, sid, sharee);
+        // backward compat
+        sessionUser.set(factUser.create(sharer));
     }
 
     /**
@@ -50,28 +83,36 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
             throws Exception
     {
         sessionUser.set(factUser.create(sharer));
-        service.shareFolder(sid.toString(), sid.toPB(), toPB(sharee, role), "").get();
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "")
+                .get();
+    }
+
+    protected @Nullable String getSharedFolderCode(UserID sharer, SID sid, UserID sharee)
+            throws Exception
+    {
+        sessionUser.set(factUser.create(sharee));
+        ListPendingFolderInvitationsReply reply = service.listPendingFolderInvitations().get();
+
+        for (PBFolderInvitation inv : reply.getInvitationsList()) {
+            if (sharer.toString().equals(inv.getSharer()) &&
+                    sid.toStringFormal().equals(inv.getFolderName())) {
+                return inv.getSharedFolderCode();
+            }
+        }
+
+        return null;
     }
 
     protected void joinSharedFolder(UserID sharer, SID sid, UserID sharee) throws Exception
     {
-        // fopr backward compat with existing tests, accept invite immediately to update ACLs
-        sessionUser.set(factUser.create(sharee));
-        ListPendingFolderInvitationsReply reply;
-        try {
-            reply = service.listPendingFolderInvitations().get();
-        } catch (ExNotFound e) {
-            trans.handleException();
-            reply = null;
-        }
-        if (reply != null) {
-            for (PBFolderInvitation inv : reply.getInvitationsList()) {
-                if (sharer.toString().equals(inv.getSharer())) {
-                    service.joinSharedFolder(inv.getSharedFolderCode());
-                }
-            }
-        }
+        String code = getSharedFolderCode(sharer, sid, sharee);
+        assertNotNull(code);
+        joinSharedFolder(sharee, code);
+    }
 
-        sessionUser.set(factUser.create(sharer));
+    protected void joinSharedFolder(UserID sharee, String code) throws Exception
+    {
+        sessionUser.set(factUser.create(sharee));
+        service.joinSharedFolder(code);
     }
 }
