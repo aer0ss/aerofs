@@ -46,7 +46,7 @@ class servlet (
 
     $metrics = hiera("metrics")
 
-    class{"nginx":}
+    include nginx
 
     file {"/etc/nginx/certs":
         ensure => directory,
