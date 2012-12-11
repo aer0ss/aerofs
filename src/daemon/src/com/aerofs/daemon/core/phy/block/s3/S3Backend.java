@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.lib.SecUtil.CipherFactory;

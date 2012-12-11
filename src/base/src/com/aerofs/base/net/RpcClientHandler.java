@@ -2,9 +2,9 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.net;
+package com.aerofs.base.net;
 
-import com.aerofs.lib.Loggers;
+import com.aerofs.base.Loggers;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import org.jboss.netty.buffer.ChannelBuffer;

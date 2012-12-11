@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.xmpp;
 
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFormatError;

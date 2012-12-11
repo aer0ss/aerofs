@@ -10,7 +10,7 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.DID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;

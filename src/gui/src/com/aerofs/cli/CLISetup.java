@@ -6,7 +6,7 @@ import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Properties;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.RootAnchorUtil;

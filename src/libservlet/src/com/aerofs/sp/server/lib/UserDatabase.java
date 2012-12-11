@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;

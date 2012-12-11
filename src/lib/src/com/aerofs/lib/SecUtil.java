@@ -41,6 +41,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.aerofs.base.Base64;
 import com.aerofs.lib.id.UserID;
 import sun.security.pkcs.PKCS10;
 import sun.security.x509.X500Name;

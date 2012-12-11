@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;

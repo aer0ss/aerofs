@@ -4,7 +4,7 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.SecUtil;

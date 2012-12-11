@@ -4,10 +4,10 @@
 
 package com.aerofs.zephyr.server;
 
-import com.aerofs.lib.Loggers;
-import com.aerofs.lib.net.TraceHandler;
-import com.aerofs.lib.net.ZephyrConstants;
-import com.aerofs.lib.net.ZephyrPipeHandler;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.net.TraceHandler;
+import com.aerofs.base.net.ZephyrConstants;
+import com.aerofs.base.net.ZephyrPipeHandler;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelEvent;

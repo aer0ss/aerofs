@@ -11,7 +11,7 @@ import com.aerofs.daemon.tng.IMaxcastListener;
 import com.aerofs.daemon.tng.ReceivedMaxcastFilter;
 import com.aerofs.daemon.tng.base.IMaxcastService;
 import com.aerofs.daemon.tng.xmpp.XMPPServerConnectionService.IXMPPServerConnectionListener;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;

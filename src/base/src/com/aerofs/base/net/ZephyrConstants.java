@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.net;
+package com.aerofs.base.net;
 
 import java.net.InetSocketAddress;
 

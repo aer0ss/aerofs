@@ -2,9 +2,9 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.net;
+package com.aerofs.base.net;
 
-import com.aerofs.lib.Loggers;
+import com.aerofs.base.Loggers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelEvent;

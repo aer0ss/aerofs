@@ -4,7 +4,7 @@
 
 package com.aerofs.servlets.lib;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

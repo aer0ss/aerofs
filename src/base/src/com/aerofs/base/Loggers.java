@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib;
+package com.aerofs.base;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

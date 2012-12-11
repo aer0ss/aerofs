@@ -1,4 +1,4 @@
-package com.aerofs.lib;
+package com.aerofs.base;
 
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>

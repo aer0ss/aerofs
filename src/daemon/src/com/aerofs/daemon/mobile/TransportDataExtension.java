@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.mobile;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.proto.Transport;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;

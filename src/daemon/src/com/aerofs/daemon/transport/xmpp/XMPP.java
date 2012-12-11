@@ -30,7 +30,7 @@ import com.aerofs.daemon.transport.xmpp.XMPPServerConnection.IXMPPServerConnecti
 import com.aerofs.daemon.transport.xmpp.jingle.Jingle;
 import com.aerofs.daemon.transport.xmpp.routing.SignalledPipeFanout;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientManager;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;

@@ -1,6 +1,6 @@
 package com.aerofs.lib;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 

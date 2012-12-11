@@ -2,7 +2,7 @@ package com.aerofs.lib.cfg;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;

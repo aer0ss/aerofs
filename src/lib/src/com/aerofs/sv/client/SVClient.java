@@ -2,7 +2,7 @@ package com.aerofs.sv.client;
 
 import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;

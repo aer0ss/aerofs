@@ -8,7 +8,6 @@
     <option name="DEFAULT_COMPILER" value="Eclipse" />
     <excludeFromCompile>
       <directory url="file://$PROJECT_DIR$/../../src/android/gen" includeSubdirectories="true" />
-      <directory url="file://$PROJECT_DIR$/android_test/gen" includeSubdirectories="true" />
       <directory url="file://$PROJECT_DIR$/../../src/android-test/gen" includeSubdirectories="true" />
     </excludeFromCompile>
     <resourceExtensions />

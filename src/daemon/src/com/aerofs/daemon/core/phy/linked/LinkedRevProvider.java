@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;

@@ -74,7 +74,7 @@ import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.io.ByteStreams;
 
-import com.aerofs.lib.Base64;
+import com.aerofs.base.Base64;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.lib.Util;
