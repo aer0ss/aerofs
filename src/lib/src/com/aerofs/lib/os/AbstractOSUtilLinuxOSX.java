@@ -9,15 +9,12 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
 
 abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 {
     protected static final Logger l = Util.l(AbstractOSUtilLinuxOSX.class);
-
     protected final InjectableFile.Factory _factFile;
 
     protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile)
@@ -39,46 +36,6 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
     }
 
     @Override
-    public String getAuxRoot(String path) throws IOException
-    {
-        String def = Cfg.absDefaultAuxRoot();
-        String mntDef = getMountPoint(def);
-        String mnt = getMountPoint(path);
-        if (mnt.equals(mntDef)) {
-            return def;
-        } else {
-            return Util.join(mnt, C.AUXROOT_PARENT, Cfg.did().toStringFormal());
-        }
-    }
-
-    /**
-     * @param path can be relative, non-canonical path
-     */
-    protected static String getMountPoint(String path) throws IOException
-    {
-        File f = new File(path);
-        int bufferLen = Driver.getMountIdLength();
-        byte[] buffer1 = new byte[bufferLen];
-        byte[] buffer2 = new byte[bufferLen];
-        int rc;
-        rc = Driver.getMountIdForPath(null, path, buffer1);
-        if (rc != 0) throw new IOException("Failed to get mount point: " + path);
-        // Walk up the filesystem tree until you hit a node with a new mount ID or the root
-        while (true) {
-            File parent = f.getParentFile();
-            if (parent == null || parent.equals(f)) { // we've hit the root
-                return f.toString();
-            }
-            rc = Driver.getMountIdForPath(null, parent.toString(), buffer2);
-            if (rc != 0) throw new IOException("Failed to get mount point: " + parent.toString());
-            if (!Arrays.equals(buffer1, buffer2)) { // we've crossed filesystem boundaries
-                return f.toString();
-            }
-            f = parent;
-        }
-    }
-
-    @Override
     public boolean isInSameFileSystem(String p1, String p2) throws IOException
     {
         int bufferlen = Driver.getMountIdLength();
@@ -88,7 +45,7 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
         rc = Driver.getMountIdForPath(null, p1, fsid1);
         if (rc != 0) throw new IOException("Couldn't get mount id for " + p1);
         rc = Driver.getMountIdForPath(null, p2, fsid2);
-        if (rc != 0) throw new IOException("Couldn't get mount id for " + p1);
+        if (rc != 0) throw new IOException("Couldn't get mount id for " + p2);
         return Arrays.equals(fsid1, fsid2);
     }
 

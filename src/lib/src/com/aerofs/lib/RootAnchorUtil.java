@@ -10,6 +10,8 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
+import com.aerofs.lib.id.DID;
+import com.aerofs.lib.id.UniqueID;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
@@ -51,6 +53,10 @@ public abstract class RootAnchorUtil
         } else if (!allowNonEmptyFolder) {
             String[] children = fRootAnchor.list();
             // children is null if fRootAnchor is not a directory.
+
+            // NOTE: (GS) This can be a problem on OS X and Windows since it's very likely that the
+            // user has .DS_Store, Icon\r, desktop.ini, Thumbs.db, or some other hidden system file.
+            // We should probably do something to handle those gracefully.
             if (children != null && children.length > 0) {
                 throw new ExAlreadyExist(rootAnchor + " is a non-empty folder");
             }
@@ -64,9 +70,8 @@ public abstract class RootAnchorUtil
         //   - The file picker dialog will warn the user if he tries to pick a directory to which
         //     he doesn't have permissions
         if (!OSUtil.isWindows()) {
-            String msg = S.PRODUCT + " doesn't have sufficient permissions to ";
-            if (!fToCheck.canRead()) throw new ExNoPerm(msg + "read files under " + fToCheck);
-            if (!fToCheck.canWrite()) throw new ExNoPerm(msg + "write files under " + fToCheck);
+            if (!fToCheck.canRead()) throwExNoPerm(Perm.READ, fToCheck);
+            if (!fToCheck.canWrite()) throwExNoPerm(Perm.WRITE, fToCheck);
         }
 
         // Check if it's a supported file system
@@ -87,6 +92,46 @@ public abstract class RootAnchorUtil
                         " filesystems on " + OSUtil.getOSName() + " at this moment");
             }
         }
+
+        checkAuxRoot(rootAnchor);
+    }
+
+    private static void checkAuxRoot(String rootAnchor)
+            throws ExAlreadyExist, ExNoPerm, IOException
+    {
+        File auxRoot = new File(Cfg.absAuxRootForPath(rootAnchor, Cfg.inited() ? Cfg.did()
+                : new DID(UniqueID.ZERO)));
+
+        // Check that the aux root doesn't already exist.
+        //
+        // It should never already exist because:
+        // - if we are reinstalling AeroFS over an existing installation, a new did will be
+        //   generated, so the aux root folder name will be different.
+        // - if we are relocating the root anchor, the parent folder will be different (since we
+        //   enforce that the root anchor ends with /AeroFS, it's impossible to relocate the
+        //   root anchor within the same parent folder.)
+        //
+        // But of course Murphy's law tell us that us that this _will_ happen to some users.
+        // Deleting the aux root is safe and it's the easiest way to deal with this.
+        if (auxRoot.exists()) {
+            FileUtil.deleteOrThrowIfExistRecursively(auxRoot);
+        }
+
+        // Check that we have enough permissions to read and write to the aux root
+
+        if (!auxRoot.mkdir()) throwExNoPerm(Perm.WRITE, auxRoot.getParentFile());
+        if (!OSUtil.isWindows()) {
+            if (!auxRoot.canRead()) throwExNoPerm(Perm.READ, auxRoot);
+            if (!auxRoot.canWrite()) throwExNoPerm(Perm.WRITE, auxRoot);
+        }
+        FileUtil.delete(auxRoot);
+    }
+
+    private enum Perm {READ, WRITE}
+    private static void throwExNoPerm(Perm perm, File file) throws ExNoPerm
+    {
+        throw new ExNoPerm(S.PRODUCT + " doesn't have sufficient permissions to " +
+                perm.toString().toLowerCase() + " files under " + file);
     }
 
     // We can add additional user-friendly name mappings, in case more users happen to

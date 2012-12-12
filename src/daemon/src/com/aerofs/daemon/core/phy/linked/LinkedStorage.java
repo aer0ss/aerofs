@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.linker.IgnoreList;
@@ -29,7 +30,6 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.os.OSUtil;
 import com.google.inject.Inject;
 
 public class LinkedStorage implements IPhysicalStorage
@@ -39,15 +39,16 @@ public class LinkedStorage implements IPhysicalStorage
     private InjectableFile.Factory _factFile;
     private IFIDMaintainer.Factory _factFIDMan;
     private CfgAbsRootAnchor _cfgAbsRootAnchor;
+    private CfgAbsAuxRoot _cfgAbsAuxRoot;
     private IgnoreList _il;
     private LinkedRevProvider _revProvider;
     private SharedFolderTagFileAndIcon _sfti;
-    private String _pathAuxRoot;
 
     @Inject
     public void inject_(InjectableFile.Factory factFile,
             IFIDMaintainer.Factory factFIDMan,
             CfgAbsRootAnchor cfgAbsRootAnchor,
+            CfgAbsAuxRoot cfgAbsAuxRoot,
             IgnoreList il,
             LinkedRevProvider revProvider,
             SharedFolderTagFileAndIcon sfti)
@@ -55,6 +56,7 @@ public class LinkedStorage implements IPhysicalStorage
         _factFile = factFile;
         _factFIDMan = factFIDMan;
         _cfgAbsRootAnchor = cfgAbsRootAnchor;
+        _cfgAbsAuxRoot = cfgAbsAuxRoot;
         _il = il;
         _revProvider = revProvider;
         _sfti = sfti;
@@ -63,22 +65,20 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public void init_() throws IOException
     {
-        _pathAuxRoot = OSUtil.get().getAuxRoot(_cfgAbsRootAnchor.get());
-
         // create aux folders. other codes assume these folders already exist.
         for (C.AuxFolder af : C.AuxFolder.values()) {
-            InjectableFile f = _factFile.create(Util.join(_pathAuxRoot, af._name));
+            InjectableFile f = _factFile.create(Util.join(_cfgAbsAuxRoot.get(), af._name));
             if (!f.exists()) f.mkdirs();
         }
 
-        _revProvider.init_(_pathAuxRoot);
+        _revProvider.init_(_cfgAbsAuxRoot.get());
     }
 
     @Override
     public IPhysicalFile newFile_(SOKID sokid, Path path)
     {
         return new LinkedFile(_cfgAbsRootAnchor, _factFile, _factFIDMan, this, sokid, path,
-                _pathAuxRoot);
+                _cfgAbsAuxRoot.get());
     }
 
     @Override
@@ -90,7 +90,7 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public IPhysicalPrefix newPrefix_(SOCKID k)
     {
-        return new LinkedPrefix(_factFile, k, _pathAuxRoot);
+        return new LinkedPrefix(_factFile, k, _cfgAbsAuxRoot.get());
     }
 
     @Override
@@ -123,7 +123,7 @@ public class LinkedStorage implements IPhysicalStorage
 
     private void deleteFiles_(AuxFolder af, final String prefix) throws IOException
     {
-        InjectableFile folder = _factFile.create(Util.join(_pathAuxRoot, af._name));
+        InjectableFile folder = _factFile.create(Util.join(_cfgAbsAuxRoot.get(), af._name));
         InjectableFile[] fs = folder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name)

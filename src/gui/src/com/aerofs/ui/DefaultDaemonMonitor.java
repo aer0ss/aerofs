@@ -105,6 +105,16 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                         */
                         l.warn("Ignoring exit code " + WINDOWS_SHUTTING_DOWN
                                 + " - Windows is shutting down");
+
+                    } else if (exitCode == DPUT_MIGRATE_AUX_ROOT_FAILED.getNumber()) {
+                        /*
+                           This exit code may happen when we try to run the DPUTMigrateAuxRoot task
+                           Therefore, it can only happen here, not in onDaemonDeath()
+                         */
+                        throw new ExUIMessage(S.PRODUCT + " couldn't launch because it couldn't " +
+                                "write to: \"" + Cfg.absAuxRoot() + "\"\n\nPlease make sure that " +
+                                S.PRODUCT + " has the appropriate permissions to write to that " +
+                                "folder.");
                     } else {
                         throw new IOException(getMessage(exitCode));
                     }

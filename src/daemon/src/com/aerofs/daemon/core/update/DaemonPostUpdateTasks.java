@@ -45,7 +45,8 @@ public class DaemonPostUpdateTasks
             new DPUTMigrateS3Schema(dbcw, _cfgDB),
             null, // used to be DPUTBreakSyncStatActivityLogDependency with missing commit()
             new DPUTBreakSyncStatActivityLogDependency(dbcw),
-            new DPUTResetSyncStatus(dbcw) // bug in AggregateSyncStatus.objectMoved_
+            new DPUTResetSyncStatus(dbcw), // bug in AggregateSyncStatus.objectMoved_
+            new DPUTMigrateAuxRoot(absAuxRoot)
             // new tasks go here
         };
 

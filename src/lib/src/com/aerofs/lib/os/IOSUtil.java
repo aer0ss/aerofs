@@ -38,13 +38,6 @@ public interface IOSUtil
     /**
      * N.B. this method may be expensive. use sparingly
      *
-     * @return the AUXROOT of the given folder.
-     */
-    String getAuxRoot(String path) throws IOException;
-
-    /**
-     * N.B. this method may be expensive. use sparingly
-     *
      * @param remote set to null if unknown
      * @return capitalized file system type
      */

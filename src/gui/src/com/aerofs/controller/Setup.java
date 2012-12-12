@@ -320,13 +320,12 @@ class Setup
             l.warn("cleaning up the old daemon failed: " + Util.e(e));
         }
 
-        // clear auxiliary folders under the default auxroot so files from the previous install
-        // aren't carried to the new install. we don't need to clear files under non-default
-        // auxroot since they are scoped by device ids.
-        for (C.AuxFolder af : C.AuxFolder.values()) {
-            InjectableFile f = _factFile.create(Util.join(Cfg.absDefaultAuxRoot(), af._name));
-            f.deleteOrThrowIfExistRecursively();
-        }
+        // Create Aux Root
+        InjectableFile auxRoot = _factFile.create(Cfg.absAuxRoot());
+        if (auxRoot.exists()) auxRoot.deleteOrThrowIfExistRecursively();
+        auxRoot.mkdirs();
+        OSUtil.get().markHiddenSystemFile(auxRoot.getAbsolutePath());
+
 
         // remove database file (the daemon will setup the schema if it detects a missing DB)
         InjectableFile fDB = _factFile.create(_rtRoot, C.CORE_DATABASE);

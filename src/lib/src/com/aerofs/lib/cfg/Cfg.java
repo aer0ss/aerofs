@@ -57,6 +57,7 @@ public class Cfg
     private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
     private static String _absRootAnchor;
+    private static String _absAuxRoot;
     private static String _ver;
     private static X509Certificate _cert;
     private static PrivateKey _privKey;
@@ -112,6 +113,7 @@ public class Cfg
         File rootAnchor = new File(_db.get(Key.ROOT));
         assert rootAnchor.isAbsolute();
         _absRootAnchor = rootAnchor.getCanonicalPath();
+        _absAuxRoot = absAuxRootForPath(_absRootAnchor, _did);
 
         _portbase = readPortbase();
         _rootSID = SID.rootSID(_user);
@@ -176,14 +178,31 @@ public class Cfg
         return _ver;
     }
 
-    public static String absDefaultAuxRoot()
+    public static String absRTRoot()
     {
         return _absRTRoot;
     }
 
-    public static String absRTRoot()
+    /**
+     * @return the absolute path to the aux root
+     */
+    public static String absAuxRoot()
     {
-        return _absRTRoot;
+        return _absAuxRoot;
+    }
+
+    /**
+     * @return the location of the aux root for a given path
+     * @param did to use to generate the path
+     * This is needed because during setup we want to use this method to check if we have the
+     * permission to create the aux root folder, but don't have the real did yet.
+     */
+    public static String absAuxRootForPath(String path, DID did)
+    {
+        String shortDid = did.toStringFormal().substring(0, 6);
+        File parent = new File(path).getParentFile();
+        File auxRoot = new File(parent, C.AUXROOT_PREFIX + shortDid);
+        return auxRoot.getAbsolutePath();
     }
 
     /**

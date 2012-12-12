@@ -13,17 +13,16 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.C;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExInUse;
-import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -47,15 +46,17 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     private final InjectableFile.Factory _factFile;
     private final TransManager _tm;
     private final InjectableDriver _dr;
+    private final CfgAbsAuxRoot _cfgAbsAuxRoot;
 
     @Inject
     public HdRelocateRootAnchor(DirectoryService ds, InjectableFile.Factory factFile,
-            TransManager tm, InjectableDriver dr)
+            TransManager tm, InjectableDriver dr, CfgAbsAuxRoot cfgAbsAuxRoot)
     {
         _ds = ds;
         _factFile = factFile;
         _tm = tm;
         _dr = dr;
+        _cfgAbsAuxRoot = cfgAbsAuxRoot;
     }
 
     @Override
@@ -78,7 +79,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
      */
     private void move_(String absOldRoot, String absNewRoot) throws Exception
     {
-        ////////
         // sanity checking
 
         RootAnchorUtil.checkNewRootAnchor(absOldRoot, absNewRoot);
@@ -89,55 +89,24 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
         // The new root folder must be created so that getAuxRoot() below won't fail
         if (!fNewRoot.exists()) fNewRoot.mkdirs();
+        boolean sameFS = OSUtil.get().isInSameFileSystem(absOldRoot, absNewRoot);
 
-        String oldAux = OSUtil.get().getAuxRoot(absOldRoot);
-        String newAux = OSUtil.get().getAuxRoot(absNewRoot);
-        InjectableFile fNewAuxRoot = _factFile.create(newAux);
+        AbstractRelocator relocator = sameFS ?
+                new SameFSRelocator(fOldRoot, fNewRoot)
+                : new DifferentFSRelocator(fOldRoot, fNewRoot);
 
-        if (!fNewAuxRoot.exists()) fNewAuxRoot.mkdirs();
-
-        if (!fNewAuxRoot.canRead() || !fNewAuxRoot.canWrite()) {
-            throw new ExNoPerm("cannot read or write to " + newAux);
-        }
-
-        boolean copyNDelete = !OSUtil.get().isInSameFileSystem(absOldRoot, absNewRoot);
-
-        // Delete the empty directory so later moving or copying won't fail
+        // Delete the empty new root that we just created, so that the move and copy operations
+        // work properly. Note: we know this is empty because either we just created it or we
+        // asserted its emptiness in RootAnchorUtil.checkRootAnchor above.
         fNewRoot.delete();
 
-        ////////
         // perform actual operations
 
-        l.warn(absOldRoot + " -> " + absNewRoot + " " + copyNDelete);
+        l.warn(absOldRoot + " -> " + absNewRoot + ". same fs? " + sameFS);
 
         Trans t = _tm.begin_();
         try {
-            if (copyNDelete) {
-                OSUtil.get().copyRecursively(fOldRoot, fNewRoot, true, true);
-                _updateFID(_ds.resolveThrows_(new Path()), absNewRoot, t);
-
-                // Must copy over individual aux folders because AuxRoot is equivalent to the
-                // RTRoot when the Anchor Root is on the same volume as the RTRoot.
-                for (C.AuxFolder af : C.AuxFolder.values()) {
-                    InjectableFile fOldAuxFolder = _factFile.create(Util.join(oldAux, af._name));
-                    InjectableFile fNewAuxFolder = _factFile.create(Util.join(newAux, af._name));
-                    OSUtil.get().copyRecursively(fOldAuxFolder, fNewAuxFolder, false, false);
-                }
-
-            } else {
-                try {
-                    fOldRoot.moveInSameFileSystem(fNewRoot);
-                } catch (IOException e) {
-                    if (OSUtil.isWindows()) {
-                        throw new ExInUse("files in the " + S.PRODUCT + " folder are in use. " +
-                                "Please close all processes interacting with files in " +
-                                S.PRODUCT);
-                    }
-
-                    throw e;
-                }
-            }
-
+            relocator.doWork(t);
             Cfg.db().set(Key.ROOT, absNewRoot);
 
             t.commit_();
@@ -149,22 +118,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             Cfg.db().set(Key.ROOT, absOldRoot);
             // Restart Cfg settings since the daemon keeps running
             Cfg.init_(Cfg.absRTRoot(), false);
-
-            if (copyNDelete) {
-                deleteOldFolders(fNewRoot, newAux);
-            } else {
-                if (fNewRoot.exists() && !fNewRoot.moveInSameFileSystemIgnoreError(fOldRoot)) {
-                    throw new ExInconsistentState(S.PRODUCT + " cannot roll back move");
-                }
-            }
-
+            relocator.rollback();
             throw e;
 
         } finally {
             t.end_();
         }
 
-        if (copyNDelete) deleteOldFolders(fOldRoot, oldAux);
+        relocator.onSuccessfulTransaction();
 
         /*
          * Need to exit daemon so that the linker can be restarted and does not change the
@@ -174,47 +135,112 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         ExitCode.RELOCATE_ROOT_ANCHOR.exit();
     }
 
-    /**
-     * oldParent has the File.separator affixed to the end of the path
-     */
-    private @Nullable String _prefixWalk(String oldParent, OA oa)
+    private abstract class AbstractRelocator
     {
-        if (oa.isExpelled()) {
-            assert oa.fid() == null;
-            return null;
+        final InjectableFile _oldRoot;
+        final InjectableFile _newRoot;
+        final InjectableFile _oldAuxRoot;
+        final InjectableFile _newAuxRoot;
+
+        AbstractRelocator(InjectableFile oldRoot, InjectableFile newRoot)
+        {
+            _oldRoot = oldRoot;
+            _newRoot = newRoot;
+
+            _oldAuxRoot = _factFile.create(_cfgAbsAuxRoot.get());
+            _newAuxRoot = _factFile.create(_cfgAbsAuxRoot.forPath(_newRoot.getPath()));
         }
 
-        switch (oa.type()) {
-        case ANCHOR:
-            return oldParent + oa.name();
-        case DIR:
-            // Root has oa.name() == "R"
-            if (oa.soid().oid().isRoot()) {
-                return oldParent + File.separator;
-            } else {
-                return oldParent + oa.name() + File.separator;
-            }
-        case FILE:
-            return null;
-        default:
-            assert false;
-            return null;
-        }
+        abstract void doWork(Trans t) throws Exception;
+
+        /**
+         * Called if doWork throws
+         */
+        abstract void rollback() throws Exception;
+
+        /**
+         * Called after the transaction has been successfully ended
+         */
+        abstract void onSuccessfulTransaction();
     }
 
-    private void _updateFID(SOID newRootSOID, String absNewRoot, final Trans t) throws Exception
+    private class SameFSRelocator extends AbstractRelocator
     {
-        // Initial walk inserts extra byte to each new FID to avoid duplicate key conflicts in the
-        // database in case some files in the new location happen to have identical FIDs with
-        // original files -- although it should be very rare. Second walk removes this extra byte.
-
-        _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
+        SameFSRelocator(InjectableFile oldRoot, InjectableFile newRoot)
         {
-            @Override
-            public String prefixWalk_(String oldParent, OA oa)
-            {
-                return _prefixWalk(oldParent, oa);
+            super(oldRoot, newRoot);
+        }
+
+        @Override
+        void doWork(Trans t) throws Exception
+        {
+            try {
+                _oldRoot.moveInSameFileSystem(_newRoot);
+                _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
+            } catch (IOException e) {
+                if (OSUtil.isWindows()) {
+                    throw new ExInUse("files in the " + S.PRODUCT + " folder are in use. " +
+                            "Please close all programs interacting with files in " +
+                            S.PRODUCT);
+                }
+                throw e;
             }
+        }
+
+        @Override
+        void rollback() throws Exception
+        {
+            if (_newAuxRoot.exists()) _newAuxRoot.moveInSameFileSystem(_oldAuxRoot);
+            if (_newRoot.exists()) _newRoot.moveInSameFileSystem(_oldRoot);
+        }
+
+        @Override
+        void onSuccessfulTransaction() {}
+    }
+
+    private class DifferentFSRelocator extends AbstractRelocator
+    {
+        DifferentFSRelocator(InjectableFile oldRoot, InjectableFile newRoot)
+        {
+            super(oldRoot, newRoot);
+        }
+
+        @Override
+        void doWork(Trans t) throws Exception
+        {
+            OSUtil.get().copyRecursively(_oldRoot, _newRoot, true, true);
+            updateFID(_ds.resolveThrows_(new Path()), _newRoot.getAbsolutePath(), t);
+            OSUtil.get().copyRecursively(_oldAuxRoot, _newAuxRoot, false, false);
+            OSUtil.get().markHiddenSystemFile(_newAuxRoot.getAbsolutePath());
+        }
+
+        @Override
+        void rollback() throws Exception
+        {
+            deleteFolders(_newRoot, _newAuxRoot);
+        }
+
+        @Override
+        void onSuccessfulTransaction()
+        {
+            // We only delete the old folders once we're absolutely sure everything was successful
+            // Otherwise we risk deleting user data
+            deleteFolders(_oldRoot, _oldAuxRoot);
+        }
+
+        private void updateFID(SOID newRootSOID, String absNewRoot, final Trans t) throws Exception
+        {
+            // Initial walk inserts extra byte to each new FID to avoid duplicate key conflicts in the
+            // database in case some files in the new location happen to have identical FIDs with
+            // original files -- although it should be very rare. Second walk removes this extra byte.
+
+            _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
+            {
+                @Override
+                public String prefixWalk_(String oldParent, OA oa)
+                {
+                    return prefixWalk(oldParent, oa);
+                }
 
             @Override
             public void postfixWalk_(String oldParent, OA oa)
@@ -236,13 +262,13 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             }
         });
 
-        _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
-        {
-            @Override
-            public String prefixWalk_(String oldParent, OA oa)
+            _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
             {
-                return _prefixWalk(oldParent, oa);
-            }
+                @Override
+                public String prefixWalk_(String oldParent, OA oa)
+                {
+                    return prefixWalk(oldParent, oa);
+                }
 
             @Override
             public void postfixWalk_(String oldParent, OA oa)
@@ -258,16 +284,32 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         });
     }
 
-    private void deleteOldFolders(InjectableFile rootAnchor, String auxRoot)
-    {
-        if (!rootAnchor.deleteIgnoreErrorRecursively()) {
-            l.warn("couldn't delete " + rootAnchor + ". ignored.");
+        /**
+         * oldParent has the File.separator affixed to the end of the path (except root)
+         */
+        private @Nullable String prefixWalk(String oldParent, OA oa)
+        {
+            if (oa.isExpelled()) {
+                assert oa.fid() == null;
+                return null;
+            }
+
+            switch (oa.type()) {
+            case ANCHOR: return oldParent + oa.name();
+            case DIR:    return (oa.soid().oid().isRoot()) ? oldParent + File.separator
+                                                           : oldParent + oa.name() + File.separator;
+            case FILE:   return null;
+            default:     assert false; return null;
+            }
         }
 
-        for (C.AuxFolder af : C.AuxFolder.values()) {
-            InjectableFile fAuxFolder = _factFile.create(Util.join(auxRoot, af._name));
-            if (!fAuxFolder.deleteIgnoreErrorRecursively()) {
-                l.warn("couldn't delete " + fAuxFolder + ". ignored.");
+        private void deleteFolders(InjectableFile rootAnchor, InjectableFile auxRoot)
+        {
+            if (!rootAnchor.deleteIgnoreErrorRecursively()) {
+                l.warn("couldn't delete " + rootAnchor + ". ignored.");
+            }
+            if (!auxRoot.deleteIgnoreErrorRecursively()) {
+                l.warn("couldn't delete " + auxRoot + ". ignored.");
             }
         }
     }

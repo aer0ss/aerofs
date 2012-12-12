@@ -4,17 +4,18 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.os.OSUtil;
-
-import java.io.IOException;
-
 /**
  * The absolute path to the aux root
  */
 public class CfgAbsAuxRoot
 {
-    public String get() throws IOException
+    public String get()
     {
-        return OSUtil.get().getAuxRoot(Cfg.absRootAnchor());
+        return Cfg.absAuxRoot();
+    }
+
+    public String forPath(String path)
+    {
+        return Cfg.absAuxRootForPath(path, Cfg.did());
     }
 }

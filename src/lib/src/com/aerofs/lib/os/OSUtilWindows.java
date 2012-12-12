@@ -78,7 +78,7 @@ public class OSUtilWindows implements IOSUtil
             }
 
         } catch (IOException e) {
-            Util.l(OSUtilWindows.class).warn(Util.e(e));
+            l.warn(Util.e(e));
             return System.getProperty("user.home");
         }
     }
@@ -89,7 +89,8 @@ public class OSUtilWindows implements IOSUtil
         if (!OSUtil.isWindowsXP()) {
             SystemUtil.execBackground(AppRoot.abs() + File.separator + "shortcut.exe",
                     "/F:\"" + System.getProperty("user.home") + File.separator +
-                            "Links" + File.separator + "AeroFS.lnk" + "\"", "/A:C",
+                    "Links" + File.separator + "AeroFS.lnk" + "\"",
+                    "/A:C",
                     "/I:\"" + OSUtil.getIconPath(Icon.WinLibraryFolder) + "\"",
                     "/T:\"" + path + "\"");
         }
@@ -103,21 +104,6 @@ public class OSUtilWindows implements IOSUtil
                     "Links" + File.separator + "AeroFS.lnk");
             f.delete();
         }
-    }
-    /**
-     * TODO use JNI + SetFileAttributes() instead of calling the attrib command
-     * (or wait until Java 7)
-     */
-    public static void setFileAttributes(String path, boolean system,
-            boolean hidden) throws IOException
-    {
-        File f = new File(path);
-
-        // attrib doesn't return error even if the file doesn't exist
-        if (!f.exists()) throw new IOException("file not found");
-
-        SystemUtil.execForeground("attrib", system ? "+S" : "-S", hidden ? "+H" : "-H",
-                f.getAbsolutePath());
     }
 
     final static private HashSet<Character> INVALID_FILENAME_CHARS;
@@ -136,34 +122,6 @@ public class OSUtilWindows implements IOSUtil
         }
 
         return true;
-    }
-
-    @Override
-    public String getAuxRoot(String path) throws IOException
-    {
-        String def = new File(Cfg.absDefaultAuxRoot()).getCanonicalPath();
-        char driveDef = Character.toUpperCase(def.charAt(0));
-        path = new File(path).getCanonicalPath();
-        char drive = Character.toUpperCase(path.charAt(0));
-
-        if (drive == driveDef) {
-            return def;
-
-        } else if (drive == '\\') {
-            // it's a remote drive. use the default root
-            // BUGBUG TODO (WW) this doesn't work. use a real drive path
-            return def;
-
-        } else {
-            File auxRootParent = new File(Util.join(drive + ":", C.AUXROOT_PARENT));
-            // make the auxroot parent a hidden system folder
-            if (!auxRootParent.exists()) {
-                auxRootParent.mkdirs();
-                OSUtilWindows.setFileAttributes(auxRootParent.getPath(), true, true);
-            }
-
-            return Util.join(auxRootParent.getPath(), Cfg.did().toStringFormal());
-        }
     }
 
     @Override
@@ -252,7 +210,13 @@ public class OSUtilWindows implements IOSUtil
     @Override
     public void markHiddenSystemFile(String absPath) throws IOException
     {
-        setFileAttributes(absPath, true, true);
+        File f = new File(absPath);
+
+        // attrib doesn't return error even if the file doesn't exist
+        if (!f.exists()) throw new IOException("file not found");
+
+        // TODO use JNI + SetFileAttributes() instead of calling attrib (or wait until Java 7)
+        SystemUtil.execForeground("attrib", "+S", "+H", f.getAbsolutePath());
     }
 
     @Override

@@ -41,15 +41,14 @@ public class C
     public static final String LAST_SENT_DEFECT        = "lsd";
 
     /**
-     * AUXROOT (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
-     * files for a given path that hosts AeroFS physical files. To avoid copying files across
-     * filesystems, AUXROOT is always on the same filesystem as the given path. If the path is
-     * on the filesystem where RTROOT is located, AUXROOT is equivalent to RTROOT. Otherwise,
-     * AUXROOT is �<mount>/.aerofs.aux/<device_id>� where <mount> is the root of the filesystem
-     * where the given path is located and <device_id> is the local device ID. For example, Constant
-     * AUXROOT_PARENT below defines the parent folder name.
+     * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
+     * files for a given path that hosts AeroFS physical files.
+     *
+     * AuxRoot has the same parent folder as RootAnchor to ensure they are on the same filesystem.
+     * AuxRoot's name is AUXROOT_PREFIX + the first 6 characters of the device id, to avoid
+     * conflicting AuxRoots in case of multiple installations
      */
-    public static final String AUXROOT_PARENT = ".aerofs.aux";
+    public static final String AUXROOT_PREFIX = ".aerofs.";
     public static enum AuxFolder
     {
         PREFIX("p"),

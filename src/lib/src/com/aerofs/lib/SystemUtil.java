@@ -30,6 +30,7 @@ public abstract class SystemUtil
         OUT_OF_MEMORY("out of memory"),
         JINGLE_CALL_TOO_LONG("jingle call too long"),
         JINGLE_TASK_FATAL_ERROR("jingle task fatal error"),
+        DPUT_MIGRATE_AUX_ROOT_FAILED("migrating the aux root failed"),
 
         ////////
         // Exit codes that are expected during normal operations. _All_ of them should be handled
