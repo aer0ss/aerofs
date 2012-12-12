@@ -12,7 +12,7 @@
 	<classpathentry kind="lib" path="resource/server/protobuf-format-java-1.1.jar"/>
 	<classpathentry kind="lib" path="resource/server/servlet-api-2.5.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/libservlet"/>
-	<classpathentry kind="lib" path="approot/lib/json_simple-1.1.jar"/>
+	<classpathentry kind="lib" path="approot/lib/gson-2.2.2.jar"/>
 	<classpathentry kind="lib" path="approot/lib/netty-3.5.8.jar"/>
 	<classpathentry kind="output" path="approot/bin"/>
 </classpath>
