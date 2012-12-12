@@ -18,6 +18,7 @@ import java.util.Properties;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.lib.*;
+import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
@@ -326,11 +327,10 @@ public abstract class Updater
             updateDirFolder.deleteOrThrowIfExistRecursively();
 
             if (!dir.moveInSameFileSystemIgnoreError(updateDirFolder)) {
-                l.warn("download: could not rename tmp dir: " +
-                       dir.getAbsolutePath() + "->" + updateDirFolder.getAbsolutePath());
-                //test whether directory is readable or writeable
-                // AAG FIXME: I'm almost 100% sure we should throw an exception here and let it
-                // be cleaned up (or change installation filename to be the correct path)
+                l.warn("download: could not rename tmp dir. hasPermission? " + hasPermissions());
+
+                throw new ExFileIO("download: could not rename tmp dir {} -> {}",
+                        dir.getImplementation(), updateDirFolder.getImplementation());
             }
 
             // _installationFilename should be file name only, to be passed to Updater.
