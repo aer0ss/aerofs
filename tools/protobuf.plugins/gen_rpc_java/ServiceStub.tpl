@@ -15,7 +15,7 @@ public static class $ServiceName$Stub
   }
 
   private <T extends $MessageType$> com.google.common.util.concurrent.ListenableFuture<T>
-  sendQuery($ServiceClassName$Reactor.ServiceRpcTypes type, com.google.protobuf.ByteString bytes, $MessageType$.Builder b)
+  sendQuery($ServiceClassName$Reactor.ServiceRpcTypes type, com.google.protobuf.ByteString bytes, $MessageType$.Builder b, Class<T> tClass)
   {
     com.aerofs.proto.RpcService.Payload p = com.aerofs.proto.RpcService.Payload.newBuilder()
       .setType(type.ordinal())
@@ -24,23 +24,25 @@ public static class $ServiceName$Stub
 
     com.google.common.util.concurrent.SettableFuture<T> receiveFuture = com.google.common.util.concurrent.SettableFuture.create();
     com.google.common.util.concurrent.ListenableFuture<byte[]> sendFuture = _callbacks.doRPC(p.toByteArray());
-    com.google.common.util.concurrent.Futures.addCallback(sendFuture, new ReplyCallback<T>(receiveFuture, type, b));
+    com.google.common.util.concurrent.Futures.addCallback(sendFuture, new ReplyCallback<T>(receiveFuture, type, b, tClass));
     return receiveFuture;
   }
 
   private class ReplyCallback<T extends $MessageType$>
     implements com.google.common.util.concurrent.FutureCallback<byte[]>
   {
-    private com.google.common.util.concurrent.SettableFuture<T> _replyFuture;
-    private $ServiceClassName$Reactor.ServiceRpcTypes _replyType;
-    private $MessageType$.Builder _builder;
+    private final com.google.common.util.concurrent.SettableFuture<T> _replyFuture;
+    private final $ServiceClassName$Reactor.ServiceRpcTypes _replyType;
+    private final $MessageType$.Builder _builder;
+    private final Class<T> _tClass;
 
     public ReplyCallback(com.google.common.util.concurrent.SettableFuture<T> future,
-      $ServiceClassName$Reactor.ServiceRpcTypes type, $MessageType$.Builder builder)
+      $ServiceClassName$Reactor.ServiceRpcTypes type, $MessageType$.Builder builder, Class<T> tClass)
     {
       _replyFuture = future;
       _replyType = type;
       _builder = builder;
+      _tClass = tClass;
     }
 
     @Override
@@ -61,8 +63,7 @@ public static class $ServiceName$Stub
         }
 
         $MessageType$ r = _builder.mergeFrom(p.getPayloadData()).build();
-        @SuppressWarnings("unchecked")
-        T reply = (T) r;
+        T reply = _tClass.cast(r);
         _replyFuture.set(reply);
 
       } catch (Throwable e) {

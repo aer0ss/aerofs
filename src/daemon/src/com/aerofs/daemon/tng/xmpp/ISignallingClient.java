@@ -5,8 +5,6 @@
 package com.aerofs.daemon.tng.xmpp;
 
 import com.aerofs.daemon.tng.xmpp.ISignallingService.SignallingMessage;
-import com.aerofs.lib.id.DID;
-import com.aerofs.proto.Transport.PBTPHeader;
 
 /**
  * Implemented by classes that want to send and receive messages via an out-of-band signalling (or

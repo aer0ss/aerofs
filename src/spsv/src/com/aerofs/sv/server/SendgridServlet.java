@@ -4,25 +4,22 @@
 
 package com.aerofs.sv.server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.sql.SQLException;
+import com.aerofs.lib.Util;
+import com.aerofs.servlets.AeroServlet;
+import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
+import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.sv.common.Event;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.apache.log4j.Logger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.aerofs.lib.Util;
-import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
-import com.aerofs.servlets.AeroServlet;
-
-import org.apache.log4j.Logger;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.aerofs.sv.common.Event;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class SendgridServlet extends AeroServlet {
 
@@ -79,10 +76,10 @@ public class SendgridServlet extends AeroServlet {
     {
         BufferedReader br = req.getReader();
         String line;
-        JSONParser parser = new JSONParser();
+        JsonParser parser = new JsonParser();
         try {
             while ((line = br.readLine()) != null) {
-                JSONObject obj = (JSONObject)parser.parse(line);
+                JsonObject obj = (JsonObject)parser.parse(line);
 
                 handleEvent(obj);
 
@@ -99,16 +96,16 @@ public class SendgridServlet extends AeroServlet {
         }
     }
 
-    private void handleEvent(JSONObject obj)
+    private void handleEvent(JsonObject obj)
             throws SQLException
     {
         _transaction.begin();
 
-        assert obj.containsKey("category");
-        String category = (String)obj.get("category");
-        String email = (String)obj.get("email");
-        String eventStr = (String)obj.get("event");
-        Long timestamp = (Long)obj.get("timestamp");
+        assert obj.has("category");
+        String category = obj.get("category").getAsString();
+        String email = obj.get("email").getAsString();
+        String eventStr = obj.get("event").getAsString();
+        Long timestamp = obj.get("timestamp").getAsLong();
 
         l.info("EVENT(" + eventStr + ")" +
                 "FROM EMAIL(" + email + ") " +
@@ -152,40 +149,40 @@ public class SendgridServlet extends AeroServlet {
         _transaction.commit();
     }
 
-    private String deferredDesc(JSONObject obj)
+    private String deferredDesc(JsonObject obj)
             throws SQLException
     {
         StringBuilder desc = new StringBuilder();
-        if (obj.containsKey("attempt")) desc.append("attempt =").append((String)obj.get("attempt"));
-        if (obj.containsKey("response")) desc.append(" response = ").append((String)obj.get("response"));
+        if (obj.has("attempt")) desc.append("attempt =").append(obj.get("attempt").getAsString());
+        if (obj.has("response")) desc.append(" response = ").append(obj.get("response").getAsString());
         return desc.toString();
     }
 
-    private String deliveredDesc(JSONObject obj)
+    private String deliveredDesc(JsonObject obj)
             throws SQLException
     {
-        return (String)obj.get("response");
+        return obj.get("response").getAsString();
     }
 
-    private String clickDesc(JSONObject obj)
+    private String clickDesc(JsonObject obj)
     {
-        return (String)obj.get("url");
+        return obj.get("url").getAsString();
     }
 
-    private String bounceDesc(JSONObject obj)
+    private String bounceDesc(JsonObject obj)
             throws SQLException
     {
         StringBuilder desc = new StringBuilder();
-        if (obj.containsKey("status")) desc.append("status =").append((String)obj.get("status"));
-        if (obj.containsKey("reason")) desc.append(" reason =").append((String)obj.get("reason"));
-        if (obj.containsKey("type")) desc.append(" type =").append((String)obj.get("type"));
+        if (obj.has("status")) desc.append("status =").append(obj.get("status").getAsString());
+        if (obj.has("reason")) desc.append(" reason =").append(obj.get("reason").getAsString());
+        if (obj.has("type")) desc.append(" type =").append(obj.get("type").getAsString());
 
         return desc.toString();
     }
 
-    private String dropDesc(JSONObject obj)
+    private String dropDesc(JsonObject obj)
     {
-        return (String) obj.get("reason");
+        return obj.get("reason").getAsString();
     }
 
 }

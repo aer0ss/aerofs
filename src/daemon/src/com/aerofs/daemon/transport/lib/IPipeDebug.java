@@ -6,7 +6,6 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.lib.IDebug;
-import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.id.DID;
 
 /**

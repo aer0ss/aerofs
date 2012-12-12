@@ -470,7 +470,6 @@ public abstract class FileUtil
         reportIfNotNFC(name, extraLogs, true);
     }
 
-    @SuppressWarnings("unused")
     public static void assertIfNotNFC(String name, String extraLogs)
     {
         reportIfNotNFC(name, extraLogs, false);

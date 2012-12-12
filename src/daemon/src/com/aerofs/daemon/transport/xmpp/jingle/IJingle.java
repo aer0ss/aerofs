@@ -5,9 +5,6 @@
 
 package com.aerofs.daemon.transport.xmpp.jingle;
 
-import com.aerofs.daemon.transport.lib.INetworkStats;
-import com.aerofs.daemon.transport.lib.IPipeController;
-import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.id.DID;
 
 import java.io.ByteArrayInputStream;

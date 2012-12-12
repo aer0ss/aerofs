@@ -4,8 +4,6 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.OutArg;
 
-import java.util.concurrent.Executor;
-
 /**
  * An abstract representation of an event-loop. Events can be enqueued by calling {@link
  * #enqueueEvent(Object, Prio)}.

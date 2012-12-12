@@ -1,6 +1,5 @@
 package com.aerofs.daemon.tng.xmpp.netty;
 
-import org.jboss.netty.channel.ChannelDownstreamHandler;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.MessageEvent;

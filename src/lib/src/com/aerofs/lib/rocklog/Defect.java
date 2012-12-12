@@ -6,12 +6,14 @@ package com.aerofs.lib.rocklog;
 
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 
 /**
  * Represents a defect that will be sent to the RockLog server.
@@ -32,14 +34,13 @@ import java.util.Date;
  * }
 
  */
-@SuppressWarnings("unchecked")
 public class Defect
 {
     public enum Priority { Info, Warning, Fatal }
 
     private final String _name;
     private final RockLog _rocklog;
-    private JSONObject _json = new JSONObject();
+    private HashMap<String, Object> _json = new HashMap<String, Object>();
 
     Defect(RockLog rocklog, String name)
     {
@@ -123,7 +124,7 @@ public class Defect
             _json.put("aerofs_arch", OSUtil.getOSArch().toString());
         }
 
-        return _json.toJSONString();
+        return new Gson().toJson(_json);
     }
 
     /**
@@ -145,26 +146,26 @@ public class Defect
      *   }
      * }
      */
-    private JSONObject encodeException(Throwable e)
+    private JsonObject encodeException(Throwable e)
     {
-        JSONObject result = new JSONObject();
+        JsonObject result = new JsonObject();
         if (e == null) return result;
 
-        JSONArray stacktrace = new JSONArray();
+        JsonArray stacktrace = new JsonArray();
         StackTraceElement[] javaStack = e.getStackTrace();
         for (StackTraceElement javaFrame : javaStack) {
-            JSONObject frame = new JSONObject();
-            frame.put("class", javaFrame.getClassName());
-            frame.put("method", javaFrame.getMethodName());
-            frame.put("file", javaFrame.getFileName());
-            frame.put("line", javaFrame.getLineNumber());
+            JsonObject frame = new JsonObject();
+            frame.addProperty("class", javaFrame.getClassName());
+            frame.addProperty("method", javaFrame.getMethodName());
+            frame.addProperty("file", javaFrame.getFileName());
+            frame.addProperty("line", javaFrame.getLineNumber());
             stacktrace.add(frame);
         }
 
-        result.put("type", e.getClass().getName());
-        result.put("message", e.getMessage());
-        result.put("stacktrace", stacktrace);
-        result.put("cause", encodeException(e.getCause()));
+        result.addProperty("type", e.getClass().getName());
+        result.addProperty("message", e.getMessage());
+        result.add("stacktrace", stacktrace);
+        result.add("cause", encodeException(e.getCause()));
         return result;
     }
 }

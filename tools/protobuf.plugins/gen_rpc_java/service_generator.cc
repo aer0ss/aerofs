@@ -159,7 +159,7 @@ void ServiceGenerator::generateStub(const ServiceDescriptor* service, io::Printe
 
        printer->Print(subvars,
                        "\n"
-                       "  return sendQuery($ServiceClassName$Reactor.ServiceRpcTypes.$RPC_TYPE$, builder.build().toByteString(), $ReplyClass$.newBuilder());\n"
+                       "  return sendQuery($ServiceClassName$Reactor.ServiceRpcTypes.$RPC_TYPE$, builder.build().toByteString(), $ReplyClass$.newBuilder(), $ReplyClass$.class);\n"
                       "}\n"
                        );
     }

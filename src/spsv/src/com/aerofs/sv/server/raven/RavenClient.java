@@ -1,5 +1,9 @@
 package com.aerofs.sv.server.raven;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 import java.io.IOException;
@@ -17,16 +21,12 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
 /**
  * User: ken cochrane
  * Date: 2/6/12
  * Time: 11:59 AM
  */
 
-@SuppressWarnings("unchecked")
 public class RavenClient {
 
     private static final String RAVEN_JAVA_VERSION = "Raven-Java 0.6";
@@ -95,30 +95,30 @@ public class RavenClient {
 
     private String buildJSON(RavenTrace rt)
     {
-        JSONObject obj = new JSONObject();
-        JSONObject jsonStack = buildStacktrace(rt);
+        Gson gson = new Gson();
+        JsonObject obj = new JsonObject();
+        JsonObject jsonStack = buildStacktrace(rt);
         buildJSONCommon(obj, rt.getMessage(), RavenUtils.getTimestampString(rt.getTimestamp()), "logger", 50, rt.getUser(), rt.getDeviceId(), rt.getVersion());
-        obj.put("culprit", determineCulprit(rt));
-        obj.put("checksum", RavenUtils.calculateChecksum(jsonStack.toJSONString()));
-        obj.put("sentry.interfaces.Exception", buildException(rt));
-        obj.put("sentry.interfaces.Stacktrace", jsonStack);
+        obj.addProperty("culprit", determineCulprit(rt));
+        obj.addProperty("checksum", RavenUtils.calculateChecksum(gson.toJson(jsonStack)));
+        obj.add("sentry.interfaces.Exception", buildException(rt));
+        obj.add("sentry.interfaces.Stacktrace", jsonStack);
 
-        return obj.toJSONString();
+        return gson.toJson(obj);
     }
 
-    private String buildJSONCommon(JSONObject obj, String message, String timestamp, String loggerClass, int logLevel, String user, String deviceId, String version)
+    private void buildJSONCommon(JsonObject obj, String message, String timestamp, String loggerClass, int logLevel, String user, String deviceId, String version)
     {
         String lastID = RavenUtils.getRandomUUID();
-        obj.put("event_id", lastID); //Hexadecimal string representing a uuid4 value.
-        obj.put("timestamp", timestamp);
-        obj.put("message", message);
-        obj.put("project", getConfig().getProjectId());
-        obj.put("level", logLevel);
-        obj.put("logger", loggerClass);
-        obj.put("server_name", RavenUtils.getHostname());
-        obj.put("sentry.interfaces.User", buildUser(user,deviceId, version));
+        obj.addProperty("event_id", lastID); //Hexadecimal string representing a uuid4 value.
+        obj.addProperty("timestamp", timestamp);
+        obj.addProperty("message", message);
+        obj.addProperty("project", getConfig().getProjectId());
+        obj.addProperty("level", logLevel);
+        obj.addProperty("logger", loggerClass);
+        obj.addProperty("server_name", RavenUtils.getHostname());
+        obj.add("sentry.interfaces.User", buildUser(user, deviceId, version));
         setLastID(lastID);
-        return obj.toJSONString();
     }
 
     private String determineCulprit(RavenTrace rt)
@@ -126,42 +126,42 @@ public class RavenClient {
         return rt.getTraceElements()[0].getClassName() + "." + rt.getTraceElements()[0].getMethodName();
     }
 
-    private JSONObject buildUser(String user, String deviceId, String version) {
-        JSONObject json = new JSONObject();
-        json.put("is_authenticated", true);
-        json.put("id", version);
-        json.put("username", deviceId);
-        json.put("email", user);
+    private JsonObject buildUser(String user, String deviceId, String version) {
+        JsonObject json = new JsonObject();
+        json.addProperty("is_authenticated", true);
+        json.addProperty("id", version);
+        json.addProperty("username", deviceId);
+        json.addProperty("email", user);
 
         return json;
     }
 
-    private JSONObject buildException(RavenTrace rt) {
-        JSONObject json = new JSONObject();
-        json.put("type", rt.getTraceElements()[0].getClassName());
-        json.put("value", rt.getMessage());
+    private JsonObject buildException(RavenTrace rt) {
+        JsonObject json = new JsonObject();
+        json.addProperty("type", rt.getTraceElements()[0].getClassName());
+        json.addProperty("value", rt.getMessage());
         //yuris: module is optional, skipping for now
 
         return json;
     }
 
 
-    private JSONObject buildStacktrace(RavenTrace rt) {
-        JSONArray array = new JSONArray();
-        JSONObject frame = new JSONObject();
+    private JsonObject buildStacktrace(RavenTrace rt) {
+        JsonArray array = new JsonArray();
+        JsonObject frame = new JsonObject();
         RavenTraceElement[] rte = rt.getTraceElements();
 
         for (int i = 0; i < rte.length; i++)
         {
-            frame = new JSONObject();
-            frame.put("filename", rte[i].getClassName());
-            frame.put("function", rte[i].getMethodName());
-            frame.put("lineno", rte[i].getLineNumber());
+            frame = new JsonObject();
+            frame.addProperty("filename", rte[i].getClassName());
+            frame.addProperty("function", rte[i].getMethodName());
+            frame.addProperty("lineno", rte[i].getLineNumber());
             array.add(frame);
         }
 
-        JSONObject stacktrace = new JSONObject();
-        stacktrace.put("frames", array);
+        JsonObject stacktrace = new JsonObject();
+        stacktrace.add("frames", array);
         return stacktrace;
     }
 

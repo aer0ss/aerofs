@@ -53,7 +53,7 @@ public class RockLog
             l.info("Sending defect...");
             rpc(defect.getJSON().getBytes());
         } catch (Throwable e) {
-            l.warn("Could not send log to RockLog: " + Util.e(e));
+            l.warn("Could not send log to RockLog: " + Util.e(e, IOException.class));
         }
     }
 

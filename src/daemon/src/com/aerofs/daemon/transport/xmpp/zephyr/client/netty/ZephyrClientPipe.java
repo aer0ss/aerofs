@@ -8,7 +8,6 @@ import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.daemon.transport.lib.INetworkStats;
 import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.TPUtil;
-import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.daemon.transport.xmpp.ISignallingChannel;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception.ExInvalidZephyrChannelAction;
