@@ -27,6 +27,8 @@
  * online backup system.
  */
 
+#include "platform_config.h"
+
 #include <sys/types.h>
 
 #include <errno.h>
