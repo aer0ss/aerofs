@@ -13,7 +13,6 @@ import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.daemon.transport.xmpp.ISignallingChannel;
-import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.ExInvalidTransition;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachine;

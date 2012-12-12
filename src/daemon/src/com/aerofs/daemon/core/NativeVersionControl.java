@@ -9,7 +9,6 @@ import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.ver.INativeVersionDatabase;

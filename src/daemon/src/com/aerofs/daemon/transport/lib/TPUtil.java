@@ -25,7 +25,6 @@ import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExFormatError;

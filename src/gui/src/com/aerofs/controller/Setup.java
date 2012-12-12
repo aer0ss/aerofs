@@ -18,7 +18,6 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ExNotSetup;
-import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNotDir;

@@ -10,7 +10,6 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
@@ -36,7 +35,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -62,7 +60,7 @@ import java.util.Map.Entry;
 
 public class MobileService implements IMobileService
 {
-    private final static Logger l = Util.l(MobileService.class);
+    //private final static Logger l = Util.l(MobileService.class);
     private static final Prio PRIO = Prio.LO;
 
     private static final byte[] MAGIC_BYTES = "MOBL".getBytes();

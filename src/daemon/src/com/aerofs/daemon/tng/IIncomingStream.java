@@ -8,8 +8,6 @@ import com.aerofs.daemon.tng.base.streams.Chunk;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 
-import java.util.concurrent.Future;
-
 public interface IIncomingStream extends IStream
 {
     /**

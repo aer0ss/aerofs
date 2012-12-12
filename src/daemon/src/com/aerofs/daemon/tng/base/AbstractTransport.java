@@ -5,7 +5,6 @@
 package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.core.net.tng.Preference;
-import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
