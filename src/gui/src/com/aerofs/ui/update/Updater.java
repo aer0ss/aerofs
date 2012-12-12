@@ -195,8 +195,8 @@ public abstract class Updater
      */
     public void onStartupFailed()
     {
-        CheckAndDownloadResult cdr = checkAndDownload();
-        if (cdr != null) applyUpdate(cdr._downloadedVersion, hasPermissions());
+        String downloadedVersion = checkAndDownload();
+        if (downloadedVersion != null) applyUpdate(downloadedVersion, hasPermissions());
     }
 
     /**
@@ -205,10 +205,10 @@ public abstract class Updater
      */
     private void checkForUpdateImpl()
     {
-        CheckAndDownloadResult cdr = checkAndDownload();
+        String downloadedVersion = checkAndDownload();
 
         // force update on all changes
-        if (cdr != null) applyUpdate(cdr._downloadedVersion, true /* cdr._cr != CompareResult.BUILD_CHANGE*/);
+        if (downloadedVersion != null) applyUpdate(downloadedVersion, true);
     }
 
     /**
@@ -415,26 +415,12 @@ public abstract class Updater
         }
     }
 
-    // Note the caller needs to maintain the update status (setUpdateStatus())
-    // if an update is found
-
-    private class CheckAndDownloadResult
-    {
-        final String _downloadedVersion;
-        @SuppressWarnings("unused")
-        final CompareResult _cr;
-
-        CheckAndDownloadResult(String downloadedVersion, CompareResult cr)
-        {
-            _downloadedVersion = downloadedVersion;
-            _cr = cr;
-        }
-    }
-
     /**
-     * @return {@code null} if no update is available, or no update can be downloaded
+     * Checks for an update and downloads it if avalable.
+     *
+     * @return the version string of the downloaded update, or null if no update is available
      */
-    @Nullable private CheckAndDownloadResult checkAndDownload()
+    @Nullable private String checkAndDownload()
     {
         l.info("check and download update");
 
@@ -468,7 +454,7 @@ public abstract class Updater
 
             l.info("updating to ver:" + verServer + " file:" + _installationFilename);
 
-            return new CheckAndDownloadResult(verServer, cr);
+            return verServer;
 
         } catch (Exception e) {
             l.warn("update failed: " + Util.e(e, UnknownHostException.class));
