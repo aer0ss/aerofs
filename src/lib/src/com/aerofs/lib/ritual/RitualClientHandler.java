@@ -1,6 +1,5 @@
 package com.aerofs.lib.ritual;
 
-import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.proto.Common;

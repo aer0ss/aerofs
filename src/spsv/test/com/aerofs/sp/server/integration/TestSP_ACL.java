@@ -3,7 +3,6 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -17,16 +16,12 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
