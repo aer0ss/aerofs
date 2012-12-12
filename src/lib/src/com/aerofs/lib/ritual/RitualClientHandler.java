@@ -151,8 +151,6 @@ public class RitualClientHandler extends SimpleChannelHandler implements RitualS
 
     private void drainPendingRequests(Throwable reason)
     {
-        // TODO (EK) remove this warn once arkoot's bug is fixed
-        Util.l().warn("RitualClientHandler exception: " + Util.e(reason));
         synchronized (this) {
             for (UncancellableFuture<byte[]> pending : _pendingReads) {
                 pending.setException(reason);
