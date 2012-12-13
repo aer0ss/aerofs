@@ -16,7 +16,7 @@ public class PauseOrResumeSyncing
     private int _pauseSeq;
     private boolean _paused;
 
-    synchronized void pause(long timeout) throws Exception
+    public synchronized void pause(long timeout) throws Exception
     {
         // The test is needed in case the GUI shows a "Pause" menu item when a pause operation is
         // ongoing (since isPaused() returns false before the operation completes), and the user
@@ -24,7 +24,7 @@ public class PauseOrResumeSyncing
         if (!_paused) pause_(timeout);
     }
 
-    synchronized void resume() throws Exception
+    public synchronized void resume() throws Exception
     {
         // see comments in pause() for detail.
         if (_paused) resume_();

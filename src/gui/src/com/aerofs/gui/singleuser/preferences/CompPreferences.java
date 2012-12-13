@@ -1,14 +1,14 @@
-package com.aerofs.gui.preferences;
+package com.aerofs.gui.singleuser.preferences;
 
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.password.DlgPasswordChange;
+import com.aerofs.gui.preferences.PreferencesUtil;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
 import com.aerofs.lib.Param.SP;
-import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -41,7 +41,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
@@ -66,10 +65,13 @@ public class CompPreferences extends Composite
     private String _lastName;   // must be null initially. see updateUserAndDeviceName
     private String _deviceName; // must be null initially. see updateUserAndDeviceName
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
+    private final PreferencesUtil _preferencesUtil;
 
     public CompPreferences(Composite parent, boolean showTransfers)
     {
         super(parent, SWT.NONE);
+
+        _preferencesUtil = new PreferencesUtil(this);
 
         GridLayout gridLayout = new GridLayout(3, false);
         gridLayout.marginWidth = GUIParam.MARGIN;
@@ -501,49 +503,19 @@ public class CompPreferences extends Composite
     {
         // Have to re-open the directory dialog in a separate stack, since doing it in the same
         // stack would cause strange SWT crashes on OSX :/
-
         GUI.get().safeAsyncExec(this, new Runnable() {
             @Override
             public void run()
             {
-                DirectoryDialog dd = new DirectoryDialog(getShell(), SWT.SHEET);
-                dd.setMessage("Select " + S.SETUP_ANCHOR_ROOT);
-                String root = dd.open();
-                if (root != null && moveAnchorRoot(root)) selectAndMoveRootAnchor_();
+                String root = _preferencesUtil.getRootAnchorPathFromDirectoryDialog(
+                        "Select " + S.SETUP_ANCHOR_ROOT);
+                if (root == null) return; //User hit cancel
+                if (_preferencesUtil.moveRootAnchor(root)) {
+                    _txtRootAnchor.setText(_preferencesUtil.getRootAnchor());
+                } else {
+                    selectAndMoveRootAnchor_();
+                }
             }
         });
-    }
-
-    /**
-     * @return whether to reopen the select-folder dialog.
-     */
-    private boolean moveAnchorRoot(String rootParent)
-    {
-        String pathOld = Cfg.absRootAnchor();
-        String pathNew = RootAnchorUtil.adjustRootAnchor(rootParent);
-
-        try {
-            RootAnchorUtil.checkNewRootAnchor(pathOld, pathNew);
-        } catch (Exception e) {
-            GUI.get().show(getShell(), MessageType.WARN, e.getMessage() +
-                    ". Please select a different folder.");
-            return true;
-        }
-
-        if (!GUI.get().ask(getShell(), MessageType.QUESTION, "Are you sure you want to move the "
-                + S.PRODUCT + " folder and its content from:\n\n" + pathOld + " \n\n to: \n\n " +
-                pathNew + "?")) {
-            return false;
-        }
-
-        DlgMoveRootAnchor dlg = new DlgMoveRootAnchor(getShell(), true, pathNew);
-
-        Boolean okay = (Boolean) dlg.openDialog();
-        if (okay != null && okay) {
-            _txtRootAnchor.setText(pathNew);
-            return false;
-        } else {
-            return true;
-        }
     }
 }
