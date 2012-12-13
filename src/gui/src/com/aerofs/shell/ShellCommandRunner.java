@@ -10,6 +10,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -19,7 +20,7 @@ import java.util.TreeMap;
 
 public class ShellCommandRunner<T>
 {
-    public static interface ICallback<T>
+    public static interface ICallback
     {
         String getPrompt_();
     }
@@ -31,21 +32,18 @@ public class ShellCommandRunner<T>
     public static final String ARG_SHOW_STACK = "-s";
 
     private final Map<String, IShellCommand<T>> _cmds = new TreeMap<String, IShellCommand<T>>();
-    private final Map<String, String[]> _aliases = new TreeMap<String, String[]>();
     private final PrintStream _err = System.err;
     private final PrintStream _out = System.out;
     private final ConsoleReader _reader;
     private boolean _echo;
     private boolean _showStack;
-    private final ICallback<T> _cb;
+    private final ICallback _cb;
     private final T _data;
     private final String _prog, _desc;
 
     private String[] _cmdlineInput;
-    private String _lastInput = "";
 
-
-    public ShellCommandRunner(ICallback<T> cb, T data, String prog, String desc, String[] args)
+    public ShellCommandRunner(ICallback cb, T data, String prog, String desc, String[] args)
             throws ExBadArgs, IOException
     {
         _cb = cb;
@@ -114,10 +112,10 @@ public class ShellCommandRunner<T>
         _cmds.put(cmd.getName(), cmd);
     }
 
-    public String nextInputLine() throws IOException
+    public @Nullable String nextInputLineNullable() throws IOException
     {
         String line = _reader.readLine(_cb.getPrompt_());
-        if (_echo) {
+        if (line != null && _echo) {
             _out.print(_cb.getPrompt_());
             _out.println(line);
         }
@@ -132,11 +130,6 @@ public class ShellCommandRunner<T>
     public Map<String, IShellCommand<T>> getCommands_()
     {
         return _cmds;
-    }
-
-    public T cookie_()
-    {
-        return _data;
     }
 
     public void usage(IShellCommand<T> cmd)
@@ -154,8 +147,6 @@ public class ShellCommandRunner<T>
     private void exec_(String args[])
     {
         if (args.length == 0) return;
-
-        if (_aliases.containsKey(args[0])) args = _aliases.get(args[0]);
 
         IShellCommand<T> cmd = _cmds.get(args[0]);
         if (cmd == null) {
@@ -209,15 +200,10 @@ public class ShellCommandRunner<T>
         while (true) {
             String line;
             try {
-                line = nextInputLine();
+                line = nextInputLineNullable();
+                if (line == null) break;
             } catch (NoSuchElementException e) {
                 break;
-            }
-
-            if (line.isEmpty()) {
-                line = _lastInput;
-            } else {
-                _lastInput = line;
             }
 
             try {

@@ -20,10 +20,9 @@ import com.aerofs.shell.ShellCommandRunner.ICallback;
 import com.aerofs.shell.restricted.CmdDstat;
 import com.aerofs.ui.UIUtil;
 
-public class ShProgram implements IProgram, ICallback<ShProgram>
+public class ShProgram implements IProgram, ICallback
 {
     public static final String SEP = "/";
-    public static final char SEP_CHAR = '/';
 
     static final String DEBUG_FLAG = "DEBUG";
 
