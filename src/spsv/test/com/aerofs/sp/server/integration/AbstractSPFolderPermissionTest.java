@@ -40,7 +40,6 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
         return SubjectRolePairs.mapToPB(Collections.singletonMap(sharee, role));
     }
 
-
     protected Set<String> mockVerkehrToSuccessfullyPublishAndStoreSubscribers()
     {
         final Set<String> published = new HashSet<String>();
@@ -70,7 +69,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
         // for backward compat with existing tests, accept invite immediately to update ACLs
         joinSharedFolder(sharer, sid, sharee);
         // backward compat
-        sessionUser.set(factUser.create(sharer));
+        setSessionUser(sharer);
     }
 
     /**
@@ -80,7 +79,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
     protected void shareFolder(UserID sharer, SID sid, UserID sharee, Role role)
             throws Exception
     {
-        sessionUser.set(factUser.create(sharer));
+        setSessionUser(sharer);
         service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "")
                 .get();
     }
@@ -88,7 +87,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
     protected @Nullable String getSharedFolderCode(UserID sharer, SID sid, UserID sharee)
             throws Exception
     {
-        sessionUser.set(factUser.create(sharee));
+        setSessionUser(sharee);
         ListPendingFolderInvitationsReply reply = service.listPendingFolderInvitations().get();
 
         for (PBFolderInvitation inv : reply.getInvitationsList()) {
@@ -110,7 +109,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
 
     protected void joinSharedFolder(UserID sharee, String code) throws Exception
     {
-        sessionUser.set(factUser.create(sharee));
+        setSessionUser(sharee);
         service.joinSharedFolder(code);
     }
 }

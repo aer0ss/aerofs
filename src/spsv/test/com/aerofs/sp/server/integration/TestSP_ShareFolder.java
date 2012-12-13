@@ -70,8 +70,6 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.EDITOR);
-
-
     }
 
     @Test
@@ -121,13 +119,13 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExNotFoundWhenTryingToJoinWithInvalidCode() throws Exception
     {
-        boolean ok = false;
         try {
             joinSharedFolder(TEST_USER_2, "deadbeef");
+            // must not reach here
+            assertTrue(false);
         } catch (ExNotFound e) {
-            ok = true;
+            trans.handleException();
         }
-        Assert.assertTrue(ok);
         assertTrue(published.isEmpty());
     }
 
@@ -140,13 +138,13 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         String code = getSharedFolderCode(TEST_USER_1, TEST_SID_1, TEST_USER_2);
         Assert.assertNotNull(code);
 
-        boolean ok = false;
         try {
             joinSharedFolder(TEST_USER_3, code);
+            // must not reach here
+            assertTrue(false);
         } catch (ExNoPerm e) {
-            ok = true;
+            trans.handleException();
         }
-        Assert.assertTrue(ok);
         assertTrue(published.isEmpty());
     }
 
@@ -157,15 +155,14 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
         published.clear();
 
-        boolean ok = false;
         try {
             // should throw ExNoPerm because user 2 is an editor
             shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+            // must not reach here
+            assertTrue(false);
         } catch (ExNoPerm e) {
             trans.handleException();
-            ok = true;
         }
-        Assert.assertTrue(ok);
         assertTrue(published.isEmpty());
     }
 
@@ -182,15 +179,14 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
         published.clear();
 
-        boolean ok = false;
         try {
             // should throw ExNoPerm because user 4 is unverified
             shareFolder(TEST_USER_4, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+            // must not reach here
+            assertTrue(false);
         } catch (ExNoPerm e) {
             trans.handleException();
-            ok = true;
         }
-        Assert.assertTrue(ok);
         assertTrue(published.isEmpty());
     }
 }

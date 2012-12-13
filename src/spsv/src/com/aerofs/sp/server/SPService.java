@@ -619,7 +619,7 @@ public class SPService implements ISPService
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
         l.info(sharer + " shares " + sf + " with " + srps.size() + " users");
-        if (srps.isEmpty()) throw new ExNoPerm("must specify one or more sharee");
+        if (srps.isEmpty()) throw new ExBadArgs("must specify one or more sharee");
 
         _transaction.begin();
 
@@ -819,9 +819,9 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> inviteUser(List<String> userIds, Boolean toDefaultOrg)
             throws ExNoPerm, SQLException, ExNotFound, ExEmailSendingFailed, ExAlreadyExist,
-                IOException
+            IOException, ExBadArgs
     {
-        if (userIds.isEmpty()) throw new ExNoPerm("Must specify one or more invitee");
+        if (userIds.isEmpty()) throw new ExBadArgs("Must specify one or more invitee");
 
         _transaction.begin();
 
