@@ -11,6 +11,7 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UniqueID;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Common.Void;
+import com.aerofs.servlets.lib.db.AbstractSQLDatabase.ExBatchSizeMismatch;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -66,15 +67,21 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     public void shouldRevokeDeviceCertificateSuccessfully()
             throws Exception
     {
-        // Follow a typical certify-revoke cycle. Revocation on the same device should not fail.
-        // It doesn't do anything, but it still doesn't fail.
-        service.revokeUserDeviceCertificate(_did.toPB());
+        // Follow a typical certify-revoke cycle.
         service.revokeUserDeviceCertificate(_did.toPB());
 
         // Verify that only one certificate has been revoked, as expected.
         GetCRLReply reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 1);
         assertTrue(reply.getSerialList().get(0) == getLastSerialNumber());
+    }
+
+    @Test(expected = ExBatchSizeMismatch.class)
+    public void shouldThrowIfRevokeDeviceCertificateMoreThanOnce()
+            throws Exception
+    {
+        service.revokeUserDeviceCertificate(_did.toPB());
+        service.revokeUserDeviceCertificate(_did.toPB());
     }
 
     @Test(expected = ExNotFound.class)
