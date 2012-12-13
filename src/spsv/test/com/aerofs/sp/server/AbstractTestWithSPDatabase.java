@@ -18,7 +18,7 @@ import java.sql.SQLException;
 
 /**
  * This test class sets up SP database schema before running each test, and clean up
- * transactions afterward, if failed tests leave the transaction open.
+ * transactions afterward if the test fails leaving the transaction open.
  */
 public class AbstractTestWithSPDatabase extends AbstractTest
 {
