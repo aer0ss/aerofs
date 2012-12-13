@@ -4,9 +4,7 @@
 
 package com.aerofs.servlets.lib.db;
 
-import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import org.apache.log4j.Logger;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,8 +17,6 @@ import java.util.TimeZone;
  */
 public abstract class AbstractSQLDatabase
 {
-    private final static Logger l = Util.l(AbstractSQLDatabase.class);
-
     private IDatabaseConnectionProvider<Connection> _provider;
 
     // Not all subclasses need this. Added to here just for convenience.
@@ -62,7 +58,7 @@ public abstract class AbstractSQLDatabase
         return getConnection().prepareStatement(sql);
     }
 
-    protected static class ExBatchSizeMismatch extends SQLException
+    public static class ExBatchSizeMismatch extends SQLException
     {
         private static final long serialVersionUID = 0;
 
