@@ -212,6 +212,21 @@ function make_windows_installers() {
     # now make the installer
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
 
+        # Temporary function to exist only in this ssh session
+        # This function is used to sign exe files and dll's
+        function sign_exe() {
+            FILENAME="\$1"
+
+            export PASSPHRASE="$PASSPHRASE"
+
+            printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \
+                -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timestamp.dll \
+                -tr 10 -n "AeroFS" -i "http://www.aerofs.com" "\${FILENAME}" > /dev/null
+
+            rm -f "\${FILENAME}.bak"
+        }
+
+
         # Create a temporary directory to work in
         NSIS_TEMP_DIR="\$( mktemp -d -t nsis.XXXXXXXX )"
         trap "rm -r \"\$NSIS_TEMP_DIR\"" EXIT
@@ -235,13 +250,13 @@ function make_windows_installers() {
 
         chmod -R a+rx "\${NSIS_TEMP_DIR}"
 
+        sign_exe "\${NSIS_TEMP_DIR}/aerofs.exe"
+        sign_exe "\${NSIS_TEMP_DIR}/aerofsd.exe"
+
         makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" -DAEROFS_OUT_FOLDER="$local_VERSIONED_INSTALLER_DIR" \
                  -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
 
-        export PASSPHRASE="$PASSPHRASE"
-        printenv PASSPHRASE | signcode -spc ~/.certs/cert.spc -v ~/.certs/privateKey.pvk \
-            -a sha1 -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll \
-            -tr 10 -n "AeroFS" -i "http://www.aerofs.com" "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe" > /dev/null
+        sign_exe "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe"
 
         cp -r "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe" "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall.exe"
         chmod a+r "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe"
