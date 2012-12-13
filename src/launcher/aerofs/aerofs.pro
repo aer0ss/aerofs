@@ -2,10 +2,9 @@ include(../common.pri)
 
 # general settings
 TEMPLATE = app
-CONFIG += console
 CONFIG -= app_bundle
 DESTDIR = $$PWD/../bin/$$OS
-TARGET = aerofsd
+TARGET = aerofs
 
 macx {
     LIBS += -framework JavaVM
@@ -23,8 +22,11 @@ linux-g++-64 {
 }
 win32 {
     DEFINES += _UNICODE UNICODE
-    LIBS += -ladvapi32
+    LIBS += -ladvapi32 -luser32
 }
+
+# Icon settings
+RC_FILE = aerofs.rc
 
 # Link with our liblauncher
 LIBS += -L$$PWD/../lib -llauncher
@@ -40,3 +42,6 @@ HEADERS += \
 SOURCES += \
     main.cpp \
     $$PWD/../common/util.cpp
+
+OTHER_FILES += \
+    aerofs.rc

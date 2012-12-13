@@ -71,15 +71,6 @@ VIAddVersionKey LegalCopyright ""
 InstallDir $APPDATA\AeroFSExec          # Always install to %AppData%\AeroFSExec
 ShowUninstDetails hide
 
-# Sanity check: make sure that the aerofs.ini has been created
-# This step is done by the build script, by SED'ing the version number into a template aerofs.ini
-# If this step fails or we forget to do it for some reason, AeroFS will not launch
-${!defineifexist} AEROFS_DOT_INI_EXISTS "${AEROFS_IN_FOLDER}\aerofs.ini"
-!ifndef AEROFS_DOT_INI_EXISTS
-    !error "Missing aerofs.ini in ${AEROFS_IN_FOLDER}. Aborting."
-!endif
-!undef AEROFS_DOT_INI_EXISTS
-
 Function requestAdminPrivileges
 
 uac_tryagain:
@@ -226,6 +217,8 @@ Function install_unprivileged
     Delete /REBOOTOK "$INSTDIR\version"
     Delete /REBOOTOK "$INSTDIR\cacert.pem"
     Delete /REBOOTOK "$INSTDIR\cacert-ci.pem"
+    # aerofs.ini obsolete after prod 0.4.130 due to move to our own launcher instead of eclipse.exe
+    Delete /REBOOTOK "$INSTDIR\aerofs.ini"
 
     # Allow overwritting aerofs.exe and aerofsd.exe even if they are still in use
     # This should not be the case, but we never know, since they are not in the

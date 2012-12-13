@@ -13,29 +13,23 @@
 static void show_error(const _TCHAR* details);
 
 /**
-  Main entry point for the aerofs daemon.  This launches the aerofs daemon with
-  the specified runtime root.
+  Main entry point for the aerofs gui. This launches the aerofs gui with
+  the default runtime root.
 
   Usage:
-    aerofsd <rtroot>
-
+    aerofs
  */
 #ifdef _WIN32
-int _tmain(int argc, _TCHAR* argv[])
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     SetLastError(ERROR_SUCCESS);
 #else
-int main(int argc, char* argv[])
+int main(int argc, char* argv)
 {
     // Util.execBackground closes all our output streams, so we need to ignore
     // SIGPIPE if we want to be able to print any debugging information
     signal(SIGPIPE, SIG_IGN);
 #endif
-    if (argc != 2) {
-        _tprintf(_T("Usage: %s <RTROOT>\n"), argv[0]);
-        return EXIT_FAILURE;
-    }
-
     JavaVM* jvm;
     JNIEnv* env;
     _TCHAR* errmsg;
@@ -59,10 +53,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    // N.B. the GUI/CLI always pass us an absolute path, so we needn't worry about
-    // expanding argv[1] == "DEFAULT" to the platform's usual rtroot location.
-    tstring heap_dump_option_string = tstring(_T("-XX:HeapDumpPath=")) + tstring(argv[1]);
-    _TCHAR* args[] = {const_cast<_TCHAR*>(heap_dump_option_string.c_str()), argv[1], _T("daemon"), NULL};
+    _TCHAR* args[] = {_T("DEFAULT"), _T("gui"), NULL};
     bool vm_created = launcher_create_jvm(approot, args, &jvm, &env, &errmsg);
 
     if (!vm_created) {
@@ -82,17 +73,17 @@ int main(int argc, char* argv[])
     return exit_code;
 }
 
-
 /**
- * Display the error message by printing it on the console.
+ * Display the error message in a message box if Windows otherwise print.
  */
-static void show_error(const _TCHAR* details) {
+static void show_error(const _TCHAR* details)
+{
     _TCHAR msg[2*MAX_MESSAGE_LENGTH];
     _sprintf(msg, sizeof(msg), _T("%s\n%s\n%s\n%s\n"),
              _T("We're sorry, AeroFS failed to launch:"), details,
              _T("Please contact support@aerofs.com to report this problem."), _T("Thank you."));
 #ifdef _WIN32
-    _tprintf(msg);
+    MessageBox(NULL, msg, NULL, MB_ICONERROR);
 #else
     fprintf(stderr, "%s", msg);
 #endif

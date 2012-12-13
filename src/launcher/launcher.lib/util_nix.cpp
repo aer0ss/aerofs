@@ -24,9 +24,14 @@ bool file_exists(const std::string& file)
     return false;
 }
 
-jint create_jvm(JavaVM **pvm, void **penv, void *args)
+bool create_jvm(JavaVM **pvm, void **penv, void *args)
 {
-    return JNI_CreateJavaVM(pvm, penv, args);
+    jint result = JNI_CreateJavaVM(pvm, penv, args);
+    if (result < 0) {
+        SET_ERROR(_T("Call to JNI_CreateJavaVM failed with error code: %ld."), result);
+        return false;
+    }
+    return true;
 }
 
 /**
