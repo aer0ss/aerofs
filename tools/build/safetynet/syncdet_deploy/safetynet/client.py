@@ -202,9 +202,10 @@ class _WindowsClient(_PackagedAeroFSClient):
         with open(version, 'r') as f:
             # Search for the version directory string
             v_num = f.readline().strip('\n')
+            folder_name = 'v_' + v_num
             if v_num:
                 # If it exists, create the path to the directory
-                return os.path.join(app.app_root_path(), v_num)
+                return os.path.join(app.app_root_path(), folder_name)
             else:
                 # This string may not exist if the installed AeroFS version
                 # is from before the versioned installation directories
