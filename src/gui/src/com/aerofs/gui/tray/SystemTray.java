@@ -1,19 +1,23 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.gui.tray;
 
 public class SystemTray
 {
     private final TrayIcon _icon;
-    private final TrayMenu _menu;
     private final Balloons _bm;
     private final Progresses _progs;
+    private final ITrayMenu _menu;
 
-    public SystemTray()
+    public SystemTray(IMenuProvider menuProvider)
     {
         _icon = new TrayIcon(this);
         _progs = new Progresses(this);
         _bm = new Balloons(_icon);
-        _menu = new TrayMenu(_icon);
-    }
+        _menu = menuProvider.createMenu(_icon);
+     }
 
     public Balloons getBalloons()
     {
@@ -28,7 +32,7 @@ public class SystemTray
     public void dispose()
     {
         _bm.dispose();
-        _menu.dispose();
+        if (_menu != null) _menu.dispose();
         _icon.dispose();
         _progs.removeAllProgresses();
     }
@@ -38,8 +42,14 @@ public class SystemTray
         return _progs;
     }
 
-    public TrayMenu getMenu()
+    public void enableMenu()
     {
-        return _menu;
+        if (_menu != null) _menu.enable();
     }
+
+    public void setMenuVisible(boolean b)
+    {
+        if (_menu != null) _menu.setVisible(b);
+    }
+
 }

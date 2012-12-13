@@ -11,6 +11,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.os.OSUtil;
@@ -113,7 +114,11 @@ public class GUI implements IUI
     private void preLaunch()
     {
         // Create the system tray
-        _st = new SystemTray();
+        if (Cfg.isTeamServer()) {
+            _st = new SystemTray(new com.aerofs.gui.multiuser.tray.MenuProvider());
+        } else {
+            _st = new SystemTray(new com.aerofs.gui.singleuser.tray.MenuProvider());
+        }
     }
 
     /**
@@ -123,9 +128,8 @@ public class GUI implements IUI
     {
         assert UI.get().isUIThread();
 
-        if (GUI.get().st() != null && GUI.get().st().getMenu() != null) {
-            GUI.get().st().getMenu().enable();
-        }
+        SystemTray st = GUI.get().st();
+        if (st != null) st.enableMenu();
 
         if (OSUtil.isLinux()) UbuntuTraySettings.checkAndUpdateUbuntuTraySettings();
 

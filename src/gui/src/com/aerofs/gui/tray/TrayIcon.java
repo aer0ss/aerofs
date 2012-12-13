@@ -71,7 +71,7 @@ public class TrayIcon
             @Override
             public void handleEventImpl(Event event)
             {
-                if (_st.getMenu() != null) _st.getMenu().setVisible(true);
+                _st.setMenuVisible(true);
             }
         });
 

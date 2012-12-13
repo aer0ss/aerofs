@@ -1,4 +1,4 @@
-package com.aerofs.gui.preferences;
+package com.aerofs.gui.singleuser.preferences;
 
 import org.eclipse.swt.widgets.Shell;
 
