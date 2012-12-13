@@ -29,26 +29,38 @@ bool file_exists(const tstring& file)
 /**
   Calls JNI_CreateJavaVM dynamically, using LoadLibraryW and GetProcAddress
  */
-jint create_jvm(JavaVM **pvm, void **penv, void *args)
+bool create_jvm(JavaVM **pvm, void **penv, void *args)
 {
     typedef jint(JNICALL* PJNI_CreateJavaVM)(JavaVM**, void**, void*);
 
     tstring jvm_path = find_jvm();
 
     if (jvm_path.empty()) {
-        fprintf(stderr, "Could not find a JVM. Please install Java.\n");
-        return -1;
+        SET_ERROR(_T("%s\n%s%s"),
+                  _T("Java 32-bit was not found."),
+                  _T("Please download the 32 bit version of Java at "),
+                  _T("www.java.com/getjava/"));
+        return false;
     }
 
     HINSTANCE jvm = LoadLibraryW((LPCWSTR)jvm_path.c_str());
     PJNI_CreateJavaVM fn = (PJNI_CreateJavaVM) GetProcAddress(jvm, CREATE_JVM_FUNCTION);
 
     if (!fn) {
-        fprintf(stderr, "Invalid JVM. Please re-install Java.\n");
-        return -1;
+        SET_ERROR(_T("%s %s %s\n%s"),
+                  _T("AeroFS found a Java installation at:"),
+                  jvm_path.c_str(),
+                  _T("but could not use it."),
+                  _T("Please visit www.java.com/getjava/ to reinstall Java 32-bit on your computer."));
+        return false;
     }
 
-    return fn(pvm, penv, args);
+    jint result = fn(pvm, penv, args);
+    if (result < 0) {
+        SET_ERROR(_T("Call to JNI_CreateJavaVM failed with error code: %ld."), result);
+        return false;
+    }
+    return true;
 }
 
 /**

@@ -66,25 +66,6 @@ Function isAdminRequired
 FunctionEnd
 
 /**
- * Check if a file exists at compile time
- * Source: http://nsis.sourceforge.net/Check_if_a_file_exists_at_compile_time
- */
-!macro !defineifexist _VAR_NAME _FILE_NAME
-    !tempfile _TEMPFILE
-    !ifdef NSIS_WIN32_MAKENSIS
-        ; Windows - cmd.exe
-        !system 'if exist "${_FILE_NAME}" echo !define ${_VAR_NAME} > "${_TEMPFILE}"'
-    !else
-        ; Posix - sh
-        !system 'if [ -e "${_FILE_NAME}" ]; then echo "!define ${_VAR_NAME}" > "${_TEMPFILE}"; fi'
-    !endif
-    !include '${_TEMPFILE}'
-    !delfile '${_TEMPFILE}'
-    !undef _TEMPFILE
-!macroend
-!define !defineifexist "!insertmacro !defineifexist"
-
-/**
  * Rename a file by appending a suffix and a numeric id to it.
  *
  * If the new file name already exists, the number will be increased

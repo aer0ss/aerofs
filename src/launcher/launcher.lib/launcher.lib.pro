@@ -11,7 +11,7 @@ HEADERS += \
 
 SOURCES += \
     liblauncher.cpp \
-    util.cpp \
+    util.cpp
 
 macx {
     SOURCES += \

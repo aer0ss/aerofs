@@ -196,15 +196,15 @@ class _WindowsClient(_PackagedAeroFSClient):
 
     def versioned_approot_path(self):
         # Windows uses a versioned install directory, so we need to read in the
-        # version directory from the aerofs.ini file
-        aerofs_ini = os.path.join(app.app_root_path(), "aerofs.ini")
+        # version directory from the version file
+        version = os.path.join(app.app_root_path(), "version")
 
-        with open(aerofs_ini, 'r') as f:
+        with open(version, 'r') as f:
             # Search for the version directory string
-            match = re.search("(v_[.0-9]+)", f.read())
-            if match:
+            v_num = f.readline().strip('\n')
+            if v_num:
                 # If it exists, create the path to the directory
-                return os.path.join(app.app_root_path(), match.group(0))
+                return os.path.join(app.app_root_path(), v_num)
             else:
                 # This string may not exist if the installed AeroFS version
                 # is from before the versioned installation directories

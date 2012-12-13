@@ -229,14 +229,9 @@ function make_windows_installers() {
         # Move the things that need to stay at the top-level folder
         mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "\${NSIS_TEMP_DIR}/"
         mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "\${NSIS_TEMP_DIR}/"
-        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/plugins" "\${NSIS_TEMP_DIR}/"
+        echo -n "${RELEASE_VERSION}" > "\${NSIS_TEMP_DIR}/version"
         mkdir "\${NSIS_TEMP_DIR}/icons"
         mv "\${NSIS_TEMP_DIR_WITH_VERSION}/icons"/*.ico "\${NSIS_TEMP_DIR}/icons"
-
-        # Move aerofs.ini from from the version directory to the parent dir and sed the version number into it
-        sed -e "s={RELEASE_VERSION__TO_BE_REPLACED_BY_SED}=$RELEASE_VERSION=" \
-            "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.ini.template" > "\${NSIS_TEMP_DIR}/aerofs.ini"
-        rm "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.ini.template"
 
         chmod -R a+rx "\${NSIS_TEMP_DIR}"
 

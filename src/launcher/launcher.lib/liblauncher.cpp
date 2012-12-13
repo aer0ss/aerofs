@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <jni.h>
 #include "liblauncher.h"
 
@@ -6,8 +7,21 @@
 #include <stdio.h>
 #include <vector>
 #include <iostream>
+#include <string>
 
 #include "util.h"
+
+#ifdef _WIN32
+#define DIRECTORY_SEPARATOR _T('\\')
+#else
+#include <libgen.h>      /* For dirname(3) */
+#define DIRECTORY_SEPARATOR '/'
+#endif
+
+#ifdef __APPLE__
+#include <sys/param.h>   /* For PATH_MAX */
+#include <mach-o/dyld.h> /* For _NSGetExecutablePath() */
+#endif
 
 using namespace std;
 
@@ -26,12 +40,69 @@ static _TCHAR** g_args;
 
 // internal functions
 int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[]);
+bool get_executable_path(tstring& path, tstring& errmsg);
 tstring construct_classpath(const tstring& approot);
 //tstring list_jars(const tstring& jars_path);
 vector<tstring> get_default_options();
 bool parse_options(_TCHAR*** pargv, vector<tstring>* options);
 
 }
+
+/**
+  Return the approot path, without trailing slashes.
+  This is the folder that contains the path to the current executable binary.
+*/
+bool launcher_get_approot(_TCHAR* approot, size_t approot_len, _TCHAR** perrmsg)
+{
+    *perrmsg = g_errmsg;
+    tstring s_approot;
+    tstring errmsg;
+    if (!get_executable_path(s_approot, errmsg)) {
+        SET_ERROR(_T("Could not get the executable path %s\n"), errmsg.c_str());
+        return false;
+    }
+    // Truncate the path from the trailing folder separator onward
+    // to turn the executable path into the dirname
+    s_approot = s_approot.substr(0, s_approot.rfind(DIRECTORY_SEPARATOR));
+
+    // On Windows, we now install AeroFS in a different subfolder for each version
+    // Only aerofs.exe, version and aerofsd.exe stay at the top-level folder
+    // So in order to find the approot, we have to read the current version folder from version
+
+#ifdef _WIN32
+
+    // Open version
+    // Note: we have to use the Win32 API since the path may have Unicode characters in it
+    tstring path = s_approot + _T("\\version");
+    HANDLE hFile = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        SET_ERROR(_T("Could not open %s\n"), path.c_str());
+        _tcscpy_s(approot, approot_len, s_approot.c_str());
+        return false;
+    }
+
+    // Read the first 100 chars of the file into a buffer
+    char buf[20];
+    DWORD bytesRead = 0;
+    ReadFile(hFile, buf, sizeof(buf)-1, &bytesRead, NULL);
+    CloseHandle(hFile);
+    buf[bytesRead] = '\0';
+    if (strlen(buf) == 0) {
+        SET_ERROR(_T("Could not find the current AeroFS version in %s\n"), path.c_str());
+        _tcscpy_s(approot, approot_len, s_approot.c_str());
+        return false;
+    }
+
+    // Append the version folder to the approot
+    std::string version(buf);
+    s_approot += _T("\\v_") + tstring(version.begin(), version.end());
+
+#endif
+    _tcscpy_s(approot, approot_len, s_approot.c_str());
+    return true;
+}
+
 
 /**
   Creates a JVM
@@ -130,7 +201,7 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
     }
 #endif
 
-    jint result = create_jvm(pjvm, (void**)penv, &vm_args);
+    bool result = create_jvm(pjvm, (void**)penv, &vm_args);
 
     delete vmopt;
 #ifdef _WIN32
@@ -140,11 +211,7 @@ bool launcher_create_jvm(const _TCHAR* approot, _TCHAR** args, JavaVM** pjvm, JN
     ansi_strings_to_delete.clear();
 #endif
 
-    if (result < 0) {
-        SET_ERROR(_T("Call to JNI_CreateJavaVM failed"));
-        return false;
-    }
-    return true;
+    return result;
 }
 
 int launcher_launch(JNIEnv* env, _TCHAR** perrmsg)
@@ -264,6 +331,92 @@ tstring construct_classpath(const tstring& approot)
     classpath += list_jars(jars_path);
 
     return classpath;
+}
+
+
+/**
+ * Returns the absolute canonical path to the currently running executable.
+ * There are intelligent platform-specific ways to find this:
+ *  On Windows: GetModuleFileName() (with NULL hModule) gives the executable string
+ *  On OSX: _NSGetExecutablePath() and realpath() are adequate
+ *  On Linux: /proc/self/exe is a symlink to the actual executable
+ * This may be useful in other programs.
+ */
+bool get_executable_path(tstring& path, tstring& errmsg)
+{
+#ifdef _WIN32
+    _TCHAR buffer[MAX_PATH];
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+    DWORD err = GetLastError();
+    if (err != ERROR_SUCCESS) {
+        _TCHAR details[100];
+        _sprintf(details, 100, _T("%d"), err);
+        errmsg = tstring(details);
+        return false;
+    }
+    path = tstring(buffer);
+    return true;
+#endif
+#ifdef __APPLE__
+    uint32_t buflen = 0;
+    char* path_buf = NULL;
+    // when buflen is too small to hold the string, buflen is set to how much buffer is needed
+    _NSGetExecutablePath(path_buf, &buflen);
+    path_buf = (char*)reallocf(path_buf, buflen);
+    if (!path_buf) {
+        // Out of memory.
+        errmsg = _T("Out of memory");
+        return false;
+    }
+    // Actually retrieve the executable path this time
+    int rc = _NSGetExecutablePath(path_buf, &buflen);
+    if (rc == -1) {
+        int errsv = errno;
+        char details[100];
+        _sprintf(details, 100, _T("%s %d"), _T("_NSGetExecutablePath failed "), errsv);
+        errmsg = tstring(details);
+        return false;
+    }
+    // Canonicalize absolute path.  We can't pass NULL as the second argument to realpath()
+    // to let it allocate the output buffer because that convenience didn't exist until OSX 10.6,
+    // and we currently support OSX 10.5.
+    char* canonical_path_buf = (char*)malloc(PATH_MAX * sizeof(char));
+    char* executable_canonical_path = realpath(path_buf, canonical_path_buf);
+    if (executable_canonical_path) {
+        // All's well.  Replace path_buf with the canonical path.
+        free(path_buf);
+        path_buf = executable_canonical_path;
+    } else {
+        // Something went wrong.  Clean up canonical_path_buf, and return the uncanonicalized path.
+        free(canonical_path_buf);
+    }
+    path = tstring(path_buf);
+    free(path_buf);
+    return true;
+#endif
+#ifdef __linux__
+#define MAX_PATH 1024
+    char c_path[MAX_PATH];
+    ssize_t path_len;
+    path_len = readlink("/proc/self/exe", c_path, MAX_PATH);
+    if (path_len == -1 || path_len == MAX_PATH) {
+        // MAX_PATH: We might have truncated the path.
+        // -1:  Some other error, which really shouldn't happen for
+        //      /proc/self/exe.
+        if (path_len == -1) {
+            errmsg = _T("readlink error: ");
+            errmsg += _T(strerror(errno));
+        } else {
+            errmsg = _T("readlink() likely truncated (very long path to executable?)");
+        }
+        return false;
+    }
+    // Append null terminator to path
+    c_path[path_len] = '\0';
+    path = tstring(path);
+    return true;
+#undef MAX_PATH
+#endif
 }
 
 }

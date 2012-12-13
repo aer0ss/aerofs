@@ -1,5 +1,0 @@
--startup
-v_{RELEASE_VERSION__TO_BE_REPLACED_BY_SED}\aerofs.jar
--vmargs
--ea
--Xmx64m
