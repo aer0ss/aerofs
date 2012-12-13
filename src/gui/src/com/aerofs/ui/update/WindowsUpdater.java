@@ -28,18 +28,12 @@ class WindowsUpdater extends Updater
 
         } else {
             try {
-                UI.get().exec(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        UI.get().shutdown();
-                    }
-                });
-
                 SystemUtil.execBackground(
                         Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installerFilename), "/S");
+
+                UI.get().shutdown();
                 System.exit(0);
+
             } catch (IOException e) {
                 l.warn("update: " + e);
             }

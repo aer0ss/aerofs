@@ -61,6 +61,7 @@ class OSXUpdater extends Updater
                         Util.join(Cfg.absRTRoot(), "update", installerFilename), newVersion,
                         System.getenv("USER"));
 
+                UI.get().shutdown();
                 System.exit(0);
             } else {
                 //the update must be executed as the user who originally copied AeroFS into

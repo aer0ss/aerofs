@@ -160,7 +160,7 @@ public class InjectableFile
      * Similar to moveInSameFileSystem, but return false instead throwing on
      * errors.
      */
-    public boolean moveInSameFileSystemIgnoreError(InjectableFile to) throws IOException
+    public boolean moveInSameFileSystemIgnoreError(InjectableFile to)
     {
         return _f.renameTo(to._f);
     }
