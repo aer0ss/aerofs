@@ -101,33 +101,9 @@ public class CC implements ILabeling
     }
 
     @Override
-    public short spPort()
-    {
-        return 443;
-    }
-
-    @Override
-    public String svHost()
-    {
-        return "sv.aerofs.com";
-    }
-
-    @Override
-    public short svPort()
-    {
-        return 443;
-    }
-
-    @Override
     public String ssHost()
     {
         return "sss.aerofs.com";
-    }
-
-    @Override
-    public short ssPort()
-    {
-        return 443;
     }
 
     @Override

@@ -35,15 +35,7 @@ public interface ILabeling
 
     String spUrl();
 
-    short spPort();
-
-    String svHost();
-
-    short svPort();
-
     String ssHost();
-
-    short ssPort();
 
     String mcastAddr();
 

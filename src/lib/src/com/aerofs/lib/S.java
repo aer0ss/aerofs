@@ -88,7 +88,6 @@ public class S
     public static final String INVITATION_WAS_SENT = "Invited successfully.";
     public static final String COULDNT_SEND_INVITATION = "Couldn't invite users.";
     public static final String VERSION_HISTORY = "version history";
-    public static final String UNNAMED_SHARED_FOLDER = "unnamed shared folder";
     public static final String CLI_NAME = L.get().productUnixName() + "-cli";
     public static final String TRY_AGAIN_LATER = "Please try again later.";
     public static final String PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login. " +

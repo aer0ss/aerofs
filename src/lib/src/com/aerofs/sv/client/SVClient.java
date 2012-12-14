@@ -85,7 +85,7 @@ public final class SVClient
 
     private static final class SVRPCClientHolder
     {
-        private static final SVRPCClient client = new SVRPCClient("https://" + L.get().svHost() + ":" + L.get().svPort() + "/sv_beta/sv");
+        private static final SVRPCClient client = new SVRPCClient("https://sv.aerofs.com:443/sv_beta/sv");
     }
 
     private static SVRPCClient getRpcClient()
