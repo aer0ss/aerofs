@@ -23,36 +23,35 @@ public abstract class AbstractHttpRpcClient
     private static final Logger LOGGER = Loggers.getLogger(AbstractHttpRpcClient.class);
 
     private final URL _url;
-    private String _postParamProtocol;
-    private String _postParamData;
-    private int _protocolVersion;
+    private final String _postParamProtocol;
+    private final String _postParamData;
+    private final int _protocolVersion;
+    private final IURLConnectionConfigurator _connectionConfigurator;
 
     private volatile String _cookie;
 
     protected AbstractHttpRpcClient(URL url, String postParamProtocol, String postParamData,
-            int protocolVersion)
+            int protocolVersion, IURLConnectionConfigurator connectionConfigurator)
     {
-        this._url = url;
-        this._postParamProtocol = postParamProtocol;
-        this._postParamData = postParamData;
-        this._protocolVersion = protocolVersion;
-    }
-
-    public URL getUrl()
-    {
-        return _url;
+        _url = url;
+        _postParamProtocol = postParamProtocol;
+        _postParamData = postParamData;
+        _protocolVersion = protocolVersion;
+        _connectionConfigurator = connectionConfigurator;
     }
 
     public ListenableFuture<byte[]> doRPC(byte[] data)
     {
         try {
             // Connect
-            URLConnection c = _url.openConnection();
-            c.setDoInput(true);
-            c.setDoOutput(true);
+            URLConnection connection = _url.openConnection();
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
             String cookie = _cookie;
-            if (cookie != null) c.setRequestProperty("Cookie", cookie);
-            c.connect();
+            if (cookie != null) connection.setRequestProperty("Cookie", cookie);
+
+            _connectionConfigurator.configure(connection);
+            connection.connect();
 
             // Construct data
             final String charSet = "UTF-8";
@@ -62,7 +61,7 @@ public abstract class AbstractHttpRpcClient
                     + "=" + URLEncoder.encode(Base64.encodeBytes(data), charSet);
 
             // Send call
-            OutputStreamWriter wr = new OutputStreamWriter(c.getOutputStream());
+            OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
             try {
                 wr.write(encodedData);
                 // TODO unsure whether this is necessary
@@ -71,21 +70,21 @@ public abstract class AbstractHttpRpcClient
                 wr.close();
             }
 
-            LOGGER.debug("url={} headers={}", _url, c.getHeaderFields());
+            LOGGER.debug("url={} headers={}", _url, connection.getHeaderFields());
 
             // Set cookie for the next call
-            String setCookie = c.getHeaderField("Set-Cookie");
+            String setCookie = connection.getHeaderField("Set-Cookie");
             if (setCookie != null) _cookie = setCookie.split(";")[0];
 
-            if (c.getContentLength() < 0) {
+            if (connection.getContentLength() < 0) {
                 throw new IOException(
-                        "cannot parse reply. content length = " + c.getContentLength());
+                        "cannot parse reply. content length = " + connection.getContentLength());
             }
 
-            InputStream is = c.getInputStream();
+            InputStream is = connection.getInputStream();
             DataInputStream dis = new DataInputStream(is);
             try {
-                byte[] bs = new byte[c.getContentLength()];
+                byte[] bs = new byte[connection.getContentLength()];
                 dis.readFully(bs);
 
                 // Process reply
@@ -94,7 +93,7 @@ public abstract class AbstractHttpRpcClient
                 is.close();
             }
 
-        } catch (IOException e) {
+        } catch (Throwable e) {
             // If anything went wrong, dump the exception in the future and return to user.
             return Futures.immediateFailedFuture(e);
         }

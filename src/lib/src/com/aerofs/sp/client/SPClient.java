@@ -30,6 +30,7 @@ public class SPClient extends SPServiceStub
     {
         ListenableFuture<Void> future = super.signIn(_user.toString(),
                 ByteString.copyFrom(Cfg.scrypted()));
+
         Futures.addCallback(future, new FutureCallback<Void>()
         {
             @Override

@@ -3,4 +3,6 @@
     client_max_body_size <%= client_max_body_size %>;
     proxy_read_timeout <%= proxy_read_timeout %>;
     proxy_send_timeout <%= proxy_send_timeout %>;
+    proxy_set_header Authorization $ssl_client_verify;
+    proxy_set_header From $ssl_client_serial;
   }

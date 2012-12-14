@@ -33,7 +33,8 @@ public class ThreadLocalCertificateAuthenticator
         String serial = (String) _session.get().getAttribute(SESS_ATTR_CERTAUTH_SERIAL);
         assert serial != null;
 
-        return Long.parseLong(serial);
+        // The initial conversion from long to string is done by nginx.
+        return Long.parseLong(serial, 16);
     }
 
     public void set(boolean authenticated, String serial)

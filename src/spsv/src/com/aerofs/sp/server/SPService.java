@@ -1115,11 +1115,13 @@ public class SPService implements ISPService
             // Team servers use certificates (in this case the passed credentials don't matter).
             if (!_certificateAuthenticator.isAuthenticated())
             {
+                l.warn(user + " ts not authenticated");
                 throw new ExBadCredential();
             }
 
             Certificate cert = _factCert.create(_certificateAuthenticator.getSerial());
             if (cert.isRevoked()) {
+                l.warn(user + " ts cert revoked");
                 throw new ExBadCredential();
             }
         } else {
