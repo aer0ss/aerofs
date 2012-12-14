@@ -22,7 +22,7 @@ import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExFormatError;

@@ -13,7 +13,7 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ScrollBar;
 
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;

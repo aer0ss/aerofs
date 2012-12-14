@@ -7,10 +7,6 @@
   <!-- config parameters -->
 
   <context-param>
-    <param-name>labeling_class</param-name>
-    <param-value>com.aerofs.l.AA</param-value>
-  </context-param>
-  <context-param>
     <param-name>ca_url</param-name>
     <param-value>http://joan-staging.aerofs.com:1029/staging/</param-value>
   </context-param>

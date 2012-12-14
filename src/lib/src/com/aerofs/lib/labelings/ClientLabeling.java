@@ -1,6 +1,10 @@
-package com.aerofs.l;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
 
-import com.aerofs.l.L.LabelingType;
+package com.aerofs.lib.labelings;
+
+import com.aerofs.lib.ILabeling;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExFormatError;
@@ -8,13 +12,13 @@ import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
 
 /**
- * for AeroFS
+ * the labeling for regular clients
  */
-public class AA implements ILabeling
+public class ClientLabeling implements ILabeling
 {
     private final DID _spDID;
 
-    public AA()
+    public ClientLabeling()
     {
         try {
             _spDID = new DID(Cfg.staging() ?
@@ -139,11 +143,5 @@ public class AA implements ILabeling
     public String htmlEmailHeaderColor()
     {
         return "#17466B";
-    }
-
-    @Override
-    public LabelingType type()
-    {
-        return LabelingType.AEROFS;
     }
 }

@@ -36,7 +36,6 @@ public class C
     public static final String PROFILER                = "profiler";
     public static final String NO_FS_TYPE_CHECK        = "nofstypecheck";
     public static final String NO_OSX_APP_FOLDER_CHECK = "noappfoldercheck";
-    public static final String LABELING                = "l";
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
     public static final String LAST_SENT_DEFECT        = "lsd";
 

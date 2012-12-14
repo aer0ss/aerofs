@@ -4,7 +4,7 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 import com.aerofs.gui.Images;
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.acl.SubjectRolePair;
 
 class IconLabelProvider extends ColumnLabelProvider

@@ -17,7 +17,7 @@ import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ScrollBar;
 
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.S;

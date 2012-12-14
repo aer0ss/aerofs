@@ -16,7 +16,7 @@ import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterSender;
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

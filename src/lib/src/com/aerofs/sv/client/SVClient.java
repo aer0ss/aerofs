@@ -1,6 +1,5 @@
 package com.aerofs.sv.client;
 
-import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.C;

@@ -2,7 +2,7 @@ package com.aerofs.ui.update;
 
 import java.io.IOException;
 
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;

@@ -4,7 +4,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.Param.SV;

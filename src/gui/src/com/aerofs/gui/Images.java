@@ -9,7 +9,7 @@ import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 

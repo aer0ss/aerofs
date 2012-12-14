@@ -1,6 +1,5 @@
-package com.aerofs.l;
+package com.aerofs.lib;
 
-import com.aerofs.l.L.LabelingType;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.UserID;
 
@@ -46,6 +45,4 @@ public interface ILabeling
     String logoURL();
 
     String htmlEmailHeaderColor();
-
-    LabelingType type();
 }

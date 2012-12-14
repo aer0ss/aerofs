@@ -9,7 +9,7 @@ import com.aerofs.daemon.lib.exception.ExBadCRC;
 import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
 import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;

@@ -1,6 +1,5 @@
 package com.aerofs.lib;
 
-import com.aerofs.l.L;
 import com.aerofs.lib.cfg.Cfg;
 
 import java.net.InetSocketAddress;

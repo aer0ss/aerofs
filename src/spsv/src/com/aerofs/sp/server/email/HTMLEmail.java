@@ -1,6 +1,6 @@
 package com.aerofs.sp.server.email;
 
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.S;
 import com.aerofs.sp.common.SubscriptionParams;
 

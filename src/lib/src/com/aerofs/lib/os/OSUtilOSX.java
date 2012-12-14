@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.aerofs.l.L;
+import com.aerofs.lib.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;

@@ -1,7 +1,5 @@
 package com.aerofs.servlets;
 
-import com.aerofs.l.ILabeling;
-import com.aerofs.l.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import javax.servlet.ServletException;
@@ -15,12 +13,9 @@ public class AeroServlet extends HttpServlet
     {
         try {
             // setup App Root
+            // TODO (WW) is it still needed after removal of dynamic labeling?
             String appRoot = Util.join(getServletContext().getRealPath("/"), "WEB-INF");
             AppRoot.set(appRoot);
-
-            // setup labeling
-            String cls = getServletContext().getInitParameter("labeling_class");
-            L.set((ILabeling) Class.forName(cls).newInstance());
         } catch (Exception e) {
             Util.l(this).error("init: ", e);
             throw new ServletException(e);
