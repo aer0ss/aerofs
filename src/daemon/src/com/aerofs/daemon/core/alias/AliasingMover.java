@@ -278,11 +278,8 @@ public class AliasingMover
 
             // Look for a name conflict before moving the child. Update its version only if renaming
             // is required due to name conflict.
-            boolean updateVersion = false;
-            if (_ds.resolveNullable_(targetPath.append(childName)) != null) {
-                childName = _ds.generateNameConflictFileName_(targetPath, childName);
-                updateVersion = true;
-            }
+            String newChildName = _ds.generateConflictFreeFileName_(targetPath, childName);
+            boolean updateVersion = !newChildName.equals(childName);
 
             _om.moveInSameStore_(child, target.oid(), childName, PhysicalOp.APPLY, false,
                     updateVersion, t);

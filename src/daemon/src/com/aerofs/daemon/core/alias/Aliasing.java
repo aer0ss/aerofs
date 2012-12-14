@@ -391,7 +391,8 @@ public class Aliasing
         AliasAndTarget ar = determineAliasAndTarget_(soidLocal, soidRemote);
 
         Path pParent = _ds.resolve_(new SOID(soidRemote.sidx(), parent));
-        String newName = _ds.generateNameConflictFileName_(pParent, meta.getName());
+        String newName = _ds.generateConflictFreeFileName_(pParent, meta.getName());
+        assert !newName.equals(meta.getName()) : newName + " " + meta.getName();
 
         String createName;
         Version vAliasMeta, vTargetMeta;

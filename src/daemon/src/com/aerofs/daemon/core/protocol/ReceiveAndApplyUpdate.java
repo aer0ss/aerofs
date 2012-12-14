@@ -459,6 +459,10 @@ public class ReceiveAndApplyUpdate
 
             } else {
                 if (Util.test(metaDiff, MetaDiff.PARENT | MetaDiff.NAME)) {
+
+                    resolveParentConflictIfRemoteParentIsLocallyNestedUnderChild_(soid.sidx(),
+                            soid.oid(), oidParent, t);
+
                     _om.moveInSameStore_(soid, oidParent, meta.getName(), PhysicalOp.APPLY, false,
                             false, t);
                 }
@@ -473,6 +477,43 @@ public class ReceiveAndApplyUpdate
 
         return false;
     }
+
+    private void resolveParentConflictIfRemoteParentIsLocallyNestedUnderChild_(SIndex sidx,
+            OID child, OID remoteParent, Trans t)
+            throws SQLException, IOException
+    {
+        SOID soidRemoteParent = new SOID(sidx, remoteParent);
+        OA oaChild = _ds.getOA_(new SOID(sidx, child));
+
+        Path pathRemoteParent = _ds.resolve_(soidRemoteParent);
+        Path pathChild = _ds.resolve_(oaChild);
+
+        if (pathRemoteParent.isUnder(pathChild)) {
+            // A cyclic dependency would result if we tried to apply this update.
+            // The current approach to resolve this conflict is to move the to-be parent object
+            // under the child's current parent. It's not beautiful but works and will reach
+            // consistency  across devices.
+
+            try {
+                // Avoid a local name conflict in the new path of the remote parent object
+                String newRemoteParentName = _ds.generateConflictFreeFileName_(
+                        pathChild.removeLast(), pathRemoteParent.last());
+
+                _om.moveInSameStore_(soidRemoteParent, oaChild.parent(), newRemoteParentName,
+                        PhysicalOp.APPLY, false, true, t);
+
+            } catch (ExNotFound e) {
+                SystemUtil.fatal(e);
+            } catch (ExNotDir e) {
+                SystemUtil.fatal(e);
+            } catch (ExAlreadyExist e) {
+                SystemUtil.fatal(e);
+            } catch (ExStreamInvalid e) {
+                SystemUtil.fatal(e);
+            }
+        }
+    }
+
 
     /**
      *  Resolves name conflict either by aliasing if received object wasn't
@@ -578,7 +619,9 @@ public class ReceiveAndApplyUpdate
 
         int comp = soidLocal.compareTo(soidRemote);
         assert comp != 0;
-        String newName = _ds.generateNameConflictFileName_(pParent, meta.getName());
+        String newName = _ds.generateConflictFreeFileName_(pParent, meta.getName());
+        assert !newName.equals(meta.getName());
+
         if (comp > 0) {
             // local wins
             l.debug("change remote name");

@@ -761,12 +761,15 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         }
     }
 
-    public String generateNameConflictFileName_(@Nonnull Path pParent, String name)
+    /**
+     * If no conflict exists, then returns the original name provided
+     */
+    public String generateConflictFreeFileName_(@Nonnull Path pParent, String name)
             throws SQLException, ExNotFound
     {
-        do {
+        while (resolveNullable_(pParent.append(name)) != null) {
             name = Util.nextFileName(name);
-        } while (resolveNullable_(pParent.append(name)) != null);
+        }
         return name;
     }
 
