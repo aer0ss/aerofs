@@ -76,8 +76,17 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
         ps.setTimestamp(5, ts, UTC_CALANDER);
 
         int result = ps.executeUpdate();
-        Util.l(this).info("Result of executeUpdate( " + ps.toString() + "): " + result);
-        assert result == 1;
+
+        /*
+         * The "INSERT ... ON DUPLICATE KEY UPDATE" function returns 1 for every succesful INSERT
+         * and 2 for every succesful UPDATE. That means that if you do the command on 5 rows,
+         * 3 of which result in INSERT, and 2 of which result in UPDATE, the return value
+         * will be 7 (3*1 + 2*2). In our case, we expect either a single UPDATE, or a single
+         * INSERT, so a return value of 1 or 2 is acceptable.
+         *
+         * See http://bugs.mysql.com/bug.php?id=2709 for more information
+         */
+        Util.verify(result == 1 || result == 2);
     }
 
     /**
