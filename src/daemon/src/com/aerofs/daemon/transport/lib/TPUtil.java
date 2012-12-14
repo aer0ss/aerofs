@@ -44,6 +44,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 
+import static com.aerofs.proto.Transport.PBStream.InvalidationReason.OUT_OF_ORDER;
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
@@ -246,16 +247,17 @@ public class TPUtil
         StreamID streamId = new StreamID(wireStream.getStreamId());
         switch (wireStream.getType()) {
         case BEGIN_STREAM:
+            l.debug("sender:" + ep + " begins stream:" + streamId);
             sm.newIncomingStream(ep.did(), streamId);
             break;
         case TX_ABORT_STREAM:
-            l.info("stream " + streamId + " tx aborted: " + wireStream.getReason());
+            l.warn("sender:" + ep + " aborted stream:" + streamId + " rsn:" + wireStream.getReason());
             sm.removeIncomingStream(ep.did(), streamId);
             // it must be the last statement of the case block as it may throw
             sink.enqueueThrows(new EIStreamAborted(ep, streamId, wireStream.getReason()), Prio.LO);
             break;
         case RX_ABORT_STREAM:
-            l.info("stream " + streamId + " rx aborted: " + wireStream.getReason());
+            l.warn("recv'r:" + ep + " aborted stream:" + streamId + " rsn:" + wireStream.getReason());
             sm.removeOutgoingStream(streamId);
             // the core will notice that the stream was removed when sending the next chunk
             break;
