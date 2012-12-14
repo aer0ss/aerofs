@@ -8,11 +8,15 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.multiuser.preferences.DlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
+import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
+import com.aerofs.proto.RitualNotifications.PBNotification;
+import com.aerofs.proto.RitualNotifications.PBNotification.Type;
+import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
@@ -29,8 +33,22 @@ public class TrayMenu implements ITrayMenu
     private final Menu _menu;
     private final TrayIcon _icon;
 
+    private final TransferTrayMenuSection _transferTrayMenuSection;
     private boolean _enabled;
     public final TrayMenuPopulator _trayMenuPopulator;
+
+    private final IListener _l = new IListener() {
+        @Override
+        public void onNotificationReceived(PBNotification pb) {
+            switch (pb.getType().getNumber()) {
+            case Type.DOWNLOAD_VALUE:
+            case Type.UPLOAD_VALUE:
+                _transferTrayMenuSection.update(pb);
+                break;
+            default: break;
+            }
+        }
+    };
 
     public TrayMenu(TrayIcon icon)
     {
@@ -39,6 +57,7 @@ public class TrayMenu implements ITrayMenu
         _menu = new Menu(GUI.get().sh(), SWT.POP_UP);
 
         _trayMenuPopulator = new TrayMenuPopulator(_menu);
+        _transferTrayMenuSection = new TransferTrayMenuSection(_trayMenuPopulator);
 
         _menu.addMenuListener(new MenuListener() {
             @Override
@@ -54,6 +73,7 @@ public class TrayMenu implements ITrayMenu
                 _icon.clearNotifications();
             }
         });
+        UI.rnc().addListener(_l);
     }
 
     public void loadMenu()
@@ -67,7 +87,13 @@ public class TrayMenu implements ITrayMenu
         } else {
             addPreferencesMenuItem();
         }
+
         _trayMenuPopulator.addMenuSeparator();
+
+        _transferTrayMenuSection.populate();
+
+        _trayMenuPopulator.addMenuSeparator();
+
         createHelpMenu();
         _trayMenuPopulator.addExitMenuItem(S.PRODUCT + " " + S.TEAM_SERVER);
     }

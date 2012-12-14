@@ -6,6 +6,7 @@ import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.singleuser.preferences.DlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
+import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
@@ -70,17 +71,16 @@ public class TrayMenu implements ITrayMenu
 
     private volatile int _conflictCount = 0;
 
-    private MenuItem _transferStats1;    // menu item used to display information about ongoing transfers - line 1
-    private MenuItem _transferStats2;    // menu item used to display information about ongoing transfers - line 2
-    private Object _transferProgress;    // non-null if transfer is in progress
     private final Map<Integer, Image> _pieChartCache = Maps.newHashMap();
-    private final TransferState _ts = new TransferState(true);
 
     private final Menu _menu;
     private final TrayIcon _icon;
 
     private boolean _enabled;
     public final TrayMenuPopulator _trayMenuPopulator;
+
+
+    private final TransferTrayMenuSection _transferTrayMenuSection;
 
     private final PauseOrResumeSyncing _prs = new PauseOrResumeSyncing();
 
@@ -90,8 +90,7 @@ public class TrayMenu implements ITrayMenu
             switch (pb.getType().getNumber()) {
             case Type.DOWNLOAD_VALUE:
             case Type.UPLOAD_VALUE:
-                _ts.update(pb);
-                _dr.schedule();
+                _transferTrayMenuSection.update(pb);
                 break;
             case Type.CONFLICT_COUNT_VALUE:
                 assert pb.hasConflictCount();
@@ -111,6 +110,8 @@ public class TrayMenu implements ITrayMenu
         _menu = new Menu(GUI.get().sh(), SWT.POP_UP);
 
         _trayMenuPopulator = new TrayMenuPopulator(_menu);
+
+        _transferTrayMenuSection = new TransferTrayMenuSection(_trayMenuPopulator);
 
         _menu.addMenuListener(new MenuListener() {
             @Override
@@ -165,7 +166,8 @@ public class TrayMenu implements ITrayMenu
 
             _trayMenuPopulator.addMenuSeparator();
 
-            addTransfersMenuItem();
+            _transferTrayMenuSection.populate();
+
             addPauseOrResumeSyncingMenuItem();
 
             _trayMenuPopulator.addMenuSeparator();
@@ -414,121 +416,6 @@ public class TrayMenu implements ITrayMenu
         });
     }
 
-    private void addTransfersMenuItem()
-    {
-        _transferStats1 = _trayMenuPopulator.addMenuItem("", null);
-        _transferStats1.setEnabled(false);
-
-        _transferStats2 = null;
-        updateTransferMenus();
-    }
-
-    /**
-     * Update the menu items _transferStats1 and _transferStats2 with stats about the current uploads and downloads.
-     * Must be called from the GUI thread
-     */
-    private void updateTransferMenus()
-    {
-        // Gather the stats about the current downloads and uploads
-
-        int dlCount = 0, ulCount = 0;
-        long dlBytesDone = 0, ulBytesDone = 0;
-        long dlBytesTotal = 0, ulBytesTotal = 0;
-
-        synchronized (_ts) {
-            for (PBDownloadEvent dl : _ts.downloads_().values()) {
-                // guaranteed by updateDownloadState
-                assert dl.getState() == State.ONGOING;
-                dlCount++;
-                dlBytesDone += dl.getDone();
-                dlBytesTotal += dl.getTotal();
-            }
-
-            for (PBUploadEvent ul : _ts.uploads_().values()) {
-                // guaranteed by updateUploadState
-                assert ul.getDone() != ul.getTotal();
-                if (ul.getDone() > 0 && ul.getDone() != ul.getTotal()) {
-                    ulCount++;
-                    ulBytesDone += ul.getDone();
-                    ulBytesTotal += ul.getTotal();
-                }
-            }
-        }
-
-        // If there are both downloads and uploads, create a second MenuItem to display uploads
-
-        MenuItem menuItem;
-        if (dlCount > 0 && ulCount > 0) {
-            if (_transferStats2 == null) {
-                _transferStats2 = _trayMenuPopulator.addMenuItem( "",
-                        _menu.indexOf(_transferStats1) + 1, null);
-                _transferStats2.setEnabled(false);
-            }
-            menuItem = _transferStats2;
-        } else {
-            if (_transferStats2 != null) {
-                _transferStats2.dispose();
-                _transferStats2 = null;
-            }
-            menuItem = _transferStats1;
-        }
-
-        // Display the appropriate status in the menu items
-
-        boolean transferring = dlCount != 0 || ulCount != 0;
-
-        if (transferring) {
-            showStats(_transferStats1, "Downloading", dlCount, dlBytesDone, dlBytesTotal);
-            showStats(menuItem, "Uploading", ulCount, ulBytesDone, ulBytesTotal);
-        } else {
-            _transferStats1.setText("No active transfers");
-            _transferStats1.setImage(null);
-        }
-
-        // Display the progress on the menu icon
-
-        if (transferring) {
-            if (_transferProgress == null) {
-                _transferProgress = GUI.get().addProgress("transferring files", false);
-            }
-        } else {
-            if (_transferProgress != null) {
-                GUI.get().removeProgress(_transferProgress);
-                _transferProgress = null;
-            }
-        }
-    }
-
-    /**
-     * Sets menuItem's text to something like "Downloading 2 files (12.1/29.5 MB)"
-     * and menuItem's image to a pie chart representing the progress.
-     * No-op if count is 0 (no files are being transfered)
-     *
-     * @param menuItem: MenuItem to set the text and image
-     * @param action:   verb displayed in the menu: "Downloading" or "Uploading"
-     * @param count:    number of files being transferred. If count is 0, this method does nothing.
-     * @param done:     bytes transferred
-     * @param total:    amount of bytes to transfer
-     */
-    private void showStats(MenuItem menuItem, String action, int count, long done, long total)
-    {
-        if (count > 0) {
-            menuItem.setText(String.format("%s %s file%s (%s)",
-                    action, count, count > 1 ? "s" : "",
-                    Util.formatProgress(done, total)));
-
-            if (total > 0) {
-                Color bg = Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_INACTIVE_BACKGROUND);
-                Color fg = Display.getCurrent().getSystemColor(SWT.COLOR_TITLE_INACTIVE_FOREGROUND);
-                // Swap bg and fg on Windows XP
-                if (OSUtil.isWindowsXP()) {
-                    Color tmp = bg; bg = fg; fg = tmp;
-                }
-                menuItem.setImage(Images.getPieChart(done, total, 16, bg, fg, null, _pieChartCache));
-            }
-        }
-    }
-
     private void addPauseOrResumeSyncingMenuItem()
     {
         final boolean paused = _prs.isPaused();
@@ -600,26 +487,6 @@ public class TrayMenu implements ITrayMenu
         helpTrayMenuPopulator.addHelpMenuItems();
     }
 
-
-    // Member variables related to the ongoing transfer status
-    private final DelayedRunner _dr = new DelayedRunner("update-transfers-menu",
-            UIParam.SLOW_REFRESH_DELAY, new Runnable() {
-        @Override
-        public void run()
-        {
-            if (_transferStats1 != null) {
-                GUI.get().safeExec(_transferStats1, new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        updateTransferMenus();
-                    }
-                });
-            }
-        }
-    });
-
     private DlgPreferences _dlgPref;
 
     public void openDlgPreferences(boolean showTransfers)
@@ -664,9 +531,6 @@ public class TrayMenu implements ITrayMenu
         // TODO remove listeners
         _trayMenuPopulator.dispose();
 
-        for (Image img : _pieChartCache.values()) {
-            img.dispose();
-        }
-        _pieChartCache.clear();
+        _transferTrayMenuSection.dispose();
     }
 }
