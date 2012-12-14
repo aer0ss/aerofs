@@ -1,8 +1,14 @@
-package com.aerofs.lib;
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
+package com.aerofs.base.net;
 
 import com.aerofs.base.Base64;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.Loggers;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.slf4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -12,16 +18,18 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 
-public abstract class AbstractServletClientHandler
+public abstract class AbstractHttpRpcClient
 {
-    private final URL _url;
-    private String _cookie;
+    private static final Logger LOGGER = Loggers.getLogger(AbstractHttpRpcClient.class);
 
+    private final URL _url;
     private String _postParamProtocol;
     private String _postParamData;
     private int _protocolVersion;
 
-    protected AbstractServletClientHandler(URL url, String postParamProtocol, String postParamData,
+    private volatile String _cookie;
+
+    protected AbstractHttpRpcClient(URL url, String postParamProtocol, String postParamData,
             int protocolVersion)
     {
         this._url = url;
@@ -30,14 +38,20 @@ public abstract class AbstractServletClientHandler
         this._protocolVersion = protocolVersion;
     }
 
+    public URL getUrl()
+    {
+        return _url;
+    }
+
     public ListenableFuture<byte[]> doRPC(byte[] data)
     {
-        final UncancellableFuture<byte[]> future = UncancellableFuture.create();
         try {
             // Connect
             URLConnection c = _url.openConnection();
+            c.setDoInput(true);
             c.setDoOutput(true);
-            if (_cookie != null) c.setRequestProperty("Cookie", _cookie);
+            String cookie = _cookie;
+            if (cookie != null) c.setRequestProperty("Cookie", cookie);
             c.connect();
 
             // Construct data
@@ -57,6 +71,8 @@ public abstract class AbstractServletClientHandler
                 wr.close();
             }
 
+            LOGGER.debug("url={} headers={}", _url, c.getHeaderFields());
+
             // Set cookie for the next call
             String setCookie = c.getHeaderField("Set-Cookie");
             if (setCookie != null) _cookie = setCookie.split(";")[0];
@@ -73,16 +89,14 @@ public abstract class AbstractServletClientHandler
                 dis.readFully(bs);
 
                 // Process reply
-                future.set(Base64.decode(bs));
+                return Futures.immediateFuture(Base64.decode(bs));
             } finally {
                 is.close();
             }
 
         } catch (IOException e) {
             // If anything went wrong, dump the exception in the future and return to user.
-            future.setException(e);
+            return Futures.immediateFailedFuture(e);
         }
-
-        return future;
     }
 }

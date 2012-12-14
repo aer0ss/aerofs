@@ -10,8 +10,10 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
@@ -35,6 +37,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -46,21 +49,28 @@ import org.jboss.netty.handler.ssl.SslHandler;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Map.Entry;
 
 public class MobileService implements IMobileService
 {
-    //private final static Logger l = Util.l(MobileService.class);
+    private final static Logger l = Util.l(MobileService.class);
+
     private static final Prio PRIO = Prio.LO;
 
     private static final byte[] MAGIC_BYTES = "MOBL".getBytes();
@@ -255,6 +265,7 @@ public class MobileService implements IMobileService
         }
 
         private final IIMCExecutor _imce;
+        private final CfgCACertFilename _cfgCACertFilename;
         private final CfgKeyManagersProvider _cfgKeyManagersProvider;
 
         private SSLContext _sslContext;
@@ -262,9 +273,11 @@ public class MobileService implements IMobileService
         @Inject
         public Factory(
                 CoreIMCExecutor cimce,
+                CfgCACertFilename cfgCACertFilename,
                 CfgKeyManagersProvider cfgKeyManagersProvider)
         {
             _imce = cimce.imce();
+            _cfgCACertFilename = cfgCACertFilename;
             _cfgKeyManagersProvider = cfgKeyManagersProvider;
             try {
                 getSSLContext();
@@ -283,13 +296,28 @@ public class MobileService implements IMobileService
 
         private SSLContext createSslContext()
                 throws CertificateException, IOException, KeyStoreException,
-                NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException
+                NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException,
+                SignatureException, NoSuchProviderException, InvalidKeyException
         {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Certificate caCert;
+            InputStream in = new FileInputStream(_cfgCACertFilename.get());
+            try {
+                caCert = certificateFactory.generateCertificate(in);
+            } finally {
+                in.close();
+            }
+            l.debug("caCert:" + caCert);
+
             // akin to ClientSSLEngineFactory
             char[] passwd = {};
             PrivateKey privateKey = _cfgKeyManagersProvider.getPrivateKey();
             X509Certificate cert = _cfgKeyManagersProvider.getCert();
-            Certificate[] chain = { cert };
+            l.debug("cert:" + cert);
+
+            cert.verify(caCert.getPublicKey());
+
+            Certificate[] chain = { cert, caCert };
 
             KeyStore keyStore = KeyStore.getInstance(JKS);
             keyStore.load(null, null);
@@ -299,13 +327,13 @@ public class MobileService implements IMobileService
             keyManagerFactory.init(keyStore, passwd);
 
             SSLContext context = SSLContext.getInstance(TLS);
+            // TODO: check client certificate using trust manager
             context.init(keyManagerFactory.getKeyManagers(), null, null);
             return context;
         }
 
         private synchronized SSLContext getSSLContext()
-                throws NoSuchAlgorithmException, KeyStoreException, IOException,
-                CertificateException, UnrecoverableKeyException, KeyManagementException
+                throws Exception
         {
             if (_sslContext == null) {
                 _sslContext = createSslContext();
