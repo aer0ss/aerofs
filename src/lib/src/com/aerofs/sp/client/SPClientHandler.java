@@ -4,12 +4,12 @@ import java.net.URL;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.lib.AbstractServletClientHandler;
+import com.aerofs.base.net.AbstractHttpRpcClient;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 
 public class SPClientHandler
-        extends AbstractServletClientHandler
+        extends AbstractHttpRpcClient
         implements SPServiceStubCallbacks
 {
     public SPClientHandler(URL url)

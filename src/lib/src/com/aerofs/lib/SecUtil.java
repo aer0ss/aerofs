@@ -225,10 +225,8 @@ public abstract class SecUtil
     }
 
     private static final byte[] PBE_AES_SALT = {
-            // (byte)0xc7, (byte)0x73, (byte)0x21, (byte)0x8c,
-            // (byte)0x7e, (byte)0xc8, (byte)0xee, (byte)0x99
-            (byte) 0x87, (byte) 0x73, (byte) 0x54, (byte) 0x8c, (byte) 0x7e,
-            (byte) 0xc8, (byte) 0xa0, (byte) 0x88 };
+            (byte) 0x87, (byte) 0x73, (byte) 0x54, (byte) 0x8c,
+            (byte) 0x7e, (byte) 0xc8, (byte) 0xa0, (byte) 0x88 };
 
     private static final int PBE_AES_ITERATION = 1024;
     private static final int PBE_AES_STRENGTH_STRONG = 256;

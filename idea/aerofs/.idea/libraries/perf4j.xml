@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="perf4j">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../resource/server/perf4j-0.9.16.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>

@@ -13,13 +13,13 @@
     <orderEntry type="library" exported="" name="log4j" level="project" />
     <orderEntry type="library" exported="" name="slf4j-log4j12" level="project" />
     <orderEntry type="library" exported="" name="guice-aerofs" level="project" />
+    <orderEntry type="library" exported="" name="guice-multibindings-aerofs" level="project" />
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
     <orderEntry type="library" exported="" name="gson-2.2.2" level="project" />
     <orderEntry type="library" exported="" name="aws" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="mockito" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="guice-multibindings-aerofs" level="project" />
   </component>
 </module>
 
