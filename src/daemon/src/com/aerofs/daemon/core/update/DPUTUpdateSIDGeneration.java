@@ -18,6 +18,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -122,6 +123,8 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
             @Override
             public void run_(Statement s) throws SQLException
             {
+                Connection c = _dbcw.getConnection();
+
                 // check that anchors are not aliased
                 // NB: this is not strictly required by this task but after talking with Mark about
                 // the likelihood of this happening we decided to do it just in case...
@@ -185,7 +188,7 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                             }
 
                             // fix anchor OID in all table that directly reference it
-                            updateOID(sid, fixedSID);
+                            updateOID(c, sid, fixedSID);
                         }
                     }
                 } finally {
@@ -199,8 +202,8 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                 for (Entry<SIndex, Map<OID, OID>> store : anchorFixes.entrySet()) {
                     l.info("update filters for " + store.getValue().size() + " anchors in store "
                             + store.getKey());
-                    updateSenderFilters(s, store.getKey(), store.getValue());
-                    updateCollectorFilters(s, store.getKey(), store.getValue());
+                    updateSenderFilters(s, c, store.getKey(), store.getValue());
+                    updateCollectorFilters(s, c, store.getKey(), store.getValue());
                 }
             }
         });
@@ -222,27 +225,27 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
     /**
      * Update anchor OIDs in place for all table that have an OID column
      */
-    private void updateOID(byte[] oldOID, byte[] newOID) throws SQLException
+    static void updateOID(Connection c, byte[] oldOID, byte[] newOID) throws SQLException
     {
-        updateOID(T_OA, C_OA_OID, oldOID, newOID);
-        updateOID(T_OA, C_OA_PARENT, oldOID, newOID);
-        updateOID(T_CA, C_CA_OID, oldOID, newOID);
-        updateOID(T_PRE, C_PRE_OID, oldOID, newOID);
-        updateOID(T_VER, C_VER_OID, oldOID, newOID);
-        updateOID(T_BKUPT, C_BKUPT_OID, oldOID, newOID);
-        updateOID(T_IV, C_IV_OID, oldOID, newOID);
-        updateOID(T_IBT, C_IBT_OID, oldOID, newOID);
-        updateOID(T_MAXTICK, C_MAXTICK_OID, oldOID, newOID);
-        updateOID(T_CS, C_CS_OID, oldOID, newOID);
-        updateOID(T_EX, C_EX_OID, oldOID, newOID);
-        updateOID(T_AL, C_AL_OID, oldOID, newOID);
-        updateOID(T_SSPQ, C_SSPQ_OID, oldOID, newOID);
+        updateOID(c, T_OA, C_OA_OID, oldOID, newOID);
+        updateOID(c, T_OA, C_OA_PARENT, oldOID, newOID);
+        updateOID(c, T_CA, C_CA_OID, oldOID, newOID);
+        updateOID(c, T_PRE, C_PRE_OID, oldOID, newOID);
+        updateOID(c, T_VER, C_VER_OID, oldOID, newOID);
+        updateOID(c, T_BKUPT, C_BKUPT_OID, oldOID, newOID);
+        updateOID(c, T_IV, C_IV_OID, oldOID, newOID);
+        updateOID(c, T_IBT, C_IBT_OID, oldOID, newOID);
+        updateOID(c, T_MAXTICK, C_MAXTICK_OID, oldOID, newOID);
+        updateOID(c, T_CS, C_CS_OID, oldOID, newOID);
+        updateOID(c, T_EX, C_EX_OID, oldOID, newOID);
+        updateOID(c, T_AL, C_AL_OID, oldOID, newOID);
+        updateOID(c, T_SSPQ, C_SSPQ_OID, oldOID, newOID);
     }
 
-    private void updateOID(String table, String column, byte[] oldOID, byte[] newOID)
+    private static void updateOID(Connection c, String table, String column, byte[] oldOID, byte[] newOID)
             throws SQLException
     {
-        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
+        PreparedStatement ps = c.prepareStatement(
                 "update " + table +
                 " set " + column + "=?" +
                 " where " + column + "=?");
@@ -296,10 +299,10 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
         }
     }
 
-    private void updateSenderFilters(Statement s, SIndex sidx, Map<OID, OID> anchors)
+    static void updateSenderFilters(Statement s, Connection c, SIndex sidx, Map<OID, OID> anchors)
             throws SQLException
     {
-        updateFilters(s, T_SF, C_SF_SIDX, C_SF_SFIDX, C_SF_FILTER, sidx, anchors,
+        updateFilters(s, c, T_SF, C_SF_SIDX, C_SF_SFIDX, C_SF_FILTER, sidx, anchors,
                 new IFieldTransfer() {
                     @Override
                     public void transfer(ResultSet rs, PreparedStatement ps, int idx)
@@ -310,10 +313,10 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                 });
     }
 
-    private void updateCollectorFilters(Statement s, SIndex sidx, Map<OID, OID> anchors)
+    static void updateCollectorFilters(Statement s, Connection c, SIndex sidx, Map<OID, OID> anchors)
             throws SQLException
     {
-        updateFilters(s, T_CF, C_CF_SIDX, C_CF_DID, C_CF_FILTER, sidx, anchors,
+        updateFilters(s, c, T_CF, C_CF_SIDX, C_CF_DID, C_CF_FILTER, sidx, anchors,
                 new IFieldTransfer() {
                     @Override
                     public void transfer(ResultSet rs, PreparedStatement ps, int idx)
@@ -332,12 +335,12 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
     /**
      * Update all bloom filters for a given store in a given table
      */
-    private void updateFilters(Statement s, String table, String cSidx, String cSecondaryKey,
-            String cFilter, SIndex sidx, Map<OID, OID> anchors, IFieldTransfer f)
-            throws SQLException
+    private static void updateFilters(Statement s, Connection c, String table, String cSidx,
+            String cSecondaryKey, String cFilter, SIndex sidx, Map<OID, OID> anchors,
+            IFieldTransfer f) throws SQLException
     {
         int n = 0;
-        PreparedStatement ps = _dbcw.getConnection().prepareStatement(
+        PreparedStatement ps = c.prepareStatement(
                 "replace into " + table + "(" +
                         cSidx + "," + cSecondaryKey + "," + cFilter + ") values (?,?,?)");
 

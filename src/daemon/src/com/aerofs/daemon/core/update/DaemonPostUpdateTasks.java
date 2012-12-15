@@ -48,7 +48,8 @@ public class DaemonPostUpdateTasks
             new DPUTBreakSyncStatActivityLogDependency(dbcw),
             new DPUTResetSyncStatus(dbcw), // bug in AggregateSyncStatus.objectMoved_
             new DPUTMigrateAuxRoot(absAuxRoot),
-            new DPUTUpdateSIDGeneration(cfgUser, dbcw)
+            new DPUTUpdateSIDGeneration(cfgUser, dbcw),
+            new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw)
             // new tasks go here
         };
 
