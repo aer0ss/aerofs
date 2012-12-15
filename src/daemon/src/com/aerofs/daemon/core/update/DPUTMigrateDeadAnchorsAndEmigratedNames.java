@@ -125,7 +125,10 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
                 if (!isEmigrantName(name) || !parent.isTrash()) continue;
 
                 byte[] sid = extractSID(name);
-                if (sid == null) continue;
+                if (sid == null) {
+                    Util.l(this).info("skip " + name);
+                    continue;
+                }
 
                 Util.l(this).info("fix emigrant target: " + Util.hexEncode(sid));
 
@@ -159,7 +162,7 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
     private static @Nullable byte[] extractSID(String name)
     {
         try {
-            return Util.hexDecode(name, ID_STRING_LEN + 1, ID_STRING_LEN);
+            return Util.hexDecode(name, ID_STRING_LEN + 1, 2 * ID_STRING_LEN + 1);
         } catch (ExFormatError e) {
             return null;
         }
