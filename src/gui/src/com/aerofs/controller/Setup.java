@@ -230,7 +230,7 @@ class Setup
         DID did = CredentialUtil.certifyAndSaveDeviceKeys(userID, scrypted, sp);
 
         initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted,
-                Collections.<Key, String>emptyMap());
+                Collections.<Key, String>emptyMap(), UIParam.DEFAULT_PORT_BASE);
 
         setupCommon(did, deviceName, sp);
     }
@@ -250,7 +250,8 @@ class Setup
         DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
 
         initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted,
-                Collections.singletonMap(Key.MULTIUSER, Boolean.toString(true)));
+                Collections.singletonMap(Key.MULTIUSER, Boolean.toString(true)),
+                UIParam.DEFAULT_TEAM_SERVER_PORT_BASE);
 
         // sign in with the team server's user ID
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
@@ -344,7 +345,7 @@ class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
-            PBS3Config s3config, byte[] scrypted, Map<Key, String> extraCfgTuples)
+            PBS3Config s3config, byte[] scrypted, Map<Key, String> extraCfgTuples, int defaultPortBase)
             throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
@@ -367,7 +368,7 @@ class Setup
         db.recreateSchema_();
         db.set(map);
 
-        Cfg.writePortbase(_rtRoot, findPortBase());
+        Cfg.writePortbase(_rtRoot, findPortBase(defaultPortBase));
 
         Cfg.init_(_rtRoot, true);
     }
@@ -413,25 +414,25 @@ class Setup
     /**
      * @throws IOException if unable to find a port due to any reason
      */
-    private int findPortBase()
+    private int findPortBase(int defaultPortBase)
             throws IOException
     {
-        int base = UIParam.DEFAULT_PORT_BASE;
+        //int defaultPortBase = UIParam.DEFAULT_PORT_BASE;
         boolean error = false;
 
         // try 100 times only
         for (int i = 0; i < 100; i++) {
-            for (int port = Cfg.minPort(base); port < Cfg.nextUnreservedPort(base); port++) {
+            for (int port = Cfg.minPort(defaultPortBase); port < Cfg.nextUnreservedPort(defaultPortBase); port++) {
                 try {
                     ServerSocket ss = new ServerSocket(port, 0, C.LOCALHOST_ADDR);
                     ss.close();
                 } catch (BindException e) {
-                    base = Cfg.nextUnreservedPort(base);
+                    defaultPortBase = Cfg.nextUnreservedPort(defaultPortBase);
                     error = true;
                     break;
                 }
             }
-            if (!error) return base;
+            if (!error) return defaultPortBase;
             else error = false;
         }
 
