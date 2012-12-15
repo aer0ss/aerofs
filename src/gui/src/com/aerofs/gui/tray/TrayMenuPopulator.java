@@ -10,6 +10,7 @@ import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.misc.DlgAbout;
 import com.aerofs.gui.misc.DlgDefect;
+import com.aerofs.lib.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.UI;
@@ -109,7 +110,7 @@ public class TrayMenuPopulator
 
         addMenuSeparator();
 
-        addMenuItem("About " + S.PRODUCT, new AbstractListener(null)
+        addMenuItem("About " + L.PRODUCT, new AbstractListener(null)
         {
             @Override
             protected void handleEventImpl(Event event)

@@ -1,6 +1,6 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -23,7 +23,7 @@ public class CmdShutdown implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "shutdown " + S.PRODUCT + " and exit the current process";
+        return "shutdown " + L.PRODUCT + " and exit the current process";
     }
 
     @Override

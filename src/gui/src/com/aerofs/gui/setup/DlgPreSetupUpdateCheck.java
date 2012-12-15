@@ -1,5 +1,6 @@
 package com.aerofs.gui.setup;
 
+import com.aerofs.lib.L;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
@@ -35,14 +36,13 @@ public class DlgPreSetupUpdateCheck extends Shell
     private final ProgressBar _prog;
     private final Composite _composite;
     private final Label _lblDownloading;
-    private final Label _lblChecking;
     private final StackLayout _sl;
     private boolean _firstOngoing = true;
 
     public DlgPreSetupUpdateCheck(Shell shell)
     {
         super(shell, SWT.DIALOG_TRIM | GUIUtil.alwaysOnTop());
-        setText("Setup " + S.PRODUCT);
+        setText("Setup " + L.PRODUCT);
 
         GridLayout gridLayout = new GridLayout(1, false);
         // same as GUIDownloader
@@ -56,13 +56,13 @@ public class DlgPreSetupUpdateCheck extends Shell
         _composite.setLayout(_sl);
 
         _lblDownloading = new Label(_composite, SWT.NONE);
-        _lblDownloading.setText("Downloading updates. " + S.PRODUCT +
+        _lblDownloading.setText("Downloading updates. " + L.PRODUCT +
                 " will automatically restart...  ");
 
-        _lblChecking = new Label(_composite, SWT.NONE);
-        _lblChecking.setText(S.CHECKING_FOR_DINOSAURS);
+        Label lblChecking = new Label(_composite, SWT.NONE);
+        lblChecking.setText(S.CHECKING_FOR_DINOSAURS);
 
-        _sl.topControl = _lblChecking;
+        _sl.topControl = lblChecking;
 
         _prog = new ProgressBar(this, SWT.NONE);
         GridData gdProgressBar = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);

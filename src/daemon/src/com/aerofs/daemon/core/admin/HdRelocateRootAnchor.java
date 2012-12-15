@@ -13,10 +13,10 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.L;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
@@ -63,7 +63,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     protected void handleThrows_(EIRelocateRootAnchor ev, Prio prio) throws Exception
     {
         if (!new File(ev._newRootAnchor).isAbsolute()) {
-            throw new ExBadArgs("the path to new " + S.PRODUCT + " location is not absolute");
+            throw new ExBadArgs("the path to new " + L.PRODUCT + " location is not absolute");
 
         }
 
@@ -179,9 +179,9 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                 _oldAuxRoot.moveInSameFileSystem(_newAuxRoot);
             } catch (IOException e) {
                 if (OSUtil.isWindows()) {
-                    throw new ExInUse("files in the " + S.PRODUCT + " folder are in use. " +
+                    throw new ExInUse("files in the " + L.PRODUCT + " folder are in use. " +
                             "Please close all programs interacting with files in " +
-                            S.PRODUCT);
+                            L.PRODUCT);
                 }
                 throw e;
             }

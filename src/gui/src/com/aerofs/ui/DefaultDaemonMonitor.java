@@ -7,6 +7,7 @@ package com.aerofs.ui;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.L;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;
@@ -84,12 +85,12 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                                 " the correct bucket name and AWS access and secret key.");
                     } else if (exitCode == S3_JAVA_KEY_LENGTH_MAYBE_TOO_LIMITED.getNumber()) {
                         throw new ExUIMessage(
-                                S.PRODUCT + " couldn't launch due to issues with your " +
+                                L.PRODUCT + " couldn't launch due to issues with your " +
                                 S.S3_ENCRYPTION_PASSWORD + ". If your Java runtime" +
                                 " is provided by Oracle with limited" +
                                 " crypto key strength, please download the Unlimited Strength" +
                                 " Jurisdiction Policy Files at http://bit.ly/UlsKO6. " +
-                                S.PRODUCT + " requires full strength AES-256 for a better margin" +
+                                L.PRODUCT + " requires full strength AES-256 for a better margin" +
                                 " of safety. Contact us at " + SV.SUPPORT_EMAIL_ADDRESS +
                                 " for more questions.");
                     } else if (OSUtil.isWindows() && exitCode == WINDOWS_SHUTTING_DOWN) {
@@ -111,9 +112,9 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                            This exit code may happen when we try to run the DPUTMigrateAuxRoot task
                            Therefore, it can only happen here, not in onDaemonDeath()
                          */
-                        throw new ExUIMessage(S.PRODUCT + " couldn't launch because it couldn't " +
+                        throw new ExUIMessage(L.PRODUCT + " couldn't launch because it couldn't " +
                                 "write to: \"" + Cfg.absAuxRoot() + "\"\n\nPlease make sure that " +
-                                S.PRODUCT + " has the appropriate permissions to write to that " +
+                                L.PRODUCT + " has the appropriate permissions to write to that " +
                                 "folder.");
                     } else {
                         throw new IOException(getMessage(exitCode));

@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.ex;
 
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 
 public class ExAlreadyRunning extends ExAborted
 {
@@ -12,6 +12,6 @@ public class ExAlreadyRunning extends ExAborted
 
     public ExAlreadyRunning()
     {
-        super(S.PRODUCT + " is already running.");
+        super(L.PRODUCT + " is already running.");
     }
 }

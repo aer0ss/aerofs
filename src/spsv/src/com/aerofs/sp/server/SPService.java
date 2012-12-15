@@ -1,7 +1,6 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.S;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
@@ -521,7 +520,7 @@ public class SPService implements ISPService
         if (user.getOrganization().isDefault()) {
             epochs = user.addAndMoveToOrganization("An Awesome Team");
         } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
-            throw new ExNoPerm("only admins can setup " + S.TEAM_SERVERS);
+            throw new ExNoPerm();
         } else {
             epochs = Collections.emptyMap();
         }

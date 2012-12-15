@@ -4,7 +4,7 @@
 
 package com.aerofs.sv.server;
 
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.common.EmailCategory;
 import org.apache.log4j.Logger;
@@ -61,7 +61,7 @@ class EmailSender
         MimeMessage msg;
         MimeMultipart multiPart = createMultipartEmail(textBody, htmlBody);
         msg = composeMessage(from,
-                (fromName == null) ? S.PRODUCT : fromName,
+                (fromName == null) ? L.PRODUCT : fromName,
                 to,
                 replyTo,
                 subject);

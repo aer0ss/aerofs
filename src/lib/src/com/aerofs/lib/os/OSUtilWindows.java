@@ -22,9 +22,9 @@ public class OSUtilWindows implements IOSUtil
     {
         String name;
         if (Cfg.staging()) {
-                name = S.PRODUCT + ".staging";
+                name = L.PRODUCT + ".staging";
         } else {
-                name = S.PRODUCT;
+                name = L.PRODUCT;
         }
 
         String path = System.getenv("APPDATA");

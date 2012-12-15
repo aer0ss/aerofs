@@ -7,9 +7,9 @@ package com.aerofs.sp.server.email;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import com.aerofs.lib.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.S;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
@@ -29,23 +29,23 @@ public class InvitationReminderEmailer
             final String subject = "Reminder: You've recently been invited to try AeroFS!";
 
             final String body = "\nHi there!\n\n" +
-                    "You've recently been invited to try out " + S.PRODUCT +
+                    "You've recently been invited to try out " + L.PRODUCT +
                     " (" + SP.WEB_BASE + ") \n\n " +
                     "We realize you might be quite busy and may have missed our invitation email " +
                     "so we want to remind you that your invitation is still " +
                     "waiting!\n\n" +
-                    "As a quick refresher: " + S.PRODUCT + " allows you to sync, share, and " +
+                    "As a quick refresher: " + L.PRODUCT + " allows you to sync, share, and " +
                     "collaborate on files privately and securely.\n\n Any data that you put inside your "+
-                    S.PRODUCT + " will be synced *only* with your personal devices, and anyone you " +
-                    "invite to share with you.\n\n Please keep in mind that " + S.PRODUCT +
+                    L.PRODUCT + " will be synced *only* with your personal devices, and anyone you " +
+                    "invite to share with you.\n\n Please keep in mind that " + L.PRODUCT +
                     " is still in beta! We release updates regularly and appreciate any and all " +
-                    "feedback.\n\n You can download " + S.PRODUCT + " at:\n\n" + url + "\n\n" +
+                    "feedback.\n\n You can download " + L.PRODUCT + " at:\n\n" + url + "\n\n" +
                     "And when prompted, enter the following invitation code:\n\n" + signupCode;
 
 
             final Email email = new Email(subject, true, unsubscribeId);
 
-            email.addSection("Reminder: You're invited to " + S.PRODUCT +"!", HEADER_SIZE.H1, body);
+            email.addSection("Reminder: You're invited to " + L.PRODUCT +"!", HEADER_SIZE.H1, body);
 
             email.addSignature("Happy Syncing :)", fromName,
                     "p.s. Let us know what you think at " + SV.SUPPORT_EMAIL_ADDRESS +

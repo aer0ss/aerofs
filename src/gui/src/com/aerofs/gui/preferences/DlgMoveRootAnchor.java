@@ -10,6 +10,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -39,7 +40,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
 
     public DlgMoveRootAnchor(Shell parent, boolean sheet, String absAnchorRoot)
     {
-        super(parent, "Moving " + S.PRODUCT + " Folder", sheet, false);
+        super(parent, "Moving " + L.PRODUCT + " Folder", sheet, false);
         _absAnchorRoot = absAnchorRoot;
     }
 
@@ -60,7 +61,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
         Label lblMovingTheAerofs = new Label(shell, SWT.NONE);
         lblMovingTheAerofs.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         lblMovingTheAerofs.setText("Moving files and " + S.VERSION_HISTORY +
-                ". Please do not quit " + S.PRODUCT + ".");
+                ". Please do not quit " + L.PRODUCT + ".");
 
         getShell().addListener(SWT.Show, new Listener() {
             @Override

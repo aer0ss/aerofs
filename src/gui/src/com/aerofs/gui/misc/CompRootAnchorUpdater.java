@@ -6,6 +6,7 @@ package com.aerofs.gui.misc;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
+import com.aerofs.lib.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -35,15 +36,7 @@ public class CompRootAnchorUpdater extends Composite
 {
     private final static Logger l = Util.l(CompRootAnchorUpdater.class);
 
-    private final CLabel _errorIcon;
-    private final Label _errorLabel;
-
-    private final Button _newLocationBtn;
-    private final Button _unlinkBtn;
-    private final Button _quitBtn;
-
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-    private final Composite composite;
 
     public CompRootAnchorUpdater(Composite parent)
     {
@@ -54,31 +47,30 @@ public class CompRootAnchorUpdater extends Composite
         gridLayout.verticalSpacing = 3;
         this.setLayout(gridLayout);
 
-        _errorIcon = new CLabel(this, SWT.NONE);
-        _errorIcon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
-        _errorIcon.setImage(getShell().getDisplay().getSystemImage(SWT.ICON_ERROR));
+        CLabel errorIcon = new CLabel(this, SWT.NONE);
+        errorIcon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
+        errorIcon.setImage(getShell().getDisplay().getSystemImage(SWT.ICON_ERROR));
 
-        _errorLabel = new Label(this, SWT.NONE);
-        _errorLabel.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-        _errorLabel.setText("Your " + S.PRODUCT + " folder was not found" +
+        Label errorLabel = new Label(this, SWT.NONE);
+        errorLabel.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
+        errorLabel.setText("Your " + L.PRODUCT + " folder was not found" +
                 " in the original location:\n" +
                 Cfg.absRootAnchor() + "\n\n" +
-                "If you moved the " + S.PRODUCT + " folder, click \"Select New Location...\"\n" +
+                "If you moved the " + L.PRODUCT + " folder, click \"Select New Location...\"\n" +
                 "below, and specify the new location.\n\n" +
-                "If you deleted the " + S.PRODUCT + " folder, or want to start over, click\n" +
+                "If you deleted the " + L.PRODUCT + " folder, or want to start over, click\n" +
                 "\"Unlink This Computer...\". You will be asked to setup " +
-                S.PRODUCT + "\nthe next time you launch.\n\n" +
-                "If you want to move the " + S.PRODUCT + " folder back to its original\nlocation "
-                + ", click \"Quit AeroFS\", move it back to its location,\nand launch " +
-                S.PRODUCT + " again.\n\n"
-        );
-        composite = new Composite(this, SWT.NONE);
+                L.PRODUCT + "\nthe next time you launch.\n\n" +
+                "If you want to move the " + L.PRODUCT + " folder back to its original\nlocation " +
+                ", click \"Quit AeroFS\", move it back to its location,\nand launch " +
+                L.PRODUCT + " again.\n\n");
+        Composite composite = new Composite(this, SWT.NONE);
         composite.setLayout(new FillLayout(SWT.HORIZONTAL));
         composite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
 
-        _newLocationBtn = new Button(composite, SWT.NONE);
-        _newLocationBtn.setText("Select New Location...");
-        _newLocationBtn.addSelectionListener(new SelectionAdapter()
+        Button newLocationBtn = new Button(composite, SWT.NONE);
+        newLocationBtn.setText("Select New Location...");
+        newLocationBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -87,12 +79,12 @@ public class CompRootAnchorUpdater extends Composite
             }
         });
 
-        _unlinkBtn = new Button(composite, SWT.NONE);
-        _unlinkBtn.setText("Unlink This Computer...");
+        Button unlinkBtn = new Button(composite, SWT.NONE);
+        unlinkBtn.setText("Unlink This Computer...");
 
-        _quitBtn = new Button(composite, SWT.NONE);
-        _quitBtn.setText("Quit " + S.PRODUCT);
-        _quitBtn.addSelectionListener(new SelectionAdapter()
+        Button quitBtn = new Button(composite, SWT.NONE);
+        quitBtn.setText("Quit " + L.PRODUCT);
+        quitBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -102,7 +94,7 @@ public class CompRootAnchorUpdater extends Composite
                 System.exit(0);
             }
         });
-        _unlinkBtn.addSelectionListener(new SelectionAdapter()
+        unlinkBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent e)
@@ -111,7 +103,7 @@ public class CompRootAnchorUpdater extends Composite
             }
         });
 
-        getShell().setDefaultButton(_newLocationBtn);
+        getShell().setDefaultButton(newLocationBtn);
     }
 
 
@@ -147,11 +139,11 @@ public class CompRootAnchorUpdater extends Composite
             Cfg.db().set(Key.ROOT, newRootPath);
             Cfg.init_(Cfg.absRTRoot(), false);
             GUI.get().show(getShell(), MessageType.INFO,
-                    S.PRODUCT + "' new location was updated successfully!");
+                    L.PRODUCT + "' new location was updated successfully!");
             return true;
         } catch (Exception e) {
             GUI.get().show(getShell(), MessageType.ERROR,
-                    "An error occured while applying the new location for the " + S.PRODUCT +
+                    "An error occured while applying the new location for the " + L.PRODUCT +
                             " folder " + UIUtil.e2msg(e));
             l.warn(Util.e(e));
             return false;

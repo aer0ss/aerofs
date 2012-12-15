@@ -5,8 +5,8 @@
 package com.aerofs.gui.preferences;
 
 import com.aerofs.gui.GUI;
+import com.aerofs.lib.L;
 import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
@@ -42,7 +42,7 @@ public class PreferencesUtil
         }
 
         if (!GUI.get().ask(_preferences.getShell(), MessageType.QUESTION, "Are you sure you want to move the "
-                + S.PRODUCT + " folder and its content from:\n\n" + pathOld + " \n\n to: \n\n " +
+                + L.PRODUCT + " folder and its content from:\n\n" + pathOld + " \n\n to: \n\n " +
                 pathNew + "?")) {
             return false;
         }

@@ -7,6 +7,7 @@ import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.setup.DlgSetup;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.lib.InOutArg;
+import com.aerofs.lib.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -82,7 +83,7 @@ public class GUI implements IUI
         _sh = new Shell(_disp);
         // setting the size to 0 would disable the tab key in the setup dialog
         _sh.setSize(1, 1);
-        _sh.setText(S.PRODUCT);
+        _sh.setText(L.PRODUCT);
         GUIUtil.setShellIcon(_sh);
         GUIUtil.centerShell(_sh);
 
@@ -617,7 +618,7 @@ public class GUI implements IUI
     @Override
     public void notify(MessageType mt, String msg, Runnable onClick)
     {
-        notify(mt, S.PRODUCT, msg, onClick);
+        notify(mt, L.PRODUCT, msg, onClick);
     }
 
     @Override

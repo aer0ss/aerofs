@@ -88,7 +88,7 @@ public abstract class RootAnchorUtil
                 SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
                         null, UserID.fromInternal("n/a"), rtRoot);
 
-                throw new ExUIMessage(S.PRODUCT + " doesn't support " + r + type +
+                throw new ExUIMessage(L.PRODUCT + " doesn't support " + r + type +
                         " filesystems on " + OSUtil.getOSName() + " at this moment");
             }
         }
@@ -130,7 +130,7 @@ public abstract class RootAnchorUtil
     private enum Perm {READ, WRITE}
     private static void throwExNoPerm(Perm perm, File file) throws ExNoPerm
     {
-        throw new ExNoPerm(S.PRODUCT + " doesn't have sufficient permissions to " +
+        throw new ExNoPerm(L.PRODUCT + " doesn't have sufficient permissions to " +
                 perm.toString().toLowerCase() + " files under " + file);
     }
 

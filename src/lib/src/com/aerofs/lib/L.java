@@ -49,7 +49,16 @@ public class L
         String htmlEmailHeaderColor();
     }
 
-    private static ILabeling s_l = new ClientLabeling();
+    // these constants provide easy access to commonly used values
+    public final static String PRODUCT;
+
+    private final static ILabeling s_l;
+
+    static {
+        s_l = new ClientLabeling();
+
+        PRODUCT = s_l.product();
+    }
 
     public static ILabeling get()
     {

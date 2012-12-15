@@ -281,7 +281,7 @@ public abstract class Updater
             try {
                 FileOutputStream out = new FileOutputStream(localFilePath);
                 try {
-                    int bytesRead = 0;
+                    int bytesRead;
                     int downloadedFileSize = 0;
                     int oldPercent = 0;
                     byte[] buf = new byte[Param.FILE_BUF_SIZE];
@@ -511,9 +511,9 @@ public abstract class Updater
                     final long duration = 60;
                     _skipUpdate = !((GUI)UI.get()).ask(MessageType.INFO,
                             S.IMPORTANT_UPDATE_DOWNLOADED + " Apply it now?\n" +
-                            "Skipping this version may cause " + S.PRODUCT +
+                            "Skipping this version may cause " + L.PRODUCT +
                             " to stop syncing with other computers.\n\n" +
-                            S.PRODUCT + " is going to update automatically" +
+                            L.PRODUCT + " is going to update automatically" +
                             " in %d seconds.",
                             "Apply Update", "Not Now (files may stop syncing)",
                             duration);
@@ -534,7 +534,7 @@ public abstract class Updater
     private void execUpdate(String newVersion, boolean hasPermissions)
     {
         if (!UI.isGUI()) {
-            UI.get().show(MessageType.WARN, S.PRODUCT +
+            UI.get().show(MessageType.WARN, L.PRODUCT +
                                             " may shut down to apply an update. A new process will" +
                                             " be started at the background after the update.");
         }

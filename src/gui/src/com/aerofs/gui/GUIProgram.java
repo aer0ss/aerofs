@@ -7,7 +7,7 @@ package com.aerofs.gui;
 import com.aerofs.controller.ControllerBadCredentialListener;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sp.client.SPBlockingClient;
@@ -34,7 +34,7 @@ public class GUIProgram implements IProgram
                     System.loadLibrary("msvcp100");
                 } catch (UnsatisfiedLinkError e1) {
                     MessageBox msgBox = new MessageBox(new Shell());
-                    msgBox.setMessage(S.PRODUCT + " cannot launch because the Microsoft Visual " +
+                    msgBox.setMessage(L.PRODUCT + " cannot launch because the Microsoft Visual " +
                             "C++ 2010 redistributable package is not installed. Please go to the " +
                             "following URL to download and install it:\n\nhttp://ae.ro/msvc2010");
                     msgBox.open();

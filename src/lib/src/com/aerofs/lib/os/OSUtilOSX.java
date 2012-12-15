@@ -5,8 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.OutArg;
+import com.aerofs.lib.SecUtil;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.swig.driver.Driver;
@@ -24,7 +28,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public final String getDefaultRTRoot()
     {
-        String path = System.getenv("HOME") + "/Library/Application Support/" + L.get().product();
+        String path = System.getenv("HOME") + "/Library/Application Support/" + L.PRODUCT;
         if (Cfg.staging()) path += ".staging";
         return path;
     }
@@ -194,7 +198,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
                 ArrayList<String> commands = new ArrayList<String>();
                 commands.add("mkdir -p " + destination.getPath());
                 commands.add("chown $USER " + destination.getPath());
-                runWithAdminPrivileges(S.PRODUCT + " needs your password to install the "
+                runWithAdminPrivileges(L.PRODUCT + " needs your password to install the "
                         + getShellExtensionName() + ".", commands);
             } else {
                 throw new SecurityException("Needs admin privileges");

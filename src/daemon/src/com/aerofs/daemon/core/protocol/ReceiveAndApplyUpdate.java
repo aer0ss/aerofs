@@ -30,8 +30,12 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.daemon.lib.exception.ExNameConflictDependsOn;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.L;
-import com.aerofs.lib.*;
+import com.aerofs.lib.Path;
+import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
 import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.*;
@@ -564,7 +568,7 @@ public class ReceiveAndApplyUpdate
             // inconsistent with other peers.
             //
             l.debug("folder->anchor conversion detected: " + soidLocal + "->" + soidRemote);
-            String newName = L.get().product() + " temporary folder - do not remove";
+            String newName = L.PRODUCT + " temporary folder - do not remove";
 
             while (_ds.resolveNullable_(pParent.append(newName)) != null) {
                 newName = Util.nextFileName(newName);

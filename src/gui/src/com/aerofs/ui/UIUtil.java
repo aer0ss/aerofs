@@ -191,7 +191,7 @@ public class UIUtil
         }
     }
 
-    private static String LAUNCH_ERROR_STRING = "Sorry, " + S.PRODUCT + " couldn't launch." +
+    private static String LAUNCH_ERROR_STRING = "Sorry, " + L.PRODUCT + " couldn't launch." +
             " Please contact us at " + SV.SUPPORT_EMAIL_ADDRESS;
 
     /**

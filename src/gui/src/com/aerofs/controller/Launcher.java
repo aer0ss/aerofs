@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.sql.SQLException;
 
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.lib.L;
 import com.aerofs.lib.ex.ExAlreadyRunning;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.ui.IUI.MessageType;
@@ -22,7 +23,6 @@ import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -79,7 +79,7 @@ class Launcher
             }
         } catch (Exception e) {
             String msg = e.getLocalizedMessage() != null ? e.getLocalizedMessage()
-                    : "Sorry, an internal error happened, preventing " + S.PRODUCT + " to launch";
+                    : "Sorry, an internal error happened, preventing " + L.PRODUCT + " to launch";
             reply.setStatus(Status.NOT_LAUNCHABLE);
             reply.setErrorMessage(msg);
             if (!(e instanceof ExAlreadyRunning)) {
@@ -118,11 +118,11 @@ class Launcher
         // Check that OS and arch are supported
         String msg = null;
         if (OSUtil.get() == null) {
-            msg = "Sorry, " + S.PRODUCT + " has yet to support " + OSUtil.getOSName() + ".";
+            msg = "Sorry, " + L.PRODUCT + " has yet to support " + OSUtil.getOSName() + ".";
         }
 
         if (OSUtil.getOSArch() == null) {
-            msg = "Sorry, " + S.PRODUCT + " has yet to support your computer's architecture.";
+            msg = "Sorry, " + L.PRODUCT + " has yet to support your computer's architecture.";
         }
 
         if (msg != null) {
@@ -137,7 +137,7 @@ class Launcher
                 && !Cfg.staging()
                 && !new File(AppRoot.abs()).getAbsolutePath().startsWith("/Applications/")
                 && !new File(_rtRoot, C.NO_OSX_APP_FOLDER_CHECK).exists()) {
-            throw new ExAborted("Please copy the " + S.PRODUCT +
+            throw new ExAborted("Please copy the " + L.PRODUCT +
                     " program into /Applications and try again.");
         }
     }
@@ -226,10 +226,10 @@ class Launcher
         String failedFile = PostUpdate.verifyChecksum();
         if (failedFile != null) {
             String url = SV.DOWNLOAD_LINK;
-            String msg = S.PRODUCT + " couldn't launch because some program files are corrupted." +
+            String msg = L.PRODUCT + " couldn't launch because some program files are corrupted." +
                     " Please " +
                     (UI.isGUI() ? "click " + IDialogConstants.OK_LABEL : "go to " + url) +
-                    " to download and install " + S.PRODUCT + " again. " +
+                    " to download and install " + L.PRODUCT + " again. " +
                     "All your data will be intact during re-installation.";
 
             SVClient.logSendDefectAsync(true, msg, new Exception(failedFile + " chksum failed" +

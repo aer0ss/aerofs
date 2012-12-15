@@ -7,7 +7,6 @@ import com.aerofs.lib.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Param.SP;
-import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -42,8 +41,7 @@ public class ShProgram implements IProgram, ICallback
             // FIXME: replace with the builder pattern to add commands
 
             _s = new ShellCommandRunner<ShProgram>(this, this, PROG,
-                    S.PRODUCT + " Shell, the command-line console for " +
-                    S.PRODUCT,
+                    L.PRODUCT + " Shell, the command-line console for " + L.PRODUCT,
                     args);
 
             initCommands_();

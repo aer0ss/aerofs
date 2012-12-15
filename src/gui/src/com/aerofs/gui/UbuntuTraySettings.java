@@ -4,8 +4,8 @@
 
 package com.aerofs.gui;
 
+import com.aerofs.lib.L;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
@@ -43,12 +43,12 @@ public class UbuntuTraySettings
                 }
 
                 GUI.get().show(MessageType.INFO,
-                        S.PRODUCT + " has updated your system settings to allow " +
-                        "displaying the " + S.PRODUCT +
+                        L.PRODUCT + " has updated your system settings to allow " +
+                        "displaying the " + L.PRODUCT +
                         " icon in the tray menu. If you don't see " +
                         "the tray icon, please log out of your session and log back in.\n\n" +
                         "Alternatively, you can use the 'aerofs-sh' command to use " +
-                        S.PRODUCT +
+                        L.PRODUCT +
                         " from the command line.");
             }
         } catch (IOException e) {

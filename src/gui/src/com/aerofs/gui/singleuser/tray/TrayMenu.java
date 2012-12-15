@@ -10,6 +10,7 @@ import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
+import com.aerofs.lib.L;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
@@ -180,7 +181,7 @@ public class TrayMenu implements ITrayMenu
 
         _trayMenuPopulator.addMenuSeparator();
 
-        _trayMenuPopulator.addExitMenuItem(S.PRODUCT);
+        _trayMenuPopulator.addExitMenuItem(L.PRODUCT);
     }
 
     private void addConflictsMenuItem(int conflictCount)
@@ -203,7 +204,7 @@ public class TrayMenu implements ITrayMenu
 
     private void addOpenFolderMenuItem()
     {
-        _trayMenuPopulator.addMenuItem("Open " + S.PRODUCT + " Folder",
+        _trayMenuPopulator.addMenuItem("Open " + L.PRODUCT + " Folder",
                 new AbstractListener(CLICKED_TASKBAR_OPEN_AEROFS)
                 {
                     @Override

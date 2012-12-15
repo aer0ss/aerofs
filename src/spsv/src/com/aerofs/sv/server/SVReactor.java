@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import com.aerofs.lib.L;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.proto.Sv.PBSVEmail;
@@ -236,7 +237,7 @@ public class SVReactor
                                   header.getUser(),
                                   SV.SUPPORT_EMAIL_ADDRESS,
                                   null,
-                                  S.PRODUCT + " Problem # " + id,
+                                  L.PRODUCT + " Problem # " + id,
                                   msg,
                                   null,
                                   true,

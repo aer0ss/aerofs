@@ -5,6 +5,7 @@ import java.net.ConnectException;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.lib.L;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -134,7 +135,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             }
         });
 
-        _btnIsExistingUser.setText("I already have an " + S.PRODUCT + " account");
+        _btnIsExistingUser.setText("I already have an " + L.PRODUCT + " account");
 
         if (Cfg.isTeamServer()) {
             _btnIsExistingUser.setSelection(true);
@@ -322,9 +323,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
 
         setTitleImage(Images.get(Images.IMG_SETUP));
 
-        setTitle("Setup " + S.PRODUCT + " "
-                + (Cfg.isTeamServer() ? S.TEAM_SERVER : "") + " (beta) "
-                + (Cfg.staging() ? "staging" : ""));
+        setTitle("Setup " + L.PRODUCT + " (beta) " + (Cfg.staging() ? "staging" : ""));
 
         if (_forceInvite && !_isTargetedInvite) _txtIC.setFocus();
         else if (_txtUserID.getText().isEmpty()) _txtUserID.setFocus();
@@ -623,7 +622,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
                     } catch (SecurityException e) {
                         if (!UI.get()
                                 .ask(MessageType.QUESTION,
-                                        S.PRODUCT + " needs your authorization to install the " +
+                                        L.PRODUCT + " needs your authorization to install the " +
                                                 OSUtil.get().getShellExtensionName() + ".\n\n" +
                                                 "Would you like to retry entering your password?\n" +
                                                 "If you click Cancel, the " +

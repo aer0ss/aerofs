@@ -8,6 +8,7 @@ import com.aerofs.gui.password.DlgPasswordChange;
 import com.aerofs.gui.preferences.PreferencesUtil;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
+import com.aerofs.lib.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -170,7 +171,7 @@ public class CompPreferences extends Composite
 
         Label lblAerofsLocation = new Label(this, SWT.NONE);
         lblAerofsLocation.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblAerofsLocation.setText(S.PRODUCT + " location:");
+        lblAerofsLocation.setText(L.PRODUCT + " location:");
 
         _txtRootAnchor = new Text(this, SWT.BORDER | SWT.READ_ONLY);
         GridData gd__txtRootAnchor = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);

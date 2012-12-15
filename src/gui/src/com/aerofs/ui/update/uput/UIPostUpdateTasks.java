@@ -2,7 +2,7 @@ package com.aerofs.ui.update.uput;
 
 import java.util.ArrayList;
 
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -67,21 +67,21 @@ public class UIPostUpdateTasks
             for (String msg : msgs) sb.append(msg + "\n\n");
 
             UI.get().show(MessageType.WARN,
-                    "Important message from " + S.PRODUCT + ":\n\n" + sb);
+                    "Important message from " + L.PRODUCT + ":\n\n" + sb);
         }
 
         if (suggestReboot) {
             UI.get().show(MessageType.INFO,
                     "A reboot of this computer is highly " +
-                    "recommended for the latest " + S.PRODUCT +
+                    "recommended for the latest " + L.PRODUCT +
                     " update to work properly.");
         }
 
         if (shutdown) {
             UI.dm().stopIgnoreException();
             UI.get().show(MessageType.INFO,
-                    S.PRODUCT + " will have to shutdown to apply an update." +
-                    " Please restart " + S.PRODUCT + " manually. Sorry" +
+                    L.PRODUCT + " will have to shutdown to apply an update." +
+                    " Please restart " + L.PRODUCT + " manually. Sorry" +
                     " for the inconvenience.");
         }
 

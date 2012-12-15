@@ -8,6 +8,7 @@ import java.util.Properties;
 
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -130,12 +131,12 @@ public class CLISetup
 
         } else {
             if (!OSUtil.isLinux()) {
-                cli.confirm(MessageType.WARN, S.PRODUCT + " CLI is not officially supported" +
+                cli.confirm(MessageType.WARN, L.PRODUCT + " CLI is not officially supported" +
                         " on non-Linux platforms. Specifically, GUI will be started" +
                         " up on the next automatic update.");
             }
 
-            _isExistingUser = cli.ask(MessageType.INFO, "Welcome! Do you have an " + S.PRODUCT +
+            _isExistingUser = cli.ask(MessageType.INFO, "Welcome! Do you have an " + L.PRODUCT +
                     " account already?");
             if (_isExistingUser) {
                 userID = getUser(cli);
@@ -237,7 +238,7 @@ public class CLISetup
 
         cli.notify(MessageType.INFO,
                 "+-------------------------------------------------+\n" +
-                "| You can now access " + S.PRODUCT + " functions through the |\n" +
+                "| You can now access " + L.PRODUCT + " functions through the |\n" +
                 "| " + Util.quote("aerofs-sh") + " command while aerofs-cli is running |\n" +
                 "+-------------------------------------------------+");
     }

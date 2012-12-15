@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
+import com.aerofs.lib.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
@@ -25,7 +26,7 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = S.PRODUCT + " password request";
+        String subject = L.PRODUCT + " password request";
 
         Email email = new Email(subject, false ,null);
 
@@ -36,9 +37,9 @@ public class PasswordResetEmailer
                "to reset your password:\n\n" + url + "\n\n" +
                 "If you didn't request this email please ignore this message.";
 
-        email.addSection(S.PRODUCT + " password request", HEADER_SIZE.H1, body);
+        email.addSection(L.PRODUCT + " password request", HEADER_SIZE.H1, body);
 
-        email.addSignature("Happy Syncing,", "The " + S.PRODUCT + " Team",
+        email.addSignature("Happy Syncing,", "The " + L.PRODUCT + " Team",
                 Email.DEFAULT_PS);
 
         try {
@@ -56,20 +57,20 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = S.PRODUCT + " password request confirmation";
+        String subject = L.PRODUCT + " password request confirmation";
 
         Email email = new Email(subject, false, null);
 
         String body = "\nCongrats! You've successfully created a new password " +
-                "for your " + S.PRODUCT + " account!\n" +
+                "for your " + L.PRODUCT + " account!\n" +
                 "You should now be able to continue syncing privately and securely.\n\n" +
                 "If you didn't request a password reset, " +
                 "please email " + SV.SUPPORT_EMAIL_ADDRESS + " right away.";
 
-        email.addSection(S.PRODUCT + " password request was successful", HEADER_SIZE.H1, body);
+        email.addSection(L.PRODUCT + " password request was successful", HEADER_SIZE.H1, body);
 
-        email.addSignature("Thank you for using " + S.PRODUCT + ",",
-                "The " + S.PRODUCT + " Support Team",
+        email.addSignature("Thank you for using " + L.PRODUCT + ",",
+                "The " + L.PRODUCT + " Support Team",
                 Email.DEFAULT_PS);
 
         try {

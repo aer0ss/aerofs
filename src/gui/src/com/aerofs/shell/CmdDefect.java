@@ -6,7 +6,7 @@ package com.aerofs.shell;
 
 import com.aerofs.cli.CLI;
 import com.aerofs.lib.C;
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -30,7 +30,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
 
         boolean cpuIssue = message.toLowerCase().contains("cpu");
 
-        Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + S.PRODUCT +
+        Object prog = UI.get().addProgress(cpuIssue ? "Sampling " + L.PRODUCT +
                 " CPU usage" : "Submitting", true);
 
         if (cpuIssue) logThreads(ritual, l);
@@ -97,7 +97,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "report an issue to the " + S.PRODUCT + " team";
+        return "report an issue to the " + L.PRODUCT + " team";
     }
 
     @Override

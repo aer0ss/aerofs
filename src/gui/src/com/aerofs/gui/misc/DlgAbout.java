@@ -1,5 +1,6 @@
 package com.aerofs.gui.misc;
 
+import com.aerofs.lib.L;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
@@ -61,7 +62,7 @@ public class DlgAbout extends AeroFSDialog
 
         Label lblAerofs = new Label(shell, SWT.NONE);
         lblAerofs.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, true, false, 1, 1));
-        lblAerofs.setText(S.PRODUCT + " (beta)" + (Cfg.staging() ? " staging" : ""));
+        lblAerofs.setText(L.PRODUCT + " (beta)" + (Cfg.staging() ? " staging" : ""));
 
         FontData fd = lblAerofs.getFont().getFontData()[0];
         lblAerofs.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 2, SWT.BOLD));
@@ -79,7 +80,7 @@ public class DlgAbout extends AeroFSDialog
 
         Link link = new Link(shell, SWT.NONE);
         link.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        link.setText("Visit " + S.PRODUCT + " <a>Web site</a> and <a>Release Notes</a>.");
+        link.setText("Visit " + L.PRODUCT + " <a>Web site</a> and <a>Release Notes</a>.");
         link.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)

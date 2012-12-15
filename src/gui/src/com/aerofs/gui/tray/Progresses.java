@@ -3,9 +3,9 @@ package com.aerofs.gui.tray;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import com.aerofs.lib.L;
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
@@ -16,22 +16,20 @@ public class Progresses {
     private static final Logger l = Util.l(Progresses.class);
 
     private static final String TOOLTIP_PREFIX =
-            (Cfg.staging() ? "STAGING " : "") + S.PRODUCT + " (beta)";
+            (Cfg.staging() ? "STAGING " : "") + L.PRODUCT + " (beta)";
     private static final String DEFAULT_TOOLTIP =
             TOOLTIP_PREFIX + " " + Cfg.ver() +
-            (OSUtil.isOSX() ? "" : "\nDouble click to open " + S.PRODUCT + " folder");
+            (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.PRODUCT + " folder");
 
     private final TreeMap<Integer, Progress> _progs =
         new TreeMap<Integer, Progress>();
 
     private int _lastProgressID;
-    private final SystemTray _st;
     private final TrayIcon _ti;
 
     Progresses(SystemTray st)
     {
-        _st = st;
-        _ti = _st.getIcon();
+        _ti = st.getIcon();
 
         _ti.setToolTipText(DEFAULT_TOOLTIP);
     }

@@ -11,14 +11,12 @@ import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayMenuPopulator;
-import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
+import com.aerofs.lib.L;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
 import com.aerofs.ui.RitualNotificationClient.IListener;
 import com.aerofs.ui.UI;
-import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MenuListener;
@@ -29,7 +27,6 @@ import static com.aerofs.proto.Sv.PBSVEvent.Type.CLICKED_TASKBAR_PREFERENCES;
 
 public class TrayMenu implements ITrayMenu
 {
-    static final Logger l = Util.l(TrayMenu.class);
     private final Menu _menu;
     private final TrayIcon _icon;
 
@@ -95,7 +92,7 @@ public class TrayMenu implements ITrayMenu
         _trayMenuPopulator.addMenuSeparator();
 
         createHelpMenu();
-        _trayMenuPopulator.addExitMenuItem(S.PRODUCT + " " + S.TEAM_SERVER);
+        _trayMenuPopulator.addExitMenuItem(L.PRODUCT);
     }
 
     public void createHelpMenu()

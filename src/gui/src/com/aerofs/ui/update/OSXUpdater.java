@@ -5,7 +5,6 @@ import java.io.IOException;
 import com.aerofs.lib.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -70,13 +69,13 @@ class OSXUpdater extends Updater
                 SystemUtil.execForeground(username, "stat", "-f", "%Su",
                         packageRoot.getAbsolutePath());
 
-                UI.get().show(MessageType.WARN, S.PRODUCT +
+                UI.get().show(MessageType.WARN, L.PRODUCT +
                                                 " updates can only be applied from the account which" +
-                                                " first installed " + S.PRODUCT + " (\"" +
+                                                " first installed " + L.PRODUCT + " (\"" +
                                                 username.get().trim() +
                                                 "\"). Please switch to that" +
                                                 " account and check for updates by going to " +
-                                                S.PRODUCT + " Help -> About " + S.PRODUCT + " ->" +
+                                                L.PRODUCT + " Help -> About " + L.PRODUCT + " ->" +
                                                 " Update Now.");
             }
         } catch (IOException e) {

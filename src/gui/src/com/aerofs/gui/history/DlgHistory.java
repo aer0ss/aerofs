@@ -12,9 +12,9 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
@@ -413,7 +413,7 @@ public class DlgHistory extends AeroFSDialog
             _restoreBtn.setText("Restore Deleted Files...");
             if (index == null) {
                 _statusLabel.setText(
-                        S.PRODUCT + " keeps previous versions of a file when receiving new" +
+                        L.PRODUCT + " keeps previous versions of a file when receiving new" +
                         " updates from remote devices. When disk space runs low, old versions may" +
                         " be deleted to save space.\n\n" +
                         "Select a file in the left column to view all the versions stored on this" +

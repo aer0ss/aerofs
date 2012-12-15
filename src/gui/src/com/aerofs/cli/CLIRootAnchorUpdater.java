@@ -4,6 +4,7 @@
 
 package com.aerofs.cli;
 
+import com.aerofs.lib.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -19,14 +20,14 @@ import java.io.IOError;
 public class CLIRootAnchorUpdater
 {
     private CLI _cli;
-    private final String _relocateMsg = "Your " + S.PRODUCT + " folder was not found in" +
+    private final String _relocateMsg = "Your " + L.PRODUCT + " folder was not found in" +
             " the original location:\n" + Cfg.absRootAnchor() + ".\n" +
             "Would you like to select a new folder location?";
 
-    private final String _unlinkOrQuitMsg = "If you want to move the " + S.PRODUCT + " folder " +
+    private final String _unlinkOrQuitMsg = "If you want to move the " + L.PRODUCT + " folder " +
             "back to its original location, choose \"Quit\", move it back to its original" +
-            " location, and launch " + S.PRODUCT + " again.\n" +
-            "If you deleted the " + S.PRODUCT + " folder, or want to start over, " +
+            " location, and launch " + L.PRODUCT + " again.\n" +
+            "If you deleted the " + L.PRODUCT + " folder, or want to start over, " +
             "choose \"Unlink\". You will be asked to setup AeroFS the next time you launch.";
 
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
@@ -88,7 +89,7 @@ public class CLIRootAnchorUpdater
             @Override
             public void run()
             {
-                _cli.out().print("Enter the new " + S.PRODUCT + " folder location: ");
+                _cli.out().print("Enter the new " + L.PRODUCT + " folder location: ");
                 String rootPath = readLine();
                 if (rootPath == null) return; // leave ret as null
 
@@ -107,12 +108,12 @@ public class CLIRootAnchorUpdater
                 try {
                     Cfg.db().set(Key.ROOT, newRootPath);
                     Cfg.init_(Cfg.absRTRoot(), false);
-                    _cli.show(MessageType.INFO, S.PRODUCT +
+                    _cli.show(MessageType.INFO, L.PRODUCT +
                             "' new location was updated succesfully!");
                     ret.set(true);
                 } catch (Exception e) {
                     _cli.show(MessageType.ERROR, "An error occured while applying " +
-                            "the new location for the " + S.PRODUCT +
+                            "the new location for the " + L.PRODUCT +
                             " folder " + UIUtil.e2msg(e));
                     ret.set(false);
                 }

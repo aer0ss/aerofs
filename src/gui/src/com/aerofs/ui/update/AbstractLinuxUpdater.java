@@ -9,7 +9,6 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.L;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
@@ -60,10 +59,10 @@ abstract class AbstractLinuxUpdater extends Updater
         } else {
             // the updater has no permissions to write approot
             String text = "An Update has been downloaded" +
-                    " for your " + S.PRODUCT + ", but you do not have sufficient" +
+                    " for your " + L.PRODUCT + ", but you do not have sufficient" +
                     " permission to apply it. Please *recursively* grant" +
                     " yourself write permission to " + appRoot + " at your" +
-                    " earliest convenience, and " + S.PRODUCT + " will" +
+                    " earliest convenience, and " + L.PRODUCT + " will" +
                     " try again later. Files might stop syncing without the update.";
 
             try {
@@ -78,16 +77,16 @@ abstract class AbstractLinuxUpdater extends Updater
 
                     String deviceName = sp.getPreferences(Cfg.did().toPB()).getDeviceName();
 
-                    final String subject = "[Action Required] Update " + S.PRODUCT +
+                    final String subject = "[Action Required] Update " + L.PRODUCT +
                                 " on " + Util.quote(deviceName);
 
                     final String body = "Hello,\n\n" + text +
                                         "\n\n" +
                                         "Best,\n" +
-                                        "The " + S.PRODUCT +
+                                        "The " + L.PRODUCT +
                                         " Support Team\n\n" +
                                         "P.S. This is an auto-generated email by your own " +
-                                        S.PRODUCT + " Client :)";
+                                        L.PRODUCT + " Client :)";
                     sp.emailUser(subject, body);
                 } catch (Exception e2) {
                     l.warn("can't send email. ignored: " + Util.e(e));

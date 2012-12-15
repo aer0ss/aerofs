@@ -1,6 +1,6 @@
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 
 /**
  * The application hasn't been set up yet.
@@ -12,6 +12,6 @@ public class ExNotSetup extends Exception
     @Override
     public String getMessage()
     {
-        return S.PRODUCT + " hasn't set up yet";
+        return L.PRODUCT + " hasn't set up yet";
     }
 }

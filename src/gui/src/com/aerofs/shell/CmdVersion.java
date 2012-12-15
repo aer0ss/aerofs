@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.lib.L;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -11,7 +12,7 @@ public class CmdVersion implements IShellCommand<ShProgram>
     @Override
     public void execute(ShellCommandRunner<ShProgram> s, CommandLine cl) throws Exception
     {
-        s.out().println(S.PRODUCT + " " + Cfg.ver());
+        s.out().println(L.PRODUCT + " " + Cfg.ver());
         s.out().println("Copyright " + S.COPYRIGHT);
     }
 
@@ -24,7 +25,7 @@ public class CmdVersion implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "display " + S.PRODUCT + " version infomation";
+        return "display " + L.PRODUCT + " version infomation";
     }
 
     @Override

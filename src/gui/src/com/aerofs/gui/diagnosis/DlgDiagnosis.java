@@ -1,5 +1,6 @@
 package com.aerofs.gui.diagnosis;
 
+import com.aerofs.lib.L;
 import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;
@@ -22,7 +23,6 @@ public class DlgDiagnosis extends AeroFSDialog
     private final static int COMP_HEIGHT = 120;
 
     private final boolean _showSystemfiles;
-    private Button _btnClose;
     private Label _lblUnsyncableStatusText;
     private Label _lblUnsyncableStatusImage;
 
@@ -53,7 +53,7 @@ public class DlgDiagnosis extends AeroFSDialog
         gd_lblNewLabel_2.widthHint = 357;
         lblNewLabel_2.setLayoutData(gd_lblNewLabel_2);
         lblNewLabel_2.setText("Files may not be synced if they are in conflict or not supported by " +
-                S.PRODUCT + ". Please review these files below.");
+                L.PRODUCT + ". Please review these files below.");
 
         Label lblConflictFiles = new Label(shell, SWT.NONE);
         lblConflictFiles.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 4, 1));
@@ -106,16 +106,17 @@ public class DlgDiagnosis extends AeroFSDialog
                 _lblUnsyncableStatusText.getFont());
         _lblUnsyncableStatusText.setLayoutData(gd_lbl);
 
-        _btnClose = new Button(shell, SWT.NONE);
-        _btnClose.addSelectionListener(new SelectionAdapter() {
+        Button btnClose = new Button(shell, SWT.NONE);
+        btnClose.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 closeDialog();
             }
         });
-        _btnClose.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        _btnClose.setText("Close");
+        btnClose.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        btnClose.setText("Close");
 
         compUnsyncable.search();
     }

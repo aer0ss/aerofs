@@ -3,6 +3,7 @@ package com.aerofs.cli;
 import java.io.IOException;
 
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
@@ -26,11 +27,11 @@ class CLIPreSetupUpdateCheck
         // 2. the updater will restart the process in background, which is bad
         //
         if (Versions.compare(Cfg.ver(), Updater.getServerVersion()) != CompareResult.NO_CHANGE) {
-            System.out.println("A new update is found for " + S.PRODUCT +
+            System.out.println("A new update is found for " + L.PRODUCT +
                     ". Please " + (OSUtil.isLinux() ?
                         Util.quote("rm -rf " + AppRoot.abs()) :
                         "reinstall")
-                    + " and run " + S.PRODUCT + " again.");
+                    + " and run " + L.PRODUCT + " again.");
             System.exit(0);
         }
     }

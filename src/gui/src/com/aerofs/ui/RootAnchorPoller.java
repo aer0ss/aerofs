@@ -9,7 +9,7 @@ import com.aerofs.cli.CLIRootAnchorUpdater;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.misc.DlgRootAnchorUpdater;
 import com.aerofs.gui.shellext.ShellextService;
-import com.aerofs.lib.S;
+import com.aerofs.lib.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -101,7 +101,7 @@ public class RootAnchorPoller
                 UI.dm().start();  // restart the daemon
             } catch (Exception e1) {
                 GUI.get().show(MessageType.ERROR,
-                        "An error occured while starting up " + S.PRODUCT +
+                        "An error occured while starting up " + L.PRODUCT +
                                 " " + UIUtil.e2msg(e1));
                 l.warn(Util.e(e1));
             }
