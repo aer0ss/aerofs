@@ -28,13 +28,15 @@ final class CoreProgressWatcher implements IStartable
     private static final Logger l = Util.l(CoreProgressWatcher.class);
 
     private final CoreEventDispatcher _disp;
+    private final CoreQueue _q;
 
     private long _prevNumExecutedEvents = Long.MIN_VALUE; // only touched by "progress-watcher"
 
     @Inject
-    CoreProgressWatcher(CoreEventDispatcher disp)
+    CoreProgressWatcher(CoreEventDispatcher disp, CoreQueue q)
     {
         this._disp = disp;
+        this._q = q;
     }
 
     @Override
@@ -60,18 +62,18 @@ final class CoreProgressWatcher implements IStartable
     private void checkDaemon_()
     {
         long currNumExecutedEvents = _disp.getExecutedEventCount();
+        boolean haveWaitingEvents = !_q.isEmpty();
 
-        if (currNumExecutedEvents != _prevNumExecutedEvents) {
+        if ((currNumExecutedEvents == _prevNumExecutedEvents) && haveWaitingEvents) {
+            l.warn("daemon made no progress stopped executing after n:" + _prevNumExecutedEvents);
+
+            Util.logAllThreadStackTraces();
+
+            SVClient.logSendDefectSyncIgnoreErrors(true, "stuck daemon", new ExTimeout("stuck daemon"));
+
+            SystemUtil.fatal("stuck daemon");
+        } else {
             _prevNumExecutedEvents = currNumExecutedEvents;
-            return;
         }
-
-        l.warn("daemon made no progress stopped executing after n:" + _prevNumExecutedEvents);
-
-        Util.logAllThreadStackTraces();
-
-        SVClient.logSendDefectSyncIgnoreErrors(true, "stuck daemon", new ExTimeout("stuck daemon"));
-
-        SystemUtil.fatal("stuck daemon");
     }
 }

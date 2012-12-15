@@ -220,6 +220,21 @@ public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, I
         return ev;
     }
 
+    public boolean isEmpty()
+    {
+        _l.lock();
+        try {
+            return isEmpty_();
+        } finally {
+            _l.unlock();
+        }
+    }
+
+    public boolean isEmpty_()
+    {
+        return _pq.isEmpty_();
+    }
+
     @Override
     public void dumpStatMisc(String indent, String indentUnit, PrintStream ps)
     {
