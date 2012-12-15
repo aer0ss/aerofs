@@ -3,7 +3,7 @@ package com.aerofs.gui.tray;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;

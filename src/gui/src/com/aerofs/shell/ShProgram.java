@@ -3,7 +3,7 @@ package com.aerofs.shell;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Param.SP;

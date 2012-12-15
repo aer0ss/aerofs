@@ -2,7 +2,7 @@ package com.aerofs.ui.update.uput;
 
 import java.util.ArrayList;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.cfg.CfgDatabase;

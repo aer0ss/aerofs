@@ -4,7 +4,7 @@
 
 package com.aerofs.gui;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;

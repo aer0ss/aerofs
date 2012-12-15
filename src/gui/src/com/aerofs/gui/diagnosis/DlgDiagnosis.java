@@ -1,6 +1,6 @@
 package com.aerofs.gui.diagnosis;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import org.eclipse.swt.widgets.Shell;
 
 import com.aerofs.gui.AeroFSDialog;

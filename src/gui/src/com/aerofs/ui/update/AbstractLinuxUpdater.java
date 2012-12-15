@@ -3,6 +3,7 @@ package com.aerofs.ui.update;
 import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 
 import com.aerofs.lib.Param.SP;

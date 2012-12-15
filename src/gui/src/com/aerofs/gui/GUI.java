@@ -7,7 +7,7 @@ import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.setup.DlgSetup;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.lib.InOutArg;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;

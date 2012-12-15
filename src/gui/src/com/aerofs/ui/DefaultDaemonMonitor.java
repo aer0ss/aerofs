@@ -7,7 +7,7 @@ package com.aerofs.ui;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.S;

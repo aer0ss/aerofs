@@ -1,6 +1,6 @@
 package com.aerofs.gui.setup;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;

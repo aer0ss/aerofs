@@ -3,7 +3,7 @@ package com.aerofs.cli;
 import java.io.IOException;
 
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;

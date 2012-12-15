@@ -5,7 +5,7 @@ import java.net.ConnectException;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;

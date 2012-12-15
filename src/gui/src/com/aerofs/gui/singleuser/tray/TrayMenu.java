@@ -10,7 +10,7 @@ import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;

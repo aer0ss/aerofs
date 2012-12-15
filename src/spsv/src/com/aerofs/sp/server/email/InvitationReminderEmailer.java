@@ -7,7 +7,7 @@ package com.aerofs.sp.server.email;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.sv.client.SVClient;

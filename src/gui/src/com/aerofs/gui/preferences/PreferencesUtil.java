@@ -5,7 +5,7 @@
 package com.aerofs.gui.preferences;
 
 import com.aerofs.gui.GUI;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUI.MessageType;

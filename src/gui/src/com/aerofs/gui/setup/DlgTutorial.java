@@ -11,7 +11,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.tray.BigArrow;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.os.OSUtil;
 import com.swtdesigner.SWTResourceManager;
 import org.eclipse.swt.SWT;

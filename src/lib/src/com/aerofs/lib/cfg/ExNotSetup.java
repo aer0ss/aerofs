@@ -1,6 +1,6 @@
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 
 /**
  * The application hasn't been set up yet.

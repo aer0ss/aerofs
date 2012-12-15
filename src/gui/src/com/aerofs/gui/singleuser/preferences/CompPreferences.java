@@ -8,7 +8,7 @@ import com.aerofs.gui.password.DlgPasswordChange;
 import com.aerofs.gui.preferences.PreferencesUtil;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;

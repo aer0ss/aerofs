@@ -7,7 +7,7 @@ package com.aerofs.gui;
 import com.aerofs.controller.ControllerBadCredentialListener;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sp.client.SPBlockingClient;

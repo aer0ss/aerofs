@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import org.apache.log4j.Logger;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.C;

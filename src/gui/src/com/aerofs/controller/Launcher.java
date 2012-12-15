@@ -11,7 +11,7 @@ import java.net.ServerSocket;
 import java.sql.SQLException;
 
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.ex.ExAlreadyRunning;
 import com.aerofs.lib.id.UserID;
 import com.aerofs.ui.IUI.MessageType;

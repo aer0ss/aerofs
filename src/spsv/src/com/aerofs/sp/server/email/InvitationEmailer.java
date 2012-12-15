@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.Util;

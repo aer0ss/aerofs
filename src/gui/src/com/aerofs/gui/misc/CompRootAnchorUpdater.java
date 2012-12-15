@@ -6,7 +6,7 @@ package com.aerofs.gui.misc;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;

@@ -1,6 +1,6 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 
 // TODO (WW) FIXME Why there are two SPParam classes in the code base?!
 public class SPParam

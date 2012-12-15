@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.proto.Sv.PBSVEmail;
@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.Exceptions;

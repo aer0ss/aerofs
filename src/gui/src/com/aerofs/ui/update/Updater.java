@@ -17,6 +17,7 @@ import java.util.Properties;
 
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtil;

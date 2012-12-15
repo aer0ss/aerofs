@@ -8,7 +8,7 @@ import java.util.Properties;
 
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;

@@ -12,7 +12,7 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.history.HistoryModel.IDecisionMaker;
 import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;

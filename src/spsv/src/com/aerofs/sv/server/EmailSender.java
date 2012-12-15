@@ -4,7 +4,7 @@
 
 package com.aerofs.sv.server;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.common.EmailCategory;
 import org.apache.log4j.Logger;

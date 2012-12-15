@@ -1,6 +1,6 @@
 package com.aerofs.shell;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 

@@ -1,11 +1,8 @@
 package com.aerofs.daemon.core;
 
-import java.io.IOException;
-
 import com.aerofs.daemon.core.db.CoreDBSetup;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
-import com.aerofs.lib.SystemUtil;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
@@ -19,14 +16,8 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.update.DaemonPostUpdateTasks;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.L;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.ex.ExNoResource;
 
 public class Core implements IModule
 {
@@ -37,7 +28,6 @@ public class Core implements IModule
     private final IStores _ss;
     private final LinkStateService _lss;
     private final Transports _tps;
-    private final CoreScheduler _sched;
     private final TC _tc;
     private final VerkehrNotificationSubscriber _vksub;
     private final ACLNotificationSubscriber _aclsub;
@@ -55,7 +45,6 @@ public class Core implements IModule
             CoreIMCExecutor imce,
             Transports tps,
             LinkStateService lss,
-            CoreScheduler sched,
             IPhysicalStorage ps,
             NativeVersionControl nvc,
             ImmigrantVersionControl ivc,
@@ -76,7 +65,6 @@ public class Core implements IModule
         _ss = ss;
         _lss = lss;
         _tps = tps;
-        _sched = sched;
         _ps = ps;
         _nvc = nvc;
         _ivc = ivc;
@@ -112,18 +100,21 @@ public class Core implements IModule
         _sssub.init_();
         _notifier.init_();
 
-        _sched.schedule(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                try {
-                    initCore_();
-                } catch (Exception e) {
-                    SystemUtil.fatal(e);
-                }
-            }
-        }, 0);
+// SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
+// Cfg.isSP() when restoring the function.
+//
+//        _sched.schedule(new AbstractEBSelfHandling()
+//        {
+//            @Override
+//            public void handle_()
+//            {
+//                try {
+//                    initCore_();
+//                } catch (Exception e) {
+//                    SystemUtil.fatal(e);
+//                }
+//            }
+//        }, 0);
     }
 
     // It's a hack. FIXME using injection
@@ -156,30 +147,30 @@ public class Core implements IModule
         _notifier.start_();
     }
 
-    // this method is called in a core thread
-    private void initCore_()
-            throws ExNoResource, IOException, ExFormatError
-    {
-        if (Cfg.isSP()) {
-            String tcpEndpoint = Cfg.db().getNullable(Key.TCP_ENDPOINT);
-            if (tcpEndpoint == null) {
-                throw new ExFormatError("must set " + Key.TCP_ENDPOINT + " for sp");
-            }
-
-            if (!tcpEndpoint.equals(L.get().spEndpoint())) {
-                throw new ExFormatError("sp tcp endpoint values doesn't match");
-            }
-
-        } else {
 // SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
 // Cfg.isSP() when restoring the function.
 //
+//    // this method is called in a core thread
+//    private void initCore_()
+//            throws ExNoResource, IOException, ExFormatError
+//    {
+//        if (Cfg.isSP()) {
+//            String tcpEndpoint = Cfg.db().getNullable(Key.TCP_ENDPOINT);
+//            if (tcpEndpoint == null) {
+//                throw new ExFormatError("must set " + Key.TCP_ENDPOINT + " for sp");
+//            }
+//
+//            if (!tcpEndpoint.equals(L.get().spEndpoint())) {
+//                throw new ExFormatError("sp tcp endpoint values doesn't match");
+//            }
+//
+//        } else {
 //            // configure SP's transport. TODO move it to TCP?
 //            for (ITransport tp : _tps.getAll_()) {
 //                tp.q().enqueueThrows(
 //                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), SP_DID),
 //                        _tc.prio());
 //            }
-        }
-    }
+//        }
+//    }
 }

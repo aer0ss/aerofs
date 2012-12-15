@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.ex;
 
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 
 public class ExAlreadyRunning extends ExAborted
 {

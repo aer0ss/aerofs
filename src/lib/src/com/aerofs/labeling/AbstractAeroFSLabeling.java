@@ -2,15 +2,14 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.labelings;
+package com.aerofs.labeling;
 
-import com.aerofs.lib.L.ILabeling;
 import com.aerofs.lib.cfg.Cfg;
 
 /**
  * the labeling for regular clients
  */
-public class ClientLabeling implements ILabeling
+public abstract class AbstractAeroFSLabeling implements ILabeling
 {
     @Override
     public int trayIconAnimationFrameCount()
@@ -94,14 +93,6 @@ public class ClientLabeling implements ILabeling
     public short mcastPort()
     {
         return Cfg.staging() ? (short) 29870 : 29871;
-    }
-
-    @Override
-    public String spEndpoint()
-    {
-        return Cfg.staging() ?
-                "sterling-staging.aerofs.com:80" :
-                "sterling.aerofs.com:443";
     }
 
     @Override

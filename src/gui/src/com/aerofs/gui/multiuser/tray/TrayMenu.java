@@ -11,7 +11,7 @@ import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayMenuPopulator;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;

@@ -12,7 +12,7 @@ import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
 import com.aerofs.j.XmppSocket_CloseEventSlot;
 import com.aerofs.j.XmppSocket_ErrorSlot;
-import com.aerofs.lib.L;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
