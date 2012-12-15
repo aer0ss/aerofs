@@ -1,0 +1,107 @@
+#!/usr/bin/python
+# vim: set expandtab ts=2 sw=2:
+
+import logging
+import MySQLdb
+import sys
+
+logger = logging.getLogger("get_user_info")
+
+def get_devices(user, spconn):
+  devices=[]
+  spcursor = spconn.cursor()
+  try:
+    spcursor.execute("""select d_id, d_name from sp_device where d_owner_id like %s""", (user,))
+
+    row = spcursor.fetchone()
+    while row != None:
+      devices.append(row)
+      row = spcursor.fetchone()
+
+    return devices
+  except Exception as err:
+    logger.warning('fail get devices err:%s' %err)
+    raise err
+  finally:
+    spcursor.close()
+
+def get_device_info(devices, svconn):
+  device_infos=[]
+
+  for device, device_description in devices:
+    svcursor0 = svconn.cursor()
+    svcursor1 = svconn.cursor()
+    try:
+      latest_version = None
+      last_event_ts = None
+      platform = None
+
+      svcursor0.execute("""select hdr_ver, from_unixtime(hdr_ts/1000) from sv_event where hdr_did like %s order by hdr_ts desc limit 1""", (device,)) # last event
+      row = svcursor0.fetchone()
+      if row != None:
+        latest_version = row[0]
+        last_event_ts = row[1]
+
+      if svcursor0.fetchone() != None:
+        raise RuntimeError('too many results for latest event query')
+
+      svcursor1.execute("""select ev_desc from sv_event where hdr_did like %s and ev_type=1007 order by hdr_ts desc limit 1""", (device,)) # platform
+      row = svcursor1.fetchone()
+      if row != None:
+        event_desc = row[0]
+        components = event_desc.partition(',')
+        platform = components[2].lstrip()
+
+      if svcursor1.fetchone() != None:
+        raise RuntimeError('too many results for platform query')
+
+      device_infos.append((device, device_description, platform, latest_version, last_event_ts))
+    except Exception as err:
+      logger.warning('fail get device info err:%s' %err)
+      raise err
+    finally:
+      svcursor0.close()
+      svcursor1.close()
+
+  return device_infos
+
+def get_user_info(user, spconn, svconn):
+  devices = get_devices(user, spconn)
+  if devices == None or len(devices) == 0:
+    return devices
+
+  devices = get_device_info(devices, svconn)
+
+  return devices
+
+def make_connection(user, host, password, dbname):
+  logger.debug('make db connection %s@%s/%s' %(user, host, dbname))
+  conn = MySQLdb.connect(user=user, host=host, passwd=password, db=dbname)
+  return conn
+
+def setup_logger():
+  logging.basicConfig(level=logging.INFO)
+
+if __name__ == '__main__':
+  if len(sys.argv) != 2:
+    print("usage: %s [username]" %(sys.argv[0]))
+    sys.exit(1)
+
+  setup_logger()
+
+  try:
+    # TODO get a config file to pull the database information
+    spconn = make_connection('user', 'host', 'passwd', 'db')
+    svconn = make_connection('user', 'host', 'passwd', 'db')
+
+    user = sys.argv[1]
+
+    logger.debug('get info for:%s' %user)
+    devices = get_user_info(user, spconn, svconn)
+    if devices == None or len(devices) == 0:
+      print('no devices for %s' %user)
+    else:
+      for d in devices:
+        print('%s (%30s) [%25s, %10s], %s' %d) # 25 is because of Windows Server 2008 R2
+  except:
+    logger.error('cannot connect to db')
