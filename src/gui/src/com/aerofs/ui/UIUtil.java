@@ -4,7 +4,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.setup.DlgTutorial;
-import com.aerofs.lib.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.lib.Param.SV;
@@ -129,9 +128,6 @@ public class UIUtil
         UserID me = Cfg.user();
         if (u1.equals(me)) return -1;
         if (u2.equals(me)) return 1;
-
-        if (u1.equals(L.get().spUser())) return 1;
-        if (u2.equals(L.get().spUser())) return -1;
 
         return comp;
     }

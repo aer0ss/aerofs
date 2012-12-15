@@ -161,11 +161,6 @@ public class Core implements IModule
             throws ExNoResource, IOException, ExFormatError
     {
         if (Cfg.isSP()) {
-            // verify settings are all right
-            if (!Cfg.user().equals(L.get().spUser())) {
-                throw new ExFormatError("sp user doesn't match Param.SP_USER");
-            }
-
             String tcpEndpoint = Cfg.db().getNullable(Key.TCP_ENDPOINT);
             if (tcpEndpoint == null) {
                 throw new ExFormatError("must set " + Key.TCP_ENDPOINT + " for sp");
@@ -176,11 +171,13 @@ public class Core implements IModule
             }
 
         } else {
-            // configure SP's transport. TODO move it to TCP?
-// Reconfigure SP endpoint disabled until cloud sync is implemented
+// SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
+// Cfg.isSP() when restoring the function.
+//
+//            // configure SP's transport. TODO move it to TCP?
 //            for (ITransport tp : _tps.getAll_()) {
 //                tp.q().enqueueThrows(
-//                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), L.get().spDID()),
+//                        new EOTransportReconfigRemoteDevice(L.get().spEndpoint(), SP_DID),
 //                        _tc.prio());
 //            }
         }

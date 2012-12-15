@@ -5,7 +5,6 @@ import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
-import com.aerofs.lib.L;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.cfg.Cfg;
@@ -105,20 +104,23 @@ public class Stores
     {
         assert !Cfg.isSP();
 
-        if (did.equals(L.get().spDID())) {
-            synchronized (this) {
-                PBTCPStores.Builder bd = PBTCPStores.newBuilder();
-                for (Prefix prefix : _prefix2sids.keySet()) {
-                    bd.addPrefix(prefix.toPB());
-                }
-                return bd;
-            }
-        } else {
+// SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references to
+// Cfg.isSP() when restoring the function.
+//
+//        if (did.equals(SP_DID)) {
+//            synchronized (this) {
+//                PBTCPStores.Builder bd = PBTCPStores.newBuilder();
+//                for (Prefix prefix : _prefix2sids.keySet()) {
+//                    bd.addPrefix(prefix.toPB());
+//                }
+//                return bd;
+//            }
+//        } else {
             return PBTCPStores.newBuilder()
                 .setFilter(PBTCPFilterAndSeq.newBuilder()
                     .setFilter(_filter.toPB())
                     .setSequence(_filterSeq));
-        }
+//        }
     }
 
     PBTCPStores.Builder newStoresForSP(DID did, Collection<Prefix> prefixes)

@@ -1,6 +1,5 @@
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
@@ -49,7 +48,6 @@ public class Cfg
     private static DID _did;
     private static UserID _user;
     private static SID _rootSID;
-    private static boolean _isSP;
     private static boolean _useDM;
     private static boolean _useTCP;
     private static boolean _useXMPP;
@@ -117,7 +115,6 @@ public class Cfg
 
         _portbase = readPortbase();
         _rootSID = SID.rootSID(_user);
-        _isSP = _did.equals(L.get().spDID());
         _useDM = !new File(rtRoot, C.NODM).exists();
         _useTCP = !new File(rtRoot, C.NOTCP).exists();
         _useXMPP = !new File(rtRoot, C.NOXMPP).exists();
@@ -228,9 +225,11 @@ public class Cfg
         return _rootSID;
     }
 
+    // SP Daemon support is temporarily disabled. Search the code base for "SP_DID" and references
+    // to Cfg.isSP() when restoring the function.
     public static boolean isSP()
     {
-        return _isSP;
+        return false;
     }
 
     public static boolean useDM()

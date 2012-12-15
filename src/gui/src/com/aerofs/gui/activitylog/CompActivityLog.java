@@ -17,11 +17,8 @@ import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ScrollBar;
 
-import com.aerofs.lib.L;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.S;
-import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
@@ -48,25 +45,15 @@ public class CompActivityLog extends Composite
     private static final int MAX_RESULTS_MIN = 20;
     private static final int MAX_RESULTS_MAX = 200;
 
-    public static interface ILoadListener
-    {
-        // this method is called within the GUI thread
-        void loaded();
-    }
-
     private final TableViewer _tv;
 
     private final TableColumn _tcTime;
     private final TableColumn _tcMsg;
 
-    private Role _rSelf;
-
     private boolean _recalcing;
     private int _maxResult = MAX_RESULTS_MIN;
     private Long _pageToken;
-    private final Composite composite;
     private final Button _btnMore;
-    private final Button _btnClose;
     private final CompSpin _compSpin;
     private final Label _lblStatus;
     private final Button _btnView;
@@ -137,7 +124,7 @@ public class CompActivityLog extends Composite
         _lblStatus.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
         _lblStatus.setText("New Label");
 
-        composite = new Composite(this, SWT.NONE);
+        Composite composite = new Composite(this, SWT.NONE);
         composite.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
         FillLayout fl_composite = new FillLayout(SWT.HORIZONTAL);
         fl_composite.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
@@ -167,15 +154,16 @@ public class CompActivityLog extends Composite
             }
         });
 
-        _btnClose = new Button(composite, SWT.NONE);
-        _btnClose.addSelectionListener(new SelectionAdapter() {
+        Button btnClose = new Button(composite, SWT.NONE);
+        btnClose.addSelectionListener(new SelectionAdapter()
+        {
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
                 dlg.closeDialog();
             }
         });
-        _btnClose.setText(IDialogConstants.CLOSE_LABEL);
+        btnClose.setText(IDialogConstants.CLOSE_LABEL);
 
         loadMoreAsync(initialSelection);
     }
@@ -211,12 +199,6 @@ public class CompActivityLog extends Composite
         });
     }
 
-    public boolean canChangeACL(SubjectRolePair srp)
-    {
-        return !srp._subject.equals(Cfg.user()) && _rSelf == Role.OWNER && srp != null &&
-                !srp._subject.equals(L.get().spUser());
-    }
-
     private void recalcColumnWidths()
     {
         // this is to prevent an infinite recursion bug found in production
@@ -248,12 +230,9 @@ public class CompActivityLog extends Composite
 
     /**
      * This method can be called in either UI or non-UI threads
-     * @param selection
      */
     void loadMore(RitualBlockingClient ritual, Integer selection)
     {
-        _rSelf = null;
-
         Object[] elems;
         boolean hasUnresolved;
         try {

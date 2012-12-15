@@ -4,7 +4,6 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 import com.aerofs.gui.Images;
-import com.aerofs.lib.L;
 import com.aerofs.lib.acl.SubjectRolePair;
 
 class IconLabelProvider extends ColumnLabelProvider
@@ -16,18 +15,14 @@ class IconLabelProvider extends ColumnLabelProvider
         else if (elem instanceof String) return null;
 
         SubjectRolePair srp = (SubjectRolePair) elem;
-        if (srp._subject.equals(L.get().spUser())) {
-            return Images.get(Images.ICON_LOGO16);
-        } else {
-            switch (srp._role) {
-            case OWNER:
-                return Images.get(Images.ICON_USER_KEY);
-            case EDITOR:
-                return Images.get(Images.ICON_PEN);
-            default:
-                assert false;
-                return null;
-            }
+        switch (srp._role) {
+        case OWNER:
+            return Images.get(Images.ICON_USER_KEY);
+        case EDITOR:
+            return Images.get(Images.ICON_PEN);
+        default:
+            assert false;
+            return null;
         }
     }
 

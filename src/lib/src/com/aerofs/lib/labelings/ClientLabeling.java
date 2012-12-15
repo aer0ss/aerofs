@@ -4,31 +4,14 @@
 
 package com.aerofs.lib.labelings;
 
-import com.aerofs.lib.ILabeling;
-import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.L.ILabeling;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UserID;
 
 /**
  * the labeling for regular clients
  */
 public class ClientLabeling implements ILabeling
 {
-    private final DID _spDID;
-
-    public ClientLabeling()
-    {
-        try {
-            _spDID = new DID(Cfg.staging() ?
-                    "ac4c5631b47b39281c16074370b1b23d" :
-                    "91cee4ffb4f998e7591cf298f31ec558");
-        } catch (ExFormatError e) {
-            throw SystemUtil.fatalWithReturn(e);
-        }
-    }
-
     @Override
     public int trayIconAnimationFrameCount()
     {
@@ -87,18 +70,6 @@ public class ClientLabeling implements ILabeling
     public short jingleRelayPort()
     {
         return Cfg.staging() ? (short) 7583 : 80;
-    }
-
-    @Override
-    public UserID spUser()
-    {
-        return UserID.fromInternal("aerofs.com");
-    }
-
-    @Override
-    public DID spDID()
-    {
-        return _spDID;
     }
 
     @Override

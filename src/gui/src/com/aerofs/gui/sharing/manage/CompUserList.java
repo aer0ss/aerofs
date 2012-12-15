@@ -13,7 +13,6 @@ import com.aerofs.proto.Common.PBSubjectRolePair;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ScrollBar;
 
-import com.aerofs.lib.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.Util;
@@ -58,7 +57,6 @@ public class CompUserList extends Composite
 
     private Role _rSelf;
     private Path _path;
-    private final boolean _showSPUser;
     private final ILoadListener _ll;
 
     public CompUserList(Composite parent, Path path, ILoadListener ll)
@@ -66,7 +64,6 @@ public class CompUserList extends Composite
         super(parent, SWT.NONE);
 
         _path = path;
-        _showSPUser = false;
         _ll = ll;
 
         setLayout(new FillLayout(SWT.HORIZONTAL));
@@ -152,8 +149,7 @@ public class CompUserList extends Composite
 
     public boolean canChangeACL(SubjectRolePair srp)
     {
-        return !srp._subject.equals(Cfg.user()) && _rSelf == Role.OWNER && srp != null &&
-                !srp._subject.equals(L.get().spUser());
+        return !srp._subject.equals(Cfg.user()) && _rSelf == Role.OWNER;
     }
 
     private boolean _recalcing;
@@ -209,7 +205,6 @@ public class CompUserList extends Composite
                 PBSubjectRolePair srp = reply.getSubjectRole(i);
                 UserID subject = UserID.fromExternal(srp.getSubject());
                 Role role = Role.fromPB(srp.getRole());
-                if (!_showSPUser && subject.equals(L.get().spUser())) continue;
 
                 srps.add(new SubjectRolePair(subject, role));
 
