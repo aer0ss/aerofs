@@ -121,6 +121,7 @@ public class GUI implements IUI
         }
     }
 
+
     /**
      * this method runs in the ui thread
      */
@@ -134,7 +135,7 @@ public class GUI implements IUI
         if (OSUtil.isLinux()) UbuntuTraySettings.checkAndUpdateUbuntuTraySettings();
 
         // Offer to install the shell extension if it's not installed
-        if (OSUtil.get().isShellExtensionAvailable() && !OSUtil.get().isShellExtensionInstalled()) {
+        if (shellExtensionShouldBeInstalled()) {
             try {
                 // Try to install silently
                 OSUtil.get().installShellExtension(true);
@@ -144,6 +145,15 @@ public class GUI implements IUI
                 reportShellExtInstallFailed(e);
             }
         }
+    }
+
+    private boolean shellExtensionShouldBeInstalled()
+    {
+        if (Cfg.isTeamServer()) return false;
+        if (OSUtil.get().isShellExtensionAvailable() && !OSUtil.get().isShellExtensionInstalled()) {
+           return true;
+        }
+        return false;
     }
 
     private void askUserToInstallShellExt()
