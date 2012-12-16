@@ -13,6 +13,12 @@ import com.aerofs.lib.cfg.Cfg;
 public abstract class AbstractDefaultLabeling implements ILabeling
 {
     @Override
+    public boolean isMultiuser()
+    {
+        return false;
+    }
+
+    @Override
     public int trayIconAnimationFrameCount()
     {
         return 14;

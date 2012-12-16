@@ -115,13 +115,12 @@ public class GUI implements IUI
     private void preLaunch()
     {
         // Create the system tray
-        if (Cfg.isTeamServer()) {
+        if (L.get().isMultiuser()) {
             _st = new SystemTray(new com.aerofs.gui.multiuser.tray.MenuProvider());
         } else {
             _st = new SystemTray(new com.aerofs.gui.singleuser.tray.MenuProvider());
         }
     }
-
 
     /**
      * this method runs in the ui thread
@@ -150,11 +149,8 @@ public class GUI implements IUI
 
     private boolean shellExtensionShouldBeInstalled()
     {
-        if (Cfg.isTeamServer()) return false;
-        if (OSUtil.get().isShellExtensionAvailable() && !OSUtil.get().isShellExtensionInstalled()) {
-           return true;
-        }
-        return false;
+        return !L.get().isMultiuser() && OSUtil.get().isShellExtensionAvailable() &&
+                !OSUtil.get().isShellExtensionInstalled();
     }
 
     private void askUserToInstallShellExt()

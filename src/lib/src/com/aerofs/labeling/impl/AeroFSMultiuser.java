@@ -12,6 +12,12 @@ import com.aerofs.labeling.AbstractDefaultLabeling;
 public class AeroFSMultiuser extends AbstractDefaultLabeling
 {
     @Override
+    public boolean isMultiuser()
+    {
+        return true;
+    }
+
+    @Override
     public String product()
     {
         return super.product() + " Team Server";

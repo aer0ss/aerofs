@@ -10,8 +10,6 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.Map;
 import java.util.TreeMap;
 
 import com.aerofs.labeling.L;
@@ -230,8 +228,7 @@ class Setup
 
         DID did = CredentialUtil.certifyAndSaveDeviceKeys(userID, scrypted, sp);
 
-        initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted,
-                Collections.<Key, String>emptyMap());
+        initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted);
 
         setupCommon(did, deviceName, sp);
     }
@@ -250,8 +247,7 @@ class Setup
 
         DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
 
-        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted,
-                Collections.singletonMap(Key.MULTIUSER, Boolean.toString(true)));
+        initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted);
 
         // sign in with the team server's user ID
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
@@ -345,7 +341,7 @@ class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
-            PBS3Config s3config, byte[] scrypted, Map<Key, String> extraCfgTuples)
+            PBS3Config s3config, byte[] scrypted)
             throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
@@ -362,7 +358,6 @@ class Setup
             map.put(Key.S3_SECRET_KEY, s3config.getSecretKey());
             map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
         }
-        map.putAll(extraCfgTuples);
 
         CfgDatabase db = Cfg.db();
         db.recreateSchema_();

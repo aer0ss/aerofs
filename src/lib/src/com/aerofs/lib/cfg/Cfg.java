@@ -259,19 +259,6 @@ public class Cfg
         return !isSP();
     }
 
-    static private Boolean _isTeamServer;
-
-    /**
-     * This method can be called _before_ Cfg.init_()
-     */
-    public static boolean isTeamServer()
-    {
-        if (_isTeamServer == null) {
-            _isTeamServer = new File(Util.join(AppRoot.abs(), "ts")).exists();
-        }
-        return _isTeamServer;
-    }
-
     public static boolean useAutoUpdate()
     {
         return _useAutoUpdate;

@@ -192,7 +192,7 @@ public class InvitationEmailer
                     "with to join this organization, simply ignore this email.";
 
             email.addSection(subject, HEADER_SIZE.H1, body);
-            email.addSignature("Best Regards,", "The " + S.PRODUCT + " Team", Email.DEFAULT_PS);
+            email.addSignature("Best Regards,", "The " + L.PRODUCT + " Team", Email.DEFAULT_PS);
 
             return new InvitationEmailer(new Callable<Void>()
             {

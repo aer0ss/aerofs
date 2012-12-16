@@ -137,7 +137,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
 
         _btnIsExistingUser.setText("I already have an " + L.PRODUCT + " account");
 
-        if (Cfg.isTeamServer()) {
+        if (L.get().isMultiuser()) {
             _btnIsExistingUser.setSelection(true);
             _btnIsExistingUser.setVisible(false);
         }
@@ -598,7 +598,7 @@ public class DlgSetup extends AeroFSTitleAreaDialog
             public void run()
                     throws Exception
             {
-                if (Cfg.isTeamServer()) {
+                if (L.get().isMultiuser()) {
                     UI.controller()
                             .setupTeamServer(userID, new String(passwd), _absRootAnchor,
                                     _deviceName, null);

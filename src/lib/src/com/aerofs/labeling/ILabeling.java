@@ -9,6 +9,8 @@ package com.aerofs.labeling;
  */
 public interface ILabeling
 {
+    boolean isMultiuser();
+
     int trayIconAnimationFrameCount();
 
     long trayIconAnimationFrameInterval();

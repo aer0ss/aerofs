@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
 import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
 import com.aerofs.daemon.ritual.RitualServer;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -52,7 +53,7 @@ public class DaemonProgram implements IProgram
 
         Module storageModule;
         Module multiplicityModule;
-        if (Cfg.db().getBoolean(Key.MULTIUSER)) {
+        if (L.get().isMultiuser()) {
             multiplicityModule = new MultiuserModule();
             storageModule = BlockStorageModules.storage(new LocalBackendModule());
         } else {
