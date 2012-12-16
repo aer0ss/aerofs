@@ -44,6 +44,11 @@ public class TrayMenuPopulator
         return mi;
     }
 
+    public MenuItem addMenuItemAfterItem(String text, MenuItem menuItem, AbstractListener la)
+    {
+        return addMenuItem(text, _rootMenu.indexOf(menuItem) + 1, la);
+    }
+
     public MenuItem addMenuItem(String text, AbstractListener la)
     {
         MenuItem mi = new MenuItem(_rootMenu, SWT.PUSH);
