@@ -21,11 +21,11 @@ public interface ILabeling
 
     String xmppServerAddr();
 
-    short xmppServerPort();
+    int xmppServerPort();
 
     String jingleRelayHost();
 
-    short jingleRelayPort();
+    int jingleRelayPort();
 
     String webHost();
 
@@ -35,7 +35,9 @@ public interface ILabeling
 
     String mcastAddr();
 
-    short mcastPort();
+    int mcastPort();
+
+    int defaultPortbase();
 
     ////////
     // Labeling methods specific to servers.

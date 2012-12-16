@@ -7,9 +7,10 @@ package com.aerofs.labeling;
 import com.aerofs.lib.cfg.Cfg;
 
 /**
- * the labeling for regular clients
+ * The default labeling class for concrete labeling classes to inherit. The default labeling
+ * represents an AeroFS single-user client.
  */
-public abstract class AbstractAeroFSLabeling implements ILabeling
+public abstract class AbstractDefaultLabeling implements ILabeling
 {
     @Override
     public int trayIconAnimationFrameCount()
@@ -54,9 +55,9 @@ public abstract class AbstractAeroFSLabeling implements ILabeling
     }
 
     @Override
-    public short xmppServerPort()
+    public int xmppServerPort()
     {
-        return Cfg.staging() ? (short) 9328 : 443;
+        return Cfg.staging() ? 9328 : 443;
     }
 
     @Override
@@ -66,9 +67,9 @@ public abstract class AbstractAeroFSLabeling implements ILabeling
     }
 
     @Override
-    public short jingleRelayPort()
+    public int jingleRelayPort()
     {
-        return Cfg.staging() ? (short) 7583 : 80;
+        return Cfg.staging() ? 7583 : 80;
     }
 
     @Override
@@ -90,9 +91,9 @@ public abstract class AbstractAeroFSLabeling implements ILabeling
     }
 
     @Override
-    public short mcastPort()
+    public int mcastPort()
     {
-        return Cfg.staging() ? (short) 29870 : 29871;
+        return Cfg.staging() ? 29870 : 29871;
     }
 
     @Override
@@ -105,5 +106,11 @@ public abstract class AbstractAeroFSLabeling implements ILabeling
     public String htmlEmailHeaderColor()
     {
         return "#17466B";
+    }
+
+    @Override
+    public int defaultPortbase()
+    {
+        return 50193;
     }
 }

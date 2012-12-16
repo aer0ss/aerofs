@@ -20,8 +20,5 @@ public class UIParam
     public static final int DEFAULT_REFRESH_DELAY = 100;
     public static final int SLOW_REFRESH_DELAY = 1000;
 
-    public static final int DEFAULT_PORT_BASE = 50193;
-    public static final int DEFAULT_TEAM_SERVER_PORT_BASE = 60193;
-
     public static final long DAEMON_CONNECTION_RETRY_INTERVAL = 1 * C.SEC;
 }

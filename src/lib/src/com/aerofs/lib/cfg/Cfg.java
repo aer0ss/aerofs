@@ -41,9 +41,6 @@ public class Cfg
         RITUAL
     }
 
-    private static final int NUM_RESERVED_PORTS =
-            Math.max(8, PortType.values().length);
-
     private static String _absRTRoot;
     private static DID _did;
     private static UserID _user;
@@ -288,19 +285,6 @@ public class Cfg
     public static int port(PortType type)
     {
         return _portbase + type.ordinal();
-    }
-
-    public static int minPort(int portbase)
-    {
-        return portbase;
-    }
-
-    /**
-     * @return the next unreserved port for the given base
-     */
-    public static int nextUnreservedPort(int portbase)
-    {
-        return portbase + NUM_RESERVED_PORTS;
     }
 
     public static boolean lotsOfLog(String rtRoot)

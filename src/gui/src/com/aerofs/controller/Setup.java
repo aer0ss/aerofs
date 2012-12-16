@@ -14,8 +14,10 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ThreadUtil;
+import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.lib.ex.ExBadCredential;
@@ -52,7 +54,6 @@ import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sv;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIParam;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 
@@ -230,7 +231,7 @@ class Setup
         DID did = CredentialUtil.certifyAndSaveDeviceKeys(userID, scrypted, sp);
 
         initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted,
-                Collections.<Key, String>emptyMap(), UIParam.DEFAULT_PORT_BASE);
+                Collections.<Key, String>emptyMap());
 
         setupCommon(did, deviceName, sp);
     }
@@ -250,8 +251,7 @@ class Setup
         DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
 
         initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted,
-                Collections.singletonMap(Key.MULTIUSER, Boolean.toString(true)),
-                UIParam.DEFAULT_TEAM_SERVER_PORT_BASE);
+                Collections.singletonMap(Key.MULTIUSER, Boolean.toString(true)));
 
         // sign in with the team server's user ID
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
@@ -345,7 +345,7 @@ class Setup
      * initialize the configuration database and the in-memory Cfg object
      */
     private void initializeConfiguration(UserID userId, DID did, String rootAnchorPath,
-            PBS3Config s3config, byte[] scrypted, Map<Key, String> extraCfgTuples, int defaultPortBase)
+            PBS3Config s3config, byte[] scrypted, Map<Key, String> extraCfgTuples)
             throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
@@ -368,7 +368,7 @@ class Setup
         db.recreateSchema_();
         db.set(map);
 
-        Cfg.writePortbase(_rtRoot, findPortBase(defaultPortBase));
+        Cfg.writePortbase(_rtRoot, findPortBase());
 
         Cfg.init_(_rtRoot, true);
     }
@@ -414,28 +414,41 @@ class Setup
     /**
      * @throws IOException if unable to find a port due to any reason
      */
-    private int findPortBase(int defaultPortBase)
+    private static int findPortBase()
             throws IOException
     {
-        //int defaultPortBase = UIParam.DEFAULT_PORT_BASE;
-        boolean error = false;
+        int portbase = L.get().defaultPortbase();
 
         // try 100 times only
         for (int i = 0; i < 100; i++) {
-            for (int port = Cfg.minPort(defaultPortBase); port < Cfg.nextUnreservedPort(defaultPortBase); port++) {
-                try {
-                    ServerSocket ss = new ServerSocket(port, 0, C.LOCALHOST_ADDR);
-                    ss.close();
-                } catch (BindException e) {
-                    defaultPortBase = Cfg.nextUnreservedPort(defaultPortBase);
-                    error = true;
-                    break;
-                }
-            }
-            if (!error) return defaultPortBase;
-            else error = false;
+            if (isPortRangeAvailable(portbase)) return portbase;
+            portbase += requiredPortCount();
         }
 
         throw new IOException("couldn't find available local ports");
+    }
+
+    private static boolean isPortRangeAvailable(int portbase)
+            throws IOException
+    {
+        boolean available = true;
+        for (int offset = 0; available && offset < requiredPortCount(); offset++) {
+            try {
+                ServerSocket ss = new ServerSocket(portbase + offset, 0, C.LOCALHOST_ADDR);
+                ss.close();
+            } catch (BindException e) {
+                available = false;
+            }
+        }
+        return available;
+    }
+
+    /**
+     * Return the number of ports AeroFS requires. Add some room for future addition of new port
+     * types.
+     */
+    private static int requiredPortCount()
+    {
+        return PortType.values().length + 5;
     }
 }

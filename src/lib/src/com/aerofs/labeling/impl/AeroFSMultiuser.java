@@ -4,12 +4,12 @@
 
 package com.aerofs.labeling.impl;
 
-import com.aerofs.labeling.AbstractAeroFSLabeling;
+import com.aerofs.labeling.AbstractDefaultLabeling;
 
 /**
  * the labeling for regular (i.e. non-team-server) AeroFS clients
  */
-public class AeroFSMultiuser extends AbstractAeroFSLabeling
+public class AeroFSMultiuser extends AbstractDefaultLabeling
 {
     @Override
     public String product()
@@ -21,5 +21,11 @@ public class AeroFSMultiuser extends AbstractAeroFSLabeling
     public String productUnixName()
     {
         return super.productUnixName() + "ts";
+    }
+
+    @Override
+    public int defaultPortbase()
+    {
+        return 60193;
     }
 }

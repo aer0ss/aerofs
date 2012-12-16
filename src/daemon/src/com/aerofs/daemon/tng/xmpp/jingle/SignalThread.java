@@ -172,8 +172,11 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
         InetSocketAddress address = Param.xmppAddress();
+
+        // TODO (WW) XmppMain() should use int rathe than short as the datatype of jingleRelayPort
+        // as Java's unsigned short may overflow on big port numbers.
         _main = new XmppMain(address.getHostName(), address.getPort(), true, _jidSelf,
-                ID.getShaedXMPP(), L.get().jingleRelayHost(), L.get().jingleRelayPort(),
+                ID.getShaedXMPP(), L.get().jingleRelayHost(), (short) L.get().jingleRelayPort(),
                 ljlogpathutf8);
 
         l.info("connect slots");
