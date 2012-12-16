@@ -4,6 +4,7 @@
 import logging
 import MySQLdb
 import sys
+from config import config
 
 logger = logging.getLogger("get_user_info")
 
@@ -91,8 +92,8 @@ if __name__ == '__main__':
 
   try:
     # TODO get a config file to pull the database information
-    spconn = make_connection('user', 'host', 'passwd', 'db')
-    svconn = make_connection('user', 'host', 'passwd', 'db')
+    spconn = make_connection('aerofs_sp_ro', config["sp_database"], config["aerofs_sp_ro_password"], 'aerofs_sp')
+    svconn = make_connection('aerofs_sv_ro', config["sv_database"], config["aerofs_sv_ro_password"], 'aerofs_sv')
 
     user = sys.argv[1]
 

@@ -1,4 +1,4 @@
 #!/bin/bash -u -e
 
-echo "getting devices via sp..."
-ssh sp.aerofs.com "getdev $@"
+echo "getting devices via c.aerofs.com..."
+ssh c.aerofs.com "getdev $@"

@@ -4,6 +4,7 @@
 import logging
 import MySQLdb
 import sys
+from config import config
 
 logger = logging.getLogger("get_client_ver")
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
   try:
     # TODO get a config file to pull the database information
-    svconn = make_connection('user', 'host', 'passwd', 'db')
+    svconn = make_connection('aerofs_sv_ro', config["sv_database"], config["aerofs_sv_ro_password"], 'aerofs_sv')
     defect = sys.argv[1]
 
     logger.debug('get client version for defect:%s' %defect)
