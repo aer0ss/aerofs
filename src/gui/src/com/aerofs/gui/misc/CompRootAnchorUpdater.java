@@ -51,25 +51,31 @@ public class CompRootAnchorUpdater extends Composite
         errorIcon.setLayoutData(new GridData(SWT.CENTER, SWT.TOP, true, false, 1, 1));
         errorIcon.setImage(getShell().getDisplay().getSystemImage(SWT.ICON_ERROR));
 
-        Label errorLabel = new Label(this, SWT.NONE);
-        errorLabel.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
-        errorLabel.setText("Your " + L.PRODUCT + " folder was not found" +
-                " in the original location:\n" +
+        final String NEW_LOCATION_TEXT = "Select New Location...";
+        final String QUIT_BUTTON_TEXT = "Quit";
+
+        Label errorLabel = new Label(this, SWT.WRAP);
+        GridData gdErrorLabel = new GridData(SWT.FILL, SWT.TOP, true, true, 1, 1);
+        gdErrorLabel.widthHint = 360;
+        errorLabel.setLayoutData(gdErrorLabel);
+        errorLabel.setText(
+                "Your " + L.PRODUCT + " folder was not found in the original location:\n" +
                 Cfg.absRootAnchor() + "\n\n" +
-                "If you moved the " + L.PRODUCT + " folder, click \"Select New Location...\"\n" +
+                "If you moved the folder, click \"" + NEW_LOCATION_TEXT + "\" " +
                 "below, and specify the new location.\n\n" +
-                "If you deleted the " + L.PRODUCT + " folder, or want to start over, click\n" +
-                "\"Unlink This Computer...\". You will be asked to setup " +
-                L.PRODUCT + "\nthe next time you launch.\n\n" +
-                "If you want to move the " + L.PRODUCT + " folder back to its original\nlocation " +
-                ", click \"Quit AeroFS\", move it back to its location,\nand launch " +
-                L.PRODUCT + " again.\n\n");
+                "If you deleted the folder, or want to start over, click " +
+                "\"" + S.UNLINK_THIS_COMPUTER + "\". You will be asked to setup " +
+                L.PRODUCT + " the next time you launch.\n\n" +
+                "If you want to move the folder back to its original location, " +
+                "click \"" + QUIT_BUTTON_TEXT + "\", move it back to its location, and launch " +
+                L.PRODUCT + " again.");
+
         Composite composite = new Composite(this, SWT.NONE);
         composite.setLayout(new FillLayout(SWT.HORIZONTAL));
         composite.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, true, false, 2, 1));
 
         Button newLocationBtn = new Button(composite, SWT.NONE);
-        newLocationBtn.setText("Select New Location...");
+        newLocationBtn.setText(NEW_LOCATION_TEXT);
         newLocationBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -80,10 +86,10 @@ public class CompRootAnchorUpdater extends Composite
         });
 
         Button unlinkBtn = new Button(composite, SWT.NONE);
-        unlinkBtn.setText("Unlink This Computer...");
+        unlinkBtn.setText(S.UNLINK_THIS_COMPUTER);
 
         Button quitBtn = new Button(composite, SWT.NONE);
-        quitBtn.setText("Quit " + L.PRODUCT);
+        quitBtn.setText(QUIT_BUTTON_TEXT);
         quitBtn.addSelectionListener(new SelectionAdapter()
         {
             @Override
@@ -115,7 +121,7 @@ public class CompRootAnchorUpdater extends Composite
     {
         // Select the new Root Anchor.
         DirectoryDialog dd = new DirectoryDialog(getShell(), SWT.SHEET);
-        dd.setMessage("Select " + S.SETUP_ANCHOR_ROOT);
+        dd.setMessage("Select folder location");
         String rootPath = dd.open();
 
         if (rootPath == null) return false;

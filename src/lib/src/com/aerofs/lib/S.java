@@ -46,7 +46,7 @@ public class S
 
             ROOT_ANCHOR_NAME         = L.PRODUCT,
 
-            RAW_LOCATION_CHANGE      = L.PRODUCT + " Has Changed Location",
+            RAW_LOCATION_CHANGE      = "Folder Location Was Changed",
 
             GUI_LOADING              = "Loading...",
 
@@ -68,6 +68,7 @@ public class S
             COPYRIGHT = "2010-2012 " + L.get().vendor() + " All Rights Reserved.",
             BTN_ADVANCED = "Advanced...",
             BTN_CHANGE = "Change...",
+            UNLINK_THIS_COMPUTER = "Unlink This Computer...",
             UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from the " +
                 L.PRODUCT + " account and quit the program?" +
                 " Files in the " + L.PRODUCT + " folder will not be deleted.",

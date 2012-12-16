@@ -334,7 +334,7 @@ public class CompPreferences extends Composite
 
         Button button = new Button(composite, SWT.NONE);
         button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-        button.setText("Unlink This Computer");
+        button.setText(S.UNLINK_THIS_COMPUTER);
         button.addSelectionListener(new SelectionAdapter()
         {
             @Override

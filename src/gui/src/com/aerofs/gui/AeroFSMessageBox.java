@@ -33,8 +33,7 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     public static final int OK_ID = IDialogConstants.OK_ID;
     public static final int CANCEL_ID = IDialogConstants.CANCEL_ID;
 
-    private Label _lbl;
-    private CLabel _icon;
+    private Label _lblMessage;
     private final String _msg;
     private final IconType _it;
     private final ButtonType _bt;
@@ -82,7 +81,6 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
 
     /**
      * Create contents of the dialog.
-     * @param parent
      */
     @Override
     protected Control createDialogArea(Composite parent)
@@ -111,15 +109,15 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
             icon = SWT.ICON_INFORMATION;
         }
 
-        _icon = new CLabel(container, SWT.NONE);
-        _icon.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, true, 1, 1));
-        _icon.setImage(getShell().getDisplay().getSystemImage(icon));
+        CLabel lblIcon = new CLabel(container, SWT.NONE);
+        lblIcon.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, true, 1, 1));
+        lblIcon.setImage(getShell().getDisplay().getSystemImage(icon));
 
-        _lbl = new Label(container, SWT.WRAP);
+        _lblMessage = new Label(container, SWT.WRAP);
         GridData gd__text = new GridData(SWT.FILL, SWT.CENTER, true, true, 1, 1);
         gd__text.widthHint = 360;
-        _lbl.setLayoutData(gd__text);
-        _lbl.setText(_msg);
+        _lblMessage.setLayoutData(gd__text);
+        _lblMessage.setText(_msg);
 
         if (_checkBoxText != null) {
             new Label(container, SWT.NONE);
@@ -163,18 +161,21 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     }
 
 
-    public Label getLbl() {
-        return _lbl;
+    public Label getMessageLabel()
+    {
+        return _lblMessage;
     }
 
-    public Button getOkayBtn() {
+    public Button getOkayBtn()
+    {
         return _okayBtn;
     }
 
     /**
      * Null if ButtonType is not OKAY_CANCEL.
      */
-    public @Nullable Button getCancelBtn() {
+    public @Nullable Button getCancelBtn()
+    {
         return _cancelBtn;
     }
 }
