@@ -6,11 +6,13 @@
 set -e
 
 if [ x"$1" == x ]; then
-    echo "usage: $0 <approot> <resource> <mode=STAGING> <os>" >&2
+    echo "usage: $0 <approot> <resource> <mode=STAGING> <multiplicity=CLIENT> <os>" >&2
     echo "    <approot>  The approot folder path which doesn't need to pre-exist." >&2
     echo "    <resource> The resource/client folder path which must exist." >&2
-    echo "    <mode>     (optional) the mode specifies which cacert.pem file to use and" >&2
-    echo "               whether or not APPROOT/stg should be created. Defaults to STAGING." >&2
+    echo "    <mode>     (optional) specifies which cacert.pem file to use and whether or not" >&2
+    echo "               APPROOT/stg should be created. Can be STAGING or CI. Defaults to STAGING." >&2
+    echo "    <multiplicity> (optional) whether or not to populate as a Team Server." >&2
+    echo "               Can be TEAM_SERVER or CLIENT. Defaults to CLIENT." >&2
     echo "    <os>       (optional) The OS to populate for. Can be osx, win, linux32 or" >&2
     echo "               linux64. If not set, we will use the output from the ./os script." >&2
     exit 1
@@ -21,7 +23,8 @@ PPWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 APPROOT="$1"
 ASIS="$2"
 MODE="${3:-'STAGING'}"
-OS="${4:-`"$PPWD"/os`}"
+MULTIPLICITY="${4:-'CLIENT'}"
+OS="${5:-`"$PPWD"/os`}"
 
 VERSION_FILE=version
 
@@ -41,6 +44,10 @@ else
     touch "$APPROOT"/stg
     rm "$APPROOT"/cacert-ci.pem
     mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
+fi
+
+if [ "$MULTIPLICITY" == "TEAM_SERVER" ]; then
+    touch "$APPROOT"/ts
 fi
 
 # Common to both staging and CI
