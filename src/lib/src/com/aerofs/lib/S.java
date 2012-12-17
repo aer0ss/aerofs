@@ -44,8 +44,6 @@ public class S
             SETUP_S3_ENCRYPTION_PASSWORD = "Create an " + S3_ENCRYPTION_PASSWORD +
                 " (used to encrypt your data before sending to S3)",
 
-            ROOT_ANCHOR_NAME         = L.PRODUCT,
-
             RAW_LOCATION_CHANGE      = "Folder Location Was Changed",
 
             GUI_LOADING              = "Loading...",

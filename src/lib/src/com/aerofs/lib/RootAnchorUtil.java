@@ -180,8 +180,9 @@ public abstract class RootAnchorUtil
     {
         root = new File(root).getAbsolutePath();
         root = Util.removeTailingSeparator(root);
-        if (!root.toLowerCase().endsWith(File.separator + S.ROOT_ANCHOR_NAME.toLowerCase())) {
-            root += File.separator + S.ROOT_ANCHOR_NAME;
+        String rootAnchorName = L.get().rootAnchorName();
+        if (!root.toLowerCase().endsWith(File.separator + rootAnchorName.toLowerCase())) {
+            root += File.separator + rootAnchorName;
         }
 
         return root;

@@ -204,59 +204,21 @@ public class UIUtil
      *
      *  This logic is (will be) duplicated in the native UIs
      *
-     * @param rtRoot
      * @param preLaunch a runnable that will be executed in the UI thread, before the launch
      * @param postLaunch a runnable that will be executed in the UI thread, iff the launch succeeds
      */
-    public static void launch(String rtRoot, final Runnable preLaunch, final Runnable postLaunch)
+    public static void launch(String rtRoot, Runnable preLaunch, Runnable postLaunch)
     {
         try {
             GetInitialStatusReply reply = UI.controller().getInitialStatus();
             switch (reply.getStatus()) {
 
             case NOT_LAUNCHABLE:
-                UI.get().show(MessageType.ERROR, reply.hasErrorMessage() ? reply.getErrorMessage() :
-                        LAUNCH_ERROR_STRING + ".");
-                System.exit(0);
-                break; // suppress compiler fall-through warning just for this case
+                failToLaunch(reply);
+                break;
 
             case NEEDS_SETUP:
-                // TODO: add the same logic in the native Cocoa UI. Currently only setup is run
-
-                if (OSUtil.isOSX()) {
-                    // Launch AeroFS on startup
-                    SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",
-                            AppRoot.abs().replace("Contents/Resources/Java", ""));
-
-                    SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "add",
-                            AppRoot.abs().replace("Contents/Resources/Java", ""));
-                }
-
-                UI.get().preSetupUpdateCheck_();
-                SetupType st = UI.get().setup_(rtRoot);
-                if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-
-                if (UI.isGUI() && (OSUtil.isOSX() || OSUtil.isWindows())) {
-                    // Show the user tutorial on OS X and Windows
-                    new DlgTutorial(GUI.get().sh()).openDialog();
-                }
-
-                if (st == SetupType.NEW_USER && UI.isGUI()) {
-                    // Check if there are any shared folder invitations to accept
-                    new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
-                    // TODO (GS): Needs a similar class for CLI, too
-                }
-
-                finishLaunch(postLaunch);
-
-                UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        GUIUtil.launch(Cfg.absRootAnchor());
-                    }
-                });
-
+                setup(rtRoot, preLaunch, postLaunch);
                 break;
 
             case NEEDS_LOGIN:
@@ -266,30 +228,88 @@ public class UIUtil
                 break;
 
             case READY_TO_LAUNCH:
-                if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-                Futures.addCallback(UI.controller().async().launch(), new FutureCallback<Common.Void>()
-                {
-                    @Override
-                    public void onSuccess(Common.Void aVoid)
-                    {
-                        finishLaunch(postLaunch);
-                    }
-                    @Override
-                    public void onFailure(Throwable e)
-                    {
-                        logAndShowLaunchError(e);
-                        System.exit(0);
-                    }
-                });
+                launch(preLaunch, postLaunch);
                 break;
             }
-        } catch (ExAborted exAb) {
+        } catch (ExAborted e) {
             // User clicked on cancel, exit without error messages
             System.exit(0);
         } catch (Exception e) {
             logAndShowLaunchError(e);
             System.exit(0);
         }
+    }
+
+    private static void failToLaunch(GetInitialStatusReply reply)
+    {
+        UI.get().show(MessageType.ERROR, reply.hasErrorMessage() ? reply.getErrorMessage() :
+                LAUNCH_ERROR_STRING + ".");
+        System.exit(0);
+    }
+
+    private static void launch(Runnable preLaunch, final Runnable postLaunch)
+    {
+        if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
+        Futures.addCallback(UI.controller().async().launch(), new FutureCallback<Common.Void>()
+        {
+            @Override
+            public void onSuccess(Common.Void aVoid)
+            {
+                finishLaunch(postLaunch);
+            }
+
+            @Override
+            public void onFailure(Throwable e)
+            {
+                logAndShowLaunchError(e);
+                System.exit(0);
+            }
+        });
+    }
+
+    private static void setup(String rtRoot, Runnable preLaunch, Runnable postLaunch)
+            throws Exception
+    {
+        // TODO: add the same logic in the native Cocoa UI. Currently only setup is run
+
+        if (OSUtil.isOSX()) {
+            // Launch AeroFS on startup
+            SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "rem",
+                    AppRoot.abs().replace("Contents/Resources/Java", ""));
+
+            SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "loginitem", "add",
+                    AppRoot.abs().replace("Contents/Resources/Java", ""));
+        }
+
+        UI.get().preSetupUpdateCheck_();
+        SetupType st = UI.get().setup_(rtRoot);
+        if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
+
+        if (shouldShowTutorial()) {
+            // Show the user tutorial on OS X and Windows
+            new DlgTutorial(GUI.get().sh()).openDialog();
+        }
+
+        if (st == SetupType.NEW_USER && UI.isGUI()) {
+            // Check if there are any shared folder invitations to accept
+            new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
+            // TODO (GS): Needs a similar class for CLI, too
+        }
+
+        finishLaunch(postLaunch);
+
+        UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", new Runnable() {
+            @Override
+            public void run()
+            {
+                GUIUtil.launch(Cfg.absRootAnchor());
+            }
+        });
+    }
+
+    private static boolean shouldShowTutorial()
+    {
+        return !L.get().isMultiuser() && UI.isGUI() && (OSUtil.isOSX() || OSUtil.isWindows());
     }
 
     private static void logAndShowLaunchError(Throwable e)

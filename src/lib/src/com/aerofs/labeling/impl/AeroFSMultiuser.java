@@ -34,4 +34,10 @@ public class AeroFSMultiuser extends AbstractDefaultLabeling
     {
         return 60193;
     }
+
+    @Override
+    public String rootAnchorName()
+    {
+        return product() + " Storage";
+    }
 }

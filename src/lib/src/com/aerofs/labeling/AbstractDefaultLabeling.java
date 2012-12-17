@@ -49,6 +49,12 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     }
 
     @Override
+    public String rootAnchorName()
+    {
+        return product();
+    }
+
+    @Override
     public String webHost()
     {
         return "www.aerofs.com";

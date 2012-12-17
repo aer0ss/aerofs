@@ -21,6 +21,8 @@ public interface ILabeling
 
     String vendor();
 
+    String rootAnchorName();
+
     String xmppServerAddr();
 
     int xmppServerPort();
