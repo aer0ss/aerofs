@@ -51,6 +51,9 @@ if [ "$MULTIPLICITY" == "TEAM_SERVER" ]; then
 fi
 
 # Common to both staging and CI
+
+# Create the version file. 100.0.0 is our special development environment version
+# This version number must be kept in sync with src/launcher/launcher.lib/liblauncher.cpp
 echo "100.0.0" > "$APPROOT"/$VERSION_FILE
 rm "$APPROOT"/cacert-prod.pem
 

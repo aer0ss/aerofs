@@ -96,14 +96,12 @@ bool launcher_get_approot(_TCHAR* approot, size_t approot_len, _TCHAR** perrmsg)
         version = version.substr(0, pos);
     }
 
-    if (version.empty()) {
-        SET_ERROR(_T("Could not find the current AeroFS version in %s\n"), path.c_str());
-        _tcscpy_s(approot, approot_len, s_approot.c_str());
-        return false;
+    // Append the version folder to the approot, unless the version number is empty or equals to
+    // 100.0.0, which is the version number for the development environment.
+    // This version number must be kept consistent with the populate script in /tools/populate/
+    if (!version.empty() && version != "100.0.0") {
+        s_approot += _T("\\v_") + tstring(version.begin(), version.end());
     }
-
-    // Append the version folder to the approot
-    s_approot += _T("\\v_") + tstring(version.begin(), version.end());
 
 #endif
     _tcscpy_s(approot, approot_len, s_approot.c_str());
