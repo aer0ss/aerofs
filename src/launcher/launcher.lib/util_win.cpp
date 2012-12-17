@@ -44,14 +44,20 @@ bool create_jvm(JavaVM **pvm, void **penv, void *args)
     }
 
     HINSTANCE jvm = LoadLibraryW((LPCWSTR)jvm_path.c_str());
-    PJNI_CreateJavaVM fn = (PJNI_CreateJavaVM) GetProcAddress(jvm, CREATE_JVM_FUNCTION);
+    if (!jvm) {
+        SET_ERROR(_T("AeroFS found a Java installation at: %s but could not use it.\n")
+                     _T("Reason: LoadLibraryW failed with %d\n\n")
+                     _T("Please visit www.java.com/getjava/ to reinstall Java 32-bit on your computer."),
+                  jvm_path.c_str(), GetLastError());
+        return false;
+    }
 
+    PJNI_CreateJavaVM fn = (PJNI_CreateJavaVM) GetProcAddress(jvm, CREATE_JVM_FUNCTION);
     if (!fn) {
-        SET_ERROR(_T("%s %s %s\n%s"),
-                  _T("AeroFS found a Java installation at:"),
-                  jvm_path.c_str(),
-                  _T("but could not use it."),
-                  _T("Please visit www.java.com/getjava/ to reinstall Java 32-bit on your computer."));
+        SET_ERROR(_T("AeroFS found a Java installation at: %s but could not use it.\n")
+                     _T("Reason: GetProcAddress failed with %d\n\n")
+                     _T("Please visit www.java.com/getjava/ to reinstall Java 32-bit on your computer."),
+                  jvm_path.c_str(), GetLastError());
         return false;
     }
 
@@ -85,8 +91,8 @@ tstring find_jvm()
         length = MAX_PATH;
         while (RegEnumKeyExW(jreKey, i++, keyName, &length, 0, 0, 0, 0) == ERROR_SUCCESS) {
 
-            // look for a 1.4 or 1.5 vm
-            tstring baseVersion = _T("1.4");
+            // look for a 1.6 vm or above
+            tstring baseVersion = _T("1.6");
             if( baseVersion.compare(0, 3, keyName) <= 0 ) {
                 tstring path = check_key(jreKey, keyName);
                 if (!path.empty()) {
