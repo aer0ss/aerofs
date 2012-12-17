@@ -393,11 +393,11 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
                 task.run();
                 l.debug("st: run fin after onmessage m_id:" + msg.getMessage_id() + " t:" + task);
             } catch (Exception e) {
-                l.error("st: t:" + task + " run fin with unhandled err: "+ Util.stackTrace2string(e));
+                l.error("st: t:" + task + " run fin with unhandled err: "+ Util.e(e));
                 task.error(e);
             } catch (Throwable t) {
                 l.fatal("jingle task crash and burn");
-                l.fatal(Util.stackTrace2string(t));
+                l.fatal(Util.e(t));
                 ExitCode.JINGLE_TASK_FATAL_ERROR.exit();
             }
 

@@ -229,6 +229,7 @@ public abstract class Util
         SocketException.class,
     };
 
+    // TODO (WW) make it private and clean up LogUtil.
     static boolean shouldPrintStackTrace(Throwable e, Class<?> ...excludes)
     {
         for (Class<?> exclude : excludes) {
@@ -252,6 +253,10 @@ public abstract class Util
         }
     }
 
+    /**
+     * Use Util.e() when possible. In particular, always use e instead of this method when loging
+     * exceptions.
+     */
     public static String stackTrace2string(Throwable e)
     {
         StringWriter sw = new StringWriter();

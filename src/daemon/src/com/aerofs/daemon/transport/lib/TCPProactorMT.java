@@ -451,7 +451,7 @@ public class TCPProactorMT
         } catch (Exception e) {
             l.warn("error sending to " + p._key + ". close the socket: " + e + " intr:" +
                     Thread.interrupted());
-            l.warn(Util.stackTrace2string(e));
+            l.warn(Util.e(e));
             discard(p, e);
         } finally {
             // discard() simply interrupts the thread and lets this thread attempt

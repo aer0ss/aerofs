@@ -355,11 +355,11 @@ public class Aliasing
         // See {@link com.aerofs.daemon.lib.db.trans.Trans#end_()} for the reason of these blocks
         } catch (Exception e) {
             rollbackCause = e;
-            l.warn("triggered rollback: " + Util.stackTrace2string(rollbackCause));
+            l.warn("triggered rollback: " + Util.e(rollbackCause));
             throw e;
         } catch (Error e) {
             rollbackCause = e;
-            l.warn("triggered rollback: " + Util.stackTrace2string(rollbackCause));
+            l.warn("triggered rollback: " + Util.e(rollbackCause));
             throw e;
         } finally {
             t.end_(rollbackCause);

@@ -304,7 +304,7 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
                     }
                     throw new Exception(Util.e(e));
                 } catch (Exception e) {
-                    l.error(Util.stackTrace2string(e));
+                    l.error(Util.e(e));
                 }
 
                 return null;

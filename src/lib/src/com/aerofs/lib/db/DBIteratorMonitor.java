@@ -35,7 +35,7 @@ public class DBIteratorMonitor
     {
         if (Cfg.staging() && s_iters != null) {
             for (Exception e : s_iters.values()) {
-                Util.l().warn("unclosed db iterator created at:\n" + Util.stackTrace2string(e));
+                Util.l().warn("unclosed db iterator created at:\n" + Util.e(e));
             }
         }
 

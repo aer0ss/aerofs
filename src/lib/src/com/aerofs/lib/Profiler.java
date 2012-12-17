@@ -92,7 +92,7 @@ public class Profiler
 
             long diff = System.currentTimeMillis() - _ts;
             if (diff > _threshold) {
-                l.debug(Util.stackTrace2string(new ProfilerTrace(diff).fillInStackTrace()));
+                l.debug(Util.e(new ProfilerTrace(diff).fillInStackTrace()));
 
                 if (_adjustThreshold) {
                     _threshold = diff;

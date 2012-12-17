@@ -74,7 +74,7 @@ public class TapServiceImpl implements ITapService
     @Override
     public Common.PBException encodeError(Throwable error)
     {
-        l.error(Util.stackTrace2string(error));
+        l.error(Util.e(error));
         return Exceptions.toPB(error);
     }
 

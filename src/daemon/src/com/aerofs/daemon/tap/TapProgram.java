@@ -122,7 +122,7 @@ public class TapProgram implements IProgram
         public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
                 throws Exception
         {
-            l.error(Util.stackTrace2string(e.getCause()));
+            l.error(Util.e(e.getCause()));
         }
     }
 
