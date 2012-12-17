@@ -50,7 +50,8 @@ public class DaemonPostUpdateTasks
             new DPUTMigrateAuxRoot(absAuxRoot),
             new DPUTUpdateSIDGeneration(cfgUser, dbcw),
             null,  // used to be DPUTMigrateDeadAnchorsAndEmigratedNames
-            new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw)
+            new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
+            new DPUTMarkAuxRootAsHidden(absAuxRoot)
             // new tasks go here
         };
 
