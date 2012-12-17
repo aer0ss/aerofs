@@ -35,7 +35,8 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
         try {
             final String oldAuxRoot = getOldAuxRoot();
             final String newAuxRoot = _cfgAbsAuxRoot.get();
-            new File(newAuxRoot).mkdirs();
+            FileUtil.mkdirs(new File(newAuxRoot));
+            OSUtil.get().markHiddenSystemFile(newAuxRoot);
 
             for (AuxFolder auxFolder : AuxFolder.values()) {
                 File src = new File(oldAuxRoot, auxFolder._name);
