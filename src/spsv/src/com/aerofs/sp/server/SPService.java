@@ -915,13 +915,15 @@ public class SPService implements ISPService
 
         l.info("Send organization invite by " + inviter + " to " + invitee);
 
-        if (invitee.getOrganization().equals(org)) {
+        if (invitee.exists() && invitee.getOrganization().equals(org)) {
+            l.warn(invitee + " already a member.");
             throw new ExAlreadyExist();
         }
 
         OrganizationInvitation invite = _factOrgInvite.create(invitee.id(), org.id());
 
         if (invite.exists()) {
+            l.warn(invitee + " already invited.");
             throw new ExAlreadyInvited();
         }
 

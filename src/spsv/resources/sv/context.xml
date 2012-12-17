@@ -12,7 +12,7 @@
               type="javax.sql.DataSource"
 
               username="aerofs_spsv"
-              password="[MYSQL_PASSWORD]"
+              password="password"
 
               driverClassName="com.mysql.jdbc.Driver"
 
