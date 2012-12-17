@@ -125,7 +125,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     }
 
     @Override
-    public void remFromFavorite(String path) throws IOException
+    public void removeFromFavorite(String path) throws IOException
     {
         InjectableFile f = _factFile.create(Util.join(System.getenv("HOME"), ".gtk-bookmarks"));
         InjectableFile tmpFile = _factFile.createTempFile(".gtk-bookmarks","$$$");

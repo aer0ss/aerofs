@@ -98,7 +98,7 @@ public class OSUtilWindows implements IOSUtil
     }
 
     @Override
-    public void remFromFavorite(String path) throws IOException
+    public void removeFromFavorite(String path) throws IOException
     {
         if (!OSUtil.isWindowsXP()) {
             File f = new File(System.getProperty("user.home") + File.separator +

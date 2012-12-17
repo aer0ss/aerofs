@@ -133,8 +133,7 @@ class Setup
             FullName fullName = new FullName(firstName, lastName);
             new SignupHelper(res._sp).signUp(userId, res._scrypted, signUpCode, fullName);
 
-            setupRegularClientImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted,
-                    res._sp);
+            setupSingluser(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + userId);
         } catch (Exception e) {
@@ -163,8 +162,7 @@ class Setup
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupRegularClientImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted,
-                    res._sp);
+            setupSingluser(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
@@ -180,7 +178,7 @@ class Setup
         try {
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupTeamServerImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupMultiuser(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -218,7 +216,7 @@ class Setup
     /**
      * @param sp must have been signed in
      */
-    private void setupRegularClientImpl(UserID userID, String rootAnchorPath, String deviceName,
+    private void setupSingluser(UserID userID, String rootAnchorPath, String deviceName,
             PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
@@ -230,10 +228,12 @@ class Setup
 
         initializeConfiguration(userID, did, rootAnchorPath, s3config, scrypted);
 
-        setupCommon(did, deviceName, sp);
+        setupCommon(did, deviceName, rootAnchorPath, sp);
+
+        addToFavorite(rootAnchorPath);
     }
 
-    private void setupTeamServerImpl(UserID userID, String rootAnchorPath, String deviceName,
+    private void setupMultiuser(UserID userID, String rootAnchorPath, String deviceName,
             PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
@@ -253,10 +253,10 @@ class Setup
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
         signIn(tsUserId, tsScrypted, tsSP);
 
-        setupCommon(tsDID, deviceName, tsSP);
+        setupCommon(tsDID, deviceName, rootAnchorPath, tsSP);
     }
 
-    private void setupCommon(DID did, String deviceName, SPBlockingClient sp)
+    private void setupCommon(DID did, String deviceName, String rootAnchorPath, SPBlockingClient sp)
             throws Exception
     {
         initializeAndLaunchDaemon();
@@ -267,10 +267,10 @@ class Setup
         // Proceed with AeroFS launch
         new Launcher(_rtRoot).launch(true);
 
-        runNonEssential(did, deviceName, sp);
+        setDeviceNameAndRootAnchorIcon(did, deviceName, rootAnchorPath, sp);
     }
 
-    private void signIn(UserID userId, byte[] scrypted, SPBlockingClient sp)
+    private static void signIn(UserID userId, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
         sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
@@ -311,8 +311,9 @@ class Setup
 
     private void initializeAndLaunchDaemon()
             throws Exception
-    {// clean up the running daemon if any. it is needed as the daemon
-        // process may lock files in cache and aerofs.db
+    {
+        // Clean up the running daemon if any. It is needed as the daemon process may lock files in
+        // cache and aerofs.db.
         try {
             UI.dm().stop();
         } catch (IOException e) {
@@ -325,12 +326,11 @@ class Setup
         auxRoot.mkdirs();
         OSUtil.get().markHiddenSystemFile(auxRoot.getAbsolutePath());
 
-
-        // remove database file (the daemon will setup the schema if it detects a missing DB)
+        // Remove database file (the daemon will setup the schema if it detects a missing DB)
         InjectableFile fDB = _factFile.create(_rtRoot, C.CORE_DATABASE);
         fDB.deleteOrThrowIfExist();
 
-        // setup root anchor
+        // Create Root Anchor
         InjectableFile fRootAnchor = _factFile.create(Cfg.absRootAnchor());
         if (!fRootAnchor.exists()) fRootAnchor.mkdirs();
 
@@ -369,11 +369,11 @@ class Setup
     }
 
     /**
-     * Perform the tasks whose errors can be ignored by the setup process. Users doesn't need to
-     * wait for them before start using AeroFS, and therefore we put these tasks into a separate
-     * thread.
+     * Since the operations in this method is not critical, and the users doesn't need to wait for
+     * them before start using AeroFS, we put them into a separate thread.
      */
-    private void runNonEssential(final DID did, final String deviceName, final SPBlockingClient sp)
+    private static void setDeviceNameAndRootAnchorIcon(final DID did, final String deviceName,
+            final String rootAnchorPath, final SPBlockingClient sp)
     {
         ThreadUtil.startDaemonThread("setup-non-essential", new Runnable()
         {
@@ -386,24 +386,38 @@ class Setup
                     l.warn("set prefs: " + Util.e(e));
                 }
 
-                try {
-                    OSUtil.get().addToFavorite(Cfg.absRootAnchor());
-                } catch (Exception e) {
-                    l.warn("add anchor root to os fav: " + Util.e(e));
-                }
-
-                setRootAnchorIcon();
+                setRootAnchorIcon(rootAnchorPath);
             }
         });
     }
 
-    private void setRootAnchorIcon()
+    /**
+     * Since the operations in this method is not critical, and the users doesn't need to wait for
+     * them before start using AeroFS, we put them into a separate thread.
+     */
+    private static void addToFavorite(final String rootAnchorPath)
+    {
+        ThreadUtil.startDaemonThread("add-to-fav", new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try {
+                    OSUtil.get().addToFavorite(rootAnchorPath);
+                } catch (Exception e) {
+                    l.warn("add to fav: " + Util.e(e));
+                }
+            }
+        });
+    }
+
+    private static void setRootAnchorIcon(String rootAnchorPath)
     {
         if (OSUtil.isLinux()) return;
 
         // TODO use real dependency injection
         InjectableDriver dr = new InjectableDriver();
-        dr.setFolderIcon(Cfg.absRootAnchor(), OSUtil.getIconPath(Icon.RootAnchor));
+        dr.setFolderIcon(rootAnchorPath, OSUtil.getIconPath(Icon.RootAnchor));
     }
 
     /**

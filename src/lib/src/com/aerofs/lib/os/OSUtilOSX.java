@@ -85,12 +85,12 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     @Override
     public void addToFavorite(String path) throws IOException
     {
-        remFromFavorite(path);
+        removeFromFavorite(path);
         SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "shortcut", "add", path);
     }
 
     @Override
-    public void remFromFavorite(String path) throws IOException
+    public void removeFromFavorite(String path) throws IOException
     {
         SystemUtil.execBackground(AppRoot.abs().concat("/osxtools"), "shortcut", "rem", path);
     }

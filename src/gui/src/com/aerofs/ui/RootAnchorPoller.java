@@ -126,17 +126,23 @@ public class RootAnchorPoller
 
         ShellextService.get().notifyRootAnchor();
 
-        String newRoot = Cfg.absRootAnchor();
+        updateFavorite(_oldRoot, Cfg.absRootAnchor());
+        _oldRoot = Cfg.absRootAnchor();
+
+        return true;
+    }
+
+    private static void updateFavorite(String oldRoot, String newRoot)
+    {
+        if (L.get().isMultiuser()) return;
+
         try {
-            OSUtil.get().remFromFavorite(_oldRoot);
+            OSUtil.get().removeFromFavorite(oldRoot);
             OSUtil.get().addToFavorite(newRoot);
         } catch (IOException e) {
             // This is unimportant so we can just warn and move on.
             l.warn("Updating favorites failed: " + e);
         }
-        _oldRoot = newRoot;
-
-        return true;
     }
 
     /*

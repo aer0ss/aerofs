@@ -8,6 +8,7 @@ import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.io.ByteStreams;
 
@@ -43,7 +44,9 @@ public class LocalBackend implements IBlockStorageBackend
     @Override
     public void init_() throws IOException
     {
-        if (!_rootDir.isDirectory()) _rootDir.mkdirs();
+        // Do not automatically recreate the root folder. It is UI's responsibility to guarantee
+        // its presence.
+        if (!_rootDir.exists()) throw new ExFileNotFound(_rootDir);
     }
 
     @Override

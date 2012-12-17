@@ -5,6 +5,7 @@
 package com.aerofs.lib.ex;
 
 import com.aerofs.lib.Path;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatter.FormattedMessage;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 
@@ -20,6 +21,11 @@ public class ExFileNotFound extends FileNotFoundException implements IExObfuscat
     private static final long serialVersionUID = 1L;
 
     private final String _plainTextMessage;
+
+    public ExFileNotFound(InjectableFile file)
+    {
+        this(file.getImplementation());
+    }
 
     public ExFileNotFound(File file)
     {

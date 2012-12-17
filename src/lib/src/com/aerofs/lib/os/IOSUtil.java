@@ -33,7 +33,7 @@ public interface IOSUtil
 
     void addToFavorite(String path) throws IOException;
 
-    void remFromFavorite(String path) throws IOException;
+    void removeFromFavorite(String path) throws IOException;
 
     /**
      * N.B. this method may be expensive. use sparingly
