@@ -21,6 +21,7 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 
 import java.io.PrintStream;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.util.Set;
@@ -137,6 +138,7 @@ public class XMPPServerConnection implements IDumpStatMisc
                             return null;
                         }
                         synchronized (XMPPServerConnection.this) { connect_(); }
+
                     } catch (XMPPException e) {
                         l.warn("error", e);
                         // 502: remote-server-error(502): java.net.ConnectException: Operation timed out
@@ -148,10 +150,10 @@ public class XMPPServerConnection implements IDumpStatMisc
                             }
                         }
 
-                        // all other cases should throw an exception with no message
-                        throw new Exception(Util.e(e));
+                        throw e;
+
                     } catch (Exception e) {
-                        l.error(Util.stackTrace2string(e));
+                        l.error(Util.e(e, ConnectException.class));
                     }
 
                     return null;
