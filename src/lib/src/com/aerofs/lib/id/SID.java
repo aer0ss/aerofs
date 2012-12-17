@@ -85,7 +85,9 @@ public class SID extends UniqueID
         assert !oid.isRoot() && !oid.isTrash() && !oid.isAnchor() : oid.toStringFormal();
         byte[] bs = SecUtil.newMessageDigestMD5().digest(oid.getBytes());
         setVersionNibble(bs, 0);
-        return new SID(bs);
+        SID sid = new SID(bs);
+        assert !sid.isRoot();
+        return sid;
     }
 
     /**
@@ -96,7 +98,9 @@ public class SID extends UniqueID
         assert !oid.isRoot() && !oid.isTrash() && !oid.isAnchor() : oid.toStringFormal();
         byte[] bs = Arrays.copyOf(oid.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 0);
-        return new SID(bs);
+        SID sid = new SID(bs);
+        assert !sid.isRoot();
+        return sid;
     }
 
     /**
@@ -107,7 +111,9 @@ public class SID extends UniqueID
         assert !sid.isRoot() : sid.toStringFormal();
         byte[] bs = Arrays.copyOf(sid.getBytes(), UniqueID.LENGTH);
         setVersionNibble(bs, 4);
-        return new OID(bs);
+        OID oid = new OID(bs);
+        assert !oid.isAnchor();
+        return oid;
     }
 
     /**
@@ -116,7 +122,9 @@ public class SID extends UniqueID
     public static OID storeSID2anchorOID(SID sid)
     {
         assert !sid.isRoot() : sid.toStringFormal();
-        return new OID(sid.getBytes());
+        OID oid = new OID(sid.getBytes());
+        assert oid.isAnchor();
+        return oid;
     }
 
     /**
@@ -126,7 +134,9 @@ public class SID extends UniqueID
     public static SID anchorOID2storeSID(OID oid)
     {
         assert oid.isAnchor() : oid.toStringFormal();
-        return new SID(oid.getBytes());
+        SID sid = new SID(oid.getBytes());
+        assert !sid.isRoot();
+        return sid;
     }
 
     /**
@@ -138,7 +148,9 @@ public class SID extends UniqueID
         md.update(Util.string2utf(userId.toString()));
         byte[] bs = md.digest(C.ROOT_SID_SALT);
         setVersionNibble(bs, 3);
-        return new SID(bs);
+        SID sid = new SID(bs);
+        assert sid.isRoot();
+        return sid;
     }
 
     @Override
