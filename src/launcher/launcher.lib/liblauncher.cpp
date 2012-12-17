@@ -88,14 +88,21 @@ bool launcher_get_approot(_TCHAR* approot, size_t approot_len, _TCHAR** perrmsg)
     ReadFile(hFile, buf, sizeof(buf)-1, &bytesRead, NULL);
     CloseHandle(hFile);
     buf[bytesRead] = '\0';
-    if (strlen(buf) == 0) {
+
+    // Keep only the first line
+    std::string version(buf);
+    size_t pos = version.find_first_of("\r\n\t ");
+    if (pos != string::npos) {
+        version = version.substr(0, pos);
+    }
+
+    if (version.empty()) {
         SET_ERROR(_T("Could not find the current AeroFS version in %s\n"), path.c_str());
         _tcscpy_s(approot, approot_len, s_approot.c_str());
         return false;
     }
 
     // Append the version folder to the approot
-    std::string version(buf);
     s_approot += _T("\\v_") + tstring(version.begin(), version.end());
 
 #endif
