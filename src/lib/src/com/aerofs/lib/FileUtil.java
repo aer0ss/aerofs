@@ -68,28 +68,6 @@ public abstract class FileUtil
     private static FrequentDefectSender _defectSender = new FrequentDefectSender();
 
     /**
-     * DEPRECATED: This method does not obfuscate the file path. There are currently two places
-     * that call this method and they only do so temporarily. Once those calls are removed this
-     * method should be removed. The offending callers are
-     * {@link com.aerofs.lib.injectable.InjectableDriver#throwIOException(java.io.File)} and
-     * {@link com.aerofs.lib.injectable.InjectableDriver#throwNotFoundOrIOException(java.io.File)}
-     *
-     * Annotate filename with extra infos to make defect reports more informative.
-     *
-     * @param f the file to annotate
-     * @return the String representing the file's extra info
-     */
-    public static String debugString(File f)
-    {
-        String attrParent = getDebuggingAttributesString(f.getParentFile());
-        String attrSelf = getDebuggingAttributesString(f);
-
-        // @deprecated This should NEVER be shown to the user as an error message (attributes? rly?)
-        // Do not obfuscate the path since the string may be displayed to the user as error messages
-        return f.getAbsolutePath() + " (attributes: " + attrParent + "," + attrSelf + ")";
-    }
-
-    /**
      * Returns a string of characters whose positions and values represent attributes of
      * the specified file. For example, a file which exists on the system, is a directory,
      * and can be read and executed will look like:
@@ -468,11 +446,6 @@ public abstract class FileUtil
     public static void logIfNotNFC(String name, String extraLogs)
     {
         reportIfNotNFC(name, extraLogs, true);
-    }
-
-    public static void assertIfNotNFC(String name, String extraLogs)
-    {
-        reportIfNotNFC(name, extraLogs, false);
     }
 
     private static void reportIfNotNFC(String name, String extraLogs, boolean shouldLogOnly)
