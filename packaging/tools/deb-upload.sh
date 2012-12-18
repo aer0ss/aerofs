@@ -50,8 +50,8 @@ ssh $APT_SERVER \
         echo signing \$deb; \
         dpkg-sig --sign builder \$deb; \
     done; \
-    reprepro includedeb precise ~/$DEBS_FOLDER/*.deb; \
     cp ~/$DEBS_FOLDER/*.ver /var/www/ubuntu/$DEST/versions; \
+    reprepro includedeb precise ~/$DEBS_FOLDER/*.deb; \
     rm -f ~/$DEBS_FOLDER/*"
 
 if [ $MODE != "STAGING" ]
