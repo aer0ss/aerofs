@@ -1,7 +1,5 @@
 package com.aerofs.gui.singleuser.tray;
 
-import java.util.Map;
-
 import com.aerofs.gui.history.DlgHistory;
 import com.aerofs.gui.singleuser.preferences.DlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
@@ -12,13 +10,11 @@ import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
 import com.aerofs.ui.UIUtil;
-import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MenuListener;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;

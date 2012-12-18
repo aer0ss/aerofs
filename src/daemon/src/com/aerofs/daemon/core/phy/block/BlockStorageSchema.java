@@ -7,11 +7,9 @@ package com.aerofs.daemon.core.phy.block;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.lib.ContentHash;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.db.TableDumper;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -25,8 +23,6 @@ import static com.aerofs.lib.db.DBUtil.createUniqueIndex;
 
 public class BlockStorageSchema implements ISchema
 {
-    static final Logger l = Util.l(BlockStorageSchema.class);
-
     // mapping between internal name (SOKID) and file index (primary key, auto-increment)
     public static final String
             T_FileInfo              = "bsfi",
@@ -67,7 +63,6 @@ public class BlockStorageSchema implements ISchema
             C_BlockCount_Len        = "bsco_len",  // content length *before* backend encoding
             C_BlockCount_State      = "bsco_state",
             C_BlockCount_Count      = "bsco_count";
-
 
     public enum BlockState
     {
