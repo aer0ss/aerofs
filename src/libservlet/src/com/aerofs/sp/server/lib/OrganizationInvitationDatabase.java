@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
@@ -22,7 +23,9 @@ import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITER;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_ORG_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_OI;
+import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 {
@@ -89,4 +92,26 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 
         return result;
     }
+
+    public boolean hasInvite(UserID invitee, OrganizationID orgID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_OI,
+                C_OI_INVITEE + "=? and " + C_OI_ORG_ID + "=?", "count(*)"));
+
+        ps.setString(1, invitee.toString());
+        ps.setInt(2, orgID.getInt());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            Util.verify(rs.next());
+            int count = rs.getInt(1);
+            assert count == 0 || count == 1;
+            assert !rs.next();
+            return count != 0;
+        } finally {
+            rs.close();
+        }
+    }
+
 }

@@ -3,8 +3,6 @@ package com.aerofs.sp.client;
 import java.net.URL;
 
 import com.aerofs.base.net.IURLConnectionConfigurator;
-import com.aerofs.base.net.NullURLConnectionConfigurator;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.base.net.AbstractHttpRpcClient;

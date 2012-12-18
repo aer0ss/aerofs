@@ -4,42 +4,136 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.UserID;
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExAlreadyInvited;
+import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestSP_OrganizationMovement extends AbstractSPTest
 {
     private static final String _organizationName = "Some Awesome Organization";
 
-    @Test
-    public void shouldMoveUserToNewOrganizationViaEmail()
+    private void addOrganization()
             throws Exception
     {
-        setSessionUser(USER_1);
-
         // Create a new organization (name doesn't matter). The session user will now be an admin
         // of this new organization.
         service.addOrganization(_organizationName);
-        service.inviteToOrganization(USER_2.toString());
+    }
 
+    private void sendInvitation(UserID userID)
+            throws Exception
+    {
+       service.inviteToOrganization(userID.toString());
+    }
+
+    /**
+     * Accept the first inviation returned by the get organization invites call.
+     * @return the ID of the organization that we hvae joined.
+     * @throws Exception
+     */
+    private int acceptFirstInvitation()
+            throws Exception
+    {
         // Switch to the invited user.
-        setSessionUser(USER_2);
         GetOrganizationInvitationsReply pending = service.getOrganizationInvitations().get();
 
-        assertEquals(1, pending.getOrganizationInvitationsList().size());
-
         // Accept the invite.
-        service.acceptOrganizationInvitation(
-                pending.getOrganizationInvitationsList().get(0).getOrganizationId());
+        int orgID = pending.getOrganizationInvitationsList().get(0).getOrganizationId();
+        service.acceptOrganizationInvitation(orgID);
 
-        pending = service.getOrganizationInvitations().get();
+        return orgID;
+    }
+
+    private void acceptSpecificInvitation(int orgID)
+            throws Exception
+    {
+        service.acceptOrganizationInvitation(orgID);
+    }
+
+    @Test
+    public void shouldMoveUserToNewOrganizationViaAcceptOrganizationInvitationCall()
+            throws Exception
+    {
+        setSessionUser(USER_1);
+        addOrganization();
+        sendInvitation(USER_2);
+        setSessionUser(USER_2);
+        acceptFirstInvitation();
 
         // Verify user 2 is indeed in the new organization.
-        assertEquals(0, pending.getOrganizationInvitationsList().size());
-        assertEquals(
-                service.getOrgPreferences().get().getOrganizationName(),
-                _organizationName);
+        assertEquals(service.getOrgPreferences().get().getOrganizationName(), _organizationName);
+
+        // Verify get organization invitations call does not return any new invitations, since the
+        // user has already been moved over.
+        GetOrganizationInvitationsReply invites = service.getOrganizationInvitations().get();
+        assertEquals(0, invites.getOrganizationInvitationsList().size());
+    }
+
+    @Test (expected = ExNoPerm.class)
+    public void shouldThrowExNoPermIfUserIsNotAdmin()
+            throws Exception
+    {
+        setSessionUser(USER_1);
+        service.inviteToOrganization(USER_2.toString());
+    }
+
+    @Test (expected = ExAlreadyInvited.class)
+    public void shouldThrowExAlreadyInvitedIfUserHasAlreadyBeenInvited()
+            throws Exception
+    {
+        try {
+            setSessionUser(USER_1);
+            addOrganization();
+            sendInvitation(USER_2);
+        } catch (Exception e) {
+            assertTrue(false);
+        }
+
+        sendInvitation(USER_2);
+    }
+
+    @Test (expected = ExAlreadyExist.class)
+    public void shouldThrowExAlreadyExistIfUserIsAlreadyAMember()
+            throws Exception
+    {
+        int orgID = 0;
+
+        try {
+            setSessionUser(USER_1);
+            addOrganization();
+            sendInvitation(USER_2);
+            setSessionUser(USER_2);
+            orgID = acceptFirstInvitation();
+        } catch (Exception e) {
+            assertTrue(false);
+        }
+
+        acceptSpecificInvitation(orgID);
+    }
+
+    @Test (expected = ExNoPerm.class)
+    public void shouldThrowExNoPermIfUserNotInvitedToTargetOrganization()
+            throws Exception
+    {
+        int orgID = 0;
+
+        try {
+            setSessionUser(USER_1);
+            addOrganization();
+            sendInvitation(USER_2);
+            setSessionUser(USER_2);
+            orgID = acceptFirstInvitation();
+            setSessionUser(USER_3);
+        } catch (Exception e) {
+            assertTrue(false);
+        }
+
+        acceptSpecificInvitation(orgID);
     }
 }

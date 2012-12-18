@@ -76,20 +76,10 @@ public class OrganizationInvitation
 
     /**
      * Return true if the organization invite exists.
-     *
-     * TODO (MP) use a count instead of an exception here?
      */
     public boolean exists()
         throws SQLException
     {
-        boolean exists = true;
-
-        try {
-            getInviter();
-        } catch (ExNotFound e) {
-            exists = false;
-        }
-
-        return exists;
+        return _db.hasInvite(_invitee, _org);
     }
 }

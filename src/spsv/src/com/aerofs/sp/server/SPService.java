@@ -956,7 +956,7 @@ public class SPService implements ISPService
         OrganizationInvitation invite = _factOrgInvite.create(accepter.id(), organization.id());
 
         // Check to see if the user was actually invited to this organization.
-        if (invite.getInviter().id().toString().isEmpty()) {
+        if (!invite.exists()) {
             throw new ExNoPerm();
         }
 
