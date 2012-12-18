@@ -9,3 +9,9 @@ mysql_sp:
     password: "testpw1"
 
 mysql_endpoint: "localhost"
+
+sp_database: "localhost"
+aerofs_sp_ro_password: "asdfaweaewqr"
+
+sv_database: "localhost"
+aerofs_sv_ro_password: "asdfaweaewqr"

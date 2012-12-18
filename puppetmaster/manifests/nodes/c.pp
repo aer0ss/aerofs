@@ -26,4 +26,6 @@ node "c.aerofs.com" inherits default {
         cacert_location         => $cacert_location
     }
     ### END STAGING SYNCSTAT ###
+
+    include dbtools
 }

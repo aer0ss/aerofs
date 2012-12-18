@@ -8,9 +8,9 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-echo "inferring version number via sp..."
+echo "inferring version number via c.aerofs.com..."
 DEFECT="$1"
-VER=$( ssh sp.aerofs.com "getver $DEFECT" )
+VER=$( ssh c.aerofs.com "getver $DEFECT" )
 
 if [ x"$VER" == "x" ]; then
     echo "no version for defect!"

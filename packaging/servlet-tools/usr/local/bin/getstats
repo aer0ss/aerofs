@@ -4,6 +4,7 @@
 import sys
 import MySQLdb as mdb
 import argparse
+from config import config
 
 class DBLogin:
     def __init__(self, user, host, passwd, db):
@@ -31,17 +32,17 @@ commands = {
 
 # TODO get a config file to pull the database information
 sp_db_login = {
-    'user': 'user',
-    'host': 'host',
-    'passwd':  'passwd',
-    'db': 'db'
+    'user': 'aerofs_sp_ro',
+    'host': config["sp_database"],
+    'passwd': config["aerofs_sp_ro_password"],
+    'db': 'aerofs_sp'
 }
 
 sv_db_login = {
-    'user': 'user',
-    'host': 'host',
-    'passwd': 'passwd',
-    'db': 'db'
+    'user': 'aerofs_sv_ro',
+    'host': config["sv_database"],
+    'passwd': config["aerofs_sv_ro_password"],
+    'db': 'aerofs_sv'
 }
 
 def _create_command_parser():
