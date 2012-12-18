@@ -138,13 +138,7 @@ public class RPC
 
     private static void logRpcTimeout(Endpoint ep, PBCore call, ExTimeout e)
     {
-        l.warn(ep + " " + typeString(call) + " timeout. pulse and try next");
-
-        //
-        // disabled because even at low usage we got over 1500 defects in an hour
-        //
-        // SVClient.logSendDefectAsync(true, "pulse ep:" + ep + " call:" + typeString(call), e);
-        //
+        l.warn(ep + " " + typeString(call) + " timeout. start pulse");
     }
 
     /**
