@@ -70,8 +70,8 @@
                             <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="#">Profile</a></li>
-                            <li class="divider"></li>
+                            <!-- <li><a href="#">Profile</a></li>
+                            <li class="divider"></li> -->
                             <li><a href="${request.route_path('logout')}">Sign Out</a></li>
                         </ul>
                     </div>
