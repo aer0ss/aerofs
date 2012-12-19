@@ -31,14 +31,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.concurrent.Callable;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * BlockStorage backend based on Amazon S3
  *
- * The blocks are transparently compressed/encrypted locally before on the way to remote storage and
- * transparently decrypted/decompressed on the way back.
+ * The blocks are transparently encrypted locally before on the way to remote storage and
+ * transparently decrypted on the way back.
  */
 public class S3Backend implements IBlockStorageBackend
 {
@@ -95,7 +93,6 @@ public class S3Backend implements IBlockStorageBackend
         boolean ok = false;
         try {
             in = new CipherFactory(_secretKey).decryptingHmacedInputStream(in);
-            in = new GZIPInputStream(in);
             ok = true;
             return in;
         } finally {
@@ -114,7 +111,7 @@ public class S3Backend implements IBlockStorageBackend
     }
 
     /**
-     * Compress and encrypt blocks before storing remotely
+     * Encrypt blocks before storing remotely
      *
      * Also need to compute MD5 of the encoded data to comply with S3 API
      */
@@ -144,7 +141,6 @@ public class S3Backend implements IBlockStorageBackend
             out = new DigestOutputStream(out, md);
             out = new BufferedOutputStream(out);
             out = new CipherFactory(_secretKey).encryptingHmacedOutputStream(out);
-            out = new GZIPOutputStream(out);
             ok = true;
             return new EncoderWrapping(out, d);
         } finally {

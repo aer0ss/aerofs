@@ -14,8 +14,8 @@ import com.google.inject.name.Names;
 import java.lang.annotation.Annotation;
 
 /**
- * To enable caching in any backend simply make the backend Module inherit from this class instead
- * of BlockStorageModule
+ * To enable caching in any backend simply add this module to the proxy chain
+ * (see BlockStorageModules.proxy() for details)
  */
 public class CacheBackendModule extends AbstractProxyBackendModule
 {

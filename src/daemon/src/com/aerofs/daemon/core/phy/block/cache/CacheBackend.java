@@ -23,9 +23,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.apache.log4j.Logger;
 
-import javax.inject.Named;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;

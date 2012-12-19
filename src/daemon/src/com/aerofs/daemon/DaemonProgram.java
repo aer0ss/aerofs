@@ -3,6 +3,7 @@ package com.aerofs.daemon;
 import com.aerofs.daemon.core.CoreModule;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules;
 import com.aerofs.daemon.core.phy.block.cache.CacheBackendModule;
+import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
@@ -55,15 +56,26 @@ public class DaemonProgram implements IProgram
         Module multiplicityModule;
         if (L.get().isMultiuser()) {
             multiplicityModule = new MultiuserModule();
-            storageModule = BlockStorageModules.storage(new LocalBackendModule());
+            /**
+             * NB: Do not change the proxy chain in a backward incompatible way unless you write
+             * a DPUT to convert all user data
+             */
+            storageModule = BlockStorageModules.proxy(new LocalBackendModule(),
+                    new GZipBackendModule());
         } else {
             multiplicityModule = new SingleuserModule();
             storageModule = new LinkedStorageModule();
         }
 
         if (Cfg.db().getNullable(Key.S3_BUCKET_ID) != null) {
+            /**
+             * NB: Do not ever change the proxy chain in a backward incompatible way unless you
+             * write a DPUT to convert all (known) user data. Note that you'd have to change the
+             * storage schema on the S3 side to avoid conflicts with unknown user data (i.e blocks
+             * leftover from previous installs of S3 client on the same bucket)
+             */
             storageModule = BlockStorageModules.proxy(new S3BackendModule(),
-                    new CacheBackendModule());
+                    new CacheBackendModule(), new GZipBackendModule());
         }
 
         Stage stage = Stage.PRODUCTION;
