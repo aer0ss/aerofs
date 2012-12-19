@@ -103,10 +103,8 @@ public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
         _highWatermark = db.getInt(Key.HIGH_CHUNK_WATERMARK);
         iss.addListener_(this);
 
-        l.info("low watermark is roughly "
-                + (metrics.getMaxUnicastSize_() * _lowWatermark) + " bytes");
-        l.info("high watermark is roughly "
-                + (metrics.getMaxUnicastSize_() * _highWatermark) + " bytes");
+        l.info("watermark lo ~" + (metrics.getMaxUnicastSize_() * _lowWatermark) + " hi ~" +
+                (metrics.getMaxUnicastSize_() * _highWatermark));
     }
 
     /**
