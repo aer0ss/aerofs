@@ -10,7 +10,6 @@ import java.util.Set;
 
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
-import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.linked.LinkedStorage;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
@@ -58,7 +57,6 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     private MapAlias2Target _alias2target;
     private IPhysicalStorage _ps;
     private IMapSID2SIndex _sid2sidx;
-    private IgnoreList _il;
     private FrequentDefectSender _fds;
     private IPathResolver _pathResolver;
 
@@ -127,14 +125,13 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
     @Inject
     public void inject_(IPhysicalStorage ps, IMetaDatabase mdb, MapAlias2Target alias2target,
-            TransManager tm, IMapSID2SIndex sid2sidx, IgnoreList il, FrequentDefectSender fds,
+            TransManager tm, IMapSID2SIndex sid2sidx, FrequentDefectSender fds,
             StoreDeletionOperators storeDeletionOperators, IPathResolver pathResolver)
     {
         _ps = ps;
         _mdb = mdb;
         _alias2target = alias2target;
         _sid2sidx = sid2sidx;
-        _il = il;
         _fds = fds;
         _pathResolver = pathResolver;
 
@@ -359,9 +356,6 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         assert oaParent.isDir();
         FileUtil.logIfNotNFC(name, soid.toString());
 
-        // The linker should have prevented this OA from being created
-        assert !_il.isIgnored_(name) : name;
-
         _mdb.createOA_(sidx, oid, oidParent, name, type, flags, t);
 
         _cacheOA.invalidate_(soid);
@@ -441,8 +435,6 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
         // verify the encoding of "name" is NFC
         FileUtil.logIfNotNFC(name, oa + " " + oaParent);
-
-        assert !_il.isIgnored_(name) : oa + " -> " + name;
 
         Path pathFrom = resolve_(oa);
         Path pathTo = resolve_(oaParent).append(name);
