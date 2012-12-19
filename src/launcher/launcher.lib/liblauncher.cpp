@@ -23,6 +23,11 @@
 #include <mach-o/dyld.h> /* For _NSGetExecutablePath() */
 #endif
 
+#ifdef __GNUC__
+// Disable the warning for the %hs format specifier
+#pragma GCC diagnostic ignored "-Wformat"
+#endif
+
 using namespace std;
 
 _TCHAR g_errmsg[512];
@@ -254,7 +259,9 @@ int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
 
     jclass cls = env->FindClass(class_name);
     if (!cls) {
-        SET_ERROR(_T("Could not load class '%s'\n"), class_name);
+        // We have to use %hs because class_name is char* but the error string is wchar on Windows
+        // This creates a warning with gcc (but it works as expected)
+        SET_ERROR(_T("Could not load class '%hs'\n"), class_name);
         if (env->ExceptionOccurred()) {
             env->ExceptionDescribe();
         }
@@ -264,7 +271,7 @@ int launch(JNIEnv* env, const char* class_name, _TCHAR* argv[])
     // Get a pointer to main()
     jmethodID mid = env->GetStaticMethodID(cls, "main", "([Ljava/lang/String;)V");
     if (mid == NULL) {
-        SET_ERROR(_T("Could not find method 'static void main(String[] args)' in class '%s'\n"),
+        SET_ERROR(_T("Could not find method 'static void main(String[] args)' in class '%hs'\n"),
                   class_name);
         if (env->ExceptionOccurred()) {
             env->ExceptionDescribe();
