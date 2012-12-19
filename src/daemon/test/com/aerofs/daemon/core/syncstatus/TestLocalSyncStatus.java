@@ -61,7 +61,6 @@ public class TestLocalSyncStatus extends AbstractTest
     @Mock DescendantStores dss;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock AggregateSyncStatus assc;
-    @Mock IgnoreList il;
     @Mock FrequentDefectSender fds;
     @Mock StoreDeletionOperators sdo;
     @Mock SingleuserStores sss;
@@ -92,7 +91,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
         DirectoryService ds = new DirectoryService();
         SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sidx2sid);
-        ds.inject_(ps, mdb, alias2target, tm, sm, il, fds, sdo, pathResolver);
+        ds.inject_(ps, mdb, alias2target, tm, sm, fds, sdo, pathResolver);
         lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdo, dss);
     }
 
