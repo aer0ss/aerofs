@@ -10,6 +10,10 @@ import java.net.NetworkInterface;
 
 public interface ILinkStateListener
 {
+    /**
+     * WARNING never pause during execution of this method
+     * e.g. tk.pause_(Cfg.timeout(), reason);
+     */
     void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
             ImmutableSet<NetworkInterface> removed, ImmutableSet<NetworkInterface> current,
             ImmutableSet<NetworkInterface> previous);

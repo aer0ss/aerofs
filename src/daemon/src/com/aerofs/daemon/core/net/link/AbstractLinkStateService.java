@@ -36,7 +36,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
     private final Notifier<ILinkStateListener> _notifier = Notifier.create();
     private ImmutableSet<NetworkInterface> _ifaces = ImmutableSet.of();
     // whether we are told to say that all interfaces on the machine are down
-    private boolean _markedDown;
+    private volatile boolean _markedDown;
 
     /**
      * The implementation of this method should call the runnable on the thread where other methods
@@ -231,11 +231,6 @@ public abstract class AbstractLinkStateService implements ILinkStateService
     public final void removeListener_(ILinkStateListener listener)
     {
         _notifier.removeListener(listener);
-    }
-
-    public final boolean isUp_()
-    {
-        return !_ifaces.isEmpty();
     }
 
     /**

@@ -30,33 +30,19 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
     private final SIndex _sidx;
     private final int _seq;
 
-    private final ILinkStateListener _l = new ILinkStateListener()
-    {
-        @Override
-        public void onLinkStateChanged_(ImmutableSet<NetworkInterface> added,
-                ImmutableSet<NetworkInterface> removed,
-                final ImmutableSet<NetworkInterface> current,
-                final ImmutableSet<NetworkInterface> previous)
-        {
-            if (previous.isEmpty() && !current.isEmpty()) performAntiEntropy_();
-        }
-    };
-
     public static class Factory
     {
         private final CoreScheduler _sched;
-        private final LinkStateService _lss;
         private final GetVersCall _pgvc;
         private final To.Factory _factTo;
         private final MapSIndex2Store _sidx2s;
         private final TokenManager _tokenManager;
 
         @Inject
-        public Factory(GetVersCall pgvc, LinkStateService lss, MapSIndex2Store sidx2s,
+        public Factory(GetVersCall pgvc, MapSIndex2Store sidx2s,
                 CoreScheduler sched, To.Factory factTo, TokenManager tokenManager)
         {
             _pgvc = pgvc;
-            _lss = lss;
             _sched = sched;
             _factTo = factTo;
             _sidx2s = sidx2s;
@@ -74,9 +60,6 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         _f = f;
         _sidx = sidx;
         _seq = seq;
-
-        // IMPORTANT: we know that in our implementation, listeners are called on the core thread
-        _f._lss.addListener_(_l, sameThreadExecutor());
     }
 
     @Override
@@ -89,13 +72,6 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
      * @return whether to continue this anti-entropy instance in the future
      */
     private boolean performAntiEntropy_()
-    {
-        boolean ret = performAntiEntropyImpl_();
-        if (!ret) _f._lss.removeListener_(_l);
-        return ret;
-    }
-
-    private boolean performAntiEntropyImpl_()
     {
         Store s = _f._sidx2s.getNullable_(_sidx);
 
@@ -110,9 +86,6 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         } else if (!s.hasOnlinePotentialMemberDevices_()) {
             l.debug(s + ": no online devs. return");
             return false;
-
-        } else if (!_f._lss.isUp_()) {
-            l.debug(s + ": link is down. skip");
 
         } else {
             To to = _f._factTo.create_(_sidx, To.RANDCAST);
