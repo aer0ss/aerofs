@@ -47,6 +47,13 @@ public class SID extends UniqueID
         assert !(id instanceof OID);
     }
 
+    public SID(String str, int start, int end) throws ExFormatError, ExInvalidID
+    {
+        super(str, start, end);
+
+        if (!isValid()) throw new ExInvalidID();
+    }
+
     public SID(byte[] bs)
     {
         super(bs);
@@ -59,10 +66,15 @@ public class SID extends UniqueID
         assertIsValid();
     }
 
-    private void assertIsValid()
+    private boolean isValid()
     {
         int v = getVersionNibble(getBytes());
-        assert (v == 3 || v == 0) : toStringFormal();
+        return (v == 3 || v == 0);
+    }
+
+    private void assertIsValid()
+    {
+        assert isValid() : toStringFormal();
     }
 
     public boolean isRoot()

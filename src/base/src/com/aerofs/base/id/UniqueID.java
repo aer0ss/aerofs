@@ -41,6 +41,17 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
         bs[VERSION_BYTE] |= value << VERSION_SHIFT;
     }
 
+    /**
+     * UniqueID subclasses may restrict the range of valid values. When such IDs are constructed
+     * from internal values, asserts should be used to enforce the restrictions. However, when such
+     * IDs are received from the outside the network, it should be possible to simply ignore invalid
+     * IDs to avoid DoS by remote peers so exceptions should be prefered in that case.
+     */
+    public static class ExInvalidID extends Exception
+    {
+        private static final long serialVersionUID = 0L;
+    }
+
     public static final UniqueID ZERO = new UniqueID(new byte[LENGTH]);
 
     private final byte[] _bs;

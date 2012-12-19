@@ -11,7 +11,7 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 
 import java.util.regex.Pattern;
 
@@ -124,7 +124,12 @@ public abstract class ID
         }
 
         // FIXME: we should not use a string store address - instead we should use a binary sid
-        return new SID(new UniqueID(muc, 0, at));
+        try {
+            return new SID(muc, 0, at);
+        } catch (ExInvalidID e) {
+            // TODO: propagate ExInvalidID upwards for special handling?
+            throw new ExFormatError("invalid SID");
+        }
     }
 
     public static String sid2muc(SID sid)

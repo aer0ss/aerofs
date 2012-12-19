@@ -6,7 +6,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UniqueID.ExInvalidID;
 
 /**
  * the jid string can be either of the two forms
@@ -100,7 +100,12 @@ public class ID {
         }
 
         // FIXME: we should not use a string store address - instead we should use a binary sid
-        return new SID(new UniqueID(muc, 0, at));
+        try {
+            return new SID(muc, 0, at);
+        } catch (ExInvalidID e) {
+            // TODO: propagate ExInvalidID upwards for special handling?
+            throw new ExFormatError("invalid SID");
+        }
     }
 
     public static String sid2muc(SID sid)
