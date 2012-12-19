@@ -195,8 +195,11 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
                     rs.close();
                 }
 
-                // make sure there was exactly one root store candidate
-                assert rootCount == 1 : rootCount;
+                // Make sure there was exactly one root store candidate. If the user updates AeroFS
+                // from a very old version, the core may not have created the root store yet.
+                // Therefore, we also allow zero root stores.
+                //
+                assert rootCount == 0 || rootCount == 1 : rootCount;
 
                 // update bloom filters (sender/collector)
                 for (Entry<SIndex, Map<OID, OID>> store : anchorFixes.entrySet()) {
