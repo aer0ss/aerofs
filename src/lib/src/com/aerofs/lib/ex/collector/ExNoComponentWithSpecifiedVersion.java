@@ -7,20 +7,9 @@ public class ExNoComponentWithSpecifiedVersion extends AbstractExPermanentError
 {
     private static final long serialVersionUID = 1L;
 
-
     public ExNoComponentWithSpecifiedVersion()
     {
         super();
-    }
-
-    public ExNoComponentWithSpecifiedVersion(String string)
-    {
-        super(string);
-    }
-
-    public ExNoComponentWithSpecifiedVersion(Exception cause)
-    {
-        super(cause);
     }
 
     public ExNoComponentWithSpecifiedVersion(PBException pb)

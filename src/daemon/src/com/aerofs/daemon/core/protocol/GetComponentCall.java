@@ -89,7 +89,7 @@ public class GetComponentCall
         // Several of the version control and physical storage classes require a branch, not socid.
         // We know that downloads will only ever act on the master branch.
         SOCKID sockid = new SOCKID(socid, KIndex.MASTER);
-        l.info("req gcc for " + socid);
+        if (l.isDebugEnabled()) l.debug("req gcc for " + socid);
 
         Version vLocal = _nvc.getLocalVersion_(sockid);
 
@@ -178,7 +178,7 @@ public class GetComponentCall
         if (!_ds.isPresent_(k) &&
             !(k.cid().isMeta() && _ds.hasAliasedOA_(k.soid()))) {
             l.debug(k + " not present. Throwing");
-            throw new ExNoComponentWithSpecifiedVersion(k + " not present");
+            throw new ExNoComponentWithSpecifiedVersion();
         }
 
         // check permissions
@@ -196,7 +196,7 @@ public class GetComponentCall
             if (l.isDebugEnabled()) {
                 l.debug("r " + vRemote + " >= l " + vLocal + ". Throw no_new_update");
             }
-            throw new ExNoComponentWithSpecifiedVersion(k + " " + vRemote);
+            throw new ExNoComponentWithSpecifiedVersion();
         }
 
         // the kml_version field is used only as a hint for the receiver to

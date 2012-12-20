@@ -289,9 +289,8 @@ public class Download
             } catch (ExNoComponentWithSpecifiedVersion e) {
                 reenqueue(started);
                 if (l.isInfoEnabled()) {
-                    l.info(_socid + ":recv from " + replier + " "
-                            + Util.e(e, ExNoComponentWithSpecifiedVersion.class) + " & kml ="
-                            + _f._nvc.getKMLVersion_(_socid));
+                    l.info(_socid + ": " + replier + " "
+                            + Util.e(e, ExNoComponentWithSpecifiedVersion.class));
                 }
                 avoidDevice_(replier, e);
 
