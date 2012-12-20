@@ -5,17 +5,17 @@
 
 package com.aerofs.daemon.transport.xmpp.routing;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.xmpp.IPipe;
-import com.aerofs.base.id.DID;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.util.Set;
 
-import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.BADBAD;
+import static com.aerofs.daemon.core.net.Transports.TransportImplementation.NOOPTP;
 import static com.aerofs.proto.Files.PBDumpStat;
 
 /**
@@ -50,9 +50,9 @@ public class ErrorPipe implements IPipe
     }
 
     @Override
-    public int pref()
+    public int rank()
     {
-        return _bid.pref();
+        return _bid.rank();
     }
 
     @Override
@@ -128,6 +128,10 @@ public class ErrorPipe implements IPipe
 
     /**
      * Convenience static instance of {@link ErrorPipe}
+     * FIXME (AG): this is broken because I've conflated the concept of pipes along with transports!
+     * Basically, a pipe is an _internal_ construct to the xmpp routing mechanism, while transport
+     * ids and rankings are at a different layer of abstraction entirely. This has no effect on
+     * functionality, but it is broken from a design perspective.
      */
-    public static final ErrorPipe ERROR_PIPE = new ErrorPipe(BADBAD.id(), BADBAD.pref());
+    public static final ErrorPipe ERROR_PIPE = new ErrorPipe(NOOPTP.id(), NOOPTP.rank());
 }

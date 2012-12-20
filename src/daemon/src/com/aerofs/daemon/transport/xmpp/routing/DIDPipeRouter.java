@@ -127,10 +127,10 @@ class DIDPipeRouter<T extends IPipe>
                 //
 
                 if (cke.set_()) {
-                    assert cke.p_().pref() == p.pref() && cke.connSeqNum_() == curPipeConnSeqNum :
+                    assert cke.p_().rank() == p.rank() && cke.connSeqNum_() == curPipeConnSeqNum :
                         (_pream + " mismatched cke params " +
                          "expect: p:" + p.id() + " csn:" + curPipeConnSeqNum +
-                         "actual: p:" + cke.p_().pref() + " csn:" + cke.connSeqNum_());
+                         "actual: p:" + cke.p_().rank() + " csn:" + cke.connSeqNum_());
                 } else {
                     cke.set_(p, curPipeConnSeqNum);
                 }
@@ -169,7 +169,7 @@ class DIDPipeRouter<T extends IPipe>
         connectToBetters_();
 
         if (origcke != null && cke.set_()) {
-            assert cke.p_().pref() != worstPossiblePref() :
+            assert cke.p_().rank() != worstPossiblePref() :
                 (_pream + " cke set_ incorrectly to worst pipe");
 
             IPipe oldpipe = cke.p_();
@@ -277,7 +277,7 @@ class DIDPipeRouter<T extends IPipe>
         boolean added = _connected.add(p);
         assert added : (_pream + " fail add p:" + p.id());
 
-        DIDPipeConnectionCounter pcc = _available.get(p.pref());
+        DIDPipeConnectionCounter pcc = _available.get(p.rank());
         assert pcc != null : (_pream + " no pcc p:" + p.id());
 
         pcc.increment_(); // don't have to put it back into the map
@@ -308,7 +308,7 @@ class DIDPipeRouter<T extends IPipe>
      */
     private int getConnSeqNum(IPipe p)
     {
-        DIDPipeConnectionCounter pcc = _available.get(p.pref());
+        DIDPipeConnectionCounter pcc = _available.get(p.rank());
         assert pcc != null : (_pream + " invalid p:" + p.id());
 
         return pcc.connSeqNum_();
@@ -319,7 +319,7 @@ class DIDPipeRouter<T extends IPipe>
      */
     private int bestConnectedPref_()
     {
-        return _connected.first().pref();
+        return _connected.first().rank();
     }
 
     /**
@@ -343,7 +343,7 @@ class DIDPipeRouter<T extends IPipe>
      */
     private static int worstPossiblePref()
     {
-        return ERROR_PIPE.pref();
+        return ERROR_PIPE.rank();
     }
 
     /**
@@ -354,7 +354,7 @@ class DIDPipeRouter<T extends IPipe>
      */
     private void assertValidPipe(IPipe p)
     {
-        assert p.pref() != worstPossiblePref() : (_pream + " invalid p:" + p.id());
+        assert p.rank() != worstPossiblePref() : (_pream + " invalid p:" + p.id());
     }
 
     /**
@@ -370,7 +370,7 @@ class DIDPipeRouter<T extends IPipe>
         SortedMap<Integer, DIDPipeConnectionCounter> sorted = new TreeMap<Integer, DIDPipeConnectionCounter>();
         for (IPipe p : pipes) {
             DIDPipeConnectionCounter pcc = new DIDPipeConnectionCounter(p);
-            DIDPipeConnectionCounter old = sorted.put(p.pref(), pcc);
+            DIDPipeConnectionCounter old = sorted.put(p.rank(), pcc);
 
             assert old == null: (_pream + " pcc already exists p:" + p.id());
         }
@@ -452,7 +452,7 @@ class DIDPipeRouter<T extends IPipe>
     private final DID _did;
     private final String _pream;
     private final IScheduler _sched;
-    private final SortedMap<Integer, DIDPipeConnectionCounter> _available; // pref -> DIDPipeConnectionCounter
+    private final SortedMap<Integer, DIDPipeConnectionCounter> _available; // rank -> DIDPipeConnectionCounter
     private final SortedSet<IPipe> _connected = new TreeSet<IPipe>(new DefaultComparator());
 
     private boolean _connecting = false;

@@ -76,9 +76,9 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
     /**
      * Constructor
      * @param id external name of <code>ZephyrClientManager</code>
-     * @param pref how <code>ZephyrClientManager</code> should be ranked in a
+     * @param rank how <code>ZephyrClientManager</code> should be ranked in a
      * set of {@link com.aerofs.daemon.transport.xmpp.IPipe} objects
-     * @param pc {@link XMPP} object that owns this ZephyrClientManager
+     * @param pc {@link IPipeController} object that owns this ZephyrClientManager
      * <strong>XMPP object is the one into which we will enqueue outgoing
      * @param ns {@link INetworkStats} object in which bytes transmitted and
      * received via Zephyr will be stored
@@ -86,9 +86,9 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
      * signalling channel Zephyr will use to communicate <code>zid</code>, etc.
      * to remotes
      */
-    public ZephyrClientManager(String id, int pref, IPipeController pc, INetworkStats ns, ISignallingChannel sc)
+    public ZephyrClientManager(String id, int rank, IPipeController pc, INetworkStats ns, ISignallingChannel sc)
     {
-        _bid = new BasicIdentifier(id, pref);
+        _bid = new BasicIdentifier(id, rank);
         _pc = pc;
         _ns = ns;
         _sc = sc;
@@ -150,9 +150,9 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
     }
 
     @Override
-    public int pref()
+    public int rank()
     {
-        return _bid.pref();
+        return _bid.rank();
     }
 
     @Override

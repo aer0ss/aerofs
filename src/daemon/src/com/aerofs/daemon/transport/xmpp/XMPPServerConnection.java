@@ -5,9 +5,9 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.Base64;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.base.Base64;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;
@@ -41,16 +41,16 @@ public class XMPPServerConnection implements IDumpStatMisc
         //XMPPConnection.DEBUG_ENABLED = true;
     }
 
-    XMPPServerConnection(String resource, IXMPPServerConnectionWatcher listener)
+    public XMPPServerConnection(String resource, IXMPPServerConnectionWatcher watcher)
     {
         _resource = resource;
-        _watcher = listener;
+        _watcher = watcher;
     }
 
     synchronized boolean ready()
     {
         return _conn != null && _conn.isConnected() && _conn.isAuthenticated();
-   }
+    }
 
     /**
      * @throws XMPPException if not connected to the server
@@ -64,7 +64,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         return c;
     }
 
-    void linkStateChanged(Set<NetworkInterface> rem, Set<NetworkInterface> cur)
+    public void linkStateChanged(Set<NetworkInterface> cur)
     {
         boolean up = !XMPP.allLinksDown(cur);
 
@@ -77,8 +77,8 @@ public class XMPPServerConnection implements IDumpStatMisc
         // leave it around and let it get disconnected at its own sweet pace
         //
 
-        XMPPConnection c = null;
-        boolean connected = false;
+        XMPPConnection c;
+        boolean connected;
         synchronized (this) {
             c = _conn;
             connected = (c != null && c.isConnected());
@@ -102,8 +102,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
         InetSocketAddress address = Param.xmppAddress();
-        ConnectionConfiguration cc = new ConnectionConfiguration(
-                address.getHostName(), address.getPort());
+        ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
         cc.setServiceName(DaemonParam.XMPP.SERVER_DOMAIN);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
@@ -161,7 +160,8 @@ public class XMPPServerConnection implements IDumpStatMisc
             }, Exception.class);
     }
 
-    private void connect_() throws XMPPException
+    private void connect_()
+        throws XMPPException
     {
         try {
             connectImpl_();
@@ -174,25 +174,44 @@ public class XMPPServerConnection implements IDumpStatMisc
     // with the xmpp library. and access to _conn need synchronization, too.
     private void connectImpl_() throws XMPPException
     {
+        //
+        // check if we have a valid connection already
+        //
+
         if (_conn != null && _conn.isAuthenticated()) {
             l.warn("beginning process to replace old connection");
         }
+
+        //
+        // create a new connection and log in
+        //
 
         XMPPConnection c = newConnection();
         l.info("connecting to " + c.getHost() + ":" + c.getPort());
         c.connect();
 
-        l.info("logging in as " + _user + '@' + c.getServiceName() + '/' + _resource);
-
+        l.info("logging in as " + ID.did2FormAJid(Cfg.did(), _resource)); // done to show relationship
         c.login(_user, shaedXMPP(), _resource);
-
         l.info("logged in");
+
+        // for legacy reasons (basically I don't have time to refactor the code) Multicast
+        // accesses conn directly. Since Multicast runs on a different thread the moment we
+        // assign a new value to _conn it _may_ be accessed by Multicast (i.e. even before
+        // a listener is added
+
         _conn = c; // this is the point at which changes are visible
+
+        //
+        // notify watcher of connection
+        //
 
         // I would prefer to only set _conn _after_ calling _watcher.connected, but apparently
         // Multicast.java uses conn() internally...
+
         try {
-            if (_watcher != null) _watcher.xmppServerConnected(c);
+            if (_watcher != null) {
+                _watcher.xmppServerConnected(c);
+            }
         } catch (XMPPException e) {
             _conn = null;
             throw e;
@@ -200,6 +219,10 @@ public class XMPPServerConnection implements IDumpStatMisc
             _conn = null;
             throw e;
         }
+
+        //
+        // add disconnection listener
+        //
 
         // FIXME: we need to verify that the connection is actually valid prior to adding a listener
         // we don't rely on Smack API's connect capability as experiments
@@ -230,8 +253,8 @@ public class XMPPServerConnection implements IDumpStatMisc
                 synchronized (XMPPServerConnection.this) {
                     if (_conn == _c) {
                         try {
+                            l.info("notifying listeners of disconnection");
                             if (_watcher != null) {
-                                l.info("notifying listeners of disconnection");
                                 _watcher.xmppServerDisconnected();
                             }
                         } finally {
@@ -299,7 +322,7 @@ public class XMPPServerConnection implements IDumpStatMisc
     public static String shaedXMPP()
     {
         if (s_shaedXmpp == null) {
-            s_shaedXmpp = Base64.encodeBytes(SecUtil.hash(Cfg.scrypted(), XMPP_SERVER_SALT));
+            s_shaedXmpp = Base64.encodeBytes(SecUtil.hash(Cfg.scrypted(), XMPP_PASSWORD_SALT));
         }
         return s_shaedXmpp;
     }
@@ -311,12 +334,12 @@ public class XMPPServerConnection implements IDumpStatMisc
     private final IXMPPServerConnectionWatcher _watcher;
     private final String _user = ID.did2user(Cfg.did());
 
-    private static String s_shaedXmpp; // sha256(scrypt(p|u)|XMPP_SERVER_SALT)
+    private static String s_shaedXmpp; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
 
     private static final Logger l = Util.l(XMPPServerConnection.class);
 
     // 64 bytes
-    private static final byte[] XMPP_SERVER_SALT = {
+    private static final byte[] XMPP_PASSWORD_SALT = {
         (byte)0xcc, (byte)0xd9, (byte)0x82, (byte)0x0d,
         (byte)0xf2, (byte)0xf1, (byte)0x4a, (byte)0x56,
         (byte)0x0a, (byte)0x70, (byte)0x28, (byte)0xbe,

@@ -1,22 +1,28 @@
 package com.aerofs.lib.cfg;
 
+import com.aerofs.base.Base64;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -108,13 +114,25 @@ public class Cfg
 
         _portbase = readPortbase();
         _rootSID = SID.rootSID(_user);
-        _useDM = !new File(rtRoot, C.NODM).exists();
-        _useTCP = !new File(rtRoot, C.NOTCP).exists();
-        _useXMPP = !new File(rtRoot, C.NOXMPP).exists();
-        _useAutoUpdate = !new File(rtRoot, C.NOAUTOUPDATE).exists();
-        _isAggressiveCheckingEnabled = new File(rtRoot, C.AGGRESSIVE_CHECKS).exists();
+        _useDM = disabledByFile(rtRoot, C.NODM);
+        _useTCP = disabledByFile(rtRoot, C.NOTCP);
+        _useXMPP = disabledByFile(rtRoot, C.NOXMPP);
+        _useJingle = disabledByFile(rtRoot, C.NOSTUN);
+        _useZephyr = disabledByFile(rtRoot, C.NOZEPHYR);
+        _useAutoUpdate = disabledByFile(rtRoot, C.NOAUTOUPDATE);
+        _isAggressiveCheckingEnabled = enabledByFile(rtRoot, C.AGGRESSIVE_CHECKS);
 
         _inited = true;
+    }
+
+    private static boolean disabledByFile(String rtRoot, String filename)
+    {
+        return !new File(rtRoot, filename).exists();
+    }
+
+    private static boolean enabledByFile(String rtRoot, String filename)
+    {
+        return new File(rtRoot, filename).exists();
     }
 
     /**

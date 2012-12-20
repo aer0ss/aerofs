@@ -6,32 +6,21 @@
 
 package com.aerofs.daemon.transport.tcpmt;
 
-import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
-import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
-import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
-
-import java.io.ByteArrayInputStream;
-import java.io.PrintStream;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.List;
-import java.util.Set;
-
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.event.net.EIPresence;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
-
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.IEvent;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
+import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
+import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.daemon.transport.lib.HdMaxcastMessage;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.ITransportImpl;
@@ -43,20 +32,31 @@ import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.daemon.transport.xmpp.IPipe;
-import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.base.id.SID;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
-import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.proto.Transport.PBTCPPong;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import com.google.common.collect.Lists;
+import org.apache.log4j.Logger;
+
+import java.io.ByteArrayInputStream;
+import java.io.PrintStream;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.List;
+import java.util.Set;
+
+import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
+import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
+import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 
 public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
 {
@@ -67,12 +67,14 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     private Unicast _ucast;
     private volatile boolean _ready;
 
+    private final String _id;
+    private final int _pref;
     private final MaxcastFilterReceiver _mcfr;
     private final ARP _arp = new ARP();
     private final Multicast _mcast = new Multicast(this);
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
     private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
-    private final Scheduler _sched = new Scheduler(_q, id());
+    private final Scheduler _sched;
     private final EventDispatcher _disp = new EventDispatcher();
     private final HostnameMonitor _hm = new HostnameMonitor(this);
     private final StreamManager _sm = new StreamManager();
@@ -80,8 +82,12 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     private final Stores _ss = new Stores(this, _arp, _hm);
     private final PulseManager _pm = new PulseManager();
 
-    public TCP(IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
+    public TCP(String id, int pref, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
     {
+        _id = id;
+        _pref = pref;
+
+        _sched = new Scheduler(_q, id()); // can't initialize above because id() will return null
         _sink = sink;
         _mcfr = mcfr;
 
@@ -110,11 +116,14 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         _ucast = new Unicast(this, _arp, _ss, port, internalPort);
 
         // must be called *after* the Unicast object is initialized.
+
         TPUtil.registerCommonHandlers(this);
+        TPUtil.registerMulticastHandler(this);
 
         _mcast.init_();
 
-        _sched.schedule(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling()
+        {
             @Override
             public void handle_()
             {
@@ -145,6 +154,12 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
             }
 
         }, ARP_GC_INTERVAL);
+    }
+
+    @Override
+    public boolean supportsMulticast()
+    {
+        return true;
     }
 
     /**
@@ -225,7 +240,7 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     @Override
     public String id()
     {
-        return C.TRANSPORT_ID_TCP;
+        return _id;
     }
 
     @Override
@@ -235,9 +250,9 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
     }
 
     @Override
-    public int pref()
+    public int rank()
     {
-        return 0;
+        return _pref;
     }
 
     @Override

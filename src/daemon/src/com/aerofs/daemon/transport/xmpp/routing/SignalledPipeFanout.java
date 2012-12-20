@@ -14,12 +14,15 @@ import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
+import com.google.common.collect.ImmutableSet;
 import org.apache.log4j.Logger;
-import javax.annotation.Nullable;
 
+import javax.annotation.Nullable;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static com.aerofs.proto.Files.PBDumpStat;
 
@@ -29,24 +32,15 @@ import static com.aerofs.proto.Files.PBDumpStat;
  */
 public class SignalledPipeFanout implements IPipeDebug
 {
-    /**
-     *
-     * @param sched
-     * @param pipes
-     */
     public SignalledPipeFanout(IScheduler sched, Set<ISignalledPipe> pipes)
     {
         assert sched != null && pipes != null && pipes.size() > 0 : ("invalid args");
 
         _pream = "spf:";
         _sched = sched;
-        _pipes = Collections.unmodifiableSet(new HashSet<ISignalledPipe>(pipes));
+        _pipes = ImmutableSet.copyOf(pipes);
     }
 
-    /**
-     *
-     * @throws Exception
-     */
     public void init_() throws Exception
     {
         for (IPipe p : _pipes) {
@@ -57,9 +51,6 @@ public class SignalledPipeFanout implements IPipeDebug
         l.info(_pream + " inited");
     }
 
-    /**
-     *
-     */
     public void start_()
     {
         for (IPipe p : _pipes) {
@@ -70,10 +61,6 @@ public class SignalledPipeFanout implements IPipeDebug
         l.info(_pream + " started");
     }
 
-    /**
-     *
-     * @return
-     */
     public boolean ready()
     {
         boolean oneready = false;
@@ -91,12 +78,6 @@ public class SignalledPipeFanout implements IPipeDebug
         return oneready;
     }
 
-    /**
-     *
-     * @param rem
-     * @param cur
-     * @throws ExNoResource
-     */
     public void linkStateChanged_(Set<NetworkInterface> rem, Set<NetworkInterface> cur)
         throws ExNoResource
     {
@@ -106,10 +87,6 @@ public class SignalledPipeFanout implements IPipeDebug
         }
     }
 
-    /**
-     *
-     * @throws ExNoResource
-     */
     public void xmppServerConnected_()
         throws ExNoResource
     {
@@ -119,10 +96,6 @@ public class SignalledPipeFanout implements IPipeDebug
         }
     }
 
-    /**
-     *
-     * @throws ExNoResource
-     */
     public void xmppServerDisconnected_()
         throws ExNoResource
     {
@@ -132,11 +105,6 @@ public class SignalledPipeFanout implements IPipeDebug
         }
     }
 
-    /**
-     *
-     * @param did
-     * @param p
-     */
     public void peerConnected_(DID did, IPipe p)
     {
         l.info(_pream + " p:" + p.id() + " +d:" + did);
@@ -144,15 +112,10 @@ public class SignalledPipeFanout implements IPipeDebug
         // it is possible for peers to connect without a packet being sent from
         // us first
 
-        DIDPipeRouter<? extends IPipe> dpr = getorcreate(did);
+        DIDPipeRouter<? extends IPipe> dpr = getOrCreate(did);
         dpr.peerConnected_(p);
     }
 
-    /**
-     *
-     * @param did
-     * @param p
-     */
     public void peerDisconnected_(DID did, IPipe p)
     {
         l.info(_pream + " p:" + p.id() + " -d:" + did);
@@ -176,12 +139,6 @@ public class SignalledPipeFanout implements IPipeDebug
         // IMPORTANT - don't remove the dpr! FIXME: find a way to purge dprs
     }
 
-    /**
-     *
-     * @param did
-     * @param ex
-     * @throws ExNoResource
-     */
     public void disconnect_(DID did, Exception ex)
         throws ExNoResource
     {
@@ -193,20 +150,10 @@ public class SignalledPipeFanout implements IPipeDebug
         }
     }
 
-    /**
-     *
-     * @param did
-     * @param wtr
-     * @param pri
-     * @param bss
-     * @param cke
-     * @return
-     * @throws Exception
-     */
     public Object send_(DID did, @Nullable IResultWaiter wtr, Prio pri, byte[][] bss, @Nullable Object cke)
         throws Exception
     {
-        DIDPipeRouter<? extends IPipe> dpr = getorcreate(did);
+        DIDPipeRouter<? extends IPipe> dpr = getOrCreate(did);
         return dpr.send_(wtr, pri, bss, cke);
     }
 
@@ -267,7 +214,7 @@ public class SignalledPipeFanout implements IPipeDebug
      * should be retrieved or created
      * @return a valid <code>DIDPipeRouter</code>
      */
-    DIDPipeRouter<? extends IPipe> getorcreate(DID did)
+    DIDPipeRouter<? extends IPipe> getOrCreate(DID did)
     {
         if (!_peers.containsKey(did)) {
             _peers.put(did, new DIDPipeRouter<ISignalledPipe>(did, _sched, _pipes));
@@ -282,7 +229,7 @@ public class SignalledPipeFanout implements IPipeDebug
 
     private final String _pream;
     private final IScheduler _sched;
-    private final Set<ISignalledPipe> _pipes;
+    private final ImmutableSet<ISignalledPipe> _pipes;
     private final Map<DID, DIDPipeRouter<? extends IPipe>> _peers = new HashMap<DID, DIDPipeRouter<? extends IPipe>>();
 
     private static final Logger l = Util.l(SignalledPipeFanout.class);

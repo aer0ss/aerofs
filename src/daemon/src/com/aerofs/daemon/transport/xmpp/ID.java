@@ -1,12 +1,17 @@
 package com.aerofs.daemon.transport.xmpp;
 
-import java.util.regex.Pattern;
-
-import com.aerofs.base.id.DID;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
+import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.lib.Util;
+import org.apache.log4j.Logger;
+
+import java.util.regex.Pattern;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.System.arraycopy;
 
 /**
  * the jid string can be either of the two forms
@@ -15,11 +20,13 @@ import com.aerofs.base.id.UniqueID.ExInvalidID;
  *  Form B: <chatroom>@c.aerofs.com/<did>
  */
 
-public class ID {
+public abstract class ID
+{
+    private static final Logger l = Util.l(ID.class);
 
-    public static String resource(boolean ucast)
+    private ID()
     {
-        return ucast ? "u" : "m";
+        // private to enforce uninstantiability
     }
 
     public static String did2user(DID did)
@@ -33,48 +40,73 @@ public class ID {
     }
 
     /**
-     * @return form A jid
+     * @return form A jid for multicast connections
+     * This is the jid that we use when connecting to the XMPP server
      */
-    public static String did2jid(DID did, boolean ucast)
+    public static String did2FormAJid(DID did, String xmppTransportId)
     {
-        return did2user(did) + '@' + DaemonParam.XMPP.SERVER_DOMAIN +
-                '/' + resource(ucast);
+        return did2user(did) + '@' + DaemonParam.XMPP.SERVER_DOMAIN + '/' + xmppTransportId;
     }
 
     /**
-     * @return form B jid
+     * This is the nickname we use when joining a multicast room. It is very similar to the Form A
+     * jid, except instead of having the xmpp transport ID as a resource we append it to the did
      */
-    public static String did2jid(DID did, SID sid)
+    public static String getMUCRoomNickname(DID did, String xmppTransportId)
     {
-        return sid2muc(sid) + '/' + did.toStringFormal();
+        return ID.did2user(did) + "-" + xmppTransportId;
+    }
+
+    /**
+     * @return form B jid for multicast connections (this is the jid that is reported for all members
+     * in a MUC)
+     */
+    public static String did2FormBJid(DID did, SID sid, String xmppTransportId)
+    {
+        return sid2muc(sid) + '/' + getMUCRoomNickname(did, xmppTransportId);
     }
 
     private static final Pattern SLASH_PATTERN = Pattern.compile("/");
+    private static final Pattern DASH_PATTERN = Pattern.compile("-");
 
     /**
-     * split the string using "/"
+     * split the jid using "/" and "-" (form A (jingle), form B)
      */
-    public static String[] tokenize(String xmpp) throws ExFormatError
+    public static String[] tokenize(String jid) throws ExFormatError
     {
-        String tokens[] = SLASH_PATTERN.split(xmpp);
-        if (tokens.length != 2) {
-            throw new ExFormatError("wrong # of /'s: " + xmpp);
+        // split using "/"
+
+        String components[] = SLASH_PATTERN.split(jid);
+        if (components.length != 2) {
+            throw new ExFormatError("wrong # of /'s: " + jid);
         }
+
+        // split using "-"
+
+        String[] didAndXmppTransportId = DASH_PATTERN.split(components[1]);
+
+        String[] tokens = new String[1 + didAndXmppTransportId.length];
+        tokens[0] = components[0];
+
+        arraycopy(didAndXmppTransportId, 0, tokens, 1, didAndXmppTransportId.length);
+
+        if (l.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder(128);
+            for (String token : tokens) {
+                sb.append(token).append("|");
+            }
+            l.debug("JID ========>" + jid + " TOKENS ========>" + sb.toString());
+        }
+
         return tokens;
     }
 
     /**
      * convert either form A or form B jid to did
      */
-    public static DID jid2did(String xmpp) throws ExFormatError
+    public static DID jid2did(String jid) throws ExFormatError
     {
-        return jid2did(tokenize(xmpp));
-    }
-
-    public static boolean isMUCAddress(String[] tokens)
-    {
-        assert tokens.length == 2;
-        return tokens[1].length() != 1;
+        return jid2did(tokenize(jid));
     }
 
     public static DID jid2did(String[] tokens)
@@ -90,6 +122,12 @@ public class ID {
             if (at < 0) throw new ExFormatError("@ not found");
             return new DID(tokens[0], 0, at);
         }
+    }
+
+    public static boolean isMUCAddress(String[] tokens)
+    {
+        checkArgument(tokens.length >= 2, "insufficient tokens len:" + tokens.length);
+        return tokens[1].length() != 1;
     }
 
     public static SID muc2sid(String muc) throws ExFormatError
@@ -112,5 +150,4 @@ public class ID {
     {
         return sid.toStringFormal() + '@' + DaemonParam.XMPP.MUC_ADDR;
     }
-
 }

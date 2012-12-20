@@ -884,9 +884,9 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
     }
 
     @Override
-    public int pref()
+    public int rank()
     {
-        return _id.pref();
+        return _id.rank();
     }
 
     @Override

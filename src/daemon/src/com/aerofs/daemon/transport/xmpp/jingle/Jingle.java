@@ -1,13 +1,7 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
-import java.io.ByteArrayInputStream;
-import java.io.PrintStream;
-import java.net.NetworkInterface;
-import java.util.Set;
-
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
-import org.apache.log4j.Logger;
-
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
@@ -19,13 +13,18 @@ import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.j.Jid;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Files;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTPHeader;
+import org.apache.log4j.Logger;
+
+import java.io.ByteArrayInputStream;
+import java.io.PrintStream;
+import java.net.NetworkInterface;
+import java.util.Set;
 
 /**
  *  message format
@@ -37,17 +36,17 @@ import com.aerofs.proto.Transport.PBTPHeader;
 
 public class Jingle implements ISignalledPipe, IJingle
 {
-    public Jingle(String id, int pref, IPipeController pc, INetworkStats ns)
+    public Jingle(String id, int rank, IPipeController pc, INetworkStats ns)
     {
         OSUtil.get().loadLibrary("aerofsj");
 
-        bid = new BasicIdentifier(id, pref);
+        bid = new BasicIdentifier(id, rank);
         this.pc = pc;
         this.ns = ns;
 
         _st = new SignalThread(this);
         _st.setDaemon(true);
-        _st.setName("j");
+        _st.setName(SIGNAL_THREAD_THREAD_ID);
     }
 
     //
@@ -84,9 +83,9 @@ public class Jingle implements ISignalledPipe, IJingle
     }
 
     @Override
-    public int pref()
+    public int rank()
     {
-        return bid.pref();
+        return bid.rank();
     }
 
     @Override
@@ -452,7 +451,7 @@ public class Jingle implements ISignalledPipe, IJingle
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(ID.did2user(did), DaemonParam.XMPP.SERVER_DOMAIN, ID.resource(true));
+        return new Jid(ID.did2user(did), DaemonParam.XMPP.SERVER_DOMAIN, JINGLE_RESOURCE_NAME);
     }
 
     static DID jid2did(Jid jid) throws ExFormatError
@@ -465,9 +464,12 @@ public class Jingle implements ISignalledPipe, IJingle
     // members
 
     private final BasicIdentifier bid;
-    private final IPipeController pc;
+    private IPipeController pc;
     private final INetworkStats ns;
     private final SignalThread _st;
 
     private static final Logger l = Util.l(Jingle.class);
+
+    private static final String SIGNAL_THREAD_THREAD_ID = "st";
+    private static final String JINGLE_RESOURCE_NAME = "u";
 }

@@ -33,6 +33,11 @@ public interface ITransport extends IModule, IIdentifier, IDebug
     public boolean ready();
 
     /**
+     * @return true if multicast is supported, false otherwise
+     */
+    public boolean supportsMulticast();
+
+    /**
      * Get a collection of {@link DID} that are not reachable via multicast
      *
      * @return <strong>immutable</strong> (i.e. content mustn't change after
@@ -43,7 +48,6 @@ public interface ITransport extends IModule, IIdentifier, IDebug
      * <code>null</code>. If there are no entries, an empty set should be returned.
      */
     Set<DID> getMulticastUnreachableOnlineDevices();
-
 
     /**
      * This method is obsolete in the new transport code.

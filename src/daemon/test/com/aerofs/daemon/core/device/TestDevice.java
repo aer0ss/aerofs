@@ -35,13 +35,13 @@ public class TestDevice extends AbstractTest
     public void setUp()
             throws Exception
     {
-        when(_tp1.pref()).thenReturn(1);
+        when(_tp1.rank()).thenReturn(1);
         when(_tp1.id()).thenReturn("tp1");
 
-        when(_tp2.pref()).thenReturn(2);
+        when(_tp2.rank()).thenReturn(2);
         when(_tp2.id()).thenReturn("tp2");
 
-        when(_tp3.pref()).thenReturn(3);
+        when(_tp3.rank()).thenReturn(3);
         when(_tp3.id()).thenReturn("tp3");
     }
 
