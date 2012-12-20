@@ -15,8 +15,8 @@ import com.aerofs.lib.id.SID;
  * must use enqueueBlocking() rather than enqueue() to file the event. we need
  * reliable receiving of these events
  */
-public class EIPresence implements IEvent {
-
+public class EIPresence implements IEvent
+{
     public final Map<DID, Collection<SID>> _did2sids;
     public final ITransport _tp;
     public final boolean _online;

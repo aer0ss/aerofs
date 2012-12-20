@@ -271,15 +271,13 @@ public class Stores
         if (!added.isEmpty()) {
             // enqueue mustn't fail because we won't enqueue again after
             // arp already added the entry
-            _tcp.sink().enqueueBlocking(new EIPresence(_tcp, true, did, added),
-                    Prio.LO);
+            _tcp.sink().enqueueBlocking(new EIPresence(_tcp, true, did, added), Prio.LO);
         }
 
         if (!removed.isEmpty()) {
             // enqueue mustn't fail because we won't enqueue again after
             // arp already added the entry
-            _tcp.sink().enqueueBlocking(new EIPresence(_tcp, false, did, removed),
-                    Prio.LO);
+            _tcp.sink().enqueueBlocking(new EIPresence(_tcp, false, did, removed), Prio.LO);
         }
     }
 
@@ -383,8 +381,7 @@ public class Stores
                 // N.B. for simplicity, we don't add the sids to ARPEntry._sids.
                 // It will cause redundant online notification next time the remote
                 // device modifies the filter (see online()), which is fine.
-                _tcp.sink().enqueueBlocking(new EIPresence(_tcp, true, did2sids),
-                        Prio.LO);
+                _tcp.sink().enqueueBlocking(new EIPresence(_tcp, true, did2sids), Prio.LO);
             }
         }
 

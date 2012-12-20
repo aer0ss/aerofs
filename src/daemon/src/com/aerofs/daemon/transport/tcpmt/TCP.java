@@ -163,6 +163,7 @@ public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
         });
 
         // Call remove() out of the visitor to avoid holding the ARP lock
+        l.debug("removeAll " + dids);
         for (DID did : dids) remove(did, true);
     }
 

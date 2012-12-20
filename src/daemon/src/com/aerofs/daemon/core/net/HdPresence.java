@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SID;
@@ -46,6 +47,7 @@ public class HdPresence implements IEventHandler<EIPresence>
                     // ignore stores that don't exist
                     if (sidx != null) sidcs.add(sidx);
                 }
+                Util.l(this).debug("sids " + sids + " sidcs " + sidcs);
 
                 if (ev._online) _dp.online_(ev._tp, did, sidcs);
                 else _dp.offline_(ev._tp, did, sidcs);

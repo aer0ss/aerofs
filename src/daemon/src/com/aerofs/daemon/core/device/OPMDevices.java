@@ -48,4 +48,10 @@ public class OPMDevices
     {
         return ImmutableMap.copyOf(_opmd);
     }
+
+    @Override
+    public String toString()
+    {
+        return _opmd.toString();
+    }
 }

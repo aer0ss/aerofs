@@ -95,7 +95,7 @@ public class ARP
      * @param did {@link DID} of the peer whose <code>ARPEntry </code> should be removed
      * @return null if there was no entry
      */
-    synchronized ARPEntry remove(DID did)
+    synchronized @Nullable ARPEntry remove(DID did)
     {
         ARPEntry ret = _did2en.remove(did);
 
