@@ -173,6 +173,7 @@ public class DevicePresence implements IDumpStatMisc
             OPMDevices opm = _sidx2opm.get(sidx);
             assert opm != null;
             opm.remove_(did);
+            l.debug("remaining opms 4 " + sidx + ": " + opm);
             if (opm.isEmpty_()) {
                 _sidx2opm.remove(sidx);
                 if (s != null) s.setOPMDevices_(null);
