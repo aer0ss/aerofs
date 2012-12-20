@@ -181,8 +181,8 @@ public final class SVClient
                     true,
                     false,
                     false);
-        } catch (Throwable t) {
-            l.warn("can't dump err:", t);
+        } catch (Throwable e) {
+            l.warn("dump core db:" + Util.e(e));
         }
     }
 
@@ -209,7 +209,7 @@ public final class SVClient
                 try {
                     sendEventSync(type, desc);
                 } catch (Throwable e) {
-                    l.warn("can't archive logs err:", e);
+                    l.warn("send sv event: " + Util.e(e));
                 }
             }
         }, SVClient.class.getName() + ".event");
@@ -241,8 +241,8 @@ public final class SVClient
 
         try {
             getRpcClient().doRPC(call, null);
-        } catch (Throwable t) {
-            l.warn("can't send event err:", t);
+        } catch (Throwable e) {
+            l.warn("send sv event: " + Util.e(e));
         }
     }
 
@@ -283,7 +283,7 @@ public final class SVClient
                             true,
                             false);
                 } catch (Throwable e) {
-                    l.warn("can't send defect err:", e);
+                    l.warn("send defect: " + Util.e(e));
                 }
             }
         });
@@ -313,8 +313,8 @@ public final class SVClient
     {
         try {
             logSendDefectSync(isAutoBug, context, cause, null, false);
-        } catch (Throwable t) {
-            l.error("can't send defect err:", t);
+        } catch (Throwable e) {
+            l.error("send defect: " + Util.e(e));
         }
     }
 
@@ -333,8 +333,8 @@ public final class SVClient
                     false,
                     false,
                     false);
-        } catch (Throwable t) {
-            l.error("can't send defect err:", t);
+        } catch (Throwable e) {
+            l.error("send defect: " + Util.e(e));
         }
     }
 
@@ -354,8 +354,8 @@ public final class SVClient
                     false,
                     false,
                     false);
-        } catch (Throwable t) {
-            l.error("can't send defect err:", t);
+        } catch (Throwable e) {
+            l.error("send defect: " + Util.e(e));
         }
     }
 
@@ -574,8 +574,8 @@ public final class SVClient
                 } finally {
                     if (os != null) os.close();
                 }
-            } catch (Throwable t) {
-                l.error("can't compress defect logs; send them as is err:", cause);
+            } catch (Throwable e) {
+                l.error("compress defect logs, ignore: " + Util.e(e));
             }
         }
 
@@ -725,7 +725,7 @@ public final class SVClient
                         if (is != null) is.close();
                     }
                 } catch (IOException e) {
-                    l.warn("fail compress err: ", e);
+                    l.warn("compress " + f + ": " + Util.e(e));
                 }
             }
         } finally {
@@ -750,7 +750,7 @@ public final class SVClient
         } catch (FileNotFoundException e) {
             l.warn("file not found:" + lastSentDefectFile);
         } catch (Throwable e) {
-            l.warn("fail lsd (bad trip) err:", e);
+            l.warn("lsd (bad trip): " + Util.e(e));
         }
 
         return false;
@@ -771,7 +771,7 @@ public final class SVClient
                 os.close();
             }
         } catch (Throwable e) {
-            l.warn("fail lsd (bad trip) err:", e);
+            l.warn("fail lsd (bad trip): " + Util.e(e));
         }
     }
 

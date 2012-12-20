@@ -115,7 +115,7 @@ public final class LogArchiver
 
                 uncompressedLog.delete();
             } catch (IOException e) {
-                l.warn("fail archive" + uncompressedLog + ": " + e);
+                l.warn("archive" + uncompressedLog + ": " + Util.e(e));
             }
         }
 
@@ -132,7 +132,7 @@ public final class LogArchiver
                 SVClient.sendGZippedLog(gzippedLog);
                 deleteOrOnExit(gzippedLog);
             } catch (Exception e) {
-                l.warn("fail upload " + gzippedLog + ": ", e);
+                l.warn("upload " + gzippedLog + ": " + Util.e(e));
             }
         }
     }

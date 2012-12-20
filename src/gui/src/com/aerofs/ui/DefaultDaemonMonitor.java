@@ -305,7 +305,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                         break;
                     }
                 } catch (SocketTimeoutException e) {
-                    l.info("hb test");
+                    l.debug("hb test");
 
                     if (!tryHeartBeat()) {
                         // If the hearbeat failed, kill the daemon
