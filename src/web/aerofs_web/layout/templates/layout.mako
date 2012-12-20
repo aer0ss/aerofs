@@ -21,12 +21,6 @@
 
     <!-- fav and touch icons -->
     <link rel="shortcut icon" href="../assets/ico/favicon.ico">
-    <!--
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon-57-precomposed.png"> -->
-
 </head>
 
 <body>
@@ -95,6 +89,7 @@
     <div class="container">
         <div class="row">
             <div class="span12">
+                <hr>
                 <p>&copy; Air Computing Inc. ${year}</p>
             </div>
         </div>

@@ -4,10 +4,12 @@
     from aerofs_sp.gen.sp_pb2 import ADMIN, USER
 %>
 
-<h1>AeroFS Web Interface</h1>
-<ul class="nav">
-    <li><a href="${request.route_path('accept')}">View Pending Invitations</a></li>
+<div class="span12">
+	<h1>&nbsp;</h1>
+	<center>
+		<h2><a href="${request.route_path('accept')}">View Pending Invitations</a></h2>
+
     %if request.session['group'] == ADMIN:
-        <li><a href="${request.route_path('users')}">Manage Team</a></li>
+        <h2><a href="${request.route_path('users')}">Manage Team</a></h2>
     %endif
-</ul>
+</div>

@@ -75,13 +75,13 @@ body {
 }
 #wrapper {
   min-height: 100%;
-  margin-bottom: -8em;
+  margin-bottom: -6em;
 }
 #footer-push {
-  height: 8em;
+  height: 6em;
 }
 footer {
-  height: 8em;
-  background: #156290;
-  color: #add5ea;
+  height: 6em;
+  color: gray;
+  text-align: right;
 }
