@@ -15,6 +15,7 @@ import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.ui.IUI.MessageType;
@@ -40,7 +41,7 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
 
     public DlgMoveRootAnchor(Shell parent, boolean sheet, String absAnchorRoot)
     {
-        super(parent, "Moving " + L.PRODUCT + " Folder", sheet, false);
+        super(parent, "Moving " + S.ROOT_ANCHOR, sheet, false);
         _absAnchorRoot = absAnchorRoot;
     }
 
@@ -93,6 +94,9 @@ public class DlgMoveRootAnchor extends AeroFSDialog implements ISWTWorker {
         } finally {
             ritual.close();
         }
+
+        // update root anchor in the Cfg class right away
+        Cfg.init_(Cfg.absRTRoot(), false);
 
         Util.l(this).warn("wait for heartbeat");
 

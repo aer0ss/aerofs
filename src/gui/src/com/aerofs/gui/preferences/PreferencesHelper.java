@@ -5,30 +5,47 @@
 package com.aerofs.gui.preferences;
 
 import com.aerofs.gui.GUI;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
+import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.ui.IUI.MessageType;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Text;
 
-public class PreferencesUtil
+public class PreferencesHelper
 {
     private final Composite _preferences;
 
-    private String _rootAnchor;
-
-    public PreferencesUtil(Composite preferences)
+    public PreferencesHelper(Composite preferences)
     {
        _preferences = preferences;
     }
 
+    public void selectAndMoveRootAnchor(final Text txtRootAnchor)
+    {
+        // Have to re-open the directory dialog in a separate stack, since doing it in the same
+        // stack would cause strange SWT crashes on OSX :/
+        GUI.get().safeAsyncExec(_preferences, new Runnable() {
+            @Override
+            public void run()
+            {
+                String root = getRootAnchorPathFromDirectoryDialog();
+                if (root == null) return; //User hit cancel
+                if (moveRootAnchor(root)) {
+                    txtRootAnchor.setText(Cfg.absRootAnchor());
+                } else {
+                    selectAndMoveRootAnchor(txtRootAnchor);
+                }
+            }
+        });
+    }
+
     /**
-     * @param rootParent
      * @return whether we were successful
      */
-    public boolean moveRootAnchor(String rootParent)
+    private boolean moveRootAnchor(String rootParent)
     {
         String pathOld = Cfg.absRootAnchor();
         String pathNew = RootAnchorUtil.adjustRootAnchor(rootParent);
@@ -41,8 +58,9 @@ public class PreferencesUtil
             return true;
         }
 
-        if (!GUI.get().ask(_preferences.getShell(), MessageType.QUESTION, "Are you sure you want to move the "
-                + L.PRODUCT + " folder and its content from:\n\n" + pathOld + " \n\n to: \n\n " +
+        if (!GUI.get().ask(_preferences.getShell(), MessageType.QUESTION,
+                "Are you sure you want to move the "
+                + S.ROOT_ANCHOR + " and its content from:\n\n" + pathOld + "\n\nto:\n\n" +
                 pathNew + "?")) {
             return false;
         }
@@ -51,26 +69,16 @@ public class PreferencesUtil
 
         Boolean success = (Boolean) dlg.openDialog();
 
-        if (success != null && success) {
-            _rootAnchor = pathNew;
-            return true;
-        } else {
-            return false;
-        }
+        return success != null && success;
     }
 
     /**
      * @return Path of new root anchor
      */
-    public String getRootAnchorPathFromDirectoryDialog(String prompt)
+    private String getRootAnchorPathFromDirectoryDialog()
     {
         DirectoryDialog dd = new DirectoryDialog(_preferences.getShell(), SWT.SHEET);
-        dd.setMessage(prompt);
+        dd.setMessage("Select " + S.ROOT_ANCHOR);
         return dd.open();
-    }
-
-    public String getRootAnchor()
-    {
-        return _rootAnchor;
     }
 }

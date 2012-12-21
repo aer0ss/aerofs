@@ -12,9 +12,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Shell;
 
-public class DlgPreferences extends AeroFSDialog
+public class MultiuserDlgPreferences extends AeroFSDialog
 {
-    public DlgPreferences(Shell parent)
+    public MultiuserDlgPreferences(Shell parent)
     {
         super(parent, L.PRODUCT + " " + S.PREFERENCES, false, false);
     }
@@ -25,7 +25,7 @@ public class DlgPreferences extends AeroFSDialog
             shell = new Shell(getParent(), getStyle());
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        new CompPreferences(shell);
+        new MultiuserCompPreferences(shell);
 
         shell.pack();
     }

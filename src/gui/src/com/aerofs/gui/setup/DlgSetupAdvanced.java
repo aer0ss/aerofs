@@ -65,7 +65,7 @@ public class DlgSetupAdvanced extends AeroFSJFaceDialog {
 
         Label lbl = new Label(container, SWT.NONE);
         lbl.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
-        lbl.setText(S.SETUP_ANCHOR_ROOT + ":");
+        lbl.setText(S.ROOT_ANCHOR + ":");
 
         Composite _composite = new Composite(container, SWT.NONE);
         GridLayout glComposite = new GridLayout(2, false);
@@ -83,7 +83,7 @@ public class DlgSetupAdvanced extends AeroFSJFaceDialog {
             public void widgetSelected(SelectionEvent e)
             {
                 DirectoryDialog dd = new DirectoryDialog(getShell(), SWT.SHEET);
-                dd.setMessage("Select " + S.SETUP_ANCHOR_ROOT);
+                dd.setMessage("Select " + S.ROOT_ANCHOR);
                 String root = dd.open();
                 if (root != null) {
                     _absRootAnchor = RootAnchorUtil.adjustRootAnchor(root);

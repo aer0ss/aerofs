@@ -9,11 +9,11 @@ import com.aerofs.lib.S;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 
-public class DlgPreferences extends AeroFSDialog
+public class SingleuserDlgPreferences extends AeroFSDialog
 {
     private final boolean _showTransfers;
 
-    public DlgPreferences(Shell parent, boolean showTransfers)
+    public SingleuserDlgPreferences(Shell parent, boolean showTransfers)
     {
         super(parent, S.PREFERENCES, false, false);
         _showTransfers = showTransfers;
@@ -26,7 +26,7 @@ public class DlgPreferences extends AeroFSDialog
             shell = new Shell(getParent(), getStyle());
         shell.setLayout(new FillLayout(SWT.HORIZONTAL));
 
-        new CompPreferences(shell, _showTransfers);
+        new SingleuserCompPreferences(shell, _showTransfers);
 
         shell.pack();
     }

@@ -6,7 +6,7 @@ package com.aerofs.gui.multiuser.tray;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil.AbstractListener;
-import com.aerofs.gui.multiuser.preferences.DlgPreferences;
+import com.aerofs.gui.multiuser.preferences.MultiuserDlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.TransferTrayMenuSection;
 import com.aerofs.gui.tray.TrayIcon;
@@ -25,7 +25,7 @@ import org.eclipse.swt.widgets.Menu;
 
 import static com.aerofs.proto.Sv.PBSVEvent.Type.CLICKED_TASKBAR_PREFERENCES;
 
-public class TrayMenu implements ITrayMenu
+public class MultiuserTrayMenu implements ITrayMenu
 {
     private final Menu _menu;
     private final TrayIcon _icon;
@@ -47,7 +47,7 @@ public class TrayMenu implements ITrayMenu
         }
     };
 
-    public TrayMenu(TrayIcon icon)
+    public MultiuserTrayMenu(TrayIcon icon)
     {
         _icon = icon;
 
@@ -102,12 +102,12 @@ public class TrayMenu implements ITrayMenu
         helpTrayMenuPopulator.addHelpMenuItems();
     }
 
-    private DlgPreferences _dlgPreferences;
+    private MultiuserDlgPreferences _dlgPreferences;
 
     public void openDlgPreferences()
     {
         if (_dlgPreferences == null || _dlgPreferences.isDisposed()) {
-            _dlgPreferences = new DlgPreferences(GUI.get().sh());
+            _dlgPreferences = new MultiuserDlgPreferences(GUI.get().sh());
             _dlgPreferences.openDialog();
         } else {
             _dlgPreferences.forceActive();

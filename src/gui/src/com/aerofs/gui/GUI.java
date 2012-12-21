@@ -3,10 +3,12 @@ package com.aerofs.gui;
 import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.MultiuserDlgSetup;
+import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
 import com.aerofs.gui.password.DlgLogin;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.singleuser.SingleuserDlgSetup;
 import com.aerofs.gui.setup.IDlgSetup;
+import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.labeling.L;
@@ -117,9 +119,9 @@ public class GUI implements IUI
     {
         // Create the system tray
         if (L.get().isMultiuser()) {
-            _st = new SystemTray(new com.aerofs.gui.multiuser.tray.MenuProvider());
+            _st = new SystemTray(new MultiuserMenuProvider());
         } else {
-            _st = new SystemTray(new com.aerofs.gui.singleuser.tray.MenuProvider());
+            _st = new SystemTray(new SingleuserMenuProvider());
         }
     }
 

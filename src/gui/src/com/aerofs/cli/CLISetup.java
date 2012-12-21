@@ -194,7 +194,7 @@ public class CLISetup
 
             } else {
                 // input anchor root
-                String input = cli.askText(S.SETUP_ANCHOR_ROOT, anchorRoot);
+                String input = cli.askText(S.ROOT_ANCHOR, anchorRoot);
                 String root = RootAnchorUtil.adjustRootAnchor(input);
                 if (!input.equals(root)) {
                     cli.confirm(MessageType.INFO,

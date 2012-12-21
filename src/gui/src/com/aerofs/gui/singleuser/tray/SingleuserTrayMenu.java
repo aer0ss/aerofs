@@ -1,7 +1,7 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.gui.singleuser.preferences.DlgPreferences;
+import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
 import com.aerofs.gui.tray.TransferTrayMenuSection;
@@ -53,9 +53,9 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import static com.aerofs.proto.Sv.PBSVEvent.Type.*;
 
-public class TrayMenu implements ITrayMenu
+public class SingleuserTrayMenu implements ITrayMenu
 {
-    static final Logger l = Util.l(TrayMenu.class);
+    static final Logger l = Util.l(SingleuserTrayMenu.class);
 
     private volatile int _conflictCount = 0;
 
@@ -89,7 +89,7 @@ public class TrayMenu implements ITrayMenu
         }
     };
 
-    TrayMenu(TrayIcon icon)
+    SingleuserTrayMenu(TrayIcon icon)
     {
         _icon = icon;
 
@@ -483,12 +483,12 @@ public class TrayMenu implements ITrayMenu
         helpTrayMenuPopulator.addHelpMenuItems();
     }
 
-    private DlgPreferences _dlgPref;
+    private SingleuserDlgPreferences _dlgPref;
 
     public void openDlgPreferences(boolean showTransfers)
     {
         if (_dlgPref == null || _dlgPref.isDisposed()) {
-            _dlgPref = new DlgPreferences(GUI.get().sh(), showTransfers);
+            _dlgPref = new SingleuserDlgPreferences(GUI.get().sh(), showTransfers);
             _dlgPref.openDialog();
         } else {
             _dlgPref.forceActive();

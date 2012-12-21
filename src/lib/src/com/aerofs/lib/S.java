@@ -25,7 +25,8 @@ public class S
             SETUP_FIRST_NAME         = "First name",
             SETUP_LAST_NAME          = "Last name",
             SETUP_DEV_ALIAS          = "Computer name",
-            SETUP_ANCHOR_ROOT        = L.PRODUCT + " folder to sync",
+            ROOT_ANCHOR              = L.get().isMultiuser() ? "Data Storage folder" :
+                L.PRODUCT + " folder",
             SETUP_IC                 = "Invitation code",
             SETUP_CANT_VERIFY_IIC    = "Couldn't verify invitation code ",
             SETUP_INVALID_USER_ID    = "Email address is not valid.",

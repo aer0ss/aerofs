@@ -4,9 +4,9 @@
 
 package com.aerofs.gui.multiuser.preferences;
 
-import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.preferences.PreferencesUtil;
+import com.aerofs.gui.preferences.PreferencesHelper;
+import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import org.eclipse.swt.SWT;
@@ -19,15 +19,15 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-public class CompPreferences extends Composite
+public class MultiuserCompPreferences extends Composite
 {
     private final Text _txtRootAnchor;
-    private final PreferencesUtil _preferencesUtil;
+    private final PreferencesHelper _helper;
 
-    public CompPreferences(Composite parent) {
+    public MultiuserCompPreferences(Composite parent) {
         super(parent, SWT.NONE);
 
-        _preferencesUtil = new PreferencesUtil(this);
+        _helper = new PreferencesHelper(this);
 
         GridLayout gridLayout = new GridLayout(3, false);
 
@@ -38,9 +38,9 @@ public class CompPreferences extends Composite
 
         // Root anchor location row
 
-        Label lblAerofsLocation = new Label(this, SWT.NONE);
-        lblAerofsLocation.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblAerofsLocation.setText("Storage location:");
+        Label lblRootAnchor = new Label(this, SWT.NONE);
+        lblRootAnchor.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        lblRootAnchor.setText(S.ROOT_ANCHOR);
 
         _txtRootAnchor = new Text(this, SWT.BORDER | SWT.READ_ONLY);
         GridData gd__txtRootAnchor = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
@@ -56,26 +56,7 @@ public class CompPreferences extends Composite
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                selectAndMoveRootAnchor_();
-            }
-        });
-    }
-
-    private void selectAndMoveRootAnchor_()
-    {
-        // Have to re-open the directory dialog in a separate stack, since doing it in the same
-        // stack would cause strange SWT crashes on OSX :/
-        GUI.get().safeAsyncExec(this, new Runnable() {
-            @Override
-            public void run()
-            {
-                String root = _preferencesUtil.getRootAnchorPathFromDirectoryDialog("Select storage location");
-                if (root == null) return; //User hit cancel
-                if (_preferencesUtil.moveRootAnchor(root)) {
-                    _txtRootAnchor.setText(_preferencesUtil.getRootAnchor());
-                } else {
-                    selectAndMoveRootAnchor_();
-                }
+                _helper.selectAndMoveRootAnchor(_txtRootAnchor);
             }
         });
     }

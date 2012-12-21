@@ -5,10 +5,9 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.password.DlgPasswordChange;
-import com.aerofs.gui.preferences.PreferencesUtil;
+import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
@@ -49,9 +48,9 @@ import org.eclipse.swt.widgets.Text;
 
 import javax.annotation.Nullable;
 
-public class CompPreferences extends Composite
+public class SingleuserCompPreferences extends Composite
 {
-    private final static Logger l = Util.l(CompPreferences.class);
+    private final static Logger l = Util.l(SingleuserCompPreferences.class);
 
     private final Button _btnNotify;
     private final Label _lblId2;
@@ -66,13 +65,13 @@ public class CompPreferences extends Composite
     private String _lastName;   // must be null initially. see updateUserAndDeviceName
     private String _deviceName; // must be null initially. see updateUserAndDeviceName
     private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-    private final PreferencesUtil _preferencesUtil;
+    private final PreferencesHelper _helper;
 
-    public CompPreferences(Composite parent, boolean showTransfers)
+    public SingleuserCompPreferences(Composite parent, boolean showTransfers)
     {
         super(parent, SWT.NONE);
 
-        _preferencesUtil = new PreferencesUtil(this);
+        _helper = new PreferencesHelper(this);
 
         GridLayout gridLayout = new GridLayout(3, false);
         gridLayout.marginWidth = GUIParam.MARGIN;
@@ -171,7 +170,7 @@ public class CompPreferences extends Composite
 
         Label lblAerofsLocation = new Label(this, SWT.NONE);
         lblAerofsLocation.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblAerofsLocation.setText(L.PRODUCT + " location:");
+        lblAerofsLocation.setText(S.ROOT_ANCHOR);
 
         _txtRootAnchor = new Text(this, SWT.BORDER | SWT.READ_ONLY);
         GridData gd__txtRootAnchor = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
@@ -187,7 +186,7 @@ public class CompPreferences extends Composite
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                selectAndMoveRootAnchor_();
+                _helper.selectAndMoveRootAnchor(_txtRootAnchor);
             }
         });
 
@@ -312,9 +311,8 @@ public class CompPreferences extends Composite
             });
         }
 
-        Button btnShowTransfers;
         if (showTransfers) {
-            btnShowTransfers = new Button(composite, SWT.NONE);
+            Button btnShowTransfers = new Button(composite, SWT.NONE);
             btnShowTransfers.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
             btnShowTransfers.addSelectionListener(new SelectionAdapter()
             {
@@ -326,8 +324,6 @@ public class CompPreferences extends Composite
             });
             btnShowTransfers.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
             btnShowTransfers.setText("Show Transfers...");
-        } else {
-            btnShowTransfers = null;
         }
 
         new Label(composite, SWT.NONE);
@@ -386,7 +382,7 @@ public class CompPreferences extends Composite
 
                 final GetPreferencesReply reply = r;
                 final Exception eFinal = e;
-                GUI.get().safeAsyncExec(CompPreferences.this, new Runnable() {
+                GUI.get().safeAsyncExec(SingleuserCompPreferences.this, new Runnable() {
                     @Override
                     public void run()
                     {
@@ -459,7 +455,7 @@ public class CompPreferences extends Composite
                 }
 
                 final Exception eFinal = e;
-                GUI.get().safeAsyncExec(CompPreferences.this, new Runnable()
+                GUI.get().safeAsyncExec(SingleuserCompPreferences.this, new Runnable()
                 {
                     @Override
                     public void run()
@@ -498,25 +494,5 @@ public class CompPreferences extends Composite
     protected void checkSubclass()
     {
         // Disable the check that prevents subclassing of SWT components
-    }
-
-    private void selectAndMoveRootAnchor_()
-    {
-        // Have to re-open the directory dialog in a separate stack, since doing it in the same
-        // stack would cause strange SWT crashes on OSX :/
-        GUI.get().safeAsyncExec(this, new Runnable() {
-            @Override
-            public void run()
-            {
-                String root = _preferencesUtil.getRootAnchorPathFromDirectoryDialog(
-                        "Select " + S.SETUP_ANCHOR_ROOT);
-                if (root == null) return; //User hit cancel
-                if (_preferencesUtil.moveRootAnchor(root)) {
-                    _txtRootAnchor.setText(_preferencesUtil.getRootAnchor());
-                } else {
-                    selectAndMoveRootAnchor_();
-                }
-            }
-        });
     }
 }
