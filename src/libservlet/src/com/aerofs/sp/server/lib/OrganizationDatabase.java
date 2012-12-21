@@ -144,6 +144,11 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         return users;
     }
 
+    private static String andNotTeamServer()
+    {
+        return " and " + C_USER_ID + " not like ':%' ";
+    }
+
     /**
      * @param orgId ID of the organization.
      * @param offset Starting index of the results list from the database.
@@ -158,7 +163,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 "select " + C_USER_ID + "," +
                         C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " +
                         T_USER +
-                        " where " + C_USER_ORG_ID + "=? " + " order by " +
+                        " where " + C_USER_ORG_ID + "=? " + andNotTeamServer() + " order by " +
                         C_USER_ID + " limit ? offset ?");
 
         psLU.setInt(1, orgId.getInt());
@@ -187,7 +192,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + "," +
                 C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " + T_USER +
-                " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " +
+                " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " + andNotTeamServer() +
                 " order by " + C_USER_ID + " limit ? offset ?");
 
         psSLU.setInt(1, orgId.getInt());
@@ -219,7 +224,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                 "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
                         C_USER_LAST_NAME + " from " + T_USER +
                         " where " + C_USER_ORG_ID + "=? and " +
-                        C_USER_AUTHORIZATION_LEVEL + "=? " +
+                        C_USER_AUTHORIZATION_LEVEL + "=? " + andNotTeamServer() +
                         "order by " + C_USER_ID + " limit ? offset ?"
         );
 
@@ -256,7 +261,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
                         C_USER_LAST_NAME + " from " + T_USER +
                         " where " + C_USER_ORG_ID + "=? and " +
                         C_USER_ID + " like ? and " +
-                        C_USER_AUTHORIZATION_LEVEL + "=? " +
+                        C_USER_AUTHORIZATION_LEVEL + "=? " + andNotTeamServer() +
                         "order by " + C_USER_ID + " limit ? offset ?"
         );
 
@@ -282,7 +287,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement("select count(*) from " +
-                T_USER + " where " + C_USER_ORG_ID + "=?");
+                T_USER + " where " + C_USER_ORG_ID + "=?" + andNotTeamServer());
 
         ps.setInt(1, orgId.getInt());
         ResultSet rs = ps.executeQuery();
@@ -303,7 +308,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement psSCU = prepareStatement("select count(*) from " +
-                T_USER + " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ?");
+                T_USER + " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ?" +
+                andNotTeamServer());
 
         psSCU.setInt(1, orgId.getInt());
         psSCU.setString(2, "%" + search + "%");
@@ -326,7 +332,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     {
         PreparedStatement psLUAC = prepareStatement("select count(*) from " +
                 T_USER + " where " + C_USER_ORG_ID + "=? and " +
-                C_USER_AUTHORIZATION_LEVEL + "=?");
+                C_USER_AUTHORIZATION_LEVEL + "=?" + andNotTeamServer());
 
         psLUAC.setInt(1, orgId.getInt());
         psLUAC.setInt(2, authlevel.ordinal());
@@ -353,8 +359,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         PreparedStatement psSUAC = prepareStatement(
                 "select count(*) from " + T_USER + " where " + C_USER_ORG_ID + "=? and " +
                         C_USER_ID + " like ? and " +
-                        C_USER_AUTHORIZATION_LEVEL + "=?"
-        );
+                        C_USER_AUTHORIZATION_LEVEL + "=?" + andNotTeamServer());
 
         psSUAC.setInt(1, orgId.getInt());
         psSUAC.setString(2, "%" + search + "%");

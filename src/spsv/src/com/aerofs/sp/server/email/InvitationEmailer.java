@@ -8,6 +8,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.lib.ex.ExNotFound;
@@ -176,20 +177,28 @@ public class InvitationEmailer
                 @Nonnull final User invitee, @Nonnull Organization organization)
                 throws IOException, SQLException, ExNotFound
         {
-            final String organizationName = organization.getName();
-            final String subject = "Join the \"" + organizationName + "\" organization!";
+            final String subject = "Join my team on AeroFS!";
 
             final Email email = new Email(subject);
 
+            FullName inviterFullName = inviter.getFullName();
+            final String inviterName, inviterLongName;
+            if (inviterFullName.isFirstOrLastNameEmpty()) {
+                inviterName = inviterLongName = inviter.id().toString();
+            } else {
+                inviterName = inviterFullName.toString();
+                inviterLongName = inviterName + " (" + inviter.id().toString() + ")";
+            }
 
-            final FullName inviterFullName = inviter.getFullName();
-            final String inviterName = inviterFullName.isFirstOrLastNameEmpty() ?
-                    inviter.id().toString() : inviterFullName.toString();
-
-            String body = "\n" + inviterName + " has invited you to join the \"" +
-                    organizationName + "\" organization.\n\nClick on this link to accept the " +
-                    "invitation: " + AdminPanelParam.ADMIN_ORG_ACCEPT_LINK + "\n\nIf you do not " +
-                    "with to join this organization, simply ignore this email.";
+            String body = "\n" + inviterLongName + " has invited you to join the team on AeroFS." +
+                    "\n\n" +
+                    "Click on this link to view the " +
+                    "invitation: " + AdminPanelParam.ADMIN_ORG_ACCEPT_LINK +
+                    "\n\n" +
+                    "Once you join the team, all the files in your " + S.ROOT_ANCHOR + " will be" +
+                    " synced to the team's AeroFS Team Server." + // TODO (WW) labeling
+                    "\n\n" +
+                    "If you do not wish to join the team, simply ignore this email.";
 
             email.addSection(subject, HEADER_SIZE.H1, body);
             email.addSignature("Best Regards,", "The " + L.PRODUCT + " Team", Email.DEFAULT_PS);
@@ -199,8 +208,9 @@ public class InvitationEmailer
                 @Override
                 public Void call() throws Exception
                 {
-                    SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,
-                            inviter.id().toString(),
+                    SVClient.sendEmail(
+                            SV.SUPPORT_EMAIL_ADDRESS,
+                            inviterName,
                             invitee.id().toString(),
                             null,
                             subject,

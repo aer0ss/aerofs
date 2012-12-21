@@ -4,7 +4,10 @@
 
 package com.aerofs.sp.server;
 
+import com.aerofs.labeling.L;
+
 public class AdminPanelParam
 {
-    public static final String ADMIN_ORG_ACCEPT_LINK = "http://webadmin.aerofs.com/accept";
+    public static final String
+            ADMIN_ORG_ACCEPT_LINK = "https://" + L.get().webAdminHost() + "/accept";
 }

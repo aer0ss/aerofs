@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.gui.singleuser.preferences;
 
 import com.aerofs.gui.GUI;
