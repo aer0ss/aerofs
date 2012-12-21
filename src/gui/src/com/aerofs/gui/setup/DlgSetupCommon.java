@@ -56,7 +56,7 @@ public class DlgSetupCommon
         Button getButtonBarButton(int id);
 
         /**
-         * This method is called in the GUI thread
+         * This method is called in the GUI thread, right before runSetup()
          */
         void preSetup();
 
@@ -64,6 +64,11 @@ public class DlgSetupCommon
          * This method is called in a non-GUI thread
          */
         void runSetup(String userID, char[] passwd) throws Exception;
+
+        /**
+         * This method is called in the GUI thread, after setup succeeds.
+         */
+        void postSetup();
 
         void closeDialog();
 
@@ -407,6 +412,8 @@ public class DlgSetupCommon
             {
                 _okay = true;
                 _callbacks.closeDialog();
+
+                _callbacks.postSetup();
             }
         });
     }

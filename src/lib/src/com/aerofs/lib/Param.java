@@ -116,6 +116,7 @@ public class Param
     public static class SP
     {
         public static final String WEB_BASE = "https://" + L.get().webHost() + "/";
+        public static final String TEAM_MANAGEMENT_URL = "https://" + L.get().webAdminHost() + "/admin/users";
         public static final URL URL;
 
         static {

@@ -67,10 +67,10 @@ public class GUIUtil
         {
             _eventType = t;
         }
+
         @Override
         public void handleEvent(Event event)
         {
-            l.info(event);
             if (_eventType != null) SVClient.sendEventAsync(_eventType);
             handleEventImpl(event);
         }

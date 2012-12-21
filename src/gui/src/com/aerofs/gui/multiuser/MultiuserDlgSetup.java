@@ -5,9 +5,14 @@
 package com.aerofs.gui.multiuser;
 
 import com.aerofs.gui.AeroFSTitleAreaDialog;
+import com.aerofs.gui.GUI;
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgSetupCommon;
 import com.aerofs.gui.setup.DlgSetupCommon.IDlgSetupCommonCallbacks;
 import com.aerofs.gui.setup.IDlgSetup;
+import com.aerofs.labeling.L;
+import com.aerofs.lib.Param.SP;
+import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -37,7 +42,6 @@ public class MultiuserDlgSetup extends AeroFSTitleAreaDialog
     /**
      * Create contents of the dialog
      */
-    @SuppressWarnings("all")
     @Override
     protected Control createDialogArea(Composite parent)
     {
@@ -139,6 +143,17 @@ public class MultiuserDlgSetup extends AeroFSTitleAreaDialog
     {
         UI.controller().setupTeamServer(userID, new String(passwd),
                 _common.getAbsRootAnchor(), _common.getDeviceName(), null);
+    }
+
+    @Override
+    public void postSetup()
+    {
+        if (GUI.get().ask(MessageType.QUESTION,
+                "Do you want to invite users to your team now?" +
+                " You can also do it later by visiting http://" + L.get().webAdminHost() + ".",
+                "Invite Users", "Later")) {
+            GUIUtil.launch(SP.TEAM_MANAGEMENT_URL);
+        }
     }
 
     @Override

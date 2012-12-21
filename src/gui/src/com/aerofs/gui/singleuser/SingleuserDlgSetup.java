@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.gui.singleuser;
 
 import java.io.IOException;
@@ -81,7 +85,6 @@ public class SingleuserDlgSetup extends AeroFSTitleAreaDialog
     /**
      * Create contents of the dialog
      */
-    @SuppressWarnings("all")
     @Override
     protected Control createDialogArea(Composite parent)
     {
@@ -480,6 +483,11 @@ public class SingleuserDlgSetup extends AeroFSTitleAreaDialog
                 break;
             }
         }
+    }
+
+    @Override
+    public void postSetup()
+    {
     }
 
     @Override

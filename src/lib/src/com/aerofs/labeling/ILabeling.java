@@ -33,6 +33,8 @@ public interface ILabeling
 
     String webHost();
 
+    String webAdminHost();
+
     String spUrl();
 
     String ssHost();

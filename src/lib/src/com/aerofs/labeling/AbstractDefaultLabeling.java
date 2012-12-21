@@ -91,6 +91,12 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     }
 
     @Override
+    public String webAdminHost()
+    {
+        return "my.aerofs.com";
+    }
+
+    @Override
     public String ssHost()
     {
         return "sss.aerofs.com";
