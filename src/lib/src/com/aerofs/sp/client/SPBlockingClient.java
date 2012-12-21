@@ -29,12 +29,13 @@ public class SPBlockingClient extends SPServiceBlockingStub
     {
         public SPBlockingClient create_(URL spURL, UserID user)
         {
-            return new SPBlockingClient(new SPClientHandler(spURL), user);
+            return new SPBlockingClient(new SPClientHandler(spURL,
+                    SPClientFactory.getDefaultConfigurator()), user);
         }
 
         public SPBlockingClient create_(UserID user)
         {
-            return new SPBlockingClient(new SPClientHandler(SP.URL), user);
+            return create_(SP.URL, user);
         }
     }
 

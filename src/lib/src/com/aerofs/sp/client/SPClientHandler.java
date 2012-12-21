@@ -2,6 +2,7 @@ package com.aerofs.sp.client;
 
 import java.net.URL;
 
+import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.base.net.NullURLConnectionConfigurator;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.C;
@@ -14,12 +15,9 @@ public class SPClientHandler
         extends AbstractHttpRpcClient
         implements SPServiceStubCallbacks
 {
-    public SPClientHandler(URL url)
+    public SPClientHandler(URL url, IURLConnectionConfigurator conf)
     {
-        super(url, C.SP_POST_PARAM_PROTOCOL, C.SP_POST_PARAM_DATA, C.SP_PROTOCOL_VERSION,
-                L.get().isMultiuser() ?
-                    SSLURLConnectionConfigurator.SSL_URL_CONNECTION_CONFIGURATOR :
-                    NullURLConnectionConfigurator.NULL_URL_CONNECTION_CONFIGURATOR);
+        super(url, C.SP_POST_PARAM_PROTOCOL, C.SP_POST_PARAM_DATA, C.SP_PROTOCOL_VERSION, conf);
     }
 
     @Override

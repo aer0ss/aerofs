@@ -208,7 +208,11 @@ class Setup
 
         PreSetupResult res = new PreSetupResult();
         res._scrypted = SecUtil.scrypt(password, userID);
-        res._sp = SPClientFactory.newBlockingClient(SP.URL, userID);
+
+        // When setting up Team Servers, the ID of the user who sets up the server is used with this
+        // SP client to sign in. Since the default configurator is SSLURLConnectionConfigurator
+        // which doesn't work with regular clients, we force a null connection configurator.
+        res._sp = SPClientFactory.newBlockingClientWithNullConnectionConfigurator(SP.URL, userID);
 
         return res;
     }
