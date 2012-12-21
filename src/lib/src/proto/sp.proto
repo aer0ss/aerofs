@@ -395,7 +395,7 @@ service SPService {
      * Throws:
      *   ExNoPerm       if the user calling this does not have admin privileges
      */
-    rpc ListSharedFolders(ListSharedFoldersCall) returns(ListSharedFoldersResponse);
+    rpc ListSharedFolders(ListSharedFoldersCall) returns(ListSharedFoldersReply);
 
     /**
      * Gets a list of organizations the user has been invited to, excluding their current
@@ -765,7 +765,7 @@ message ListSharedFoldersCall {
     optional int32 offset = 2;
 }
 
-message ListSharedFoldersResponse {
+message ListSharedFoldersReply {
     message PBSharedFolder {
         required bytes store_id = 1;                   // store id (unique identifier)
         required string name = 2;                      // folder name (user facing)

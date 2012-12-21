@@ -6,11 +6,13 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.lib.id.UserID;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
-import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -24,9 +26,6 @@ import java.util.List;
 public class Organization
 {
     private final static Logger l = Util.l(Organization.class);
-
-    private final OrganizationID _id;
-    private final OrganizationDatabase _db;
 
     public static class Factory
     {
@@ -44,7 +43,7 @@ public class Organization
 
         public Organization create(@Nonnull OrganizationID id)
         {
-            return new Organization(_db, id);
+            return new Organization(this, id);
         }
 
         /**
@@ -90,10 +89,13 @@ public class Organization
         }
     }
 
-    private Organization(OrganizationDatabase db, OrganizationID id)
+    private final OrganizationID _id;
+    private final Factory _f;
+
+    private Organization(Factory f, OrganizationID id)
     {
+        _f = f;
         _id = id;
-        _db = db;
     }
 
     public OrganizationID id()
@@ -109,13 +111,13 @@ public class Organization
     public String getName()
             throws ExNotFound, SQLException
     {
-        return _db.getName(_id);
+        return _f._db.getName(_id);
     }
 
     public void setName(String name)
             throws SQLException
     {
-        _db.setName(_id, name);
+        _f._db.setName(_id, name);
     }
 
     @Override
@@ -136,14 +138,16 @@ public class Organization
         return "org #" + _id;
     }
 
-    public static class UserListAndQueryCount
+    public class UsersAndQueryCount
     {
-        public final List<UserInfo> _userInfoList;
+        public final ImmutableList<User> _users;
         public final int _count;
 
-        public UserListAndQueryCount(List<UserInfo> userInfoList, int count)
+        public UsersAndQueryCount(Collection<UserID> userIDs, int count)
         {
-            _userInfoList = userInfoList;
+            Builder<User> builder = ImmutableList.builder();
+            for (UserID userID : userIDs) builder.add(_f._factUser.create(userID));
+            _users = builder.build();
             _count = count;
         }
     }
@@ -151,65 +155,64 @@ public class Organization
     /**
      * @param search Null or empty string when we want to find all the users.
      */
-    public UserListAndQueryCount listUsersAuth(@Nullable String search,
+    public UsersAndQueryCount listUsersAuth(@Nullable String search,
             AuthorizationLevel authLevel, int maxResults, int offset)
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-        checkOffset(offset);
-        checkMaxResults(maxResults);
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
 
         assert offset >= 0;
 
-        List<UserInfo> users;
+        List<UserID> userIDs;
         int count;
         if (search.isEmpty()) {
-            users = _db.listUsersWithAuthorization(_id, offset, maxResults, authLevel);
-            count = _db.listUsersWithAuthorizationCount(authLevel, _id);
-        }
-        else {
+            userIDs = _f._db.listUsersWithAuthorization(_id, offset, maxResults, authLevel);
+            count = _f._db.listUsersWithAuthorizationCount(authLevel, _id);
+        } else {
             assert !search.isEmpty();
-            users = _db.searchUsersWithAuthorization(
-                    _id, offset, maxResults, authLevel, search);
-            count = _db.searchUsersWithAuthorizationCount(authLevel, _id, search);
+            userIDs = _f._db.searchUsersWithAuthorization(_id, offset, maxResults, authLevel, search);
+            count = _f._db.searchUsersWithAuthorizationCount(authLevel, _id, search);
         }
-        return new UserListAndQueryCount(users, count);
+
+        return new UsersAndQueryCount(userIDs, count);
     }
 
     public int totalUserCount() throws SQLException
     {
-        return _db.listUsersCount(_id);
+        return _f._db.listUsersCount(_id);
     }
 
     public int totalUserCount(AuthorizationLevel authLevel)
             throws SQLException
     {
-        return _db.listUsersWithAuthorizationCount(authLevel, _id);
+        return _f._db.listUsersWithAuthorizationCount(authLevel, _id);
     }
 
-    public UserListAndQueryCount listUsers(@Nullable String search, int maxResults, int offset)
+    public UsersAndQueryCount listUsers(@Nullable String search, int maxResults, int offset)
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-        checkOffset(offset);
-        checkMaxResults(maxResults);
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
 
         assert offset >= 0;
 
-        List<UserInfo> users;
+        List<UserID> userIDs;
         int count;
         if (search.isEmpty()) {
-            users = _db.listUsers(_id, offset, maxResults);
-            count = _db.listUsersCount(_id);
+            userIDs = _f._db.listUsers(_id, offset, maxResults);
+            count = _f._db.listUsersCount(_id);
         } else {
             assert !search.isEmpty();
-            users = _db.searchUsers(_id, offset, maxResults, search);
-            count = _db.searchUsersCount(_id, search);
+            userIDs = _f._db.searchUsers(_id, offset, maxResults, search);
+            count = _f._db.searchUsersCount(_id, search);
         }
-        return new UserListAndQueryCount(users, count);
+        return new UsersAndQueryCount(userIDs, count);
     }
 
-    private static void checkOffset(int offset)
+    private static void throwOnInvalidOffset(int offset)
             throws ExBadArgs
     {
         if (offset < 0) throw new ExBadArgs("offset is negative");
@@ -218,7 +221,7 @@ public class Organization
     // To avoid DoS attacks, do not permit listUsers queries to exceed 1000 returned results
     private static final int ABSOLUTE_MAX_RESULTS = 1000;
 
-    private static void checkMaxResults(int maxResults)
+    private static void throwOnInvalidMaxResults(int maxResults)
             throws ExBadArgs
     {
         if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
@@ -228,7 +231,7 @@ public class Organization
     public int countSharedFolders()
             throws SQLException
     {
-        return _db.countSharedFolders(_id);
+        return _f._db.countSharedFolders(_id);
     }
 
     /**
@@ -237,6 +240,6 @@ public class Organization
     public Collection<SharedFolderInfo> listSharedFolders(int maxResults, int offset)
             throws SQLException
     {
-        return _db.listSharedFolders(_id, maxResults, offset);
+        return _f._db.listSharedFolders(_id, maxResults, offset);
     }
 }

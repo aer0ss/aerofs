@@ -37,9 +37,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_ORG_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_ORG;
@@ -111,36 +109,15 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    // TODO (WW) use User class
-    public static class UserInfo
-    {
-        public final UserID _userId;
-        public final String _firstName;
-        public final String _lastName;
-
-        public UserInfo(UserID userId, String firstName, String lastName)
-        {
-            _userId = userId;
-            _firstName = firstName;
-            _lastName = lastName;
-        }
-    }
-
     /**
      * @param rs Result set of tuples of the form (id, first name, last name).
      * @return  List of users in the result set.
      */
-    private List<UserInfo> usersResultSet2List(ResultSet rs)
+    private List<UserID> usersResultSet2List(ResultSet rs)
             throws SQLException
     {
-        List<UserInfo> users = Lists.newArrayList();
-        while (rs.next()) {
-            UserID id = UserID.fromInternal(rs.getString(1));
-            String firstName = rs.getString(2);
-            String lastName = rs.getString(3);
-            UserInfo user = new UserInfo(id, firstName, lastName);
-            users.add(user);
-        }
+        List<UserID> users = Lists.newArrayList();
+        while (rs.next()) users.add(UserID.fromInternal(rs.getString(1)));
         return users;
     }
 
@@ -156,13 +133,11 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @return List of users under the organization {@code orgId}
      * between [offset, offset + maxResults].
      */
-    public List<UserInfo> listUsers(OrganizationID orgId, int offset, int maxResults)
+    public List<UserID> listUsers(OrganizationID orgId, int offset, int maxResults)
             throws SQLException
     {
         PreparedStatement psLU = prepareStatement(
-                "select " + C_USER_ID + "," +
-                        C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " +
-                        T_USER +
+                "select " + C_USER_ID + " from " + T_USER +
                         " where " + C_USER_ORG_ID + "=? " + andNotTeamServer() + " order by " +
                         C_USER_ID + " limit ? offset ?");
 
@@ -187,11 +162,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    public List<UserInfo> searchUsers(OrganizationID orgId, int offset, int maxResults, String search)
+    public List<UserID> searchUsers(OrganizationID orgId, int offset, int maxResults, String search)
             throws SQLException
     {
-        PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + "," +
-                C_USER_FIRST_NAME + "," + C_USER_LAST_NAME + " from " + T_USER +
+        PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + " from " + T_USER +
                 " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " + andNotTeamServer() +
                 " order by " + C_USER_ID + " limit ? offset ?");
 
@@ -216,13 +190,12 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @return List of users with the given authorization level {@code authLevel} under
      * the organization {@code orgId} between [offset, offset + maxResults].
      */
-    public List<UserInfo> listUsersWithAuthorization(OrganizationID orgId, int offset, int maxResults,
+    public List<UserID> listUsersWithAuthorization(OrganizationID orgId, int offset, int maxResults,
             AuthorizationLevel authLevel)
             throws SQLException
     {
         PreparedStatement psLUA = prepareStatement(
-                "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
-                        C_USER_LAST_NAME + " from " + T_USER +
+                "select " + C_USER_ID + " from " + T_USER +
                         " where " + C_USER_ORG_ID + "=? and " +
                         C_USER_AUTHORIZATION_LEVEL + "=? " + andNotTeamServer() +
                         "order by " + C_USER_ID + " limit ? offset ?"
@@ -252,13 +225,12 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * The users are under the organization {@code orgId}, and the list is between
      * [offset, offset + maxResults].
      */
-    public List<UserInfo> searchUsersWithAuthorization(OrganizationID orgId, int offset,
+    public List<UserID> searchUsersWithAuthorization(OrganizationID orgId, int offset,
             int maxResults, AuthorizationLevel authLevel, String search)
             throws SQLException
     {
         PreparedStatement psSUA = prepareStatement(
-                "select " + C_USER_ID + ", " + C_USER_FIRST_NAME + ", " +
-                        C_USER_LAST_NAME + " from " + T_USER +
+                "select " + C_USER_ID + " from " + T_USER +
                         " where " + C_USER_ORG_ID + "=? and " +
                         C_USER_ID + " like ? and " +
                         C_USER_AUTHORIZATION_LEVEL + "=? " + andNotTeamServer() +

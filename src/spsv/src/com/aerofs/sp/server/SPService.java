@@ -35,9 +35,8 @@ import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
 import com.aerofs.sp.server.lib.device.Device;
-import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
-import com.aerofs.sp.server.lib.organization.Organization.UserListAndQueryCount;
+import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sv.client.SVClient;
@@ -59,8 +58,8 @@ import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
-import com.aerofs.proto.Sp.ListSharedFoldersResponse;
-import com.aerofs.proto.Sp.ListSharedFoldersResponse.PBSharedFolder;
+import com.aerofs.proto.Sp.ListSharedFoldersReply;
+import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.Sp.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -253,10 +252,10 @@ public class SPService implements ISPService
         user.throwIfNotAdmin();
 
         Organization org = user.getOrganization();
-        UserListAndQueryCount listAndCount = org.listUsers(search, maxResults, offset);
+        UsersAndQueryCount listAndCount = org.listUsers(search, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(userInfoList2PBUserList(listAndCount._userInfoList))
+                .addAllUsers(users2PBUserLists(listAndCount._users))
                 .setFilteredCount(listAndCount._count)
                 .setTotalCount(org.totalUserCount())
                 .build();
@@ -279,10 +278,10 @@ public class SPService implements ISPService
         Organization org = user.getOrganization();
         AuthorizationLevel level = AuthorizationLevel.fromPB(authLevel);
 
-        UserListAndQueryCount listAndCount = org.listUsersAuth(search, level, maxResults, offset);
+        UsersAndQueryCount listAndCount = org.listUsersAuth(search, level, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(userInfoList2PBUserList(listAndCount._userInfoList))
+                .addAllUsers(users2PBUserLists(listAndCount._users))
                 .setFilteredCount(listAndCount._count)
                 .setTotalCount(org.totalUserCount(level))
                 .build();
@@ -292,21 +291,23 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
-    private static List<PBUser> userInfoList2PBUserList(List<UserInfo> uis)
+    private static List<PBUser> users2PBUserLists(Collection<User> users)
+            throws SQLException, ExNotFound
     {
-        List<PBUser> pbusers = Lists.newArrayListWithCapacity(uis.size());
-        for (UserInfo ui : uis) {
+        List<PBUser> pbusers = Lists.newArrayListWithCapacity(users.size());
+        for (User user : users) {
+            FullName fn = user.getFullName();
             pbusers.add(PBUser.newBuilder()
-                    .setUserEmail(ui._userId.toString())
-                    .setFirstName(ui._firstName)
-                    .setLastName(ui._lastName)
+                    .setUserEmail(user.id().toString())
+                    .setFirstName(fn._first)
+                    .setLastName(fn._last)
                     .build());
         }
         return pbusers;
     }
 
     @Override
-    public ListenableFuture<ListSharedFoldersResponse> listSharedFolders(Integer maxResults,
+    public ListenableFuture<ListSharedFoldersReply> listSharedFolders(Integer maxResults,
             Integer offset)
             throws Exception
     {
@@ -339,7 +340,7 @@ public class SPService implements ISPService
 
         _transaction.commit();
 
-        return createReply(ListSharedFoldersResponse.newBuilder()
+        return createReply(ListSharedFoldersReply.newBuilder()
                 .addAllSharedFolders(pbs)
                 .setTotalCount(sharedFolderCount)
                 .build());
