@@ -140,12 +140,12 @@ public class DlgSetupAdvanced extends AeroFSJFaceDialog {
         super.buttonPressed(buttonId);
     }
 
-    String getDeviceName()
+    public String getDeviceName()
     {
         return _deviceName;
     }
 
-    String getAbsoluteRootAnchor()
+    public String getAbsoluteRootAnchor()
     {
         assert new File(_absRootAnchor).isAbsolute();
         return _absRootAnchor;

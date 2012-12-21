@@ -20,7 +20,7 @@ public class S
             LBL_UPDATE_APPLY         = "A new update has been downloaded.",
             LBL_UPDATE_ERROR         = "An error was encountered.",
 
-            SETUP_USER_ID            = "Email address",
+            SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
             SETUP_FIRST_NAME         = "First name",
             SETUP_LAST_NAME          = "Last name",
