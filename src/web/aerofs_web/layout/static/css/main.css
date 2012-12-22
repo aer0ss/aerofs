@@ -58,12 +58,15 @@ div.message_container {
 }
 div.flash_message {
   padding: 8px;
+  text-align: center;
 }
 div.error_message {
   background-color: #f4c8c5;
+  margin: 0 auto;
 }
 div.success_message {
   background-color: #adf1ad;
+  margin: 0 auto;
 }
 div#not_authorized {
   color: #9d261d;
@@ -75,13 +78,13 @@ body {
 }
 #wrapper {
   min-height: 100%;
-  margin-bottom: -6em;
+  margin-bottom: -4em;
 }
 #footer-push {
-  height: 6em;
+  height: 4em;
 }
 footer {
-  height: 6em;
+  height: 4em;
   color: gray;
   text-align: right;
 }

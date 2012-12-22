@@ -1,6 +1,6 @@
 @import "bootstrap/variables.less";
 
-@footerHeight: 6em;
+@footerHeight: 4em;
 
 .navbar .nav > li > a {
   font-size:120%;
@@ -90,14 +90,17 @@ div.message_container {
 
 div.flash_message {
     padding: 8px;
+    text-align: center;
 }
 
 div.error_message {
     background-color: @errorMessageColor;
+    margin: 0 auto;    // for center alignment
 }
 
 div.success_message {
     background-color: @successMessageColor;
+    margin: 0 auto;    // for center alignment
 }
 
 div#not_authorized {
