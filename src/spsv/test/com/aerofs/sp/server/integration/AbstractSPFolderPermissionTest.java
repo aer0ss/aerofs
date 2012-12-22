@@ -83,7 +83,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
     {
         setSessionUser(sharer);
         service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role),
-                "no notes for you");
+                "");
     }
 
     protected @Nullable String getSharedFolderCode(UserID sharer, SID sid, UserID sharee)
