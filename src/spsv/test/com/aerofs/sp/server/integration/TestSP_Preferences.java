@@ -25,14 +25,14 @@ public class TestSP_Preferences extends AbstractSPTest
     @Before
     public void setup()
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
     }
 
     @Test
     public void shouldTrimUserAndDeviceNames() throws Exception
     {
         trans.begin();
-        ddb.addDevice(_did, TEST_USER_1, "name");
+        ddb.addDevice(_did, USER_1, "name");
         trans.commit();
 
         service.setPreferences("   first ", " last   ", _did.toPB(), "  device names  ").get();

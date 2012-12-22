@@ -37,7 +37,7 @@ public class TestSP_SignIn extends AbstractSPTest
             throws Exception
     {
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(TEST_USER_1.toString(), ByteString.copyFrom(TEST_USER_1_CRED));
+        service.signIn(USER_1.toString(), ByteString.copyFrom(USER_1_CRED));
     }
 
     @Test(expected = ExBadCredential.class)
@@ -55,7 +55,7 @@ public class TestSP_SignIn extends AbstractSPTest
     public void shouldNotAllowTeamServerIDToSignInWithPasswords()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
         UserID tsUserID = setupTeamServer();
 
         mockCertificateAuthenticatorSetUnauthorizedState();
@@ -66,7 +66,7 @@ public class TestSP_SignIn extends AbstractSPTest
     public void shouldAllowTeamServerLoginWithValidCertificate()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
         UserID tsUserID = setupTeamServer();
 
         // Credentials do not need to be supplied here.
@@ -80,7 +80,7 @@ public class TestSP_SignIn extends AbstractSPTest
     public void shouldNotAllowTeamServerLoginWithRevokedCertificate()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
 
         // Setup the team server (obtail device certificate).
         UserID tsUserID = setupTeamServer();

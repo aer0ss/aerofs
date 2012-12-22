@@ -64,7 +64,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
             boolean hasOwner = false;
             for (PBSubjectRolePair srp : sf.getSubjectRoleList()) {
-                if (UserID.fromInternal(srp.getSubject()).equals(TEST_USER_1)) {
+                if (UserID.fromInternal(srp.getSubject()).equals(USER_1)) {
                     assertEquals(Role.fromPB(srp.getRole()), Role.OWNER);
                     assertFalse(hasOwner);
                     hasOwner = true;
@@ -81,7 +81,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
             boolean hasSharee = false;
             for (PBSubjectRolePair srp : sf.getSubjectRoleList()) {
-                if (!UserID.fromInternal(srp.getSubject()).equals(TEST_USER_1)) {
+                if (!UserID.fromInternal(srp.getSubject()).equals(USER_1)) {
                     assertEquals(Role.fromPB(srp.getRole()), Role.EDITOR);
                     assertFalse(hasSharee);
                     hasSharee = true;
@@ -95,10 +95,10 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // for backward compat with existing tests, accept invite immediately to update ACLs
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         // for backward compat with existing tests, accept invite immediately to update ACLs
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_2, TEST_USER_3, Role.EDITOR);
+        shareAndJoinFolder(USER_1, TEST_SID_2, USER_3, Role.EDITOR);
 
         // add a new org so user 1 can haz permissions to list folders
         service.addOrganization("test org");

@@ -69,19 +69,19 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     public void shouldThrowWhenTryingToShareWithSelf()
             throws Exception
     {
-        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_1, Role.EDITOR);
+        shareFolder(USER_1, TEST_SID_1, USER_1, Role.EDITOR);
     }
 
     @Test
     public void shouldSuccessfullyShareFolderWithOneUser()
             throws Exception
     {
-        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(TEST_USER_1.toString()));
-        verifyFolderInvitation(TEST_USER_1, TEST_USER_2, TEST_SID_1, true);
-        verifyNewUserAccountInvitation(TEST_USER_1, TEST_USER_2, TEST_SID_1, false);
+        assertTrue(published.contains(USER_1.toString()));
+        verifyFolderInvitation(USER_1, USER_2, TEST_SID_1, true);
+        verifyNewUserAccountInvitation(USER_1, USER_2, TEST_SID_1, false);
     }
 
     @Test
@@ -89,38 +89,38 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // user 4 hasn't actually been added to the db yet so this should trigger an invite to them
-        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
+        shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(TEST_USER_1.toString()));
-        verifyFolderInvitation(TEST_USER_1, TEST_USER_4, TEST_SID_1, false);
-        verifyNewUserAccountInvitation(TEST_USER_1, TEST_USER_4, TEST_SID_1, true);
+        assertTrue(published.contains(USER_1.toString()));
+        verifyFolderInvitation(USER_1, TEST_USER_4, TEST_SID_1, false);
+        verifyNewUserAccountInvitation(USER_1, TEST_USER_4, TEST_SID_1, true);
     }
 
     @Test
     public void shouldJoinFolder() throws Exception
     {
-        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(TEST_USER_1.toString()));
+        assertTrue(published.contains(USER_1.toString()));
         published.clear();
 
-        String code = getSharedFolderCode(TEST_USER_1, TEST_SID_1, TEST_USER_2);
+        String code = getSharedFolderCode(USER_1, TEST_SID_1, USER_2);
         Assert.assertNotNull(code);
 
-        joinSharedFolder(TEST_USER_2, code);
+        joinSharedFolder(USER_2, code);
 
         assertEquals(2, published.size());
-        assertTrue(published.contains(TEST_USER_1.toString()));
-        assertTrue(published.contains(TEST_USER_2.toString()));
+        assertTrue(published.contains(USER_1.toString()));
+        assertTrue(published.contains(USER_2.toString()));
     }
 
     @Test
     public void shouldThrowExNotFoundWhenTryingToJoinWithInvalidCode() throws Exception
     {
         try {
-            joinSharedFolder(TEST_USER_2, "deadbeef");
+            joinSharedFolder(USER_2, "deadbeef");
             // must not reach here
             assertTrue(false);
         } catch (ExNotFound e) {
@@ -132,14 +132,14 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExNoPermWhenTryingToJoinWithCodeForDifferentUser() throws Exception
     {
-        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
         published.clear();
 
-        String code = getSharedFolderCode(TEST_USER_1, TEST_SID_1, TEST_USER_2);
+        String code = getSharedFolderCode(USER_1, TEST_SID_1, USER_2);
         Assert.assertNotNull(code);
 
         try {
-            joinSharedFolder(TEST_USER_3, code);
+            joinSharedFolder(USER_3, code);
             // must not reach here
             assertTrue(false);
         } catch (ExNoPerm e) {
@@ -152,12 +152,12 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     public void shouldThrowExNoPermWhenEditorTriesToInviteToFolder()
             throws Exception
     {
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
         published.clear();
 
         try {
             // should throw ExNoPerm because user 2 is an editor
-            shareFolder(TEST_USER_2, TEST_SID_1, TEST_USER_3, Role.EDITOR);
+            shareFolder(USER_2, TEST_SID_1, USER_3, Role.EDITOR);
             // must not reach here
             assertTrue(false);
         } catch (ExNoPerm e) {
@@ -176,12 +176,12 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
         trans.commit();
 
-        shareFolder(TEST_USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
+        shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
         published.clear();
 
         try {
             // should throw ExNoPerm because user 4 is unverified
-            shareFolder(TEST_USER_4, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+            shareFolder(TEST_USER_4, TEST_SID_1, USER_2, Role.EDITOR);
             // must not reach here
             assertTrue(false);
         } catch (ExNoPerm e) {

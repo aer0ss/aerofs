@@ -121,14 +121,14 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     // N.B. the @Mock is only necessary if the subclass will mock the object in some special way
     @InjectMocks protected SPService service;
 
-    protected static final UserID TEST_USER_1 = UserID.fromInternal("user_1");
-    protected static final byte[] TEST_USER_1_CRED = "CREDENTIALS".getBytes();
+    protected static final UserID USER_1 = UserID.fromInternal("user_1");
+    protected static final byte[] USER_1_CRED = "CREDENTIALS".getBytes();
 
-    protected static final UserID TEST_USER_2 = UserID.fromInternal("user_2");
-    protected static final byte[] TEST_USER_2_CRED = "CREDENTIALS".getBytes();
+    protected static final UserID USER_2 = UserID.fromInternal("user_2");
+    protected static final byte[] USER_2_CRED = "CREDENTIALS".getBytes();
 
-    protected static final UserID TEST_USER_3 = UserID.fromInternal("user_3");
-    protected static final byte[] TEST_USER_3_CRED = "CREDENTIALS".getBytes();
+    protected static final UserID USER_3 = UserID.fromInternal("user_3");
+    protected static final byte[] USER_3_CRED = "CREDENTIALS".getBytes();
 
     // Use a method name that is unlikely to conflict with setup methods in subclasses
     @Before
@@ -143,15 +143,12 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
 
         // Add all the users to the db.
         trans.begin();
-        udb.addUser(TEST_USER_1, new FullName(TEST_USER_1.toString(), TEST_USER_1.toString()),
-                TEST_USER_1_CRED, orgId, level);
-        udb.setVerified(TEST_USER_1);
-        udb.addUser(TEST_USER_2, new FullName(TEST_USER_2.toString(), TEST_USER_2.toString()),
-                TEST_USER_2_CRED, orgId, level);
-        udb.setVerified(TEST_USER_2);
-        udb.addUser(TEST_USER_3, new FullName(TEST_USER_3.toString(), TEST_USER_3.toString()),
-                TEST_USER_3_CRED, orgId, level);
-        udb.setVerified(TEST_USER_3);
+        udb.addUser(USER_1, new FullName(USER_1.toString(), USER_1.toString()), USER_1_CRED, orgId, level);
+        udb.setVerified(USER_1);
+        udb.addUser(USER_2, new FullName(USER_2.toString(), USER_2.toString()), USER_2_CRED, orgId, level);
+        udb.setVerified(USER_2);
+        udb.addUser(USER_3, new FullName(USER_3.toString(), USER_3.toString()), USER_3_CRED, orgId, level);
+        udb.setVerified(USER_3);
         trans.commit();
     }
 

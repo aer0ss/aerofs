@@ -17,15 +17,15 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     public void shouldMoveUserToNewOrganizationViaEmail()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
 
         // Create a new organization (name doesn't matter). The session user will now be an admin
         // of this new organization.
         service.addOrganization(_organizationName);
-        service.inviteToOrganization(TEST_USER_2.toString());
+        service.inviteToOrganization(USER_2.toString());
 
         // Switch to the invited user.
-        setSessionUser(TEST_USER_2);
+        setSessionUser(USER_2);
         GetOrganizationInvitationsReply pending = service.getOrganizationInvitations().get();
 
         assertEquals(1, pending.getOrganizationInvitationsList().size());

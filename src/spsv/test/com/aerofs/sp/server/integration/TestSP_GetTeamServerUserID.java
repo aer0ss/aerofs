@@ -30,7 +30,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
     public void setup()
             throws ExNoPerm
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
         user = sessionUser.get();
     }
 

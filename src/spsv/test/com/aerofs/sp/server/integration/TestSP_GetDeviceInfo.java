@@ -46,24 +46,24 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         trans.begin();
 
         // User 1
-        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A01");
-        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A02");
-        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_1, "Device A03");
+        ddb.addDevice(new DID(UniqueID.generate()), USER_1, "Device A01");
+        ddb.addDevice(new DID(UniqueID.generate()), USER_1, "Device A02");
+        ddb.addDevice(new DID(UniqueID.generate()), USER_1, "Device A03");
 
         // User 2
         _deviceB01 = new DID(UniqueID.generate());
-        ddb.addDevice(_deviceB01, TEST_USER_2, "Device B01");
-        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_2, "Device B02");
+        ddb.addDevice(_deviceB01, USER_2, "Device B01");
+        ddb.addDevice(new DID(UniqueID.generate()), USER_2, "Device B02");
 
         // User 3
         _deviceC01 = new DID(UniqueID.generate());
-        ddb.addDevice(_deviceC01, TEST_USER_3, "Device C01");
-        ddb.addDevice(new DID(UniqueID.generate()), TEST_USER_3, "Device C02");
+        ddb.addDevice(_deviceC01, USER_3, "Device C01");
+        ddb.addDevice(new DID(UniqueID.generate()), USER_3, "Device C02");
 
         trans.commit();
 
         // User 1 shares with User 2, but not with User 3
-        shareAndJoinFolder(TEST_USER_1, TEST_SID_1, TEST_USER_2, Role.EDITOR);
+        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
     }
 
     /**
@@ -91,9 +91,9 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         assertTrue(deviceInfo.hasOwner());
 
         // The parent sets the first name and the last name to just be the test user name.
-        assertEquals(deviceInfo.getOwner().getUserEmail(), TEST_USER_2.toString());
-        assertEquals(deviceInfo.getOwner().getFirstName(), TEST_USER_2.toString());
-        assertEquals(deviceInfo.getOwner().getLastName(), TEST_USER_2.toString());
+        assertEquals(deviceInfo.getOwner().getUserEmail(), USER_2.toString());
+        assertEquals(deviceInfo.getOwner().getFirstName(), USER_2.toString());
+        assertEquals(deviceInfo.getOwner().getLastName(), USER_2.toString());
     }
 
     /**

@@ -14,7 +14,7 @@ public class TestSP_OrganizationPreferences extends AbstractSPTest
     @Before
     public void setup()
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
     }
 
     @Test

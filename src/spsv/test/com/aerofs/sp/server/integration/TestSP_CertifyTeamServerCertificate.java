@@ -35,7 +35,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
     public void setup()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
         user = sessionUser.get();
     }
 

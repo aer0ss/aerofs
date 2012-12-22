@@ -19,7 +19,7 @@ public class TestSP_InviteUser extends AbstractSPTest
     public void inviteUser_shouldThrowOnEmptyInviteeList()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
 
         service.inviteUser(Collections.<String>emptyList());
     }
@@ -28,8 +28,8 @@ public class TestSP_InviteUser extends AbstractSPTest
     public void inviteUser_shouldThrowIfUserAlreadyExists()
             throws Exception
     {
-        setSessionUser(TEST_USER_1);
+        setSessionUser(USER_1);
 
-        service.inviteUser(Collections.singletonList(TEST_USER_2.toString()));
+        service.inviteUser(Collections.singletonList(USER_2.toString()));
     }
 }
