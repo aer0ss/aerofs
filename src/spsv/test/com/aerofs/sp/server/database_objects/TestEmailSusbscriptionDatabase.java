@@ -32,7 +32,8 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
 
     @Test
     public void shouldSubscribeUserToOneCategory()
-            throws SQLException {
+            throws SQLException
+    {
         SubscriptionCategory sc = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
 
         esdb.addEmailSubscription(TEST_USER1, sc);
@@ -42,7 +43,8 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
 
     @Test
     public void shouldUnsubscribeUserFromOneCategory()
-            throws SQLException, ExNotFound {
+            throws SQLException, ExNotFound
+    {
         SubscriptionCategory sc1 = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
         SubscriptionCategory sc2 = SubscriptionCategory.NEWSLETTER;
 

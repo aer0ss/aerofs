@@ -14,7 +14,8 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.User;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 
@@ -42,12 +43,12 @@ public class SharedFolder
             _factUser = factUser;
         }
 
-        public SharedFolder create_(ByteString sid)
+        public SharedFolder create(ByteString sid)
         {
-            return create_(new SID(sid));
+            return create(new SID(sid));
         }
 
-        public SharedFolder create_(SID sid)
+        public SharedFolder create(SID sid)
         {
             return new SharedFolder(this, sid);
         }
@@ -242,11 +243,11 @@ public class SharedFolder
     public Collection<User> getUsers()
             throws SQLException
     {
-        List<User> users = Lists.newArrayList();
+        Builder<User> builder = ImmutableList.builder();
         for (UserID userID : _f._db.getACLUsers(_sid)) {
-            users.add(_f._factUser.create(userID));
+            builder.add(_f._factUser.create(userID));
         }
-        return users;
+        return builder.build();
     }
 
     /**
@@ -284,7 +285,7 @@ public class SharedFolder
     private void throwIfNoOwnerLeft()
             throws ExNoPerm, SQLException
     {
-        if (!_f._db.hasOwner(_sid)) throw new ExNoPerm("cannot demote all admins");
+        if (!_f._db.hasOwner(_sid)) throw new ExNoPerm("there must be at least one owner");
     }
 
     public void throwIfNotOwner(User user)

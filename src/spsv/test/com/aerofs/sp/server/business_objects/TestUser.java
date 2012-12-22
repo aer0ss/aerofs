@@ -104,7 +104,7 @@ public class TestUser extends AbstractBusinessObjectTest
         User user = newUser();
 
         // insert the colliding root store
-        SharedFolder sf = factSharedFolder.create_(SID.rootSID(user.id()));
+        SharedFolder sf = factSharedFolder.create(SID.rootSID(user.id()));
         sf.createNewSharedFolder("haha", attacker);
         sf.addACL(attacker2, Role.EDITOR);
         assertEquals(sf.getRoleThrows(attacker), Role.OWNER);
@@ -156,9 +156,9 @@ public class TestUser extends AbstractBusinessObjectTest
         createNewUser(user, orgOld);
         User tsUserOld = newUser(orgOld.id().toTeamServerUserID());
 
-        SharedFolder sfRoot = factSharedFolder.create_(SID.rootSID(user.id()));
-        SharedFolder sf1 = factSharedFolder.create_(SID.generate());
-        SharedFolder sf2 = factSharedFolder.create_(SID.generate());
+        SharedFolder sfRoot = factSharedFolder.create(SID.rootSID(user.id()));
+        SharedFolder sf1 = factSharedFolder.create(SID.generate());
+        SharedFolder sf2 = factSharedFolder.create(SID.generate());
         sf1.createNewSharedFolder("haha", user);
         sf2.createNewSharedFolder("haha", user);
 

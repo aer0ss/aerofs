@@ -5,9 +5,9 @@
 %>
 
 <div class="span12">
-	<h1>&nbsp;</h1>
-	<center>
-		<h2><a href="${request.route_path('accept')}">View Pending Invitations</a></h2>
+    <h1>&nbsp;</h1>
+    <center>
+        <h2><a href="${request.route_path('accept')}">View Pending Invitations</a></h2>
 
     %if request.session['group'] == ADMIN:
         <h2><a href="${request.route_path('users')}">Manage Team</a></h2>

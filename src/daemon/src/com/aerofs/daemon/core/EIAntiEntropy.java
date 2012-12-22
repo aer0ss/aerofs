@@ -1,8 +1,6 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.net.To;
-import com.aerofs.daemon.core.net.link.ILinkStateListener;
-import com.aerofs.daemon.core.net.link.LinkStateService;
 import com.aerofs.daemon.core.protocol.GetVersCall;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
@@ -14,13 +12,8 @@ import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
-
-import java.net.NetworkInterface;
-
-import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 public class EIAntiEntropy extends AbstractEBSelfHandling
 {

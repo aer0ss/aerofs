@@ -12,6 +12,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
+import com.aerofs.sp.server.lib.user.User;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -74,13 +75,15 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
     /**
      * Shares a folder through service.shareFolder with the given user and verifies that an
      * invitation email would've been sent.
+     *
+     * The folder name is always sid.toStringFormal(). This is required by getSharedFolderCode().
      */
     protected void shareFolder(UserID sharer, SID sid, UserID sharee, Role role)
             throws Exception
     {
         setSessionUser(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "")
-                .get();
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role),
+                "no notes for you");
     }
 
     protected @Nullable String getSharedFolderCode(UserID sharer, SID sid, UserID sharee)
@@ -108,7 +111,11 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
 
     protected void joinSharedFolder(UserID sharee, String code) throws Exception
     {
+        User oldUser = sessionUser.exists() ? sessionUser.get() : null;
+
         setSessionUser(sharee);
         service.joinSharedFolder(code);
+
+        if (oldUser != null) setSessionUser(oldUser.id());
     }
 }

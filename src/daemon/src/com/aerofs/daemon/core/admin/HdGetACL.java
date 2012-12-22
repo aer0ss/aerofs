@@ -6,7 +6,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.inject.Inject;

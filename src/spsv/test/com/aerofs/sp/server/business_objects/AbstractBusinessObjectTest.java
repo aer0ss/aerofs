@@ -47,7 +47,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     @Spy protected final User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
             factOrgInvite, factSharedFolder);
     {
-        factOrg.inject(odb, factUser);
+        factOrg.inject(odb, factUser, factSharedFolder);
         factSharedFolder.inject(sfdb, factUser);
     }
 
@@ -94,7 +94,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
 
     SharedFolder newSharedFolder(SID sid)
     {
-        return factSharedFolder.create_(sid);
+        return factSharedFolder.create(sid);
     }
 
     SharedFolder createNewSharedFolder(User owner)
@@ -106,7 +106,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     SharedFolder createNewSharedFolder(SID sid, User owner)
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
-        SharedFolder sf = factSharedFolder.create_(sid);
+        SharedFolder sf = factSharedFolder.create(sid);
         sf.createNewSharedFolder("shared folder", owner);
         return sf;
     }

@@ -31,6 +31,12 @@ public class MockSessionUser implements ISessionUser
     }
 
     @Override
+    public boolean exists()
+    {
+        return _user != null;
+    }
+
+    @Override
     public @Nonnull User get()
             throws ExNoPerm
     {

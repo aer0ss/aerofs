@@ -87,7 +87,7 @@ public class SPServlet extends AeroServlet
             _factOrgInvite, _factSharedFolder);
     {
         _factDevice.inject(_ddb, _certdb, _certgen, _factUser, _factCert);
-        _factOrg.inject(_odb, _factUser);
+        _factOrg.inject(_odb, _factUser, _factSharedFolder);
         _factOrgInvite.inject(_oidb, _factUser, _factOrg);
         _factSharedFolder.inject(_sfdb, _factUser);
     }

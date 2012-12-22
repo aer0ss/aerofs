@@ -41,4 +41,9 @@ public class OrganizationID extends IntegerID
     {
         return Integer.toHexString(getInt());
     }
+
+    public boolean isDefault()
+    {
+        return equals(DEFAULT);
+    }
 }

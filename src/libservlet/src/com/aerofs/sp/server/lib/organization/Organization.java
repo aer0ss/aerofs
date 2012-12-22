@@ -6,9 +6,10 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
+import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
@@ -33,12 +34,15 @@ public class Organization
 
         private OrganizationDatabase _db;
         private User.Factory _factUser;
+        private SharedFolder.Factory _factSharedFolder;
 
         @Inject
-        public void inject(OrganizationDatabase db, User.Factory factUser)
+        public void inject(OrganizationDatabase db, User.Factory factUser,
+                SharedFolder.Factory factSharedFolder)
         {
             _db = db;
             _factUser = factUser;
+            _factSharedFolder = factSharedFolder;
         }
 
         public Organization create(@Nonnull OrganizationID id)
@@ -105,7 +109,7 @@ public class Organization
 
     public boolean isDefault()
     {
-        return _id.equals(OrganizationID.DEFAULT);
+        return _id.isDefault();
     }
 
     public String getName()
@@ -229,17 +233,18 @@ public class Organization
     }
 
     public int countSharedFolders()
-            throws SQLException
+            throws SQLException, ExBadArgs
     {
         return _f._db.countSharedFolders(_id);
     }
 
-    /**
-     * TODO (WW) return a collection of SharedFolder objects instead.
-     */
-    public Collection<SharedFolderInfo> listSharedFolders(int maxResults, int offset)
-            throws SQLException
+    public Collection<SharedFolder> listSharedFolders(int maxResults, int offset)
+            throws SQLException, ExBadArgs
     {
-        return _f._db.listSharedFolders(_id, maxResults, offset);
+        Builder<SharedFolder> builder = ImmutableList.builder();
+        for (SID sid : _f._db.listSharedFolders(_id, maxResults, offset)) {
+            builder.add(_f._factSharedFolder.create(sid));
+        }
+        return builder.build();
     }
 }

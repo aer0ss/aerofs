@@ -27,7 +27,6 @@ import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.OrganizationDatabase.SharedFolderInfo;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase.GetACLResult;
 import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
@@ -318,23 +317,15 @@ public class SPService implements ISPService
         Organization org = user.getOrganization();
 
         int sharedFolderCount = org.countSharedFolders();
-        Collection<SharedFolderInfo> sfis = org.listSharedFolders(sanitizeMaxResults(maxResults),
+        Collection<SharedFolder> sfs = org.listSharedFolders(sanitizeMaxResults(maxResults),
                 sanitizeOffset(offset));
 
-        List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfis.size());
-        for (SharedFolderInfo sfi : sfis) {
-            List<PBSubjectRolePair> pbsrps = Lists.newArrayListWithCapacity(sfi._acl.size());
-            for (SubjectRolePair srp : sfi._acl) {
-                pbsrps.add(PBSubjectRolePair.newBuilder()
-                        .setSubject(srp._subject.toString())
-                        .setRole(srp._role.toPB())
-                        .build());
-            }
-
+        List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfs.size());
+        for (SharedFolder sf : sfs) {
             pbs.add(PBSharedFolder.newBuilder()
-                    .setStoreId(sfi._sid.toPB())
-                    .setName(sfi._name)
-                    .addAllSubjectRole(pbsrps)
+                    .setStoreId(sf.id().toPB())
+                    .setName(sf.getName())
+                    .addAllSubjectRole(getACL(sf))
                     .build());
         }
 
@@ -344,6 +335,25 @@ public class SPService implements ISPService
                 .addAllSharedFolders(pbs)
                 .setTotalCount(sharedFolderCount)
                 .build());
+    }
+
+    private List<PBSubjectRolePair> getACL(SharedFolder sf)
+            throws SQLException
+    {
+        Collection<User> sfusers = sf.getUsers();
+        List<PBSubjectRolePair> pbsrps = Lists.newArrayListWithCapacity(sfusers.size());
+        for (User sfuser : sfusers) {
+            // skip team server ids.
+            // TODO (WW) should we move it to SharedFolderDatabase.getUsers()?
+            if (sfuser.id().isTeamServerID()) continue;
+            Role role = sf.getRoleNullable(sfuser);
+            assert role != null;
+            pbsrps.add(PBSubjectRolePair.newBuilder()
+                    .setSubject(sfuser.id().toString())
+                    .setRole(role.toPB())
+                    .build());
+        }
+        return pbsrps;
     }
 
     private int sanitizeOffset(Integer offset)
@@ -384,13 +394,10 @@ public class SPService implements ISPService
             throw new ExNoPerm("cannot change authorization for yourself");
         }
 
-        if (requester.getLevel().covers(AuthorizationLevel.ADMIN)) {
-            throw new ExNoPerm(requester + " cannot change authorization");
-        }
-
-        // Verify caller's authorization level covers the new level
-        if (!requester.getLevel().covers(newAuth)) {
-            throw new ExNoPerm("cannot change authorization to " + authLevel);
+        if (!requester.getLevel().covers(AuthorizationLevel.ADMIN) ||
+                // requester's level must cover the new level
+                !requester.getLevel().covers(newAuth)) {
+            throw new ExNoPerm("you have no permissions to change authorization");
         }
 
         subject.setLevel(newAuth);
@@ -574,7 +581,7 @@ public class SPService implements ISPService
         User user = _sessionUser.get();
         List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
         for (ByteString shareId : shareIds) {
-            SharedFolder sf = _factSharedFolder.create_(shareId);
+            SharedFolder sf = _factSharedFolder.create(shareId);
             // throws ExNoPerm if the user doesn't have permission to view the name
             sf.getRoleThrows(user);
             names.add(sf.getName());
@@ -659,7 +666,7 @@ public class SPService implements ISPService
             List<PBSubjectRolePair> rolePairs, @Nullable String note)
             throws Exception
     {
-        SharedFolder sf = _factSharedFolder.create_(shareId);
+        SharedFolder sf = _factSharedFolder.create(shareId);
         User sharer = _sessionUser.get();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
@@ -1008,7 +1015,7 @@ public class SPService implements ISPService
             throws Exception
     {
         User user = _sessionUser.get();
-        SharedFolder sf = _factSharedFolder.create_(storeId);
+        SharedFolder sf = _factSharedFolder.create(storeId);
 
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(subjectRoleList);
 
@@ -1032,7 +1039,7 @@ public class SPService implements ISPService
             throws Exception
     {
         User user = _sessionUser.get();
-        SharedFolder sf = _factSharedFolder.create_(storeId);
+        SharedFolder sf = _factSharedFolder.create(storeId);
 
         List<UserID> subjects = UserID.fromExternal(subjectList);
 

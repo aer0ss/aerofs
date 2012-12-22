@@ -242,7 +242,7 @@ public class User
     private void addRootStoreAndCheckForCollision()
             throws SQLException, IOException, ExAlreadyExist, ExNoPerm
     {
-        SharedFolder rootStore = _f._factSharedFolder.create_(SID.rootSID(_id));
+        SharedFolder rootStore = _f._factSharedFolder.create(SID.rootSID(_id));
 
         if (rootStore.exists()) {
             /**
@@ -336,7 +336,7 @@ public class User
         Collection<SID> sids = _f._udb.getSharedFolders(_id);
         List<SharedFolder> sfs = Lists.newArrayListWithCapacity(sids.size());
         for (SID sid : sids) {
-            sfs.add(_f._factSharedFolder.create_(sid));
+            sfs.add(_f._factSharedFolder.create(sid));
         }
         return sfs;
     }

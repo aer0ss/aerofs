@@ -128,7 +128,7 @@ public class SharedFolderInvitation
     SharedFolder getSharedFolder()
             throws ExNotFound, SQLException
     {
-        return _f._factSharedFolder.create_(_f._db.getSID(_code));
+        return _f._factSharedFolder.create(_f._db.getSID(_code));
     }
 
     Role getRole()

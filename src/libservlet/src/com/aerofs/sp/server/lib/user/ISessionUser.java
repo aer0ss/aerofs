@@ -28,6 +28,11 @@ public interface ISessionUser
     @Nonnull UserID getID() throws ExNoPerm;
 
     /**
+     * Return whether set() has been called
+     */
+    boolean exists();
+
+    /**
      * Set the session user
      */
     void set(User user);

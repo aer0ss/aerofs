@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import com.aerofs.daemon.core.NativeVersionControl;
+
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
@@ -82,7 +82,6 @@ public class Download
     {
         private final TC _tc;
         private final DirectoryService _ds;
-        private final NativeVersionControl _nvc;
         private final MapSIndex2Store _sidx2s;
         private final Downloads _dls;
         private final DownloadState _dlstate;
@@ -91,13 +90,12 @@ public class Download
         private final To.Factory _factTo;
 
         @Inject
-        public Factory(TC tc, DirectoryService ds, NativeVersionControl nvc, MapSIndex2Store sidx2s,
+        public Factory(TC tc, DirectoryService ds, MapSIndex2Store sidx2s,
                 Downloads dls, DownloadState dlstate, GetComponentCall gcc, GetComponentReply gcr,
                 To.Factory factTo)
         {
             _tc = tc;
             _ds = ds;
-            _nvc = nvc;
             _sidx2s = sidx2s;
             _dls = dls;
             _dlstate = dlstate;
