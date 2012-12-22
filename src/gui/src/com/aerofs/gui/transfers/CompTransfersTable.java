@@ -1,11 +1,11 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.base.id.DID;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.ui.DelayedUIRunner;
 import com.aerofs.ui.RitualNotificationClient;

@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.tng;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.util.concurrent.ListenableFuture;
 

@@ -6,7 +6,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 
 /**

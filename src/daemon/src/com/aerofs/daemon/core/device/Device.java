@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

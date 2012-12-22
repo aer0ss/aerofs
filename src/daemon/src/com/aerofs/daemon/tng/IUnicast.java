@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.tng;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.google.common.util.concurrent.ListenableFuture;
 
 // FIXME: add a parameter to indicate if packet must be sent via reliable channels (some messages without stream ids - transport flood, sent by <code>sendUnicastPacket_</code>) need reliability

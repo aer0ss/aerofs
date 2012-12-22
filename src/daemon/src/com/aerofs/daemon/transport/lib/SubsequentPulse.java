@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import org.apache.log4j.Logger;
 
 import static com.aerofs.daemon.lib.DaemonParam.MAX_PULSE_FAILURES;

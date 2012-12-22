@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 class CfgRootSID
 {

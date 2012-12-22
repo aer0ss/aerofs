@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Limit;
 
 /**

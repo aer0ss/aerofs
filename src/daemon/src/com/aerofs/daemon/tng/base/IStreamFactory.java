@@ -10,7 +10,7 @@ import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 public interface IStreamFactory
 {

@@ -4,10 +4,10 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.sp.server.lib.SPDatabase.UserDevice;
 import org.junit.Before;
 import org.junit.Test;

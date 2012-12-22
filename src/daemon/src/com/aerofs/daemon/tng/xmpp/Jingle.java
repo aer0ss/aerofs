@@ -14,7 +14,7 @@ import com.aerofs.daemon.tng.base.IMaxcastService;
 import com.aerofs.daemon.tng.base.IPresenceService;
 import com.aerofs.daemon.tng.base.IUnicastService;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 import java.net.Proxy;
 

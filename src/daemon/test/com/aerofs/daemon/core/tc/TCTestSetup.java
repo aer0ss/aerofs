@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import org.apache.log4j.Logger;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;

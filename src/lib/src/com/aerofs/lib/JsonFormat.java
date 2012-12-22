@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.aerofs.base.BaseUtil;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -1202,7 +1203,7 @@ public class JsonFormat {
      * sequences.
      */
     private static String escapeBytes(ByteString input) {
-        return Util.hexEncode(input.toByteArray());
+        return BaseUtil.hexEncode(input.toByteArray());
     }
 
     /**
@@ -1213,7 +1214,7 @@ public class JsonFormat {
      */
     private static ByteString unescapeBytes(CharSequence input) throws InvalidEscapeSequence {
         try {
-            return ByteString.copyFrom(Util.hexDecode(input.toString()));
+            return ByteString.copyFrom(BaseUtil.hexDecode(input.toString()));
         } catch (Exception e) {
             throw new InvalidEscapeSequence(e.toString());
         }

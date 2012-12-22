@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.ui.UIUtil;
 import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;

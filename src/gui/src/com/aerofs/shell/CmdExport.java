@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.PrintStream;
 
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Ritual.ExportConflictReply;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;

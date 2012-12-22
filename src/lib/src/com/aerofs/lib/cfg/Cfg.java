@@ -1,5 +1,6 @@
 package com.aerofs.lib.cfg;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
@@ -9,10 +10,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;

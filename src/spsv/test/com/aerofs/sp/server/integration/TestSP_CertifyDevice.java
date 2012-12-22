@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import org.junit.Test;

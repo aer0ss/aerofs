@@ -4,6 +4,7 @@
 
 package com.aerofs.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -11,9 +12,8 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.collect.ImmutableMap;

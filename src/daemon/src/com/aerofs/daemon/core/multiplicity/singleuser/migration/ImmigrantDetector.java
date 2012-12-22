@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
@@ -30,14 +31,13 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 import javax.annotation.Nonnull;
 

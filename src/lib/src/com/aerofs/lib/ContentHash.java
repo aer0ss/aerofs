@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseUtil;
 import com.google.protobuf.ByteString;
 
 import java.util.Arrays;
@@ -13,7 +14,7 @@ public class ContentHash
     /**
      * The byte count of a single block hash value
      */
-    public static final int UNIT_LENGTH = SecUtil.newMessageDigest().getDigestLength();
+    public static final int UNIT_LENGTH = BaseUtil.newMessageDigest().getDigestLength();
 
     private final byte[] _hash;
     private ByteString _pb;
@@ -67,6 +68,6 @@ public class ContentHash
 
     public String toHex()
     {
-        return Util.hexEncode(getBytes());
+        return BaseUtil.hexEncode(getBytes());
     }
 }

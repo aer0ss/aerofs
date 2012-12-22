@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base.pipeline;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public interface IPipelineContext
 {

@@ -97,9 +97,6 @@ public class C
     public static final int SP_PROTOCOL_VERSION         = 18;
     public static final int SS_PROTOCOL_VERSION         = 6;
 
-    public static final byte[] ROOT_SID_SALT       = new byte[]
-        { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };
-
     public static final String TRANSPORT_ID_XMPP        = "x";
     public static final String TRANSPORT_ID_TCP         = "t";
     public static final String LOG_FILE_EXT             = ".log";

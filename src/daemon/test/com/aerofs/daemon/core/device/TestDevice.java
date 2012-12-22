@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.device;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;

@@ -2,11 +2,11 @@ package com.aerofs.daemon.transport.xmpp;
 
 import java.util.regex.Pattern;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 
 /**
  * the jid string can be either of the two forms

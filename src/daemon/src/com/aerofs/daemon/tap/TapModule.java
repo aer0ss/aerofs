@@ -13,7 +13,7 @@ import com.aerofs.daemon.tng.base.http.Proxies;
 import com.aerofs.lib.Param.Zephyr;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Tap.ITapService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Stage;

@@ -1,11 +1,11 @@
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
 import java.util.Arrays;
 import java.util.UUID;
 
-import com.aerofs.lib.Util;
-import com.aerofs.lib.bf.IBFKey;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.bf.IBFKey;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.protobuf.ByteString;
 
 // globally unique ids.
@@ -55,12 +55,12 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 
         long v = uuid.getLeastSignificantBits();
         byte [] bs = new byte[LENGTH];
-        for(int i = 0; i < 8; i++){
+        for (int i = 0; i < 8; i++) {
             bs[LENGTH - 1 - i] = (byte)(v >>> (i * 8));
         }
 
         v = uuid.getMostSignificantBits();
-        for(int i = 0; i < 8; i++){
+        for (int i = 0; i < 8; i++) {
             bs[LENGTH - 8 - 1 - i] = (byte)(v >>> (i * 8));
         }
 
@@ -74,8 +74,8 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
          * We rely on some of the 6 fixed bits specified by said RFC to distinguish various subtypes
          * of unique ids so we assert that they are set as expected.
          */
-        assert getVersionNibble(bs) == 4 : Util.hexEncode(bs);
-        assert (bs[VERSION_BYTE + 2] & 0xc0) == 0x80 : Util.hexEncode(bs);
+        assert getVersionNibble(bs) == 4 : BaseUtil.hexEncode(bs);
+        assert (bs[VERSION_BYTE + 2] & 0xc0) == 0x80 : BaseUtil.hexEncode(bs);
 
         return new UniqueID(bs);
     }
@@ -96,7 +96,7 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
      */
     public UniqueID(String str, int start, int end) throws ExFormatError
     {
-        byte[] bs = Util.hexDecode(str, start, end);
+        byte[] bs = BaseUtil.hexDecode(str, start, end);
         if (bs.length != LENGTH) throw new ExFormatError("wrong length");
         _bs = bs;
     }
@@ -138,7 +138,7 @@ public class UniqueID implements Comparable<UniqueID>, IBFKey
 
     public String toStringFormal()
     {
-        return Util.hexEncode(_bs);
+        return BaseUtil.hexEncode(_bs);
     }
 
     @Override

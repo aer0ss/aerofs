@@ -15,7 +15,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBListRevHistoryRequest;

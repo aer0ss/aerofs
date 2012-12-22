@@ -5,7 +5,7 @@
 
 package com.aerofs.daemon.event.net;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 import static com.aerofs.daemon.transport.lib.PulseManager.PulseToken;
 

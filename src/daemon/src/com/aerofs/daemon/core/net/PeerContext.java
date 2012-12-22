@@ -1,10 +1,10 @@
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 
 /**
  * N.B. The ep().tp() field is ignored by equals() and hashCode().

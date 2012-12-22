@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.alias;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;

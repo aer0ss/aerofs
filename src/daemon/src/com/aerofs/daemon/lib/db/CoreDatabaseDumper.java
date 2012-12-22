@@ -11,6 +11,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.collector.CollectorSeq;
 import com.aerofs.daemon.core.collector.SenderFilterIndex;
 import com.aerofs.lib.BitVector;
@@ -21,11 +23,10 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.google.common.base.Joiner;
@@ -259,7 +260,7 @@ public class CoreDatabaseDumper extends AbstractDatabase
             byte[] hash = rs.getBytes(6);
 
             // Only first 4 bytes of the hash will be printed.
-            String hStr = hash != null ? "<" + Util.hexEncode(hash, 0, 4) + ">" : "null";
+            String hStr = hash != null ? "<" + BaseUtil.hexEncode(hash, 0, 4) + ">" : "null";
             if (formal) {
                 ps.println(sidx.toString() + '\t' + oid.toStringFormal() + '\t' + kidx + '\t'
                         + len + '\t' + mtime + '\t' + hStr);

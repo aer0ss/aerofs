@@ -8,7 +8,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;

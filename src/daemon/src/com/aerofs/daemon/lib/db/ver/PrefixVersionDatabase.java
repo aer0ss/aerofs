@@ -1,12 +1,12 @@
 package com.aerofs.daemon.lib.db.ver;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;

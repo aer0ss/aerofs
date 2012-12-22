@@ -6,7 +6,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 
 class HdTransportReconfigRemoteDevice
 implements IEventHandler<EOTransportReconfigRemoteDevice> {

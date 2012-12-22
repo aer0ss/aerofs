@@ -6,7 +6,7 @@ package com.aerofs.daemon.event.net;
 
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 /**
  * Even that is sent to the core when the continuous pulses to a peer stop

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -17,7 +18,6 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

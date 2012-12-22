@@ -2,8 +2,7 @@ package com.aerofs.lib.bf;
 
 import java.util.Arrays;
 
-import com.aerofs.lib.Util;
-import com.aerofs.lib.bf.IBFHash;
+import com.aerofs.base.BaseUtil;
 import com.google.protobuf.ByteString;
 
 /**
@@ -210,7 +209,7 @@ public class BloomFilter<E> {
     @Override
     public String toString()
     {
-        return Util.hexEncode(_bs).replace('0', '_');
+        return BaseUtil.hexEncode(_bs).replace('0', '_');
     }
 
     public ByteString toPB()

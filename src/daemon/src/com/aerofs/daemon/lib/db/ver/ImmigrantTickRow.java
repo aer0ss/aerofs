@@ -1,9 +1,9 @@
 package com.aerofs.daemon.lib.db.ver;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 
 public class ImmigrantTickRow extends AbstractTickRow
 {

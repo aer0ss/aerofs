@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.protocol;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
@@ -29,10 +30,9 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBGetComReply;

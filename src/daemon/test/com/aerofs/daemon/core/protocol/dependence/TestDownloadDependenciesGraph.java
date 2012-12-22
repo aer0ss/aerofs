@@ -6,10 +6,10 @@ package com.aerofs.daemon.core.protocol.dependence;
 
 import com.aerofs.daemon.core.protocol.dependence.DownloadDependenciesGraph.ExDownloadDeadlock;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;

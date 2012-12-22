@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.multiplicity.multiuser.migration;
 
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 
 import java.sql.SQLException;
 import java.util.Collections;

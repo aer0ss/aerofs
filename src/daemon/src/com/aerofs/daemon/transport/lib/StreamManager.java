@@ -6,13 +6,13 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.Util;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
-import com.aerofs.lib.id.DID;
 
 // we maintain outgoing stream state at the transport layer rather than
 // the core because transport has better knowledge on when a stream has

@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
@@ -37,11 +38,10 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Transport.PBCheckPulse;

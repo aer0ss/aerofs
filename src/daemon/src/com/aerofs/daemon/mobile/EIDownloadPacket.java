@@ -2,7 +2,7 @@ package com.aerofs.daemon.mobile;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import org.jboss.netty.buffer.ChannelBuffer;
 
 import com.aerofs.daemon.event.fs.AbstractEIFS;

@@ -1,4 +1,4 @@
-package com.aerofs.lib.ex;
+package com.aerofs.base.ex;
 
 public class ExFormatError extends Exception
 {

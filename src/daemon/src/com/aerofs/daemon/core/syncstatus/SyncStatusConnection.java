@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.Param.SyncStat;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.syncstat.client.SyncStatusBlockingClient;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.google.inject.Inject;

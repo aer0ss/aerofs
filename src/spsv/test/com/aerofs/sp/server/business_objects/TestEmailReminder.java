@@ -6,7 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.common.SubscriptionCategory;

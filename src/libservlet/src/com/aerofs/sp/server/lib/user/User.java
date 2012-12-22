@@ -4,17 +4,17 @@
 
 package com.aerofs.sp.server.lib.user;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;

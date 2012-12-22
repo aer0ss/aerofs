@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -13,8 +14,7 @@ import com.aerofs.daemon.tng.IUnicastListener;
 import com.aerofs.daemon.tng.ImmediateInlineExecutor;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;

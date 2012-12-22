@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.core.store;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 

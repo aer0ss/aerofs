@@ -6,7 +6,7 @@ package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.IntegerID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 
 /**
  * Organization ID.

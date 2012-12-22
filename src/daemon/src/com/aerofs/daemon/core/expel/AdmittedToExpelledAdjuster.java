@@ -18,7 +18,7 @@ import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;

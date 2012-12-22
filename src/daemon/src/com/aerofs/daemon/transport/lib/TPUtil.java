@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
 import com.aerofs.daemon.event.net.EOStartPulse;
@@ -27,11 +28,10 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
@@ -44,7 +44,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.regex.PatternSyntaxException;
 
-import static com.aerofs.proto.Transport.PBStream.InvalidationReason.OUT_OF_ORDER;
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
@@ -271,7 +270,7 @@ public class TPUtil
     /**
      * Process a unicast {@link PBTPHeader} message of type <code>DIAGNOSIS</code>
      *
-     * @param did {@link DID} of the peer that sent the diagnostic message
+     * @param did {@link com.aerofs.base.id.DID} of the peer that sent the diagnostic message
      * @param dg {@link PBTransportDiagnosis} diagnostic message itself
      * @param pd {@link IPipeDebug} instance of the debugging interface this method
      * can use to get basic diagnostic statistics (for example,

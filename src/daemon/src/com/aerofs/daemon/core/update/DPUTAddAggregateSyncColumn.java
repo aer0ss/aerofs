@@ -17,7 +17,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import org.apache.log4j.Logger;

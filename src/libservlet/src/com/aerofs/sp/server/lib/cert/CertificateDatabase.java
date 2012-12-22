@@ -4,10 +4,10 @@
 
 package com.aerofs.sp.server.lib.cert;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.google.common.collect.ImmutableList;

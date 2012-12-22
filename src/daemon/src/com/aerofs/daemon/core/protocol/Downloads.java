@@ -27,7 +27,7 @@ import com.aerofs.daemon.event.IEvent;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import javax.annotation.Nullable;
 
 // downloads are preemptive. That is, downloads may interrupt others with lower

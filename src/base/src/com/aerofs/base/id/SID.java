@@ -1,9 +1,7 @@
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
-import com.aerofs.lib.C;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.protobuf.ByteString;
 
 import java.security.MessageDigest;
@@ -27,6 +25,9 @@ import java.util.Arrays;
  */
 public class SID extends UniqueID
 {
+    private static final byte[] ROOT_SID_SALT = new byte[]
+            { (byte) 0x07, (byte) 0x24, (byte) 0xF1, (byte) 0x37 };
+
     private String _str;
 
     public SID(ByteString bstr)
@@ -83,7 +84,7 @@ public class SID extends UniqueID
     public static SID folderOID2legacyConvertedStoreSID(OID oid)
     {
         assert !oid.isRoot() && !oid.isTrash() && !oid.isAnchor() : oid.toStringFormal();
-        byte[] bs = SecUtil.newMessageDigestMD5().digest(oid.getBytes());
+        byte[] bs = BaseUtil.newMessageDigestMD5().digest(oid.getBytes());
         setVersionNibble(bs, 0);
         SID sid = new SID(bs);
         assert !sid.isRoot();
@@ -144,9 +145,9 @@ public class SID extends UniqueID
      */
     public static SID rootSID(UserID userId)
     {
-        MessageDigest md = SecUtil.newMessageDigestMD5();
-        md.update(Util.string2utf(userId.toString()));
-        byte[] bs = md.digest(C.ROOT_SID_SALT);
+        MessageDigest md = BaseUtil.newMessageDigestMD5();
+        md.update(BaseUtil.string2utf(userId.toString()));
+        byte[] bs = md.digest(ROOT_SID_SALT);
         setVersionNibble(bs, 3);
         SID sid = new SID(bs);
         assert sid.isRoot();

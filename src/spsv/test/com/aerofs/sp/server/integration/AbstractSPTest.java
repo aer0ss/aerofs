@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.PasswordManagement;

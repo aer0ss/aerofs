@@ -2,7 +2,7 @@ package com.aerofs.daemon.event.fs;
 
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 
 public abstract class AbstractEIFS extends AbstractEBIMC
 {

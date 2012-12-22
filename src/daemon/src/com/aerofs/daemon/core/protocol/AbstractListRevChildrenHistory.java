@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.NSL;
@@ -7,7 +8,6 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 import com.aerofs.lib.Path;

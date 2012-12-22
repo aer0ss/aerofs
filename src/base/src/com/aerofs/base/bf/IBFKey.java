@@ -1,4 +1,4 @@
-package com.aerofs.lib.bf;
+package com.aerofs.base.bf;
 
 /**
  * Interface for any object to be used as a key to Bloom filters

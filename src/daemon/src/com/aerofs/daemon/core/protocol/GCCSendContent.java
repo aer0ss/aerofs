@@ -29,7 +29,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.ExUpdateInProgress;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Core.PBCore;

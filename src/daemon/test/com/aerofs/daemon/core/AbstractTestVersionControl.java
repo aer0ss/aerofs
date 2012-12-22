@@ -2,6 +2,7 @@ package com.aerofs.daemon.core;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -20,9 +21,8 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.MockDBIterator;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 
 public abstract class AbstractTestVersionControl<E extends AbstractTickRow> extends AbstractTest

@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.util.Set;
 
+import com.aerofs.base.id.DID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
@@ -18,10 +19,9 @@ import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.j.Jid;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Files;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;

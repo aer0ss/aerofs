@@ -2,7 +2,7 @@ package com.aerofs.daemon.event.admin;
 
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 import javax.annotation.Nullable;
 

@@ -1,8 +1,8 @@
 package com.aerofs.daemon.event.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.lib.id.DID;
 
 /**
  * used for gauging transport-to-transport bandwidth

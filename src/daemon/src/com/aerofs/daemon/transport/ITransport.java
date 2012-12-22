@@ -5,7 +5,7 @@ import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.transport.lib.IIdentifier;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 import java.util.Set;
 

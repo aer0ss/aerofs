@@ -2,7 +2,7 @@ package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 

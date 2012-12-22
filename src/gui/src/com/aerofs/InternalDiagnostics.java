@@ -4,6 +4,7 @@
 
 package com.aerofs;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.JsonFormat;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
@@ -15,7 +16,6 @@ import org.apache.log4j.Logger;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.id.DID;
 
 /**
  * This class provide helper methods around Ritual's private API (ping, dump, ...)

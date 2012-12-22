@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.migration;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.google.protobuf.ByteString;
 

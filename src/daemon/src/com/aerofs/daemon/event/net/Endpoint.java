@@ -1,7 +1,7 @@
 package com.aerofs.daemon.event.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
 
 /*
  *  sessions are used primarily for authentication and identification

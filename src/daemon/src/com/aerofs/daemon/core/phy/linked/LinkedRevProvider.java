@@ -14,6 +14,7 @@ import java.util.SortedMap;
 import java.util.concurrent.TimeUnit;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;
@@ -246,7 +247,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
                 }
                 if (path.last().equals(info._name)) {
                     revisions.put(info._suffix._rtime,
-                                  new Revision(Util.string2utf(info.index()),
+                                  new Revision(BaseUtil.string2utf(info.index()),
                                                info._suffix._mtime,
                                                info._length));
                 }
@@ -260,7 +261,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     public RevInputStream getRevInputStream_(Path path, byte[] index)
             throws Exception
     {
-        String strIndex = Util.utf2string(index);
+        String strIndex = BaseUtil.utf2string(index);
         String auxPath = Util.join(_pathBase, Util.join(path.elements()))
                 + RevisionSuffix.SEPARATOR + strIndex;
         InjectableFile file = _factFile.create(auxPath);

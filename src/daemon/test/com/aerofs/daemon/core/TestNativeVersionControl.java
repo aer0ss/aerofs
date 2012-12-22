@@ -16,10 +16,10 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.MockDBIterator;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 
 public class TestNativeVersionControl extends AbstractTestVersionControl<NativeTickRow>
 {

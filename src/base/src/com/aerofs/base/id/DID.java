@@ -1,6 +1,6 @@
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.protobuf.ByteString;
 
 /**

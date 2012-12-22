@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import java.util.Collection;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public interface IListRevHistoryListener
 {

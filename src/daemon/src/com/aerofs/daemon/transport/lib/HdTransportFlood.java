@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EOTransportFlood;
@@ -9,7 +10,6 @@ import com.aerofs.daemon.transport.lib.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.proto.Transport.PBTransportDiagnosis.PBFloodStatCall;
 import com.aerofs.proto.Transport.PBTPHeader;

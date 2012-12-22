@@ -1,9 +1,9 @@
 package com.aerofs.daemon.event.net.rx;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.id.DID;
 
 // release the transport resource for this stream. Upon receiving chunks for
 // an ended stream, the receiver's transport should send an abortion

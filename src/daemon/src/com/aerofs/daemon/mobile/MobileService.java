@@ -18,7 +18,7 @@ import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AbstractRpcServerHandler;
 import com.aerofs.base.net.MagicHeader;
 import com.aerofs.proto.Common;

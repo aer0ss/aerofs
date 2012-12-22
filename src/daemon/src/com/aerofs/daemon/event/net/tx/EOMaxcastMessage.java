@@ -1,7 +1,7 @@
 package com.aerofs.daemon.event.net.tx;
 
 import com.aerofs.daemon.event.IEvent;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 public class EOMaxcastMessage implements IEvent, IOutputBuffer {
 

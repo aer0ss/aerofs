@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -19,8 +20,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FailedFutureCallback;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;

@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.SWT;

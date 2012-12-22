@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
@@ -14,8 +15,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import org.apache.log4j.Logger;

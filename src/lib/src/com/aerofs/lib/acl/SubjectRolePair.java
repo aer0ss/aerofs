@@ -1,7 +1,7 @@
 package com.aerofs.lib.acl;
 
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 
 import javax.annotation.Nullable;

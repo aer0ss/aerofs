@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
@@ -53,9 +54,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Common.PBSubjectRolePair;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -12,8 +13,7 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;

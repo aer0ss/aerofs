@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 public final class OutgoingUnicastPacket
 {

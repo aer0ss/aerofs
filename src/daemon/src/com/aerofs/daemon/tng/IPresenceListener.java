@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng;
 
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.google.common.collect.ImmutableSet;
 
 public interface IPresenceListener

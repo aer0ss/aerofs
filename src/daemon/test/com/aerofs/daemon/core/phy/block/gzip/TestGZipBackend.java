@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.gzip;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.lib.ContentHash;
@@ -46,7 +47,7 @@ public class TestGZipBackend extends AbstractBlockTest
         {
             byte[] d = _blocks.get(key);
             if (d == null) throw new FileNotFoundException();
-            Util.l(this).info("get k: " + key + " v:" + Util.hexEncode(d));
+            Util.l(this).info("get k: " + key + " v:" + BaseUtil.hexEncode(d));
             return new ByteArrayInputStream(d);
         }
 
@@ -65,7 +66,7 @@ public class TestGZipBackend extends AbstractBlockTest
             assert !_blocks.containsKey(key);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteStreams.copy(input, output);
-            Util.l(this).info("put k: " + key + " v:" + Util.hexEncode(output.toByteArray()));
+            Util.l(this).info("put k: " + key + " v:" + BaseUtil.hexEncode(output.toByteArray()));
             _blocks.put(key, output.toByteArray());
         }
     }

@@ -5,10 +5,10 @@
 package com.aerofs.daemon.core.migration;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 
 import javax.annotation.Nullable;
 

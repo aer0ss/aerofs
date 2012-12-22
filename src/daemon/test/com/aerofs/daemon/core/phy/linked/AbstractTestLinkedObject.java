@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core.phy.linked;
 
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.linker.IgnoreList;

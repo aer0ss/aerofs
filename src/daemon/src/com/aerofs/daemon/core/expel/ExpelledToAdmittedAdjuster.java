@@ -15,7 +15,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 

@@ -20,7 +20,7 @@ import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 
 public class Store implements Comparable<Store>, IDumpStatMisc

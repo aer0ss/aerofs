@@ -5,9 +5,9 @@
 
 package com.aerofs.daemon.event.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.lib.id.DID;
 
 /**
  * Event that is sent by the <code>Core</code> when it wants to check the liveness
@@ -23,7 +23,7 @@ public class EOStartPulse extends AbstractEBIMC
      * Constructor
      *
      * @param imc {@link IIMCExecutor} into which this event should be scheduled
-     * @param did {@link DID} being checked for liveness
+     * @param did {@link com.aerofs.base.id.DID} being checked for liveness
      */
     public EOStartPulse(IIMCExecutor imc, DID did)
     {

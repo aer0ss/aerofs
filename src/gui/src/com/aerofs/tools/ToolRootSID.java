@@ -1,8 +1,8 @@
 package com.aerofs.tools;
 
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.SID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 
 public class ToolRootSID implements ITool {
 

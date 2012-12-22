@@ -4,9 +4,9 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import org.junit.Before;
 
 /**

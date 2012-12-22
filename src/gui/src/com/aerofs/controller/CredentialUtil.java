@@ -5,6 +5,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.base.Base64;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.SecUtil;
@@ -13,9 +14,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.CertifyDeviceReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;

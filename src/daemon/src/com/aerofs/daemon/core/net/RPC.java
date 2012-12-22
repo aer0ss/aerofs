@@ -17,7 +17,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableSet;

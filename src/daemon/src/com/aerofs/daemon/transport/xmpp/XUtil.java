@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.C;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 
 import java.io.*;
 

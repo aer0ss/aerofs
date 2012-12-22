@@ -3,7 +3,7 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;

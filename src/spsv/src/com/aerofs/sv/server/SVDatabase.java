@@ -4,6 +4,7 @@ import java.sql.Connection;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.sv.common.Event;
 
 import java.sql.PreparedStatement;
@@ -44,7 +45,7 @@ public class SVDatabase extends AbstractSQLDatabase
         ps.setLong(1, h.getTime());
         ps.setString(2, h.getVersion());
         ps.setString(3, h.getUser());
-        ps.setString(4, Util.hexEncode(h.getDeviceId().toByteArray()));
+        ps.setString(4, BaseUtil.hexEncode(h.getDeviceId().toByteArray()));
         ps.setString(5, h.getAppRoot());
         ps.setString(6, h.getRtRoot());
         ps.setString(7, client);

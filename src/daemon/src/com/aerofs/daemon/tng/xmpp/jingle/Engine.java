@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.LRUCache;
 import com.aerofs.daemon.lib.Prio;
@@ -16,9 +17,8 @@ import com.aerofs.j.TunnelSessionClient_IncomingTunnelSlot;
 import com.aerofs.j.XmppMain;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.id.DID;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;

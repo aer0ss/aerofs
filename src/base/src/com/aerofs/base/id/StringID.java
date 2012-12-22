@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
 public class StringID implements Comparable<StringID>
 {

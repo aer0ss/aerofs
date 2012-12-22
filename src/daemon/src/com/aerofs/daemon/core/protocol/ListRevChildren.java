@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.protocol;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
@@ -14,7 +15,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBListRevChildrenRequest;

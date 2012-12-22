@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -14,7 +15,6 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.id.DID;
 import com.aerofs.ui.UIParam;
 
 import org.eclipse.swt.widgets.Label;

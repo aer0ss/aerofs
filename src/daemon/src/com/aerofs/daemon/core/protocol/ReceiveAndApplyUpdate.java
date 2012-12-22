@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.alias.Aliasing;
 import com.aerofs.daemon.core.alias.MapAlias2Target;

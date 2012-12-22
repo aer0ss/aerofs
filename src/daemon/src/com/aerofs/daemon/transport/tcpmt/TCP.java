@@ -17,6 +17,7 @@ import java.net.NetworkInterface;
 import java.util.List;
 import java.util.Set;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
@@ -49,8 +50,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;

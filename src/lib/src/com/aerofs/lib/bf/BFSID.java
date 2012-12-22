@@ -1,6 +1,6 @@
 package com.aerofs.lib.bf;
 
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.google.protobuf.ByteString;
 
 /**

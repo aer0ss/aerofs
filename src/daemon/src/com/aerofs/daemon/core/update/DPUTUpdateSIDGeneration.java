@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
@@ -11,8 +12,8 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * Migrate DB from old OID->SID generation to new scheme that allows bidirectional mapping.
  *
- * See {@link com.aerofs.lib.id.SID} for details of the new scheme
+ * See {@link com.aerofs.base.id.SID} for details of the new scheme
  *
  * We must not under any circumstance break existing shared folders in an irrecoverable way and this
  * transition is potentially risky in that regard. Therefore, we back up the old SID table to be
@@ -166,11 +167,11 @@ public class DPUTUpdateSIDGeneration implements IDaemonPostUpdateTask
 
                         if (Arrays.equals(fixedSID, rootSID)) {
                             // fix root SID: set version nibble to 3
-                            l.info("store " + sidx + ":" + Util.hexEncode(sid) + " [root]");
+                            l.info("store " + sidx + ":" + BaseUtil.hexEncode(sid) + " [root]");
                             updateSID(sidx, fixedSID);
                             ++rootCount;
                         } else {
-                            l.info("store " + sidx + ":" + Util.hexEncode(sid));
+                            l.info("store " + sidx + ":" + BaseUtil.hexEncode(sid));
 
                             // fix regular SID: set version nibble to 0
                             SID.setVersionNibble(fixedSID, 0);

@@ -6,7 +6,7 @@ import com.aerofs.gui.SimpleContentProvider;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBSubjectRolePair;

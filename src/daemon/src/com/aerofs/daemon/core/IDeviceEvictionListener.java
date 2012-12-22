@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public interface IDeviceEvictionListener
 {

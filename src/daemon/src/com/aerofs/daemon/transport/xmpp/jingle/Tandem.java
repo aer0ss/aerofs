@@ -1,8 +1,8 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.id.DID;
 import org.apache.log4j.Logger;
 
 // see Engine.java for documentation

@@ -10,8 +10,8 @@ import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.lib.Scheduler;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 
 import java.net.NetworkInterface;
 import java.util.Set;
@@ -92,7 +92,7 @@ public interface ITransportImpl extends ITransport
     /**
      * Disconnect a peer
      *
-     * @param did {@link DID} to disconnect
+     * @param did {@link com.aerofs.base.id.DID} to disconnect
      * @throws ExNoResource if the disconnection cannot be performed due to
      * resource constraints
      */

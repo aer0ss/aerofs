@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import com.aerofs.InternalDiagnostics;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import org.eclipse.swt.widgets.Composite;
@@ -17,7 +18,6 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.InternalDiagnostics.IPingCallback;
-import com.aerofs.lib.id.DID;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.ui.UIParam;
 

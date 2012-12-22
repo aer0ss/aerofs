@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import org.apache.log4j.Logger;
 
 import com.google.inject.CreationException;

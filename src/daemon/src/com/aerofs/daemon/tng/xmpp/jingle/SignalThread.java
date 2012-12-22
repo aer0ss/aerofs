@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.tng.xmpp.ID;
@@ -25,7 +26,6 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.id.DID;
 import org.apache.log4j.Logger;
 
 import java.io.PrintStream;

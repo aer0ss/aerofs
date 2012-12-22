@@ -2,8 +2,8 @@ package com.aerofs.daemon.core.protocol;
 
 import java.util.Collection;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
-import com.aerofs.lib.id.DID;
 
 public interface IListRevChildrenListener
 {

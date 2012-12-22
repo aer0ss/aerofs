@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.lib.id.DID;
 
 import java.util.concurrent.Executor;
 

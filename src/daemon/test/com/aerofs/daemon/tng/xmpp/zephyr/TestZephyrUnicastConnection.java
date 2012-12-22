@@ -1,5 +1,6 @@
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -17,7 +18,6 @@ import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;

@@ -3,6 +3,7 @@ package com.aerofs.daemon.core;
 import java.sql.SQLException;
 import java.util.List;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
@@ -18,7 +19,6 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;
 import com.google.inject.Inject;

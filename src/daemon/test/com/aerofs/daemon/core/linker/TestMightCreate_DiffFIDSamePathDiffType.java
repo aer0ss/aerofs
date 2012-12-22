@@ -5,10 +5,10 @@ import java.io.IOException;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.id.FID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 
 import org.junit.Before;
 import org.junit.Test;

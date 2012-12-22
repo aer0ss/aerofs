@@ -4,10 +4,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 /**
  * The presence is *edge* triggered

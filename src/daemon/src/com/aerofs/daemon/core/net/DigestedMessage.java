@@ -6,12 +6,12 @@ package com.aerofs.daemon.core.net;
 
 import java.io.ByteArrayInputStream;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IncomingStreams.StreamKey;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 
 import javax.annotation.Nullable;

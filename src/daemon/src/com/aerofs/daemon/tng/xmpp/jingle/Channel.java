@@ -16,10 +16,10 @@ import com.aerofs.j.j;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import org.apache.log4j.Logger;
 
 import java.io.ByteArrayInputStream;

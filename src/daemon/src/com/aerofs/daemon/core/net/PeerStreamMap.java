@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IStream;
 import com.aerofs.daemon.tng.StreamMap;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport;
 import com.google.inject.BindingAnnotation;
 

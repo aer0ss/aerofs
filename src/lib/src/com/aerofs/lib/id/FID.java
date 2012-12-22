@@ -2,7 +2,7 @@ package com.aerofs.lib.id;
 
 import java.util.Arrays;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.BaseUtil;
 
 /**
  * Persistent file identifiers specific to OSes and filesystems (e.g. i-node number)
@@ -46,6 +46,6 @@ public class FID implements Comparable<FID>
     @Override
     public String toString()
     {
-        return Util.hexEncode(_bs);
+        return BaseUtil.hexEncode(_bs);
     }
 }

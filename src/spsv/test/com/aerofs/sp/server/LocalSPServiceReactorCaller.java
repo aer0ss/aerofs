@@ -8,7 +8,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;

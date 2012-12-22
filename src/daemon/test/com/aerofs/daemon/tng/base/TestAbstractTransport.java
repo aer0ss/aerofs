@@ -4,14 +4,14 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.DropDelayedInlineEventLoop;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;

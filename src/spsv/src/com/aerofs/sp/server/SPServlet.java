@@ -5,7 +5,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;

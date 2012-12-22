@@ -1,7 +1,7 @@
 package com.aerofs.daemon.event.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEvent;
-import com.aerofs.lib.id.DID;
 
 // this event may be fired even though the configure hasn't been changed.
 // it's the receiver's responsibility to determine if actual changes are made.

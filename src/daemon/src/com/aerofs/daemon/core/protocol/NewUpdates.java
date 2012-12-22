@@ -23,7 +23,7 @@ import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOCKID;

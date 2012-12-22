@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Tick;
@@ -15,7 +16,6 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 

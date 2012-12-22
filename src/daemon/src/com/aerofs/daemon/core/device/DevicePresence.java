@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.Transports;
@@ -29,8 +30,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 
 import javax.annotation.Nullable;

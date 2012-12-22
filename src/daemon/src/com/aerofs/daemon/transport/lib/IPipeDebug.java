@@ -5,8 +5,8 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.IDebug;
-import com.aerofs.lib.id.DID;
 
 /**
  * Implemented by {@link IPipe} implementations that want to supplement the

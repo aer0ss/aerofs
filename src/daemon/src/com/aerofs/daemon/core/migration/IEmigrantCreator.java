@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.migration;
 
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 
 import java.sql.SQLException;
 import java.util.List;

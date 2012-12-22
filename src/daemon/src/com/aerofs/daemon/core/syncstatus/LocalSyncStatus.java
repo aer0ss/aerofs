@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.DescendantStores;
@@ -18,8 +19,7 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Maps;

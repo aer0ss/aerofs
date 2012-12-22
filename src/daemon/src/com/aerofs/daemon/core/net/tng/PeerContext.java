@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.net.tng;
 
 import com.aerofs.daemon.event.net.tng.Endpoint;
 import com.aerofs.daemon.tng.ITransport;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 
 /**

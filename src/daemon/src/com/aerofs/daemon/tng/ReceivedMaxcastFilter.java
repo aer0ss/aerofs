@@ -24,8 +24,8 @@
 
 package com.aerofs.daemon.tng;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;

@@ -16,7 +16,6 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -49,7 +48,6 @@ import org.apache.log4j.varia.NullAppender;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.AbstractExWirable;
 import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.ex.ExTimeout;
@@ -692,49 +690,6 @@ public abstract class Util
         }
     }
 
-    public static String hexEncode(byte[] bs, int offset, int length)
-    {
-        assert offset + length <= bs.length;
-
-        StringBuilder sb = new StringBuilder(length * 2);
-        for (int i = offset; i < length; i++) {
-            sb.append(String.format("%1$02x", bs[i]));
-        }
-
-        return sb.toString();
-    }
-
-    public static String hexEncode(byte[] bs)
-    {
-        return hexEncode(bs, 0, bs.length);
-    }
-
-    public static byte[] hexDecode(String str) throws ExFormatError
-    {
-        return hexDecode(str, 0, str.length());
-    }
-
-    public static byte[] hexDecode(String str, int start, int end)
-        throws ExFormatError
-    {
-        int len = end - start;
-        if (len % 2 != 0) throw new ExFormatError("wrong length");
-        len >>= 1;
-
-        byte[] bs = new byte[len];
-        for (int i = 0; i < len; i++) {
-            try {
-                String pos = str.substring((i << 1) + start, (i << 1) + 2 + start);
-                // Byte.parseByte() can't handle MSB==1
-                bs[i] = (byte) Integer.parseInt(pos, 16);
-            } catch (NumberFormatException e) {
-                throw new ExFormatError(str + " contains invalid charactor");
-            }
-        }
-
-        return bs;
-    }
-
     // all case conversions throughout the system shall use this method
     public static String toEnglishLowerCase(String src)
     {
@@ -817,18 +772,6 @@ public abstract class Util
     {
         FileName fn = FileName.fromBaseName(fileName);
         return nextName(fn.base, fn.extension);
-    }
-
-    private static final Charset CHARSET_UTF = Charset.forName("UTF-8");
-
-    public static byte[] string2utf(String str)
-    {
-        return str.getBytes(CHARSET_UTF);
-    }
-
-    public static String utf2string(byte[] utf)
-    {
-        return new String(utf, CHARSET_UTF);
     }
 
     /**

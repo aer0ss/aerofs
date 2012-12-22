@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.dtls;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.net.dtls.DTLSLayer.Footer;
@@ -14,7 +15,6 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExDTLS;
 import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.id.DID;
 import com.aerofs.swig.dtls.DTLSEngine;
 import com.aerofs.swig.dtls.DTLSEngine.DTLS_RETCODE;
 import com.aerofs.swig.dtls.SSLCtx;

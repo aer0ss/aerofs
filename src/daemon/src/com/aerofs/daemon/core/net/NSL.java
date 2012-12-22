@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.device.Device;
@@ -19,7 +20,6 @@ import com.aerofs.daemon.transport.lib.MaxcastFilterSender;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.google.inject.Inject;

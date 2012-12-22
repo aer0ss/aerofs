@@ -5,9 +5,9 @@
 
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.transport.lib.StartPulseBase;
-import com.aerofs.lib.id.DID;
 
 /**
  * XMPP-specific event handler for {@link com.aerofs.daemon.event.net.EOTpStartPulse} events. This handler

@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 /**
  * Implemented by a class that acts as a mediator between the implementation classes in the

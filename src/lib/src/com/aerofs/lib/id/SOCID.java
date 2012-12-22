@@ -1,5 +1,6 @@
 package com.aerofs.lib.id;
 
+import com.aerofs.base.id.OID;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 
 /** Store, Object, Component id */

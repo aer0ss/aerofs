@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.routing;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.IScheduler;
 import com.aerofs.daemon.lib.Prio;
@@ -13,7 +14,6 @@ import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 
@@ -263,7 +263,7 @@ public class SignalledPipeFanout implements IPipeDebug
      * Gets the {@link DIDPipeRouter} instance for a peer, or creates one if it
      * does not exist
      *
-     * @param did {@link DID} of the peer for which the <code>DIDPipeRouter</code>
+     * @param did {@link com.aerofs.base.id.DID} of the peer for which the <code>DIDPipeRouter</code>
      * should be retrieved or created
      * @return a valid <code>DIDPipeRouter</code>
      */

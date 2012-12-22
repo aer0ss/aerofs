@@ -1,12 +1,12 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.tcpmt.Stores.Prefix;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.google.common.collect.ImmutableSet;
 
 import org.apache.log4j.Logger;

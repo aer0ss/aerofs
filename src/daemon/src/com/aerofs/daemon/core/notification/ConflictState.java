@@ -14,7 +14,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;

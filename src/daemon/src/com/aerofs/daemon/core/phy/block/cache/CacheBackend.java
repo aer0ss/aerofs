@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block.cache;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
@@ -17,7 +18,7 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Maps;
@@ -140,7 +141,7 @@ public class CacheBackend implements IBlockStorageBackend
                         file.delete();
                         continue;
                     }
-                    if (l.isDebugEnabled()) l.debug("found block " + Util.hexEncode(key));
+                    if (l.isDebugEnabled()) l.debug("found block " + BaseUtil.hexEncode(key));
                     long accessTime = _cdb.getCacheAccess(key);
                     if (accessTime <= BlockStorageDatabase.DELETED_FILE_DATE) {
                         file.delete();
@@ -213,7 +214,7 @@ public class CacheBackend implements IBlockStorageBackend
 
     private File getFileForKey(byte[] key) throws IOException
     {
-        String hex = Util.hexEncode(key);
+        String hex = BaseUtil.hexEncode(key);
         String prefix = hex.substring(0, 2);
         File dir = new File(_cacheDir, prefix);
         String name = hex + SUFFIX;
@@ -228,7 +229,7 @@ public class CacheBackend implements IBlockStorageBackend
         if (!name.endsWith(SUFFIX)) return null;
         byte[] bytes;
         try {
-            bytes = Util.hexDecode(name, 0, hexSize);
+            bytes = BaseUtil.hexDecode(name, 0, hexSize);
         } catch (ExFormatError e) {
             return null;
         }

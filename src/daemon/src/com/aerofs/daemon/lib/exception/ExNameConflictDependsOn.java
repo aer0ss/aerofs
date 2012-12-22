@@ -7,9 +7,9 @@ package com.aerofs.daemon.lib.exception;
 import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.OCID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.proto.Core.PBMeta;
 

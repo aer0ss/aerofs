@@ -1,13 +1,13 @@
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.syncstatus.LocalSyncStatus.IAggregatedStatus;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 

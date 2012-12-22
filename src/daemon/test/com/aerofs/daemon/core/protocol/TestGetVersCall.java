@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.protocol;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import org.junit.After;
@@ -25,9 +26,8 @@ import com.aerofs.daemon.lib.db.PulledDeviceDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.testlib.AbstractTest;
 

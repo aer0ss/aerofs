@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.IIncomingStreamChunkListener;
 import com.aerofs.daemon.core.net.IncomingStreams;
 import com.aerofs.daemon.core.net.Metrics;
@@ -12,7 +13,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;

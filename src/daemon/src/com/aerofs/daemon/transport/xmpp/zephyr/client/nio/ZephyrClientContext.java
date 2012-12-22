@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
@@ -16,7 +17,6 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMach
 import com.aerofs.lib.C;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
 import com.aerofs.zephyr.core.ExAlreadyBound;
 import org.apache.log4j.Logger;

@@ -7,7 +7,7 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 
 import org.junit.Before;
 import org.junit.Test;

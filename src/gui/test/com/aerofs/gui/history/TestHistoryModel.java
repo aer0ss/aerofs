@@ -8,7 +8,7 @@ import com.aerofs.gui.history.HistoryModel.ModelIndex;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;

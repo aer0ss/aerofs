@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public interface IIncomingStreamChunkListener
 {

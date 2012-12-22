@@ -21,7 +21,7 @@ import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;

@@ -5,8 +5,8 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.IPulseEvent;
-import com.aerofs.lib.id.DID;
 
 /**
  * Specific methods to be implemented by any classes handling pulse
@@ -46,7 +46,7 @@ public interface IPulseHandlerImpl<T extends IPulseEvent>
      * Concrete implementation of the method called to notify the core that
      * the pulse stopped
      *
-     * @param did {@link com.aerofs.lib.id.DID} of the remote peer for which
+     * @param did {@link com.aerofs.base.id.DID} of the remote peer for which
      * the pulse was stopped
      */
     public void notifypulsestopped_(DID did);

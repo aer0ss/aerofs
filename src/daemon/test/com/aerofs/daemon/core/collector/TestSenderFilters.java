@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.collector;
 
+import com.aerofs.base.id.DID;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,10 +19,9 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.bf.BFOID;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 
 public class TestSenderFilters extends AbstractTest

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IIncomingPipelineEventHandler;
 import com.aerofs.daemon.tng.base.pipeline.IOutgoingPipelineEventHandler;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.tng.base.pipeline.IPipelineEventHandler;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEventSink;
 import com.aerofs.daemon.tng.base.pipeline.IStateContainer;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.id.DID;
 import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nullable;

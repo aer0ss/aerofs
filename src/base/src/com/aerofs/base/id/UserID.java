@@ -2,9 +2,9 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
-import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -46,9 +46,9 @@ public class UserID extends StringID
      * normalized. This is to prevent DoS attacks where the peer sends an unnormalized string.
      */
     public static UserID fromInternalThrowIfNotNormalized(String str)
-            throws ExBadArgs
+            throws ExFormatError
     {
-        if (!isNormalized(str)) throw new ExBadArgs("unnormalized user ID");
+        if (!isNormalized(str)) throw new ExFormatError("unnormalized user ID");
         return fromInternal(str);
     }
 

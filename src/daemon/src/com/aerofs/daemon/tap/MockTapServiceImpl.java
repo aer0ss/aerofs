@@ -1,10 +1,10 @@
 package com.aerofs.daemon.tap;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Tap.ITapService;
 import com.aerofs.proto.Tap.MessageTypeCollection;

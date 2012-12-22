@@ -6,7 +6,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 
 public class EIUpdateACL extends AbstractEBIMC
 {

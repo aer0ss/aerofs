@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IIncomingUnicastConnectionListener;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.tng.xmpp.zephyr.handler.NetworkStatsMonitor;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.StrictChannelPipeline;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FutureUtil;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.notifier.SingleListenerNotifier;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Transport.PBTPHeader;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.protocol.dependence;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.protocol.ReceiveAndApplyUpdate;
@@ -14,13 +15,12 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Core.PBMeta;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;

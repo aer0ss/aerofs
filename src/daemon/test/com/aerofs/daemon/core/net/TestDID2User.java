@@ -4,12 +4,11 @@
 
 package com.aerofs.daemon.core.net;
 
-import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.DID2UserDatabase;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;

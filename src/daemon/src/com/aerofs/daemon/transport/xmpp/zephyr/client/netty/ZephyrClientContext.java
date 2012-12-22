@@ -1,7 +1,7 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
-import com.aerofs.lib.id.DID;
 import org.jboss.netty.channel.Channel;
 
 public class ZephyrClientContext {

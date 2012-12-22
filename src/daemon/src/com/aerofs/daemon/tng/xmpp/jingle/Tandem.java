@@ -6,7 +6,7 @@ package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 // see Engine.java for documentation
 

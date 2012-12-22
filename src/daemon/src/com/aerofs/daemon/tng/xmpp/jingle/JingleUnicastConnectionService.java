@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IIncomingUnicastConnectionListener;
@@ -15,9 +16,8 @@ import com.aerofs.daemon.tng.xmpp.ISignallingClient;
 import com.aerofs.daemon.tng.xmpp.ISignallingService.SignallingMessage;
 import com.aerofs.j.Jid;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.notifier.SingleListenerNotifier;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Files.PBDumpStat;

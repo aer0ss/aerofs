@@ -1,12 +1,12 @@
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.lib.Scheduler;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Limit;
 import org.apache.log4j.Logger;
 import javax.annotation.Nonnull;

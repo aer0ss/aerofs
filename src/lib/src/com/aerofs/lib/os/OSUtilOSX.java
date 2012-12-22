@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
@@ -166,7 +167,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
         File f = new File(AppRoot.abs() + "/" + FINDEREXT_BUNDLE +
                 "/Contents/MacOS/AeroFSFinderExtension");
         try {
-            return Util.hexEncode(SecUtil.hash(f));
+            return BaseUtil.hexEncode(SecUtil.hash(f));
         } catch (IOException e) {
             l.warn("Could not compute hash for " + f + ": " + Util.e(e));
             return "";

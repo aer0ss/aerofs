@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.transport.lib.StartPulseBase;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 /**
  * TCPMT-specific event handler for {@link com.aerofs.daemon.event.net.EOTpStartPulse} events. This handler

@@ -9,10 +9,10 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOID;
 
 /**

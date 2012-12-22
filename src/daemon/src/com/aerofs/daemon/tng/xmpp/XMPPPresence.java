@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.IPresenceListener;
@@ -12,9 +13,8 @@ import com.aerofs.daemon.tng.base.IPresenceService;
 import com.aerofs.daemon.tng.xmpp.XMPPServerConnectionService.IXMPPServerConnectionListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.Files.PBDumpStat;

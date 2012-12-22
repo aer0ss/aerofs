@@ -1,10 +1,10 @@
 package com.aerofs.daemon.event.net.tx;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 //N.B. streams are always at background priority to allow atomic messages
 //go first

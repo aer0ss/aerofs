@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core.device;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;

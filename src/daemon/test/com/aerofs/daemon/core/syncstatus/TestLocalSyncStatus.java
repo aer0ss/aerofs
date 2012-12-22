@@ -2,6 +2,7 @@ package com.aerofs.daemon.core.syncstatus;
 
 import java.sql.SQLException;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.linker.IgnoreList;
@@ -15,7 +16,7 @@ import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserPathResolver;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -39,8 +40,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.testlib.AbstractTest;

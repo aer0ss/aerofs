@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.net.throttling;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.IUnicastOutputLayer;
 import com.aerofs.daemon.core.net.PeerContext;
@@ -13,7 +14,6 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ICfgDatabaseListener;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;

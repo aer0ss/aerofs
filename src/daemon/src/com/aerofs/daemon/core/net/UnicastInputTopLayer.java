@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreDeviceLRU;
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
@@ -25,9 +26,8 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;

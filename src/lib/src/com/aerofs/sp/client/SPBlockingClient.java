@@ -4,7 +4,7 @@ import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SPServiceBlockingStub;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.google.protobuf.ByteString;

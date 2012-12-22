@@ -7,7 +7,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Common.PBPath;
 

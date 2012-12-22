@@ -9,7 +9,7 @@ import com.aerofs.daemon.event.net.EOTpSubsequentPulse;
 import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.daemon.lib.Scheduler;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import org.apache.log4j.Logger;
 
 import static com.aerofs.daemon.lib.DaemonParam.INIT_PULSE_TIMEOUT;

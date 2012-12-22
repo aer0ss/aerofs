@@ -13,7 +13,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
@@ -25,8 +26,7 @@ import com.aerofs.daemon.tng.ex.ExStreamInvalid;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FailedFutureCallback;
 import com.aerofs.lib.async.FutureUtil;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

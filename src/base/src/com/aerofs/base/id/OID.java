@@ -1,14 +1,15 @@
-package com.aerofs.lib.id;
+package com.aerofs.base.id;
 
 import java.util.Arrays;
 
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.protobuf.ByteString;
 
 /**
  * object id
  */
-public class OID extends UniqueID {
+public class OID extends UniqueID
+{
 
     public static final OID ROOT;   // all zeros
     public static final OID TRASH;  // all zeros except one bit

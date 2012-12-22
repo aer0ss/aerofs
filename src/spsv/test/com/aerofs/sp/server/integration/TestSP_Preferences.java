@@ -8,8 +8,8 @@ import com.aerofs.lib.ex.ExNotFound;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.GetPreferencesReply;
 
 import static org.junit.Assert.assertEquals;

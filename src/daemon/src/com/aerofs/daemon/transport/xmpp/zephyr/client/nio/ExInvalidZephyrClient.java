@@ -5,7 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 /**
  * Thrown whenever any code requests a {@link com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext} that doesn't

@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.tng.base;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
-import com.aerofs.lib.id.DID;
 
 class PeerFactory
 {

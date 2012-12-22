@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
@@ -22,7 +23,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.async.FailedFutureCallback;
 import com.aerofs.lib.async.FutureUtil;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;

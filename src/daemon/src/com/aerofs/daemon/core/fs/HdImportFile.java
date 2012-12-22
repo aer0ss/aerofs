@@ -31,10 +31,10 @@ import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotFile;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 

@@ -2,7 +2,7 @@ package com.aerofs.sp.client;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.proto.Sp.SPServiceStub;
 import com.google.common.util.concurrent.FutureCallback;

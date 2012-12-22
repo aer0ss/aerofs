@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.lib.Prio;
@@ -8,10 +9,9 @@ import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.PacketListener;

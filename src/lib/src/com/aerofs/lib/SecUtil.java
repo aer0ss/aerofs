@@ -42,13 +42,14 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.aerofs.base.Base64;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import sun.security.pkcs.PKCS10;
 import sun.security.x509.X500Name;
 import sun.security.x509.X500Signer;
 
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.swig.scrypt.Scrypt;
 import com.google.common.io.ByteStreams;
@@ -134,7 +135,7 @@ public abstract class SecUtil
 
     public static String getCertificateCName(UserID userId, DID did)
     {
-        return alphabetEncode(hash(Util.string2utf(userId.toString()), did.getBytes()));
+        return alphabetEncode(hash(BaseUtil.string2utf(userId.toString()), did.getBytes()));
     }
 
     public static PKCS10 newCSR(PublicKey pubKey, PrivateKey privKey, UserID userId,
@@ -581,27 +582,9 @@ public abstract class SecUtil
         return cipher.doFinal(data);
     }
 
-    public static MessageDigest newMessageDigest()
-    {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw SystemUtil.fatalWithReturn(e);
-        }
-    }
-
-    public static MessageDigest newMessageDigestMD5()
-    {
-        try {
-            return MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw SystemUtil.fatalWithReturn(e);
-        }
-    }
-
     public static byte[] hash(File f) throws IOException
     {
-        MessageDigest md = newMessageDigest();
+        MessageDigest md = BaseUtil.newMessageDigest();
 
         FileInputStream is = new FileInputStream(f);
         try {
@@ -619,7 +602,7 @@ public abstract class SecUtil
 
     public static byte[] hash(byte[] bs, int offset, int len)
     {
-        MessageDigest md = newMessageDigest();
+        MessageDigest md = BaseUtil.newMessageDigest();
         md.update(bs, offset, len);
         return md.digest();
     }
@@ -631,7 +614,7 @@ public abstract class SecUtil
 
     public static byte[] hash(byte[] ...bss)
     {
-        MessageDigest md = newMessageDigest();
+        MessageDigest md = BaseUtil.newMessageDigest();
         for (byte[] bs : bss) md.update(bs);
         return md.digest();
     }
@@ -656,7 +639,7 @@ public abstract class SecUtil
     public static byte[] scrypt(char[] passwd, UserID user)
     {
         byte[] bsPass = getPasswordBytes(passwd);
-        byte[] bsUser = Util.string2utf(user.toString());
+        byte[] bsUser = BaseUtil.string2utf(user.toString());
 
         OSUtil.get().loadLibrary("aerofsd");
 

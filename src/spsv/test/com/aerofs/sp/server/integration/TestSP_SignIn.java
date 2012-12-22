@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExBadCredential;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.google.common.collect.ImmutableList;

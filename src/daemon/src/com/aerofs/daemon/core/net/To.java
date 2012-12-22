@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.device.Device;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -13,7 +14,6 @@ import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoAvailDevice;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

@@ -18,7 +18,7 @@ import com.aerofs.daemon.tng.base.IUnicastService;
 import com.aerofs.daemon.tng.base.UnicastService;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.daemon.tng.xmpp.zephyr.ZephyrUnicastConnectionService;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
 

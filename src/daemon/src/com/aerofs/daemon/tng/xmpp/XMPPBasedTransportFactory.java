@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.core.net.tng.Preference;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
@@ -15,7 +16,6 @@ import com.aerofs.daemon.tng.base.IMaxcastService;
 import com.aerofs.daemon.tng.base.IPresenceService;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.lib.FrequentDefectSender;
-import com.aerofs.lib.id.DID;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;

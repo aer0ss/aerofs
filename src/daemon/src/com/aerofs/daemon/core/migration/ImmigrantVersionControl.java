@@ -9,7 +9,7 @@ import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCID;
 
 import com.google.inject.Inject;

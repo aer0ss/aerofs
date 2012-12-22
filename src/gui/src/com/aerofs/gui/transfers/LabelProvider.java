@@ -1,9 +1,9 @@
 package com.aerofs.gui.transfers;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.gui.Images;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.RitualNotifications.PBDownloadEvent;

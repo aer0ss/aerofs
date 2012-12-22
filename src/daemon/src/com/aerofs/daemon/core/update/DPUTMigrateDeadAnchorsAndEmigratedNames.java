@@ -4,16 +4,17 @@
 
 package com.aerofs.daemon.core.update;
 
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.update.DPUTUtil.IDatabaseOperation;
 import com.aerofs.daemon.lib.db.CoreDBCW;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.ex.ExFormatError;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.UniqueID;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nullable;
@@ -130,7 +131,7 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
                     continue;
                 }
 
-                Util.l(this).info("fix emigrant target: " + Util.hexEncode(sid));
+                Util.l(this).info("fix emigrant target: " + BaseUtil.hexEncode(sid));
 
                 /**
                  * There is no guarantee that the emigrantTargetSID is a non-root store but this
@@ -162,7 +163,7 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
     private static @Nullable byte[] extractSID(String name)
     {
         try {
-            return Util.hexDecode(name, ID_STRING_LEN + 1, 2 * ID_STRING_LEN + 1);
+            return BaseUtil.hexDecode(name, ID_STRING_LEN + 1, 2 * ID_STRING_LEN + 1);
         } catch (ExFormatError e) {
             return null;
         }
@@ -186,7 +187,7 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
                 int v = UniqueID.getVersionNibble(oid);
                 if (v == 0) continue;
 
-                Util.l(this).info("migrate anchor: " + Util.hexEncode(oid));
+                Util.l(this).info("migrate anchor: " + BaseUtil.hexEncode(oid));
 
                 byte[] fixedOID = Arrays.copyOf(oid, oid.length);
                 UniqueID.setVersionNibble(fixedOID, 0);
@@ -261,7 +262,7 @@ public class DPUTMigrateDeadAnchorsAndEmigratedNames implements IDaemonPostUpdat
                 int v = UniqueID.getVersionNibble(oid);
                 // 0: valid anchor, 4: valid non-anchor, anything else: invalid anchor, fix...
                 if (v != 0 && v != 4) {
-                    Util.l(this).info(table + ": migrate dead anchor: " + Util.hexEncode(oid));
+                    Util.l(this).info(table + ": migrate dead anchor: " + BaseUtil.hexEncode(oid));
 
                     byte[] fixedAnchor = Arrays.copyOf(oid, oid.length);
                     UniqueID.setVersionNibble(fixedAnchor, 0);

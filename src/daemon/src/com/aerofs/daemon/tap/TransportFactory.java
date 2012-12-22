@@ -13,7 +13,7 @@ import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.daemon.tng.diagnosis.PeerDiagnoser;
 import com.aerofs.daemon.tng.xmpp.XMPPBasedTransportFactory;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Tap.StartTransportCall;
 import com.google.inject.BindingAnnotation;
 import com.google.inject.Inject;

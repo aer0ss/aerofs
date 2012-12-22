@@ -1,9 +1,9 @@
 package com.aerofs.sp.server.lib.cert;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.C;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import sun.security.pkcs.PKCS10;
 
 import java.io.ByteArrayInputStream;
@@ -120,7 +120,7 @@ public class CertificateGenerator implements ICertificateGenerator
 
         OutputStream os = conn.getOutputStream();
         try {
-            os.write(Util.string2utf(strCSR));
+            os.write(BaseUtil.string2utf(strCSR));
         } finally {
             os.close();
         }

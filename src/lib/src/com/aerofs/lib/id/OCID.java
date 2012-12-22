@@ -1,5 +1,7 @@
 package com.aerofs.lib.id;
 
+import com.aerofs.base.id.OID;
+
 /** Object id, Component id */
 public class OCID implements Comparable<OCID>
 {

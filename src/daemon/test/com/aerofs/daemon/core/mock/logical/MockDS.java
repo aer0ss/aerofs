@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.mock.logical;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
@@ -22,13 +23,12 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;

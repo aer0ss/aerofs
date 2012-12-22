@@ -7,7 +7,7 @@ package com.aerofs.daemon.tng.base.streams;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 public final class NewOutgoingStream
 {

@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public class ExZephyrChannelNotBound extends Exception {
 

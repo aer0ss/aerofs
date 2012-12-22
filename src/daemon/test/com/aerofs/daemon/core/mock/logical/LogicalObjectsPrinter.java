@@ -5,7 +5,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 

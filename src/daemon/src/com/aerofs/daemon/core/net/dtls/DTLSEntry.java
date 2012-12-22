@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.net.dtls;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.net.PeerContext;

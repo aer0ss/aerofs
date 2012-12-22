@@ -8,7 +8,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNotShared;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.google.inject.Inject;

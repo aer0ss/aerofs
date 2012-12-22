@@ -11,7 +11,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Ritual.GetChildrenAttributesReply;

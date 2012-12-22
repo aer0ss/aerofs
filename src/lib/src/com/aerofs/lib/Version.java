@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Common.PBVer;
 import com.google.common.collect.Maps;
 

@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.Prio;
@@ -20,7 +21,6 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMach
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport;
@@ -594,7 +594,7 @@ public class ZephyrClientManager implements ISignalledPipe, IIOEventHandler
 
     /**
      * Send the Zephyr ID for our connection to a remote ZephyrClient to that client
-     * @param remotedid {@link com.aerofs.lib.id.DID} of the remote ZephyrClient
+     * @param remotedid {@link com.aerofs.base.id.DID} of the remote ZephyrClient
      * @param localzid Zephyr ID of our connection to the Zephyr relay server
      * @param remotezid Zephyr ID of the endpoint being connected to
      */

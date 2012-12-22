@@ -17,7 +17,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;

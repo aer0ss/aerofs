@@ -16,7 +16,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;

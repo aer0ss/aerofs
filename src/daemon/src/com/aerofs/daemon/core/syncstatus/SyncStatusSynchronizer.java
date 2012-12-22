@@ -1,16 +1,12 @@
 package com.aerofs.daemon.core.syncstatus;
 
-import java.security.MessageDigest;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.concurrent.Callable;
-
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
@@ -20,21 +16,31 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.syncstatus.SyncStatusConnection.ExSignIn;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
+import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransLocal;
+import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.Tick;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
+import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
+import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
@@ -43,25 +49,18 @@ import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DevicesSyncStatus;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Tick;
-import com.aerofs.lib.Util;
-import com.aerofs.lib.Version;
-import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SOID;
-import com.google.inject.Inject;
+import java.security.MessageDigest;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.concurrent.Callable;
 
 /**
  * This class keeps local sync status information in sync with the central server.
@@ -520,7 +519,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
             List<ByteString> vhs = Lists.newArrayList();
             for (OID oid : e.getValue()) {
                 byte[] vh = getVersionHash_(new SOID(sidx, oid));
-                l.debug(new SOID(sidx, oid).toString() + " : " + Util.hexEncode(vh));
+                l.debug(new SOID(sidx, oid).toString() + " : " + BaseUtil.hexEncode(vh));
                 oids.add(oid.toPB());
                 vhs.add(ByteString.copyFrom(vh));
             }
@@ -590,7 +589,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
 
         // make a digest from that aggregate
         // (no security concern here, only compactness matters so MD5 is fine)
-        MessageDigest md = SecUtil.newMessageDigestMD5();
+        MessageDigest md = BaseUtil.newMessageDigestMD5();
         for (Entry<DID, TickPair> e : aggregated.entrySet()) {
             md.update(e.getKey().getBytes());
             md.update(Util.toByteArray(e.getValue().metaTick()));

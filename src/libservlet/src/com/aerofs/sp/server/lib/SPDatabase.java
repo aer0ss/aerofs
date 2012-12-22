@@ -2,17 +2,18 @@ package com.aerofs.sp.server.lib;
 
 import java.util.Arrays;
 
+import com.aerofs.base.BaseUtil;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.S;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 
 import com.aerofs.lib.db.DBUtil;
 
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.google.common.collect.Sets;
@@ -222,7 +223,7 @@ public class SPDatabase extends AbstractSQLDatabase
         public int hashCode()
         {
             HashCodeBuilder builder = new HashCodeBuilder();
-            builder.append(Util.hexEncode(_did));
+            builder.append(BaseUtil.hexEncode(_did));
             builder.append(_userId);
             return builder.toHashCode();
         }

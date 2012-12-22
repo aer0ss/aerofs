@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
@@ -17,7 +18,6 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.handler.ZephyrClient
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrBindRequest;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport;

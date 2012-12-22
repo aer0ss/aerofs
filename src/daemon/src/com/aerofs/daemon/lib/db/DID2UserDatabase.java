@@ -6,8 +6,8 @@ package com.aerofs.daemon.lib.db;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.db.DBUtil;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UserID;
 import com.google.inject.Inject;
 
 import java.sql.PreparedStatement;

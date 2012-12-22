@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.lib.db;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;

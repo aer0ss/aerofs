@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.tng.diagnosis;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.IPeerDiagnoser;
 import com.aerofs.daemon.tng.base.IUnicastConnection;
 import com.aerofs.daemon.tng.diagnosis.TransportDiagnosisState.FloodEntry;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.proto.Transport.PBTransportDiagnosis.PBFloodStatReply;
@@ -35,7 +35,7 @@ public class PeerDiagnoser implements IPeerDiagnoser
 //     * <strong>IMPORTANT:</strong> asserts that this method is <em>only</em>
 //     * called from within the <code>XMPPBasedTransportFactory</code> event-dispatch thread
 //     *
-//     * @param _did {@link com.aerofs.lib.id.DID} of the peer that sent the diagnostic message
+//     * @param _did {@link com.aerofs.base.id.DID} of the peer that sent the diagnostic message
 //     * @param dg {@link com.aerofs.proto.AbstractTransport.PBDiagnosis} diagnostic message sent by the peer
 //     * @throws com.aerofs.lib.ex.ExProtocol if the diagnostic message has a type that is unrecognized
 //     * (and therefore unprocessable) by this method

@@ -1,9 +1,10 @@
 package com.aerofs.ui.update;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +36,7 @@ public class PostUpdate
                 String str = s.nextLine();
                 String parts[] = str.split("=");
                 if (parts.length != 2) throw new IOException("ver file format error");
-                chksums.put(parts[0], Util.hexDecode(parts[1]));
+                chksums.put(parts[0], BaseUtil.hexDecode(parts[1]));
             }
 
             return chksums;
@@ -63,8 +64,8 @@ public class PostUpdate
             byte[] hash = SecUtil.hash(f);
             if (!Arrays.equals(hash, en.getValue())) {
                 Util.l(PostUpdate.class).warn(en.getKey() + " chksum mismatch." +
-                        " expected " + Util.hexEncode(en.getValue()) +
-                        " actual " + Util.hexEncode(hash));
+                        " expected " + BaseUtil.hexEncode(en.getValue()) +
+                        " actual " + BaseUtil.hexEncode(hash));
                 return en.getKey();
             }
         }

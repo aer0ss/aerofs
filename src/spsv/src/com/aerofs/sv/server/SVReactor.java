@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.SystemUtil;
@@ -171,7 +172,7 @@ public class SVReactor
         }
 
         // save the log
-        String did = Util.hexEncode(header.getDeviceId().toByteArray());
+        String did = BaseUtil.hexEncode(header.getDeviceId().toByteArray());
         String path = pathDir + File.separator + did + '.' + log.getName();
         byte[] bs = new byte[FILE_BUF_SIZE];
         int len;
@@ -218,7 +219,7 @@ public class SVReactor
             //log the defect into sentry
             sentry(unobfuscatedStackTrace,
                     header.getUser(),
-                    Util.hexEncode(header.getDeviceId().toByteArray()),
+                    BaseUtil.hexEncode(header.getDeviceId().toByteArray()),
                     header.getVersion());
         }
 
@@ -272,7 +273,7 @@ public class SVReactor
         // send notification email
         String body = desc
                 + "\n\n" + header.getVersion() + " on dev " + (header.hasDeviceId() ?
-                     Util.hexEncode(header.getDeviceId().toByteArray()) : "(unknown)")
+                     BaseUtil.hexEncode(header.getDeviceId().toByteArray()) : "(unknown)")
                 + "\n" + dc
                 + "\n\n" + javaEnv.toString();
 

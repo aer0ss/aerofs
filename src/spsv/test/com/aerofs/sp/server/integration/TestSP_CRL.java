@@ -4,11 +4,11 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Common.Void;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase.ExBatchSizeMismatch;

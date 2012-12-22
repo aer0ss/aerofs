@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.proto.Core.PBCore;
 import com.aerofs.proto.Core.PBUpdateSenderFilter;

@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.linker;
 
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 

@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.base.pipeline.IStateContainer;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public interface IPeer
 {

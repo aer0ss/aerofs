@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.core.store;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;

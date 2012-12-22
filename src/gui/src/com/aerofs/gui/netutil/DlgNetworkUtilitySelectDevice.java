@@ -1,5 +1,6 @@
 package com.aerofs.gui.netutil;
 
+import com.aerofs.base.id.DID;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
 
@@ -7,7 +8,6 @@ import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.SWT;

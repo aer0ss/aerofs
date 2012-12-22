@@ -11,7 +11,7 @@ import java.util.Set;
 import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.daemon.transport.lib.IPipeDebug;
 import com.aerofs.daemon.transport.lib.IUnicast;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 /**
  * Implemented by classes that provide a connected transport channel to a peer.

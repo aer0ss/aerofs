@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.net.IncomingStreams;
@@ -32,8 +33,7 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Core.PBGetVersReply;

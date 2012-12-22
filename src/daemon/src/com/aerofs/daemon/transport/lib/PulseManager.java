@@ -5,12 +5,12 @@
 
 package com.aerofs.daemon.transport.lib;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.net.EIPulseStopped;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.IntegerID;
 import com.aerofs.proto.Transport;
 import org.apache.log4j.Logger;
@@ -122,7 +122,7 @@ public class PulseManager
     /**
      * Retrieves the outstanding pulse id for a <code>did</code>
      *
-     * @param did {@link DID} of the remote peer for whom you want to get a pulse id
+     * @param did {@link com.aerofs.base.id.DID} of the remote peer for whom you want to get a pulse id
      * @return null if there is no outstanding pulse for this remote peer.
      * <code>Integer</code> pulse id otherwise.
      */

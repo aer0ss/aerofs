@@ -1,6 +1,6 @@
 package com.aerofs.sp.client;
 
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import java.net.URL;
 

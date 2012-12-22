@@ -1,5 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.DaemonParam;
@@ -8,8 +9,7 @@ import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBTCPFilterAndSeq;
 import com.aerofs.proto.Transport.PBTCPStores;
 import com.aerofs.proto.Transport.PBTCPPong;

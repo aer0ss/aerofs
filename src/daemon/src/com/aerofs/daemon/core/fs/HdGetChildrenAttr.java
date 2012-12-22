@@ -10,10 +10,10 @@ import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.id.OID;
+import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.google.inject.Inject;
 
 public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>

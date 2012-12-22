@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
@@ -32,13 +33,12 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.OID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -18,10 +19,9 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.id.DID;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.notifier.IListenerVisitor;
 import com.aerofs.lib.notifier.Notifier;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -520,7 +520,7 @@ final class XMPPMulticast
     /**
      * Decode the body of an incoming XMPPBasedTransportFactory message
      *
-     * @param did {@link com.aerofs.lib.id.DID} of the remote peer from whom the message was
+     * @param did {@link com.aerofs.base.id.DID} of the remote peer from whom the message was
      * received
      * @param wirelen will be populated with the number of bytes the message took up on the wire
      * @param body the encoded body of the XMPPBasedTransportFactory message

@@ -9,8 +9,9 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.List;
+
+import com.aerofs.base.BaseUtil;
 import com.google.common.collect.Lists;
-import com.aerofs.lib.Util;
 
 public class TableDumper
 {
@@ -44,7 +45,7 @@ public class TableDumper
             @Override
             public String format(ResultSet rs, int col) throws SQLException
             {
-                return Util.hexEncode(rs.getBytes(col));
+                return BaseUtil.hexEncode(rs.getBytes(col));
             }
         }
 

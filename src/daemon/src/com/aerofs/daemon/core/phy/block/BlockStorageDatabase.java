@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.lib.db.AbstractDatabase;
@@ -17,7 +18,7 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.db.PreparedStatementWrapper;
 import com.aerofs.lib.db.dbcw.IDBCW;
-import com.aerofs.lib.ex.ExFormatError;
+import com.aerofs.base.ex.ExFormatError;
 import com.google.inject.Inject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -738,14 +739,14 @@ public class BlockStorageDatabase extends AbstractDatabase
 
     private byte[] encodeIndex(long id, long version)
     {
-        return Util.string2utf(
-                Util.hexEncode(ByteBuffer.allocate(16).putLong(id).putLong(version).array()));
+        return BaseUtil.string2utf(
+                BaseUtil.hexEncode(ByteBuffer.allocate(16).putLong(id).putLong(version).array()));
     }
 
     private long[] decodeIndex(byte[] index) {
         if (index.length != 32) return null;
         try {
-            ByteBuffer buf = ByteBuffer.wrap(Util.hexDecode(Util.utf2string(index)));
+            ByteBuffer buf = ByteBuffer.wrap(BaseUtil.hexDecode(BaseUtil.utf2string(index)));
             long[] result = new long[2];
             result[0] = buf.getLong();
             result[1] = buf.getLong();

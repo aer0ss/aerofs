@@ -44,7 +44,7 @@ import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 

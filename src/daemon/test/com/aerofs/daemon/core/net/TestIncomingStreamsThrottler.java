@@ -4,15 +4,13 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.UnicastInputOutputStack;
-import com.aerofs.daemon.core.net.IncomingStreams;
-import com.aerofs.daemon.core.net.Metrics;
 import com.aerofs.daemon.core.net.throttling.IncomingStreamsThrottler;
 import com.aerofs.daemon.core.net.throttling.LimitMonitor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.id.DID;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;

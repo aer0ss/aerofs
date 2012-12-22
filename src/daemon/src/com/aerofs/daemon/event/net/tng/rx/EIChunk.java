@@ -5,7 +5,7 @@ import com.aerofs.daemon.event.net.rx.IInputBuffer;
 import com.aerofs.daemon.event.net.tng.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IIncomingStream;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 import java.io.ByteArrayInputStream;
 

@@ -1,5 +1,6 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.os.OSUtilWindows;
 import com.google.common.base.CharMatcher;
@@ -453,7 +454,7 @@ public abstract class FileUtil
         if (!Normalizer.isNormalized(name, Form.NFC)) {
             final String msg = Joiner.on(' ').useForNull("null").join(
                     "Not NFC:",
-                    Util.hexEncode(Util.string2utf(name)),
+                    BaseUtil.hexEncode(BaseUtil.string2utf(name)),
                     extraLogs);
 
             if (shouldLogOnly) _defectSender.logSendAsync(msg);

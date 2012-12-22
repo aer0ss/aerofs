@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.lib;
 import java.io.ByteArrayInputStream;
 
 import com.aerofs.daemon.transport.xmpp.IPipe;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
 
 /**

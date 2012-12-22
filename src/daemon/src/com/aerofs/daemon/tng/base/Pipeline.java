@@ -8,7 +8,7 @@ import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineBuilder;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEventSink;
 import com.aerofs.daemon.tng.base.pipeline.IStateContainer;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 public abstract class Pipeline
 {

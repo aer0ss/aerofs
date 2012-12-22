@@ -3,6 +3,10 @@ package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 import java.sql.SQLException;
 import java.util.*;
 
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.migration.EmigrantUtil;
 import com.aerofs.daemon.core.mock.TestUtilCore;
 import com.aerofs.daemon.core.ds.OA;

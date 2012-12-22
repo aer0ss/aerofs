@@ -8,7 +8,7 @@ import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.ControllerNotifications.Type;

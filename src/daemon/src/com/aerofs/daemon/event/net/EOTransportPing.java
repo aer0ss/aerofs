@@ -2,7 +2,7 @@ package com.aerofs.daemon.event.net;
 
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 /**
  * send a new ping message with seq # seqNext() if 1) the ping message with

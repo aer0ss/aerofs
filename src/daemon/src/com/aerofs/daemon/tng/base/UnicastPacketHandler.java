@@ -6,7 +6,7 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.IUnicastListener;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 
 import static com.aerofs.daemon.tng.base.Handlers.sendOutgoingMessage_;
 import static com.aerofs.proto.Transport.PBTPHeader;

@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.syncstatus;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.mock.logical.MockDS;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
@@ -12,9 +13,8 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.UniqueID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 import junit.framework.Assert;
 import org.hamcrest.Description;

@@ -18,7 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.lib.id.SID;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;

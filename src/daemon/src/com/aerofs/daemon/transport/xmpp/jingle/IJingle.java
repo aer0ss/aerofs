@@ -5,7 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.jingle;
 
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 
 import java.io.ByteArrayInputStream;
 

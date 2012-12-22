@@ -1,8 +1,8 @@
 package com.aerofs.daemon.event.admin;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
-import com.aerofs.lib.id.DID;
 
 /**
  * see IEOTransportFloodQuery. Additionally, the event can also throw not found

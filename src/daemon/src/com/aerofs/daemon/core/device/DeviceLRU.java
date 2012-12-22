@@ -1,9 +1,9 @@
 package com.aerofs.daemon.core.device;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.IDeviceEvictionListener;
 import com.aerofs.daemon.lib.LRUCache;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 import org.apache.log4j.Logger;
 import javax.annotation.Nonnull;
 

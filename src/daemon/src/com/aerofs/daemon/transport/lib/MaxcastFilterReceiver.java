@@ -23,10 +23,10 @@ package com.aerofs.daemon.transport.lib;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.aerofs.base.id.DID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Util;
-import com.aerofs.lib.id.DID;
 
 public class MaxcastFilterReceiver {
     private static final Logger l = Util.l(MaxcastFilterReceiver.class);

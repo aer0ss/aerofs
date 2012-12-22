@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.Map.Entry;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.google.common.collect.Lists;
@@ -18,7 +19,6 @@ import com.aerofs.daemon.lib.db.ICollectorFilterDatabase;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFOID;
-import com.aerofs.lib.id.DID;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SIndex;
 

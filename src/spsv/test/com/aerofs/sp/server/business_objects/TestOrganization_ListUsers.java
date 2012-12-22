@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.lib.FullName;
-import com.aerofs.lib.id.UserID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.OrganizationDatabase.UserInfo;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;

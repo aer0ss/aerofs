@@ -11,7 +11,7 @@ import com.aerofs.daemon.tng.base.WireData;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExJingle;
-import com.aerofs.lib.id.DID;
+import com.aerofs.base.id.DID;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
