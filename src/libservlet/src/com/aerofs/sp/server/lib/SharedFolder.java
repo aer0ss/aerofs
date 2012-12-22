@@ -13,6 +13,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.Organization;
+import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -274,6 +275,9 @@ public class SharedFolder
         return _f._db.getRoleNullable(_sid, user.id());
     }
 
+    /**
+     * @throws ExNoPerm if the user is not found
+     */
     public @Nonnull Role getRoleThrows(User user)
             throws SQLException, ExNoPerm
     {
@@ -288,10 +292,18 @@ public class SharedFolder
         if (!_f._db.hasOwner(_sid)) throw new ExNoPerm("there must be at least one owner");
     }
 
-    public void throwIfNotOwner(User user)
-            throws SQLException, ExNoPerm
+    public void throwIfNotOwnerAndNotAdmin(User user)
+            throws SQLException, ExNoPerm, ExNotFound
+    {
+        if (!isOwner(user) && !user.getLevel().covers(AuthorizationLevel.ADMIN)) {
+            throw new ExNoPerm();
+        }
+    }
+
+    private boolean isOwner(User user)
+            throws SQLException
     {
         Role role = getRoleNullable(user);
-        if (role == null || !role.covers(Role.OWNER)) throw new ExNoPerm();
+        return role != null && role.covers(Role.OWNER);
     }
 }

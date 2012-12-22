@@ -703,7 +703,7 @@ public class SPService implements ISPService
 
         Map<UserID, Long> epochs;
         if (sf.exists()) {
-            sf.throwIfNotOwner(sharer);
+            sf.throwIfNotOwnerAndNotAdmin(sharer);
             epochs = Collections.emptyMap();
         } else {
             // The store doesn't exist. Create it and add the user as the owner.
@@ -1024,7 +1024,7 @@ public class SPService implements ISPService
         // notification that is newer than what it should be (i.e. we skip an update
 
         _transaction.begin();
-        sf.throwIfNotOwner(user);
+        sf.throwIfNotOwnerAndNotAdmin(user);
         Map<UserID, Long> epochs = sf.updateACL(srps);
         // send verkehr notification as the last step of the transaction
         publish_(epochs);
@@ -1044,7 +1044,7 @@ public class SPService implements ISPService
         List<UserID> subjects = UserID.fromExternal(subjectList);
 
         _transaction.begin();
-        sf.throwIfNotOwner(user);
+        sf.throwIfNotOwnerAndNotAdmin(user);
         Map<UserID, Long> updatedEpochs = sf.deleteACL(subjects);
         // send verkehr notification as the last step of the transaction
         publish_(updatedEpochs);
