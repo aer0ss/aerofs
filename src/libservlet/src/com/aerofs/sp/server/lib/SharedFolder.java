@@ -295,9 +295,7 @@ public class SharedFolder
     public void throwIfNotOwnerAndNotAdmin(User user)
             throws SQLException, ExNoPerm, ExNotFound
     {
-        if (!isOwner(user) && !user.getLevel().covers(AuthorizationLevel.ADMIN)) {
-            throw new ExNoPerm();
-        }
+        if (!isOwner(user) && !user.isAdmin()) throw new ExNoPerm();
     }
 
     private boolean isOwner(User user)

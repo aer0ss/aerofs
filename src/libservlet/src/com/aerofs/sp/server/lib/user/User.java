@@ -166,6 +166,12 @@ public class User
         return _f._udb.getLevel(_id);
     }
 
+    public boolean isAdmin()
+            throws SQLException, ExNotFound
+    {
+        return getLevel().covers(AuthorizationLevel.ADMIN);
+    }
+
     // TODO (WW) throw ExNotFound if the user doesn't exist?
     public void setLevel(AuthorizationLevel auth)
             throws SQLException

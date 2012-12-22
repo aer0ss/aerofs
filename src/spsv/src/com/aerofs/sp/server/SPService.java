@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
@@ -174,21 +175,15 @@ public class SPService implements ISPService
     @Override
     public PBException encodeError(Throwable e)
     {
-        // Report error in logs (if it is not an exception that we would normally expect).
-        if (!(e instanceof ExNoPerm) &&
-                !(e instanceof ExBadCredential) &&
-                !(e instanceof ExBadArgs) &&
-                !(e instanceof ExAlreadyExist) &&
-                !(e instanceof ExNotFound)) {
-            String user;
-            try {
-                user = _sessionUser.get().id().toString();
-            } catch (ExNoPerm enp) {
-                user = UNKNOWN_DEVICE_NAME;
-            }
-
-            l.error("user: " + user + ": " + Util.e(e));
+        String user;
+        try {
+            user = _sessionUser.exists() ? _sessionUser.get().id().toString() : "user unknown";
+        } catch (ExNoPerm enp) {
+            throw SystemUtil.fatalWithReturn(enp);
         }
+
+        l.warn(user + ": " + Util.e(e, ExNoPerm.class, ExBadCredential.class, ExBadArgs.class,
+                ExAlreadyExist.class, ExNotFound.class));
 
         // Notify SPTransaction that an exception occurred.
         _transaction.handleException();
@@ -880,13 +875,9 @@ public class SPService implements ISPService
         _transaction.begin();
 
         User inviter = _sessionUser.get();
-        l.info("Send " + userIdStrings.size() + " invite(s) by " + inviter);
+        l.info("invite " + userIdStrings.size() + " users by " + inviter);
 
-        // check and set invitation quota
-        int left = inviter.getSignUpInvitationsQuota() - userIdStrings.size();
-        if (left < 0) throw new ExNoPerm();
-
-        inviter.setSignUpInvitationQuota(left);
+        if (!inviter.isAdmin()) enforceSignUpInvitationQuota(userIdStrings, inviter);
 
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
@@ -906,6 +897,15 @@ public class SPService implements ISPService
         for (InvitationEmailer emailer : emailers) emailer.send();
 
         return createVoidReply();
+    }
+
+    private void enforceSignUpInvitationQuota(List<String> userIdStrings, User inviter)
+            throws ExNotFound, SQLException, ExNoPerm
+    {
+        int left = inviter.getSignUpInvitationsQuota() - userIdStrings.size();
+        if (left < 0) throw new ExNoPerm();
+
+        inviter.setSignUpInvitationQuota(left);
     }
 
     @Override

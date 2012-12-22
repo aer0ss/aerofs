@@ -216,35 +216,44 @@ public abstract class Util
                 "\n==== END STACKS ====");
     }
 
-    private static Set<Class<?>> s_excludes = new HashSet<Class<?>>();
+    private static Set<Class<?>> s_suppressStackTrace = new HashSet<Class<?>>();
     static {
-        s_excludes.add(ExTimeout.class);
-        s_excludes.add(ExAborted.class);
-        s_excludes.add(ExNoAvailDevice.class);
+        s_suppressStackTrace.add(ExTimeout.class);
+        s_suppressStackTrace.add(ExAborted.class);
+        s_suppressStackTrace.add(ExNoAvailDevice.class);
     }
 
-    private static Class<?>[] s_excludeBases = new Class<?>[] {
+    private static Class<?>[] s_suppressStackTraceBaseClasses = new Class<?>[] {
         SocketException.class,
     };
 
     // TODO (WW) make it private and clean up LogUtil.
-    static boolean shouldPrintStackTrace(Throwable e, Class<?> ...excludes)
+    static boolean shouldPrintStackTrace(Throwable e, Class<?> ...suppressStackTrace)
     {
-        for (Class<?> exclude : excludes) {
-            if (exclude.isInstance(e)) return false;
+        for (Class<?> suppress : suppressStackTrace) {
+            if (suppress.isInstance(e)) return false;
         }
-        if (s_excludes.contains(e.getClass())) return false;
-        for (Class<?> excludeBase : s_excludeBases) {
+        if (s_suppressStackTrace.contains(e.getClass())) return false;
+        for (Class<?> excludeBase : s_suppressStackTraceBaseClasses) {
             if (excludeBase.isInstance(e)) return false;
         }
         return true;
     }
 
+    /**
+     * Return the logging string of the exception. The string includes the stack trace for all the
+     * exception classses except those defined in s_suppressStackTrace* (see above) and as the
+     * suppressStackTrace parameter.
+     *
+     * @param suppressStackTrace the exception classes of which the stack trace should be
+     * suppressed.
+     *
+     * N.B. Use this method for logging only. Use CLIUtil.e2msg() for UI messages
+     */
     // avoid stack printing for non-error native exceptions
-    // this method is for logging only. Use CLIUtil.e2msg() for UI messages
-    public static String e(Throwable e, Class<?> ... excludes)
+    public static String e(Throwable e, Class<?> ... suppressStackTrace)
     {
-        if (shouldPrintStackTrace(e, excludes)) {
+        if (shouldPrintStackTrace(e, suppressStackTrace)) {
             return stackTrace2string(e);
         } else {
             return e.getClass().getName() + ": " + e.getMessage();
