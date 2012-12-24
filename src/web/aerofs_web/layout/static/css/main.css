@@ -72,6 +72,17 @@ div#not_authorized {
   color: #9d261d;
   margin-bottom: 10px;
 }
+div.home_nav {
+  margin-top: 8em;
+  text-align: center;
+}
+div.home_nav > h2 {
+  margin: 0 auto;
+}
+.invitation_title {
+  color: #156290;
+  font-size: 120%;
+}
 html,
 body {
   height: 100%;

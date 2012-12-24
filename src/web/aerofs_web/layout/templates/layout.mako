@@ -85,16 +85,16 @@
     <div id="footer-push"></div>
 </div>
 
-<footer>
-    <div class="container">
-        <div class="row">
-            <div class="span12">
-                <p>&copy; Air Computing Inc. ${year}</p>
-            </div>
-        </div>
-    </div>
-</footer>
-
+## Remove the footer for now.
+##<footer>
+##    <div class="container">
+##        <div class="row">
+##            <div class="span12">
+##                <p>&copy; Air Computing Inc. ${year}</p>
+##            </div>
+##        </div>
+##    </div>
+##</footer>
 
 <!-- javascript
 ================================================== -->
@@ -109,10 +109,10 @@
 </html>
 
 ## sets a global variable with the current year, for copyright notices
-<%!
-    import datetime
-    year = datetime.datetime.now().year
-%>
+##<%!
+##    import datetime
+##    year = datetime.datetime.now().year
+##%>
 
 ## Outputs the sidebar navigation
 ## param links: list of tuples (route_name, text_to_display)

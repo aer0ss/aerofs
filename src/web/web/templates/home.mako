@@ -4,9 +4,7 @@
     from aerofs_sp.gen.sp_pb2 import ADMIN, USER
 %>
 
-<div class="span12">
-    <h1>&nbsp;</h1>
-    <center>
+<div class="span12 home_nav">
         <h2><a href="${request.route_path('accept')}">View Pending Invitations</a></h2>
 
     %if request.session['group'] == ADMIN:
