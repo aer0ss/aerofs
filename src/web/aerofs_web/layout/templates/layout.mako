@@ -18,7 +18,6 @@
     <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-
     <!-- fav and touch icons -->
     <link rel="shortcut icon" href="../assets/ico/favicon.ico">
 </head>
@@ -58,17 +57,7 @@
                 </a>
 
                 %if 'username' in request.session:
-                   <div class="btn-group pull-right">
-                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                            <i class="icon-user"></i> ${request.session['username']}
-                            <span class="caret"></span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <!-- <li><a href="#">Profile</a></li>
-                            <li class="divider"></li> -->
-                            <li><a href="${request.route_path('logout')}">Sign Out</a></li>
-                        </ul>
-                    </div>
+                    ${render_top_right_navigation()}
                 %endif
 
             </div>
@@ -84,6 +73,65 @@
     ## this element is the same height as the footer, and it ensures that the footer never overlaps the content
     <div id="footer-push"></div>
 </div>
+
+<%!
+    from aerofs_sp.gen.sp_pb2 import ADMIN
+%>
+
+<%def name="render_top_right_navigation()">
+
+    ## TODO (WW) CSS for navgar buttons is completely broken.
+
+    <div class="pull-right" style="margin-top: 2em;">
+        % if request.session['group'] == ADMIN:
+            ${render_client_and_server_download_links()}
+        % else:
+            ${render_client_download_link()}
+        % endif
+
+        <span class="btn-group" style="margin-left: 3em; padding-bottom: 8px;">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                ${request.session['username']} &#9662;
+                ## The result of the following line is ugly. The CSS for navgar
+                ## buttons has been messed up.
+                ## <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <!-- <li><a href="#">Profile</a></li>
+                <li class="divider"></li> -->
+                <li><a href="${request.route_path('logout')}">Sign Out</a></li>
+            </ul>
+        </span>
+    </div>
+
+</%def>
+
+<%def name="render_client_download_link()">
+    <a href="https://www.aerofs.com/download" target="_blank">
+        ${render_download_text()}
+    </a>
+</%def>
+
+<%def name="render_client_and_server_download_links()">
+    <span class="btn-group" style="margin-left: 3em; padding-bottom: 8px;">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+            ## see the previous occurrance of the UNICODE char for comments
+            ${render_download_text()} &#9662;
+        </a>
+        <ul class="dropdown-menu">
+            <li><a href="https://www.aerofs.com/download" target="_blank">
+                Desktop Client
+            </a></li>
+            <li><a>
+                Team Server
+            </a></li>
+        </ul>
+    </span>
+</%def>
+
+<%def name="render_download_text()">
+    Install
+</%def>
 
 ## Remove the footer for now.
 ##<footer>

@@ -1,7 +1,9 @@
 import logging
+from pyramid.httpexceptions import HTTPFound
 
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
+from aerofs_sp.gen.sp_pb2 import USER
 
 from aerofs_web.helper_functions import flash_error
 
@@ -13,11 +15,15 @@ log = logging.getLogger(__name__)
 # basic homepage view with links to pages
 @view_config(
     route_name = 'homepage',
-    renderer = 'home.mako',
+    renderer = 'admin_home.mako',
     permission = 'user'
 )
 def homepage(request):
-    return {}
+    if request.session['group'] == USER:
+        # direct non-admin users to the invitation page
+        return HTTPFound(request.route_url('accept'))
+    else:
+        return {}
 
 
 # Exception handlers
