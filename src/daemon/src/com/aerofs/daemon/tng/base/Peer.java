@@ -17,8 +17,8 @@ import com.aerofs.daemon.tng.base.streams.NewOutgoingStream;
 import com.aerofs.daemon.tng.ex.ExTransport;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.async.FailedFutureCallback;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.FailedFutureCallback;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.base.id.SID;
 import com.google.common.util.concurrent.FutureCallback;
@@ -32,7 +32,7 @@ import java.util.List;
 import static com.aerofs.daemon.lib.DaemonParam.CONNECT_TIMEOUT;
 import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;
 import static com.aerofs.daemon.lib.Prio.LO;
-import static com.aerofs.lib.async.FutureUtil.addCallback;
+import static com.aerofs.base.async.FutureUtil.addCallback;
 
 class Peer implements IPeer
 {

@@ -7,7 +7,7 @@ package com.aerofs.daemon.tng.base;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.tng.base.pipeline.*;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;

@@ -8,7 +8,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.tng.IDefectReporter;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 

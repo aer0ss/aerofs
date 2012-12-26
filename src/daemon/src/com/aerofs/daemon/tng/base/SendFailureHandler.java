@@ -6,7 +6,7 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.IDefectReporter;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
-import com.aerofs.lib.async.FailedFutureCallback;
+import com.aerofs.base.async.FailedFutureCallback;
 
 import static com.google.common.util.concurrent.Futures.addCallback;
 

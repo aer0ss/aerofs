@@ -6,7 +6,7 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 
 // same type of future return value as the event that caused the handler to throw
 final public class ExceptionEvent<FutureReturn> implements IPipelineEvent<FutureReturn>

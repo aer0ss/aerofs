@@ -9,7 +9,7 @@ import com.aerofs.lib.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.async.FutureUtil;
+import com.aerofs.base.async.FutureUtil;
 import com.aerofs.proto.Tap;
 import com.aerofs.proto.Tap.ITapService;
 import com.google.common.util.concurrent.FutureCallback;

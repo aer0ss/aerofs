@@ -13,7 +13,7 @@ import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.IUnicastListener;
 import com.aerofs.daemon.tng.ImmediateInlineExecutor;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableSet;

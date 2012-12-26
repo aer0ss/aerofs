@@ -12,8 +12,8 @@ import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;
 import com.aerofs.daemon.tng.ex.ExStreamInvalid;
-import com.aerofs.lib.async.FailedFutureCallback;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.FailedFutureCallback;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -22,7 +22,7 @@ import java.io.ByteArrayInputStream;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.aerofs.lib.async.FutureUtil.addCallback;
+import static com.aerofs.base.async.FutureUtil.addCallback;
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 

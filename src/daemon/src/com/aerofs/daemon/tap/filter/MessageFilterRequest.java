@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tap.filter;
 
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 
 public final class MessageFilterRequest
 {

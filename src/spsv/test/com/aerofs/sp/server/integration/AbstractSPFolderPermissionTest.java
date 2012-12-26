@@ -6,7 +6,7 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePairs;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;

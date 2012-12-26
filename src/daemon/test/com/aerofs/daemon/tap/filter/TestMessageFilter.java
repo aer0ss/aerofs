@@ -11,7 +11,7 @@ import com.aerofs.daemon.tng.base.MessageEvent;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Before;
 import org.junit.Test;

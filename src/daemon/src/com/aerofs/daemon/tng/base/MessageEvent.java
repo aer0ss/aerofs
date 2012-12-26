@@ -7,7 +7,7 @@ package com.aerofs.daemon.tng.base;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 
 public final class MessageEvent implements IPipelineEvent<Void>
 {

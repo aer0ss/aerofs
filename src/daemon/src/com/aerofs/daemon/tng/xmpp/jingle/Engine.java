@@ -16,7 +16,7 @@ import com.aerofs.j.TunnelSessionClient;
 import com.aerofs.j.TunnelSessionClient_IncomingTunnelSlot;
 import com.aerofs.j.XmppMain;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import org.apache.log4j.Logger;

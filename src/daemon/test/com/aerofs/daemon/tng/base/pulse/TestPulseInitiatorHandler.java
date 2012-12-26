@@ -13,7 +13,7 @@ import com.aerofs.daemon.tng.base.OutgoingAeroFSPacket;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.base.pulse.ex.ExInvalidPulseReply;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.testlib.AbstractTest;

@@ -9,7 +9,7 @@ import com.aerofs.daemon.tng.IUnicastListener;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;

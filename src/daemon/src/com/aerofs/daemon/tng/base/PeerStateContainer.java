@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.base.pipeline.IStateContainer;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import javax.annotation.Nullable;

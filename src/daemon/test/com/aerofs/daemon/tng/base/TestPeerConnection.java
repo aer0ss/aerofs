@@ -9,7 +9,7 @@ import com.aerofs.daemon.tng.ImmediateInlineExecutor;
 import com.aerofs.daemon.tng.base.pipeline.IPipeline;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;

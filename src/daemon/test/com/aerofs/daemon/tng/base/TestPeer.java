@@ -12,7 +12,7 @@ import com.aerofs.daemon.tng.DropDelayedInlineExecutor;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.base.streams.NewOutgoingStream;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
 import com.aerofs.base.id.SID;
 import com.aerofs.testlib.AbstractTest;

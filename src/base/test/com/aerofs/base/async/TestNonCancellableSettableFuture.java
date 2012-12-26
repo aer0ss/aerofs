@@ -2,16 +2,18 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.async;
+package com.aerofs.base.async;
 
-import com.aerofs.lib.Util;
+import com.aerofs.base.Loggers;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
 import org.junit.Test;
+import org.slf4j.Logger;
 
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestNonCancellableSettableFuture
 {
@@ -100,7 +102,7 @@ public class TestNonCancellableSettableFuture
         private final boolean _throwex;
         private final UncancellableFuture<Void> _f;
         private final long _sleeptime;
-        private static final Logger l = Util.l(OneUseAsyncModule.class);
+        private static final Logger l = Loggers.getLogger(OneUseAsyncModule.class);
     }
 
     private static final RuntimeException MY_TEST_RUNTIME_EXCEPTION = new RuntimeException();

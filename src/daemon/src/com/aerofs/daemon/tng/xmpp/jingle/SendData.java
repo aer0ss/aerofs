@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 
 final class SendData
 {

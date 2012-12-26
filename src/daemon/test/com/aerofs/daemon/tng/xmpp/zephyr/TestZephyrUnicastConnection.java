@@ -16,7 +16,7 @@ import com.aerofs.daemon.tng.xmpp.zephyr.exception.ExZephyrFailedToBind;
 import com.aerofs.daemon.tng.xmpp.zephyr.handler.StrictChannelPipeline;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.OutArg;
 import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTPHeader;

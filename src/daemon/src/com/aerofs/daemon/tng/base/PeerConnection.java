@@ -10,7 +10,7 @@ import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipeline;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -19,7 +19,7 @@ import javax.annotation.Nullable;
 
 import static com.aerofs.daemon.tng.base.ConnectionEvent.Type.CONNECT;
 import static com.aerofs.daemon.tng.base.ConnectionEvent.Type.DISCONNECT;
-import static com.aerofs.lib.async.FutureUtil.addCallback;
+import static com.aerofs.base.async.FutureUtil.addCallback;
 
 class PeerConnection implements IConnection
 {

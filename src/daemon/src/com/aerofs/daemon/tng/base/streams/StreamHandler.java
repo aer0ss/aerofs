@@ -30,7 +30,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import org.apache.log4j.Logger;
 
 import static com.aerofs.daemon.tng.base.Handlers.sendOutgoingMessage_;
-import static com.aerofs.lib.async.FutureUtil.addCallback;
+import static com.aerofs.base.async.FutureUtil.addCallback;
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STREAM_NOT_FOUND;
 
 public final class StreamHandler extends SimplePipelineEventHandler

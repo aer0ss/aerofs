@@ -15,7 +15,7 @@ import com.aerofs.j.StreamState;
 import com.aerofs.j.j;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;

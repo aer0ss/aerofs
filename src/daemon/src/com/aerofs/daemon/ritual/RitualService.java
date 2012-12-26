@@ -49,7 +49,7 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;

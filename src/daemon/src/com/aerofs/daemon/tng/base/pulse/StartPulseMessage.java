@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base.pulse;
 
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 
 public final class StartPulseMessage
 {

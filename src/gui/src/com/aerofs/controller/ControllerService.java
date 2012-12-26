@@ -5,7 +5,7 @@
 package com.aerofs.controller;
 
 import com.aerofs.lib.ThreadUtil;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.base.id.UserID;

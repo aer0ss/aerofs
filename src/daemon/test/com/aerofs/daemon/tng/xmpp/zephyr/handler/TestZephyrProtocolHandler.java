@@ -6,7 +6,7 @@ import com.aerofs.daemon.tng.xmpp.netty.MockSinkEventListener;
 import com.aerofs.daemon.tng.xmpp.zephyr.IZephyrUnicastEventSink;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrBindRequest;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.channel.*;
 import org.junit.Before;

@@ -6,7 +6,7 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
-import com.aerofs.lib.async.UncancellableFuture;
+import com.aerofs.base.async.UncancellableFuture;
 
 import java.util.LinkedList;
 import java.util.List;
