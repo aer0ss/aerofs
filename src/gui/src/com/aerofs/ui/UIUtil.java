@@ -322,8 +322,11 @@ public class UIUtil
 
     private static void finishLaunch(Runnable postLaunch)
     {
-        // Starts the service that displays notifications when files are updated
-        new FileChangeNotification();
+        if (!L.get().isMultiuser()) {
+            // Starts the service that displays notifications when files are updated
+            new FileChangeNotification();
+        }
+
         // Start the service that displays Bad Password notifications
         // This should not be run before setup is completed, otherwise it will
         // trigger update password dialogs during setup.
