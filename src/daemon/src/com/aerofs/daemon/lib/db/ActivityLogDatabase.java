@@ -58,7 +58,7 @@ public class ActivityLogDatabase extends AbstractDatabase implements IActivityLo
 
     private PreparedStatement _psAA;
     @Override
-    public void addActivity_(SOID soid, int activities, Path path, @Nullable Path pathTo,
+    public void insertActivity_(SOID soid, int activities, Path path, @Nullable Path pathTo,
             Set<DID> dids, Trans t) throws SQLException
     {
         assertValidity(activities, pathTo, dids);

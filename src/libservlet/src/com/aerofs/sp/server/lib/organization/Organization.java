@@ -61,7 +61,7 @@ public class Organization
         /**
          * Add a new organization as well as its team server account to the DB
          */
-        public Organization createNewOrganization(@Nonnull String name)
+        public Organization save(@Nonnull String name)
                 throws SQLException, ExNoPerm, IOException, ExNotFound
         {
             while (true) {
@@ -69,9 +69,9 @@ public class Organization
                 // orgs. It is NOT a security measure.
                 OrganizationID orgID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _db.add(orgID, name);
+                    _db.insert(orgID, name);
                     Organization org = create(orgID);
-                    createNewTeamServerUser(org);
+                    saveTeamServerUser(org);
                     l.info(org + " created");
                     return org;
                 } catch (ExAlreadyExist e) {
@@ -82,14 +82,14 @@ public class Organization
             }
         }
 
-        private void createNewTeamServerUser(Organization org)
+        private void saveTeamServerUser(Organization org)
                 throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
         {
             User tsUser = _factUser.create(org.id().toTeamServerUserID());
 
             // Use an invalid password hash to prevent attackers from logging in as Team Server
             // using _any_ password. Also see C.TEAM_SERVER_LOCAL_PASSWORD.
-            tsUser.createNewUser(new byte[0], new FullName("Team", "Server"), org);
+            tsUser.save(new byte[0], new FullName("Team", "Server"), org);
         }
     }
 

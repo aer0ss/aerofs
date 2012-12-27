@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.DeviceBitMap;
@@ -115,7 +114,7 @@ public class TestLocalSyncStatus extends AbstractTest
     @Test
     public void shouldAddDevices() throws SQLException
     {
-        sdb.add_(sidx, t);
+        sdb.insert_(sidx, t);
 
         assertDeviceList();
 
@@ -132,11 +131,11 @@ public class TestLocalSyncStatus extends AbstractTest
     @Test
     public void shouldUpdateSyncStatus() throws SQLException, ExAlreadyExist
     {
-        sdb.add_(sidx, t);
-        mdb.createOA_(sidx, OID.ROOT, OID.ROOT, "R", OA.Type.DIR, 0, t);
-        mdb.createOA_(sidx, o1.oid(), OID.ROOT, "foo", OA.Type.FILE, 0, t);
-        mdb.createOA_(sidx, o2.oid(), OID.ROOT, "bar", OA.Type.DIR, 0, t);
-        mdb.createOA_(sidx, o3.oid(), o2.oid(), "bar", OA.Type.FILE, 0, t);
+        sdb.insert_(sidx, t);
+        mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, "R", OA.Type.DIR, 0, t);
+        mdb.insertOA_(sidx, o1.oid(), OID.ROOT, "foo", OA.Type.FILE, 0, t);
+        mdb.insertOA_(sidx, o2.oid(), OID.ROOT, "bar", OA.Type.DIR, 0, t);
+        mdb.insertOA_(sidx, o3.oid(), o2.oid(), "bar", OA.Type.FILE, 0, t);
 
         Assert.assertEquals(0, mdb.getSyncStatus_(o1).size());
         Assert.assertEquals(0, mdb.getSyncStatus_(o2).size());

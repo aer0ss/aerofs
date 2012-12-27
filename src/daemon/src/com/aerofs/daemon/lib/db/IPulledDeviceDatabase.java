@@ -23,7 +23,7 @@ public interface IPulledDeviceDatabase
     /**
      * add a device that has been pulled for knowledge about store sidx
      */
-    void add_(SIndex sidx, DID did, Trans t) throws SQLException;
+    void insert_(SIndex sidx, DID did, Trans t) throws SQLException;
 
     /**
      * delete the pulled devices associated with store indexed by sidx

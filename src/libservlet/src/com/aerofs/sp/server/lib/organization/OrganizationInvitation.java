@@ -42,11 +42,11 @@ public class OrganizationInvitation
             return new OrganizationInvitation(_db, _factUser, _factOrg, invitee, org);
         }
 
-        public OrganizationInvitation createNewOrganizationInvitation(@Nonnull UserID inviter,
-                @Nonnull UserID invitee, @Nonnull OrganizationID org)
+        public OrganizationInvitation save(@Nonnull UserID inviter, @Nonnull UserID invitee,
+                @Nonnull OrganizationID org)
                 throws SQLException
         {
-            _db.addOrganizationInvitation(inviter, invitee, org);
+            _db.insert(inviter, invitee, org);
             return new OrganizationInvitation(_db, _factUser, _factOrg, invitee, org);
         }
     }

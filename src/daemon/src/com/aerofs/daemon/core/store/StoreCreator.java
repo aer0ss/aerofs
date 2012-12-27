@@ -82,10 +82,10 @@ public class StoreCreator
         Util.l(this).debug("create store " + sidx);
 
         // create root directory; its parent is itself
-        _mdb.createOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);
+        _mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);
 
         // create trash directory
-        _mdb.createOA_(sidx, OID.TRASH, OID.ROOT, C.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
+        _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, C.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
 
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);

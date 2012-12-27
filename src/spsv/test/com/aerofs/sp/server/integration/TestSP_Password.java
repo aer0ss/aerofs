@@ -81,7 +81,7 @@ public class TestSP_Password extends AbstractTest
         throws Exception
     {
         _passwordManagement.sendPasswordResetEmail(user);
-        verify(db).addPasswordResetToken(eq(user.id()), anyString());
+        verify(db).insertPasswordResetToken(eq(user.id()), anyString());
     }
 
     @Test

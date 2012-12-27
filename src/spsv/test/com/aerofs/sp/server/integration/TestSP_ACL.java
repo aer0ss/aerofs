@@ -87,7 +87,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     {
         // set up TEST_USER_4
         trans.begin();
-        udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
+        udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
         udb.setVerified(TEST_USER_4);
         trans.commit();

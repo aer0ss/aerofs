@@ -625,7 +625,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 /*
                  * Truncate push queue to avoid unbounded growth
                  */
-                _ssdb.removeModifiedObjects_(clientEpoch - 1, t);
+                _ssdb.deleteModifiedObjects_(clientEpoch - 1, t);
 
                 long pushEpoch = _ssdb.getPushEpoch_();
                 if (clientEpoch < pushEpoch) {
@@ -680,7 +680,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 @Override
                 public void committing_(Trans t) throws SQLException
                 {
-                    for (SOID soid : set) _ssdb.addToModifiedObjects_(soid, t);
+                    for (SOID soid : set) _ssdb.insertModifiedObject_(soid, t);
                 }
 
                 @Override

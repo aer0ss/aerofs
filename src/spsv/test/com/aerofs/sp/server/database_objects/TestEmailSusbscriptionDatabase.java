@@ -36,7 +36,7 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
     {
         SubscriptionCategory sc = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
 
-        esdb.addEmailSubscription(TEST_USER1, sc);
+        esdb.insertEmailSubscription(TEST_USER1, sc);
 
         assertTrue(esdb.isSubscribed(TEST_USER1, sc));
     }
@@ -48,8 +48,8 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
         SubscriptionCategory sc1 = SubscriptionCategory.AEROFS_INVITATION_REMINDER;
         SubscriptionCategory sc2 = SubscriptionCategory.NEWSLETTER;
 
-        esdb.addEmailSubscription(TEST_USER2, sc1);
-        esdb.addEmailSubscription(TEST_USER2, sc2);
+        esdb.insertEmailSubscription(TEST_USER2, sc1);
+        esdb.insertEmailSubscription(TEST_USER2, sc2);
 
         Set<SubscriptionCategory> subscriptions = esdb.getEmailSubscriptions(TEST_USER2.toString());
 

@@ -358,7 +358,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         assert oaParent.isDir();
         FileUtil.logIfNotNFC(name, soid.toString());
 
-        _mdb.createOA_(sidx, oid, oidParent, name, type, flags, t);
+        _mdb.insertOA_(sidx, oid, oidParent, name, type, flags, t);
 
         _cacheOA.invalidate_(soid);
 
@@ -375,7 +375,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 
     public void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException
     {
-        _mdb.createCA_(soid, kidx, t);
+        _mdb.insertCA_(soid, kidx, t);
         _cacheOA.invalidate_(soid);
 
         Path path = resolve_(soid);

@@ -48,7 +48,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
-    public void addDevice(DID did, UserID ownerID, String name)
+    public void insertDevice(DID did, UserID ownerID, String name)
             throws SQLException, ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExists
     {
         try {

@@ -156,11 +156,7 @@ public class DBUtil
      */
     public static String deleteWhere(String table, String condition)
     {
-        return new StringBuilder("delete from ")
-                .append(table)
-                .append(" where ")
-                .append(condition)
-                .toString();
+        return "delete from " + table + " where " + condition;
     }
 
     public static String createUniqueIndex(String table, int indexNum, String ... columns)
@@ -179,7 +175,12 @@ public class DBUtil
         StringBuilder sb = new StringBuilder();
         sb.append("create ");
         if (isUniqueIndex) sb.append("unique ");
-        sb.append("index " + table + indexNumber + " on " + table + "(");
+        sb.append("index ")
+                .append(table)
+                .append(indexNumber)
+                .append(" on ")
+                .append(table)
+                .append("(");
         boolean first = true;
         for (String column : columns) {
             if (first) first = false;

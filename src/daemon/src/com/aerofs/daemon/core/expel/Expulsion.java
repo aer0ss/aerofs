@@ -148,7 +148,7 @@ public class Expulsion
 
         l.debug("set expulsion of " + soid + " with " + expelled);
 
-        if (expelled) _exdb.addExpelledObject_(soid, t);
+        if (expelled) _exdb.insertExpelledObject_(soid, t);
         else _exdb.deleteExpelledObject_(soid, t);
 
         IExpulsionAdjuster adj = getAdjuster(flagsOld, flagsNew);
@@ -253,7 +253,7 @@ public class Expulsion
         // table.
         if (_nvc.getKMLVersion_(socid).isZero_()) return;
 
-        _csdb.addCS_(socid, t);
+        _csdb.insertCS_(socid, t);
         _tlaf.get(t).add_(soid.sidx());
     }
 }

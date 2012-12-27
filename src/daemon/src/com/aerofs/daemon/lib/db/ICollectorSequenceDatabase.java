@@ -15,7 +15,7 @@ public interface ICollectorSequenceDatabase
     /**
      * no-op if the component already exists in the CS table.
      */
-    void addCS_(SOCID socid, Trans t) throws SQLException;
+    void insertCS_(SOCID socid, Trans t) throws SQLException;
 
     void deleteCS_(CollectorSeq cs, Trans t) throws SQLException;
 

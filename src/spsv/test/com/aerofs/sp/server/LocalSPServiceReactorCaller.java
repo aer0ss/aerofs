@@ -128,7 +128,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService
         trans.begin();
-        udb.addUser(ADMIN_ID, new FullName("first", "last"), cred, OrganizationID.DEFAULT,
+        udb.insertUser(ADMIN_ID, new FullName("first", "last"), cred, OrganizationID.DEFAULT,
                 AuthorizationLevel.ADMIN);
         udb.setVerified(ADMIN_ID);
         trans.commit();

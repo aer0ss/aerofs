@@ -27,7 +27,7 @@ public interface IActivityLogDatabase
      * @param pathTo the new path of the object, valid iff activities include movement
      * @param dids the set of devices that contributes to the activity
      */
-    void addActivity_(SOID soid, int activites, Path path, @Nullable Path pathTo, Set<DID> dids,
+    void insertActivity_(SOID soid, int activites, Path path, @Nullable Path pathTo, Set<DID> dids,
             Trans t) throws SQLException;
 
     public static class ActivityRow

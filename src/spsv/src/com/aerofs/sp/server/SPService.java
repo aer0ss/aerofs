@@ -558,7 +558,7 @@ public class SPService implements ISPService
 
         // Certify device
         Device device = _factDevice.create(deviceId);
-        device.createNewDevice(tsUser, UNKNOWN_DEVICE_NAME);
+        device.save(tsUser, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = certifyDevice(csr, device);
 
         _transaction.commit();
@@ -635,7 +635,7 @@ public class SPService implements ISPService
                         user + " != " + owner);
             }
         } else {
-            device.createNewDevice(user, UNKNOWN_DEVICE_NAME);
+            device.save(user, UNKNOWN_DEVICE_NAME);
         }
 
         CertifyDeviceReply reply = certifyDevice(csr, device);
@@ -702,7 +702,7 @@ public class SPService implements ISPService
             epochs = Collections.emptyMap();
         } else {
             // The store doesn't exist. Create it and add the user as the owner.
-            epochs = sf.createNewSharedFolder(folderName, sharer);
+            epochs = sf.save(folderName, sharer);
         }
         return epochs;
     }
@@ -736,7 +736,7 @@ public class SPService implements ISPService
             throws SQLException, IOException, ExNotFound, ExAlreadyExist
     {
         SharedFolderInvitation sfi = _factSFI.createWithGeneratedCode();
-        sfi.createNewSharedFolderInvitation(sharer, sharee, sf, role, folderName);
+        sfi.save(sharer, sharee, sf, role, folderName);
 
         InvitationEmailer emailer;
         if (sharee.exists()) {
@@ -766,7 +766,7 @@ public class SPService implements ISPService
     {
         String code = invitee.addSignUpInvitationCode(inviter);
 
-        _esdb.addEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+        _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         return _factEmailer.createSignUpInvitationEmailer(inviter.id().toString(),
                 invitee.id().toString(), inviterName, folderName, note, code);
@@ -935,7 +935,7 @@ public class SPService implements ISPService
             throw new ExAlreadyInvited();
         }
 
-        _factOrgInvite.createNewOrganizationInvitation(inviter.id(), invitee.id(), org.id());
+        _factOrgInvite.save(inviter.id(), invitee.id(), org.id());
         _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
 
         _transaction.commit();
@@ -1159,7 +1159,7 @@ public class SPService implements ISPService
 
         _transaction.begin();
 
-        user.createNewUser(shaedSP, fullName, _factOrg.getDefault());
+        user.save(shaedSP, fullName, _factOrg.getDefault());
 
         //unsubscribe user from the aerofs invitation reminder mailing list
         _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
@@ -1218,7 +1218,7 @@ public class SPService implements ISPService
         User user = _factUser.create(userID);
 
         // All new users start in the default organization.
-        user.createNewUser(shaedSP, fullName, _factOrg.getDefault());
+        user.save(shaedSP, fullName, _factOrg.getDefault());
 
         // Since no exceptions were thrown, and the signup code was received via email,
         // mark the user as verified

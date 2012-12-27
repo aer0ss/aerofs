@@ -92,8 +92,8 @@ public class TestHdGetActivities extends AbstractTest
         for (DID did : dids) set.add(did);
 
         idx++;
-        aldb.addActivity_(new SOID(new SIndex(idx), new OID(UniqueID.generate())), type, from, to,
-                set, null);
+        aldb.insertActivity_(new SOID(new SIndex(idx), new OID(UniqueID.generate())), type, from,
+                to, set, null);
     }
 
     @SuppressWarnings("unchecked")

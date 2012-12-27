@@ -65,7 +65,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
 
     private PreparedStatement _psAddPV;
     @Override
-    public void addPrefixVersion_(SOID soid, KIndex kidx, Version v, Trans t)
+    public void insertPrefixVersion_(SOID soid, KIndex kidx, Version v, Trans t)
             throws SQLException
     {
         try {

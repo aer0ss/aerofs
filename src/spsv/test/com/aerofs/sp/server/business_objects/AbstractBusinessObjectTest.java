@@ -68,10 +68,10 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         return factUser.create(id);
     }
 
-    protected void createNewUser(User user, Organization org)
+    protected void saveUser(User user, Organization org)
             throws IOException, SQLException, ExAlreadyExist, ExNoPerm
     {
-        user.createNewUser(new byte[0], new FullName("first", "last"), org);
+        user.save(new byte[0], new FullName("first", "last"), org);
     }
 
     private int nextOrganizationID = 123;
@@ -81,10 +81,10 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         return factOrg.create(new OrganizationID(nextOrganizationID++));
     }
 
-    protected Organization createNewOrganization()
+    protected Organization saveOrganization()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        return factOrg.createNewOrganization("test org");
+        return factOrg.save("test org");
     }
 
     SharedFolder newSharedFolder()
@@ -97,17 +97,17 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
         return factSharedFolder.create(sid);
     }
 
-    SharedFolder createNewSharedFolder(User owner)
+    SharedFolder saveSharedFolder(User owner)
             throws ExNoPerm, IOException, ExNotFound, ExAlreadyExist, SQLException
     {
-        return createNewSharedFolder(SID.generate(), owner);
+        return saveSharedFolder(SID.generate(), owner);
     }
 
-    SharedFolder createNewSharedFolder(SID sid, User owner)
+    SharedFolder saveSharedFolder(SID sid, User owner)
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = factSharedFolder.create(sid);
-        sf.createNewSharedFolder("shared folder", owner);
+        sf.save("shared folder", owner);
         return sf;
     }
 }

@@ -49,15 +49,15 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     /**
      * Subscribe a user to a particular category
      */
-    public void addEmailSubscription(UserID userId, SubscriptionCategory sc)
+    public void insertEmailSubscription(UserID userId, SubscriptionCategory sc)
             throws SQLException
     {
-        addEmailSubscription(userId, sc, System.currentTimeMillis());
+        insertEmailSubscription(userId, sc, System.currentTimeMillis());
     }
 
     // For testing only
     // TODO (WW) use DI instead
-    public void addEmailSubscription(UserID userId, SubscriptionCategory sc, long currentTime)
+    public void insertEmailSubscription(UserID userId, SubscriptionCategory sc, long currentTime)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(

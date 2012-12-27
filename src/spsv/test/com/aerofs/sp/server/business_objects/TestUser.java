@@ -73,7 +73,7 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldThrowIfCreatingUserWithoutOrg()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
-        createNewUser(newUser(), newOrganization());
+        saveUser(newUser(), newOrganization());
     }
 
     @Test(expected = ExAlreadyExist.class)
@@ -81,9 +81,9 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User user = newUser();
-        Organization org = createNewOrganization();
-        createNewUser(user, org);
-        createNewUser(user, org);
+        Organization org = saveOrganization();
+        saveUser(user, org);
+        saveUser(user, org);
     }
 
     // see User.addRootStoreAndCheckForCollision for detail
@@ -92,26 +92,26 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         // create the playground
-        Organization org = createNewOrganization();
-        Organization org2 = createNewOrganization();
+        Organization org = saveOrganization();
+        Organization org2 = saveOrganization();
 
         // create the players
         User attacker = newUser("attacker");
         User attacker2 = newUser("attacker2");
-        createNewUser(attacker, org);
-        createNewUser(attacker2, org2);
+        saveUser(attacker, org);
+        saveUser(attacker2, org2);
 
         User user = newUser();
 
         // insert the colliding root store
         SharedFolder sf = factSharedFolder.create(SID.rootSID(user.id()));
-        sf.createNewSharedFolder("haha", attacker);
+        sf.save("haha", attacker);
         sf.addACL(attacker2, Role.EDITOR);
         assertEquals(sf.getRoleThrows(attacker), Role.OWNER);
         assertEquals(sf.getRoleThrows(attacker2), Role.EDITOR);
 
         // create the ligitimate user
-        createNewUser(user, org);
+        saveUser(user, org);
 
         // the collision should have been corrected
         assertNull(sf.getRoleNullable(attacker));
@@ -129,9 +129,9 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldThrowIfUserNoPermissionOnAddAndMoveToOrg()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
-        Organization org = createNewOrganization();
+        Organization org = saveOrganization();
         User user = newUser();
-        createNewUser(user, org);
+        saveUser(user, org);
         user.addAndMoveToOrganization("test");
     }
 
@@ -140,7 +140,7 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User user = newUser();
-        createNewUser(user, factOrg.getDefault());
+        saveUser(user, factOrg.getDefault());
         user.addAndMoveToOrganization("test");
 
         assertFalse(user.getOrganization().isDefault());
@@ -152,21 +152,21 @@ public class TestUser extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User user = newUser();
-        Organization orgOld = createNewOrganization();
-        createNewUser(user, orgOld);
+        Organization orgOld = saveOrganization();
+        saveUser(user, orgOld);
         User tsUserOld = newUser(orgOld.id().toTeamServerUserID());
 
         SharedFolder sfRoot = factSharedFolder.create(SID.rootSID(user.id()));
         SharedFolder sf1 = factSharedFolder.create(SID.generate());
         SharedFolder sf2 = factSharedFolder.create(SID.generate());
-        sf1.createNewSharedFolder("haha", user);
-        sf2.createNewSharedFolder("haha", user);
+        sf1.save("haha", user);
+        sf2.save("haha", user);
 
         assertEquals(sfRoot.getRoleNullable(tsUserOld), Role.EDITOR);
         assertEquals(sf1.getRoleNullable(tsUserOld), Role.EDITOR);
         assertEquals(sf2.getRoleNullable(tsUserOld), Role.EDITOR);
 
-        Organization orgNew = createNewOrganization();
+        Organization orgNew = saveOrganization();
         User tsUserNew = newUser(orgNew.id().toTeamServerUserID());
 
         user.setOrganization(orgNew);

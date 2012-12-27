@@ -102,10 +102,10 @@ public class SharedFolder
      * Add the shared folder to db. Also add {@code owner} as the first owner.
      * @return A map of user IDs to epochs to be published via verkehr.
      */
-    public Map<UserID, Long> createNewSharedFolder(String folderName, User owner)
+    public Map<UserID, Long> save(String folderName, User owner)
             throws ExNotFound, SQLException, IOException, ExAlreadyExist
     {
-        _f._db.add(_sid, folderName);
+        _f._db.insert(_sid, folderName);
 
         try {
             return addACL(owner, Role.OWNER);
@@ -132,7 +132,7 @@ public class SharedFolder
             // TODO: remove this codepath after transition period...
             return Collections.emptyMap();
         } else {
-            _f._db.addACL(_sid, Collections.singletonList(new SubjectRolePair(user.id(), role)));
+            _f._db.insertACL(_sid, Collections.singletonList(new SubjectRolePair(user.id(), role)));
 
             addTeamServerACLImpl(user);
 
@@ -170,7 +170,7 @@ public class SharedFolder
         User tsUser = _f._factUser.create(org.id().toTeamServerUserID());
         if (getRoleNullable(tsUser) == null) {
             SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
-            _f._db.addACL(_sid, Collections.singletonList(srp));
+            _f._db.insertACL(_sid, Collections.singletonList(srp));
             return true;
         } else {
             return false;

@@ -57,7 +57,7 @@ public class ImmigrantVersionDatabase
     }
 
     @Override
-    protected PreparedStatement createAddBackupStatement() throws SQLException
+    protected PreparedStatement createInsertBackupStatement() throws SQLException
     {
         return c().prepareStatement("insert into "
                     + T_IBT + "(" + C_IBT_SIDX + "," + C_IBT_OID + ","

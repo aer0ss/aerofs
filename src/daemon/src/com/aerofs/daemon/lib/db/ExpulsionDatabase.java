@@ -28,7 +28,7 @@ public class ExpulsionDatabase extends AbstractDatabase implements IExpulsionDat
 
     private PreparedStatement _psAdd;
     @Override
-    public void addExpelledObject_(SOID soid, Trans t) throws SQLException
+    public void insertExpelledObject_(SOID soid, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {

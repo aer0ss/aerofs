@@ -36,8 +36,8 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     public void setup()
         throws Exception
     {
-        odb.add(orgId, "test");
-        odb.add(nonQueriedOrgId, "dummy");
+        odb.insert(orgId, "test");
+        odb.insert(nonQueriedOrgId, "dummy");
 
         setupUsers();
     }
@@ -48,18 +48,18 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
         FullName fullName = new FullName("", "");
 
         for (int i = 0; i < NUMBER_OF_USERS; i++) {
-            udb.addUser(UserID.fromInternal("user" + i + "@test.com"), fullName, "".getBytes(),
+            udb.insertUser(UserID.fromInternal("user" + i + "@test.com"), fullName, "".getBytes(),
                     orgId, AuthorizationLevel.USER);
         }
 
         for (int i = 0; i < NUMBER_OF_ADMINS; i++) {
-            udb.addUser(UserID.fromInternal("admin" + i + "@test.com"), fullName,
-                    "".getBytes(), orgId, AuthorizationLevel.ADMIN);
+            udb.insertUser(UserID.fromInternal("admin" + i + "@test.com"), fullName, "".getBytes(),
+                    orgId, AuthorizationLevel.ADMIN);
         }
 
         for (int i = 0; i < NUMBER_OF_USERS; i++) {
-            udb.addUser(UserID.fromInternal("user" + i + "@dummy.com"), fullName,
-                    "".getBytes(), nonQueriedOrgId, AuthorizationLevel.USER);
+            udb.insertUser(UserID.fromInternal("user" + i + "@dummy.com"), fullName, "".getBytes(),
+                    nonQueriedOrgId, AuthorizationLevel.USER);
         }
     }
 

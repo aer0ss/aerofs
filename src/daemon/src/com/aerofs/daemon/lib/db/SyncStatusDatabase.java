@@ -168,7 +168,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
 
     private PreparedStatement _psAMO;
     @Override
-    public void addToModifiedObjects_(SOID soid, Trans t) throws SQLException
+    public void insertModifiedObject_(SOID soid, Trans t) throws SQLException
     {
         try {
             if (_psAMO == null) {
@@ -188,7 +188,7 @@ public class SyncStatusDatabase extends AbstractDatabase implements ISyncStatusD
 
     private PreparedStatement _psRMO;
     @Override
-    public void removeModifiedObjects_(long idx, Trans t) throws SQLException
+    public void deleteModifiedObjects_(long idx, Trans t) throws SQLException
     {
         try {
             if (_psRMO == null) {

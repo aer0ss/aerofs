@@ -31,7 +31,7 @@ public class TestSVEmailAddEvent extends AbstractSVReactorTest
 
         _transaction.begin();
 
-        int id = db.addEmailEvent(event);
+        int id = db.insertEmailEvent(event);
         EmailEvent ee = db.getEmailEvent(id);
 
         _transaction.commit();

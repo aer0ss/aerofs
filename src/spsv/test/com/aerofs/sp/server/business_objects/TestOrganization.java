@@ -21,17 +21,17 @@ import static org.junit.Assert.assertFalse;
 public class TestOrganization extends AbstractBusinessObjectTest
 {
     @Test
-    public void createNewOrganization_shouldNeverCreateDefaultOrganization()
+    public void saveOrganization_shouldNeverCreateDefaultOrganization()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        assertFalse(createNew().isDefault());
+        assertFalse(save().isDefault());
     }
 
     @Test
-    public void createNewOrganization_shouldAddTeamServerUser()
+    public void saveOrganization_shouldAddTeamServerUser()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        User tsUser = factUser.create(createNew().id().toTeamServerUserID());
+        User tsUser = factUser.create(save().id().toTeamServerUserID());
 
         assertTrue(tsUser.exists());
     }
@@ -55,16 +55,16 @@ public class TestOrganization extends AbstractBusinessObjectTest
     public void getName_shouldReturnSetName()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        Organization org = createNew();
+        Organization org = save();
 
         final String NAME = "12345676543456765432";
         org.setName(NAME);
         assertEquals(org.getName(), NAME);
     }
 
-    private Organization createNew()
+    private Organization save()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        return factOrg.createNewOrganization("test");
+        return factOrg.save("test");
     }
 }

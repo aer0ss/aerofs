@@ -73,9 +73,9 @@ public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithS
     private void addSharedFolder(SID rootsid)
             throws SQLException, ExAlreadyExist
     {
-        sfdb.add(rootsid, "test");
-        sfdb.addACL(rootsid, Collections.singleton(
-                new SubjectRolePair(orgID.toTeamServerUserID(), Role.EDITOR)));
+        sfdb.insert(rootsid, "test");
+        sfdb.insertACL(rootsid,
+                Collections.singleton(new SubjectRolePair(orgID.toTeamServerUserID(), Role.EDITOR)));
     }
 
 }

@@ -144,7 +144,7 @@ public class SendgridServlet extends AeroServlet {
 
         }
 
-        _db.addEmailEvent(new EmailEvent(email, event, reason, category, timestamp));
+        _db.insertEmailEvent(new EmailEvent(email, event, reason, category, timestamp));
 
         _transaction.commit();
     }

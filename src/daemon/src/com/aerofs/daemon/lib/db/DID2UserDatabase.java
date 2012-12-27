@@ -30,22 +30,22 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
         super(dbcw.get());
     }
 
-    private PreparedStatement _psAdd;
+    private PreparedStatement _psInsert;
     @Override
-    public void add_(DID did, UserID user, Trans t)
+    public void insert_(DID did, UserID user, Trans t)
         throws SQLException
     {
         try {
-            if (_psAdd == null) _psAdd = c().prepareStatement("insert into " + T_D2U + " ( " +
+            if (_psInsert == null) _psInsert = c().prepareStatement("insert into " + T_D2U + " ( " +
                     C_D2U_DID + "," + C_D2U_USER + ") values (?,?)");
 
-            _psAdd.setBytes(1, did.getBytes());
-            _psAdd.setString(2, user.toString());
+            _psInsert.setBytes(1, did.getBytes());
+            _psInsert.setString(2, user.toString());
 
-            _psAdd.executeUpdate();
+            _psInsert.executeUpdate();
         } catch (SQLException e) {
-            DBUtil.close(_psAdd);
-            _psAdd = null;
+            DBUtil.close(_psInsert);
+            _psInsert = null;
             throw e;
         }
     }

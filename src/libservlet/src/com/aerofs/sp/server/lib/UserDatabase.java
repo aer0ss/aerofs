@@ -72,7 +72,7 @@ public class UserDatabase extends AbstractSQLDatabase
      *
      * @throws ExAlreadyExist if the user ID already exists
      */
-    public void addUser(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
+    public void insertUser(UserID id, FullName fullName, byte[] shaedSP, OrganizationID orgID,
             AuthorizationLevel level)
             throws SQLException, ExAlreadyExist
     {
@@ -260,15 +260,15 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     // TODO (WW) move it to a different database class?
-    public void addSignupCode(String code, UserID from, UserID to)
+    public void insertSignupCode(String code, UserID from, UserID to)
             throws SQLException
     {
-        addSignupCode(code, from, to, System.currentTimeMillis());
+        insertSignupCode(code, from, to, System.currentTimeMillis());
     }
 
     // For testing only
     // TODO (WW) use DI instead
-    public void addSignupCode(String code, UserID from, UserID to, long currentTime)
+    public void insertSignupCode(String code, UserID from, UserID to, long currentTime)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(

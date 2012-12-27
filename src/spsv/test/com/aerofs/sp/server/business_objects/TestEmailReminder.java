@@ -70,7 +70,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
-        odb.add(ORG_ID, "Test Organization");
+        odb.insert(ORG_ID, "Test Organization");
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
@@ -91,11 +91,10 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
         for (UserID user: users) {
             l.info("adding signup code for: " + user);
             String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-            udb.addSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
+            udb.insertSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
                     System.currentTimeMillis() - age);
 
-            esdb.addEmailSubscription(user,
-                    SubscriptionCategory.AEROFS_INVITATION_REMINDER,
+            esdb.insertEmailSubscription(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER,
                     System.currentTimeMillis() - age);
 
             assertNotNull(db.getSignUpInvitation(signupCode));

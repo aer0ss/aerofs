@@ -45,7 +45,7 @@ public class NativeVersionDatabase
     }
 
     @Override
-    protected PreparedStatement createAddBackupStatement() throws SQLException
+    protected PreparedStatement createInsertBackupStatement() throws SQLException
     {
         return c().prepareStatement("insert into "
                     + T_BKUPT + "(" + C_BKUPT_SIDX + "," + C_BKUPT_OID + ","

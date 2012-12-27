@@ -86,7 +86,7 @@ public abstract class AbstractVersionControl<E extends AbstractTickRow>
         l.debug("Delete store " + sidx + " and backup max ticks");
         IDBIterator<E> iter = getMaxTicks_(sidx, _cfgLocalDID.get(), Tick.ZERO);
         try {
-            _vdb.addBackupTicks_(sidx, iter, t);
+            _vdb.insertBackupTicks_(sidx, iter, t);
         } finally {
             assert !iter.closed_() : sidx;
             iter.close_();

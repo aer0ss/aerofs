@@ -238,7 +238,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     private void addKMLVersionAndCollectorSequenceImpl_(SOCID socid, Version v,
             boolean expensiveAssert, Trans t) throws SQLException
     {
-        if (addKMLVersionImpl_(socid, v, expensiveAssert, t)) _csdb.addCS_(socid, t);
+        if (addKMLVersionImpl_(socid, v, expensiveAssert, t)) _csdb.insertCS_(socid, t);
     }
 
     /**

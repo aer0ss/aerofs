@@ -54,7 +54,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     /**
      * @throws ExAlreadyExist if the organization ID already exists
      */
-    public void add(OrganizationID orgID, String name)
+    public void insert(OrganizationID orgID, String name)
             throws SQLException, ExAlreadyExist
     {
         try {

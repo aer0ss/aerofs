@@ -21,5 +21,5 @@ public interface ISIDDatabase
     /**
      * @return the SIndex of the newly created SID
      */
-    @Nonnull SIndex addSID_(SID sid, Trans t) throws SQLException;
+    @Nonnull SIndex insertSID_(SID sid, Trans t) throws SQLException;
 }

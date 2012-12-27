@@ -60,7 +60,7 @@ public class PulledDeviceDatabase extends AbstractDatabase implements IPulledDev
 
     private PreparedStatement _psAddToPD;
     @Override
-    public void add_(SIndex sidx, DID did, Trans t) throws SQLException
+    public void insert_(SIndex sidx, DID did, Trans t) throws SQLException
     {
         try {
             if (_psAddToPD == null) {

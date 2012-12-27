@@ -55,7 +55,7 @@ public class Stores implements IStores, IStoreDeletionOperator
     {
         _sdb.assertExists_(sidx);
         _sdb.assertExists_(sidxParent);
-        _sdb.addParent_(sidx, sidxParent, t);
+        _sdb.insertParent_(sidx, sidxParent, t);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class Stores implements IStores, IStoreDeletionOperator
         assert _sdb.getParents_(sidx).isEmpty();
         assert _sdb.getChildren_(sidx).isEmpty();
 
-        _sdb.add_(sidx, t);
+        _sdb.insert_(sidx, t);
 
         notifyAddition_(sidx);
 

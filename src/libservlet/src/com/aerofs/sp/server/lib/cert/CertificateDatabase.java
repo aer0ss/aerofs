@@ -39,7 +39,7 @@ public class CertificateDatabase extends AbstractSQLDatabase
      * @param did the device which owns this certificate.
      * @param expiry the date (in the future) at which this certificate expires.
      */
-    public void addCertificate(long serial, DID did, Date expiry)
+    public void insertCertificate(long serial, DID did, Date expiry)
             throws SQLException, ExAlreadyExist
     {
         try {

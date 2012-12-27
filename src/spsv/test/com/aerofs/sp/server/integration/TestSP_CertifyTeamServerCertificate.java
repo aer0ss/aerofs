@@ -74,7 +74,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         UserID tsUserID = getTeamServerUserID();
         certifyTeamServerDevice(tsUserID);
 
-        // Can't conveniently use verify() since udb.addUser() may be called many times during test
+        // Can't conveniently use verify() since udb.insertUser() may be called many times during test
         // initialization.
         trans.begin();
         assertTrue(udb.hasUser(tsUserID));
@@ -90,7 +90,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
 
         verify(certgen).generateCertificate(eq(tsUserID), eq(tsDID), any(PKCS10.class));
 
-        // Can't conveniently use verify() since ddb.addDevice() may be called many times during
+        // Can't conveniently use verify() since ddb.insertDevice() may be called many times during
         // test initialization.
         trans.begin();
         assertTrue(ddb.hasDevice(tsDID));

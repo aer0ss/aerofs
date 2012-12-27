@@ -170,7 +170,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
 
     private void addModifiedObject(SOID... soids) throws SQLException
     {
-        for (SOID soid : soids) ssdb.addToModifiedObjects_(soid, t);
+        for (SOID soid : soids) ssdb.insertModifiedObject_(soid, t);
     }
 
     @Before

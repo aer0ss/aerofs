@@ -40,7 +40,7 @@ public class SPDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
-    public void addPasswordResetToken(UserID userId, String token)
+    public void insertPasswordResetToken(UserID userId, String token)
         throws SQLException
     {
         PreparedStatement ps = prepareStatement("insert into " +

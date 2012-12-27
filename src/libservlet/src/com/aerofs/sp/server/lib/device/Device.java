@@ -140,12 +140,12 @@ public class Device
     /**
      * Add the device to the db, rename using Util.nextName() if a device with the same name exists.
      */
-    public void createNewDevice(User owner, String name)
+    public void save(User owner, String name)
             throws SQLException, ExDeviceIDAlreadyExists
     {
         while (true) {
             try {
-                _f._db.addDevice(_id, owner.id(), name);
+                _f._db.insertDevice(_id, owner.id(), name);
                 break;
             } catch (ExDeviceNameAlreadyExist e) {
                 name = Util.nextName(name, "");
@@ -178,7 +178,7 @@ public class Device
         // the CA will still have a record of the certificate, but we will not return it.
         // This is okay, since the DRL (device revocation list) is maintained by the SP and
         // not the CA anyway.
-        _f._certdb.addCertificate(cert.getSerial(), _id, cert.getExpiry());
+        _f._certdb.insertCertificate(cert.getSerial(), _id, cert.getExpiry());
 
         Util.l(this).info("created certificate for " + _id.toStringFormal() + " with serial " +
                 cert.getSerial() + " (expires on " + cert.getExpiry() + ")");

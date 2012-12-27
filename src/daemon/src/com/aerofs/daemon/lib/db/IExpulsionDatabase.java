@@ -16,7 +16,7 @@ public interface IExpulsionDatabase
     /**
      * Add the specified object id into the database. The id must not exist in the database.
      */
-    void addExpelledObject_(SOID soid, Trans t) throws SQLException;
+    void insertExpelledObject_(SOID soid, Trans t) throws SQLException;
 
     /**
      * Remove the specified object id from the database. The id must exist in the database.

@@ -88,7 +88,7 @@ public class SIDDatabase extends AbstractDatabase implements ISIDDatabase
 
     private PreparedStatement _psAdd;
     @Override
-    public @Nonnull SIndex addSID_(SID sid, Trans t) throws SQLException
+    public @Nonnull SIndex insertSID_(SID sid, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {

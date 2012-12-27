@@ -141,7 +141,7 @@ public class CollectorSequenceDatabase extends AbstractDatabase
 
     private PreparedStatement _psACS;
     @Override
-    public void addCS_(SOCID socid, Trans t) throws SQLException
+    public void insertCS_(SOCID socid, Trans t) throws SQLException
     {
         try {
             if (_psACS == null) _psACS = c()

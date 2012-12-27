@@ -34,7 +34,6 @@ import java.util.Set;
 import static com.aerofs.lib.db.DBUtil.binaryCount;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
-import static com.aerofs.lib.db.DBUtil.insert;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
@@ -78,10 +77,10 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     /**
      * Add the given sid to the shared folder table
      */
-    public void add(SID sid, String name)
+    public void insert(SID sid, String name)
             throws SQLException, ExAlreadyExist
     {
-        PreparedStatement ps = prepareStatement(insert(T_SF, C_SF_ID, C_SF_NAME));
+        PreparedStatement ps = prepareStatement(DBUtil.insert(T_SF, C_SF_ID, C_SF_NAME));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, name);
@@ -95,10 +94,10 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void addACL(SID sid, Iterable<SubjectRolePair> pairs)
+    public void insertACL(SID sid, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
-        PreparedStatement ps = prepareStatement(insert(T_AC,
+        PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC,
                 C_AC_STORE_ID, C_AC_USER_ID, C_AC_ROLE));
 
         int pairCount = 0;

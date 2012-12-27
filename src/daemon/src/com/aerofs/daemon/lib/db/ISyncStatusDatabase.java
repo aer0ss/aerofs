@@ -100,14 +100,14 @@ public interface ISyncStatusDatabase
      *
      * Do not use outside of SyncStatusSynchronizer
      */
-    void addToModifiedObjects_(SOID soid, Trans t) throws SQLException;
+    void insertModifiedObject_(SOID soid, Trans t) throws SQLException;
 
     /**
      * Remove all push queue entries up to given index (including)
      *
      * Do not use outside of SyncStatusSynchronizer
      */
-    void removeModifiedObjects_(long idx, Trans t) throws SQLException;
+    void deleteModifiedObjects_(long idx, Trans t) throws SQLException;
 
     void deleteModifiedObjectsForStore_(SIndex sidx, Trans t) throws SQLException;
 }

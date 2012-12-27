@@ -30,7 +30,7 @@ public class PrefixVersionControl
 
     public void addPrefixVersion_(SOID soid, KIndex kidx, Version v, Trans t) throws SQLException
     {
-        _pvdb.addPrefixVersion_(soid, kidx, v, t);
+        _pvdb.insertPrefixVersion_(soid, kidx, v, t);
     }
 
     public void deletePrefixVersion_(SOID soid, KIndex kidx, Trans t) throws SQLException

@@ -70,7 +70,7 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
     /**
      * Adds the given user id to the users table.
      */
-    private void addUser(String userId)
+    private void insertUser(String userId)
             throws SQLException
     {
         PreparedStatement addUser =
@@ -104,7 +104,7 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
         // add users with IDs "A" - "Z" and one data row for each of them
         for (char id = 'A'; id <= 'Z'; id++) {
             String userId = "" + id;
-            addUser(userId);
+            insertUser(userId);
         }
     }
 
@@ -170,8 +170,8 @@ public class TestSQLThreadLocalTransaction extends AbstractTest
 
         try {
             _transaction.begin();
-            addUser(user1);
-            addUser(user2);
+            insertUser(user1);
+            insertUser(user2);
             initializeDummyData(); // doing this again will cause a duplicate key error
         } catch (SQLException e) {
             _transaction.handleException(); // cleans up after the transaction

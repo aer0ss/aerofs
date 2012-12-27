@@ -109,7 +109,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
 
     private PreparedStatement _psAdd;
     @Override
-    public void add_(SIndex sidx, Trans t) throws SQLException
+    public void insert_(SIndex sidx, Trans t) throws SQLException
     {
         try {
             if (_psAdd == null) {
@@ -134,7 +134,7 @@ public class StoreDatabase extends AbstractDatabase implements IStoreDatabase
 
     private PreparedStatement _psAP;
     @Override
-    public void addParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException
+    public void insertParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException
     {
         try {
             if (_psAP == null) {

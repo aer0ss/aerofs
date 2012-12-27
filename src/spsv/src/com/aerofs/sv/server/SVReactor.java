@@ -128,7 +128,7 @@ public class SVReactor
         PBSVHeader header = call.getHeader();
 
         _transaction.begin();
-        _db.addEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
+        _db.insertEvent(header, ev.getType(), ev.hasDesc() ? ev.getDesc() : null, client);
         _transaction.commit();
     }
 
@@ -226,7 +226,8 @@ public class SVReactor
         // save to db
         String dc = defect.hasCfgDb() ? defect.getCfgDb() : "(unknown)";
         _transaction.begin();
-        int id = _db.addDefect(header, client, defect.getAutomatic(), desc, dc, javaEnv.toString());
+        int id = _db.insertDefect(header, client, defect.getAutomatic(), desc, dc,
+                javaEnv.toString());
         _transaction.commit();
 
         // send email to the customer support system

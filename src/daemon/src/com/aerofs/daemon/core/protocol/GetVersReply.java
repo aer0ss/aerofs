@@ -286,7 +286,7 @@ public class GetVersReply
 
             // Once all blocks have been processed and are written to the db,
             // locally remember that store s has been pulled from the DID from.
-            _pulleddb.add_(sidx, from, t);
+            _pulleddb.insert_(sidx, from, t);
         }
 
         return didBlock;

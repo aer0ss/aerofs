@@ -172,7 +172,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     {
         // add user 4 to db but don't verify their account
         trans.begin();
-        udb.addUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
+        udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
         trans.commit();
 

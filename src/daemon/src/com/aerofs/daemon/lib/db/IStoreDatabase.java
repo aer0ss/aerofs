@@ -20,14 +20,14 @@ public interface IStoreDatabase
      */
     boolean hasAny_() throws SQLException;
 
-    void add_(SIndex sidx, Trans t) throws SQLException;
+    void insert_(SIndex sidx, Trans t) throws SQLException;
 
     void delete_(SIndex sidx, Trans t) throws SQLException;
 
     /**
      * @pre the parenthood relation doesn't exist
      */
-    void addParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
+    void insertParent_(SIndex sidx, SIndex sidxParent, Trans t) throws SQLException;
 
     /**
      * @pre the parenthood relation exists

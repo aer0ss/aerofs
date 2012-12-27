@@ -22,7 +22,7 @@ public interface IDID2UserDatabase
      *
      * @pre the mapping must not already exist
      */
-    void add_(DID did, UserID user, Trans t) throws SQLException;
+    void insert_(DID did, UserID user, Trans t) throws SQLException;
 
     /**
      * @return the user id mapped to the given DID. null if the mapping doesn't exist

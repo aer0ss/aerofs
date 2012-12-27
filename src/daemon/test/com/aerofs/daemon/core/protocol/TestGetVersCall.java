@@ -90,7 +90,7 @@ public class TestGetVersCall extends AbstractTest
         mockEmptyKnowledge();
 
         // Mock that knowledge about store s has been pulled from didTo.
-        pulledDevices.add_(sidx, didTo, t);
+        pulledDevices.insert_(sidx, didTo, t);
 
         // fromBase flag should be false
         assertFalse(getFlagFromBaseWhenRunningRPC(didTo));

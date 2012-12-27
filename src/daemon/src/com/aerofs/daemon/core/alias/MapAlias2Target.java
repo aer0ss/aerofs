@@ -37,7 +37,7 @@ public class MapAlias2Target
         SIndex sidx = alias.sidx();
         assert sidx.equals(target.sidx());
 
-        _aldb.addAliasToTargetMapping_(sidx, alias.oid(), target.oid(), t);
+        _aldb.insertAliasToTargetMapping_(sidx, alias.oid(), target.oid(), t);
         _aldb.resolveAliasChaining_(sidx, alias.oid(), target.oid(), t);
     }
 

@@ -44,7 +44,7 @@ public interface IMetaDatabase
     /**
      * @param flags one or more of ObjectAttr.FLAG_*
      */
-    void createOA_(SIndex sidx, OID oid, OID oidParent, String name, OA.Type type, int flags,
+    void insertOA_(SIndex sidx, OID oid, OID oidParent, String name, OA.Type type, int flags,
             Trans t) throws ExAlreadyExist, SQLException;
 
     /**
@@ -68,7 +68,7 @@ public interface IMetaDatabase
 
     void deleteOA_(SIndex sidx, OID alias, Trans t) throws SQLException;
 
-    void createCA_(SOID soid, KIndex kidx, Trans t) throws SQLException;
+    void insertCA_(SOID soid, KIndex kidx, Trans t) throws SQLException;
 
     void deleteCA_(SOID soid, KIndex kidx, Trans t) throws SQLException;
 

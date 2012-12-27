@@ -26,7 +26,7 @@ public class AliasDatabase extends AbstractDatabase implements IAliasDatabase
 
     private PreparedStatement _psSetAliasSOID;
     @Override
-    public void addAliasToTargetMapping_(SIndex sidx, OID src, OID target, Trans t)
+    public void insertAliasToTargetMapping_(SIndex sidx, OID src, OID target, Trans t)
         throws SQLException
     {
         try {

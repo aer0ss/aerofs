@@ -223,7 +223,7 @@ public class ActivityLog implements IDirectoryServiceListener, IVersionControlLi
                 ae._pathTo = null;
             }
 
-            _aldb.addActivity_(en.getKey(), ae._type, ae._path, ae._pathTo, ae._dids, t);
+            _aldb.insertActivity_(en.getKey(), ae._type, ae._path, ae._pathTo, ae._dids, t);
         }
     }
 

@@ -52,8 +52,8 @@ public class SVDatabase extends AbstractSQLDatabase
     }
 
     // return the id of the error record
-    public int addDefect(PBSVHeader header, String client, boolean automatic,
-            String desc, String deviceCfg, String javaEnv)
+    public int insertDefect(PBSVHeader header, String client, boolean automatic, String desc,
+            String deviceCfg, String javaEnv)
             throws SQLException
     {
         PreparedStatement psAddDefect = getConnection().prepareStatement(
@@ -84,8 +84,7 @@ public class SVDatabase extends AbstractSQLDatabase
      * @param desc may be null
      * @return the unique id of the event
      */
-    public int addEvent(PBSVHeader header, PBSVEvent.Type type, String desc,
-            String client)
+    public int insertEvent(PBSVHeader header, PBSVEvent.Type type, String desc, String client)
             throws SQLException
     {
         PreparedStatement psAddEvent = getConnection().prepareStatement(
@@ -116,7 +115,7 @@ public class SVDatabase extends AbstractSQLDatabase
      * add email event to the database
      * @return the unique id associated with this event
      */
-    public int addEmailEvent(EmailEvent ee)
+    public int insertEmailEvent(EmailEvent ee)
            throws SQLException
     {
         PreparedStatement psAddEmailEvent = getConnection().prepareStatement(

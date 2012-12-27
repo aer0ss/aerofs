@@ -85,7 +85,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
     private PreparedStatement _psInsOA;
 
     @Override
-    public void createOA_(SIndex sidx, OID oid, OID oidParent, String name, OA.Type type, int flags,
+    public void insertOA_(SIndex sidx, OID oid, OID oidParent, String name, OA.Type type, int flags,
             Trans t)
         throws SQLException, ExAlreadyExist
     {
@@ -119,7 +119,7 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
     private PreparedStatement _psInsCA;
 
     @Override
-    public void createCA_(SOID soid, KIndex kidx, Trans t)
+    public void insertCA_(SOID soid, KIndex kidx, Trans t)
             throws SQLException
     {
         try {

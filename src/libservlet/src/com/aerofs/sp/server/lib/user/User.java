@@ -227,14 +227,14 @@ public class User
      * Add the user to the database
      * @throws ExAlreadyExist if the user ID already exists.
      */
-    public void createNewUser(byte[] shaedSP, FullName fullName, Organization org)
+    public void save(byte[] shaedSP, FullName fullName, Organization org)
             throws ExAlreadyExist, SQLException, IOException, ExNoPerm
     {
         // TODO If successful, this method should delete all the user's existing signup codes from
         // the signup_code table
         // TODO write a test to verify that after one successful signup,
         // other codes fail/do not exist
-        _f._udb.addUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
+        _f._udb.insertUser(_id, fullName, shaedSP, org.id(), AuthorizationLevel.USER);
 
         addRootStoreAndCheckForCollision();
     }
@@ -268,7 +268,7 @@ public class User
         // Ignore the return value and do not publish verkehr notifications, as this newly added
         // user mustn't have any daemon running at this moment.
         try {
-            rootStore.createNewSharedFolder("root store: " + _id, this);
+            rootStore.save("root store: " + _id, this);
         } catch (ExNotFound e) {
             // The method throws ExNotFound only if the user doesn't exist, which is guaranteed not
             // to happen.
@@ -312,7 +312,7 @@ public class User
             throw new ExNoPerm("you have no permission to create new teams");
         }
 
-        Organization org = _f._factOrg.createNewOrganization(orgName);
+        Organization org = _f._factOrg.save(orgName);
         setLevel(AuthorizationLevel.ADMIN);
         return setOrganization(org);
     }
@@ -358,7 +358,7 @@ public class User
         assert !exists();
 
         String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
-        _f._udb.addSignupCode(code, inviter.id(), _id);
+        _f._udb.insertSignupCode(code, inviter.id(), _id);
         return code;
     }
 

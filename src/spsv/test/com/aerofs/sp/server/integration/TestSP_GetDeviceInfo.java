@@ -46,19 +46,19 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         trans.begin();
 
         // User 1
-        ddb.addDevice(new DID(UniqueID.generate()), USER_1, "Device A01");
-        ddb.addDevice(new DID(UniqueID.generate()), USER_1, "Device A02");
-        ddb.addDevice(new DID(UniqueID.generate()), USER_1, "Device A03");
+        ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "Device A01");
+        ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "Device A02");
+        ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "Device A03");
 
         // User 2
         _deviceB01 = new DID(UniqueID.generate());
-        ddb.addDevice(_deviceB01, USER_2, "Device B01");
-        ddb.addDevice(new DID(UniqueID.generate()), USER_2, "Device B02");
+        ddb.insertDevice(_deviceB01, USER_2, "Device B01");
+        ddb.insertDevice(new DID(UniqueID.generate()), USER_2, "Device B02");
 
         // User 3
         _deviceC01 = new DID(UniqueID.generate());
-        ddb.addDevice(_deviceC01, USER_3, "Device C01");
-        ddb.addDevice(new DID(UniqueID.generate()), USER_3, "Device C02");
+        ddb.insertDevice(_deviceC01, USER_3, "Device C01");
+        ddb.insertDevice(new DID(UniqueID.generate()), USER_3, "Device C02");
 
         trans.commit();
 

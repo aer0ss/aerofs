@@ -44,7 +44,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
         trans.commit();
 
         getTeamServerUserID();
-        verify(odb).add(any(OrganizationID.class), anyString());
+        verify(odb).insert(any(OrganizationID.class), anyString());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
             throws Exception
     {
         UserID tsUserID = getTeamServerUserID();
-        verify(odb).add(capOrganizationID.capture(), anyString());
+        verify(odb).insert(capOrganizationID.capture(), anyString());
         assertEquals(capOrganizationID.getValue().toTeamServerUserID(), tsUserID);
     }
 

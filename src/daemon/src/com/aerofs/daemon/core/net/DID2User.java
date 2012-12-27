@@ -75,7 +75,7 @@ public class DID2User
      */
     public void addToLocal_(DID did, UserID user, Trans t) throws SQLException
     {
-        _db.add_(did, user, t);
+        _db.insert_(did, user, t);
     }
 
     /**

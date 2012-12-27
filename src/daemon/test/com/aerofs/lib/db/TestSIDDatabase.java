@@ -38,15 +38,15 @@ public class TestSIDDatabase extends AbstractTest
     public void shouldThrowOnAddingExistingSID() throws ExAlreadyExist, SQLException
     {
         SID sid = SID.generate();
-        db.addSID_(sid, t);
-        db.addSID_(sid, t);
+        db.insertSID_(sid, t);
+        db.insertSID_(sid, t);
     }
 
     @Test
     public void shouldReturnTheSameSIndexAsWhenAdded() throws ExAlreadyExist, SQLException
     {
         SID sid = SID.generate();
-        SIndex sidx = db.addSID_(sid, t);
+        SIndex sidx = db.insertSID_(sid, t);
         assertEquals(sidx, db.getSIndex_(sid));
     }
 
@@ -54,7 +54,7 @@ public class TestSIDDatabase extends AbstractTest
     public void shouldConvertBidirectionally() throws ExAlreadyExist, SQLException
     {
         SID sid = SID.generate();
-        SIndex sidx = db.addSID_(sid, t);
+        SIndex sidx = db.insertSID_(sid, t);
         assertEquals(sid, db.getSID_(sidx));
     }
 }

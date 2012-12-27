@@ -70,7 +70,7 @@ public interface IVersionDatabase<E extends AbstractTickRow>
      * regular versions
      * @param sidx the Store Index associated with the tick row
      */
-    public void addBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
+    public void insertBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
             throws SQLException;
 
     /**

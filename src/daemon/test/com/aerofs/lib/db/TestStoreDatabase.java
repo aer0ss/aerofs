@@ -42,8 +42,8 @@ public class TestStoreDatabase extends AbstractTest
     @Test(expected = SQLException.class)
     public void shouldThrowOnAddingExistingStore() throws ExAlreadyExist, SQLException
     {
-        db.add_(sidx, t);
-        db.add_(sidx, t);
+        db.insert_(sidx, t);
+        db.insert_(sidx, t);
     }
 
     @Test(expected = AssertionError.class)
@@ -55,8 +55,8 @@ public class TestStoreDatabase extends AbstractTest
     @Test
     public void shouldReturnParents() throws SQLException
     {
-        db.add_(sidx, t);
-        db.addParent_(sidx, sidxParent, t);
+        db.insert_(sidx, t);
+        db.insertParent_(sidx, sidxParent, t);
         Collection<SIndex> sidxs = db.getParents_(sidx);
         assertEquals(sidxs.size(), 1);
         for (SIndex sidx : sidxs) assertTrue(sidx.equals(sidxParent));
@@ -65,8 +65,8 @@ public class TestStoreDatabase extends AbstractTest
     @Test
     public void shouldReturnExistingStoresOnly() throws SQLException
     {
-        db.add_(sidx, t);
-        db.add_(sidx2, t);
+        db.insert_(sidx, t);
+        db.insert_(sidx2, t);
         db.delete_(sidx, t);
 
         Collection<SIndex> sidxs = db.getAll_();

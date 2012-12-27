@@ -15,7 +15,7 @@ public interface IAliasDatabase
     /**
      * Adds alias to target object mapping in the persistent store.
      */
-    void addAliasToTargetMapping_(SIndex sidx, OID alias, OID target, Trans t) throws SQLException;
+    void insertAliasToTargetMapping_(SIndex sidx, OID alias, OID target, Trans t) throws SQLException;
 
     /**
      * @return target object-id for given soid if one exists else returns null.

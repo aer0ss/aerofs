@@ -97,7 +97,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
     /**
      * @return the PreparedStatement to add a *TickRow to the backup table
      */
-    abstract protected PreparedStatement createAddBackupStatement()
+    abstract protected PreparedStatement createInsertBackupStatement()
             throws SQLException;
 
     /**
@@ -272,12 +272,12 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
     private PreparedStatement _psAddBkupTicks;
     @Override
-    public void addBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
+    public void insertBackupTicks_(SIndex sidx, IDBIterator<E> iter, Trans t)
             throws SQLException
     {
         try {
             if (_psAddBkupTicks == null) {
-                _psAddBkupTicks = createAddBackupStatement();
+                _psAddBkupTicks = createInsertBackupStatement();
             }
 
             while(iter.next_()) {

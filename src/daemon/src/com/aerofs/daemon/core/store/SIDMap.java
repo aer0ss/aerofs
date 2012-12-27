@@ -85,7 +85,7 @@ public class SIDMap implements IMapSIndex2SID, IMapSID2SIndex
     {
         assert getNullable_(sid) == null : sid;
         SIndex sidx = getLocalOrAbsentNullable_(sid);
-        if (sidx == null) sidx = _db.addSID_(sid, t);
+        if (sidx == null) sidx = _db.insertSID_(sid, t);
         return sidx;
     }
 

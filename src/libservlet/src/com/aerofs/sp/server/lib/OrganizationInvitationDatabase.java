@@ -34,7 +34,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         super(provider);
     }
 
-    public void addOrganizationInvitation(UserID inviter, UserID invitee, OrganizationID org)
+    public void insert(UserID inviter, UserID invitee, OrganizationID org)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(

@@ -69,7 +69,7 @@ public abstract class AbstractTestVersionControl<E extends AbstractTickRow> exte
         vc.deleteStore_(sidx, t);
 
         InOrder inOrder = inOrder(vdb);
-        inOrder.verify(vdb).addBackupTicks_(sidx, iter, t);
+        inOrder.verify(vdb).insertBackupTicks_(sidx, iter, t);
         inOrder.verify(vdb).deleteTicksAndKnowledgeForStore_(sidx, t);
     }
 
