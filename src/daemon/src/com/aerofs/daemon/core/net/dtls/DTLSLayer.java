@@ -508,7 +508,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
     static final byte[] USERID_MAGIC_BYTES = {0x23, 0x45, 0x67};
     static final byte[] USERID_BYTES =
-            Util.concatenate(USERID_MAGIC_BYTES, BaseUtil.string2utf(Cfg.user().toString()));
+            BaseUtil.concatenate(USERID_MAGIC_BYTES, BaseUtil.string2utf(Cfg.user().toString()));
 
     private final DTLSMessage<byte[]> USERID_MSG;
 

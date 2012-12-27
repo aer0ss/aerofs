@@ -23,7 +23,7 @@ import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.SIndex;

@@ -7,7 +7,7 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;

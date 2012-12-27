@@ -4,8 +4,8 @@
 
 package com.aerofs.lib;
 
-import com.aerofs.lib.SecUtil.HmacInputStream;
-import com.aerofs.lib.SecUtil.HmacOutputStream;
+import com.aerofs.base.BaseSecUtil.HmacInputStream;
+import com.aerofs.base.BaseSecUtil.HmacOutputStream;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.Test;
 

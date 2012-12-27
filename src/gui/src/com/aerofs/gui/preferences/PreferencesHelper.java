@@ -13,7 +13,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Sp.GetPreferencesReply;
 import com.aerofs.sp.client.SPBlockingClient;

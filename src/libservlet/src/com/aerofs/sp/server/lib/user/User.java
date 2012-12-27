@@ -9,7 +9,7 @@ import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;

@@ -7,8 +7,6 @@ package com.aerofs.base;
 import com.aerofs.base.ex.ExFormatError;
 
 import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class BaseUtil
 {
@@ -67,24 +65,11 @@ public class BaseUtil
         return bs;
     }
 
-    // newMessageDigest() and newMessageDigestMD5() used to be in SecUtil
-    // Moved here so that it's accessible to the mobile client
-
-    public static MessageDigest newMessageDigest()
+    public static byte[] concatenate(byte[] b1, byte[] b2)
     {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-    }
-
-    public static MessageDigest newMessageDigestMD5()
-    {
-        try {
-            return MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
+        byte[] ret = new byte[b1.length + b2.length];
+        System.arraycopy(b1, 0, ret, 0, b1.length);
+        System.arraycopy(b2, 0, ret, b1.length, b2.length);
+        return ret;
     }
 }

@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 
 public class ThreadLocalCertificateAuthenticator
         extends AbstractThreadLocalHttpSession
@@ -22,7 +22,7 @@ public class ThreadLocalCertificateAuthenticator
 
     /**
      * Returns the serial number of the authenticated certificiate.
-     * @throws com.aerofs.lib.ex.ExBadCredential if the session has not been authenticated.
+     * @throws com.aerofs.base.ex.ExBadCredential if the session has not been authenticated.
      */
     public long getSerial() throws ExBadCredential
     {

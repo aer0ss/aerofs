@@ -1,4 +1,4 @@
-package com.aerofs.lib.ex;
+package com.aerofs.base.ex;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;

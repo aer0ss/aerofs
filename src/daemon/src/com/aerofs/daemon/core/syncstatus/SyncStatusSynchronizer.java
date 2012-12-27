@@ -31,6 +31,7 @@ import com.aerofs.daemon.lib.db.trans.TransLocal;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
@@ -589,7 +590,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
 
         // make a digest from that aggregate
         // (no security concern here, only compactness matters so MD5 is fine)
-        MessageDigest md = BaseUtil.newMessageDigestMD5();
+        MessageDigest md = SecUtil.newMessageDigestMD5();
         for (Entry<DID, TickPair> e : aggregated.entrySet()) {
             md.update(e.getKey().getBytes());
             md.update(Util.toByteArray(e.getValue().metaTick()));

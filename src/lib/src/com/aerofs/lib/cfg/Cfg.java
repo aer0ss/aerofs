@@ -9,7 +9,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
@@ -348,7 +348,7 @@ public class Cfg
      *
      * @param scrypted bytes representing scrypt(p|u)
      * @throws IOException if the key file doesn't exist
-     * @throws com.aerofs.lib.ex.ExBadCredential if we can't decrypt the private key
+     * @throws com.aerofs.base.ex.ExBadCredential if we can't decrypt the private key
      */
     public static void setPrivKeyAndScryptedUsingScrypted(byte[] scrypted)
         throws IOException, ExBadCredential

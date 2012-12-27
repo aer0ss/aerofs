@@ -1,5 +1,7 @@
 package com.aerofs.lib.ex;
 
+import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.collector.ExNoComponentWithSpecifiedVersion;
 import com.aerofs.proto.Common.PBException;

@@ -2,7 +2,7 @@ package com.aerofs.gui.password;
 
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;

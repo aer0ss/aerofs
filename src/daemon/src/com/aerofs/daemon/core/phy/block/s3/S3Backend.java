@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
-import com.aerofs.lib.SecUtil.CipherFactory;
+import com.aerofs.base.BaseSecUtil.CipherFactory;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;

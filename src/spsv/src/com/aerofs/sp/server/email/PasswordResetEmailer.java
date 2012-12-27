@@ -8,7 +8,7 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Param.SV;
-import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;

@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.ex.collector;
 
-import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.proto.Common.PBException;
 
 /**

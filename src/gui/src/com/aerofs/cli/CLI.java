@@ -5,7 +5,7 @@ import com.aerofs.lib.S;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.ExBadCredential;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.ui.IUI;
 import com.aerofs.ui.UI;

@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.DlgJoinSharedFolders;

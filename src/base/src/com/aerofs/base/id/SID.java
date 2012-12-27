@@ -1,5 +1,6 @@
 package com.aerofs.base.id;
 
+import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.ex.ExFormatError;
 import com.google.protobuf.ByteString;
@@ -84,7 +85,7 @@ public class SID extends UniqueID
     public static SID folderOID2legacyConvertedStoreSID(OID oid)
     {
         assert !oid.isRoot() && !oid.isTrash() && !oid.isAnchor() : oid.toStringFormal();
-        byte[] bs = BaseUtil.newMessageDigestMD5().digest(oid.getBytes());
+        byte[] bs = BaseSecUtil.newMessageDigestMD5().digest(oid.getBytes());
         setVersionNibble(bs, 0);
         SID sid = new SID(bs);
         assert !sid.isRoot();
@@ -145,7 +146,7 @@ public class SID extends UniqueID
      */
     public static SID rootSID(UserID userId)
     {
-        MessageDigest md = BaseUtil.newMessageDigestMD5();
+        MessageDigest md = BaseSecUtil.newMessageDigestMD5();
         md.update(BaseUtil.string2utf(userId.toString()));
         byte[] bs = md.digest(ROOT_SID_SALT);
         setVersionNibble(bs, 3);

@@ -46,7 +46,7 @@ import org.apache.log4j.spi.ThrowableRendererSupport;
 import org.apache.log4j.varia.NullAppender;
 
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ex.AbstractExWirable;
+import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.ex.ExProtocolError;
@@ -883,14 +883,6 @@ public abstract class Util
         CRC32 crc = new CRC32();
         crc.update(bytes);
         return Long.toHexString(crc.getValue());
-    }
-
-    public static byte[] concatenate(byte[] b1, byte[] b2)
-    {
-        byte[] ret = new byte[b1.length + b2.length];
-        System.arraycopy(b1, 0, ret, 0, b1.length);
-        System.arraycopy(b2, 0, ret, b1.length, b2.length);
-        return ret;
     }
 
     public static void initDriver(String logFileName)

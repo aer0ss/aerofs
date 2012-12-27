@@ -8,9 +8,9 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Param;
+import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Lists;
 
 public class HashStream
@@ -24,7 +24,7 @@ public class HashStream
 
     public static HashStream newFileHasher()
     {
-        return new HashStream(BaseUtil.newMessageDigest(), Param.FILE_BLOCK_SIZE);
+        return new HashStream(SecUtil.newMessageDigest(), Param.FILE_BLOCK_SIZE);
     }
 
     public HashStream(MessageDigest md, int chunkSize)
