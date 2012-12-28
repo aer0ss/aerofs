@@ -58,6 +58,10 @@ public abstract class BaseSecUtil
     protected static final String STATE_NAME = "CA";
     protected static final String COUNTRY_NAME = "US";
 
+    private static final char[] PASSWD_PASSWD = { '*', '$', '%', '^', '@', '#', '$', '*', 'C', 'X',
+            '%', ' ', 'H', 'Z', 'S' };
+    private static final int PASSWD_RANDOM_BYTES = 16;
+
     // TODO (GS): This is duplicated from Param.java - FIXME
     private static final int FILE_BUF_SIZE = 512 * 1024;
 
@@ -198,7 +202,7 @@ public abstract class BaseSecUtil
     /**
      * N.B. don't use strong for the client side because Windows doesn't support it
      */
-    public static byte[] decryptPBEwithAES(byte[] data, char[] passwd,
+    private static byte[] decryptPBEwithAES(byte[] data, char[] passwd,
             boolean strong) throws GeneralSecurityException
     {
         byte[] iv = new byte[IV_SIZE];
@@ -220,6 +224,46 @@ public abstract class BaseSecUtil
                 strong ? PBE_AES_STRENGTH_STRONG : PBE_AES_STRENGTH_WEAK);
         SecretKey tmp = factory.generateSecret(spec);
         return new SecretKeySpec(tmp.getEncoded(), "AES");
+    }
+
+    /**
+     * @param base64 a string with the value of
+     * b64(pbe_daemonkey(scrypt(p|u)|random_bytes))
+     * @return scrypt(p|u)
+     */
+    public static byte[] encryptedBase642scrypted(String base64) throws IOException
+    {
+        try {
+            // returns scrypt(p|u)|random_bytes
+            byte[] scrypted = decryptPBEwithAES(Base64.decode(base64), PASSWD_PASSWD, false);
+            // remove random_bytes
+            scrypted = Arrays.copyOfRange(scrypted, 0, scrypted.length - PASSWD_RANDOM_BYTES);
+            return scrypted;
+        } catch (GeneralSecurityException e) {
+            throw new Error(e);
+        }
+    }
+
+    /**
+     * Turns a byte[] with the scrypted credential-bytes into a String suitable
+     * for writing to device.conf
+     *
+     * @param scrypted requires a byte[] with scrypt(p|u)
+     * @return b64(pbe_daemonkey(scrypt(p|u)|random_byte)))
+     */
+    public static String scrypted2encryptedBase64(byte[] scrypted)
+    {
+        try {
+            byte[] rand = newRandomBytes(PASSWD_RANDOM_BYTES);
+            byte[] bytes = new byte[rand.length + scrypted.length];
+            System.arraycopy(scrypted, 0, bytes, 0, scrypted.length);
+            System.arraycopy(rand, 0, bytes, scrypted.length, rand.length);
+
+            byte[] encrypt = encryptPBEwithAES(bytes, PASSWD_PASSWD, false);
+            return Base64.encodeBytes(encrypt);
+        } catch (GeneralSecurityException e) {
+            throw new Error(e);
+        }
     }
 
     public static class CipherFactory

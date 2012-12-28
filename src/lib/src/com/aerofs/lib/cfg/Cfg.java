@@ -5,7 +5,6 @@ import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -17,13 +16,11 @@ import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -336,7 +333,7 @@ public class Cfg
         return _scrypted;
     }
 
-    public static void resetSecurityTokens()
+    private static void resetSecurityTokens()
     {
         _privKey = null;
         _scrypted = null;
@@ -355,80 +352,22 @@ public class Cfg
     {
         // decrypt device_private_key using b64(scrypt(p|u))
         char[] pbePasswd = Base64.encodeBytes(scrypted).toCharArray();
-        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator +
-                C.DEVICE_KEY);
+        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + C.DEVICE_KEY);
         _privKey = SecUtil.decryptPrivateKey(encryptedKey, pbePasswd);
 
         // do it after decryption has succeeded
         _scrypted = scrypted;
     }
 
-    private static final char[] PASSWD_PASSWD = { '*', '$', '%', '^', '@', '#',
-        '$', '*', 'C', 'X', '%', ' ', 'H', 'Z', 'S' };
-
-    private static final int PASSWD_RANDOM_BYTES = 16;
-
-    /**
-     * @param base64 a string with the value of
-     * b64(pbe_daemonkey(scrypt(p|u)|random_bytes))
-     * @return scrypt(p|u)
-     */
-    public static byte[] encryptedBase642scrypted(String base64)
-        throws IOException
-    {
-        try {
-            // returns scrypt(p|u)|random_bytes
-            byte[] scrypted = SecUtil.decryptPBEwithAES(Base64.decode(base64),
-                PASSWD_PASSWD, false);
-            // remove random_bytes
-            scrypted = Arrays.copyOfRange(scrypted, 0, scrypted.length -
-                    PASSWD_RANDOM_BYTES);
-            return scrypted;
-        } catch (GeneralSecurityException e) {
-            SystemUtil.fatal(e);
-            // keep compiler happy
-            return null;
-        }
-    }
-
-    /**
-     * Turns a byte[] with the scrypted credential-bytes into a String suitable
-     * for writing to device.conf
-     *
-     * @param scrypted requires a byte[] with scrypt(p|u)
-     * @return b64(pbe_daemonkey(scrypt(p|u)|random_byte)))
-     */
-    public static String scrypted2encryptedBase64(byte[] scrypted)
-    {
-        try {
-            byte[] rand = SecUtil.newRandomBytes(PASSWD_RANDOM_BYTES);
-
-            byte[] bytes = new byte[rand.length + scrypted.length];
-            System.arraycopy(scrypted, 0, bytes, 0, scrypted.length);
-            System.arraycopy(rand, 0, bytes, scrypted.length, rand.length);
-
-            byte[] encrypt = SecUtil.encryptPBEwithAES(bytes, PASSWD_PASSWD,
-                    false);
-            return Base64.encodeBytes(encrypt);
-        } catch (GeneralSecurityException e) {
-            SystemUtil.fatal(e);
-            return null;
-        }
-    }
-
     /*
-     * jnorris:
-     *
      * scrypted = scrypt( password | username )
      * confdb[cred] = base64( AES_E[PBKDF2(PASSWD_PASSWD)]( scrypted | random ) )
-     *
      */
-
-    public static void readCreds() throws ExBadCredential, IOException
+    private static void readCreds() throws ExBadCredential, IOException
     {
         String cred = _db.getNullable(Key.CRED);
         if (cred != null) {
-            byte[] scrypted = encryptedBase642scrypted(cred);
+            byte[] scrypted = SecUtil.encryptedBase642scrypted(cred);
             setPrivKeyAndScryptedUsingScrypted(scrypted);
         } else {
             resetSecurityTokens();
@@ -438,8 +377,7 @@ public class Cfg
     public static X509Certificate cert() throws IOException, CertificateException
     {
         if (_cert == null) {
-            InputStream in = new FileInputStream(absRTRoot() + File.separator +
-                    C.DEVICE_CERT);
+            InputStream in = new FileInputStream(absRTRoot() + File.separator + C.DEVICE_CERT);
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 _cert = (X509Certificate) cf.generateCertificate(in);

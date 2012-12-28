@@ -1,17 +1,15 @@
 package com.aerofs.sp.client;
 
-import java.net.URL;
-
+import com.aerofs.base.net.AbstractHttpRpcClient;
 import com.aerofs.base.net.IURLConnectionConfigurator;
 import com.aerofs.lib.C;
 import com.aerofs.lib.ex.Exceptions;
-import com.aerofs.base.net.AbstractHttpRpcClient;
 import com.aerofs.proto.Common.PBException;
 import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 
-public class SPClientHandler
-        extends AbstractHttpRpcClient
-        implements SPServiceStubCallbacks
+import java.net.URL;
+
+public class SPClientHandler extends AbstractHttpRpcClient implements SPServiceStubCallbacks
 {
     public SPClientHandler(URL url, IURLConnectionConfigurator conf)
     {

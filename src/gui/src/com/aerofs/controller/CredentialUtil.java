@@ -75,7 +75,7 @@ public class CredentialUtil
 
         CfgDatabase db = Cfg.db();
         writePrivateKey(scrypted, Cfg.privateKey());
-        db.set(Key.CRED, Cfg.scrypted2encryptedBase64(scrypted));
+        db.set(Key.CRED, SecUtil.scrypted2encryptedBase64(scrypted));
 
         Cfg.setPrivKeyAndScryptedUsingScrypted(scrypted);
 
@@ -124,7 +124,7 @@ public class CredentialUtil
         });
     }
 
-    static DID certifyAndSaveDeviceKeysImpl(UserID certUserId, byte[] scrypted, SPBlockingClient sp,
+    private static DID certifyAndSaveDeviceKeysImpl(UserID certUserId, byte[] scrypted, SPBlockingClient sp,
             ISPCertifyDeviceCaller caller)
             throws Exception
     {

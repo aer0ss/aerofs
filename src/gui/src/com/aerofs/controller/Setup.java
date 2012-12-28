@@ -351,7 +351,7 @@ class Setup
         TreeMap<Key, String> map = Maps.newTreeMap();
         map.put(Key.USER_ID, userId.toString());
         map.put(Key.DEVICE_ID, did.toStringFormal());
-        map.put(Key.CRED, Cfg.scrypted2encryptedBase64(scrypted));
+        map.put(Key.CRED, SecUtil.scrypted2encryptedBase64(scrypted));
         map.put(Key.ROOT, rootAnchorPath);
         map.put(Key.LAST_VER, Cfg.ver());
         map.put(Key.DAEMON_POST_UPDATES, Integer.toString(PostUpdate.DAEMON_POST_UPDATE_TASKS));
