@@ -124,22 +124,16 @@ public class CredentialUtil
         });
     }
 
-    private static DID certifyAndSaveDeviceKeysImpl(UserID certUserId, byte[] scrypted, SPBlockingClient sp,
-            ISPCertifyDeviceCaller caller)
+    private static DID certifyAndSaveDeviceKeysImpl(UserID certUserId, byte[] scrypted,
+            SPBlockingClient sp, ISPCertifyDeviceCaller caller)
             throws Exception
     {
         KeyPair kp = SecUtil.newRSAKeyPair();
+        DID did = new DID(UniqueID.generate());
 
-        while (true) {
-            DID did = new DID(UniqueID.generate());
-            try {
-                certifyAndSaveDeviceKeys(certUserId, did, kp.getPublic(), kp.getPrivate(), scrypted,
-                        sp, caller);
-                return did;
-            } catch (ExDeviceIDAlreadyExists e) {
-                l.info("device id " + did.toStringFormal() + " exists. generate a new one");
-            }
-        }
+        certifyAndSaveDeviceKeys(certUserId, did, kp.getPublic(), kp.getPrivate(), scrypted, sp,
+                caller);
+        return did;
     }
 
     private static interface ISPCertifyDeviceCaller
