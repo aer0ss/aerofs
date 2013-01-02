@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.labeling.impl;
+package com.aerofs.labeling.excluded;
 
 import com.aerofs.labeling.AbstractDefaultLabeling;
 
@@ -20,13 +20,19 @@ public class AeroFSMultiuser extends AbstractDefaultLabeling
     @Override
     public String product()
     {
-        return super.product() + " Team Server";
+        return "AeroFS Team Server";
+    }
+
+    @Override
+    public String productSpaceFreeName()
+    {
+        return "AeroFSTeamServer";
     }
 
     @Override
     public String productUnixName()
     {
-        return super.productUnixName() + "ts";
+        return "aerofsts";
     }
 
     @Override

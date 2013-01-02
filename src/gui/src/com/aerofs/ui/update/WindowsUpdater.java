@@ -2,6 +2,7 @@ package com.aerofs.ui.update;
 
 import java.io.IOException;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -14,7 +15,7 @@ class WindowsUpdater extends Updater
 {
     WindowsUpdater()
     {
-        super("AeroFSInstall-%s.exe");
+        super(L.get().productSpaceFreeName() + "Install-%s.exe");
     }
 
     @Override

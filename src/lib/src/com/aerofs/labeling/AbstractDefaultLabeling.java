@@ -12,11 +12,9 @@ import com.aerofs.lib.cfg.Cfg;
  */
 public abstract class AbstractDefaultLabeling implements ILabeling
 {
-    @Override
-    public boolean isMultiuser()
-    {
-        return false;
-    }
+    // Note that for now we have chosen to only use one map file, so the mapping for classes that
+    // inherit from this class might be broken. This isn't a big deal though, since you can identify
+    // what function is being called using line numbers.
 
     @Override
     public int trayIconAnimationFrameCount()
@@ -31,27 +29,9 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     }
 
     @Override
-    public String product()
-    {
-        return "AeroFS";
-    }
-
-    @Override
-    public String productUnixName()
-    {
-        return "aerofs";
-    }
-
-    @Override
     public String vendor()
     {
         return "Air Computing Inc.";
-    }
-
-    @Override
-    public String rootAnchorName()
-    {
-        return product();
     }
 
     @Override
@@ -124,11 +104,5 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     public String htmlEmailHeaderColor()
     {
         return "#17466B";
-    }
-
-    @Override
-    public int defaultPortbase()
-    {
-        return 50193;
     }
 }

@@ -10,7 +10,7 @@
 # TODO (WW) why can't I run include?
 # include include/common ${1:-}
 
-readonly INPUT_PACKAGE="com.aerofs.labeling.impl"
+readonly INPUT_PACKAGE="com.aerofs.labeling.excluded"
 
 if [[ $# -ne 2 ]]; then
     echo "usage: $0 [labeling class] [src path]" >&2

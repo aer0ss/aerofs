@@ -18,7 +18,7 @@ class OSXUpdater extends Updater
 
     OSXUpdater()
     {
-        super("aerofs-osx-%s.zip");
+        super(L.get().productUnixName() + "-osx-%s.zip");
     }
 
     @Override

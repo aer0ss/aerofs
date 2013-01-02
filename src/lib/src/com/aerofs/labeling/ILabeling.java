@@ -17,6 +17,8 @@ public interface ILabeling
 
     String product();
 
+    String productSpaceFreeName();
+
     String productUnixName();
 
     String vendor();

@@ -1,12 +1,13 @@
 package com.aerofs.ui.update;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
 
 class Linux32Updater extends AbstractLinuxUpdater
 {
     Linux32Updater()
     {
-        super("aerofs-%s-x86.tgz");
+        super(L.get().productUnixName() + "-%s-x86.tgz");
     }
 
     @Override

@@ -86,8 +86,21 @@ function create_versioned_installer_directory_on_release_server() {
 
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         mkdir -p "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
-        rm "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"/* 2> /dev/null || true
 ENDCMDS
+}
+
+######################################################################
+#
+# Gets the installer names from the java jar. This is used when we
+# create the actual installers on our various platforms.
+#
+######################################################################
+
+function compute_installer_names() {
+    readonly AEROFS_INSTALLER_CAMEL=$(java -cp \
+        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductSpaceFreeName)
+    readonly AEROFS_INSTALLER_UNIX=$(java -cp \
+        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductUnixName)
 }
 
 ###############################################################################
@@ -102,7 +115,7 @@ function make_linux_installer_deb_on_release_server() {
     kscp "${BUILD_SCRIPT_DIR}/make_deb" $RELEASE_SERVER_LOGIN:~/
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         chmod a+x ~/make_deb
-        ~/make_deb $MODE $RELEASE_VERSION "$RELEASE_UNPACK_DIR" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/aerofs-installer.deb"
+        ~/make_deb $MODE $RELEASE_VERSION "$RELEASE_UNPACK_DIR" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${AEROFS_INSTALLER_UNIX}-installer.deb"
 ENDCMDS
 }
 
@@ -117,7 +130,7 @@ function make_linux_installer_tgz_on_release_server() {
 
     # Any variables that are defined within the remote shell are referenced via \$ to make sure
     # the variables aren't substituted in the local shell
-    local local_LINUX_INSTALLER_TGZ_FILENAME=aerofs-installer.tgz
+    local local_LINUX_INSTALLER_TGZ_FILENAME=${AEROFS_INSTALLER_UNIX}-installer.tgz
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
         readonly INSTALLER_TGZ_TEMP_DIR="\$( mktemp -d -t temp_tgz_XXXXXX )"
         trap "rm -r \$INSTALLER_TGZ_TEMP_DIR" EXIT
@@ -163,8 +176,8 @@ function make_linux_arch_dependent_tgz_on_release_server() {
 
     echo ">> make arch dependent tgz (${local_BITS}-bit) on release server"
 
-    local local_VERSIONED_ARCH_TGZ_FILENAME=aerofs-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
-    local local_UNVERSIONED_ARCH_TGZ_FILENAME=aerofs-${local_TGZ_SUFFIX}.tgz
+    local local_VERSIONED_ARCH_TGZ_FILENAME=${AEROFS_INSTALLER_UNIX}-${RELEASE_VERSION}-${local_TGZ_SUFFIX}.tgz
+    local local_UNVERSIONED_ARCH_TGZ_FILENAME=${AEROFS_INSTALLER_UNIX}-${local_TGZ_SUFFIX}.tgz
 
     # Any variables that are defined within the remote shell are referenced via \$ to make sure
     # the variables aren't substituted in the local shell
@@ -253,21 +266,32 @@ function make_windows_installers() {
         sign_exe "\${NSIS_TEMP_DIR}/aerofs.exe"
         sign_exe "\${NSIS_TEMP_DIR}/aerofsd.exe"
 
-        makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" -DAEROFS_OUT_FOLDER="$local_VERSIONED_INSTALLER_DIR" \
-                 -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
+        makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" \
+                -DAEROFS_OUT_FOLDER="$local_VERSIONED_INSTALLER_DIR" \
+                -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
 
-        sign_exe "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe"
+        # The installer coming from makensis will be names AeroFSInstall-VERSION.exe, rename it
+        # according to the labeling class.
+        OLDEXE="${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe"
+        NEWEXE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_INSTALLER_CAMEL}Install-${RELEASE_VERSION}.exe"
 
-        cp -r "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe" "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall.exe"
-        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe"
-        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall.exe"
+        if [ "\${OLDEXE}" != "\${NEWEXE}" ]
+        then
+            mv "\${OLDEXE}" "\${NEWEXE}"
+        fi
+
+        sign_exe "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_INSTALLER_CAMEL}Install-${RELEASE_VERSION}.exe"
+
+        cp -r "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_INSTALLER_CAMEL}Install-${RELEASE_VERSION}.exe" "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_INSTALLER_CAMEL}Install.exe"
+        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_INSTALLER_CAMEL}Install-${RELEASE_VERSION}.exe"
+        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_INSTALLER_CAMEL}Install.exe"
 
         # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus
         if [ "$MODE" == "PROD" ]; then
             lftp -e "mirror -R \${NSIS_TEMP_DIR}/ /aerofs/; bye" -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
-            lftp -e 'put $local_VERSIONED_INSTALLER_DIR/AeroFSInstall.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+            lftp -e 'put $local_VERSIONED_INSTALLER_DIR/${AEROFS_INSTALLER_CAMEL}Install.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
         fi
 
 ENDCMDS
@@ -282,9 +306,9 @@ ENDCMDS
 function make_osx_installers() {
     echo ">> make mac osx dmg and zip"
 
-    local local_VERSIONED_MAC_ZIP_FILENAME="aerofs-osx-${RELEASE_VERSION}.zip"
-    local local_VERSIONED_MAC_DMG_FILENAME="AeroFSInstall-${RELEASE_VERSION}.dmg"
-    local local_UNVERSIONED_MAC_DMG_FILENAME="AeroFSInstall.dmg"
+    local local_VERSIONED_MAC_ZIP_FILENAME="${AEROFS_INSTALLER_UNIX}-osx-${RELEASE_VERSION}.zip"
+    local local_VERSIONED_MAC_DMG_FILENAME="${AEROFS_INSTALLER_CAMEL}Install-${RELEASE_VERSION}.dmg"
+    local local_UNVERSIONED_MAC_DMG_FILENAME="${AEROFS_INSTALLER_CAMEL}Install.dmg"
 
     readonly local_VERSIONED_MAC_ZIP_FILENAME
     readonly local_VERSIONED_MAC_DMG_FILENAME
@@ -297,7 +321,7 @@ function make_osx_installers() {
     # Create a release folder within the temp directory and copy the template dmg and AeroFS.app folder
     mkdir "${local_DMG_TEMP_DIR}/Release"
     cp -R "${BUILD_SCRIPT_DIR}/${OSX_TEMPLATE_APP_FILENAME}" "${local_DMG_TEMP_DIR}/Release/AeroFS.app"
-    cp "${BUILD_SCRIPT_DIR}/${OSX_TEMPLATE_DMG_FILENAME}" "${local_DMG_TEMP_DIR}/AeroFSInstall-temp.dmg"
+    cp "${BUILD_SCRIPT_DIR}/${OSX_TEMPLATE_DMG_FILENAME}" "${local_DMG_TEMP_DIR}/${AEROFS_INSTALLER_CAMEL}Install-temp.dmg"
 
     # Copy the aerofs and aerofs.osx files into the Mac App directory within the temp directory created above
     cp -r "${AEROFS_RELEASE_DIR}"/* "${AEROFS_RELEASE_OSX_DIR}"/* "${local_DMG_TEMP_DIR}/${OSX_LOCAL_MAC_APP_DIR}/"
@@ -316,11 +340,11 @@ function make_osx_installers() {
     zip -9rq "$local_VERSIONED_MAC_ZIP_FILENAME" "Release/"
     popd > /dev/null
 
-    hdiutil mount -quiet "${local_DMG_TEMP_DIR}/AeroFSInstall-temp.dmg"
+    hdiutil mount -quiet "${local_DMG_TEMP_DIR}/${AEROFS_INSTALLER_CAMEL}Install-temp.dmg"
     rm -rf "${OSX_AEROFS_INSTALLER_VOLUME_DIR}/AeroFS.app"
     cp -R "${local_DMG_TEMP_DIR}/Release/AeroFS.app" "$OSX_AEROFS_INSTALLER_VOLUME_DIR"
     hdiutil eject -quiet "$OSX_AEROFS_INSTALLER_VOLUME_DIR"
-    hdiutil convert -quiet -format UDBZ -o "${local_DMG_TEMP_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}" "${local_DMG_TEMP_DIR}/AeroFSInstall-temp.dmg"
+    hdiutil convert -quiet -format UDBZ -o "${local_DMG_TEMP_DIR}/${local_VERSIONED_MAC_DMG_FILENAME}" "${local_DMG_TEMP_DIR}/${AEROFS_INSTALLER_CAMEL}Install-temp.dmg"
 
     echo ">> upload mac os x release zip and dmg to release server"
     kscp "${local_DMG_TEMP_DIR}/${local_VERSIONED_MAC_ZIP_FILENAME}" $RELEASE_SERVER_LOGIN:"${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
@@ -358,6 +382,7 @@ ENDCMDS
 #****************************************
 echo ">> make client installers and packages on release server"
 
+compute_installer_names
 upload_release_files_to_release_server
 upload_map_file_to_map_server
 create_versioned_installer_directory_on_release_server

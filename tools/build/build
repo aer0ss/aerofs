@@ -1,0 +1,58 @@
+#!/bin/bash -e -u
+
+###############################################################################
+#
+# General includes
+#
+###############################################################################
+include include/common ${1:-}
+
+###############################################################################
+#
+# usage and parameters
+#
+###############################################################################
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+    echo "usage: $0 [build mode] [passphrase]" >&2
+    echo " " >&2
+    echo "[build mode]: STAGING or PROD" >&2
+    echo "[passphrase]: release passphrase" >&2
+    echo " " >&2
+    echo "example: $0 STAGING" >&2
+    echo "example: $0 PROD [passphrase]" >&2
+    exit $ERRBADARGS
+fi
+
+# PROD requires a passphrase to deploy
+if [[ x"${2:-}" == x && $MODE == "PROD" ]]; then
+    echo "error: passphrase required for production release" >&2
+    exit $ERRBADPASS
+fi
+
+readonly PASSPHRASE="${2:-$STAGING_PASSPHRASE}"
+
+#******************************************************************************
+#******************************************************************************
+#**
+#** Run all of the build steps
+#**
+#******************************************************************************
+#******************************************************************************
+if is_prod ; then
+    echo
+    echo "!!!!!!!!!!!!!!!!!!!!!!!"
+    echo "!! DEPLOY PRODUCTION !!"
+    echo "!!!!!!!!!!!!!!!!!!!!!!!"
+    echo
+fi
+
+compute_next_release_version
+echo '+--------------------------'
+echo '| ' $RELEASE_VERSION $MODE
+echo '+--------------------------'
+
+call make_release_resources $MODE $RELEASE_VERSION
+call make_client_installers $MODE $RELEASE_VERSION "$PASSPHRASE"
+
+echo ">> successfully built $MODE release version $RELEASE_VERSION"
+exit 0

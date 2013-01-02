@@ -39,7 +39,7 @@ readonly SERVER_RELEASE_DIR=$3
 readonly OUTPUT_DEB_NAME="$4"
 
 # debian control-file parameters
-readonly PACKAGE_NAME='aerofs-installer'
+readonly PACKAGE_NAME=$(echo $OUTPUT_DEB_NAME | awk -F'/' '{print $NF}' | awk -F '.' '{print $1}')
 readonly VERSION=$2
 readonly SECTION='utility'
 readonly PRIORITY='optional'
@@ -154,4 +154,3 @@ find ./debian -type d | xargs chmod 755
 chmod 755 $DEBIAN_CONTROL_DIR/{preinst,postinst,postrm}
 fakeroot dpkg-deb --build debian #fakeroot allows deb to be built with root attributes for chown/chmod
 mv debian.deb $OUTPUT_DEB_NAME
-echo ">> successfully packaged deb installer in $DEB_BUILD_DIR and copied to $OUTPUT_DEB_NAME"
