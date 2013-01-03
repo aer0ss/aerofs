@@ -49,7 +49,7 @@ public interface IPhysicalStorage
     /**
      * Perform necessary operations on the physical storage for deleting a store. The implementation
      * should at least delete prefix files belonging to the store
-     * @param path During store deletion, the system mat not be in a consistent state and therefore
+     * @param path During store deletion, the system may not be in a consistent state and therefore
      * we pass the path as a parameter rather than letting the implementation to query
      * DirectoryService.
      */

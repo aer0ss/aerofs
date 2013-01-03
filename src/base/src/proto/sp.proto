@@ -115,17 +115,17 @@ service SPService {
     /**
      * Invite a person to become an AeroFS user. The will be entered into the default organization
      * The person will receive an email instructing him/her to download AeroFS. The email will also
-     * contain a sign-up code to be used in the SignUpWithTargeted call.
+     * contain a sign-up code to be used in the SignUpWithTargeted call. The user is silently
+     * ignored if she is already an AeroFS user.
      *
      * Required Auth Level: user
      *
      * Throws:
      *   ExBadArgs if the caller does not specify one or more invitees.
-     *   ExAlreadyExist if the email address is already an AeroFS user.
      *   ExEmailSendingFailed if we were unable to send the invitation email.
      *   ExNoPerm if the user has used up their invitation quota.
      */
-    rpc InviteUser(InviteUserCall) returns(Void);
+    rpc InviteToSignUp(InviteToSignUpCall) returns(Void);
 
     /**
      * Invite a person to become a member of the caller's organization. An email will be sent to the
@@ -155,7 +155,7 @@ service SPService {
     /**
      * Shares a folder with another user.
      *
-     * If the user doesn't exist yet, this method will automatically call InviteUser
+     * If the user doesn't exist yet, this method will automatically call InviteToSignUp
      * If the invitee email address is outside the organization's allowed domain, he
      * will be invited to the default organization. If the user is authorized to share
      * with the invitee, they will be sent an email notification.
@@ -518,7 +518,7 @@ message CertifyDeviceReply {
     required string cert = 1;
 }
 
-message InviteUserCall {
+message InviteToSignUpCall {
     repeated string email_addresses = 1;
 }
 

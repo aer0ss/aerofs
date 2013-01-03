@@ -764,6 +764,8 @@ public class SPService implements ISPService
             @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException
     {
+        assert !invitee.exists();
+
         String code = invitee.addSignUpInvitationCode(inviter);
 
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
@@ -864,9 +866,8 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> inviteUser(List<String> userIdStrings)
-            throws SQLException, ExBadArgs, ExAlreadyExist, ExEmailSendingFailed,
-            ExNotFound, IOException, ExNoPerm
+    public ListenableFuture<Void> inviteToSignUp(List<String> userIdStrings)
+            throws SQLException, ExBadArgs, ExEmailSendingFailed, ExNotFound, IOException, ExNoPerm
     {
         if (userIdStrings.isEmpty()) {
             throw new ExBadArgs("Must specify one or more invitees");
@@ -886,10 +887,10 @@ public class SPService implements ISPService
             User invitee = _factUser.createFromExternalID(inviteeString);
 
             if (invitee.exists()) {
-                throw new ExAlreadyExist("user already exists (" + invitee + ")");
+                l.info(inviter + " invites " + invitee + ": already exists. skip.");
+            } else {
+                emailers.add(inviteToSignUp(invitee, inviter, null, null));
             }
-
-            emailers.add(inviteToSignUp(invitee, inviter, null, null));
         }
 
         _transaction.commit();
