@@ -56,6 +56,12 @@ function copy_resources_to_local_release_directories() {
     cp -R "${CLIENT_RESOURCES_DIR}/osx"/* "${AEROFS_RELEASE_OSX_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/win"/* "${AEROFS_RELEASE_WIN_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/linux"/* "${AEROFS_RELEASE_LINUX_DIR}/"
+
+    # Updates to the osx updater for the specific product mode.
+    sed -i .original "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" \
+        ${AEROFS_RELEASE_OSX_DIR}/updater.sh
+    rm ${AEROFS_RELEASE_OSX_DIR}/updater.sh.original
+
     # N.B. We put the run scripts from the installer package in the actual aerofs
     # package so we can restart the Linux client automatically, even if aerofs-cli
     # (the launcher shell script) isn't on the user's PATH
@@ -262,6 +268,7 @@ function write_version_and_checksums() {
 #*******************************************************
 echo ">> make release resources"
 
+compute_product_names
 copy_resources_to_local_release_directories
 copy_java_class_files
 create_linux_installer

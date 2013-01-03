@@ -28,7 +28,7 @@ class OSXUpdater extends Updater
 
         InjectableFile appRoot = _factFile.create(AppRoot.abs());
 
-        // Go 3 levels up app root to get the package root (ie: /Applications/AeroFS.app)
+        // Go 3 levels up app root to get the package root.
         InjectableFile packageRoot;
         assert appRoot.getName().equals("Java");
         packageRoot = appRoot.getParentFile();
@@ -44,8 +44,8 @@ class OSXUpdater extends Updater
             _factFile.create(appRoot, "updater.sh").copy(upFile, false, false);
 
             /*
-            * On OSX, when you first copy AeroFS.app into /Applications,
-            * the OS will set the ownership of the /Applications/AeroFS.app
+            * On OSX, when you first copy the application into /Applications,
+            * the OS will set the ownership of the /Applications/*.app folder
             * to the user who is copying. If the user is not an administrator, an
             * Authorization window will pop up but the actual user doing the copying (e.g. not
             * the admin user) will still have ownership.

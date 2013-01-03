@@ -146,7 +146,7 @@ class _OSXClient(_NixClient):
     def start_aerofs(self):
         with open(os.devnull, 'w') as dev_null:
             # We must use the 'open' command on OSX to get the App to run in the
-            # background. This means we need to point 'open' at the AeroFS.app
+            # background. This means we need to point 'open' at the AeroFS app
             # folder, which is not specified in any path, but is derived from
             # app_root.
             aerofs_gui_path = os.path.join(app.app_root_path(), "../../../.")

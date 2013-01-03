@@ -4,7 +4,7 @@
 if [ $# -ne 4 ]
 then
   echo "Syntax: $0 [appDir] [updateFilepath] [updateVer] [username]"
-  echo "Ex: $0 /Applications/AeroFS.app ~/Library/Application Support/AeroFS/update/aerofs-osx-0.4.55.zip 0.4.55 lisa"
+  echo "Ex: $0 /Applications/[AEROFS_PRODUCT_SPACEFREE].app ~/Library/Application Support/AeroFS/update/aerofs-osx-0.4.55.zip 0.4.55 lisa"
   echo "NB. appDir must NOT contain the trailing slash"
   exit 1
 fi
@@ -42,7 +42,7 @@ if [ ! -d "$TMPDIR" ]; then
 else
   # Remove all files from the previous installation. Code signing will fail if there are any leftover files
   rm -rf "$APPDIR/Contents"
-  cp -rf "$TMPDIR"/Release/AeroFS.app/* "$APPDIR"
+  cp -rf "$TMPDIR"/Release/[AEROFS_PRODUCT_SPACEFREE].app/* "$APPDIR"
 fi
 
 rm -rf "$TMPDIR"

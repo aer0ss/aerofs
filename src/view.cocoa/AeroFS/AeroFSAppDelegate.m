@@ -23,8 +23,8 @@
 
     // TODO (GS):
     // Do the following pre setup:
-    //    ./osxtools loginitem rem /Path/To/AeroFS.app
-    //    ./osxtools loginitem add /Path/To/AeroFS.app
+    //    ./osxtools loginitem rem /Path/To/AeroFSApp
+    //    ./osxtools loginitem add /Path/To/AeroFSApp
     //
     // (osxtools is in approot)
 

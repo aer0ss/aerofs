@@ -62,8 +62,6 @@ readonly AEROFS_RELEASE_INST_DIR="${LOCAL_RELEASE_DIR}/aerofs.linux.inst"
 # Some OSX specific constants
 readonly OSX_TEMPLATE_DMG_FILENAME="osx.dmg.template"
 readonly OSX_TEMPLATE_APP_FILENAME="osx.app.template"
-readonly OSX_LOCAL_MAC_APP_DIR=Release/AeroFS.app/Contents/Resources/Java
-readonly OSX_AEROFS_INSTALLER_VOLUME_DIR="/Volumes/AeroFS Installer"
 
 ###############################################################################
 #
@@ -175,6 +173,19 @@ function compute_next_release_version() {
 
     readonly RELEASE_VERSION="$local_LOCAL_VERSION_MAJOR_MINOR.$local_BUILD_NUMBER"
     echo "version: current => [major.minor.build:$local_CURRENT_RELEASE_VERSION] next => [major.minor.build:$RELEASE_VERSION]"
+}
+
+######################################################################
+#
+# Gets the product names from the unobfuscated class files.
+#
+######################################################################
+
+function compute_product_names() {
+    readonly AEROFS_PRODUCT_SPACEFREE=$(java -cp \
+        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductSpaceFreeName)
+    readonly AEROFS_PRODUCT_UNIX=$(java -cp \
+        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductUnixName)
 }
 
 ###############################################################################
