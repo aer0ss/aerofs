@@ -182,6 +182,8 @@ function compute_next_release_version() {
 ######################################################################
 
 function compute_product_names() {
+    readonly AEROFS_PRODUCT=$(java -cp \
+        ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductName)
     readonly AEROFS_PRODUCT_SPACEFREE=$(java -cp \
         ${BUILD_OUTPUT_DIR}/bin com.aerofs.labeling.excluded.ProductSpaceFreeName)
     readonly AEROFS_PRODUCT_UNIX=$(java -cp \

@@ -204,6 +204,10 @@ function make_windows_installers() {
 
     local local_VERSIONED_INSTALLER_DIR="${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}"
     readonly local_VERSIONED_INSTALLER_DIR
+    local local_OUT_FILE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
+    readonly local_OUT_FILE
+    local local_OUT_FILE_VERSIONFREE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
+    readonly local_OUT_FILE_VERSIONFREE
 
     # deploy NSIS scripts
     rsync --archive --compress --rsh kssh "${LOCAL_NSIS_DIR}/" $RELEASE_SERVER_LOGIN:"$RELEASE_NSIS_DIR"
@@ -253,31 +257,20 @@ function make_windows_installers() {
         sign_exe "\${NSIS_TEMP_DIR}/aerofsd.exe"
 
         makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" \
-                -DAEROFS_OUT_FOLDER="$local_VERSIONED_INSTALLER_DIR" \
-                -DAEROFS_VERSION="$RELEASE_VERSION" "${RELEASE_NSIS_DIR}/setup.nsi"
+                -DAEROFS_OUT_FILE="$local_OUT_FILE" \
+                -DAEROFS_VERSION="$RELEASE_VERSION" \
+                -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
+                -DAEROFS_APPROOT_NAME="${AEROFS_PRODUCT_SPACEFREE}Exec" \
+                "${RELEASE_NSIS_DIR}/setup.nsi"
 
-        # The installer coming from makensis will be names AeroFSInstall-VERSION.exe, rename it
-        # according to the labeling class.
-        OLDEXE="${local_VERSIONED_INSTALLER_DIR}/AeroFSInstall-${RELEASE_VERSION}.exe"
-        NEWEXE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
 
-        if [ "\${OLDEXE}" != "\${NEWEXE}" ]
-        then
-            mv "\${OLDEXE}" "\${NEWEXE}"
-        fi
-
-        sign_exe "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
-
-        cp -r "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe" "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
-        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install-${RELEASE_VERSION}.exe"
-        chmod a+r "${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
 
         # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus
         if [ "$MODE" == "PROD" ]; then
             lftp -e "mirror -R \${NSIS_TEMP_DIR}/ /aerofs/; bye" -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
-            lftp -e 'put $local_VERSIONED_INSTALLER_DIR/${AEROFS_PRODUCT_SPACEFREE}Install.exe; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
+            lftp -e 'put ${local_OUT_FILE_VERSIONFREE}; bye' -u \`cat ~/.lftp/login.cfg\` whitelist1.kaspersky-labs.com
         fi
 
 ENDCMDS

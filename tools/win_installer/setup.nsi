@@ -1,13 +1,15 @@
 # AeroFS Installer
 #
 # The installer requires the following parameters to be specified in command line:
-# AEROFS_IN_FOLDER  - Path to the folder that is to be installed on the user's machine
-# AEROFS_OUT_FOLDER - The full path to the folder where the setup package file should be generated
+# AEROFS_IN_FOLDER  - Path to the folder whose content is duplicated to the user's machine
+# AEROFS_OUT_FILE - The full path on the build server to output the generated installer
+# AEROFS_PRODUCT - The product name. e.g. "AeroFS Team Server"
+# AEROFS_APPROOT_NAME - The name of the APPROOT folder "AeroFSTeamServerExec"
 # AEROFS_VERSION    - The current version in the form <major>.<minor>.<build>
 #
 
 !AddPluginDir "Plugins"
-Name AeroFS
+Name "${AEROFS_PRODUCT}"
 
 # This supposedly enables Unicode support
 # Unfortunately it is not available as of NSIS 2.46
@@ -33,7 +35,7 @@ SetOverwrite try
 !define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=63691"  # Java 7u4 - url from: http://www.java.com/en/download/manual.jsp
 
 # Included files
-!include 'LogicLib.nsh'
+!include LogicLib.nsh
 !include Library.nsh
 !include vcredist.nsh
 !include common.nsh
@@ -56,19 +58,19 @@ Var USERNAME
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile "${AEROFS_OUT_FOLDER}\AeroFSInstall-${AEROFS_VERSION}.exe"
+OutFile "${AEROFS_OUT_FILE}"
 CRCCheck on
 XPStyle on
 ShowInstDetails hide
 VIProductVersion "${VERSION}"
-VIAddVersionKey ProductName AeroFS
+VIAddVersionKey ProductName "$(^Name)"
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
 VIAddVersionKey CompanyWebsite "${URL}"
 VIAddVersionKey FileVersion "${VERSION}"
 VIAddVersionKey FileDescription ""
 VIAddVersionKey LegalCopyright ""
-InstallDir $APPDATA\AeroFSExec          # Always install to %AppData%\AeroFSExec
+InstallDir $APPDATA\"${AEROFS_INSTALL_FOLDER}" # sets INSTDIR. We always installs to %APPDATA%.
 ShowUninstDetails hide
 
 Function requestAdminPrivileges
@@ -90,13 +92,13 @@ uac_tryagain:
         # User declined to give admin privileges. Offer to retry
         Call isAdminRequired
         ${If} $0 <> 0
-            StrCpy $9 "AeroFS cannot be installed without administrator rights. \
+            StrCpy $9 "$(^Name) cannot be installed without administrator rights. \
                 Would you like to try entering your administrator password again? \
                 If you click no, the installation will be canceled."
             MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
             Quit # If the user chooses not te retry, quit
         ${Else}
-            StrCpy $9 "AeroFS installer needs administrator rights to install some features. \
+            StrCpy $9 "$(^Name) installer needs administrator rights to install some features. \
                 Would you like to try entering your administrator password again? \
                 If you click no, those features will be disabled."
             MessageBox MB_YESNO|mb_IconExclamation|mb_TopMost|mb_SetForeground $9 /SD IDNO IDYES uac_tryagain IDNO 0
@@ -121,7 +123,7 @@ Function .onInit
     # follow the instructions in "compiling NSIS linux.txt" under the TEAM/docs folder
     # to get a makensis with logging support.
     LogSet on
-    LogText "Installing AeroFS ${VERSION}..."
+    LogText "Installing $(^Name) ${VERSION}..."
 
     # Save original user info so that we can retrieve it later while running as admin
     UserInfo::GetName
@@ -233,11 +235,11 @@ Function install_unprivileged
     File /r ${AEROFS_IN_FOLDER}\*
 
     # Create the uninstaller and the shortcuts
-    WriteUninstaller $INSTDIR\uninstall.exe
-    SetOutPath $SMPROGRAMS\AeroFS
-    CreateShortcut "$SMPROGRAMS\AeroFS\Uninstall $(^Name).lnk" $INSTDIR\uninstall.exe
+    WriteUninstaller "$INSTDIR\uninstall.exe"
+    SetOutPath "$SMPROGRAMS\$(^Name)"
+    CreateShortcut "$SMPROGRAMS\$(^Name)\Uninstall $(^Name).lnk" $INSTDIR\uninstall.exe
     CreateShortcut "$SMSTARTUP\$(^Name).lnk" $INSTDIR\aerofs.exe
-    CreateShortcut "$SMPROGRAMS\AeroFS\$(^Name).lnk" $INSTDIR\aerofs.exe
+    CreateShortcut "$SMPROGRAMS\$(^Name)\$(^Name).lnk" $INSTDIR\aerofs.exe
 
     # Write uninstall registry keys
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "DisplayIcon" "$INSTDIR\aerofs.exe,0"
@@ -270,6 +272,8 @@ Function postInstall_privileged
     SimpleFC::AddApplication "AeroFS Daemon" "$USERS_INSTDIR\aerofsd.exe" 0 2 "" 1
 
     # Register the shell extension
+    # TODO (WW) remove shell extension dlls from the Team Server package so the following registration
+    # will silently fail.
     DetailPrint "Registering the shell extension"
     ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt32.dll"'
     ExecWait 'regsvr32.exe /s "$USERS_INSTDIR\v_${AEROFS_VERSION}\AeroFSShellExt64.dll"'
@@ -346,12 +350,12 @@ Function un.uninstall_unprivileged
     !insertmacro KillProcess "aerofs.exe" $0
     !insertmacro KillProcess "aerofsd.exe" $0
 
-    Delete /REBOOTOK "$SMPROGRAMS\AeroFS\Uninstall $(^Name).lnk"
-    Delete /REBOOTOK "$SMPROGRAMS\AeroFS\$(^Name).lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\Uninstall $(^Name).lnk"
+    Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\$(^Name).lnk"
     Delete "$SMSTARTUP\$(^Name).lnk"
-    Delete /REBOOTOK $INSTDIR\uninstall.exe
-    RmDir /r /REBOOTOK $SMPROGRAMS\AeroFS
-    RmDir /r /REBOOTOK $INSTDIR
+    Delete /REBOOTOK "$INSTDIR\uninstall.exe"
+    RmDir /r /REBOOTOK "$SMPROGRAMS\$(^Name)"
+    RmDir /r /REBOOTOK "$INSTDIR"
 
     DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
 FunctionEnd
