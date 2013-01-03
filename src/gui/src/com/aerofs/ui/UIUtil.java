@@ -299,13 +299,20 @@ public class UIUtil
 
         finishLaunch(postLaunch);
 
-        UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", new Runnable() {
-            @Override
-            public void run()
+        Runnable onClick = null;
+
+        if (!L.get().isMultiuser()) {
+            onClick = new Runnable()
             {
-                GUIUtil.launch(Cfg.absRootAnchor());
-            }
-        });
+                @Override
+                public void run()
+                {
+                    GUIUtil.launch(Cfg.absRootAnchor());
+                }
+            };
+        }
+
+        UI.get().notify(MessageType.INFO, "Up and running. Enjoy!", onClick);
     }
 
     private static boolean shouldShowTutorial()
