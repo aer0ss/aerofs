@@ -58,6 +58,8 @@ public class CLISetup
 
     private boolean _isExistingUser;
 
+    private GetSetupSettingsReply _defaults;
+
     private UserID getUser(CLI cli) throws ExNoConsole
     {
         // input user name - keep going as long as it's invalid
@@ -73,12 +75,34 @@ public class CLISetup
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
+        if (!OSUtil.isLinux()) {
+            cli.confirm(MessageType.WARN, L.PRODUCT + " CLI is not officially supported" +
+                    " on non-Linux platforms. Specifically, GUI will be started" +
+                    " up on the next automatic update.");
+        }
+
+        _defaults = UI.controller().getSetupSettings();
+
+        if (L.get().isMultiuser()) {
+            multiUserSetup(cli, rtRoot);
+        } else {
+            singleUserSetup(cli, rtRoot);
+        }
+
+        cli.notify(MessageType.INFO,
+                "+-------------------------------------------------+\n" +
+                        "| You can now access " + L.PRODUCT + " functions through the |\n" +
+                        "| " + Util.quote("aerofs-sh") + " command while aerofs-cli is running |\n" +
+                        "+-------------------------------------------------+");
+    }
+
+    private void singleUserSetup(CLI cli, String rtRoot) throws Exception
+    {
         UserID userID = null;
         char[] passwd;
 
-        GetSetupSettingsReply defaults = UI.controller().getSetupSettings();
-        String deviceName = defaults.getDeviceName();
-        String anchorRoot = defaults.getRootAnchor();
+        String deviceName = _defaults.getDeviceName();
+        String anchorRoot = _defaults.getRootAnchor();
 
         String signUpCode = null;
         String firstName = null;
@@ -130,19 +154,14 @@ public class CLISetup
             }
 
         } else {
-            if (!OSUtil.isLinux()) {
-                cli.confirm(MessageType.WARN, L.PRODUCT + " CLI is not officially supported" +
-                        " on non-Linux platforms. Specifically, GUI will be started" +
-                        " up on the next automatic update.");
-            }
 
             _isExistingUser = cli.ask(MessageType.INFO, "Welcome! Do you have an " + L.PRODUCT +
                     " account already?");
+
             if (_isExistingUser) {
+
                 userID = getUser(cli);
-                cli.show(MessageType.INFO, "If you forgot your password, go to " +
-                        S.PASSWORD_RESET_REQUEST_URL + " to reset it.");
-                passwd = cli.askPasswd(S.SETUP_PASSWD);
+                passwd = getPassword(cli);
 
             } else {
                 // input invitation code
@@ -174,7 +193,7 @@ public class CLISetup
             }
 
             // input device name
-            deviceName = cli.askText(S.SETUP_DEV_ALIAS, deviceName);
+            deviceName = getDeviceName(cli);
 
             // input S3 info
             if (cli.ask(MessageType.INFO, S.SETUP_S3)) {
@@ -193,14 +212,7 @@ public class CLISetup
                 }
 
             } else {
-                // input anchor root
-                String input = cli.askText(S.ROOT_ANCHOR, anchorRoot);
-                String root = RootAnchorUtil.adjustRootAnchor(input);
-                if (!input.equals(root)) {
-                    cli.confirm(MessageType.INFO,
-                            "The path has been adjusted to " + Util.quote(root) + ".");
-                }
-                anchorRoot = root;
+                anchorRoot = getRootAnchor(cli);
             }
 
             if (!_isExistingUser) {
@@ -235,12 +247,52 @@ public class CLISetup
         }
 
         if (s3BucketId != null) SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
+    }
 
-        cli.notify(MessageType.INFO,
-                "+-------------------------------------------------+\n" +
-                "| You can now access " + L.PRODUCT + " functions through the |\n" +
-                "| " + Util.quote("aerofs-sh") + " command while aerofs-cli is running |\n" +
-                "+-------------------------------------------------+");
+    private void multiUserSetup(CLI cli, String rtRoot) throws Exception
+    {
+        // TODO (PH) add unattended setup
+        UserID userID;
+        char[] passwd;
+
+        cli.show(MessageType.INFO, "Welcome to " + L.PRODUCT + ".");
+
+        userID = getUser(cli);
+        passwd = getPassword(cli);
+
+        String deviceName = getDeviceName(cli);
+
+        String anchorRoot = getRootAnchor(cli);
+
+        cli.progress("Performing magic");
+
+        UI.controller().setupTeamServer(userID.toString(), new String(passwd), anchorRoot, deviceName, null);
+    }
+
+    private String getRootAnchor(CLI cli) throws Exception
+    {
+        String anchorRoot = _defaults.getRootAnchor();
+        String input = cli.askText(S.ROOT_ANCHOR, anchorRoot);
+        String root = RootAnchorUtil.adjustRootAnchor(input);
+        if (!input.equals(root)) {
+            cli.confirm(MessageType.INFO,
+                    "The path has been adjusted to " + Util.quote(root) + ".");
+        }
+
+        return root;
+    }
+
+    private String getDeviceName(CLI cli) throws Exception
+    {
+        String deviceName = _defaults.getDeviceName();
+        return cli.askText(S.SETUP_DEV_ALIAS, deviceName);
+    }
+
+    private char[] getPassword(CLI cli) throws Exception
+    {
+        cli.show(MessageType.INFO, "If you forgot your password, go to " +
+                S.PASSWORD_RESET_REQUEST_URL + " to reset it.");
+        return cli.askPasswd(S.SETUP_PASSWD);
     }
 
     public boolean isExistingUser()
