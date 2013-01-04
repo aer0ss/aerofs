@@ -64,7 +64,8 @@ public class S
             IMPORTANT_UPDATE_DOWNLOADED =
                 "An important update has been downloaded for " + L.PRODUCT + ".",
             NO_CONSOLE = "No console is found.",
-            COPYRIGHT = "2010-2012 " + L.get().vendor() + " All Rights Reserved.",
+            VENDOR = "Air Computing Inc.",
+            COPYRIGHT = "2010-2013 " + VENDOR + " All Rights Reserved.",
             BTN_ADVANCED = "Advanced...",
             BTN_CHANGE = "Change...",
             UNLINK_THIS_COMPUTER = "Unlink This Computer...",
@@ -76,10 +77,10 @@ public class S
             PRE_SETUP_UPDATE_CHECK_FAILED = L.PRODUCT + " couldn't" +
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.PRODUCT + " again.",
-            PRIVACY_URL = SP.WEB_BASE + "privacy",
-            TOS_URL = SP.WEB_BASE + "tos",
-            PASSWORD_RESET_REQUEST_URL = SP.WEB_BASE + "request_password_reset",
-            PASSWORD_RESET_URL = SP.WEB_BASE + "password_reset",
+            PRIVACY_URL = SP.WEB_BASE + "/privacy",
+            TOS_URL = SP.WEB_BASE + "/tos",
+            PASSWORD_RESET_REQUEST_URL = SP.WEB_BASE + "/request_password_reset",
+            PASSWORD_RESET_URL = SP.WEB_BASE + "/password_reset",
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             SENDING_INVITATION = "Inviting",

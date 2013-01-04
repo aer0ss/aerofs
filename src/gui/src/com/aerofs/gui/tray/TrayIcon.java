@@ -30,6 +30,7 @@ import java.util.Set;
 public class TrayIcon
 {
     private final static Logger l = Util.l(TrayIcon.class);
+    private final static long ANIMATION_INTERVAL = 80; // milliseconds between frames
     private final SystemTray _st;
     private final TrayItem _ti;
     private Thread _thdSpinning;
@@ -40,7 +41,7 @@ public class TrayIcon
         _st = st;
         Tray tray = GUI.get().disp().getSystemTray();
         if (tray == null) {
-            SystemUtil.fatal("SystemUtil tray not found");
+            SystemUtil.fatal("System tray not found");
         }
 
         _ti = new TrayItem(tray, SWT.NONE);
@@ -108,7 +109,7 @@ public class TrayIcon
             public void run()
             {
                 while (!_done) {
-                    ThreadUtil.sleepUninterruptable(L.get().trayIconAnimationFrameInterval());
+                    ThreadUtil.sleepUninterruptable(ANIMATION_INTERVAL);
 
                     GUI.get().safeExec(_ti, new Runnable() {
                         @Override

@@ -1,6 +1,5 @@
 package com.aerofs.sp.server.email;
 
-import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.sp.common.SubscriptionParams;
 
@@ -18,7 +17,7 @@ public class HTMLEmail implements IEmail {
         "           <table cellpadding=\"0\" cellspacing=\"0\">" +
         "               <tr>" +
         "                   <td style=\"padding:10px 0\">" +
-        "                       <a href=\"\"><img src=\"" + L.get().logoURL() + "\"></a>" +
+        "                       <a href=\"\"><img src=\"http://www.aerofs.com/img/logo.png\"></a>" +
         "                   </td>" +
         "               </tr>" +
         "           </table>" +
@@ -31,8 +30,8 @@ public class HTMLEmail implements IEmail {
 
     private final String _footer;
 
-    public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:" + L.get().htmlEmailHeaderColor() + ";";
-    public static final String H2STYLE = "margin:0;font-size:14px;color:#" + L.get().htmlEmailHeaderColor() + ";";
+    public static final String H1STYLE = "margin:0;font-size:25px;font-family:arial, sans-serif;color:#17466B;";
+    public static final String H2STYLE = "margin:0;font-size:14px;color:#17466B;";
     public static final String PSTYLE  = "margin:0;";
 
     private final  StringBuilder _sb = new StringBuilder();

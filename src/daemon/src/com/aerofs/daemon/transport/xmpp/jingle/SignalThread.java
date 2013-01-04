@@ -13,7 +13,6 @@ import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
 import com.aerofs.j.XmppSocket_CloseEventSlot;
 import com.aerofs.j.XmppSocket_ErrorSlot;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
@@ -171,11 +170,11 @@ public class SignalThread extends java.lang.Thread implements IDumpStatMisc
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
         InetSocketAddress address = Param.xmppAddress();
-        // TODO (WW) XmppMain() should use int rathe than short as the datatype of jingleRelayPort
+        // TODO (WW) XmppMain() should use int rather than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
         _main = new XmppMain(address.getHostName(), address.getPort(),
                 true, _jidSelf, XMPPServerConnection.shaedXMPP(),
-                L.get().jingleRelayHost(), (short) L.get().jingleRelayPort(),
+                DaemonParam.Jingle.RELAY_HOST, (short) DaemonParam.Jingle.RELAY_PORT,
                 ljlogpathutf8);
 
         l.debug("st: created xmppmain");

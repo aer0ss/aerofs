@@ -150,7 +150,7 @@ public class MultiuserDlgSetup extends AeroFSTitleAreaDialog
     {
         if (GUI.get().ask(MessageType.QUESTION,
                 "Do you want to invite users to your team now?" +
-                " You can also do it later by visiting http://" + L.get().webAdminHost() + ".",
+                " You can also do it later by visiting " + SP.ADMIN_PANEL_BASE + ".",
                 "Invite Users", "Later")) {
             GUIUtil.launch(SP.TEAM_MANAGEMENT_LINK);
         }

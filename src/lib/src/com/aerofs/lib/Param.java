@@ -34,8 +34,9 @@ public class Param
     {
         InetSocketAddress address = parseAddress(System.getProperty(XMPP_SERVER_PROP));
         if (address == null) {
-            address = InetSocketAddress.createUnresolved(
-                    L.get().xmppServerAddr(), L.get().xmppServerPort());
+            address = L.get().isStaging() ?
+                    InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
+                    InetSocketAddress.createUnresolved("x.aerofs.com", 443);
         }
         return address;
     }
@@ -103,7 +104,7 @@ public class Param
     public static class SV
     {
         public static final String
-            DOWNLOAD_LINK = "https://" + L.get().webHost() + "/download",
+            DOWNLOAD_LINK = SP.WEB_BASE + "/download",
             DOWNLOAD_BASE = "https://cache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
             NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
             SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
@@ -114,8 +115,9 @@ public class Param
 
     public static class SP
     {
-        public static final String WEB_BASE = "https://" + L.get().webHost() + "/";
-        public static final String TEAM_MANAGEMENT_LINK = "https://" + L.get().webAdminHost() + "/admin/users";
+        public static final String WEB_BASE = "https://www.aerofs.com";
+        public static final String ADMIN_PANEL_BASE = "https://my.aerofs.com";
+        public static final String TEAM_MANAGEMENT_LINK = ADMIN_PANEL_BASE + "/admin/users";
         public static final URL URL;
 
         static {
@@ -123,7 +125,9 @@ public class Param
             try {
                 // in staging, the SP war is deployed under /sp by defualt
                 // allowing users to deploy their own sp war's (e.g. /yuriSP/sp, /weihanSP/sp, etc.)
-                url = new URL(L.get().spUrl() + "/sp");
+                url = L.get().isStaging() ?
+                        new URL("https://staging.aerofs.com/sp/sp") :
+                        new URL("https://sp.aerofs.com/sp");
             } catch (MalformedURLException e) {
                 SystemUtil.fatal(e);
                 url = null;
@@ -148,7 +152,7 @@ public class Param
             try {
                 url = new URL(L.get().isStaging() ?
                         "https://sss-staging.aerofs.com/syncstat" :
-                        "https://" + L.get().ssHost() + "/syncstat");
+                        "https://sss.aerofs.com/syncstat");
             } catch (MalformedURLException e) {
                 SystemUtil.fatal(e);
                 url = null;

@@ -13,47 +13,13 @@ public interface ILabeling
 
     boolean isMultiuser();
 
-    int trayIconAnimationFrameCount();
-
-    long trayIconAnimationFrameInterval();
-
     String product();
 
     String productSpaceFreeName();
 
     String productUnixName();
 
-    String vendor();
-
     String rootAnchorName();
 
-    String xmppServerAddr();
-
-    int xmppServerPort();
-
-    String jingleRelayHost();
-
-    int jingleRelayPort();
-
-    String webHost();
-
-    String webAdminHost();
-
-    String spUrl();
-
-    String ssHost();
-
-    String mcastAddr();
-
-    int mcastPort();
-
     int defaultPortbase();
-
-    ////////
-    // Labeling methods specific to servers.
-    // TODO (WW) move them to server packages
-
-    String logoURL();
-
-    String htmlEmailHeaderColor();
 }

@@ -88,7 +88,7 @@ class Multicast implements IMaxcast
     private void close(MulticastSocket s)
     {
         try {
-            s.leaveGroup(InetAddress.getByName(L.get().mcastAddr()));
+            s.leaveGroup(InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS));
             s.close();
         } catch (Exception e) {
             l.warn("error closing mcast socket. ignored: " + e);
@@ -103,10 +103,10 @@ class Multicast implements IMaxcast
                 if (!iface.supportsMulticast()) continue;
 
                 // bind to *:TCP_MCAST_PORT
-                final MulticastSocket s = new MulticastSocket(L.get().mcastPort());
+                final MulticastSocket s = new MulticastSocket(DaemonParam.TCP.MCAST_PORT);
                 s.setNetworkInterface(iface);
                 s.setLoopbackMode(!L.get().isStaging());
-                s.joinGroup(InetAddress.getByName(L.get().mcastAddr()));
+                s.joinGroup(InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS));
 
                 MulticastSocket old = _iface2sock.put(iface, s);
                 if (old != null) close(old);
@@ -275,8 +275,8 @@ class Multicast implements IMaxcast
             byte[] bs = cos.toByteArray();
 
             DatagramPacket pkt = new DatagramPacket(bs, bs.length,
-                                 InetAddress.getByName(L.get().mcastAddr()),
-                                 L.get().mcastPort());
+                    InetAddress.getByName(DaemonParam.TCP.MCAST_ADDRESS),
+                    DaemonParam.TCP.MCAST_PORT);
             //_bytesOut += bs.length;
 
             synchronized (_iface2sock) {

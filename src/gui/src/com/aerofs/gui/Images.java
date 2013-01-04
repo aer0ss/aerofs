@@ -227,10 +227,12 @@ public class Images {
      */
     public static Image getTrayIcon(boolean notification, int index)
     {
+        final int TRAY_ICON_COUNT = 14;
+
         StringBuilder sb = new StringBuilder("tray");
         if (notification) sb.append("n");
 
-        sb.append(index % L.get().trayIconAnimationFrameCount());
+        sb.append(index % TRAY_ICON_COUNT);
         sb.append(".png");
 
         Image img = get(sb.toString());

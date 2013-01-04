@@ -1,5 +1,6 @@
 package com.aerofs.daemon.lib;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.cfg.Cfg;
@@ -24,6 +25,9 @@ public class DaemonParam
 
     public static class TCP
     {
+        public static final String MCAST_ADDRESS        = L.get().isStaging() ? "225.7.8.8"
+                                                                              : "225.7.8.9";
+        public static final int MCAST_PORT              = L.get().isStaging() ? 29870 : 29871;
         public static final int MCAST_MAX_DGRAM_SIZE    = 1024;
         public static final long HEARTBEAT_INTERVAL     = 30 * C.SEC;
         public static final long RETRY_INTERVAL         = 5 * C.SEC;
@@ -50,6 +54,8 @@ public class DaemonParam
 
     public static class Jingle
     {
+        public static final String RELAY_HOST           = "97.107.139.17";
+        public static final int RELAY_PORT              = L.get().isStaging() ? 7583 : 80;
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
         public static final long CALL_TIMEOUT           = 30 * C.SEC;
     }

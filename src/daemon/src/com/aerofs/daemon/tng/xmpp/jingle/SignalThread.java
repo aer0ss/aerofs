@@ -6,6 +6,7 @@ package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.daemon.lib.DaemonParam.Jingle;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.tng.xmpp.ID;
 import com.aerofs.j.Jid;
@@ -17,7 +18,6 @@ import com.aerofs.j.XmppEngine;
 import com.aerofs.j.XmppMain;
 import com.aerofs.j.XmppSocket_CloseEventSlot;
 import com.aerofs.j.XmppSocket_ErrorSlot;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
@@ -176,7 +176,7 @@ final class SignalThread extends java.lang.Thread implements IDumpStatMisc
         // TODO (WW) XmppMain() should use int rathe than short as the datatype of jingleRelayPort
         // as Java's unsigned short may overflow on big port numbers.
         _main = new XmppMain(address.getHostName(), address.getPort(), true, _jidSelf,
-                ID.getShaedXMPP(), L.get().jingleRelayHost(), (short) L.get().jingleRelayPort(),
+                ID.getShaedXMPP(), Jingle.RELAY_HOST, (short) Jingle.RELAY_PORT,
                 ljlogpathutf8);
 
         l.info("connect slots");
