@@ -49,6 +49,7 @@ public class Cfg
     private static boolean _useJingle;
     private static boolean _useZephyr;
     private static boolean _useAutoUpdate;
+    private static boolean _isAggressiveCheckingEnabled;
     private static String _absRootAnchor;
     private static String _absAuxRoot;
     private static String _ver;
@@ -111,6 +112,7 @@ public class Cfg
         _useTCP = !new File(rtRoot, C.NOTCP).exists();
         _useXMPP = !new File(rtRoot, C.NOXMPP).exists();
         _useAutoUpdate = !new File(rtRoot, C.NOAUTOUPDATE).exists();
+        _isAggressiveCheckingEnabled = new File(rtRoot, C.AGGRESSIVE_CHECKS).exists();
 
         _inited = true;
     }
@@ -257,6 +259,11 @@ public class Cfg
     public static boolean useAutoUpdate()
     {
         return _useAutoUpdate;
+    }
+
+    public static boolean isAggressiveCheckingEnabled()
+    {
+        return _isAggressiveCheckingEnabled;
     }
 
     public static boolean useFSTypeCheck(String rtRoot)

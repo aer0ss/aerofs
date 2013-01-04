@@ -437,16 +437,20 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     private boolean _abortScan = false;
     private void scanPushQueueInternal_() throws Exception
     {
+        final int PUSH_DELAY = 500; // 500 ms delay.
+
         // avoid concurrent scans : this method is called with the core lock held
-        // but pushVersionHash release the core lock during the RPC call so we
+        // but pushVersionHash releases the core lock during the RPC call so we
         // need an extra check to avoid concurrent scans.
         if (_scanInProgress) return;
         _scanInProgress = true;
 
         try {
+            boolean firstTimeThroughLoop = true;
             long lastIndex;
             long nextIndex = _ssdb.getPushEpoch_();
             Map<SIndex, Set<OID>> soids = Maps.newHashMap();
+
             while (true) {
                 // batch DB reads
                 lastIndex = nextIndex;
@@ -454,6 +458,22 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
 
                 // reached end of activity log
                 if (soids.isEmpty()) break;
+
+                // Delay when sending subsequent batches to prevent high client side cpu.
+                if (!firstTimeThroughLoop)
+                {
+                    Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpause");
+                    TCB tcb = null;
+                    try {
+                        tcb = tk.pseudoPause_("syncstatpause");
+                        Thread.sleep(PUSH_DELAY);
+                    } finally {
+                        if (tcb != null) tcb.pseudoResumed_();
+                        tk.reclaim_();
+                    }
+                }
+
+                firstTimeThroughLoop = false;
 
                 try {
                     // push version hashes to server

@@ -23,9 +23,7 @@ import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITER;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_ORG_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_OI;
-import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 {

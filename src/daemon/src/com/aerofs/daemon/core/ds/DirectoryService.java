@@ -29,7 +29,6 @@ import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 

@@ -20,6 +20,7 @@ public class C
     public static final String NOZEPHYR                = "nozephyr";
     public static final String NOAUTOUPDATE            = "noautoupdate";
     public static final String LOL                     = "lol";
+    public static final String AGGRESSIVE_CHECKS       = "ac";
     public static final String VERSION                 = "version";
     public static final String DEFAULT_RTROOT          = "DEFAULT";
     public static final String DEVICE_CERT             = "cert";

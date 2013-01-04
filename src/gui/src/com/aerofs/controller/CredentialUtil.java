@@ -9,11 +9,9 @@ import com.aerofs.base.id.DID;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.SecUtil;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.CertifyDeviceReply;
@@ -21,7 +19,6 @@ import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.UI;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,8 +31,6 @@ import java.security.PublicKey;
 
 public class CredentialUtil
 {
-    private static final Logger l = Util.l(CredentialUtil.class);
-
     static void sendPasswordResetEmail(String userid)
             throws Exception
     {
@@ -147,9 +142,7 @@ public class CredentialUtil
             throws Exception
     {
         byte[] csr = SecUtil.newCSR(pubKey, privKey, certUserId, did).getEncoded();
-
-        String cert = caller.call(sp, did.toPB(), ByteString.copyFrom(csr))
-                .getCert();
+        String cert = caller.call(sp, did.toPB(), ByteString.copyFrom(csr)).getCert();
 
         // write encrypted private key
         writePrivateKey(scrypted, privKey);

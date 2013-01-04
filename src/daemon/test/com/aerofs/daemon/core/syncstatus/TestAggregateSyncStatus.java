@@ -13,6 +13,7 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
@@ -34,6 +35,7 @@ import java.util.List;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for aggregate sync status
@@ -55,6 +57,7 @@ public class TestAggregateSyncStatus extends AbstractTest
     @Mock DirectoryService ds;
     @Mock SIDMap sm;
     @Mock MapSIndex2DeviceBitMap sidx2dbm;
+    @Mock CfgAggressiveChecking config;
 
     @InjectMocks MockDS mds;
     @InjectMocks AggregateSyncStatus agsync;
@@ -181,6 +184,9 @@ public class TestAggregateSyncStatus extends AbstractTest
     @Before
     public void setup() throws Exception
     {
+        // Enable aggressive consistency checking.
+        when(config.get()).thenReturn(true);
+
         expectedAggregateSyncStat = 0;
         dsVerificationMode = new StrictlyOrderedNonGreedyVerification();
 

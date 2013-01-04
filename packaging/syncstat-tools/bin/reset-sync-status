@@ -1,0 +1,24 @@
+#!/bin/bash -e
+
+echo "WARNING: this will cause all clients to resend sync status information!"
+echo -n "Continue [y/n]? "
+
+read answer
+if [ "$answer" != "y" ]
+then
+    echo "Abort."
+    exit 1
+fi
+
+echo ">>> Stopping web services to avoid inconsistency..."
+service nginx stop
+service tomcat6 stop
+
+echo ">>> Reset redis database..."
+redis-cli flushall
+
+echo ">>> Restart web service..."
+service tomcat6 start
+service nginx start
+
+echo "DONE."

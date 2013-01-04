@@ -15,6 +15,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAggressiveChecking;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.KIndex;
@@ -73,6 +74,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
 
     private final DirectoryService _ds;
     private final MapSIndex2DeviceBitMap _sidx2dbm;
+    private final CfgAggressiveChecking _cfgAggressiveChecking;
 
     public static interface IListener
     {
@@ -82,10 +84,13 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     private final List<IListener> _listeners;
 
     @Inject
-    public AggregateSyncStatus(DirectoryService ds, MapSIndex2DeviceBitMap sidx2dbm)
+    public AggregateSyncStatus(DirectoryService ds, MapSIndex2DeviceBitMap sidx2dbm,
+            CfgAggressiveChecking config)
     {
         _ds = ds;
         _sidx2dbm = sidx2dbm;
+        _cfgAggressiveChecking = config;
+
         _listeners = Lists.newArrayList();
 
         ds.addListener_(this);
@@ -108,12 +113,11 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
             t.addListener_(new AbstractTransListener() {
                 @Override
                 public void committing_(Trans t) throws SQLException {
-                    // TODO (MP) disable once we're confident all bugs have been squashed.
-                    // (This completely destroys the performance benefits of maintanining
-                    // aggregated status as it essentially recomputes it...).
-                    // NB: make the check *before* the transaction is committed to prevent
-                    // corrupted data from persisting
-                    aggressiveConsistencyCheck(set);
+                    // Only enable aggressive checking when the config flag is set.
+                    if (_cfgAggressiveChecking.get()) {
+                        l.warn("Enabling aggressive sync status checking");
+                        aggressiveConsistencyCheck(set);
+                    }
                 }
 
                 @Override
