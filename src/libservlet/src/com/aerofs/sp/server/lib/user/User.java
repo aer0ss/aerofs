@@ -270,8 +270,8 @@ public class User
         try {
             rootStore.save("root store: " + _id, this);
         } catch (ExNotFound e) {
-            // The method throws ExNotFound only if the user doesn't exist, which is guaranteed not
-            // to happen.
+            // The method throws ExNotFound only if the store doesn't exist, which is guaranteed not
+            // to happen by the above code.
             SystemUtil.fatal(e);
         }
     }

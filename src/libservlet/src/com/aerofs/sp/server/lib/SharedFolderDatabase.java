@@ -164,6 +164,9 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
+    /**
+     * TODO (WW) move this method to UserDatabase
+     */
     public Map<UserID, Long> incrementACLEpoch(Set<UserID> users)
             throws SQLException
     {

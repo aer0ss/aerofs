@@ -20,7 +20,7 @@ CREATE TABLE `sp_shared_folder` (
 
 CREATE TABLE `sp_acl` (
   `a_sid` BINARY(16) NOT NULL,
-  `a_id` VARCHAR(320) NOT NULL,
+  `a_id` VARCHAR(320) NOT NULL,  -- TODO (WW) add a foreign key to user ids
   `a_role` TINYINT NOT NULL,
   PRIMARY KEY (`a_sid`,`a_id`),
   KEY `a_sid` (`a_sid`),
