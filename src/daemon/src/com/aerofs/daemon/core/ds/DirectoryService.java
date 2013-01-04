@@ -200,7 +200,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         throws SQLException, ExNotFound
     {
         SOID soid = resolveNullable_(path);
-        if (soid == null) throw new ExNotFound(new ExFileNotFound(path));
+        if (soid == null) throw new ExNotFound();
         return soid;
     }
 
