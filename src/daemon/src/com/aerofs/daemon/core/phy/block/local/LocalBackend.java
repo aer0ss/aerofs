@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block.local;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
@@ -73,6 +74,13 @@ public class LocalBackend implements IBlockStorageBackend
             block.createNewFile();
         }
         ByteStreams.copy(input, block.newOutputStream());
+    }
+
+    @Override
+    public void deleteBlock(ContentHash key, Token tk) throws IOException
+    {
+        InjectableFile block = getBlockFile(key);
+        if (block.exists()) block.delete();
     }
 
     // 2 hex digits per level -> 256-ary prefix tree

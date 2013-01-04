@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core.phy.block.gzip;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -70,5 +71,11 @@ public class GZipBackend implements IBlockStorageBackend
             @Nullable Object encoderData) throws IOException
     {
         _bsb.putBlock(key, input, decodedLength, encoderData);
+    }
+
+    @Override
+    public void deleteBlock(ContentHash key, Token tk) throws IOException
+    {
+        _bsb.deleteBlock(key, tk);
     }
 }

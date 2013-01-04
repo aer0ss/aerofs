@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -11,9 +12,15 @@ import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorage.FileAlreadyExistsException;
+import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.IEvent;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
@@ -30,6 +37,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import org.junit.After;
@@ -46,6 +54,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.List;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -53,6 +62,7 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -62,8 +72,10 @@ public class TestBlockStorage extends AbstractBlockTest
 {
     @Mock Trans t;
     @Mock Token tk;
+    @Mock TC tc;
     @Mock TCB tcb;
     @Mock TransManager tm;
+    @Mock CoreScheduler sched;
     @Mock CfgAbsAuxRoot auxRoot;
 
     // use in-memory DB
@@ -83,6 +95,7 @@ public class TestBlockStorage extends AbstractBlockTest
                 .create_(idbcw.getConnection().createStatement());
 
         when(tm.begin_()).thenReturn(t);
+        when(tc.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         when(auxRoot.get()).thenReturn(testTempDirFactory.getTestTempDir().getAbsolutePath());
 
@@ -97,8 +110,18 @@ public class TestBlockStorage extends AbstractBlockTest
             }
         });
 
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable
+            {
+                Object[] args = invocation.getArguments();
+                ((AbstractEBSelfHandling)args[0]).handle_();
+                return null;
+            }
+        }).when(sched).schedule(any(IEvent.class), anyLong());
+
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
-        bs = new BlockStorage(auxRoot, tm, fileFactory, bsb, bsdb);
+        bs = new BlockStorage(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb);
         bs.init_();
     }
 
@@ -562,5 +585,43 @@ public class TestBlockStorage extends AbstractBlockTest
 
         verify(bsb, times(5))
                 .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), isNull());
+    }
+
+    @Test
+    public void shouldRemoveFilesWhenDeletingStore() throws Exception
+    {
+        SIndex sidx = new SIndex(1);
+        long id = bsdb.getOrCreateFileIndex_("1-foo", t);
+
+        // setup db: 1 file with 1 chunk
+        TestBlock b = newBlock();
+        FileInfo info = new FileInfo(id, -1, b._content.length, 0, b._key);
+        bsdb.prePutBlock_(b._key, b._content.length, t);
+        bsdb.postPutBlock_(b._key, t);
+        bsdb.updateFileInfo(Path.fromString("foo/bar/baz"), info, t);
+
+        final List<ITransListener> listeners = Lists.newArrayList();
+        doAnswer(new Answer<Void>()
+        {
+            @Override
+            public Void answer(InvocationOnMock invocation)
+                    throws Throwable
+            {
+                listeners.add((ITransListener)invocation.getArguments()[0]);
+                return null;
+            }
+        }).when(t).addListener_(any(ITransListener.class));
+
+        bs.deleteStore_(sidx, new Path(), PhysicalOp.APPLY, t);
+
+        // check that block was deref'ed
+        Assert.assertEquals(0, bsdb.getBlockCount_(b._key));
+        // check that file info entry was removed
+        Assert.assertNull(bsdb.getFileInfo_(id));
+
+        for (ITransListener l : listeners) l.committed_();
+
+        // check that dead block was removed from backend on commit
+        verify(bsb).deleteBlock(b._key, tk);
     }
 }

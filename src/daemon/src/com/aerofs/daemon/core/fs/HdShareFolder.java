@@ -4,6 +4,8 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import com.aerofs.daemon.core.acl.ACLSynchronizer;
+import com.aerofs.daemon.core.acl.ExConcurrentACLUpdate;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -67,11 +69,12 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final IMapSID2SIndex _sid2sidx;
     private final IStores _ss;
     private final DescendantStores _dss;
+    private final ACLSynchronizer _aclsync;
 
     @Inject
     public HdShareFolder(LocalACL lacl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
             IImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
-            IStores ss, DescendantStores dss)
+            IStores ss, DescendantStores dss, ACLSynchronizer aclsync)
     {
         _ss = ss;
         _lacl = lacl;
@@ -84,6 +87,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         _od = od;
         _sid2sidx = sid2sidx;
         _dss = dss;
+        _aclsync = aclsync;
     }
 
     @Override
@@ -138,8 +142,14 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
 
+        // ensure ACLs are updated (at the very least we need an entry for the local user...)
+        try {
+            _aclsync.syncToLocal_();
+        } catch (ExConcurrentACLUpdate e) {
+            l.warn("concurrent ACL update. ignore");
+        }
+
         l.info("shared: " + ev._path + " -> " + sid.toStringFormal());
-        ev.setResult_(sid);
     }
 
     private OA checkSanity_(Path path)

@@ -5,8 +5,8 @@
 package com.aerofs.daemon.core.phy.block;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
-import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
 
+import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -15,8 +15,11 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -25,6 +28,7 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
+import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -54,7 +58,9 @@ class BlockStorage implements IPhysicalStorage
 {
     private static final Logger l = Util.l(BlockStorage.class);
 
+    private final TC _tc;
     private final TransManager _tm;
+    private final CoreScheduler _sched;
     private final InjectableFile.Factory _fileFactory;
     private final CfgAbsAuxRoot _absAuxRoot;
 
@@ -72,10 +78,12 @@ class BlockStorage implements IPhysicalStorage
     }
 
     @Inject
-    public BlockStorage(CfgAbsAuxRoot absAuxRoot, TransManager tm,
+    public BlockStorage(CfgAbsAuxRoot absAuxRoot, TC tc, TransManager tm, CoreScheduler sched,
             InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb)
     {
+        _tc = tc;
         _tm = tm;
+        _sched = sched;
         _fileFactory = fileFactory;
         _absAuxRoot = absAuxRoot;
         _bsb = bsb;
@@ -143,7 +151,7 @@ class BlockStorage implements IPhysicalStorage
         }
 
         // no need to explicitely specify version, DB auto-increments it
-        updateFileInfo(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
+        _bsdb.updateFileInfo(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
         if (l.isDebugEnabled()) l.debug("inserted " + from._hash.toHex());
 
         // delete prefix file if transaction succeeds
@@ -173,16 +181,108 @@ class BlockStorage implements IPhysicalStorage
     public void deleteStore_(SIndex sidx, Path path, PhysicalOp op, Trans t)
             throws IOException, SQLException
     {
-        // TODO: fw to backend?
+        if (op != PhysicalOp.APPLY) return;
+
+        /**
+         * 1. find all indices that correspond to internal names referring to the given sidx
+         * 2. remove file info from db and deref blocks accordingly
+         * 3. cleanup hist dir info? empty hierarchy isn't great but the space overhead may not be
+         * worth the trouble
+         * 4. cleanup index? tombstones are annoying but again the space overhead shouldn't be too
+         * significant
+         * 5. remove dead blocks from the backend (on successful commit)
+         */
+
+        IDBIterator<Long> it = _bsdb.getIndicesWithPrefix_(storePrefix(sidx));
+        try {
+            while (it.next_()) removeFile_(it.get_(), t);
+        } finally {
+            it.close_();
+        }
+
+        // TODO: cleanup hist dir info?
+        // TODO: cleanup index?
+        // pro: reduce disk usage for deleted stores
+        // con: crazy index increase when store goes back and forth...
+
+        // only cleanup backend if the transaction is sucessfully committed
+        t.addListener_(new AbstractTransListener() {
+            @Override
+            public void committed_()
+            {
+                /**
+                 * Removing dead blocks require new DB transactions and releasing core lock around
+                 * backend operations so it cannot be done directly
+                 */
+                _sched.schedule(new AbstractEBSelfHandling() {
+                    @Override
+                    public void handle_()
+                    {
+                        try {
+                            removeDeadBlocks_();
+                        } catch (Exception e) {
+                            l.warn("Failed to cleanup dead blocks: " + Util.e(e));
+                        }
+                    }
+                }, 0);
+            }
+        });
+    }
+
+    /**
+     * Fully remove a file from the DB:
+     *   * deref all blocks used by the file
+     *   * remove current file info entry
+     */
+    private void removeFile_(long id, Trans t) throws SQLException
+    {
+        FileInfo info = _bsdb.getFileInfo_(id);
+        for (ContentHash b : BlockUtil.splitBlocks(info._chunks)) _bsdb.decBlockCount_(b, t);
+        _bsdb.deleteFileInfo_(id, t);
+        // NB: for consistency with LinkedStorage we don't delete history when deleting stores
+        //_bsdb.deleteHistFileInfo_(id, t);
+    }
+
+    /**
+     * Remove dead blocks
+     *
+     * NB: must be called *outside* of any transaction:
+     *   1. we should not remove dead blocks before the transaction that deref them is committed
+     *   2. some backends may create a transaction on their own (e.g. CacheBackend)
+     *   3. some backends may release the core lock around file/io operation
+     */
+    private void removeDeadBlocks_() throws SQLException, IOException
+    {
+        Token tk = _tc.acquire_(Cat.UNLIMITED, "bs-rmd");
+        IDBIterator<ContentHash> it = _bsdb.getDeadBlocks_();
+        try {
+            while (it.next_()) {
+                ContentHash h = it.get_();
+                Trans t = _tm.begin_();
+                try {
+                    _bsdb.deleteBlock_(h, t);
+                    t.commit_();
+                } finally {
+                    t.end_();
+                }
+                // TODO: pass a Token downwards to allow backend to release core lock
+                _bsb.deleteBlock(h, tk);
+            }
+        } finally {
+            it.close_();
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    private String storePrefix(SIndex sidx)
+    {
+        return sidx.toString() + '-';
+    }
+
     private String makeFileName(SOKID sokid)
     {
-        return sokid.sidx().toString() + '-' +
-                sokid.oid().toStringFormal() + '-' +
-                sokid.kidx();
+        return storePrefix(sokid.sidx()) + sokid.oid().toStringFormal() + '-' + sokid.kidx();
     }
 
     private long getOrCreateFileId_(SOKID sokid, Trans t) throws SQLException
@@ -193,28 +293,6 @@ class BlockStorage implements IPhysicalStorage
     FileInfo getFileInfo_(SOKID sokid) throws SQLException
     {
         return _bsdb.getFileInfo_(_bsdb.getFileIndex_(makeFileName(sokid)));
-    }
-
-    /**
-     * Update file info after successful file update
-     *
-     * If the current file info is valid, back it up in the history, creating hierarchy as neeeded
-     * Increment ref count for chunks used by the new file info
-     */
-    private void updateFileInfo(Path path, FileInfo info, Trans t) throws SQLException
-    {
-        // first, back up any current file info
-        FileInfo oldInfo = _bsdb.getFileInfo_(info._id);
-        if (FileInfo.exists(oldInfo)) {
-            long dirId = _bsdb.getOrCreateHistDirByPath_(path.removeLast(), t);
-            _bsdb.saveOldFileInfo_(dirId, path.last(), oldInfo, t);
-        }
-
-        // update file info
-        _bsdb.writeNewFileInfo_(info, t);
-        for (ContentHash chunk : splitBlocks(info._chunks)) {
-            _bsdb.incBlockCount_(chunk, t);
-        }
     }
 
     public InputStream readChunks(ContentHash hash) throws IOException
@@ -348,7 +426,7 @@ class BlockStorage implements IPhysicalStorage
 
         FileInfo info = new FileInfo(id, 0, 0, new Date().getTime(),
                 EMPTY_FILE_CHUNKS);
-        updateFileInfo(file._path, info, t);
+        _bsdb.updateFileInfo(file._path, info, t);
     }
 
     void delete_(BlockFile file, Trans t) throws IOException, SQLException
@@ -357,7 +435,7 @@ class BlockStorage implements IPhysicalStorage
         if (!FileInfo.exists(oldInfo)) throw new FileNotFoundException(toString());
 
         FileInfo info = FileInfo.newDeletedFileInfo(oldInfo._id, new Date().getTime());
-        updateFileInfo(file._path, info, t);
+        _bsdb.updateFileInfo(file._path, info, t);
     }
 
     void move_(BlockFile from, BlockFile to, Trans t) throws IOException, SQLException
@@ -388,7 +466,7 @@ class BlockStorage implements IPhysicalStorage
 
         FileInfo toInfo = new FileInfo(toId, -1, fromInfo._length, new Date().getTime(),
                 fromInfo._chunks);
-        updateFileInfo(toPath, toInfo, t);
+        _bsdb.updateFileInfo(toPath, toInfo, t);
 
         if (toId != fromInfo._id) {
             delete_(from, t);

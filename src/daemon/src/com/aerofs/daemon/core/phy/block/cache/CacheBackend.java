@@ -8,6 +8,7 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -199,6 +200,18 @@ public class CacheBackend implements IBlockStorageBackend
             throws IOException
     {
         _bsb.putBlock(key, input, decodedLength, encoderData);
+    }
+
+    @Override
+    public void deleteBlock(ContentHash key, Token tk) throws IOException
+    {
+        try {
+            deleteFromCache_(key);
+        } catch (SQLException e) {
+            // TODO: fully reset cache on failure instead of aborting deletion?
+            throw new IOException("Failed to remove block from cache " + key);
+        }
+        _bsb.deleteBlock(key, tk);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -471,42 +484,47 @@ public class CacheBackend implements IBlockStorageBackend
                 while (reclaimed < needed) {
                     if (getFreeSpace() >= freeSpaceHigh) break;
                     if (!it.next_()) break;
-                    byte[] key = it.get_().getBytes();
-
-                    synchronized (_statusMap) {
-                        CacheStatus status = _statusMap.get(key);
-                        if (status != null) {
-                            if (status._count > 0) continue;
-                        }
-
-                        try {
-                            File file = getFileForKey(key);
-                            long length = file.length();
-
-                            // We must hold the lock to the status map here; otherwise, some other
-                            // thread may try to acquire the block we are deleting
-                            assert Thread.holdsLock(_statusMap);
-
-                            if (l.isDebugEnabled()) l.debug("deleting " + file);
-                            if (file.exists()) FileUtil.delete(file);
-
-                            // FIXME: should this use the dirty access time map???
-                            Trans t = _tm.begin_();
-                            try {
-                                _cdb.deleteCachedEntry(key, t);
-                                t.commit_();
-                            } finally {
-                                t.end_();
-                            }
-
-                            reclaimed += length;
-                        } catch (IOException e) {
-                            l.warn(Util.e(e));
-                        }
-                    }
+                    reclaimed += deleteFromCache_(it.get_());
                 }
             } finally {
                 it.close_();
+            }
+        }
+    }
+
+    private long deleteFromCache_(ContentHash b) throws SQLException
+    {
+        byte[] key = b.getBytes();
+        synchronized (_statusMap) {
+            CacheStatus status = _statusMap.get(key);
+            if (status != null) {
+                if (status._count > 0) return 0;
+            }
+
+            try {
+                File file = getFileForKey(key);
+                long length = file.length();
+
+                // We must hold the lock to the status map here; otherwise, some other
+                // thread may try to acquire the block we are deleting
+                assert Thread.holdsLock(_statusMap);
+
+                if (l.isDebugEnabled()) l.debug("deleting " + file);
+                if (file.exists()) FileUtil.delete(file);
+
+                // FIXME: should this use the dirty access time map???
+                Trans t = _tm.begin_();
+                try {
+                    _cdb.deleteCachedEntry(key, t);
+                    t.commit_();
+                } finally {
+                    t.end_();
+                }
+
+                return length;
+            } catch (IOException e) {
+                l.warn(Util.e(e));
+                return 0;
             }
         }
     }

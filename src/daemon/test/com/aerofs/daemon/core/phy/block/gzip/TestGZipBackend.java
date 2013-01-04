@@ -7,6 +7,7 @@ package com.aerofs.daemon.core.phy.block.gzip;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.daemon.core.phy.block.AbstractBlockTest;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
@@ -68,6 +69,12 @@ public class TestGZipBackend extends AbstractBlockTest
             ByteStreams.copy(input, output);
             Util.l(this).info("put k: " + key + " v:" + BaseUtil.hexEncode(output.toByteArray()));
             _blocks.put(key, output.toByteArray());
+        }
+
+        @Override
+        public void deleteBlock(ContentHash key, Token tk) throws IOException
+        {
+            _blocks.remove(key);
         }
     }
 

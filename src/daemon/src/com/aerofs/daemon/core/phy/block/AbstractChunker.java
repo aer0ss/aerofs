@@ -11,6 +11,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.lib.Param;
+import com.amazonaws.services.s3.internal.RepeatableFileInputStream;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
 
@@ -18,7 +19,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,7 +125,8 @@ public abstract class AbstractChunker
         @Override
         public InputStream encoded() throws IOException
         {
-            return new FileInputStream(f);
+            // stupid Java API does not provide a reset()-able version of FileInputStream...
+            return new RepeatableFileInputStream(f);
         }
 
         @Override

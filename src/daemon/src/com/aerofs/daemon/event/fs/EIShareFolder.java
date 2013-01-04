@@ -14,9 +14,6 @@ public class EIShareFolder extends AbstractEIFS
     public final Map<UserID, Role> _subject2role;
     public final String _emailNote;
 
-    // it contains the SID of the shared folder after event execution.
-    public SID _sid;
-
     /**
      * Convert an existing folder to an anchor. The anchor's OID is deterministically derived from
      * the OID of the existing folder, which in turn determines the SID of the anchored store. This
@@ -31,10 +28,5 @@ public class EIShareFolder extends AbstractEIFS
         _path = path;
         _subject2role = subject2role;
         _emailNote = emailNote;
-    }
-
-    public void setResult_(SID sid)
-    {
-        _sid = sid;
     }
 }

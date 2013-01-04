@@ -34,6 +34,7 @@ import java.util.Set;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageSchema.*;
 import static com.aerofs.daemon.core.phy.block.BlockUtil.isOneBlock;
+import static com.aerofs.daemon.core.phy.block.BlockUtil.splitBlocks;
 
 /**
  * Maintains mapping between logical object (SOKID) and physical objects (64bit index)
@@ -93,10 +94,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         PreparedStatement ps = _psGetFileIndex;
         try {
             if (ps == null) {
-                ps = _psGetFileIndex = c().prepareStatement(
-                        "SELECT " + C_FileInfo_Index +
-                                " FROM " + T_FileInfo +
-                                " WHERE " + C_FileInfo_InternalName + "=?");
+                ps = _psGetFileIndex = c().prepareStatement(DBUtil.selectWhere(T_FileInfo,
+                        C_FileInfo_InternalName + "=?",
+                        C_FileInfo_Index));
             }
 
             ps.setString(1, iname);
@@ -120,6 +120,39 @@ public class BlockStorageDatabase extends AbstractDatabase
         long id = getFileIndex_(iname);
         if (id == FILE_ID_NOT_FOUND) id = createFileEntry_(iname, t);
         return id;
+    }
+
+    private PreparedStatement _psGetIndices;
+    IDBIterator<Long> getIndicesWithPrefix_(String prefix) throws SQLException
+    {
+        PreparedStatement ps = _psGetIndices;
+        try {
+            if (ps == null) {
+                ps = _psGetIndices = c().prepareStatement(DBUtil.selectWhere(T_FileInfo,
+                        C_FileInfo_InternalName + " GLOB \"" + prefix + "*\"",
+                        C_FileInfo_Index));
+            }
+
+            return new DBIterIndices(ps.executeQuery());
+        } catch (SQLException e) {
+            _psGetIndices = null;
+            DBUtil.close(ps);
+            throw e;
+        }
+    }
+
+    class DBIterIndices extends AbstractDBIterator<Long>
+    {
+        DBIterIndices(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        @Override
+        public Long get_() throws SQLException
+        {
+            return _rs.getLong(1);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,13 +196,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         PreparedStatement ps = _psGetFileInfo;
         try {
             if (ps == null) {
-                ps = _psGetFileInfo = c().prepareStatement("SELECT " +
-                        C_FileCurr_Ver + ',' +
-                        C_FileCurr_Len + ',' +
-                        C_FileCurr_Date + ',' +
-                        C_FileCurr_Chunks +
-                        " FROM " + T_FileCurr +
-                        " WHERE " + C_FileCurr_Index + "=?");
+                ps = _psGetFileInfo = c().prepareStatement(DBUtil.selectWhere(T_FileCurr,
+                        C_FileCurr_Index + "=?",
+                        C_FileCurr_Ver, C_FileCurr_Len, C_FileCurr_Date, C_FileCurr_Chunks));
             }
             ps.setLong(1, fileId);
             ResultSet rs = ps.executeQuery();
@@ -200,6 +229,34 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
+    private final PreparedStatementWrapper _pswDelFileInfo = new PreparedStatementWrapper();
+    public void deleteFileInfo_(long fileId, Trans t) throws SQLException
+    {
+        deleteFileInfoImpl_(_pswDelFileInfo, T_FileCurr, C_FileCurr_Index, fileId, t);
+    }
+
+    private final PreparedStatementWrapper _pswDelHistFileInfo = new PreparedStatementWrapper();
+    public void deleteHistFileInfo_(long fileId, Trans t) throws SQLException
+    {
+        deleteFileInfoImpl_(_pswDelHistFileInfo, T_FileHist, C_FileHist_Index, fileId, t);
+    }
+
+    private void deleteFileInfoImpl_(PreparedStatementWrapper psw, String table, String column,
+            long fileId, Trans t) throws SQLException
+    {
+        try {
+            if (psw.get() == null) {
+                psw.set(c().prepareStatement(DBUtil.deleteWhere(table, column + "=?")));
+            }
+            psw.get().setLong(1, fileId);
+            psw.get().executeUpdate();
+        } catch (SQLException e) {
+            psw.set(null);
+            DBUtil.close(psw.get());
+            throw e;
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     private PreparedStatement _psGetChildHistDir;
@@ -208,9 +265,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         PreparedStatement ps = _psGetChildHistDir;
         try {
             if (ps == null) {
-                ps = _psGetChildHistDir = c().prepareStatement("SELECT " +
-                        C_DirHist_Index + " FROM " + T_DirHist +
-                        " WHERE " + C_DirHist_Parent + "=? AND " + C_DirHist_Name + "=?");
+                ps = _psGetChildHistDir = c().prepareStatement(DBUtil.selectWhere(T_DirHist,
+                        C_DirHist_Parent + "=? AND " + C_DirHist_Name + "=?",
+                        C_DirHist_Index));
             }
             ps.setLong(1, parent);
             ps.setString(2, name);
@@ -256,8 +313,8 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get();
             if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement("DELETE FROM " + T_DirHist +
-                        " WHERE " + C_DirHist_Index + "=?"));
+                ps = psw.set(c().prepareStatement(DBUtil.deleteWhere(T_DirHist,
+                        C_DirHist_Index + "=?")));
             }
             ps.setLong(1, dirId);
             ps.executeUpdate();
@@ -317,12 +374,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         PreparedStatement ps = _psGetHistFileInfo;
         try {
             if (ps == null) {
-                ps = _psGetHistFileInfo = c().prepareStatement("SELECT " +
-                        C_FileHist_Len + ',' +
-                        C_FileHist_Date + ',' +
-                        C_FileHist_Chunks +
-                        " FROM " + T_FileHist +
-                        " WHERE " + C_FileHist_Index + "=? AND " + C_FileHist_Ver + "=?");
+                ps = _psGetHistFileInfo = c().prepareStatement(DBUtil.selectWhere(T_FileHist,
+                        C_FileHist_Index + "=? AND " + C_FileHist_Ver + "=?",
+                        C_FileHist_Len, C_FileHist_Date, C_FileHist_Chunks));
             }
             long[] idx = decodeIndex(index);
             if (idx == null) return null;
@@ -429,9 +483,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get();
             if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "select " + C_BlockCount_State + " from " + T_BlockCount +
-                                " where " + C_BlockCount_Hash + "=?"));
+                ps = psw.set(c().prepareStatement(DBUtil.selectWhere(T_BlockCount,
+                        C_BlockCount_Hash + "=?",
+                        C_BlockCount_State)));
             }
 
             ps.setBytes(1, chunk.getBytes());
@@ -457,9 +511,9 @@ public class BlockStorageDatabase extends AbstractDatabase
         try {
             PreparedStatement ps = psw.get();
             if (!isValid(ps)) {
-                ps = psw.set(c().prepareStatement(
-                        "select " + C_BlockCount_Count + " from " + T_BlockCount +
-                                " where " + C_BlockCount_Hash + "=?"));
+                ps = psw.set(c().prepareStatement(DBUtil.selectWhere(T_BlockCount,
+                        C_BlockCount_Hash + "=?",
+                        C_BlockCount_Count)));
             }
 
             ps.setBytes(1, chunk.getBytes());
@@ -592,6 +646,41 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
+    /**
+     * Hist File Info entry may remain after deletion of the related File Info entry and said File
+     * Info entry may be recreated later before the Hist File Info have been cleaned by a garbage
+     * collector. This means that when recreating the File Info entry when need to initialize the
+     * version to a value above the maximum of existing Hist File Info entries, hence the existence
+     * of this function
+     *
+     * @return max version number for the given file index, -1 if no matching hist entry found
+     */
+    private PreparedStatementWrapper _pswGetMaxVersion = new PreparedStatementWrapper();
+    private long getMaxHistVersion(long id) throws SQLException
+    {
+        PreparedStatementWrapper psw = _pswGetMaxVersion;
+        try {
+            PreparedStatement ps = psw.get();
+            if (!isValid(ps)) {
+                ps = psw.set(c().prepareStatement(
+                        "select max(" + C_FileHist_Ver + ")" +
+                                " from " + T_FileHist +
+                                " where " + C_FileHist_Index + "=?"));
+            }
+            ps.setLong(1, id);
+            ResultSet rs = ps.executeQuery();
+            try {
+                if (rs.next()) return rs.getLong(1);
+                return -1;
+            } finally {
+                rs.close();
+            }
+        } catch (SQLException e) {
+            psw.close();
+            throw e;
+        }
+    }
+
     private PreparedStatementWrapper _pswInsertEmptyFileInfo = new PreparedStatementWrapper();
     private void insertEmptyFileInfo(long id, Trans t) throws SQLException
     {
@@ -610,7 +699,7 @@ public class BlockStorageDatabase extends AbstractDatabase
             }
             FileInfo info = FileInfo.newDeletedFileInfo(id, DELETED_FILE_DATE);
             ps.setLong(1, info._id);
-            ps.setLong(2, 0);
+            ps.setLong(2, getMaxHistVersion(id) + 1);
             ps.setLong(3, info._length);
             ps.setLong(4, info._mtime);
             ps.setBytes(5, info._chunks.getBytes());
@@ -621,8 +710,30 @@ public class BlockStorageDatabase extends AbstractDatabase
         }
     }
 
+    /**
+     * Update file info after successful file update
+     *
+     * If the current file info is valid, back it up in the history, creating hierarchy as neeeded
+     * Increment ref count for chunks used by the new file info
+     */
+    public void updateFileInfo(Path path, FileInfo info, Trans t) throws SQLException
+    {
+        // first, back up any current file info
+        FileInfo oldInfo = getFileInfo_(info._id);
+        if (FileInfo.exists(oldInfo)) {
+            long dirId = getOrCreateHistDirByPath_(path.removeLast(), t);
+            saveOldFileInfo_(dirId, path.last(), oldInfo, t);
+        }
+
+        // update file info
+        writeNewFileInfo_(info, t);
+        for (ContentHash chunk : splitBlocks(info._chunks)) {
+            incBlockCount_(chunk, t);
+        }
+    }
+
     private PreparedStatementWrapper _pswSaveOldFileInfo = new PreparedStatementWrapper();
-    void saveOldFileInfo_(long dirId, String name, FileInfo info, Trans t) throws SQLException
+    private void saveOldFileInfo_(long dirId, String name, FileInfo info, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswSaveOldFileInfo;
         try {
@@ -655,7 +766,7 @@ public class BlockStorageDatabase extends AbstractDatabase
     }
 
     private PreparedStatementWrapper _pswWriteNewFileInfo = new PreparedStatementWrapper();
-    void writeNewFileInfo_(FileInfo info, Trans t) throws SQLException
+    private void writeNewFileInfo_(FileInfo info, Trans t) throws SQLException
     {
         PreparedStatementWrapper psw = _pswWriteNewFileInfo;
         try {

@@ -6,6 +6,8 @@ package com.aerofs.daemon.core.phy.block.s3;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.base.Base64;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.base.BaseSecUtil.CipherFactory;
@@ -13,6 +15,7 @@ import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3BucketIdConfig;
 import com.aerofs.daemon.core.phy.block.s3.S3Config.S3CryptoConfig;
+import com.aerofs.lib.ex.ExAborted;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
@@ -187,6 +190,34 @@ public class S3Backend implements IBlockStorageBackend
                 return null;
             }
         });
+    }
+
+    @Override
+    public void deleteBlock(final ContentHash key, Token tk) throws IOException
+    {
+        try {
+            TCB tcb = null;
+            try {
+                tcb = tk.pseudoPause_("s3-del");
+                AWSRetry.retry(new Callable<Void>()
+                {
+                    @Override
+                    public Void call() throws Exception
+                    {
+                        String baseKey = key.toHex();
+                        String s3Key = getBlockKey(baseKey);
+                        String bucketName = _s3BucketIdConfig.getS3BucketId();
+
+                        _s3Client.deleteObject(bucketName, s3Key);
+                        return null;
+                    }
+                });
+            } finally {
+                if (tcb != null) tcb.pseudoResumed_();
+            }
+        } catch (ExAborted e) {
+            throw new IOException(e);
+        }
     }
 
     private String getBlockKeyPrefix()
