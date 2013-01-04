@@ -208,6 +208,7 @@ function make_windows_installers() {
     readonly local_OUT_FILE
     local local_OUT_FILE_VERSIONFREE="${local_VERSIONED_INSTALLER_DIR}/${AEROFS_PRODUCT_SPACEFREE}Install.exe"
     readonly local_OUT_FILE_VERSIONFREE
+    local local_EXECUTABLE="${AEROFS_PRODUCT_UNIX}.exe"
 
     # deploy NSIS scripts
     rsync --archive --compress --rsh kssh "${LOCAL_NSIS_DIR}/" $RELEASE_SERVER_LOGIN:"$RELEASE_NSIS_DIR"
@@ -229,7 +230,6 @@ function make_windows_installers() {
             rm -f "\${FILENAME}.bak"
         }
 
-
         # Create a temporary directory to work in
         NSIS_TEMP_DIR="\$( mktemp -d -t nsis.XXXXXXXX )"
         trap "rm -r \"\$NSIS_TEMP_DIR\"" EXIT
@@ -245,7 +245,8 @@ function make_windows_installers() {
         cp -r "${RELEASE_UNPACK_DIR}/aerofs.win"/* "\${NSIS_TEMP_DIR_WITH_VERSION}/"
 
         # Move the things that need to stay at the top-level folder
-        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "\${NSIS_TEMP_DIR}/"
+        # Also rename aerofs.exe to the appropriate name
+        mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofs.exe" "\${NSIS_TEMP_DIR}/$local_EXECUTABLE"
         mv "\${NSIS_TEMP_DIR_WITH_VERSION}/aerofsd.exe" "\${NSIS_TEMP_DIR}/"
         echo -n "${RELEASE_VERSION}" > "\${NSIS_TEMP_DIR}/version"
         mkdir "\${NSIS_TEMP_DIR}/icons"
@@ -253,14 +254,15 @@ function make_windows_installers() {
 
         chmod -R a+rx "\${NSIS_TEMP_DIR}"
 
-        sign_exe "\${NSIS_TEMP_DIR}/aerofs.exe"
+        sign_exe "\${NSIS_TEMP_DIR}/$local_EXECUTABLE"
         sign_exe "\${NSIS_TEMP_DIR}/aerofsd.exe"
 
         makensis -V1 -DAEROFS_IN_FOLDER="\${NSIS_TEMP_DIR}" \
                 -DAEROFS_OUT_FILE="$local_OUT_FILE" \
                 -DAEROFS_VERSION="$RELEASE_VERSION" \
                 -DAEROFS_PRODUCT="$AEROFS_PRODUCT" \
-                -DAEROFS_APPROOT_NAME="${AEROFS_PRODUCT_SPACEFREE}Exec" \
+                -DAEROFS_APPROOT="${AEROFS_PRODUCT_SPACEFREE}Exec" \
+                -DAEROFS_EXECUTABLE="$local_EXECUTABLE" \
                 "${RELEASE_NSIS_DIR}/setup.nsi"
 
         # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers

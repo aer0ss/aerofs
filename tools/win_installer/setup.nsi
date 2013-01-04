@@ -4,8 +4,9 @@
 # AEROFS_IN_FOLDER  - Path to the folder whose content is duplicated to the user's machine
 # AEROFS_OUT_FILE - The full path on the build server to output the generated installer
 # AEROFS_PRODUCT - The product name. e.g. "AeroFS Team Server"
-# AEROFS_APPROOT_NAME - The name of the APPROOT folder "AeroFSTeamServerExec"
-# AEROFS_VERSION    - The current version in the form <major>.<minor>.<build>
+# AEROFS_APPROOT - The name of the APPROOT folder "AeroFSTeamServerExec"
+# AEROFS_VERSION - The current version in the form <major>.<minor>.<build>
+# AEROFS_EXECUTABLE - The main executable name. e.g. "aerofsts.exe"
 #
 
 !AddPluginDir "Plugins"
@@ -70,7 +71,7 @@ VIAddVersionKey CompanyWebsite "${URL}"
 VIAddVersionKey FileVersion "${VERSION}"
 VIAddVersionKey FileDescription ""
 VIAddVersionKey LegalCopyright ""
-InstallDir $APPDATA\"${AEROFS_APPROOT_NAME}" # sets INSTDIR. We always installs to %APPDATA%.
+InstallDir $APPDATA\"${AEROFS_APPROOT}" # sets INSTDIR. We always installs to %APPDATA%.
 ShowUninstDetails hide
 
 Function requestAdminPrivileges
@@ -182,7 +183,7 @@ FunctionEnd
 Function install_unprivileged
 
     # Kill AeroFS
-    !insertmacro KillProcess "aerofs.exe" $USERNAME
+    !insertmacro KillProcess "${AEROFS_EXECUTABLE}" $USERNAME
     !insertmacro KillProcess "aerofsd.exe" $USERNAME
 
     # Unregister the Shell Extension
@@ -222,10 +223,10 @@ Function install_unprivileged
     # aerofs.ini obsolete after prod 0.4.130 due to move to our own launcher instead of eclipse.exe
     Delete /REBOOTOK "$INSTDIR\aerofs.ini"
 
-    # Allow overwritting aerofs.exe and aerofsd.exe even if they are still in use
+    # Allow overwritting the executables even if they are still in use
     # This should not be the case, but we never know, since they are not in the
     # per-version folder.
-    !insertmacro allowOverwritting "$INSTDIR\aerofs.exe"
+    !insertmacro allowOverwritting "$INSTDIR\${AEROFS_EXECUTABLE}"
     !insertmacro allowOverwritting "$INSTDIR\aerofsd.exe"
 
     # Copy files
@@ -238,11 +239,11 @@ Function install_unprivileged
     WriteUninstaller "$INSTDIR\uninstall.exe"
     SetOutPath "$SMPROGRAMS\$(^Name)"
     CreateShortcut "$SMPROGRAMS\$(^Name)\Uninstall $(^Name).lnk" $INSTDIR\uninstall.exe
-    CreateShortcut "$SMSTARTUP\$(^Name).lnk" $INSTDIR\aerofs.exe
-    CreateShortcut "$SMPROGRAMS\$(^Name)\$(^Name).lnk" $INSTDIR\aerofs.exe
+    CreateShortcut "$SMSTARTUP\$(^Name).lnk" $INSTDIR\${AEROFS_EXECUTABLE}
+    CreateShortcut "$SMPROGRAMS\$(^Name)\$(^Name).lnk" $INSTDIR\${AEROFS_EXECUTABLE}
 
     # Write uninstall registry keys
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "DisplayIcon" "$INSTDIR\aerofs.exe,0"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "DisplayIcon" "$INSTDIR\${AEROFS_EXECUTABLE},0"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "DisplayName" "$(^Name)"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "HelpLink" "${URL}"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" "InstallLocation" "$INSTDIR"
@@ -267,8 +268,8 @@ Function postInstall_privileged
         !insertmacro UAC_AsUser_GetGlobalVar $USERNAME
     ${EndIf}
 
-    # Allow aerofs.exe and aerofsd.exe to go through the Windows Firewall
-    SimpleFC::AddApplication "AeroFS" "$USERS_INSTDIR\aerofs.exe" 0 2 "" 1
+    # Allow the executables to go through the Windows Firewall
+    SimpleFC::AddApplication "AeroFS" "$USERS_INSTDIR\${AEROFS_EXECUTABLE}" 0 2 "" 1
     SimpleFC::AddApplication "AeroFS Daemon" "$USERS_INSTDIR\aerofsd.exe" 0 2 "" 1
 
     # Register the shell extension
@@ -298,7 +299,7 @@ FunctionEnd
 
 Function onInstSuccess_unprivileged
     # Launch AeroFS
-    Exec "$INSTDIR\aerofs.exe"
+    Exec "$INSTDIR\${AEROFS_EXECUTABLE}"
 FunctionEnd
 
 
@@ -347,7 +348,7 @@ Function un.uninstall_unprivileged
     # Quit AeroFS before uninstalling
     UserInfo::GetName
     Pop $0
-    !insertmacro KillProcess "aerofs.exe" $0
+    !insertmacro KillProcess "${AEROFS_EXECUTABLE}" $0
     !insertmacro KillProcess "aerofsd.exe" $0
 
     Delete /REBOOTOK "$SMPROGRAMS\$(^Name)\Uninstall $(^Name).lnk"

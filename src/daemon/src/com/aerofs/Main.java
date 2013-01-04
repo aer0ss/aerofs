@@ -32,36 +32,6 @@ public class Main {
     private static final Object FSCK_NAME = "fsck";
     private static final Object UMDC_NAME = "umdc";
 
-    // for windows. used by eclipse.exe
-    // args: <"gui" or invitation file> [-rtroot <rtroot>]
-    // must put <"gui" or invitation file> as the first arg.
-    public int run(String[] args)
-    {
-        String rtRoot = null;
-        String cmdarg = null;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-rtroot")) {
-                rtRoot = args[i + 1];
-            } else if (args[i].equals("-startup")) {
-                if (i + 2 < args.length && !args[i + 2].startsWith("-")) {
-                    cmdarg = args[i + 2];
-                }
-            }
-        }
-
-        if (rtRoot == null) rtRoot = C.DEFAULT_RTROOT;
-
-        String invite = null;
-        if (cmdarg != null && !cmdarg.equals(C.GUI_NAME)) {
-            invite = cmdarg;
-        }
-
-        if (invite == null) mainImpl(rtRoot, C.GUI_NAME);
-        else mainImpl(rtRoot, C.GUI_NAME, invite);
-
-        return 0;
-    }
-
     // arguments: <rtroot> <app> [appargs ...]
     public static void main(String[] args)
     {

@@ -71,7 +71,7 @@ bool launcher_get_approot(_TCHAR* approot, size_t approot_len, _TCHAR** perrmsg)
     s_approot = s_approot.substr(0, s_approot.rfind(DIRECTORY_SEPARATOR));
 
     // On Windows, we now install AeroFS in a different subfolder for each version
-    // Only aerofs.exe, version and aerofsd.exe stay at the top-level folder
+    // Only executables and the version file stay at the top-level folder
     // So in order to find the approot, we have to read the current version folder from version
 
 #ifdef _WIN32
