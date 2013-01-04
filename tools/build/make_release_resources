@@ -239,10 +239,11 @@ function obfuscate_java() {
     local local_PG_RELEASE_DIR=`echo $LOCAL_RELEASE_DIR | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
     local local_PG_HOME=`echo $PROGUARD_HOME | sed -e 's|/cygdrive/\([a-zA-Z]\)/|\1:/|'`
 
+     # TODO: (WW) Verify these packages are valid before removing
     "${PROGUARD_HOME}/bin/proguard.sh" -injars "${local_PG_AEROFS_DIR}/aerofs.unobf.jar" -outjars "${local_PG_AEROFS_DIR}/aerofs.jar" \
         -printmapping "${local_PG_RELEASE_DIR}/aerofs.map" \
         -repackageclasses "com.aerofs" \
-        -dontwarn 'com.aerofs.sak.**' \
+        -dontwarn 'com.aerofs.tools.**' \
         -dontnote 'com.aerofs.l.*' \
         @"${local_PG_HOME}/aerofs.pro"
 
