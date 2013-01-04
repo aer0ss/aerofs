@@ -263,8 +263,6 @@ function make_windows_installers() {
                 -DAEROFS_APPROOT_NAME="${AEROFS_PRODUCT_SPACEFREE}Exec" \
                 "${RELEASE_NSIS_DIR}/setup.nsi"
 
-
-
         # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus

@@ -70,7 +70,7 @@ VIAddVersionKey CompanyWebsite "${URL}"
 VIAddVersionKey FileVersion "${VERSION}"
 VIAddVersionKey FileDescription ""
 VIAddVersionKey LegalCopyright ""
-InstallDir $APPDATA\"${AEROFS_INSTALL_FOLDER}" # sets INSTDIR. We always installs to %APPDATA%.
+InstallDir $APPDATA\"${AEROFS_APPROOT_NAME}" # sets INSTDIR. We always installs to %APPDATA%.
 ShowUninstDetails hide
 
 Function requestAdminPrivileges
