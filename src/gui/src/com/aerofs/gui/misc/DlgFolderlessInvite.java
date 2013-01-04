@@ -211,7 +211,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         List<String> userIdStrings = Lists.newArrayListWithCapacity(_userIDs.size());
         for (UserID userId : _userIDs) userIdStrings.add(userId.toString());
 
-        sp.inviteUser(userIdStrings);
+        sp.inviteToSignUp(userIdStrings);
         SVClient.sendEventAsync(Sv.PBSVEvent.Type.FOLDERLESS_INVITE_SENT, Integer.toString(
                 _userIDs.size()));
     }
