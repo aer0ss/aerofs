@@ -8,7 +8,6 @@ import java.util.HashSet;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
@@ -23,7 +22,7 @@ public class OSUtilWindows implements IOSUtil
     {
         // use space-free name to be consistent with the AppRoot name.
         String name = L.get().productSpaceFreeName();
-        if (Cfg.staging()) name += ".staging";
+        if (L.get().isStaging()) name += ".staging";
 
         String path = System.getenv("APPDATA");
         return (path == null ? "C:" : path) + "\\" + name;

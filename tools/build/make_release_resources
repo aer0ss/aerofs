@@ -111,9 +111,6 @@ function copy_resources_to_local_release_directories() {
     elif [ "$MODE" == "STAGING" ]; then
         rm "${AEROFS_RELEASE_DIR}/cacert-prod.pem"
         mv "${AEROFS_RELEASE_DIR}/cacert-staging.pem" "${AEROFS_RELEASE_DIR}/cacert.pem"
-
-        # Create the stg file
-        touch "${AEROFS_RELEASE_DIR}/stg"
     else
         echo "error: invalid mode: $MODE" >&2
         exit 1

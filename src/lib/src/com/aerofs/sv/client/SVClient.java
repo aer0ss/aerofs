@@ -1,5 +1,6 @@
 package com.aerofs.sv.client;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
@@ -219,7 +220,7 @@ public final class SVClient
 
     public static void sendEventSync(PBSVEvent.Type type, @Nullable String desc)
     {
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
             l.debug("sv event sending disabled on staging");
             return;
         }
@@ -394,7 +395,7 @@ public final class SVClient
         // basic defect info
         //
 
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
             l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(cause));
             l.warn("(sv defect sending disabled on staging.)");
             return;

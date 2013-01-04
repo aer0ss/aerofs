@@ -4,10 +4,10 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
@@ -65,7 +65,7 @@ class SignupHelper
             _sp.signUpWithTargeted(signUpCode, bscrypted, fullName._first, fullName._last);
             break;
         default:
-            if (signUpCode.isEmpty() && Cfg.staging()) {
+            if (signUpCode.isEmpty() && L.get().isStaging()) {
                 // special path for syncdet and other headless installs
                 _sp.signUp(userId.toString(), bscrypted, fullName._first, fullName._last);
                 break;

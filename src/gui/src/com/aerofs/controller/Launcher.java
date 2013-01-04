@@ -134,7 +134,7 @@ class Launcher
 
         // On OSX, check that AeroFS is launched from the Applications folder
         if (OSUtil.isOSX()
-                && !Cfg.staging()
+                && !L.get().isStaging()
                 && !new File(AppRoot.abs()).getAbsolutePath().startsWith("/Applications/")
                 && !new File(_rtRoot, C.NO_OSX_APP_FOLDER_CHECK).exists()) {
             throw new ExAborted("Please copy the " + L.PRODUCT +

@@ -12,13 +12,25 @@
 
 readonly INPUT_PACKAGE="com.aerofs.labeling.excluded"
 
-if [[ $# -ne 2 ]]; then
-    echo "usage: $0 [labeling class] [src path]" >&2
+if [[ $# -ne 3 ]]; then
+    echo "usage: $0 [labeling class] [src path] [mode]" >&2
     echo " " >&2
     echo "[labeling class]: an arbitrary class in ${INPUT_PACKAGE}" >&2
+    echo "[mode]: STAGING or PROD" >&2
     echo " " >&2
-    echo "example: $0 AeroFSMultiuserLabeling ~/repos/aerofs/src" >&2
+    echo "example: $0 AeroFSMultiuserLabeling ~/repos/aerofs/src PROD" >&2
     exit -1 # $ERRBADARGS
+fi
+
+readonly MODE="${3:-}"
+
+if [ "$MODE" == "PROD" ]; then
+	readonly IS_STAGING="false"
+elif [ "$MODE" == "STAGING" ]; then
+	readonly IS_STAGING="true"
+else
+    echo "error: invalid mode: $MODE" >&2
+    exit 1
 fi
 
 readonly INPUT_CLASS="$1"
@@ -26,7 +38,7 @@ readonly SRC_PATH="$2"
 readonly INPUT_PATH="${SRC_PATH}/lib/src/${INPUT_PACKAGE//.//}"
 
 readonly OUTPUT_PACKAGE="com.aerofs.labeling"
-readonly OUTPUT_CLASS="GeneratedLabeling"
+readonly OUTPUT_CLASS="AbstractGeneratedLabeling"
 readonly OUTPUT_PATH="${SRC_PATH}/lib/gen/${OUTPUT_PACKAGE//.//}"
 
 echo "labeling: ${INPUT_CLASS}"
@@ -37,3 +49,18 @@ sed \
     -e "s/package ${INPUT_PACKAGE};/package ${OUTPUT_PACKAGE};/" \
     -e "s/${INPUT_CLASS}/${OUTPUT_CLASS}/" \
     "${INPUT_PATH}/${INPUT_CLASS}.java" > "${OUTPUT_PATH}/${OUTPUT_CLASS}.java"
+
+# Generate the non-abstract labeling class (either staging or prod)
+
+cat > "${OUTPUT_PATH}/GeneratedLabeling.java" <<EOD
+package com.aerofs.labeling;
+
+public class GeneratedLabeling extends ${OUTPUT_CLASS}
+{
+    @Override
+    public boolean isStaging()
+    {
+        return ${IS_STAGING};
+    }
+}
+EOD

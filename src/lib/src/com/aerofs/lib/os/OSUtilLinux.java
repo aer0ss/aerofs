@@ -15,7 +15,6 @@ import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -33,7 +32,7 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
     public final String getDefaultRTRoot()
     {
         String name;
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
                 name = L.get().productUnixName() + ".staging";
         } else {
                 name = L.get().productUnixName();

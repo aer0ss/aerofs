@@ -149,7 +149,7 @@ public class UIUtil
     private static String getUserFriendlyID(PBSOCID pbsocid)
     {
         ByteString oid = pbsocid.getOid();
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
             // for internal use we want the first 3 oid bytes (like git)
             return String.format("%1$02X%2$X", oid.byteAt(0), oid.byteAt(1) & 0xF);
         } else {

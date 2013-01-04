@@ -1,7 +1,6 @@
 package com.aerofs.lib;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.cfg.Cfg;
 
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -76,7 +75,7 @@ public class Param
             if (address == null) {
                 String host;
                 int port;
-                if (Cfg.staging()) {
+                if (L.get().isStaging()) {
                     host = "staging.aerofs.com";
                     port = 8888;
                 } else {
@@ -105,8 +104,8 @@ public class Param
     {
         public static final String
             DOWNLOAD_LINK = "https://" + L.get().webHost() + "/download",
-            DOWNLOAD_BASE = "https://cache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com",
-            NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (Cfg.staging() ? "stg." : "") + "aerofs.com",
+            DOWNLOAD_BASE = "https://cache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
+            NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
             SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
 
         public static final long CONNECT_TIMEOUT = 1 * C.MIN;
@@ -135,8 +134,8 @@ public class Param
 
     public static class Verkehr
     {
-        public static final String VERKEHR_HOST = Cfg.staging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
-        public static final short VERKEHR_PORT = (short) (Cfg.staging() ? 80 : 443);
+        public static final String VERKEHR_HOST = L.get().isStaging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
+        public static final short VERKEHR_PORT = (short) (L.get().isStaging() ? 80 : 443);
         public static final long VERKEHR_RETRY_INTERVAL = 5 * C.SEC;
     }
 
@@ -147,7 +146,7 @@ public class Param
         static {
             URL url;
             try {
-                url = new URL(Cfg.staging() ?
+                url = new URL(L.get().isStaging() ?
                         "https://sss-staging.aerofs.com/syncstat" :
                         "https://" + L.get().ssHost() + "/syncstat");
             } catch (MalformedURLException e) {

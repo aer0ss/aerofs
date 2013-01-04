@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import java.lang.reflect.Field;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
@@ -97,7 +98,7 @@ public class Main {
         try {
             launchProgram(rtRoot, prog, appArgs);
         } catch (Throwable e) {
-            if (Cfg.staging()) {
+            if (L.get().isStaging()) {
                 if (e instanceof CreationException) {
                     CreationException ce = (CreationException)e;
                     for (Message m : ce.getErrorMessages()) {

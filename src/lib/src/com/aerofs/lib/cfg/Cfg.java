@@ -1,6 +1,7 @@
 package com.aerofs.lib.cfg;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
@@ -57,7 +58,6 @@ public class Cfg
     private static boolean _inited;
     private static int _portbase;
 
-    private static final boolean _staging;
     private static final long _profilerStartingThreshold;
     private static final CfgDatabase _db = new CfgDatabase();
 
@@ -65,8 +65,6 @@ public class Cfg
     private static long _timeout = _db.getLong(Key.TIMEOUT);
 
     static {
-        _staging = new File(Util.join(AppRoot.abs(), C.STAGING)) .exists();
-
         long pst;
         try {
             Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), C.PROFILER)));
@@ -276,11 +274,6 @@ public class Cfg
         return new File(Util.join(rtRoot, C.LOL)).exists();
     }
 
-    public static boolean staging()
-    {
-        return _staging;
-    }
-
     public static boolean useProfiler()
     {
         return _profilerStartingThreshold != 0;
@@ -301,7 +294,7 @@ public class Cfg
 
     public static boolean useArchive()
     {
-        return !isSP() && !staging();
+        return !isSP() && !L.get().isStaging();
     }
 
     /**

@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil.FileName;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Category;
@@ -91,7 +92,7 @@ public abstract class Util
         System.setProperty(PROP_RTROOT, rtRoot);
         System.setProperty(PROP_APP, app);
 
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             URL url = cl.getResource(LOG4J_PROPERTIES_FILE);
             if (url != null) {
@@ -104,12 +105,12 @@ public abstract class Util
             Logger.getRootLogger().addAppender(new NullAppender());
         } else {
             setupLog4JLayoutAndAppenders(rtRoot + File.separator + app + C.LOG_FILE_EXT,
-                    Cfg.staging(), true);
+                    L.get().isStaging(), true);
         }
 
         String strDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
         l.debug(app + " ========================================================\n" +
-            Cfg.ver() + (Cfg.staging() ? " staging " : " ") +
+            Cfg.ver() + (L.get().isStaging() ? " staging " : " ") +
             strDate + " " + AppRoot.abs() + " " + new File(rtRoot).getAbsolutePath());
 
         if (Cfg.useProfiler()) {

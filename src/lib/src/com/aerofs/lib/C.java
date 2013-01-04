@@ -22,7 +22,6 @@ public class C
     public static final String LOL                     = "lol";
     public static final String VERSION                 = "version";
     public static final String DEFAULT_RTROOT          = "DEFAULT";
-    public static final String STAGING                 = "stg";
     public static final String DEVICE_CERT             = "cert";
     public static final String DEVICE_KEY              = "key";
     public static final String CA_CERT                 = "cacert.pem";

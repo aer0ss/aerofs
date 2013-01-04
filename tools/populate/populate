@@ -9,8 +9,8 @@ if [ x"$1" == x ]; then
     echo "usage: $0 <approot> <resource> <mode=STAGING> <multiplicity=CLIENT> <os>" >&2
     echo "    <approot>  The approot folder path which doesn't need to pre-exist." >&2
     echo "    <resource> The resource/client folder path which must exist." >&2
-    echo "    <mode>     (optional) specifies which cacert.pem file to use and whether or not" >&2
-    echo "               APPROOT/stg should be created. Can be STAGING or CI. Defaults to STAGING." >&2
+    echo "    <mode>     (optional) specifies which cacert.pem file to use." >&2
+    echo "               Can be STAGING or CI. Defaults to STAGING." >&2
     echo "    <multiplicity> (optional) whether or not to populate as a Team Server." >&2
     echo "               Can be TEAM_SERVER or CLIENT. Defaults to CLIENT." >&2
     echo "    <os>       (optional) The OS to populate for. Can be osx, win, linux32 or" >&2
@@ -41,7 +41,6 @@ if [ "$MODE" == "CI" ]; then
     mv "$APPROOT"/cacert-ci.pem "$APPROOT"/cacert.pem
 else
     # Set-up a staging environment
-    touch "$APPROOT"/stg
     rm "$APPROOT"/cacert-ci.pem
     mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
 fi

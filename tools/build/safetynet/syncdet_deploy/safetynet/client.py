@@ -99,10 +99,7 @@ class _PackagedAeroFSClient(object):
 
     def current_version_url(self):
         """Return the URL where the current AeroFS release version number is located."""
-        if os.path.exists(os.path.join(app.app_root_path(), "stg")):
-            return "https://nocache.client.stg.aerofs.com/current.ver"
-        else:
-            return "https://nocache.client.aerofs.com/current.ver"
+        return "https://nocache.client.aerofs.com/current.ver"
 
 class _NixClient(_PackagedAeroFSClient):
     def _kill(self, pids):

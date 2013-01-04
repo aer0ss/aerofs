@@ -1,10 +1,8 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.labeling;
-
-import com.aerofs.lib.cfg.Cfg;
 
 /**
  * The default labeling class for concrete labeling classes to inherit. The default labeling
@@ -43,13 +41,13 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     @Override
     public String xmppServerAddr()
     {
-        return Cfg.staging() ? "staging.aerofs.com" : "x.aerofs.com";
+        return isStaging() ? "staging.aerofs.com" : "x.aerofs.com";
     }
 
     @Override
     public int xmppServerPort()
     {
-        return Cfg.staging() ? 9328 : 443;
+        return isStaging() ? 9328 : 443;
     }
 
     @Override
@@ -61,13 +59,13 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     @Override
     public int jingleRelayPort()
     {
-        return Cfg.staging() ? 7583 : 80;
+        return isStaging() ? 7583 : 80;
     }
 
     @Override
     public String spUrl()
     {
-        return "https://" + (Cfg.staging() ? "staging.aerofs.com/sp" : "sp.aerofs.com");
+        return "https://" + (isStaging() ? "staging.aerofs.com/sp" : "sp.aerofs.com");
     }
 
     @Override
@@ -85,13 +83,13 @@ public abstract class AbstractDefaultLabeling implements ILabeling
     @Override
     public String mcastAddr()
     {
-        return Cfg.staging() ? "225.7.8.8" : "225.7.8.9";
+        return isStaging() ? "225.7.8.8" : "225.7.8.9";
     }
 
     @Override
     public int mcastPort()
     {
-        return Cfg.staging() ? 29870 : 29871;
+        return isStaging() ? 29870 : 29871;
     }
 
     @Override

@@ -5,7 +5,6 @@
 package com.aerofs.sv.server;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sv.common.EmailCategory;
 import org.apache.log4j.Logger;
 
@@ -85,7 +84,7 @@ class EmailSender
 
         msg.setFrom(new InternetAddress(from, fromName));
         msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to, false));
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
             msg.setSubject("[STAGING] " + subject, CHARSET);
         } else {
             msg.setSubject(subject, CHARSET);

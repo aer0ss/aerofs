@@ -72,7 +72,7 @@ class Setup
      */
     String getDefaultAnchorRoot()
     {
-        String parent = Cfg.staging() ? _rtRoot : OSUtil.get().getDefaultRootAnchorParent();
+        String parent = L.get().isStaging() ? _rtRoot : OSUtil.get().getDefaultRootAnchorParent();
         return new File(parent, L.get().rootAnchorName()).getAbsolutePath();
     }
 

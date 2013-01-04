@@ -11,7 +11,6 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.ui.UI;
@@ -247,7 +246,7 @@ public class DlgSetupCommon
 
     public String getTitle()
     {
-        return "Setup " + L.PRODUCT + " (beta) " + (Cfg.staging() ? "staging" : "");
+        return "Setup " + L.PRODUCT + " (beta) " + (L.get().isStaging() ? "staging" : "");
     }
 
     public void createUserIDInputLabelAndText(Composite container)

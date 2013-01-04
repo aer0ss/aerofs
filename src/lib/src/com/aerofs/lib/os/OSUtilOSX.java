@@ -12,7 +12,6 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.swig.driver.Driver;
 import com.aerofs.swig.driver.DriverConstants;
@@ -30,7 +29,7 @@ public class OSUtilOSX extends AbstractOSUtilLinuxOSX
     public final String getDefaultRTRoot()
     {
         String path = System.getenv("HOME") + "/Library/Application Support/" + L.PRODUCT;
-        if (Cfg.staging()) path += ".staging";
+        if (L.get().isStaging()) path += ".staging";
         return path;
     }
 

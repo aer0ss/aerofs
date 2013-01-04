@@ -10,6 +10,7 @@ import com.aerofs.gui.password.DlgPasswordChange;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -170,7 +171,7 @@ public class SingleuserCompPreferences extends Composite
         });
 
         Button btnChangePassword;
-        if (Cfg.staging()) {
+        if (L.get().isStaging()) {
             btnChangePassword = new Button(composite, SWT.NONE);
             btnChangePassword.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
             btnChangePassword.setText("Change Password...");

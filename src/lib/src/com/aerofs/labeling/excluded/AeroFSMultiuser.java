@@ -9,7 +9,7 @@ import com.aerofs.labeling.AbstractDefaultLabeling;
 /**
  * the labeling for regular (i.e. non-team-server) AeroFS clients
  */
-public class AeroFSMultiuser extends AbstractDefaultLabeling
+public abstract class AeroFSMultiuser extends AbstractDefaultLabeling
 {
     @Override
     public boolean isMultiuser()

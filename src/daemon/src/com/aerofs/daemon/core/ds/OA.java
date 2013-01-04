@@ -3,8 +3,8 @@ package com.aerofs.daemon.core.ds;
 import java.util.SortedMap;
 
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.KIndex;
@@ -106,7 +106,7 @@ public class OA
     @Override
     public String toString()
     {
-        return "s " + _soid + " p " + _parent + " n " + (Cfg.staging() ? _name : Util.crc32(_name))
+        return "s " + _soid + " p " + _parent + " n " + (L.get().isStaging() ? _name : Util.crc32(_name))
                 + " f " + String.format("%08X", _flags) + " fid " + _fid + " cas " + _cas;
     }
 

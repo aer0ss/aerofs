@@ -122,7 +122,7 @@ public class ShProgram implements IProgram, ICallback
         }
 
         // restricted
-        if (Cfg.staging() || Cfg.isSP()) {
+        if (L.get().isStaging() || Cfg.isSP()) {
             _s.addCommand_(new CmdDstat());
             _s.addCommand_(new CmdTestMultiuserJoinRootStore());
         }
