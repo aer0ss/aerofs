@@ -268,6 +268,9 @@ function make_windows_installers() {
                 -DAEROFS_EXECUTABLE="$local_EXECUTABLE" \
                 "${RELEASE_NSIS_DIR}/setup.nsi"
 
+        sign_exe "$local_OUT_FILE"
+        cp -r "$local_OUT_FILE" "$local_OUT_FILE_VERSIONFREE"
+
         # Kaspersky requires us to upload the entire unpacked contents of aerofs into their servers
         # we also upload the install file for whitelisting, as some versions of the antivirus flag the
         # installer as a potential virus
