@@ -144,7 +144,7 @@ function copy_java_class_files() {
         rm -rf "${local_BIN}/com/aerofs/tools"
     fi
 
-    # Remove unused labelling classes. See comments in the L class
+    # Remove unused labeling classes. See comments in the L class
     # We first make sure we are removing the correct package.
     local local_LABELING_EXCLUDED="${local_BIN}/com/aerofs/labeling/excluded"
     if [ ! -f "${local_LABELING_EXCLUDED}/AeroFSSingleuser.class" ]; then

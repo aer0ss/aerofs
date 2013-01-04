@@ -35,11 +35,11 @@ fi
 
 readonly INPUT_CLASS="$1"
 readonly SRC_PATH="$2"
-readonly INPUT_PATH="${SRC_PATH}/lib/src/${INPUT_PACKAGE//.//}"
+readonly INPUT_PATH="${SRC_PATH}/base/src/${INPUT_PACKAGE//.//}"
 
 readonly OUTPUT_PACKAGE="com.aerofs.labeling"
 readonly OUTPUT_CLASS="AbstractGeneratedLabeling"
-readonly OUTPUT_PATH="${SRC_PATH}/lib/gen/${OUTPUT_PACKAGE//.//}"
+readonly OUTPUT_PATH="${SRC_PATH}/base/gen/${OUTPUT_PACKAGE//.//}"
 
 echo "labeling: ${INPUT_CLASS}"
 
