@@ -47,4 +47,4 @@ fi
 
 rm -rf "$TMPDIR"
 
-nohup "$APPDIR/Contents/MacOS/AeroFSClient" 2>/dev/null >/dev/null &
+nohup "$APPDIR/Contents/MacOS/[AEROFS_PRODUCT_SPACEFREE]Client" 2>/dev/null >/dev/null &
