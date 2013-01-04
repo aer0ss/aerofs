@@ -1,30 +1,35 @@
 #!/bin/bash
 
-PROG=`basename $0 | cut -c 8-`
+# the cut line we use specifies the starting character to the end
+# this is equal to the length of the product name plus the dash plus one
+# We create a string with the product name plus a dash plus a space and use
+# its length in the cut command
+PRODUCT="[AEROFS_PRODUCT_UNIX]- "
+PROG=`basename $0 | cut -c ${#PRODUCT}-`
 if [ x"$PROG" == x ]; then
     PROG=gui
 fi
 
 if [ $PROG == gui ]; then
     if [ x"$DISPLAY" == x ]; then
-        echo Please use aerofs-cli when running without a graphical environment.
+        echo Please use [AEROFS_PRODUCT_UNIX]-cli when running without a graphical environment.
         exit 1
     fi
 fi
 
 if [ x"$(file -L /bin/ls | grep 64 )" != x ]; then
     ARCH=64
-    PACKAGE_FILENAME=aerofs-x86_64.tgz
+    PACKAGE_FILENAME=[AEROFS_PRODUCT_UNIX]-x86_64.tgz
     JRE_LIB_ARCH=amd64
 else
     ARCH=32
-    PACKAGE_FILENAME=aerofs-x86.tgz
+    PACKAGE_FILENAME=[AEROFS_PRODUCT_UNIX]-x86.tgz
     JRE_LIB_ARCH=i386
 fi
 
-URL=https://cache.clientDOT_STAGING__TO_BE_REPLACED_BY_SED.aerofs.com/$PACKAGE_FILENAME
+URL=https://cache.client[DOT_STAGING].aerofs.com/$PACKAGE_FILENAME
 
-DIST="$HOME/.aerofs-binDOT_STAGING__TO_BE_REPLACED_BY_SED"
+DIST="$HOME/.[AEROFS_PRODUCT_UNIX]-bin[DOT_STAGING]"
 
 if [ ! -f "$DIST/aerofs.jar" ]; then
     which ps > /dev/null
@@ -52,7 +57,7 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
     uudecode -o /dev/stdout $0 | tar xzf - -C $TMP_DIR 2>/dev/null
 
     if [ $PROG == gui ]; then
-        echo "Launching graphical interface... (use aerofs-cli for command-line interface)"
+        echo "Launching graphical interface... (use [AEROFS_PRODUCT_UNIX]-cli for command-line interface)"
     fi
 
     TARGET="$TMP_DIR/target"
@@ -74,8 +79,8 @@ if [ ! -f "$DIST/aerofs.jar" ]; then
 
     # setup auto-start
     mkdir -p "$HOME/.config/autostart/"
-    rm -f "$HOME/.config/autostart/aerofs.desktop"
-    ln -s "$DIST/aerofs.desktop" "$HOME/.config/autostart/"
+    rm -f "$HOME/.config/autostart/[AEROFS_PRODUCT_UNIX].desktop"
+    ln -s "$DIST/[AEROFS_PRODUCT_UNIX].desktop" "$HOME/.config/autostart/"
 else
     # Sanity check - ensure that aerofs libs match 32/64 bitness with userspace
     if [ x"$( file -L "$DIST/aerofsd" | grep 64 )" != x ]; then
@@ -108,7 +113,7 @@ JRE_LIB="$JRE_BASE/lib/$JRE_LIB_ARCH"
 export LD_LIBRARY_PATH="$DIST:$JRE_LIB:$JRE_LIB/server:$LD_LIBRARY_PATH"
 
 if [ $PROG == gui ]; then
-    echo "Launching graphical interface in the background... (use aerofs-cli for command-line interface)"
+    echo "Launching graphical interface in the background... (use [AEROFS_PRODUCT_UNIX]-cli for command-line interface)"
     nohup java -Xmx64m -jar "$DIST/aerofs.jar" DEFAULT gui 2>/dev/null >/dev/null &
 else
     java -Xmx64m -jar "$DIST/aerofs.jar" DEFAULT $PROG "$@"

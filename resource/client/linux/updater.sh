@@ -18,11 +18,15 @@ if [ x"$APP_ROOT" == x ]; then
   exit 1
 fi
 
-while ps -e -o pid,user,command | grep $USERNAME | grep aerofs.jar | grep -v grep > /dev/null; do
-  GET_PID=$(ps -e -o pid,user,command | grep aerofs.jar | grep -v grep | awk '{ print $1 }')
+# Kill the UI
+# We need to grep for the product name in order to avoid killing other aerofs products
+while ps -e -o pid,user,command | grep $USERNAME | grep aerofs.jar | grep [AEROFS_PRODUCT_UNIX]\\-bin | grep -v grep > /dev/null; do
+  GET_PID=$(ps -e -o pid,user,command | grep aerofs.jar | grep [AEROFS_PRODUCT_UNIX]\\-bin | grep -v grep | awk '{ print $1 }')
   kill -9 $GET_PID
 done
 
+# Kill the Daemon
+# We can kill all daemons (even daemons belonging to other products) because they will be restarted by the UI
 while ps -e -o pid,user,command | grep $USERNAME | grep aerofsd | grep -v grep > /dev/null; do
   GET_PID=$(ps -e -o pid,user,command | grep aerofsd | grep -v grep | awk '{ print $1 }')
   kill -9 $GET_PID
@@ -30,7 +34,7 @@ done
 
 # Unzip the update
 
-TMPDIR="/tmp/aerofs-$UPDATE_VER-$USERNAME"
+TMPDIR="/tmp/[AEROFS_PRODUCT_UNIX]-$UPDATE_VER-$USERNAME"
 
 rm -rf "$TMPDIR"
 mkdir "$TMPDIR"
@@ -46,7 +50,7 @@ else
   mv "$TMPDIR"/aerofs "$APP_ROOT"
   if [ $? -ne 0 ]; then
     # Failed to place new root.  Maybe the disk was full, or some other
-    # catastrophic failure took place.  AeroFS will attempt to redownload on the
+    # catastrophic failure took place. AeroFS will attempt to redownload on the
     # next user-started launch.
     rm -rf "$APP_ROOT"
     exit 1
@@ -56,13 +60,11 @@ fi
 
 rm -rf "$TMPDIR"
 
-# run aerofs
 if [ $GUI == "1" ]; then
   # the output redirections are needed so that the process won't terminate if
-  # the child process (aerofs-gui) outputs anything to stdout/stderr.
-  # We launch from $APP_ROOT because aerofs-cli and aerofs-gui may not be on
-  # the user's $PATH
-  "$APP_ROOT/aerofs-gui" >/dev/null 2>&1
+  # the child process (gui) outputs anything to stdout/stderr. We launch from
+  # $APP_ROOT because the cli and gui may not be on the user's $PATH.
+  "$APP_ROOT/[AEROFS_PRODUCT_UNIX]-gui" >/dev/null 2>&1
 else
-  nohup "$APP_ROOT/aerofs-cli" >/dev/null 2>&1 &
+  nohup "$APP_ROOT/[AEROFS_PRODUCT_UNIX]-cli" >/dev/null 2>&1 &
 fi

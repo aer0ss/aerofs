@@ -98,8 +98,11 @@ function make_linux_installer_deb_on_release_server() {
     echo ">> make arch independent installer deb on release server"
 
     # FIXME (AG): I don't want to have to kscp make_deb to the remote machine
-    kscp "${BUILD_SCRIPT_DIR}/make_deb" $RELEASE_SERVER_LOGIN:~/
+    kscp "${BUILD_SCRIPT_DIR}"/make_deb $RELEASE_SERVER_LOGIN:~/
     kssh $RELEASE_SERVER_LOGIN $RELEASE_SERVER_SHELL << ENDCMDS
+        sed -i"" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" ~/make_deb
+        sed -i"" -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" ~/make_deb
+        sed -i"" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" ~/make_deb
         chmod a+x ~/make_deb
         ~/make_deb $MODE $RELEASE_VERSION "$RELEASE_UNPACK_DIR" "${INSTALLERS_DOWNLOAD_DIR}/${RELEASE_VERSION}/${AEROFS_PRODUCT_UNIX}-installer.deb"
 ENDCMDS

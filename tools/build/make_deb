@@ -12,7 +12,7 @@ if [[ x"$1" == x || x"$2" == x || x"$3" == x || x"$4" == x ]]; then
     echo
     echo "IMPORTANT: this script is meant to be run on a remote server!!!!"
     echo
-    echo "example: $0 STAGING 0.4.65 ~/aerofs.release /data/staging-downloads/aerofs-installer.deb"
+    echo "example: $0 STAGING 0.4.65 ~/aerofs.release /data/staging-downloads/[AEROFS_PRODUCT_UNIX]-installer.deb"
     exit
 fi
 
@@ -76,7 +76,7 @@ mkdir -p debian/usr/bin/
 
 # Bump max inotify watches to something absurdly huge.
 mkdir -p debian/etc/sysctl.d/
-cat << EOF >> debian/etc/sysctl.d/30-aerofs-increase-inotify-limit.conf
+cat << EOF >> debian/etc/sysctl.d/30-[AEROFS_PRODUCT_UNIX]-increase-inotify-limit.conf
 # Increase the maximum number of inotify watches allowed per user from the
 # default value of 8192.
 # AeroFS needs to create a watch for every folder under your AeroFS folder.
@@ -95,15 +95,18 @@ mkdir -p $HICOLOR_DIR/16x16/apps
 mkdir -p $HICOLOR_DIR/32x32/apps
 mkdir -p $HICOLOR_DIR/64x64/apps
 
-cp $SERVER_RELEASE_DIR/aerofs.linux.inst/aerofs debian/usr/bin/aerofs
-chmod a+x debian/usr/bin/aerofs
-ln -s aerofs debian/usr/bin/aerofs-sh
-ln -s aerofs debian/usr/bin/aerofs-cli
-ln -s aerofs debian/usr/bin/aerofs-gui
-cp $SERVER_RELEASE_DIR/aerofs.linux/aerofs.desktop debian/usr/share/applications
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/aerofs.png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/aerofs.png
-cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/aerofs.png
+cp -R $SERVER_RELEASE_DIR/aerofs.linux.inst/[AEROFS_PRODUCT_UNIX]* debian/usr/bin/
+chmod a+x debian/usr/bin/[AEROFS_PRODUCT_UNIX]
+
+cp $SERVER_RELEASE_DIR/aerofs.linux/aerofs.desktop debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
+
+# This is getting a little ridiculous and hard to follow. Improve this (PH).
+sed -i"" -e 's/\[AEROFS_PRODUCT_UNIX\]/[AEROFS_PRODUCT_UNIX]/' debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
+sed -i"" -e 's/\[AEROFS_PRODUCT\]/[AEROFS_PRODUCT]/' debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
+
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/[AEROFS_PRODUCT_UNIX].png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/[AEROFS_PRODUCT_UNIX].png
+cp $SERVER_RELEASE_DIR/aerofs/icons/logo64.png $HICOLOR_DIR/64x64/apps/[AEROFS_PRODUCT_UNIX].png
 
 #################################
 # generate the control file
@@ -133,7 +136,7 @@ EOF
 # We pre-remove the files and links from both locations.
 cat << EOF >> $DEBIAN_CONTROL_DIR/preinst
 #!/bin/bash
-rm -rf /usr{,/local}/bin/aerofs{,-sh,-cli,-gui}
+rm -rf /usr{,/local}/bin/[AEROFS_PRODUCT_UNIX]{,-sh,-cli,-gui}
 EOF
 
 cat << EOF >> $DEBIAN_CONTROL_DIR/postinst
