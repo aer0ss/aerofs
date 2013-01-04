@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param.SP;
@@ -123,21 +124,21 @@ public class InvitationEmailer
 
         public InvitationEmailer createFolderInvitationEmailer(@Nonnull final String from,
                 final String to, final String fromPerson, @Nullable final String folderName,
-                @Nullable final String note, final String shareFolderCode)
+                @Nullable final String note, final SID sid)
                 throws IOException
         {
             final String subject = "Join my " + L.PRODUCT + " folder";
 
             final Email email = new Email(subject, false, null);
 
-            String url = SPParam.getWebDownloadLink(shareFolderCode);
+            String url = SPParam.getWebDownloadLink(sid.toStringFormal());
+            // TODO: add link to "pending invitations" page
 
             String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
             String body = "\n" + nameAndEmail + " has invited you to a shared " + L.PRODUCT
                     + " folder" + (note != null ? (":\n\n" + note) : ".") + "\n\n"
                     + "In the " + L.PRODUCT + " tray menu, click on \"Accept Invitation...\" and "
-                    + "enter the following code to accept the folder:\n\n"
-                    + shareFolderCode + "\n\n"
+                    + "select the folder named \"" + folderName + "\" to accept.\n\n"
                     + "You can download " + L.PRODUCT + " at " + url + ".";
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
@@ -164,7 +165,7 @@ public class InvitationEmailer
                     );
 
                     EmailUtil.emailSPNotification(from + " shared " + folderName + " with " + to,
-                            "code " + shareFolderCode);
+                            "code " + sid.toStringFormal());
 
                     return null;
                 }

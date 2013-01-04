@@ -79,7 +79,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void addACL_shouldDoNothingIfSubjectExists()
+    public void addACL_shouldThrowExAlreadyExistsIfSubjectExists()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
@@ -89,10 +89,18 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         sf.addACL(user, Role.EDITOR);
 
-        assertTrue(sf.addACL(user, Role.OWNER).isEmpty());
+        trans.commit();
+        trans.begin();
 
-        // To the implemantor of the User class: shouldn't we update the existing role?
-        assertEquals(sf.getRoleNullable(user), Role.EDITOR);
+        try {
+            sf.addACL(user, Role.OWNER);
+            assertTrue(false);
+        } catch (ExAlreadyExist e) {
+            trans.handleException();
+            trans.begin();
+        }
+
+        assertEquals(Role.EDITOR, sf.getRoleNullable(user));
     }
 
     @Test
@@ -155,7 +163,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertEquals(sf.getRoleNullable(getTeamServerUser(user2)), Role.EDITOR);
     }
 
-    @Test(expected = ExNoPerm.class)
+    @Test
     public void deleteACL_shouldThrowIfNoOwnerLeft()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
@@ -168,10 +176,15 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         sf.addACL(user1, Role.OWNER);
         sf.updateACL(singleSRP(owner, Role.EDITOR));
 
-        sf.deleteACL(Collections.singleton(user1.id()));
+        try {
+            sf.deleteACL(Collections.singleton(user1.id()));
+            assertTrue(false);
+        } catch (ExNoPerm e) {
+            trans.handleException();
+        }
     }
 
-    @Test(expected = ExNotFound.class)
+    @Test
     public void deleteACL_shouldThrowIfNoUserNotFound()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
@@ -180,7 +193,12 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = newUser();
         saveUser(user, saveOrganization());
 
-        sf.deleteACL(Collections.singleton(user.id()));
+        try {
+            sf.deleteACL(Collections.singleton(user.id()));
+            assertTrue(false);
+        } catch (ExNotFound e) {
+            trans.handleException();
+        }
     }
 
     @Test
@@ -279,7 +297,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         assertNull(sf.getRoleNullable(getTeamServerUser(user1)));
     }
 
-    @Test(expected = ExNoPerm.class)
+    @Test
     public void updateACL_shouldThrowIfNoOwnerLeft()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
@@ -294,7 +312,12 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         // why 4? owner, user, owner's team server, user's team server
         assertEquals(sf.updateACL(singleSRP(owner, Role.EDITOR)).size(), 4);
 
-        sf.updateACL(singleSRP(user1, Role.EDITOR));
+        try {
+            sf.updateACL(singleSRP(user1, Role.EDITOR));
+            assertTrue(false);
+        } catch (ExNoPerm e) {
+            trans.handleException();
+        }
     }
 
     @Test(expected = ExNotFound.class)

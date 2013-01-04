@@ -1,6 +1,7 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.gui.history.DlgHistory;
+import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
@@ -27,7 +28,6 @@ import com.aerofs.gui.Images;
 import com.aerofs.gui.activitylog.DlgActivityLog;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.misc.DlgFolderlessInvite;
-import com.aerofs.gui.sharing.DlgJoinSharedFolder;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.lib.C;
@@ -215,13 +215,13 @@ public class SingleuserTrayMenu implements ITrayMenu
 
     private void addAcceptInvitationMenuitem()
     {
-        _trayMenuPopulator.addMenuItem("Accept Invitation...",
+        _trayMenuPopulator.addMenuItem("Accept Invitations...",
                 new AbstractListener(CLICKED_TASKBAR_ACCEPT_INVITE)
                 {
                     @Override
                     protected void handleEventImpl(Event event)
                     {
-                        new DlgJoinSharedFolder(GUI.get().sh()).openDialog();
+                        new DlgJoinSharedFolders(GUI.get().sh()).showDialog();
                     }
                 });
     }

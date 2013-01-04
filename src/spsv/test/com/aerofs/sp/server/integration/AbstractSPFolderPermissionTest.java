@@ -10,20 +10,16 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
-import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
-import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
 import com.aerofs.sp.server.lib.user.User;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
@@ -67,7 +63,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
 
         shareFolder(sharer, sid, sharee, role);
         // for backward compat with existing tests, accept invite immediately to update ACLs
-        joinSharedFolder(sharer, sid, sharee);
+        joinSharedFolder(sharee, sid);
         // backward compat
         setSessionUser(sharer);
     }
@@ -86,35 +82,22 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
                 "");
     }
 
-    protected @Nullable String getSharedFolderCode(UserID sharer, SID sid, UserID sharee)
-            throws Exception
-    {
-        setSessionUser(sharee);
-        ListPendingFolderInvitationsReply reply = service.listPendingFolderInvitations().get();
-
-        for (PBFolderInvitation inv : reply.getInvitationsList()) {
-            if (sharer.toString().equals(inv.getSharer()) &&
-                    sid.toStringFormal().equals(inv.getFolderName())) {
-                return inv.getSharedFolderCode();
-            }
-        }
-
-        return null;
-    }
-
-    protected void joinSharedFolder(UserID sharer, SID sid, UserID sharee) throws Exception
-    {
-        String code = getSharedFolderCode(sharer, sid, sharee);
-        assertNotNull(code);
-        joinSharedFolder(sharee, code);
-    }
-
-    protected void joinSharedFolder(UserID sharee, String code) throws Exception
+    protected void joinSharedFolder(UserID sharee, SID sid) throws Exception
     {
         User oldUser = sessionUser.exists() ? sessionUser.get() : null;
 
         setSessionUser(sharee);
-        service.joinSharedFolder(code);
+        service.joinSharedFolder(sid.toPB());
+
+        if (oldUser != null) setSessionUser(oldUser.id());
+    }
+
+    protected void leaveSharedFolder(UserID sharee, SID sid) throws Exception
+    {
+        User oldUser = sessionUser.exists() ? sessionUser.get() : null;
+
+        setSessionUser(sharee);
+        service.leaveSharedFolder(sid.toPB());
 
         if (oldUser != null) setSessionUser(oldUser.id());
     }

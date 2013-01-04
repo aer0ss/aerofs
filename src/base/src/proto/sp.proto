@@ -176,8 +176,7 @@ service SPService {
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
     /**
-     * Add the user to the shared folder corresponding to the invite code and returns its shareId
-     * and folderName.
+     * Add the user to a shared folder (provided he was invited)
      *
      * NB: pushes ACL update to clients
      *
@@ -188,9 +187,22 @@ service SPService {
      *
      * Throws:
      *   ExNotFound if the shared folder code wasn't found
-     *   ExNoPerm if the user email address doesn't match the email address specified in the invitation
+     *   ExNoPerm if the user was not invited to the shared folder
      */
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
+
+    /**
+     * Remove the user from a shared folder (provided he was a member)
+     *
+     * NB: pushes ACL update to clients
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNotFound if the shared folder code wasn't found
+     *   ExNoPerm if the user was not invited to the shared folder
+     */
+    rpc LeaveSharedFolder(LeaveSharedFolderCall) returns(Void);
 
     /**
      * Returns a list of pending shared folder invitations for the user
@@ -560,20 +572,16 @@ message ShareFolderCall {
 }
 
 message JoinSharedFolderCall {
-    required string shared_folder_code = 1;
+    required bytes shared_id = 1;
+}
+
+message LeaveSharedFolderCall {
+    required bytes shared_id = 1;
 }
 
 message ListPendingFolderInvitationsReply {
-
-    message PBFolderInvitation {
-        required string sharer = 1;       // email address of the sharer
-        required string folder_name = 2;
-        required string shared_folder_code = 3;
-    }
-
-    repeated PBFolderInvitation invitations = 1;
+    repeated PBFolderInvitation invitation = 1;
 }
-
 
 message EmailUserCall {
     required string subject = 1;

@@ -4,6 +4,7 @@
 
 package com.aerofs.controller;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -27,6 +28,7 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.RETURNS_MOCKS;
@@ -59,7 +61,7 @@ public class TestSignupHelper extends AbstractTest
         when(factEmail.createSignUpInvitationEmailer(anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString())).then(RETURNS_MOCKS);
         when(factEmail.createFolderInvitationEmailer(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString())).then(RETURNS_MOCKS);
+                anyString(), anyString(), any(SID.class))).then(RETURNS_MOCKS);
 
         serviceReactorCaller.init_();
     }

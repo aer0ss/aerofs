@@ -69,6 +69,8 @@ public final class SPSchema
             C_AC_STORE_ID                   = "a_sid",
             C_AC_USER_ID                    = "a_id",
             C_AC_ROLE                       = "a_role",
+            C_AC_PENDING                    = "a_pending",
+            C_AC_SHARER                     = "a_sharer",
 
             T_SF                            = "sp_shared_folder",
             C_SF_ID                         = "sf_id",

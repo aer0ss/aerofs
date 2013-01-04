@@ -78,7 +78,6 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         DeviceDatabase ddb = new DeviceDatabase(trans);
         CertificateDatabase certdb = new CertificateDatabase(trans);
         EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
-        SharedFolderInvitationDatabase sfidb = new SharedFolderInvitationDatabase(trans);
         OrganizationDatabase odb = new OrganizationDatabase(trans);
         SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
         OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(trans);
@@ -100,10 +99,6 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
             factSharedFolder.inject(sfdb, factUser);
         }
 
-
-        SharedFolderInvitation.Factory factSFI = new SharedFolderInvitation.Factory(sfidb, factUser,
-                factSharedFolder);
-
         PasswordManagement passwordManagement =
                 new PasswordManagement(db, factUser, mock(PasswordResetEmailer.class));
 
@@ -113,9 +108,9 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         SPActiveUserSessionTracker userTracker = new SPActiveUserSessionTracker();
 
-        SPService service = new SPService(db, sfdb, trans, new MockSessionUser(),
+        SPService service = new SPService(db, trans, new MockSessionUser(),
                 passwordManagement, certificateAuthenticator, factUser, factOrg, factOrgInvite,
-                factDevice, factCert, certdb, esdb, factSharedFolder, factSFI, factEmailer);
+                factDevice, factCert, certdb, esdb, factSharedFolder, factEmailer);
 
         service.setUserTracker(userTracker);
         reactor = new SPServiceReactor(service);

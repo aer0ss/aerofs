@@ -15,14 +15,12 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
-import com.aerofs.sp.server.SharedFolderInvitation;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
-import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
@@ -83,8 +81,6 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy protected CertificateDatabase certdb = new CertificateDatabase(trans);
     @Spy protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
     @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
-    @Spy protected SharedFolderInvitationDatabase sfidb =
-            new SharedFolderInvitationDatabase(trans);
     @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(trans);
 
     // Can't use @Spy as Device.Factory's constructor needs a non-null certgen object.
@@ -108,9 +104,6 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         factOrg.inject(odb, factUser, factSharedFolder);
         factOrgInvite.inject(oidb, factUser, factOrg);
     }
-
-    @Spy protected SharedFolderInvitation.Factory factSFI =
-            new SharedFolderInvitation.Factory(sfidb, factUser, factSharedFolder);
 
     @Spy protected CertificateAuthenticator certificateAuthenticator =
             mock(CertificateAuthenticator.class);

@@ -8,6 +8,7 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.util.List;
 import java.util.Map;
@@ -31,5 +32,14 @@ public final class SubjectRolePairs
             roles.add(new SubjectRolePair(pair.getKey(), pair.getValue()).toPB());
         }
         return roles;
+    }
+
+    public static Map<UserID, Role> mapFromPB(List<PBSubjectRolePair> pbl) throws ExBadArgs
+    {
+        Map<UserID, Role> m = Maps.newHashMap();
+        for (PBSubjectRolePair pb : pbl) {
+            m.put(UserID.fromExternal(pb.getSubject()), Role.fromPB(pb.getRole()));
+        }
+        return m;
     }
 }

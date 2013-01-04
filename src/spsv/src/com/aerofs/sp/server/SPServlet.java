@@ -16,7 +16,6 @@ import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
-import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
 import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
@@ -72,8 +71,6 @@ public class SPServlet extends AeroServlet
     private final CertificateDatabase _certdb = new CertificateDatabase(_trans);
     private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_trans);
     private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_trans);
-    private final SharedFolderInvitationDatabase _sfidb =
-            new SharedFolderInvitationDatabase(_trans);
     private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_trans);
 
     private final ThreadLocalHttpSessionProvider _sessionProvider =
@@ -99,16 +96,14 @@ public class SPServlet extends AeroServlet
         _factSharedFolder.inject(_sfdb, _factUser);
     }
 
-    private final SharedFolderInvitation.Factory _factSFI =
-            new SharedFolderInvitation.Factory(_sfidb, _factUser, _factSharedFolder);
     private final InvitationEmailer.Factory _factEmailer = new InvitationEmailer.Factory();
 
     private final PasswordManagement _passwordManagement =
             new PasswordManagement(_db, _factUser, new PasswordResetEmailer());
 
-    private final SPService _service = new SPService(_db, _sfdb, _trans, _sessionUser,
+    private final SPService _service = new SPService(_db, _trans, _sessionUser,
             _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factOrgInvite,
-            _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factSFI, _factEmailer);
+            _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,

@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class SharedFolder
@@ -102,7 +101,7 @@ public class SharedFolder
      * Add the shared folder to db. Also add {@code owner} as the first owner.
      * @return A map of user IDs to epochs to be published via verkehr.
      */
-    public Map<UserID, Long> save(String folderName, User owner)
+    public Set<UserID> save(String folderName, User owner)
             throws ExNotFound, SQLException, IOException, ExAlreadyExist
     {
         _f._db.insert(_sid, folderName);
@@ -121,40 +120,65 @@ public class SharedFolder
     }
 
     /**
-     * @return A map of user IDs to epochs to be published via verkehr.
+     * @return A set of user IDs for which epoch should be increased and published via verkehr
      * @throws ExAlreadyExist if the user is already added.
      */
-    public Map<UserID, Long> addACL(User user, Role role)
+    public Set<UserID> addACL(User user, Role role)
             throws ExAlreadyExist, SQLException, ExNotFound
     {
-        if (getRoleNullable(user) != null) {
-            // old invite/join workflow: ACL added on invite
-            // TODO: remove this codepath after transition period...
-            return Collections.emptyMap();
-        } else {
-            _f._db.insertACL(_sid, Collections.singletonList(new SubjectRolePair(user.id(), role)));
+        if (isMemberOrInvited(user)) throw new ExAlreadyExist(user + " is already invited");
 
-            addTeamServerACLImpl(user);
+        _f._db.insertACL(_sid, user.id(),
+                Collections.singletonList(new SubjectRolePair(user.id(), role)));
 
-            // increment ACL epoch for all users currently sharing the folder
-            // making the modification to the database, and then getting the current acl list should
-            // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-            // notification that is newer than what it should be (i.e. we skip an update
-            return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
-        }
+        addTeamServerACLImpl(user);
+
+        return _f._db.getACLUsers(_sid);
     }
+
+    public void addPendingACL(User sharer, User sharee, Role role)
+            throws SQLException, ExAlreadyExist
+    {
+        if (isMemberOrInvited(sharee)) throw new ExAlreadyExist(sharee + " is already invited");
+
+        _f._db.insertPendingACL(_sid, sharer.id(),
+                Collections.singletonList(new SubjectRolePair(sharee.id(), role)));
+    }
+
+    public Set<UserID> setPending(User user) throws SQLException, ExNotFound
+    {
+        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+
+        _f._db.setPending(_sid, user.id(), true);
+
+        // in terms of ACL, marking a user as pending is the same as kicking him out of the folder
+        // so we need to update team server ACLs to reflect that change
+        deleteTeamServerACLImpl(user);
+
+        return affectedUsers;
+    }
+
+    public Set<UserID> resetPending(User user) throws SQLException, ExNotFound, ExAlreadyExist
+    {
+        _f._db.setPending(_sid, user.id(), false);
+
+        addTeamServerACLImpl(user);
+
+        return _f._db.getACLUsers(_sid);
+    }
+
 
     /**
      * Add the user's team server ID to the ACL. No-op if the user belongs to the default org or
      * there are other users on the shared folder belonging to the same team server.
      */
-    public Map<UserID, Long> addTeamServerACL(User user)
+    public Set<UserID> addTeamServerACL(User user)
             throws ExNotFound, ExAlreadyExist, SQLException
     {
         if (addTeamServerACLImpl(user)) {
-            return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
+            return _f._db.getACLUsers(_sid);
         } else {
-            return Collections.emptyMap();
+            return Collections.emptySet();
         }
     }
 
@@ -170,14 +194,14 @@ public class SharedFolder
         User tsUser = _f._factUser.create(org.id().toTeamServerUserID());
         if (getRoleNullable(tsUser) == null) {
             SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
-            _f._db.insertACL(_sid, Collections.singletonList(srp));
+            _f._db.insertACL(_sid, user.id(), Collections.singletonList(srp));
             return true;
         } else {
             return false;
         }
     }
 
-    public Map<UserID, Long> deleteACL(Collection<UserID> subjects)
+    public Set<UserID> deleteACL(Collection<UserID> subjects)
             throws SQLException, ExNotFound, ExNoPerm
     {
         // retrieve the list of affected users _before_ performing the deletion, so that all the
@@ -192,26 +216,22 @@ public class SharedFolder
             deleteTeamServerACLImpl(_f._factUser.create(userID));
         }
 
-        // making the modification to the database, and then getting the current acl list should
-        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
-
-        return _f._db.incrementACLEpoch(affectedUsers);
+        return affectedUsers;
     }
 
     /**
      * Remove the user's team server ID to the ACL. No-op if the user belongs to the default org or
      * there are other users on the shared folder belonging to the same team server.
      */
-    public Map<UserID, Long> deleteTeamServerACL(User user)
+    public Set<UserID> deleteTeamServerACL(User user)
             throws SQLException, ExNotFound
     {
         Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
 
         if (deleteTeamServerACLImpl(user)) {
-            return _f._db.incrementACLEpoch(affectedUsers);
+            return affectedUsers;
         } else {
-            return Collections.emptyMap();
+            return Collections.emptySet();
         }
     }
 
@@ -250,22 +270,33 @@ public class SharedFolder
         return builder.build();
     }
 
+    public Collection<User> getPendingUsers()
+            throws SQLException
+    {
+        Builder<User> builder = ImmutableList.builder();
+        for (UserID userID : _f._db.getPendingACLUsers(_sid)) {
+            builder.add(_f._factUser.create(userID));
+        }
+        return builder.build();
+    }
+
+    public List<SubjectRolePair> getACL() throws SQLException
+    {
+        return _f._db.getACL(_sid);
+    }
+
     /**
      * @return new ACL epochs for each affected user id, to be published via verkehr
      * @throws ExNotFound if trying to add new users to the store
      */
-    public Map<UserID, Long> updateACL(List<SubjectRolePair> srps)
+    public Set<UserID> updateACL(List<SubjectRolePair> srps)
             throws ExNoPerm, ExNotFound, SQLException
     {
         _f._db.updateACL(_sid, srps);
 
         throwIfNoOwnerLeft();
 
-        // making the modification to the database, and then getting the current acl list should
-        // be done in a single atomic operation. Otherwise, it is possible for us to send out a
-        // notification that is newer than what it should be (i.e. we skip an update
-
-        return _f._db.incrementACLEpoch(_f._db.getACLUsers(_sid));
+        return _f._db.getACLUsers(_sid);
     }
 
     public @Nullable Role getRoleNullable(User user)
@@ -302,5 +333,20 @@ public class SharedFolder
     {
         Role role = getRoleNullable(user);
         return role != null && role.covers(Role.OWNER);
+    }
+
+    public boolean isMember(User user) throws SQLException
+    {
+        return _f._db.getRoleNullable(_sid, user.id()) != null;
+    }
+
+    public boolean isInvited(User user) throws SQLException
+    {
+        return _f._db.getPendingRoleNullable(_sid, user.id()) != null;
+    }
+
+    public boolean isMemberOrInvited(User user) throws SQLException
+    {
+        return _f._db.getRoleOrPendingNullable(_sid, user.id()) != null;
     }
 }
