@@ -59,7 +59,7 @@ trap "rm -r $DEB_BUILD_DIR" EXIT
 # start packaging
 # all work done in $DEB_BUILD_DIR from now
 
-echo ">> build aerofs-installer version = $VERSION"
+echo ">> build ${PACKAGE_NAME} version = $VERSION"
 
 pushd $DEB_BUILD_DIR > /dev/null
 trap "popd > /dev/null || true" EXIT

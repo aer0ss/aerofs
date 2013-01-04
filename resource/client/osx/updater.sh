@@ -19,8 +19,8 @@ then
   exit 1
 fi
 
-while ps -e -o pid,user,command | grep $USERNAME | grep AeroFSClient | grep -v grep > /dev/null; do
-  GET_PID=`ps -e -o pid,user,command | grep $USERNAME | grep AeroFSClient | grep -v grep | awk '{ print $1 }'`
+while ps -e -o pid,user,command | grep $USERNAME | grep [AEROFS_PRODUCT_SPACEFREE]Client | grep -v grep > /dev/null; do
+  GET_PID=`ps -e -o pid,user,command | grep $USERNAME | grep [AEROFS_PRODUCT_SPACEFREE]Client | grep -v grep | awk '{ print $1 }'`
   kill -9 $GET_PID
 done
 
