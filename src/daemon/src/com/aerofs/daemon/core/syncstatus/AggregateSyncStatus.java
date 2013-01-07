@@ -216,6 +216,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // invariant: aggregation stop at store root, anchors are treated as regular file within
         // the parent store.
         assert !oaParent.isAnchor();
+        // invariant: expelled objects have no syncable children and empty aggregate status so
+        // this method should never reach them. Unfortunately, because expulsion flags are adjusted
+        // by a postfix walk *after* logical objects are moved, it is possible for an upward update
+        // to reach an expelled parent when some objects are moved under an expelled parent (as a
+        // result of a remote move for instance). Therefore we cannot simply assert...
+        if (oaParent.isExpelled()) {
+            if (l.isInfoEnabled()) l.info("casc stop at expelled p " + parent);
+            return;
+        }
 
         int first = diffStatus.findFirstSetBit();
         if (parentSyncableChildCountDiff == 0 && first == -1) {
@@ -333,6 +342,8 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t)
             throws SQLException
     {
+        assert !oa.isExpelled();
+
         if (l.isInfoEnabled()) l.info("obliterated " + oa.soid() + " " + oa.parent());
 
         updateParentAggregateOnDeletion_(new SOID(oa.soid().sidx(), oa.parent()), bv, pathFrom, t);
@@ -532,7 +543,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // in the same way but one must be careful not to decrement aggregate counter multiple times
         // lest you end up with a bogus aggregate status (and assertion failures down the road).
         if (ignoreExpelled && oa.isExpelled()) {
-            if (l.isInfoEnabled()) l.info("ignore delete expelled " + soid);
+            if (l.isInfoEnabled()) l.info("ignore del expelled " + soid);
             return;
         }
 
@@ -561,7 +572,12 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
          */
         _tlStatusModified.get(t).remove(path);
 
-        if (l.isInfoEnabled()) l.info("update p on delete " + parent);
+        if (_ds.getOA_(parent).isExpelled()) {
+            if (l.isInfoEnabled()) l.info("ignore del under expelled " + parent);
+            return;
+        }
+
+        if (l.isInfoEnabled()) l.info("up p on del " + parent);
 
         updateRecursively_(parent, oldStatus, new BitVector(), -1, path.removeLast(), t);
     }
@@ -582,6 +598,15 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         // is created either and aggregate sync status can therefore safely ignore these events
         if (oa.isExpelled()) {
             if (l.isInfoEnabled()) l.info("ignore create expelled " + soid);
+            return;
+        }
+
+        // object created/moved under expelled parent will be marked as expelled after this method
+        // is called so they will fail the previous check. We need to ignore them specifically as
+        // the expelled parents have empty aggregate sync status and no syncable children which
+        // will break assertions if updateRecursively_ is called.
+        if (_ds.getOA_(parent).isExpelled()) {
+            if (l.isInfoEnabled()) l.info("ignore create under expelled " + parent + " " + soid);
             return;
         }
 
@@ -645,6 +670,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     private int getSyncableChildCount_(SOID soid) throws SQLException
     {
         // TODO(huguesb): cache that number?
+        // TODO(huguesb): use a single SQL query to avoid wasting memory and CPU
         int total = 0;
         try {
             for (OID oid : _ds.getChildren_(soid)) {
