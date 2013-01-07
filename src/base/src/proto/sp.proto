@@ -296,7 +296,7 @@ service SPService {
     /**
      * Set the user's authorization level for SP services
      *
-     * authlevel: admin
+     * Required Auth Level: admin
      * throws:
      *   ExNotFound if the provided user email has no AeroFS account set up.
      *   ExNoPerm   if the authorization requirements are not met,
@@ -308,7 +308,7 @@ service SPService {
     /**
      * Create a new organization
      *
-     * authlevel: (see below)
+     * Required Auth Level: (see below)
      *
      * Throws:
      *   ExNoPerm if the user calling is not a member of the default organization or is not an admin
@@ -426,8 +426,6 @@ service SPService {
      * Unsubscribe a user from email reminders based on the unsubscribe token id
      *
      * Required Auth Level: none
-     *
-     *
      */
     rpc UnsubscribeEmail(SetUnsubscribeEmailCall) returns (GetUnsubscribeEmailReply);
 
