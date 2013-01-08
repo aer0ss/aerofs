@@ -967,6 +967,7 @@ public class SPService implements ISPService
         }
 
         accepter.setOrganization(invite.getOrganization());
+        accepter.setLevel(AuthorizationLevel.USER);
 
         _transaction.commit();
 
