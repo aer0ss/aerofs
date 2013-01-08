@@ -13,13 +13,11 @@ fi
 echo ">>> Stopping web services to avoid inconsistency..."
 service nginx stop || true
 service tomcat6 stop || true
-service redis-server stop || true
 
 echo ">>> Reset redis database..."
 redis-cli flushall
 
 echo ">>> Restart web services..."
-service redis-server start
 service tomcat6 start
 service nginx start
 

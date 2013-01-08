@@ -27,7 +27,7 @@ port x.aerofs.com 443
 port zephyr.aerofs.com 443
 url https://sp.aerofs.com/sp
 url https://sv.aerofs.com/sv_beta/sv
-#url https://sss.aerofs.com/syncstat
+url https://sss.aerofs.com/syncstat
 url https://webadmin.aerofs.com/login
 
 if [ $SUCCESS == TRUE ]; then
