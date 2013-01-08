@@ -45,6 +45,18 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         ps.executeUpdate();
     }
 
+    public void delete(UserID invitee, OrganizationID org)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(
+                DBUtil.deleteWhere(T_OI, C_OI_INVITEE + " =? and " + C_OI_ORG_ID + " =?"));
+
+        ps.setString(1, invitee.toString());
+        ps.setInt(2, org.getInt());
+
+        ps.executeUpdate();
+    }
+
     public UserID getInviter(UserID invitee, OrganizationID org)
             throws SQLException, ExNotFound
     {

@@ -140,19 +140,22 @@ service SPService {
      *   ExNoPerm if the caller is not an organization admin.
      *   ExEmailSendingFailed if we were unable to send the email.
      */
-    rpc InviteToOrganization(InviteToOrganizationCall) returns(Void);
+     rpc InviteToOrganization(InviteToOrganizationCall) returns(Void);
 
     /**
      * Accept an organization invitation and move the caller into that organization. Makes
      * appropriate ACL updates to allow for team server sync.
      *
+     * This call will also delete the pending organization invitation, since it has already been
+     * acted upon.
+     *
      * Throws:
-     *   ExNotFound if the user was not invited to the organization specified in the call.
+     *   ExNotFound if the user does not have a pending invitation for the specified organization.
      *   ExAlreadyExist if the user is already a member of the target organization.
      */
     rpc AcceptOrganizationInvitation(AcceptOrganizationInvitationCall) returns(Void);
 
-    /**
+   /**
      * Shares a folder with another user.
      *
      * If the user doesn't exist yet, this method will automatically call InviteToSignUp
@@ -473,6 +476,19 @@ service SPService {
      * Required Auth Level: user, ACL on all shared folders in request
      */
      rpc GetSharedFolderNames(GetSharedFolderNamesCall) returns(GetSharedFolderNamesReply);
+
+    /**
+     * TODO (downtime) move this under AcceptOrganizationInvite
+     *
+     * Ignore an invitation to a specific organization. This call deletes the entry in the
+     * organization invitation table so that when the user views the pending organization invites
+     * page in the admin panel, that organization will no longer appear in the list.
+     *
+     *
+     * Throws:
+     *   ExNotFound if the user does not have a pending invitation for the specified organization.
+     */
+    rpc IgnoreOrganizationInvitation(IgnoreOrganizationInvitationCall) returns(Void);
 }
 
 message SignUpCall {
@@ -811,4 +827,9 @@ message GetSharedFolderNamesCall {
 
 message GetSharedFolderNamesReply {
     repeated string folder_name = 1;
+}
+
+// TODO (downtime) move this under AcceptOrganizationInvitationCall
+message IgnoreOrganizationInvitationCall {
+    required int32 organization_id = 1;
 }

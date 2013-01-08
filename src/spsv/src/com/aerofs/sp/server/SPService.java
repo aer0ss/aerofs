@@ -958,7 +958,7 @@ public class SPService implements ISPService
 
         // Check to see if the user was actually invited to this organization.
         if (!invite.exists()) {
-            throw new ExNoPerm();
+            throw new ExNotFound();
         }
 
         // Are we already part of the target organization?
@@ -969,6 +969,25 @@ public class SPService implements ISPService
         accepter.setOrganization(invite.getOrganization());
         accepter.setLevel(AuthorizationLevel.USER);
 
+        invite.delete();
+        _transaction.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> ignoreOrganizationInvitation(Integer organizationID)
+            throws SQLException, ExNoPerm, ExNotFound
+    {
+        _transaction.begin();
+
+        User ignorer = _sessionUser.get();
+        Organization organization = _factOrg.create(new OrganizationID(organizationID));
+        l.info("Ignore org invite by " + ignorer);
+
+        OrganizationInvitation invite = _factOrgInvite.create(ignorer.id(), organization.id());
+
+        invite.delete();
         _transaction.commit();
 
         return createVoidReply();

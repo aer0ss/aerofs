@@ -82,4 +82,18 @@ public class OrganizationInvitation
     {
         return _db.hasInvite(_invitee, _org);
     }
+
+    /**
+     * Delete an organization invitation.
+     * @throws ExNotFound if the organization invitation does not exist.
+     */
+    public void delete()
+            throws ExNotFound, SQLException
+    {
+        if (!exists()) {
+            throw new ExNotFound();
+        }
+
+        _db.delete(_invitee, _org);
+    }
 }

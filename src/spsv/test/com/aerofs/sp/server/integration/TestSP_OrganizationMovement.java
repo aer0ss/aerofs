@@ -8,6 +8,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -48,6 +49,24 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         // Accept the invite.
         int orgID = pending.getOrganizationInvitationsList().get(0).getOrganizationId();
         service.acceptOrganizationInvitation(orgID);
+
+        return orgID;
+    }
+
+    /**
+     * Ignore the first inviation returned by the get organization invites call.
+     * @return the ID of the organization that we hvae joined.
+     * @throws Exception
+     */
+    private int ignoreFirstInvitation()
+            throws Exception
+    {
+        // Switch to the invited user.
+        GetOrganizationInvitationsReply pending = service.getOrganizationInvitations().get();
+
+        // Ignore the invite.
+        int orgID = pending.getOrganizationInvitationsList().get(0).getOrganizationId();
+        service.ignoreOrganizationInvitation(orgID);
 
         return orgID;
     }
@@ -100,8 +119,8 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         sendInvitation(USER_2);
     }
 
-    @Test (expected = ExAlreadyExist.class)
-    public void shouldThrowExAlreadyExistIfUserIsAlreadyAMember()
+    @Test (expected = ExNotFound.class)
+    public void shouldThrowExNotFoundIfUserIsAlreadyAccepted()
             throws Exception
     {
         int orgID = 0;
@@ -119,8 +138,8 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         acceptSpecificInvitation(orgID);
     }
 
-    @Test (expected = ExNoPerm.class)
-    public void shouldThrowExNoPermIfUserNotInvitedToTargetOrganization()
+    @Test (expected = ExNotFound.class)
+    public void shouldThrowExNotFoundIfUserNotInvitedToTargetOrganization()
             throws Exception
     {
         int orgID = 0;
@@ -159,5 +178,25 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         // Verify user 1 is not an admin in user 2's organization.
         GetAuthorizationLevelReply reply = service.getAuthorizationLevel().get();
         assertEquals(PBAuthorizationLevel.USER, reply.getLevel());
+    }
+
+    @Test (expected = ExNotFound.class)
+    public void shouldThowExNotFoundWhenTryingToAcceptIgnoredInvitation()
+            throws Exception
+    {
+        int orgID = 0;
+
+        try {
+            setSessionUser(USER_1);
+            addOrganization();
+            sendInvitation(USER_2);
+            setSessionUser(USER_2);
+            orgID = ignoreFirstInvitation();
+        } catch (Exception e) {
+            assertTrue(false);
+        }
+
+        // Verify that the organization invite has indeed been deleted (ignored).
+        acceptSpecificInvitation(orgID);
     }
 }
