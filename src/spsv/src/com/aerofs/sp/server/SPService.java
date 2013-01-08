@@ -594,8 +594,8 @@ public class SPService implements ISPService
         _transaction.begin();
 
         SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME,
-                _sessionUser.getID().toString(), null, UserID.fromExternal(userId).toString(), body,
-                null, true, null);
+                _sessionUser.get().id().toString(), null, UserID.fromExternal(userId).toString(),
+                body, null, true, null);
 
         _transaction.commit();
 
@@ -999,7 +999,7 @@ public class SPService implements ISPService
     {
         _transaction.begin();
         // TODO (WW) refactor as mentinoed in _sfdb.getACL().
-        GetACLResult result = _sfdb.getACL(epoch, _sessionUser.getID());
+        GetACLResult result = _sfdb.getACL(epoch, _sessionUser.get().id());
         _transaction.commit(); // commit right away to avoid holding read locks
 
         // this means that no acl changes have occurred
@@ -1218,7 +1218,8 @@ public class SPService implements ISPService
             throws Exception
     {
         _transaction.begin();
-        _passwordManagement.changePassword(_sessionUser.getID(),old_credentials,new_credentials);
+        _passwordManagement.changePassword(_sessionUser.get().id(), old_credentials,
+                new_credentials);
         _transaction.commit();
 
         return createVoidReply();
@@ -1369,7 +1370,7 @@ public class SPService implements ISPService
     {
         _transaction.begin();
 
-        Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.getID());
+        Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.get().id());
 
         GetDeviceInfoReply.Builder builder = GetDeviceInfoReply.newBuilder();
         for (ByteString did : dids) {

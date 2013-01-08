@@ -2,7 +2,6 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 import org.apache.log4j.Logger;
@@ -20,12 +19,6 @@ public class ThreadLocalHttpSessionUser
 {
     private static final Logger l = Util.l(ThreadLocalHttpSessionUser.class);
     private static final String SESS_ATTR_USER  = "user";
-
-    @Override
-    public @Nonnull UserID getID() throws ExNoPerm
-    {
-        return get().id();
-    }
 
     @Override
     public boolean exists()

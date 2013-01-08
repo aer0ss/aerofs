@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.base.id.UserID;
 
 import javax.annotation.Nonnull;
 
@@ -19,13 +18,6 @@ public interface ISessionUser
      * @throws ExNoPerm if no user has been set for the session
      */
     @Nonnull User get() throws ExNoPerm;
-
-    /**
-     * DEPRECATED. Use get() instead
-     * @return the user ID of this session
-     * @throws ExNoPerm if no user has been set for the session
-     */
-    @Nonnull UserID getID() throws ExNoPerm;
 
     /**
      * Return whether set() has been called

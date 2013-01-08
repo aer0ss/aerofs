@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.UserID;
-import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -37,7 +36,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
 
     /**
      * Accept the first inviation returned by the get organization invites call.
-     * @return the ID of the organization that we hvae joined.
+     * @return the ID of the organization that we have joined.
      * @throws Exception
      */
     private int acceptFirstInvitation()

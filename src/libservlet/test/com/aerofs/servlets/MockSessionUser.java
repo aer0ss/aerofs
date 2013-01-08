@@ -5,7 +5,6 @@
 package com.aerofs.servlets;
 
 import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.user.ISessionUser;
 import com.aerofs.sp.server.lib.user.User;
 
@@ -22,13 +21,6 @@ import static org.junit.Assert.assertFalse;
 public class MockSessionUser implements ISessionUser
 {
     private User _user;
-
-    @Override
-    public @Nonnull UserID getID()
-            throws ExNoPerm
-    {
-        return get().id();
-    }
 
     @Override
     public boolean exists()
