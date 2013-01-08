@@ -3,7 +3,7 @@ node "c.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
-    users:add_user {"linday":}
+    users::add_user {"linday":}
 
     # Include the cmd service
     include cmd
