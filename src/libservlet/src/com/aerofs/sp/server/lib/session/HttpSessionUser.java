@@ -1,4 +1,8 @@
-package com.aerofs.sp.server.lib;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.sp.server.lib.session;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -10,15 +14,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Wraps a ThreadLocal HttpSession and provides a getter, setter, and remover of the 'user'
- * attribute.
+ * Wraps a HttpSession and provides a getter, setter, and remover of the "user" attribute.
  */
-public class ThreadLocalHttpSessionUser
-        extends AbstractThreadLocalHttpSession
+public class HttpSessionUser
+        extends AbstractHttpSession
         implements ISessionUser
 {
-    private static final Logger l = Util.l(ThreadLocalHttpSessionUser.class);
+    private static final Logger l = Util.l(HttpSessionUser.class);
     private static final String SESS_ATTR_USER  = "user";
+
+    public HttpSessionUser(IHttpSessionProvider sessionProvider)
+    {
+        super(sessionProvider);
+    }
 
     @Override
     public boolean exists()
@@ -26,9 +34,9 @@ public class ThreadLocalHttpSessionUser
         return getNullable() != null;
     }
 
-    private @Nullable User getNullable()
+    public @Nullable User getNullable()
     {
-        return (User) _session.get().getAttribute(SESS_ATTR_USER);
+        return (User) getSession().getAttribute(SESS_ATTR_USER);
     }
 
     @Override
@@ -36,7 +44,7 @@ public class ThreadLocalHttpSessionUser
     {
         User user = getNullable();
         if (user == null) {
-            l.info("not authenticated: session " + _session.get().getId());
+            l.info("not authenticated: session " + getSession().getId());
             throw new ExNoPerm();
         } else {
             return user;
@@ -46,12 +54,12 @@ public class ThreadLocalHttpSessionUser
     @Override
     public void set(@Nonnull User user)
     {
-        _session.get().setAttribute(SESS_ATTR_USER, user);
+        getSession().setAttribute(SESS_ATTR_USER, user);
     }
 
     @Override
     public void remove()
     {
-        _session.get().removeAttribute(SESS_ATTR_USER);
+        getSession().removeAttribute(SESS_ATTR_USER);
     }
 }

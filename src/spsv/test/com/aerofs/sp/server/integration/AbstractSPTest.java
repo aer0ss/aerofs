@@ -23,7 +23,6 @@ import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
-import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
@@ -35,9 +34,13 @@ import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.proto.Common.Void;
+import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
+import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import com.google.protobuf.ByteString;
@@ -66,6 +69,13 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
     @Mock protected VerkehrAdmin verkehrAdmin;
+
+    protected SPActiveUserSessionTracker userSessionTracker =
+            new SPActiveUserSessionTracker();
+    protected SPActiveTomcatSessionTracker tomcatSessionTracker =
+            new SPActiveTomcatSessionTracker();
+    @Spy protected SPSessionInvalidator sessionInvalidator = new SPSessionInvalidator(
+            userSessionTracker, tomcatSessionTracker);
 
     @Spy protected SPDatabase db = new SPDatabase(trans);
     @Spy protected DeviceDatabase ddb = new DeviceDatabase(trans);
@@ -102,8 +112,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy protected SharedFolderInvitation.Factory factSFI =
             new SharedFolderInvitation.Factory(sfidb, factUser, factSharedFolder);
 
-    @Spy protected ThreadLocalCertificateAuthenticator certificateAuthenticator =
-            mock(ThreadLocalCertificateAuthenticator.class);
+    @Spy protected CertificateAuthenticator certificateAuthenticator =
+            mock(CertificateAuthenticator.class);
 
     // Mock invitation emailer for use with sp.shareFolder calls and organization movement tests.
     @Spy protected MockInvitationEmailerFactory factEmailer;
@@ -137,6 +147,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     {
         // Verkehr setup.
         service.setVerkehrClients_(verkehrPublisher, verkehrAdmin);
+        service.setSessionInvalidator(sessionInvalidator);
+        service.setUserTracker(userSessionTracker);
 
         OrganizationID orgId = OrganizationID.DEFAULT;
         AuthorizationLevel level = AuthorizationLevel.USER;

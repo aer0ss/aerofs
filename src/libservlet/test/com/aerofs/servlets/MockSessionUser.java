@@ -48,4 +48,11 @@ public class MockSessionUser implements ISessionUser
     {
         _user = null;
     }
+
+    @Override
+    public String getSessionID()
+    {
+        // Doesn't matter.
+        return "";
+    }
 }

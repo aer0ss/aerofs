@@ -4,13 +4,14 @@
 
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.C;
 import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.SecUtil;
 
 public class SPParam
 {
-
+    // Init parameters.
     public static final String VERKEHR_HOST_INIT_PARAMETER = "verkehr_host";
     public static final String VERKEHR_PUBLISH_PORT_INIT_PARAMETER = "verkehr_publish_port";
     public static final String VERKEHR_ADMIN_PORT_INIT_PARAMETER = "verkehr_admin_port";
@@ -18,11 +19,21 @@ public class SPParam
 
     public static final String SP_DATABASE_REFERENCE_PARAMETER = "sp_database_resource_reference";
 
+    // Context attributes.
     public static final String VERKEHR_PUBLISHER_ATTRIBUTE = "verkehr_publisher";
     public static final String VERKEHR_ADMIN_ATTRIBUTE = "verkehr_admin";
 
+    public static final String SESSION_USER_TRACKER = "session_user_tracker";
+    public static final String SESSION_INVALIDATOR = "session_invalidator";
+
+    // Verkehr constants.
     public static final long VERKEHR_RECONNECT_DELAY = 5 * C.SEC; // milliseconds
     public static final long VERKEHR_ACK_TIMEOUT = 1 * C.SEC; // milliseconds
+
+    // Email related constants.
+    public static final String SP_EMAIL_NAME = L.PRODUCT;
+    public static final String SP_NOTIFICATION_SENDER = "sp@aerofs.com";
+    public static final String SP_NOTIFICATION_RECEIVER = "team@aerofs.com";
 
     /**
      * Number of bytes we use for the salt

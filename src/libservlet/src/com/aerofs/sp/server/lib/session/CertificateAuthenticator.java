@@ -2,14 +2,19 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib;
+package com.aerofs.sp.server.lib.session;
 
 import com.aerofs.base.ex.ExBadCredential;
 
-public class ThreadLocalCertificateAuthenticator
-        extends AbstractThreadLocalHttpSession
+public class CertificateAuthenticator
+        extends AbstractHttpSession
 {
     private static final String SESS_ATTR_CERTAUTH_SERIAL  = "certauth_serial";
+
+    public CertificateAuthenticator(IHttpSessionProvider sessionProvider)
+    {
+        super(sessionProvider);
+    }
 
     /**
      * Return true when the nginx mutal authentication using certificates is successful. When the
@@ -17,7 +22,7 @@ public class ThreadLocalCertificateAuthenticator
      */
     public boolean isAuthenticated()
     {
-        return _session.get().getAttribute(SESS_ATTR_CERTAUTH_SERIAL) != null;
+        return getSession().getAttribute(SESS_ATTR_CERTAUTH_SERIAL) != null;
     }
 
     /**
@@ -30,7 +35,7 @@ public class ThreadLocalCertificateAuthenticator
             throw new ExBadCredential();
         }
 
-        String serial = (String) _session.get().getAttribute(SESS_ATTR_CERTAUTH_SERIAL);
+        String serial = (String) getSession().getAttribute(SESS_ATTR_CERTAUTH_SERIAL);
         assert serial != null;
 
         // The initial conversion from long to string is done by nginx.
@@ -40,7 +45,7 @@ public class ThreadLocalCertificateAuthenticator
     public void set(boolean authenticated, String serial)
     {
         if (authenticated) {
-            _session.get().setAttribute(SESS_ATTR_CERTAUTH_SERIAL, serial);
+            getSession().setAttribute(SESS_ATTR_CERTAUTH_SERIAL, serial);
         }
     }
 }

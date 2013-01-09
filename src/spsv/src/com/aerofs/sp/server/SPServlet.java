@@ -11,11 +11,13 @@ import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
+import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
+import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderInvitationDatabase;
-import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
+import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.email.InvitationEmailer;
@@ -33,7 +35,8 @@ import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.sp.server.lib.SPDatabase;
-import com.aerofs.sp.server.lib.ThreadLocalHttpSessionUser;
+import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
 import org.apache.log4j.Logger;
@@ -46,6 +49,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
+import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_PUBLISHER_ATTRIBUTE;
@@ -71,11 +76,13 @@ public class SPServlet extends AeroServlet
             new SharedFolderInvitationDatabase(_trans);
     private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_trans);
 
-    private final ThreadLocalHttpSessionUser _sessionUser = new ThreadLocalHttpSessionUser();
+    private final ThreadLocalHttpSessionProvider _sessionProvider =
+            new ThreadLocalHttpSessionProvider();
+    private final HttpSessionUser _sessionUser = new HttpSessionUser(_sessionProvider);
 
     private final CertificateGenerator _certgen = new CertificateGenerator();
-    private final ThreadLocalCertificateAuthenticator _certificateAuthenticator =
-            new ThreadLocalCertificateAuthenticator();
+    private final CertificateAuthenticator _certificateAuthenticator =
+            new CertificateAuthenticator(_sessionProvider);
 
     private final Organization.Factory _factOrg = new Organization.Factory();
     private final SharedFolder.Factory _factSharedFolder = new SharedFolder.Factory();
@@ -116,6 +123,9 @@ public class SPServlet extends AeroServlet
         _certgen.setCAURL_(getServletContext().getInitParameter("ca_url"));
         _service.setVerkehrClients_(getVerkehrPublisher(), getVerkehrAdmin());
 
+        _service.setUserTracker(getUserTracker());
+        _service.setSessionInvalidator(getSessionInvalidator());
+
         String dbResourceName =
                 getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
 
@@ -141,11 +151,21 @@ public class SPServlet extends AeroServlet
         return (VerkehrPublisher) getServletContext().getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
     }
 
+    private SPActiveUserSessionTracker getUserTracker()
+    {
+        return (SPActiveUserSessionTracker) getServletContext().getAttribute(SESSION_USER_TRACKER);
+    }
+
+    private SPSessionInvalidator getSessionInvalidator()
+    {
+        return (SPSessionInvalidator) getServletContext().getAttribute(SESSION_INVALIDATOR);
+    }
+
     @Override
     protected void doPost(HttpServletRequest req, final HttpServletResponse resp)
         throws IOException
     {
-        _sessionUser.setSession(req.getSession());
+        _sessionProvider.setSession(req.getSession());
         initCertificateAuthenticator(req);
 
         // Receive protocol version number.

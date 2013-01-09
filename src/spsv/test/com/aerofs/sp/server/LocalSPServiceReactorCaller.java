@@ -27,8 +27,11 @@ import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
+import com.aerofs.sp.server.lib.session.ThreadLocalHttpSessionProvider;
 import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
 
@@ -103,13 +106,18 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         PasswordManagement passwordManagement =
                 new PasswordManagement(db, factUser, mock(PasswordResetEmailer.class));
-        ThreadLocalCertificateAuthenticator certificateAuthenticator =
-                new ThreadLocalCertificateAuthenticator();
+
+        ThreadLocalHttpSessionProvider sessionProvider = new ThreadLocalHttpSessionProvider();
+        CertificateAuthenticator certificateAuthenticator =
+                new CertificateAuthenticator(sessionProvider);
+
+        SPActiveUserSessionTracker userTracker = new SPActiveUserSessionTracker();
 
         SPService service = new SPService(db, sfdb, trans, new MockSessionUser(),
                 passwordManagement, certificateAuthenticator, factUser, factOrg, factOrgInvite,
                 factDevice, factCert, certdb, esdb, factSharedFolder, factSFI, factEmailer);
 
+        service.setUserTracker(userTracker);
         reactor = new SPServiceReactor(service);
     }
 

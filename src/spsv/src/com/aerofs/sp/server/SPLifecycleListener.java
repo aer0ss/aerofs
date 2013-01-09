@@ -1,7 +1,13 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.sp.server.lib.user.User;
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.lib.NoopConnectionListener;
+import com.aerofs.sp.server.lib.session.HttpSessionUser;
+import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
+import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
+import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -11,11 +17,16 @@ import org.jboss.netty.util.HashedWheelTimer;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
 import java.io.File;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Util.join;
+import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
+import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_CACERT_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ADMIN_ATTRIBUTE;
@@ -27,9 +38,18 @@ import static com.aerofs.sp.server.lib.SPParam.VERKEHR_RECONNECT_DELAY;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.lang.Short.parseShort;
 
-public class SPLifecycleListener implements ServletContextListener
+public class SPLifecycleListener implements ServletContextListener, HttpSessionListener
 {
     private static final Logger l = Util.l(SPLifecycleListener.class);
+
+    // Trackers.
+    private final SPActiveUserSessionTracker _userSessionTracker = new SPActiveUserSessionTracker();
+    private final SPActiveTomcatSessionTracker _tomcatSessionTracker =
+            new SPActiveTomcatSessionTracker();
+
+    // Session invalidator.
+    private final SPSessionInvalidator _sessionInvalidator =
+            new SPSessionInvalidator(_userSessionTracker, _tomcatSessionTracker);
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
@@ -56,13 +76,19 @@ public class SPLifecycleListener implements ServletContextListener
         // FIXME (AG): HMMMMMMMM...notice how similar the admin is to a publisher?
         // FIXME (AG): really we should simply store the factories
 
-        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer, new NoopConnectionListener(), sameThreadExecutor());
+        VerkehrPublisher publisher = getPublisher(host, publishPort, cacert, boss, workers, timer,
+                new NoopConnectionListener(), sameThreadExecutor());
         publisher.start();
         ctx.setAttribute(VERKEHR_PUBLISHER_ATTRIBUTE, publisher);
 
-        VerkehrAdmin admin = getAdmin(host, adminPort, cacert, boss, workers, timer, new NoopConnectionListener(), sameThreadExecutor());
+        VerkehrAdmin admin = getAdmin(host, adminPort, cacert, boss, workers, timer,
+                new NoopConnectionListener(), sameThreadExecutor());
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
+
+        // Set up the user session tracker and the session invalidator.
+        ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);
+        ctx.setAttribute(SESSION_INVALIDATOR, _sessionInvalidator);
     }
 
     private VerkehrAdmin getAdmin(String host, short adminPort,
@@ -114,12 +140,43 @@ public class SPLifecycleListener implements ServletContextListener
     {
         ServletContext ctx = servletContextEvent.getServletContext();
 
-        VerkehrPublisher publisher =  (VerkehrPublisher) ctx.getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
+        VerkehrPublisher publisher =
+                (VerkehrPublisher) ctx.getAttribute(VERKEHR_PUBLISHER_ATTRIBUTE);
+
         assert publisher != null;
         publisher.stop();
 
         VerkehrAdmin admin =  (VerkehrAdmin) ctx.getAttribute(VERKEHR_ADMIN_ATTRIBUTE);
         assert admin != null;
         admin.stop();
+    }
+
+    @Override
+    public void sessionCreated(final HttpSessionEvent event)
+    {
+        _tomcatSessionTracker.sessionCreated(event.getSession());
+    }
+
+    @Override
+    public void sessionDestroyed(final HttpSessionEvent event)
+    {
+        _tomcatSessionTracker.sessionDestroyed(event.getSession().getId());
+
+        // If a sign in has occurred for this specific session, update the user session tracker
+        // as well.
+        HttpSessionUser sessionUser = new HttpSessionUser(new IHttpSessionProvider()
+        {
+            @Override
+            public HttpSession get()
+            {
+                return event.getSession();
+            }
+        });
+
+        User user = sessionUser.getNullable();
+
+        if (user != null) {
+            _userSessionTracker.signOut(user.id(), event.getSession().getId());
+        }
     }
 }

@@ -30,7 +30,6 @@ import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.SharedFolderDatabase.GetACLResult;
-import com.aerofs.sp.server.lib.ThreadLocalCertificateAuthenticator;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
@@ -39,6 +38,9 @@ import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
+import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
+import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.proto.Common.PBException;
@@ -95,8 +97,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import static com.aerofs.sp.server.SPParam.SP_EMAIL_NAME;
-
 public class SPService implements ISPService
 {
     private static final Logger l = Util.l(SPService.class);
@@ -115,6 +115,9 @@ public class SPService implements ISPService
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrAdmin _verkehrAdmin;
 
+    private SPActiveUserSessionTracker _userTracker;
+    private SPSessionInvalidator _sessionInvalidator;
+
     // Several methods in this SPService require access to the HttpSession's user id.
     // Since the Protobuf plugin cannot get access to the session user,
     // we use this interface to gain access to the user Id of the current SPServlet thread.
@@ -123,7 +126,7 @@ public class SPService implements ISPService
     private final ISessionUser _sessionUser;
 
     private final PasswordManagement _passwordManagement;
-    private final ThreadLocalCertificateAuthenticator _certificateAuthenticator;
+    private final CertificateAuthenticator _certificateAuthenticator;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
     private final OrganizationInvitation.Factory _factOrgInvite;
@@ -136,7 +139,7 @@ public class SPService implements ISPService
     SPService(SPDatabase db, SharedFolderDatabase sfdb,
             IThreadLocalTransaction<SQLException> transaction, ISessionUser sessionUser,
             PasswordManagement passwordManagement,
-            ThreadLocalCertificateAuthenticator certificateAuthenticator, User.Factory factUser,
+            CertificateAuthenticator certificateAuthenticator, User.Factory factUser,
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
@@ -165,11 +168,23 @@ public class SPService implements ISPService
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
     {
-        assert verkehrPublisher != null : ("cannot set null verkehr publisher client");
-        assert verkehrAdmin != null : ("cannot set null verkehr admin client");
+        assert verkehrPublisher != null;
+        assert verkehrAdmin != null;
 
         _verkehrPublisher = verkehrPublisher;
         _verkehrAdmin = verkehrAdmin;
+    }
+
+    public void setUserTracker(SPActiveUserSessionTracker userTracker)
+    {
+        assert userTracker != null;
+        _userTracker = userTracker;
+    }
+
+    public void setSessionInvalidator(SPSessionInvalidator sessionInvalidator)
+    {
+        assert sessionInvalidator != null;
+        _sessionInvalidator = sessionInvalidator;
     }
 
     @Override
@@ -188,7 +203,7 @@ public class SPService implements ISPService
         // Notify SPTransaction that an exception occurred.
         _transaction.handleException();
 
-        // don't include stack trace here to avoid expose SP internals to the client side.
+        // Don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
     }
 
@@ -380,6 +395,9 @@ public class SPService implements ISPService
         User subject = _factUser.createFromExternalID(userIdString);
         AuthorizationLevel newAuth = AuthorizationLevel.fromPB(authLevel);
 
+        l.info("Set auth requester=" + requester.id() + " subject=" + subject.id() + " auth=" +
+                newAuth);
+
         // Verify caller and subject's organization match
         if (!requester.getOrganization().id().equals(subject.getOrganization().id())) {
             throw new ExNoPerm("organization mismatch");
@@ -396,6 +414,7 @@ public class SPService implements ISPService
         }
 
         subject.setLevel(newAuth);
+        _sessionInvalidator.invalidate(subject.id());
 
         _transaction.commit();
 
@@ -593,7 +612,7 @@ public class SPService implements ISPService
     {
         _transaction.begin();
 
-        SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME,
+        SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
                 _sessionUser.get().id().toString(), null, UserID.fromExternal(userId).toString(),
                 body, null, true, null);
 
@@ -1139,7 +1158,7 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userIdString);
 
         if (user.id().isTeamServerID()) {
-            l.debug("TS login: " + user);
+            l.debug("TS sign in: " + user);
 
             // Team servers use certificates (in this case the passed credentials don't matter).
             if (!_certificateAuthenticator.isAuthenticated())
@@ -1154,13 +1173,16 @@ public class SPService implements ISPService
                 throw new ExBadCredential();
             }
         } else {
-            l.debug("User login: " + userIdString);
+            l.debug("User sign in: " + userIdString);
 
             // Regular users still use username/password credentials.
             user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
         }
 
+        // Set the session cookie.
         _sessionUser.set(user);
+        // Update the user tracker so we can invalidate sessions if needed.
+        _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
         _transaction.commit();
 

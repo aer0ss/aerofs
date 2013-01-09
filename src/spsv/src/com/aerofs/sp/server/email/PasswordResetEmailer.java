@@ -16,7 +16,7 @@ import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 import java.io.IOException;
 
-import static com.aerofs.sp.server.SPParam.*;
+import static com.aerofs.sp.server.lib.SPParam.*;
 
 // TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring
 // and/or merging.
@@ -43,7 +43,7 @@ public class PasswordResetEmailer
                 Email.DEFAULT_PS);
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS,SP_EMAIL_NAME, userId.toString(), null,
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME, userId.toString(), null,
                     subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {

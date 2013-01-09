@@ -34,4 +34,9 @@ public interface ISessionUser
      * ExNoPerm, unless the ID has been set again.
      */
     void remove();
+
+    /**
+     * Get the tomcat session ID associated with this session user.
+     */
+    String getSessionID();
 }
