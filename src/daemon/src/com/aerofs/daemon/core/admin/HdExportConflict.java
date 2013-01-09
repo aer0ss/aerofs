@@ -32,8 +32,8 @@ public class HdExportConflict extends AbstractHdIMC<EIExportConflict>
     protected void handleThrows_(EIExportConflict ev, Prio prio) throws Exception
     {
         SOID soid = _ds.resolveThrows_(ev._path);
-        OA oa = _ds.getOA_(soid);
-        CA ca = oa.ca(ev._kidx);
+        OA oa = _ds.getOAThrows_(soid);
+        CA ca = oa.caThrows(ev._kidx);
         IPhysicalFile pf = ca.physicalFile();
         File src = new File(pf.getAbsPath_());
 
