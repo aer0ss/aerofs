@@ -198,7 +198,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         ARPEntry arpentry = notifyOffline ? _arp.remove(did) : _arp.get(did);
 
         if (arpentry != null) {
-            l.info("remove: disconnect connections");
+            l.info("remove: disconnect connections " + arpentry._sidsOnline);
             _ucast.disconnect(arpentry._isa);
 
         }

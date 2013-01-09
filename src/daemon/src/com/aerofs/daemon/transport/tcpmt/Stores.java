@@ -439,15 +439,16 @@ class Stores implements IARPChangeListener
             ImmutableSet<SID> newlyAvailableSids =
                     getNewlyAvailableSids_(oldMembership, added, addedPrefixes);
 
-            ImmutableSet.Builder<SID> newOnlineSidsBuilder = ImmutableSet.builder();
-            newOnlineSidsBuilder.addAll(oldMembership._onlineSids); // previously online
-            newOnlineSidsBuilder.addAll(newlyAvailableSids); // online given this updateStores call
+            ImmutableSet<SID> newOnlineSids = ImmutableSet.copyOf(
+                    Sets.union(
+                    oldMembership._onlineSids, // previously online
+                    newlyAvailableSids)); // online given this updateStores call
 
             PerDeviceStoreMembership newMembership = new PerDeviceStoreMembership(
                     oldMembership._filter,
                     oldMembership._filterSeqnum,
                     oldMembership._prefixes,
-                    newOnlineSidsBuilder.build());
+                    newOnlineSids);
 
             updateMembership_(did, oldMembership, newMembership);
         }

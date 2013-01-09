@@ -42,6 +42,7 @@ import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream.Type;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
+import com.google.common.collect.ImmutableMap;
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
@@ -60,6 +61,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
@@ -504,7 +506,8 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
             public void handle_()
             {
                 try {
-                    _sink.enqueueBlocking(new EIPresence(XMPP.this, false, null), Prio.LO);
+                    _sink.enqueueBlocking(new EIPresence(XMPP.this, false,
+                            ImmutableMap.<DID, Collection<SID>>of()), Prio.LO);
                     _mc.xmppServerDisconnected();
                     _spf.xmppServerDisconnected_();
                 } catch (ExNoResource e) {

@@ -16,11 +16,14 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 public class HdPresence implements IEventHandler<EIPresence>
 {
     private final DevicePresence _dp;
     private final IMapSID2SIndex _sid2sidx;
+    private static final Logger l = Util.l(HdPresence.class);
+
     @Inject
     public HdPresence(DevicePresence dp, IMapSID2SIndex sid2sidx)
     {
@@ -31,11 +34,13 @@ public class HdPresence implements IEventHandler<EIPresence>
     @Override
     public void handle_(EIPresence ev, Prio prio)
     {
-        if (ev._did2sids == null) {
+        if (ev._did2sids.isEmpty()) {
             assert !ev._online;
             _dp.offline_(ev._tp);
 
         } else {
+            if (l.isDebugEnabled()) l.debug("did2sids " + ev._did2sids);
+
             for (Entry<DID, Collection<SID>> en : ev._did2sids.entrySet()) {
                 DID did = en.getKey();
                 Collection<SID> sids = en.getValue();
@@ -47,7 +52,7 @@ public class HdPresence implements IEventHandler<EIPresence>
                     // ignore stores that don't exist
                     if (sidx != null) sidcs.add(sidx);
                 }
-                Util.l(this).debug("sids " + sids + " sidcs " + sidcs);
+                if (l.isDebugEnabled()) l.debug(" sidcs " + sidcs);
 
                 if (ev._online) _dp.online_(ev._tp, did, sidcs);
                 else _dp.offline_(ev._tp, did, sidcs);
