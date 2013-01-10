@@ -16,9 +16,9 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportFileReply;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
-import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
-import com.aerofs.proto.Ritual.GetObjectAttributesReply;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.proto.Objects.GetChildrenAttributesReply;
+import com.aerofs.proto.Objects.GetObjectAttributesReply;
+import com.aerofs.proto.Objects.PBObjectAttributes;
 import com.google.protobuf.ByteString;
 
 public class CmdExport implements IShellCommand<ShProgram>

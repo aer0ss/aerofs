@@ -43,7 +43,7 @@ import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
-import com.aerofs.proto.Sp.PBSyncStatNotification;
+import com.aerofs.proto.SpNotifications.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DevicesSyncStatus;

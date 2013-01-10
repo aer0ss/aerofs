@@ -63,7 +63,7 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
 import com.aerofs.proto.Sp.ListSharedFoldersReply;
 import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder;
 import com.aerofs.proto.Sp.ListUsersReply;
-import com.aerofs.proto.Sp.PBACLNotification;
+import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;

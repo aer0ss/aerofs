@@ -13,7 +13,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.proto.Objects.PBObjectAttributes;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.apache.log4j.Logger;

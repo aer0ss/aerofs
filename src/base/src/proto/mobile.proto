@@ -3,10 +3,7 @@ option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "common.proto";
-
-// TODO (WW) do not include ritual.proto directly, but have it share a separate proto file with
-// ritual.
-import "ritual.proto";
+import "objects.proto";
 
 service MobileService {
     // Sets the message type used in case of errors
@@ -17,12 +14,12 @@ service MobileService {
 
     // Return the attribute of a given file or folder.
     // Throw NOT_FOUND if the object doesn't exist
-    rpc GetObjectAttributes(ritual.GetObjectAttributesCall) returns(ritual.GetObjectAttributesReply);
+    rpc GetObjectAttributes(GetObjectAttributesCall) returns(GetObjectAttributesReply);
 
     // Return the list of children names as long with their attributes for a given parent folder.
     // Throw NOT_FOUND if the parent path doesn't exist
     // Throw NOT_DIR if the parent path is not a folder
-    rpc GetChildrenAttributes(ritual.GetChildrenAttributesCall) returns(ritual.GetChildrenAttributesReply);
+    rpc GetChildrenAttributes(GetChildrenAttributesCall) returns(GetChildrenAttributesReply);
 
     // Download a file
     rpc StartDownload(StartDownloadCall) returns(StartDownloadReply);

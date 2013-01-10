@@ -10,10 +10,10 @@ import org.apache.commons.cli.Options;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Common.PBPath;
-import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
+import com.aerofs.proto.Objects.GetChildrenAttributesReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
-import com.aerofs.proto.Ritual.PBBranch;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
+import com.aerofs.proto.Objects.PBBranch;
+import com.aerofs.proto.Objects.PBObjectAttributes;
 import com.aerofs.proto.Ritual.PBRevChild;
 
 public class CmdList implements IShellCommand<ShProgram>

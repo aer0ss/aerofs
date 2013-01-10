@@ -4,8 +4,8 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExUIMessage;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
+import com.aerofs.proto.Objects.PBObjectAttributes;
+import com.aerofs.proto.Objects.PBObjectAttributes.Type;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 

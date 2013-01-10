@@ -10,9 +10,9 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.proto.Ritual.GetChildrenAttributesReply;
-import com.aerofs.proto.Ritual.PBObjectAttributes;
-import com.aerofs.proto.Ritual.PBObjectAttributes.Type;
+import com.aerofs.proto.Objects.GetChildrenAttributesReply;
+import com.aerofs.proto.Objects.PBObjectAttributes;
+import com.aerofs.proto.Objects.PBObjectAttributes.Type;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 

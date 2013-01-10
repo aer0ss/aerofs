@@ -9,7 +9,7 @@ import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.proto.Sp.PBSyncStatNotification;
+import com.aerofs.proto.SpNotifications.PBSyncStatNotification;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 

@@ -8,7 +8,7 @@ import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.proto.Sp.PBACLNotification;
+import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 

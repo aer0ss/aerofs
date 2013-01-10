@@ -81,7 +81,6 @@ message GetSyncStatusCall {
 }
 
 message GetSyncStatusReply {
-
     // Message that represents the sync status for a given device (which, when associated with
     // an OID/SID pair, encapsulates the full state of the given object).
     message DeviceSyncStatus {

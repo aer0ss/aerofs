@@ -1,0 +1,56 @@
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
+import "common.proto";
+
+message GetObjectAttributesCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message GetObjectAttributesReply {
+    required PBObjectAttributes object_attributes = 1;
+}
+
+message GetChildrenAttributesCall {
+    required string user = 1;
+    required PBPath path = 2;
+}
+
+message GetChildrenAttributesReply {
+    repeated string children_name = 1;
+    repeated PBObjectAttributes children_attributes = 2;
+}
+
+message PBObjectAttributes {
+    enum Type {
+        FILE = 0;
+        FOLDER = 1;
+        SHARED_FOLDER = 2;
+    }
+    required Type type = 1;
+
+    // An object has one or more branches iff it is a file and it has been downloaded locally.
+    repeated PBBranch branch = 2;
+
+    required bool excluded = 3;
+}
+
+/**
+ * Each Branch object describes the attributes of a branch of a file. Files that
+ * haven't been downloaded have zero branches. Otherwise, they must have
+ * as least a master branch.
+ */
+message PBBranch {
+    // the KIndex of the branch this content attribute refers to. The KIndex of
+    // master branches is always KIndex.MASTER. The value of the field can be
+    // converted to a {@link com.aci.aerofs.lib.id.KIndex} object by using
+    // <code>new KIndex(kidx)</code>
+    required uint32 kidx = 1;
+
+    // content length. see ContentAttr.length() for details
+    required uint64 length = 2;
+
+    // last modification of the conflict file
+    required uint64 mtime = 3;
+}
