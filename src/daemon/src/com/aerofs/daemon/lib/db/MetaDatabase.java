@@ -216,6 +216,48 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         }
     }
 
+    private PreparedStatement _psSOAP;
+    @Override
+    public void setOAParent_(SIndex sidx, OID oid, OID parent, Trans t)
+            throws SQLException, ExAlreadyExist
+    {
+        try {
+            if (_psSOAP == null) _psSOAP = c().prepareStatement(
+                DBUtil.updateWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_OID + "=?", C_OA_PARENT));
+
+            _psSOAP.setBytes(1, parent.getBytes());
+            _psSOAP.setInt(2, sidx.getInt());
+            _psSOAP.setBytes(3, oid.getBytes());
+            Util.verify(_psSOAP.executeUpdate() == 1);
+
+        } catch (SQLException e) {
+            DBUtil.close(_psSOAP);
+            _psSOAP = null;
+            _dbcw.throwOnConstraintViolation(e);
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psROAOID;
+    @Override
+    public void replaceOAOID_(SIndex sidx, OID oidOld, OID oidNew, Trans t)
+            throws SQLException, ExAlreadyExist {
+        try {
+            if (_psROAOID == null) _psROAOID = c().prepareStatement(
+                DBUtil.updateWhere(T_OA, C_OA_SIDX + "=? and " + C_OA_OID + "=?", C_OA_OID));
+
+            _psROAOID.setBytes(1, oidNew.getBytes());
+            _psROAOID.setInt(2, sidx.getInt());
+            _psROAOID.setBytes(3, oidOld.getBytes());
+            Util.verify(_psROAOID.executeUpdate() == 1);
+        } catch (SQLException e) {
+            DBUtil.close(_psROAOID);
+            _psROAOID = null;
+            _dbcw.throwOnConstraintViolation(e);
+            throw e;
+        }
+    }
+
     private PreparedStatement _psSOAF;
 
     @Override

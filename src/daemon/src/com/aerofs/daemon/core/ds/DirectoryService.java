@@ -11,6 +11,7 @@ import java.util.Set;
 
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.linked.LinkedStorage;
@@ -35,6 +36,7 @@ import com.aerofs.lib.id.*;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -49,6 +51,8 @@ import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
 {
@@ -246,7 +250,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         throws ExNotFound, SQLException
     {
         OA oa = getOANullable_(soid);
-        if (oa == null) throw new ExNotFound();
+        if (oa == null) throw new ExNotFound(soid.toString());
         return oa;
     }
 
@@ -415,6 +419,47 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     final public boolean isTrashOrDeleted_(@Nonnull SOID soid) throws SQLException
     {
         return soid.oid().isTrash() || isDeleted_(getOA_(soid));
+    }
+
+    public void swapOIDsInSameStoreForAliasing_(SIndex sidx, OID oid1, OID oid2, Trans t)
+            throws SQLException, ExNotFound, ExNotDir
+    {
+        Path path1 = resolve_(new SOID(sidx, oid1));
+        Path path2 = resolve_(new SOID(sidx, oid2));
+
+        // This method is only intended for swapping oids of nested directories
+        // oid2 is nested under oid1
+        checkState(path2.isUnder(path1), Joiner.on(' ').join(sidx, oid1, oid2));
+
+        final OA oa1 = getOA_(new SOID(sidx, oid1));
+        final OA oa2 = getOA_(new SOID(sidx, oid2));
+
+        // This method is only intended for swapping oids among directories.
+        checkState(oa1.isDir() && oa2.isDir(), oa1 + " " + oa2);
+
+        Set<OID> oid1Children = getChildren_(oa1.soid());
+        Set<OID> oid2Children = getChildren_(oa2.soid());
+
+        checkState(Sets.intersection(oid1Children, oid2Children).isEmpty(),
+            Joiner.on(' ').join(oa1, oa2, oid1Children, oid2Children));
+
+        try {
+            for (OID oid : oid1Children) _mdb.setOAParent_(sidx, oid, oid2, t);
+            for (OID oid : oid2Children) _mdb.setOAParent_(sidx, oid, oid1, t);
+
+            // Swap the rows for oid1 and oid2 (must create a temporary value to enable the swap)
+            OID oidTemp = new OID(UniqueID.generate());
+            _mdb.replaceOAOID_(sidx, oid1, oidTemp, t);
+            _mdb.replaceOAOID_(sidx, oid2, oid1, t);
+            _mdb.replaceOAOID_(sidx, oidTemp, oid2, t);
+
+        } catch (ExAlreadyExist e) {
+            // We don't expect AlreadyExist exception to be thrown
+            throw new RuntimeException(Joiner.on(' ').join(oid1, oid2), e);
+        }
+
+        _cacheOA.invalidateAll_();
+        _cacheDS.invalidateAll_();
     }
 
     /**
