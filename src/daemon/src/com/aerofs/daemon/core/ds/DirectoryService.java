@@ -424,6 +424,8 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     public void swapOIDsInSameStoreForAliasing_(SIndex sidx, OID oid1, OID oid2, Trans t)
             throws SQLException, ExNotFound, ExNotDir
     {
+        if (l.isDebugEnabled()) l.debug("in " + sidx + " swap oids " + oid1 + " " + oid2);
+
         Path path1 = resolve_(new SOID(sidx, oid1));
         Path path2 = resolve_(new SOID(sidx, oid2));
 
