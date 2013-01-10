@@ -5,8 +5,10 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.lib.C;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.SystemUtil;
+import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.sv.client.SVClient;
@@ -67,7 +69,11 @@ final class CoreProgressWatcher implements IStartable
         if ((currNumExecutedEvents == _prevNumExecutedEvents) && haveWaitingEvents) {
             l.warn("daemon made no progress stopped executing after n:" + _prevNumExecutedEvents);
 
-            Util.logAllThreadStackTraces();
+            // dump thread stacks three times so we can see which thread is not making progress.
+            for (int i = 0; i < 3; i++) {
+                if (i != 0) ThreadUtil.sleepUninterruptable(3 * C.SEC);
+                Util.logAllThreadStackTraces();
+            }
 
             SVClient.logSendDefectSyncIgnoreErrors(true, "stuck daemon", new ExTimeout("stuck daemon"));
 
