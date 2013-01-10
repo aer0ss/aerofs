@@ -340,7 +340,7 @@ public abstract class FileUtil
     {
         throwIfNotFile(f);
         if (!f.setLastModified(mtime)) {
-            throw new ExFileIO("can't set the last modified time for file", f);
+            throw new ExFileIO("can't set the last modified time " + mtime + " for file", f);
         }
     }
 
