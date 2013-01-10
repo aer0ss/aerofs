@@ -10,6 +10,7 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.IACLDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
@@ -189,7 +190,7 @@ public class ACLSynchronizer
          * TODO: implicitly leave shared folder when the user deletes
          */
         File noJoinFlagFile = new File(Cfg.absRTRoot(), "nojoin");
-        boolean noAutoJoin = noJoinFlagFile.exists();
+        boolean noAutoJoin = noJoinFlagFile.exists() && !L.get().isMultiuser();
 
         Trans t = _tm.begin_();
         try {

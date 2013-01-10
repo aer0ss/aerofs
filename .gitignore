@@ -1,4 +1,5 @@
 approot
+approot.multiuser
 workspace.xml
 .metadata
 .DS_Store

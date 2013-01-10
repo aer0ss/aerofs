@@ -22,7 +22,8 @@ from lib import app
 from gen import common_pb2, ritual_pb2
 from gen.common_pb2 import PBException, PBSubjectRolePair
 
-def connect(rpc_host_addr = 'localhost', rpc_host_port = 50197, user = None):
+def connect(rpc_host_addr = 'localhost', rpc_host_port = None, user = None):
+    if rpc_host_port is None: rpc_host_port = app.cfg.ritual_port()
     if user is None: user = app.user()
     ritual_service = ritual_pb2.RitualServiceRpcStub(
             connection.SyncConnectionService(rpc_host_addr, rpc_host_port))
