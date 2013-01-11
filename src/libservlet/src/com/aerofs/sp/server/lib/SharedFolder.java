@@ -270,16 +270,6 @@ public class SharedFolder
         return builder.build();
     }
 
-    public Collection<User> getPendingUsers()
-            throws SQLException
-    {
-        Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._db.getPendingACLUsers(_sid)) {
-            builder.add(_f._factUser.create(userID));
-        }
-        return builder.build();
-    }
-
     public List<SubjectRolePair> getACL() throws SQLException
     {
         return _f._db.getACL(_sid);

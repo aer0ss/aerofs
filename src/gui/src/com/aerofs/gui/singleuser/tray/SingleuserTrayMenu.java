@@ -142,7 +142,8 @@ public class SingleuserTrayMenu implements ITrayMenu
         } else {
 
             addShareFolderMenuItem();
-            addAcceptInvitationMenuitem();
+            // Disable this for now.
+            //addAcceptInvitationMenuitem();
             createManageSharedFoldersMenu();
 
             _trayMenuPopulator.addMenuSeparator();

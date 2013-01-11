@@ -176,7 +176,7 @@ service SPService {
     rpc ShareFolder(ShareFolderCall) returns(Void);
 
     /**
-     * Add the user to a shared folder (provided he was invited)
+     * Add the user to a shared folder (provided he/she was invited).
      *
      * NB: pushes ACL update to clients
      *
@@ -192,15 +192,27 @@ service SPService {
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
 
     /**
-     * Remove the user from a shared folder (provided he was a member)
+     * Ignore an invite to a shared folder.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNotFound if the shared folder does not exist.
+     *   ExNoPerm if the user has not been invited to this shared folder.
+     *   ExAlreadyExist if the user is already a member of this shared folder.
+     */
+    rpc IgnoreSharedFolderInvitation(IgnoreSharedFolderCall) returns(Void);
+
+    /**
+     * Remove the user from a shared folder (provided he/she was a member).
      *
      * NB: pushes ACL update to clients
      *
      * Required Auth Level: user
      *
      * Throws:
-     *   ExNotFound if the shared folder code wasn't found
-     *   ExNoPerm if the user was not invited to the shared folder
+     *   ExNotFound if the shared folder wasn't found.
+     *   ExNoPerm if the user was not invited to the shared folder.
      */
     rpc LeaveSharedFolder(LeaveSharedFolderCall) returns(Void);
 
@@ -211,12 +223,12 @@ service SPService {
      *
      * Throws:
      *   ExNoPerm if there is at least one pending invitaton and the user email address
-     *            isn't be verified.
+     *            hasn't be verified.
      */
     rpc ListPendingFolderInvitations(Void) returns(ListPendingFolderInvitationsReply);
 
     /**
-     * Sends an email to the user
+     * Sends an email to the user.
      *
      * Required Auth Level: user
      */
@@ -572,6 +584,10 @@ message ShareFolderCall {
 }
 
 message JoinSharedFolderCall {
+    required bytes shared_id = 1;
+}
+
+message IgnoreSharedFolderCall {
     required bytes shared_id = 1;
 }
 

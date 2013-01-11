@@ -94,7 +94,7 @@ public class C
     // 2) src/web/production.ini
     // 3) syncdet_test/lib/param.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 19;
+    public static final int SP_PROTOCOL_VERSION         = 20;
     public static final int SS_PROTOCOL_VERSION         = 6;
 
     public static final String LOG_FILE_EXT             = ".log";

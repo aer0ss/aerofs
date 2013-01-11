@@ -824,6 +824,34 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> ignoreSharedFolderInvitation(ByteString sid) throws Exception
+    {
+        _transaction.begin();
+
+        User user = _sessionUser.get();
+        SharedFolder sf = _factSharedFolder.create(new SID(sid));
+
+        l.info(user + " ignore " + sf);
+
+        if (!sf.exists()) {
+            throw new ExNotFound("No such shared folder");
+        }
+        if (!sf.isInvited(user)) {
+            throw new ExNoPerm("You have not been invited to this shared folder");
+        }
+        if (sf.isMember(user)) {
+            throw new ExAlreadyExist("You have already accepted this invitation");
+        }
+
+        // Ignore the invitation by deleting the ACL.
+        sf.deleteACL(Collections.singleton(user.id()));
+
+        _transaction.commit();
+
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<Void> leaveSharedFolder(ByteString sid) throws Exception
     {
         _transaction.begin();

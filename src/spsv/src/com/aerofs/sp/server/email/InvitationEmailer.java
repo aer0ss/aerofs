@@ -135,11 +135,14 @@ public class InvitationEmailer
             // TODO: add link to "pending invitations" page
 
             String nameAndEmail = fromPerson.isEmpty() ? from : fromPerson + " (" + from + ")";
-            String body = "\n" + nameAndEmail + " has invited you to a shared " + L.PRODUCT
-                    + " folder" + (note != null ? (":\n\n" + note) : ".") + "\n\n"
-                    + "In the " + L.PRODUCT + " tray menu, click on \"Accept Invitation...\" and "
-                    + "select the folder named \"" + folderName + "\" to accept.\n\n"
-                    + "You can download " + L.PRODUCT + " at " + url + ".";
+            String body = "\n" + nameAndEmail + " has invited you to a shared " + L.PRODUCT +
+                    " folder" +
+                    (note != null ? (":\n\n" + note) : ".") +
+                    "\n\n" +
+                    "Click on this link to view and accept the invitation: " +
+                    AdminPanelParam.ADMIN_ACCEPT_LINK +
+                    "\n\n" +
+                    "You can download " + L.PRODUCT + " at " + url + ".";
 
             // If fromPerson is empty (user didn't set his name), use his email address instead
             String nameOrEmail = fromPerson.isEmpty() ? from : fromPerson;
@@ -194,7 +197,7 @@ public class InvitationEmailer
             String body = "\n" + inviterLongName + " has invited you to join the team on AeroFS." +
                     "\n\n" +
                     "Click on this link to view the " +
-                    "invitation: " + AdminPanelParam.ADMIN_ORG_ACCEPT_LINK +
+                    "invitation: " + AdminPanelParam.ADMIN_ACCEPT_LINK +
                     "\n\n" +
                     "Once you join the team, all the files in your " + S.ROOT_ANCHOR + " will be" +
                     " synced to the team's AeroFS Team Server." + // TODO (WW) labeling
