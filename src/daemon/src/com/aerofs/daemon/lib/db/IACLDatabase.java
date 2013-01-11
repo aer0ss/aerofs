@@ -68,4 +68,9 @@ public interface IACLDatabase
      * @throws SQLException if there are db errors during the update
      */
     void setEpoch_(long newEpoch, Trans t) throws SQLException;
+
+    /**
+     *
+     */
+    IDBIterator<SIndex> getAccessibleStores_(UserID subject) throws SQLException;
 }

@@ -185,4 +185,37 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
             throw e;
         }
     }
+
+    private class StoreIterator extends AbstractDBIterator<SIndex>
+    {
+        public StoreIterator(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        @Override
+        public SIndex get_() throws SQLException
+        {
+            return new SIndex(_rs.getInt(1));
+        }
+    }
+
+    private PreparedStatement _psGetAccessibleStores;
+    @Override
+    public IDBIterator<SIndex> getAccessibleStores_(UserID subject) throws SQLException
+    {
+        try {
+            if (_psGetAccessibleStores == null) {
+                _psGetAccessibleStores = c().prepareStatement(DBUtil.selectWhere(T_ACL,
+                        C_ACL_SUBJECT + "=?", C_ACL_SIDX));
+            }
+            _psGetAccessibleStores.setString(1, subject.toString());
+
+            return new StoreIterator(_psGetAccessibleStores.executeQuery());
+        } catch (SQLException e) {
+            DBUtil.close(_psGetAccessibleStores);
+            _psGetAccessibleStores = null;
+            throw e;
+        }
+    }
 }

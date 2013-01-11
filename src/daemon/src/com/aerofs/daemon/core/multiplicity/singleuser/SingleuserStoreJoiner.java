@@ -58,7 +58,10 @@ public class SingleuserStoreJoiner implements IStoreJoiner
          * before the original move propagates)
          */
         OID oid = SID.convertedStoreSID2folderOID(sid);
-        if (_ds.hasOA_(new SOID(root, oid))) return;
+        if (_ds.hasOA_(new SOID(root, oid))) {
+            l.info("original folder already present");
+            return;
+        }
 
         assert folderName != null : sidx + " " + sid.toStringFormal();
 
@@ -78,7 +81,18 @@ public class SingleuserStoreJoiner implements IStoreJoiner
          */
         if (oaAnchor != null) {
             assert oaAnchor.isAnchor() : anchor;
-            return;
+            if (_ds.isDeleted_(oaAnchor)) {
+                l.info("restore deleted anchor");
+                /**
+                 * If the user was kicked out and later re-invited the anchor will be present in its
+                 * trash. Moving the anchor out of the trash would be too cumbersome so we simply
+                 * delete the existing OA and proceed to re-create it as if it had never existed
+                 */
+                _ds.deleteOA_(anchor, t);
+            } else {
+                l.info("anchor already present");
+                return;
+            }
         }
 
         l.info("joining share: " + sidx + " " + folderName);

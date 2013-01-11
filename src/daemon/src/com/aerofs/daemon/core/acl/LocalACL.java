@@ -19,11 +19,13 @@ import com.aerofs.lib.Path;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * ACL: Access Control List. AeroFS uses Discretionary ACL.
@@ -169,6 +171,18 @@ public class LocalACL
     {
         _adb.clear_(t);
         invalidateAll_();
+    }
+
+    Set<SIndex> getAccessibleStores_() throws SQLException
+    {
+        Set<SIndex> s = Sets.newHashSet();
+        IDBIterator<SIndex> it = _adb.getAccessibleStores_(_cfgLocalUser.get());
+        try {
+            while (it.next_()) s.add(it.get_());
+        } finally {
+            it.close_();
+        }
+        return s;
     }
 
     private void invalidate_(SIndex sidx)

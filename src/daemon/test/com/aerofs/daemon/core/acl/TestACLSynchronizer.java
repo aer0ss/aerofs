@@ -106,7 +106,7 @@ public class TestACLSynchronizer extends AbstractTest
 
         lacl = new LocalACL(cfgLocalUser, ds, tm, stores, adb);
 
-        aclsync = new ACLSynchronizer(tc, tm, adb, lacl, stores, storeJoiner,
+        aclsync = new ACLSynchronizer(tc, tm, adb, lacl, storeJoiner,
                 sidx2sid, sid2sidx, cfgLocalUser, factSP);
     }
 
@@ -258,7 +258,6 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.getNullable_(sid1)).thenReturn(null);
         when(sid2sidx.getAbsent_(sid1, t)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(null);
-        when(stores.getAll_()).thenReturn(Collections.<SIndex>emptySet());
 
         mockGetSharedFolderNames(sid1, "shared");
         mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user1, Role.OWNER),
@@ -282,7 +281,6 @@ public class TestACLSynchronizer extends AbstractTest
         when(sidx2sid.get_(eq(sidx))).thenReturn(sid1);
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
-        when(stores.getAll_()).thenReturn(ImmutableSet.of(sidx));
 
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
         mockGetACL(42L);
@@ -300,7 +298,6 @@ public class TestACLSynchronizer extends AbstractTest
         when(sid2sidx.get_(sid1)).thenReturn(sidx);
         when(sid2sidx.getNullable_(sid1)).thenReturn(sidx);
         when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
-        when(stores.getAll_()).thenReturn(ImmutableSet.of(sidx));
         lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
 
         mockGetACL(42L, storeACL(sid1, new SubjectRolePair(user1, Role.OWNER),

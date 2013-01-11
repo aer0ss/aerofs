@@ -3,7 +3,6 @@ package com.aerofs.daemon.core.acl;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.IStoreJoiner;
-import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -20,6 +19,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.ex.ExProtocolError;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
@@ -29,7 +29,6 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
@@ -58,7 +57,6 @@ public class ACLSynchronizer
     private final TransManager _tm;
     private final IACLDatabase _adb;
     private final LocalACL _lacl;
-    private final IStores _stores;
     private final IStoreJoiner _storeJoiner;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
@@ -81,7 +79,7 @@ public class ACLSynchronizer
     }
 
     @Inject
-    public ACLSynchronizer(TC tc, TransManager tm, IACLDatabase adb, LocalACL lacl, IStores stores,
+    public ACLSynchronizer(TC tc, TransManager tm, IACLDatabase adb, LocalACL lacl,
             IStoreJoiner storeJoiner, IMapSIndex2SID sIndex2SID, IMapSID2SIndex sid2SIndex,
             CfgLocalUser cfgLocalUser, SPBlockingClient.Factory factSP)
     {
@@ -89,7 +87,6 @@ public class ACLSynchronizer
         _tm = tm;
         _adb = adb;
         _lacl = lacl;
-        _stores = stores;
         _storeJoiner = storeJoiner;
         _sidx2sid = sIndex2SID;
         _sid2sidx = sid2SIndex;
@@ -209,7 +206,9 @@ public class ACLSynchronizer
     private void updateACLAndAutoJoinLeaveStores_(ServerACLReturn serverACLReturn,
             boolean noAutoJoin, Trans t) throws Exception
     {
-        Set<SIndex> stores = Sets.newHashSet(_stores.getAll_());
+        Set<SIndex> stores = _lacl.getAccessibleStores_();
+
+        l.info("accessible stores: " + stores);
 
         _lacl.clear_(t);
 
@@ -217,15 +216,16 @@ public class ACLSynchronizer
             SID sid = entry.getKey();
             Map<UserID, Role> roles = entry.getValue();
 
-            // did we already know about that store (shouldn't try to join a deleted store)
-            boolean known = (_sid2sidx.getLocalOrAbsentNullable_(sid) != null);
+            // the local user should always be present in the ACL for each store in the reply
+            if (!roles.containsKey(_cfgLocalUser.get())) {
+                throw new ExProtocolError("Invalid ACL update " + roles);
+            }
 
             // create a new SIndex if needed
             SIndex sidx = getOrCreateSIndex_(sid, t);
+            l.info(" acl for " + sidx);
 
-            // the local user should always be present in the ACL for each store in the reply
-            assert roles.containsKey(_cfgLocalUser.get()) : roles;
-            if (!known && !noAutoJoin) {
+            if (!stores.contains(sidx) && !noAutoJoin) {
                 // not known and accessible: auto-join
                 assert serverACLReturn._newStoreNames.containsKey(sid) : sid;
                 String folderName = serverACLReturn._newStoreNames.get(sid);
@@ -238,7 +238,11 @@ public class ACLSynchronizer
         }
 
         // leave stores to which we no longer have access
-        for (SIndex sidx : stores) _storeJoiner.leaveStore_(sidx, _sidx2sid.get_(sidx), t);
+        for (SIndex sidx : stores) {
+            // ignore already deleted/expelled stores
+            SID sid = _sidx2sid.getNullable_(sidx);
+            if (sid != null) _storeJoiner.leaveStore_(sidx, sid, t);
+        }
 
         _adb.setEpoch_(serverACLReturn._serverEpoch, t);
     }
