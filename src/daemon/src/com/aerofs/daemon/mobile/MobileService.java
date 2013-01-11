@@ -307,7 +307,6 @@ public class MobileService implements IMobileService
             } finally {
                 in.close();
             }
-            l.debug("caCert:" + caCert);
 
             // akin to ClientSSLEngineFactory
             char[] passwd = {};
