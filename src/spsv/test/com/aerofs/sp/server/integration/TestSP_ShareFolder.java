@@ -6,13 +6,14 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import junit.framework.Assert;
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,6 +21,7 @@ import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
@@ -45,7 +47,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     {
         verify(factEmailer, shouldBeSent ? times(1) : never())
                 .createFolderInvitationEmailer(eq(sharer.toString()), eq(sharee.toString()),
-                        eq(sharer.toString()), eq(sid.toStringFormal()), eq(""), anyString());
+                        eq(sharer.toString()), eq(sid.toStringFormal()), eq(""), any(SID.class));
     }
 
     private void verifyNewUserAccountInvitation(UserID sharer, UserID sharee, SID sid,
@@ -106,10 +108,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         assertTrue(published.contains(USER_1.toString()));
         published.clear();
 
-        String code = getSharedFolderCode(USER_1, TEST_SID_1, USER_2);
-        Assert.assertNotNull(code);
-
-        joinSharedFolder(USER_2, code);
+        joinSharedFolder(USER_2, TEST_SID_1);
 
         assertEquals(2, published.size());
         assertTrue(published.contains(USER_1.toString()));
@@ -117,10 +116,27 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
-    public void shouldThrowExNotFoundWhenTryingToJoinWithInvalidCode() throws Exception
+    public void shouldThrowExAlreadyExistWhenJoinFolderTwice() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        joinSharedFolder(USER_2, TEST_SID_1);
+        published.clear();
+
+        try {
+            joinSharedFolder(USER_2, TEST_SID_1);
+            // must not reach here
+            assertTrue(false);
+        } catch (ExAlreadyExist e) {
+            trans.handleException();
+        }
+        assertTrue(published.isEmpty());
+    }
+
+    @Test
+    public void shouldThrowExNotFoundWhenTryingToJoinNonExistingFolder() throws Exception
     {
         try {
-            joinSharedFolder(USER_2, "deadbeef");
+            joinSharedFolder(USER_2, SID.generate());
             // must not reach here
             assertTrue(false);
         } catch (ExNotFound e) {
@@ -130,16 +146,13 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
-    public void shouldThrowExNoPermWhenTryingToJoinWithCodeForDifferentUser() throws Exception
+    public void shouldThrowExNoPermWhenTryingToJoinWithoutBeingInvited() throws Exception
     {
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
         published.clear();
 
-        String code = getSharedFolderCode(USER_1, TEST_SID_1, USER_2);
-        Assert.assertNotNull(code);
-
         try {
-            joinSharedFolder(USER_3, code);
+            joinSharedFolder(USER_3, TEST_SID_1);
             // must not reach here
             assertTrue(false);
         } catch (ExNoPerm e) {
@@ -185,6 +198,57 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             // must not reach here
             assertTrue(false);
         } catch (ExNoPerm e) {
+            trans.handleException();
+        }
+        assertTrue(published.isEmpty());
+    }
+
+    @Test
+    public void shouldAllowMemberToLeaveShareFolder() throws Exception
+    {
+        shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        published.clear();
+
+        leaveSharedFolder(USER_2, TEST_SID_1);
+        assertEquals(2, published.size());
+        assertTrue(published.contains(USER_1.toString()));
+        assertTrue(published.contains(USER_2.toString()));
+    }
+
+    @Test
+    public void shouldAllowPendingMemberToLeaveShareFolder() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        published.clear();
+
+        leaveSharedFolder(USER_2, TEST_SID_1);
+        assertTrue(published.isEmpty());
+    }
+
+    @Test
+    public void shouldThrowExNotFoundWhenNonMemberTriesToLeaveShareFolder() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        published.clear();
+
+        try {
+            leaveSharedFolder(USER_3, TEST_SID_1);
+            // must not reach here
+            assertTrue(false);
+        } catch (ExNotFound e) {
+            trans.handleException();
+        }
+        assertTrue(published.isEmpty());
+    }
+
+    @Test
+    public void shouldThrowExNotFoundWhenTryingToLeaveNonExistingSharedFolder() throws Exception
+    {
+        try {
+            leaveSharedFolder(USER_1, TEST_SID_1);
+            // must not reach here
+            assertTrue(false);
+        } catch (ExNotFound e) {
             trans.handleException();
         }
         assertTrue(published.isEmpty());

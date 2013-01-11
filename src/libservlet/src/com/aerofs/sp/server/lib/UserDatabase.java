@@ -35,6 +35,8 @@ import java.util.List;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_PENDING;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
@@ -324,18 +326,90 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Collection<SID> getSharedFolders(UserID userId)
-            throws SQLException
+    public Collection<SID> getSharedFolders(UserID userId) throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_USER_ID + "=?",
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
                 C_AC_STORE_ID));
 
         ps.setString(1, userId.toString());
+        ps.setBoolean(2, false);
+
         ResultSet rs = ps.executeQuery();
         try {
             List<SID> sids = Lists.newArrayList();
             while (rs.next()) sids.add(new SID(rs.getBytes(1)));
             return sids;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public static class FolderInvitation
+    {
+        public final SID sid;
+        public final UserID sharer;
+
+        FolderInvitation(SID sid, UserID sharer)
+        {
+            this.sid = sid;
+            this.sharer = sharer;
+        }
+    }
+
+    public Collection<FolderInvitation> getPendingSharedFolders(UserID userId) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
+                C_AC_STORE_ID, C_AC_SHARER));
+
+        ps.setString(1, userId.toString());
+        ps.setBoolean(2, true);
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            List<FolderInvitation> sids = Lists.newArrayList();
+            while (rs.next()) {
+                sids.add(new FolderInvitation(new SID(rs.getBytes(1)),
+                        UserID.fromInternal(rs.getString(2))));
+            }
+            return sids;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public Long incrementACLEpoch(UserID user) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement("update " + T_USER +
+                " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1" +
+                " where " + C_USER_ID + "=?");
+
+        ps.setString(1, user.toString());
+        int rows = ps.executeUpdate();
+
+        assert rows == 1 : user + " " + rows;
+
+        return getACLEpoch(user);
+    }
+
+    public long getACLEpoch(UserID user) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?",
+                C_USER_ACL_EPOCH));
+        return queryGetACLEpoch(ps, user);
+    }
+
+    private long queryGetACLEpoch(PreparedStatement ps, UserID user)
+            throws SQLException
+    {
+        ps.setString(1, user.toString());
+        ResultSet rs = ps.executeQuery();
+        try {
+            Util.verify(rs.next());
+            long epoch = rs.getLong(1);
+            assert !rs.next();
+            return epoch;
         } finally {
             rs.close();
         }

@@ -51,9 +51,13 @@ service RitualService {
 
     rpc ListSharedFolders(Void) returns(ListSharedFoldersReply);
 
+    rpc ListSharedFolderInvitations(Void) returns(ListSharedFolderInvitationsReply);
+
     // Join an existing remote shared folder from this device.
     // Throw ALREADY_EXIST if the specified path already exists.
     rpc JoinSharedFolder(JoinSharedFolderCall) returns(Void);
+
+    rpc LeaveSharedFolder(LeaveSharedFolderCall) returns(Void);
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -237,8 +241,16 @@ message UnshareFolderCall {
     required PBPath path = 2;
 }
 
+message ListSharedFolderInvitationsReply {
+    repeated PBFolderInvitation invitation = 1;
+}
+
 message JoinSharedFolderCall {
-    required string code = 1;
+    required bytes id = 1;
+}
+
+message LeaveSharedFolderCall {
+    required PBPath path = 1;
 }
 
 message ListSharedFoldersReply {

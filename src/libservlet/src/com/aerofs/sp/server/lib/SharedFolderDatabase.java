@@ -14,7 +14,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
@@ -25,10 +25,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.aerofs.lib.db.DBUtil.binaryCount;
@@ -36,18 +33,17 @@ import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.deleteWhere;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_PENDING;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
+import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_FI_SID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_NAME;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ACL_EPOCH;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_FI;
 import static com.aerofs.sp.server.lib.SPSchema.T_SF;
-import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 /**
  * N.B. only User.java may refer to this class
@@ -94,17 +90,31 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void insertACL(SID sid, Iterable<SubjectRolePair> pairs)
+    public void insertACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
+        insertACLImpl(sid, pairs, sharer, false);
+    }
+
+    public void insertPendingACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
+            throws SQLException, ExAlreadyExist
+    {
+        insertACLImpl(sid, pairs, sharer, true);
+    }
+
+    private void insertACLImpl(SID sid, Iterable<SubjectRolePair> pairs, UserID sharer,
+            boolean pending) throws SQLException, ExAlreadyExist
+    {
         PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC,
-                C_AC_STORE_ID, C_AC_USER_ID, C_AC_ROLE));
+                C_AC_STORE_ID, C_AC_USER_ID, C_AC_ROLE, C_AC_PENDING, C_AC_SHARER));
 
         int pairCount = 0;
         for (SubjectRolePair pair : pairs) {
             ps.setBytes(1, sid.getBytes());
             ps.setString(2, pair._subject.toString());
             ps.setInt(3, pair._role.ordinal());
+            ps.setBoolean(4, pending);
+            ps.setString(5, sharer.toString());
             ps.addBatch();
             ++pairCount;
         }
@@ -124,14 +134,50 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
+    public void setPending(SID sid, UserID userId, boolean pending)
+            throws SQLException, ExNotFound
+    {
+        PreparedStatement ps = prepareStatement(updateWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_PENDING));
+
+        ps.setBoolean(1, pending);
+        ps.setBytes(2, sid.getBytes());
+        ps.setString(3, userId.toString());
+
+        int rows = ps.executeUpdate();
+
+        if (rows != 1) throw new ExNotFound();
+    }
+
     public @Nullable Role getRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC, C_AC_STORE_ID + "=? and " +
-                C_AC_USER_ID + "=?", C_AC_ROLE));
+        return getRoleNullableImpl(sid, userId, C_AC_PENDING + "=0");
+    }
+
+    public @Nullable Role getPendingRoleNullable(SID sid, UserID userId)
+            throws SQLException
+    {
+        return getRoleNullableImpl(sid, userId, C_AC_PENDING + "=1");
+    }
+
+    public @Nullable Role getRoleOrPendingNullable(SID sid, UserID userId)
+            throws SQLException
+    {
+        return getRoleNullableImpl(sid, userId, "");
+    }
+
+    private @Nullable Role getRoleNullableImpl(SID sid, UserID userId, String filter)
+            throws SQLException
+    {
+        String pendingFilter = filter.isEmpty() ? "" : " and " + filter;
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?" + pendingFilter,
+                C_AC_ROLE));
 
         ps.setBytes(1, sid.getBytes());
         ps.setString(2, userId.toString());
+
         ResultSet rs = ps.executeQuery();
         try {
             if (!rs.next()) { // there is no entry in the ACL table for this storeid/userid
@@ -146,13 +192,24 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Set<UserID> getACLUsers(SID sid)
+    public Set<UserID> getACLUsers(SID sid) throws SQLException
+    {
+        return getACLUsers(sid, false);
+    }
+
+    public Set<UserID> getPendingACLUsers(SID sid) throws SQLException
+    {
+        return getACLUsers(sid, true);
+    }
+
+    private Set<UserID> getACLUsers(SID sid, boolean pending)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_STORE_ID + "=?", C_AC_USER_ID));
+                selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_PENDING + "=?", C_AC_USER_ID));
 
         ps.setBytes(1, sid.getBytes());
+        ps.setBoolean(2, pending);
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -162,68 +219,6 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         } finally {
             rs.close();
         }
-    }
-
-    /**
-     * TODO (WW) move this method to UserDatabase
-     */
-    public Map<UserID, Long> incrementACLEpoch(Set<UserID> users)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement("update " + T_USER +
-                " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1 where " + C_USER_ID +
-                "=?");
-
-        for (UserID user : users) {
-            l.info("increment epoch for " + user);
-            ps.setString(1, user.toString());
-            ps.addBatch();
-        }
-
-        executeBatch(ps, users.size(), 1);
-
-        return getACLEpochs(users);
-    }
-
-    /**
-     * @param users set of users for whom you want the acl epoch number
-     * @return a map of user -> epoch number
-     */
-    private Map<UserID, Long> getACLEpochs(Set<UserID> users)
-            throws SQLException
-    {
-        PreparedStatement ps = preapreGetACLEpochStatemet();
-        Map<UserID, Long> epochs = Maps.newHashMap();
-        for (UserID user : users) epochs.put(user, queryGetACLEpoch(ps, user));
-        return epochs;
-    }
-
-    private long getACLEpoch(UserID user)
-            throws SQLException
-    {
-        PreparedStatement ps = preapreGetACLEpochStatemet();
-        return queryGetACLEpoch(ps, user);
-    }
-
-    private long queryGetACLEpoch(PreparedStatement ps, UserID user)
-            throws SQLException
-    {
-        ps.setString(1, user.toString());
-        ResultSet rs = ps.executeQuery();
-        try {
-            Util.verify(rs.next());
-            long epoch = rs.getLong(1);
-            assert !rs.next();
-            return epoch;
-        } finally {
-            rs.close();
-        }
-    }
-
-    private PreparedStatement preapreGetACLEpochStatemet()
-            throws SQLException
-    {
-        return  prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", C_USER_ACL_EPOCH));
     }
 
     public void deleteACL(SID sid, Collection<UserID> subjects)
@@ -248,11 +243,13 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
     public boolean hasOwner(SID sid)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(
-                selectWhere(T_AC, C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?", "count(*)"));
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=? and " + C_AC_PENDING + "=?",
+                "count(*)"));
 
         ps.setBytes(1, sid.getBytes());
         ps.setInt(2, Role.OWNER.ordinal());
+        ps.setBoolean(3, false);            // ignore pending entries
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -266,13 +263,15 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=?", C_AC_ROLE));
+                C_AC_STORE_ID + "=? and " + C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
+                C_AC_ROLE));
 
         int pairCount = 0;
         for (SubjectRolePair pair : pairs) {
             ps.setInt(1, pair._role.ordinal());
             ps.setBytes(2, sid.getBytes());
             ps.setString(3, pair._subject.toString());
+            ps.setBoolean(4, false);        // ignore pending entries
             ps.addBatch();
             ++pairCount;
         }
@@ -339,75 +338,25 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public static class GetACLResult
+    public List<SubjectRolePair> getACL(SID sid) throws SQLException
     {
-        public final long _epoch;
-        public final Map<SID, List<SubjectRolePair>> _sid2srps;
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_PENDING + "=?",
+                C_AC_USER_ID, C_AC_ROLE));
 
-        GetACLResult(long epoch, Map<SID, List<SubjectRolePair>> sid2srps)
-        {
-            _epoch = epoch;
-            _sid2srps = sid2srps;
-        }
-    }
-
-    /**
-     * TODO (WW) This method, as well as getACLEpoch* methods MUST be refactored. getACLEpoch*
-     * should belong to User, and this method should be split into two parts, with one part in User
-     * and the other in SharedFolder:
-     *
-     *      if (user.hasACLEpochChagned()) {
-     *          acls = Maps.new...;
-     *          for (sf : user.getAllSharedFolders()) acls.put(sf.getACL());
-     *      }
-     */
-    public GetACLResult getACL(long userEpoch, UserID user)
-            throws SQLException
-    {
-        //
-        // first check if the user actually needs to get the acl
-        //
-
-        long epoch = getACLEpoch(user);
-        assert epoch >= userEpoch : userEpoch + " > " + epoch;
-
-        if (epoch == userEpoch) {
-            l.info("server epoch:" + epoch + " matches user epoch:" + userEpoch);
-            return new GetACLResult(epoch, Collections.<SID, List<SubjectRolePair>>emptyMap());
-        }
-
-        //
-        // apparently the user is out of date
-        //
-
-        PreparedStatement ps = prepareStatement("select acl_master." +
-                C_AC_STORE_ID + ", acl_master." + C_AC_USER_ID + ", acl_master." +
-                C_AC_ROLE + " from " + T_AC + " as acl_master inner join " + T_AC +
-                " as acl_filter using (" + C_AC_STORE_ID + ") where acl_filter." +
-                C_AC_USER_ID + "=?");
-
-        ps.setString(1, user.toString());
-
-        Map<SID, List<SubjectRolePair>> sid2srps = Maps.newHashMap();
+        ps.setBytes(1, sid.getBytes());
+        ps.setBoolean(2, false);
 
         ResultSet rs = ps.executeQuery();
         try {
+            List<SubjectRolePair> srps = Lists.newArrayList();
             while (rs.next()) {
-                SID sid = new SID(rs.getBytes(1));
-
-                if (!sid2srps.containsKey(sid)) {
-                    sid2srps.put(sid, new LinkedList<SubjectRolePair>());
-                }
-
-                UserID subject = UserID.fromInternal(rs.getString(2));
-                Role role = Role.fromOrdinal(rs.getInt(3));
-
-                sid2srps.get(sid).add(new SubjectRolePair(subject, role));
+                srps.add(new SubjectRolePair(UserID.fromInternal(rs.getString(1)),
+                        Role.fromOrdinal(rs.getInt(2))));
             }
+            return srps;
         } finally {
             rs.close();
         }
-
-        return new GetACLResult(epoch, sid2srps);
     }
 }

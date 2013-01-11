@@ -94,7 +94,7 @@ public class C
     // 2) src/web/production.ini
     // 3) syncdet_test/lib/param.py
     // when incrementing SP_PROTOCOL_VERSION
-    public static final int SP_PROTOCOL_VERSION         = 18;
+    public static final int SP_PROTOCOL_VERSION         = 19;
     public static final int SS_PROTOCOL_VERSION         = 6;
 
     public static final String TRANSPORT_ID_XMPP        = "x";

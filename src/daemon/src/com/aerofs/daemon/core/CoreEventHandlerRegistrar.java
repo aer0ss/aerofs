@@ -16,6 +16,7 @@ import com.aerofs.daemon.core.admin.HdListConflicts;
 import com.aerofs.daemon.core.admin.HdListExpelledObjects;
 import com.aerofs.daemon.core.admin.HdListRevChildren;
 import com.aerofs.daemon.core.admin.HdListRevHistory;
+import com.aerofs.daemon.core.admin.HdListSharedFolderInvitations;
 import com.aerofs.daemon.core.admin.HdPauseOrResumeSyncing;
 import com.aerofs.daemon.core.admin.HdReloadConfig;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor;
@@ -59,6 +60,7 @@ import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.admin.EIListRevChildren;
 import com.aerofs.daemon.event.admin.EIListRevHistory;
+import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
@@ -101,6 +103,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdDeleteBranch _hddb;
     private final HdJoinSharedFolder _hdJoinSharedFolder;
     private final HdListSharedFolders _hdListSharedFolders;
+    private final HdListSharedFolderInvitations _hdListSharedFolderInvitations;
     private final HdSetExpelled _hdSetExpelled;
     private final HdListExpelledObjects _hdListExpelledObjects;
     private final HdPulseStopped _hdPulseStopped;
@@ -142,7 +145,8 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     @Inject
     public CoreEventHandlerRegistrar(HdCreateObject hdco, HdMoveObject hdMoveObject,
             HdDeleteObject hddo, HdDeleteBranch hddb, HdJoinSharedFolder hdJoinSharedFolder,
-            HdListSharedFolders hdListSharedFolders, HdSetExpelled hdSetExpelled,
+            HdSetExpelled hdSetExpelled, HdListSharedFolders hdListSharedFolders,
+            HdListSharedFolderInvitations hdListSharedFolderInvitations,
             HdListExpelledObjects hdListExpelledObjects, HdPulseStopped hdPulseStopped,
             HdStreamAborted hdStreamAborted, HdChunk hdChunk, HdStreamBegun hdStreamBegun,
             HdMaxcastMessage hdMaxcastMessage, HdUnicastMessage hdUnicastMessage,
@@ -167,6 +171,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hddb = hddb;
         _hdJoinSharedFolder = hdJoinSharedFolder;
         _hdListSharedFolders = hdListSharedFolders;
+        _hdListSharedFolderInvitations = hdListSharedFolderInvitations;
         _hdSetExpelled = hdSetExpelled;
         _hdListExpelledObjects = hdListExpelledObjects;
         _hdPulseStopped = hdPulseStopped;
@@ -230,6 +235,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIShareFolder.class, _hdShareFolder)
                 .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
                 .setHandler_(EIListSharedFolders.class, _hdListSharedFolders)
+                .setHandler_(EIListSharedFolderInvitations.class, _hdListSharedFolderInvitations)
                 .setHandler_(EITransportPing.class, _hdTransportPing)
                 .setHandler_(EITransportFlood.class, _hdTransportFlood)
                 .setHandler_(EITransportFloodQuery.class, _hdTransportFloodQuery)

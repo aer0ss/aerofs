@@ -63,6 +63,9 @@ class _RitualServiceWrapper(object):
         srps = self._convert_acl(acl)
         return self._service.share_folder(pbpath, srps, note)
 
+    def list_shared_folder_invitations(self):
+        return self._service.list_shared_folder_invitations().invitation
+
     def join_shared_folder(self, shared_folder_code):
         self._service.join_shared_folder(shared_folder_code)
 

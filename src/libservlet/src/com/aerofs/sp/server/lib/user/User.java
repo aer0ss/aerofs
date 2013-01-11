@@ -19,6 +19,7 @@ import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
+import com.aerofs.sp.server.lib.SharedFolderInvitation;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -26,7 +27,7 @@ import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -36,7 +37,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 public class User
 {
@@ -302,7 +303,7 @@ public class User
      *
      * @throws ExNoPerm if the user is a non-admin in a non-default organization
      */
-    public Map<UserID, Long> addAndMoveToOrganization(String orgName)
+    public Set<UserID> addAndMoveToOrganization(String orgName)
             throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException
     {
         // TODO (WW) move permission check to the upper layer?
@@ -320,20 +321,20 @@ public class User
     /**
      * Move the user to a new organization, and adjust ACLs of shared folders for the team server.
      */
-    public Map<UserID, Long> setOrganization(Organization org)
+    public Set<UserID> setOrganization(Organization org)
             throws SQLException, ExNotFound, ExAlreadyExist
     {
         Collection<SharedFolder> sfs = getSharedFolders();
 
-        Map<UserID, Long> epochs = Maps.newHashMap();
+        Set<UserID> users = Sets.newHashSet();
 
-        for (SharedFolder sf : sfs) epochs.putAll(sf.deleteTeamServerACL(this));
+        for (SharedFolder sf : sfs) users.addAll(sf.deleteTeamServerACL(this));
 
         _f._udb.setOrganizationID(_id, org.id());
 
-        for (SharedFolder sf : sfs) epochs.putAll(sf.addTeamServerACL(this));
+        for (SharedFolder sf : sfs) users.addAll(sf.addTeamServerACL(this));
 
-        return epochs;
+        return users;
     }
 
     public Collection<SharedFolder> getSharedFolders()
@@ -346,6 +347,28 @@ public class User
         }
         return sfs;
     }
+
+    public Collection<SharedFolderInvitation> getPendingSharedFolders()
+            throws SQLException
+    {
+        Collection<UserDatabase.FolderInvitation> l = _f._udb.getPendingSharedFolders(_id);
+        List<SharedFolderInvitation> sfs = Lists.newArrayListWithCapacity(l.size());
+        for (UserDatabase.FolderInvitation i : l) {
+            sfs.add(new SharedFolderInvitation(i.sharer, _id, _f._factSharedFolder.create(i.sid)));
+        }
+        return sfs;
+    }
+
+    public long getACLEpoch() throws SQLException
+    {
+        return _f._udb.getACLEpoch(_id);
+    }
+
+    public long incrementACLEpoch() throws SQLException
+    {
+        return _f._udb.incrementACLEpoch(_id);
+    }
+
 
     /**
      * generate a signup invitation code and add it to the database

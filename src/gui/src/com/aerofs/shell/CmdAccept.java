@@ -1,5 +1,6 @@
 package com.aerofs.shell;
 
+import com.aerofs.base.id.SID;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 
@@ -14,7 +15,7 @@ public class CmdAccept implements IShellCommand<ShProgram>
         if (cl.getArgs().length == 0) throw new ExBadArgs();
 
         for (String arg : cl.getArgs()) {
-            s.d().getRitualClient_().joinSharedFolder(arg);
+            s.d().getRitualClient_().joinSharedFolder(new SID(arg, 0, arg.length()).toPB());
         }
     }
 
@@ -27,13 +28,14 @@ public class CmdAccept implements IShellCommand<ShProgram>
     @Override
     public String getDescription()
     {
-        return "accept invitation to a shared folder. create the folder in the root folder";
+        return "accept invitation to a shared folder. create the folder in the root folder." +
+                "see the \"invitations\" command for a list of pending invitations";
     }
 
     @Override
     public String getOptsSyntax()
     {
-        return "INVITATION_CODE...";
+        return "SHARED_FOLDER_IDENTIFIER...";
     }
 
     @Override

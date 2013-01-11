@@ -3,6 +3,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.lib.C;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
+import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
@@ -13,16 +14,19 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.mockito.Mockito.verify;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -140,7 +144,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         published.clear();
 
         // inviteee joins
-        joinSharedFolder(USER_1, TEST_SID_1, USER_2);
+        joinSharedFolder(USER_2, TEST_SID_1);
         assertEquals(2, published.size());
         assertTrue(published.contains(USER_1.toString()));
         assertTrue(published.contains(USER_2.toString()));
@@ -323,6 +327,60 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
             } else {
                 fail("unexpected store acl for s:" + aclSID);
             }
+        }
+    }
+
+    @Test
+    public void getACL_shouldNotIncludePendingMembers() throws Exception
+    {
+        setupMockVerkehrToSuccessfullyPublish();
+
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+        shareFolder(USER_1, TEST_SID_1, USER_3, Role.OWNER);
+
+        checkACL(ImmutableMap.<SID, Map<UserID, Role>>of(
+                TEST_SID_1,
+                ImmutableMap.of(USER_1, Role.OWNER)));
+
+        joinSharedFolder(USER_2, TEST_SID_1);
+
+        checkACL(ImmutableMap.<SID, Map<UserID, Role>>of(
+                TEST_SID_1,
+                ImmutableMap.of(USER_1, Role.OWNER,
+                        USER_2, Role.EDITOR)));
+
+        joinSharedFolder(USER_3, TEST_SID_1);
+
+        checkACL(ImmutableMap.<SID, Map<UserID, Role>>of(
+                TEST_SID_1,
+                ImmutableMap.of(USER_1, Role.OWNER,
+                        USER_2, Role.EDITOR,
+                        USER_3, Role.OWNER)));
+
+        leaveSharedFolder(USER_2, TEST_SID_1);
+
+        checkACL(ImmutableMap.<SID, Map<UserID, Role>>of(TEST_SID_1,
+                ImmutableMap.of(USER_1, Role.OWNER, USER_3, Role.OWNER)));
+
+        leaveSharedFolder(USER_1, TEST_SID_1);
+
+        // USER_1 is the session user, hence the empty ACL reply
+        checkACL(Collections.<SID, Map<UserID, Role>>emptyMap());
+
+        setSessionUser(USER_3);
+        checkACL(ImmutableMap.<SID, Map<UserID, Role>>of(
+                TEST_SID_1,
+                ImmutableMap.of(USER_3, Role.OWNER)));
+    }
+
+    private void checkACL(Map<SID, Map<UserID, Role>> acls) throws Exception
+    {
+        List<PBStoreACL> storeAcls = service.getACL(0L).get().getStoreAclList();
+        assertEquals(acls.size(), storeAcls.size());
+        for (PBStoreACL storeAcl : storeAcls) {
+            Map<UserID, Role> expectedAcls = acls.get(new SID(storeAcl.getStoreId()));
+            assertNotNull(expectedAcls);
+            assertEquals(expectedAcls, SubjectRolePairs.mapFromPB(storeAcl.getSubjectRoleList()));
         }
     }
 

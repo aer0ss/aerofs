@@ -4,20 +4,19 @@ import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ritual.RitualBlockingClient;
+import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.sp.client.SPClient;
-import com.aerofs.sp.client.SPClientFactory;
-import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
-import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply.PBFolderInvitation;
+import com.aerofs.proto.Common.PBFolderInvitation;
+import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import org.apache.log4j.Logger;
@@ -45,45 +44,64 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class DlgJoinSharedFolders extends AeroFSDialog
 {
     private static final Logger l = Util.l(DlgJoinSharedFolders.class);
 
-    ListPendingFolderInvitationsReply _pendingFolders = null;
+    ListSharedFolderInvitationsReply _pendingFolders = null;
     CompSpin _compSpin;
     Label _lblStatus;
     TableViewer _tableViewer;
     Table _table;
-    SPClient _sp;
 
     public DlgJoinSharedFolders(Shell parent)
     {
         super(parent, "Join Shared Folders", false, true);
-        _sp = SPClientFactory.newClient(SP.URL,  Cfg.user());
-        _sp.signInRemote();
     }
 
     public void showDialogIfNeeded()
     {
-        // TODO: go through Ritual, only the daemon should access SP...
-        Futures.addCallback(_sp.listPendingFolderInvitations(),
-                new FutureCallback<ListPendingFolderInvitationsReply>()
+        showDialog(true);
+    }
+
+    public void showDialog()
+    {
+        showDialog(false);
+    }
+
+    // todo: spinner while waiting for list of invitations
+    private void showDialog(final boolean silent)
+    {
+        final RitualClient ritual = RitualClientFactory.newClient();
+        Futures.addCallback(ritual.listSharedFolderInvitations(),
+                new FutureCallback<ListSharedFolderInvitationsReply>()
                 {
                     @Override
-                    public void onSuccess(ListPendingFolderInvitationsReply reply)
+                    public void onSuccess(ListSharedFolderInvitationsReply reply)
                     {
+                        ritual.close();
+
                         _pendingFolders = reply;
-                        if (_pendingFolders.getInvitationsCount() > 0) {
-                            openDialog();
+                        if (_pendingFolders.getInvitationCount() > 0) {
+                            UI.get().asyncExec(new Runnable() {
+                                @Override
+                                public void run()
+                                {
+                                    openDialog();
+                                }
+                            });
+                        } else if (!silent) {
+                            UI.get().show(MessageType.INFO, "No invitations to accept");
                         }
                     }
 
                     @Override
                     public void onFailure(Throwable throwable)
                     {
+                        ritual.close();
+
                         if (throwable instanceof ExNoPerm) {
                             l.info("join shared folders: needs email verification");
 
@@ -91,9 +109,9 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                             // - display a different dialog that says we must verify the email address
                             // - dialog has 3 buttons: "send email" and "continue", "cancel"
                             throw new NotImplementedException();
-
                         } else {
                             l.warn("list pending folders:" + Util.e(throwable));
+                            UI.get().show(MessageType.ERROR, throwable.toString());
                         }
                     }
                 });
@@ -142,7 +160,8 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         composite.setLayoutData(gridData);
 
         // Create the TableViewer
-        _tableViewer = new TableViewer(composite, SWT.BORDER | SWT.FULL_SELECTION | SWT.CHECK);
+        _tableViewer = new TableViewer(composite, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL |
+                SWT.FULL_SELECTION | SWT.CHECK);
         _table = _tableViewer.getTable();
         _table.setHeaderVisible(true);
         _table.setLinesVisible(true);
@@ -193,11 +212,11 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 public void widgetSelected(SelectionEvent e)
                 {
                     // Create a list with the selected PBInvitations
-                    ArrayList<PBFolderInvitation> invs = new ArrayList<PBFolderInvitation>();
+                    List<PBFolderInvitation> invs = Lists.newArrayList();
                     TableItem[] items = _table.getItems();
                     for (int i = 0; i < items.length; i++) {
                         if (items[i].getChecked()) {
-                            invs.add(_pendingFolders.getInvitations(i));
+                            invs.add(_pendingFolders.getInvitation(i));
                         }
                     }
 
@@ -229,7 +248,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         try {
             for (PBFolderInvitation inv : invitations) {
                 try {
-                    ritual.joinSharedFolder(inv.getSharedFolderCode());
+                    ritual.joinSharedFolder(inv.getShareId());
                 } catch (Exception e) {
                     Util.l(this).warn("join folder " + inv.getFolderName() + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "
@@ -256,8 +275,8 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         @Override
         public Object[] getElements(Object input)
         {
-            ListPendingFolderInvitationsReply reply = (ListPendingFolderInvitationsReply) input;
-            return reply.getInvitationsList().toArray();
+            ListSharedFolderInvitationsReply reply = (ListSharedFolderInvitationsReply) input;
+            return reply.getInvitationList().toArray();
         }
 
         @Override

@@ -29,14 +29,12 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
     @Override
     protected void handleThrows_(EIJoinSharedFolder ev, Prio prio) throws Exception
     {
-        assert !ev._code.isEmpty();
-
-        l.info("join: " + ev._code);
+        l.info("join: " + ev._sid);
 
         // join the shared folder through SP
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
         sp.signInRemote();
-        sp.joinSharedFolder(ev._code);
+        sp.joinSharedFolder(ev._sid.toPB());
 
         // keep ACL up to date so we can start syncing instantly after joining the store.
         // the actual joining will be performed automatically once ACL update propagates back to us

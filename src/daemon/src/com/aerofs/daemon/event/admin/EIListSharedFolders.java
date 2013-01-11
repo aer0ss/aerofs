@@ -19,5 +19,4 @@ public class EIListSharedFolders extends AbstractEBIMC
     {
         _paths = paths;
     }
-
 }

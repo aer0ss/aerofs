@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
@@ -24,6 +25,7 @@ import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.admin.EIListRevChildren;
 import com.aerofs.daemon.event.admin.EIListRevHistory;
+import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.admin.EIPauseOrResumeSyncing;
 import com.aerofs.daemon.event.admin.EIReloadConfig;
@@ -76,6 +78,7 @@ import com.aerofs.proto.Ritual.ListConflictsReply;
 import com.aerofs.proto.Ritual.ListExcludedFoldersReply;
 import com.aerofs.proto.Ritual.ListRevChildrenReply;
 import com.aerofs.proto.Ritual.ListRevHistoryReply;
+import com.aerofs.proto.Ritual.ListSharedFolderInvitationsReply;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.proto.Objects.PBBranch;
 import com.aerofs.proto.Objects.PBObjectAttributes;
@@ -138,11 +141,29 @@ public class RitualService implements IRitualService
     }
 
     @Override
-    public ListenableFuture<Void> joinSharedFolder(String code)
+    public ListenableFuture<ListSharedFolderInvitationsReply> listSharedFolderInvitations()
             throws Exception
     {
-        EIJoinSharedFolder ev = new EIJoinSharedFolder(code);
+        EIListSharedFolderInvitations ev = new EIListSharedFolderInvitations();
         ev.execute(PRIO);
+        return createReply(ListSharedFolderInvitationsReply.newBuilder()
+                .addAllInvitation(ev._invitations).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> joinSharedFolder(ByteString sid)
+            throws Exception
+    {
+        EIJoinSharedFolder ev = new EIJoinSharedFolder(new SID(sid));
+        ev.execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> leaveSharedFolder(PBPath path)
+            throws Exception
+    {
+        // TODO:
         return createVoidReply();
     }
 
