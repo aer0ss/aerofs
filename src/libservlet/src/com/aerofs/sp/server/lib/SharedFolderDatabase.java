@@ -38,11 +38,9 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_ROLE;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_FI_SID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_SF_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
-import static com.aerofs.sp.server.lib.SPSchema.T_FI;
 import static com.aerofs.sp.server.lib.SPSchema.T_SF;
 
 /**
@@ -50,8 +48,6 @@ import static com.aerofs.sp.server.lib.SPSchema.T_SF;
  */
 public class SharedFolderDatabase extends AbstractSQLDatabase
 {
-    private final static Logger l = Util.l(SharedFolderDatabase.class);
-
     public SharedFolderDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);
@@ -300,12 +296,6 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         ps = prepareStatement(DBUtil.deleteWhere(T_AC, C_AC_STORE_ID + "=?"));
         ps.setBytes(1, sid.getBytes());
         Util.verify(ps.executeUpdate() > 0);
-
-        // remove all invitations
-        ps = prepareStatement(DBUtil.deleteWhere(T_FI, C_FI_SID + "=?"));
-        ps.setBytes(1, sid.getBytes());
-        // do not verify the return value is one as we may not have invitations left.
-        ps.executeUpdate();
 
         // remove shared folder
         ps = prepareStatement(DBUtil.deleteWhere(T_SF, C_SF_ID + "=?"));

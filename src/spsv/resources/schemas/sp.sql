@@ -85,20 +85,6 @@ CREATE TABLE `sp_password_reset_token` (
   CONSTRAINT `r_user_foreign` FOREIGN KEY (`r_user_id`) REFERENCES `sp_user` (`u_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-CREATE TABLE `sp_shared_folder_code` (
-  `f_code` CHAR(8) NOT NULL,
-  `f_from` VARCHAR(320) NOT NULL,
-  `f_to` VARCHAR(320) NOT NULL,
-  `f_share_id` BINARY(16) NOT NULL,
-  `f_folder_name` VARCHAR(255) CHARSET utf8 NOT NULL, -- important UTF8
-  `f_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `f_role` TINYINT NOT NULL DEFAULT 1,  -- 1 is Role.EDITOR
-  INDEX folder_to_idx (`f_to`),
-  PRIMARY KEY (`f_code`),
-  CONSTRAINT `f_from_foreign` FOREIGN KEY (`f_from`) REFERENCES `sp_user` (`u_id`),
-  CONSTRAINT `f_sid_foreign` FOREIGN KEY (`f_share_id`) REFERENCES `sp_shared_folder` (`sf_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
 CREATE TABLE `sp_organization_invite` (
   `m_to` VARCHAR(320) NOT NULL, -- i.e. invitee
   `m_org_id` INTEGER NOT NULL,

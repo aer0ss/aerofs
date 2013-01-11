@@ -46,14 +46,6 @@ public final class SPSchema
             C_CERT_EXPIRE_TS                = "c_expire_ts",
             C_CERT_REVOKE_TS                = "c_revoke_ts",
 
-            T_FI                            = "sp_shared_folder_code",
-            C_FI_FIC                        = "f_code",
-            C_FI_FROM                       = "f_from",
-            C_FI_TO                         = "f_to",
-            C_FI_SID                        = "f_share_id",
-            C_FI_FOLDER_NAME                = "f_folder_name",
-            C_FI_ROLE                       = "f_role",
-
             T_PASSWORD_RESET                = "sp_password_reset_token",
             C_PASS_TOKEN                    = "r_token",
             C_PASS_USER                     = "r_user_id",

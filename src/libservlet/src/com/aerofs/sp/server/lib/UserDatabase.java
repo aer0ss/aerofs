@@ -345,19 +345,20 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public static class FolderInvitation
+    public static class PendingSharedFolder
     {
-        public final SID sid;
-        public final UserID sharer;
+        public final SID _sid;
+        public final UserID _sharer;
 
-        FolderInvitation(SID sid, UserID sharer)
+        PendingSharedFolder(SID sid, UserID sharer)
         {
-            this.sid = sid;
-            this.sharer = sharer;
+            _sid = sid;
+            _sharer = sharer;
         }
     }
 
-    public Collection<FolderInvitation> getPendingSharedFolders(UserID userId) throws SQLException
+    // TODO (WW) move this method to SharedFolderDatabase?
+    public Collection<PendingSharedFolder> getPendingSharedFolders(UserID userId) throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
                 C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
@@ -368,9 +369,9 @@ public class UserDatabase extends AbstractSQLDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            List<FolderInvitation> sids = Lists.newArrayList();
+            List<PendingSharedFolder> sids = Lists.newArrayList();
             while (rs.next()) {
-                sids.add(new FolderInvitation(new SID(rs.getBytes(1)),
+                sids.add(new PendingSharedFolder(new SID(rs.getBytes(1)),
                         UserID.fromInternal(rs.getString(2))));
             }
             return sids;

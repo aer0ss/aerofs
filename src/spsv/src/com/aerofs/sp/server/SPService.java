@@ -29,7 +29,6 @@ import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
-import com.aerofs.sp.server.lib.SharedFolderInvitation;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
@@ -39,6 +38,7 @@ import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
+import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sv.client.SVClient;
@@ -861,21 +861,21 @@ public class SPService implements ISPService
 
         User user = _sessionUser.get();
 
-        Collection<SharedFolderInvitation> sfis = user.getPendingSharedFolders();
+        Collection<PendingSharedFolder> psfs = user.getPendingSharedFolders();
 
         // Throw ExNoPerm only if user isn't verified AND there are shared folder invitations to
         // accept.
-        if (!sfis.isEmpty() && !user.isVerified()) {
+        if (!psfs.isEmpty() && !user.isVerified()) {
             throw new ExNoPerm("email address not verified");
         }
 
         ListPendingFolderInvitationsReply.Builder builder =
                 ListPendingFolderInvitationsReply.newBuilder();
-        for (SharedFolderInvitation sfi : sfis) {
+        for (PendingSharedFolder psf : psfs) {
             builder.addInvitation(PBFolderInvitation.newBuilder()
-                    .setShareId(sfi.folder().id().toPB())
-                    .setFolderName(sfi.folder().getName())
-                    .setSharer(sfi.sharer().toString()));
+                    .setShareId(psf._sf.id().toPB())
+                    .setFolderName(psf._sf.getName())
+                    .setSharer(psf._sharer.toString()));
         }
 
         _transaction.commit();

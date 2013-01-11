@@ -19,7 +19,6 @@ import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.common.InvitationCode.CodeType;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
-import com.aerofs.sp.server.lib.SharedFolderInvitation;
 import com.aerofs.sp.server.lib.UserDatabase;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.organization.Organization;
@@ -348,13 +347,25 @@ public class User
         return sfs;
     }
 
-    public Collection<SharedFolderInvitation> getPendingSharedFolders()
+    public static class PendingSharedFolder
+    {
+        public final UserID _sharer;
+        public final SharedFolder _sf;
+
+        public PendingSharedFolder(UserID sharer, SharedFolder sf)
+        {
+            _sharer = sharer;
+            _sf = sf;
+        }
+    }
+
+    public Collection<PendingSharedFolder> getPendingSharedFolders()
             throws SQLException
     {
-        Collection<UserDatabase.FolderInvitation> l = _f._udb.getPendingSharedFolders(_id);
-        List<SharedFolderInvitation> sfs = Lists.newArrayListWithCapacity(l.size());
-        for (UserDatabase.FolderInvitation i : l) {
-            sfs.add(new SharedFolderInvitation(i.sharer, _id, _f._factSharedFolder.create(i.sid)));
+        Collection<UserDatabase.PendingSharedFolder> l = _f._udb.getPendingSharedFolders(_id);
+        List<PendingSharedFolder> sfs = Lists.newArrayListWithCapacity(l.size());
+        for (UserDatabase.PendingSharedFolder i : l) {
+            sfs.add(new PendingSharedFolder(i._sharer, _f._factSharedFolder.create(i._sid)));
         }
         return sfs;
     }
