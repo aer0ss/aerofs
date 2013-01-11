@@ -278,7 +278,7 @@ public class Device implements Comparable<Device>, IDumpStatMisc
      */
     public int getPreferenceUtility_()
     {
-        return getPreferedTransport_().pref();
+        return getPreferedTransport_().rank();
     }
 
     @Override

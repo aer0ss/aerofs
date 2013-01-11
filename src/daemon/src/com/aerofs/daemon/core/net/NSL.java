@@ -107,9 +107,12 @@ public class NSL
             l.debug("mc too large " + bs.length + ". send anyway");
         }
 
-        EOMaxcastMessage ev = new EOMaxcastMessage(_sidx2sid.getThrows_(sidx),
-                _mcfs.getNewMCastID_(), bs);
+        EOMaxcastMessage ev =
+                new EOMaxcastMessage(_sidx2sid.getThrows_(sidx), _mcfs.getNewMCastID_(), bs);
+
         for (ITransport tp : _tps.getAll_()) {
+            if (!tp.supportsMulticast()) continue;
+
             tp.q().enqueueThrows(ev, _tc.prio());
 
             // TODO: The current MaxcastFilter implementation will only

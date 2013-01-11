@@ -355,7 +355,6 @@ public class TPUtil
     {
         tp.disp()
             .setHandler_(EOUnicastMessage.class, new HdUnicastMessage(tp))
-            .setHandler_(EOMaxcastMessage.class, new HdMaxcastMessage(tp))
             .setHandler_(EOBeginStream.class, new HdBeginStream(tp))
             .setHandler_(EOChunk.class, new HdChunk(tp))
             .setHandler_(EOTxEndStream.class, new HdTxEndStream(tp))
@@ -370,6 +369,11 @@ public class TPUtil
             .setHandler_(EOStartPulse.class, new HdStartPulse(tp))
             .setHandler_(EOTpStartPulse.class, tp.sph())
             .setHandler_(EOTpSubsequentPulse.class, new HdPulse<EOTpSubsequentPulse>(new SubsequentPulse(tp)));
+    }
+
+    public static void registerMulticastHandler(ITransportImpl tp)
+    {
+        tp.disp().setHandler_(EOMaxcastMessage.class, new HdMaxcastMessage(tp));
     }
 
     public static void sessionEnded(Endpoint ep, IBlockingPrioritizedEventSink<IEvent> sink,

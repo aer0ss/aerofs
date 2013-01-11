@@ -225,6 +225,9 @@ public class Downloads
                     public void handle_()
                     {
                         try {
+                            // FIXME (AG): dl.do_ appears to return an exception
+                            // we're ignoring it here - is that actually the right thing to do?
+                            // talk to MJ about this
                             dl.do_();
                         } finally {
                             if (tk == null) tk2.reclaim_();

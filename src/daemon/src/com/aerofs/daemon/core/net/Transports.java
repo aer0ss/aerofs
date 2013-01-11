@@ -1,5 +1,10 @@
+/*
+ * Copyright (c) Air Computing Inc., 2012.
+ */
+
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.LinkStateService;
@@ -7,34 +12,37 @@ import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
+import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.IDumpStat;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
-import com.aerofs.daemon.transport.xmpp.XMPP;
+import com.aerofs.daemon.transport.xmpp.Jingle;
+import com.aerofs.daemon.transport.xmpp.Zephyr;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import java.io.PrintStream;
 import java.net.NetworkInterface;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import static com.aerofs.daemon.core.tc.Cat.UNLIMITED;
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 
 /**
@@ -44,76 +52,151 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
 {
     private static final Logger l = Util.l(Transports.class);
 
+    public static interface ITransportImplementation
+    {
+        ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr);
+
+        boolean isEnabled();
+    }
+
+    public static enum TransportImplementation implements ITransportImplementation
+    {
+        TCPBMT("t")
+        {
+            @Override
+            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
+            {
+                return new TCP(id(), rank(), q, mcfr);
+            }
+
+            @Override
+            public boolean isEnabled()
+            {
+                return Cfg.useTCP();
+            }
+        },
+        JINGLE("j")
+        {
+            @Override
+            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
+            {
+                return new Jingle(localdid, id(), rank(), q, mcfr);
+            }
+
+            @Override
+            public boolean isEnabled()
+            {
+                return Cfg.useXMPP() && Cfg.useJingle();
+            }
+        },
+        ZEPHYR("z")
+        {
+            @Override
+            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
+            {
+                return new Zephyr(localdid, id(),  rank(), q, mcfr);
+            }
+
+            @Override
+            public boolean isEnabled()
+            {
+                return Cfg.useXMPP() && Cfg.useZephyr();
+            }
+        },
+        NOOPTP("n") // FIXME (AG): remove this!
+        {
+            @Override
+            public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)
+            {
+                throw new UnsupportedOperationException("cannot make an instance of this transport");
+            }
+
+            @Override
+            public boolean isEnabled()
+            {
+                return false;
+            }
+        }; // this must _always_ be last
+
+        private final String _id;
+
+        private TransportImplementation(String id)
+        {
+            _id = id;
+        }
+
+        public String id()
+        {
+            return _id;
+        }
+
+        public int rank()
+        {
+            return ordinal();
+        }
+
+        @Override
+        public String toString()
+        {
+            return _id;
+        }
+    }
+
     // the more preferred the transport, the smaller value it has.
     public static final Comparator<ITransport> PREFERENCE_COMPARATOR = new Comparator<ITransport>()
     {
         @Override
-        public int compare(ITransport arg0, ITransport arg1)
+        public int compare(ITransport tp0, ITransport tp1)
         {
-            int comp = arg0.pref() - arg1.pref();
-            // transports must have different preferences
-            assert arg0 == arg1 || comp != 0;
+            int comp = tp0.rank() - tp1.rank();
+            checkArgument(tp0 == tp1 || comp != 0,
+                    "different transports have identical preferences tp0:" + tp0 + " tp1:" + tp1);
             return comp;
         }
     };
 
-    private final ITransport[] _tps;
-
-    private final HashMap<ITransport, IIMCExecutor> _tp2imce = Maps.newHashMap();
-
-    private final IIMCExecutor[] _imces;
-
-    final private SortedSet<ITransport> _prefs = new TreeSet<ITransport>(
-            Transports.PREFERENCE_COMPARATOR);
-
-    private final CoreQueue _q;
+    private final ImmutableMap<ITransport, IIMCExecutor> _availableTransports;
+    private final ImmutableSortedSet<ITransport> _rankedTransports;
     private final TC _tc;
     private final LinkStateService _lss;
 
     @Inject
-    public Transports(CoreQueue q, TC tc, LinkStateService lss,
-            MobileService.Factory mobileServiceFactory)
+    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss)
     {
-        _q = q;
-        _tc = tc;
-        _lss = lss;
+        this._tc = tc;
+        this._lss = lss;
 
-        int count = 0;
-        if (Cfg.useTCP()) count++;
-        if (Cfg.useXMPP()) count++;
+        MaxcastFilterReceiver mcfr = new MaxcastFilterReceiver(); // shared by all transports
 
-        _tps = new ITransport[count];
-        _imces = new IIMCExecutor[count];
+        ImmutableMap.Builder<ITransport, IIMCExecutor> transportBuilder = ImmutableMap.builder();
+        ImmutableSortedSet.Builder<ITransport> rankedBuilder = ImmutableSortedSet.orderedBy(PREFERENCE_COMPARATOR);
 
-        // A maxcast filter receiver shared by all transports.
-        MaxcastFilterReceiver mcfr = new MaxcastFilterReceiver();
-        count = 0;
+        for (TransportImplementation i : TransportImplementation.values()) {
+            if (i.isEnabled()) {
+                ITransport tp = i.newTransport_(localdid.get(), q, mcfr);
 
-        if (Cfg.useTCP()) add_(new TCP(_q, mcfr), count++);
-        if (Cfg.useXMPP()) add_(new XMPP(_q, mcfr, mobileServiceFactory), count++);
+                l.info("add transport " + tp);
+
+                IIMCExecutor imce = new QueueBasedIMCExecutor(tp.q());
+                transportBuilder.put(tp, imce);
+                rankedBuilder.add(tp);
+
+                addLinkStateListener_(tp, imce);
+            }
+        }
+
+        this._availableTransports = transportBuilder.build();
+        this._rankedTransports = rankedBuilder.build();
     }
 
-    public ITransport[] getAll_()
+    public Collection<ITransport> getAll_()
     {
-        return _tps;
+        return _availableTransports.keySet();
     }
 
     public IIMCExecutor getIMCE_(ITransport tp)
     {
-        return _tp2imce.get(tp);
-    }
-
-    private void add_(ITransport tp, int idx)
-    {
-        l.debug("add transport " + tp);
-
-        _tps[idx] = tp;
-        IIMCExecutor imce = new QueueBasedIMCExecutor(tp.q());
-        _tp2imce.put(tp, imce);
-        _imces[idx] = imce;
-        _prefs.add(tp);
-
-        addLinkStateListener_(tp, imce);
+        return _availableTransports.get(tp);
     }
 
     private void addLinkStateListener_(final ITransport tp, final IIMCExecutor imce)
@@ -146,7 +229,9 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     public void init_()
             throws Exception
     {
-        for (ITransport tp : _tps) tp.init_();
+        for (ITransport tp : _availableTransports.keySet()) {
+            tp.init_();
+        }
     }
 
     @Override
@@ -154,7 +239,9 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     {
         l.info("start all tps");
 
-        for (ITransport tp : _tps) tp.start_();
+        for (ITransport tp : _availableTransports.keySet()) {
+            tp.start_();
+        }
     }
 
     // see also dumpStat()
@@ -168,10 +255,9 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
         try {
             TCB tcb = tk.pseudoPause_("dumpStatMisc");
             try {
-                for (ITransport tp : _tps) {
+                for (ITransport tp : _availableTransports.keySet()) {
                     ps.println(indent + tp.id());
-                    // TODO use core-to-tp events instead
-                    tp.dumpStatMisc(indent + indentUnit, indentUnit, ps);
+                    tp.dumpStatMisc(indent + indentUnit, indentUnit, ps); // TODO use core-to-tp events instead
                 }
             } finally {
                 tcb.pseudoResumed_();
@@ -193,8 +279,9 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
             // according to ITransport's contract dumpStat() may block
             TCB tcb = tk.pseudoPause_("dumpStat");
             try {
-                // TODO use core-to-tp events instead
-                for (ITransport tp : _tps) tp.dumpStat(template, bd);
+                for (ITransport tp : _availableTransports.keySet()) {
+                    tp.dumpStat(template, bd); // TODO use core-to-tp events instead
+                }
             } finally {
                 tcb.pseudoResumed_();
             }

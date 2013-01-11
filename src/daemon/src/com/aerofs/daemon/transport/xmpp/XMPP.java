@@ -1,6 +1,9 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.Base64;
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
@@ -13,11 +16,8 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.Scheduler;
-import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
-import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IMaxcast;
-import com.aerofs.daemon.transport.lib.INetworkStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.ITransportImpl;
 import com.aerofs.daemon.transport.lib.IUnicast;
@@ -28,21 +28,14 @@ import com.aerofs.daemon.transport.lib.StreamManager;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection.IXMPPServerConnectionWatcher;
-import com.aerofs.daemon.transport.xmpp.jingle.Jingle;
 import com.aerofs.daemon.transport.xmpp.routing.SignalledPipeFanout;
-import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientManager;
-import com.aerofs.base.Base64;
 import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.base.id.SID;
-import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Transport.PBCheckPulse;
 import com.aerofs.proto.Transport.PBStream.Type;
@@ -53,11 +46,7 @@ import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.filter.MessageTypeFilter;
-import org.jivesoftware.smack.filter.OrFilter;
-import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.filter.PacketTypeFilter;
-import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 
@@ -71,29 +60,21 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.NetworkInterface;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import static com.aerofs.daemon.lib.DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE;
-import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.JINGLE;
-import static com.aerofs.daemon.lib.DaemonParam.XMPP.PACKETROUTE.ZEPHYR;
 import static com.aerofs.daemon.lib.DaemonParam.XMPP.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 import static com.aerofs.daemon.transport.lib.TPUtil.makeDiagnosis;
 import static com.aerofs.daemon.transport.lib.TPUtil.newControl;
 import static com.aerofs.daemon.transport.lib.TPUtil.processUnicastControlDiagnosis;
-import static com.aerofs.lib.C.NOSTUN;
-import static com.aerofs.lib.C.NOZEPHYR;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DATAGRAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.DIAGNOSIS;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.STREAM;
 import static com.aerofs.proto.Transport.PBTPHeader.Type.TRANSPORT_CHECK_PULSE_CALL;
-import static org.jivesoftware.smack.packet.Message.Type.chat;
-import static org.jivesoftware.smack.packet.Message.Type.error;
-import static org.jivesoftware.smack.packet.Message.Type.groupchat;
-import static org.jivesoftware.smack.packet.Message.Type.headline;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.collect.Sets.newHashSet;
 
 /**
  * Acts as a controller (or wrapper) over a number of {@link IPipe} implementations
@@ -122,67 +103,40 @@ import static org.jivesoftware.smack.packet.Message.Type.headline;
  *         <code>enqueueThrows</code></li>
  * </ol>
  */
-public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignallingChannel,
-        IXMPPServerConnectionWatcher
+public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast, IXMPPServerConnectionWatcher
 {
-    // TODO use DI
-    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
-
-    // TODO (EK) remove once OOM fixed
-    private boolean _isSamplerThreadActive = false;
-
-    /**
-     * @param sink
-     * @param mcfr
-     * @param mobileServiceFactory
-     */
-    public XMPP(IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr,
-            MobileService.Factory mobileServiceFactory)
+    protected XMPP(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink,
+            MaxcastFilterReceiver mcfr)
     {
         // this is a workaround for NullPointerException during authentication
         // see http://www.igniterealtime.org/community/thread/35976
         SASLAuthentication.supportSASLMechanism("PLAIN", 0);
 
+        // FIXME (AG): leaking 'this' before construction is seriously unsafe
+        // only doing this because refactoring would be seriously expensive and we're doing this
+        // in single-threaded phase
+
+        _localdid = localdid;
+        _id = id;
+        _rank = rank;
         _sink = sink;
+        _sched = new Scheduler(_q, id());
+        _xsc = new XMPPServerConnection(id(), this);
+        _mc = new Multicast(this, localdid, id());
         _mcfr = mcfr;
         _pm.addPulseDeletionWatcher(new GenericPulseDeletionWatcher(this, _sink));
-        _cw = new XMPPServerConnection(ID.resource(false), this);
+    }
 
-        //
-        // setup the packet router
-        //
-
-        boolean okj = !_factFile.create(Cfg.absRTRoot(), NOSTUN).exists();
-        boolean okz = !_factFile.create(Cfg.absRTRoot(), NOZEPHYR).exists();
-
-        assert okj || okz : ("at least one PR component must be active");
-
-        BasicStatsCounter sc = new BasicStatsCounter();
-        Set<ISignalledPipe> pipes = new HashSet<ISignalledPipe>();
-
-        if (okj) {
-            pipes.add(new Jingle(JINGLE.id(), JINGLE.pref(), this, sc));
-        }
-        if (okz) {
-            // FIXME: hmm separate concerns?
-            pipes.add(new ZephyrClientManager(ZEPHYR.id(), ZEPHYR.pref(), this, sc, this));
-        }
-
-        _spf = new SignalledPipeFanout(_sched, pipes);
-        if (mobileServiceFactory != null && MobileService.Factory.isEnabled()) {
-            _mobileConnector = new MobileServerZephyrConnector(mobileServiceFactory);
-        } else {
-            _mobileConnector = null;
-        }
+    protected final void setPipe_(ISignalledPipe pipe)
+    {
+        _spf = new SignalledPipeFanout(_sched, newHashSet(pipe));
     }
 
     @Override
     public void init_() throws Exception
     {
         TPUtil.registerCommonHandlers(this);
-        _disp.setHandler_(EOTransportReconfigRemoteDevice.class,
-                new HdTransportReconfigRemoteDevice());
-
+        _disp.setHandler_(EOTransportReconfigRemoteDevice.class, new HdTransportReconfigRemoteDevice());
         _spf.init_();
     }
 
@@ -197,6 +151,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             public void run()
             {
                 OutArg<Prio> outPrio = new OutArg<Prio>();
+                // noinspection InfiniteLoopStatement
                 while (true) {
                     IEvent ev = _q.dequeue(outPrio);
                     _disp.dispatch_(ev, outPrio.get());
@@ -209,21 +164,21 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     }
 
     @Override
-    public boolean ready()
+    public final boolean ready()
     {
-        return _cw.ready() && _spf.ready();
+        return _xsc.ready() && _spf.ready();
     }
 
     @Override
-    public String id()
+    public final String id()
     {
-        return C.TRANSPORT_ID_XMPP;
+        return _id;
     }
 
     @Override
-    public int pref()
+    public final int rank()
     {
-        return 1;
+        return _rank;
     }
 
     //--------------------------------------------------------------------------
@@ -235,13 +190,13 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     //--------------------------------------------------------------------------
 
     @Override
-    public IBlockingPrioritizedEventSink<IEvent> q()
+    public final IBlockingPrioritizedEventSink<IEvent> q()
     {
         return _q;
     }
 
     @Override
-    public Set<DID> getMulticastUnreachableOnlineDevices()
+    public final Set<DID> getMulticastUnreachableOnlineDevices()
     {
         return Collections.emptySet();
     }
@@ -255,81 +210,69 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     //--------------------------------------------------------------------------
 
     @Override
-    public EventDispatcher disp()
+    public final EventDispatcher disp()
     {
         return _disp;
     }
 
     @Override
-    public Scheduler sched()
+    public final Scheduler sched()
     {
         return _sched;
     }
 
     @Override
-    public HdPulse<EOTpStartPulse> sph()
+    public final HdPulse<EOTpStartPulse> sph()
     {
         return new HdPulse<EOTpStartPulse>(new StartPulse(this));
     }
 
     @Override
-    public IUnicast ucast()
+    public final IUnicast ucast()
     {
         return this;
     }
 
     @Override
-    public IMaxcast mcast()
+    public final IMaxcast mcast()
     {
         return _mc;
     }
 
     @Override
-    public PulseManager pm()
+    public final PulseManager pm()
     {
         return _pm;
     }
 
     @Override
-    public StreamManager sm() {
+    public final StreamManager sm() {
         return _sm;
     }
 
     @Override
-    public TransportDiagnosisState tds()
+    public final TransportDiagnosisState tds()
     {
         return _tds;
     }
 
-    /**
-     *
-     * @return
-     */
-    public IBlockingPrioritizedEventSink<IEvent> sink()
+    public final IBlockingPrioritizedEventSink<IEvent> sink()
     {
         return _sink;
     }
 
-    /**
-     *
-     * @return
-     */
-    public XMPPServerConnection cw()
+    public final XMPPServerConnection xmppServerConnection()
     {
-        return _cw;
+        return _xsc;
     }
 
-    /**
-     *
-     * @return
-     */
-    public XMPPPresenceManager xpm()
+    public final XMPPPresenceManager xpm()
     {
         return _xpm;
     }
 
     @Override
-    public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
+    public final void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
     {
         assertDispThread();
 
@@ -344,10 +287,11 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     //
     //--------------------------------------------------------------------------
 
-    // FIXME: ideally I should delegate to <code>SignalledPipeFanout</code> but it would need too much access to XMPP's state
+    // (AG): ideally I should delegate to <code>SignalledPipeFanout</code>
+    // unfortunately it would need too much access to XMPP's state
 
     @Override
-    public Object send_(final DID did, final IResultWaiter wtr, final Prio pri, final byte[][] bss, final Object cke)
+    public final Object send_(final DID did, final IResultWaiter wtr, final Prio pri, final byte[][] bss, final Object cke)
         throws Exception
     {
         assert _dispthr != null : ("null dispthr");
@@ -357,30 +301,36 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         if (Thread.currentThread() == _dispthr) {
             retcke.set(_spf.send_(did, wtr, pri, bss, cke));
         } else {
-            // FIXME: I need to generalize this pattern (I suspect it'll be nasty)
+            // FIXME (AG): I need to generalize this pattern (I suspect it'll be nasty)
 
-            final Object cvobj = new Object();
+            //
+            // it's correct to synchronize on a local object here because I'm simply using it
+            // for wait/notify not for mutual exclusion
+            //
 
-            synchronized (cvobj) {
+            final Object lock = new Object();
+
+            // noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (lock) {
                 enqueueIntoXmpp(new AbstractEBSelfHandling()
                 {
                     @Override
                     public void handle_()
                     {
-                        synchronized (cvobj) {
+                        synchronized (lock) {
                             try {
                                 retcke.set(_spf.send_(did, wtr, pri, bss, cke));
                             } catch (Exception e) {
                                 if (wtr != null) wtr.error(e);
                             } finally {
-                                cvobj.notifyAll();
+                                lock.notifyAll();
                             }
                         }
                     }
                 }, pri);
 
                 try {
-                    cvobj.wait();
+                    lock.wait();
                 } catch (InterruptedException e) {
                     assert false : ("interrupted during send d:" + did);
                 }
@@ -403,7 +353,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     //--------------------------------------------------------------------------
 
     @Override
-    public void peerConnected(final DID d, IPipe.ConnectionType type, final IPipe p)
+    public final void peerConnected(final DID d, IPipe.ConnectionType type, final IPipe p)
     {
         assertNonDispThread();
 
@@ -418,7 +368,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     }
 
     @Override
-    public void peerDisconnected(final DID d, final IPipe p)
+    public final void peerDisconnected(final DID d, final IPipe p)
     {
         //
         // when I first implemented this method I assumed that it would always be called in
@@ -445,7 +395,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     }
 
     @Override
-    public void processUnicastControl(final DID did, final PBTPHeader hdr)
+    public final void processUnicastControl(final DID did, final PBTPHeader hdr)
     {
         assertNonDispThread();
 
@@ -487,7 +437,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     }
 
     @Override
-    public void processUnicastPayload(final DID did, final PBTPHeader hdr, final ByteArrayInputStream bodyis, final int wirelen)
+    public final void processUnicastPayload(final DID did, final PBTPHeader hdr, final ByteArrayInputStream bodyis, final int wirelen)
     {
         assertNonDispThread();
 
@@ -498,17 +448,19 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             {
                 try {
                     Endpoint ep = new Endpoint(XMPP.this, did);
-                    PBTPHeader ret = TPUtil.processUnicastPayload(ep, hdr, bodyis, wirelen, _sink, _sm);
+                    PBTPHeader ret = TPUtil.processUnicastPayload(ep, hdr, bodyis, wirelen, _sink,
+                            _sm);
                     if (ret != null) sendControl_(did, ret, Prio.LO);
                 } catch (Exception e) {
-                    l.warn("could not respond to d:" + did + " for pkt:" + hdr.getType().name() + " err:" + e);
+                    l.warn("could not respond to d:" + did + " for pkt:" + hdr.getType().name() +
+                            " err:" + e);
                 }
             }
         }, Prio.LO);
     }
 
     @Override
-    public void closePeerStreams(final DID did, final boolean outbound, final boolean inbound)
+    public final void closePeerStreams(final DID did, final boolean outbound, final boolean inbound)
     {
         assertNonDispThread();
 
@@ -525,73 +477,6 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     //--------------------------------------------------------------------------
     //
     //
-    // ISignallingChannel methods (how subsystems can send/receive messages via
-    // a control channel)
-    //
-    //
-    //--------------------------------------------------------------------------
-
-    @Override
-    public void registerSignallingClient_(PBTPHeader.Type type, ISignallingClient ccc)
-    {
-        assert !ready() : ("x: already started");
-        assert !_processors.containsKey(type) : ("x: existing ccc for type:" + type.name());
-
-        _processors.put(type, ccc);
-    }
-
-    @Override
-    public void sendMessageOnSignallingChannel(
-            final DID did, final PBTPHeader msg, final ISignallingClient ccc)
-    {
-        assertNonDispThread();
-
-        enqueueIntoXmpp(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                OutArg<Integer> len = new OutArg<Integer>(0);
-                String enc = XMPP.encodeBody(len, msg.toByteArray());
-
-                final Message xmsg = new Message(ID.did2jid(did, false), Message.Type.normal);
-                xmsg.setBody(enc);
-
-                // for now we actually don't have to enqueue the sending task as a new
-                // event since sendPacket() is synchronized, but it's easy to do so if we
-                // have to for whatever reason (i.e. I've tried both approaches and this
-                // signature supports both). This allows us to implement this method
-                // however we wish, with whatever synchronization style we want
-
-                try {
-                    _cw.conn().sendPacket(xmsg);
-                } catch (XMPPException e) {
-                    notifySignallingClientOfError(e);
-                } catch (IllegalStateException e) {
-                    // NOTE: this can happen because smack considers it illegal to attempt to send
-                    // a packet if the channel is not connected. Since we may be notified of a
-                    // disconnection after actually enqueuing the packet to be sent, it's entirely
-                    // possible for this to occur
-
-                    notifySignallingClientOfError(e);
-                }
-            }
-
-            private void notifySignallingClientOfError(Exception e)
-            {
-                try {
-                    ccc.sendSignallingMessageFailed_(did, msg, e);
-                } catch (ExNoResource e2) {
-                    l.error("x: failed to handle error while sending packet");
-                    SystemUtil.fatal("shutdown due to err:" + e2 + " triggered by err:" + e);
-                }
-            }
-        }, Prio.HI);
-    }
-
-    //--------------------------------------------------------------------------
-    //
-    //
     // IXMPPServerConnectionWatcher methods (how XMPP gets notified and
     // processes methods coming in on the control channel)
     //
@@ -601,7 +486,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     @Override
     public void xmppServerDisconnected()
     {
-        l.warn("x: cw noticed disconnect");
+        l.warn("x: xsc noticed disconnect");
 
         //
         // IMPORTANT: there are two entry points (threading-wise) into this method:
@@ -651,8 +536,6 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         assertNonDispThread();
 
         final PacketTypeFilter presfilter = new PacketTypeFilter(Presence.class);
-        final MessageTypeFilter msgfilter = new MessageTypeFilter(Message.Type.normal);
-        final PacketFilter fullfilter = new OrFilter(presfilter, msgfilter);
 
         conn.addPacketListener(new PacketListener()
         {
@@ -672,55 +555,15 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
                                     + packet.getFrom() + ": "
                                     + Util.e(e, ExFormatError.class));
                             }
-                        } else if (packet instanceof Message) {
-                            // for now all non-presence packets are directed to Zephyr
-                            // clients only
-
-                            Message m = (Message) packet;
-                            Message.Type t = m.getType();
-
-                            if (m.getSubject() != null) return;
-
-                            assert t != groupchat && t != headline && t != chat :
-                                ("pl: groupchat, headline and chat messages are not expected here");
-                            assert t != error :
-                                ("pl: errors and headlines are unhandled here");
-
-                            try {
-                                processMessage_(m);
-                            } catch (ExFormatError e) {
-                                l.warn("pl: cannot convert JID to DID from:" +
-                                    packet.getFrom() + " err: " +
-                                    Util.e(e));
-                            } catch (ExProtocolError e) {
-                                l.warn("pl: unrecognized message from:" +
-                                    packet.getFrom() + " err:" + Util.e(e));
-                            } catch (Exception e) {
-                                l.error("pl: cannot process valid message from:" +
-                                    packet.getFrom() + " err:" + Util.e(e));
-
-                                // we fatal for a number of reasons here:
-                                // - an exception from disconnect_ within a subsystem
-                                //   is unrecoverable. It means that we're trying
-                                //   to recover from an error condition, but our
-                                //   recovery process is failing. in this case we
-                                //   really shouldn't go on
-                                // - we cannot reschedule this event because ordering
-                                //   is extremely important in processing XMPP
-                                //   messages. Receiving online, offline messages
-                                //   is very different than offline, online
-
-                                SystemUtil.fatal(e);
-                            }
                         }
                     }
                 }, Prio.LO);
             }
-        }, fullfilter);
+        }, presfilter);
 
-        if (_mobileConnector != null) {
-            _mobileConnector.setConnection(conn);
-        }
+//        if (_mobileConnector != null) {
+//            _mobileConnector.setConnection(conn);
+//        }
 
         enqueueIntoXmpp(new AbstractEBSelfHandling()
         {
@@ -729,8 +572,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             {
                 try {
                     _spf.xmppServerConnected_();
-                    _mc.xmppServerConnected(
-                            null); // FIXME: should not pass in null - change Multicast to use passed-in connection
+                    _mc.xmppServerConnected(null); // FIXME: should not pass in null - change Multicast to use passed-in connection
                 } catch (XMPPException e) {
                     l.warn("invalid XMPP message on XMPP connection");
                 } catch (ExNoResource e) { // FIXME: should I catch all exceptions? - no...let me approach this on a case-by-case basis for now
@@ -755,7 +597,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
      * @param ev {@link IEvent} to be run in the event-dispatch thread
      * @param pri {@link Prio} priority of the event
      */
-    private void enqueueIntoXmpp(IEvent ev, Prio pri)
+    protected void enqueueIntoXmpp(IEvent ev, Prio pri)
     {
         assertNonDispThread();
 
@@ -797,7 +639,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     //--------------------------------------------------------------------------
 
     @Override
-    public void disconnect_(DID did)
+    public final void disconnect_(DID did)
         throws ExNoResource
     {
         assertDispThread();
@@ -806,7 +648,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     }
 
     @Override
-    public void linkStateChanged_(
+    public final void linkStateChanged_(
             Set<NetworkInterface> removed,
             Set<NetworkInterface> added,
             Set<NetworkInterface> prev,
@@ -815,7 +657,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     {
         assertDispThread();
 
-        _cw.linkStateChanged(removed, current);
+        _xsc.linkStateChanged(current);
         _spf.linkStateChanged_(removed, current);
     }
 
@@ -847,23 +689,24 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         // the TCP connection via Zephyr will break
 
         String[] tokens = ID.tokenize(p.getFrom());
+
         if (!ID.isMUCAddress(tokens)) return;
-        // Ignore presence from mobile devices (they don't have a valid did)
-        if (tokens[1].startsWith("mobile_")) return;
+        if (tokens[1].startsWith("mobile_")) return; // Ignore presence from mobile devices (they don't have a valid did)
+        if (tokens.length == 3 && (tokens[2].compareToIgnoreCase(id()) != 0)) return; // ignore presence from other xmpp-based transports
 
         SID sid = ID.muc2sid(tokens[0]);
         DID did = ID.user2did(tokens[1]);
-        if (did.equals(Cfg.did())) return;
+        if (did.equals(_localdid)) return;
 
         if (p.isAvailable()) {
-            l.info("rcv online presence d:" + did);
+            l.info("recv online presence d:" + did);
             _xpm.add(did, sid);
             _pm.stopPulse(did, false);
         } else {
             _spf.disconnect_(did, new Exception("remote offline"));
             boolean waslast = _xpm.del(did, sid);
             if (waslast) {
-                l.info("rcv offline presence d:" + did);
+                l.info("recv offline presence d:" + did);
                 _pm.stopPulse(did, false);
             }
         }
@@ -1011,39 +854,6 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         }
     }
 
-    /**
-     * Processes an encoded XMPP message from a peer.
-     *
-     * @param m XMPP message to decode and process
-     * @throws ExFormatError if the JID cannot be converted to a DID
-     * @throws ExProtocolError if the header is an unrecognized (i.e. unhandled) type
-     * @throws ExNoResource if the message can't be processed by an
-     * {@link ISignallingClient} due to resource constraints
-     */
-    private void processMessage_(Message m) throws ExFormatError, ExProtocolError, ExNoResource
-    {
-        assertDispThread();
-
-        DID did = ID.jid2did(m.getFrom());
-        PBTPHeader hdr;
-        try {
-            OutArg<Integer> wirelen = new OutArg<Integer>(0);
-            byte[] decoded = decodeBody(did, wirelen, m.getBody());
-            if (decoded == null) return;
-            hdr = PBTPHeader.parseFrom(decoded);
-        } catch (IOException e) {
-            l.warn(Util.e(e));
-            return;
-        }
-
-        PBTPHeader.Type type = hdr.getType();
-        l.debug("rcv msg type:" + hdr.getType().name());
-
-        ISignallingClient mp = _processors.get(type);
-        if (mp == null) throw new ExProtocolError(type.getClass());
-        mp.processSignallingMessage_(did, hdr);
-    }
-
     //
     // message (de)serialization methods
     //
@@ -1114,13 +924,13 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             throws IOException
     {
         ByteArrayInputStream bos = new ByteArrayInputStream(body.getBytes());
-        DataInputStream is = new DataInputStream(new Base64.InputStream(bos));
+        DataInputStream is = null;
         try {
+            is = new DataInputStream(new Base64.InputStream(bos));
+
             int magic = is.readInt();
             if (magic != C.CORE_MAGIC) {
-                l.warn("magic mismatch " +
-                        "d:" + did + " exp:" + C.CORE_MAGIC + " act:" + magic + " bdy:" + body);
-
+                l.warn("magic mismatch d:" + did + " exp:" + C.CORE_MAGIC + " act:" + magic + " bdy:" + body);
                 return null;
             }
 
@@ -1152,8 +962,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
             }
 
             if (bos.available() != 0) {
-                throw new IOException("msg len " + len + " < avail by " +
-                        bos.available());
+                throw new IOException("msg len " + len + " < avail by " + bos.available());
             }
 
             wirelen.set(len + HEADER_LEN);
@@ -1188,20 +997,21 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
      * Asserts that the current method is being called from within the
      * <code>XMPP</code> {@link EventDispatcher} thread
      */
-    private void assertDispThread()
+    protected final void assertDispThread()
     {
-        assert _dispthr != null : ("null disp thr");
-        assert Thread.currentThread() == _dispthr : ("method called from non-disp thr");
+        checkNotNull(_dispthr, "null disp thr");
+        checkState(Thread.currentThread() == _dispthr,
+                "method called from non-disp thd:" + Thread.currentThread().getName());
     }
 
     /**
      * Asserts that the current method is <em>not</em> being called from within
      * the <code>XMPP</code> {@link EventDispatcher} thread*
      */
-    private void assertNonDispThread()
+    protected final void assertNonDispThread()
     {
-        assert _dispthr != null : ("null disp thr");
-        assert Thread.currentThread() != _dispthr : ("method called from disp thr");
+        checkNotNull(_dispthr, "null disp thr");
+        checkState(Thread.currentThread() != _dispthr, "method called from disp thd");
     }
 
     //
@@ -1222,7 +1032,7 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
         ps.println(indent + "q");
         _q.dumpStatMisc(indent2, indentUnit, ps);
         ps.println(indent + "mcast");
-        _cw.dumpStatMisc(indent2, indentUnit, ps);
+        _xsc.dumpStatMisc(indent2, indentUnit, ps);
         ps.println(indent + "ucast");
         _spf.dumpStatMisc(indent2, indentUnit, ps);
     }
@@ -1237,27 +1047,29 @@ public class XMPP implements ITransportImpl, IPipeController, IUnicast, ISignall
     // members
     //
 
+    private final DID _localdid;
+    private final String _id;
+    private final int _rank;
+
+    private boolean _isSamplerThreadActive = false;
+
     private final IBlockingPrioritizedEventSink<IEvent> _sink;
     private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
-    private final Scheduler _sched = new Scheduler(_q, id());
     private final EventDispatcher _disp = new EventDispatcher();
+    private final Scheduler _sched;
     private Thread _dispthr;
 
+    private final TransportDiagnosisState _tds = new TransportDiagnosisState();
     private final PulseManager _pm = new PulseManager();
     private final StreamManager _sm = new StreamManager();
-    private final XMPPPresenceManager _xpm = new XMPPPresenceManager();    private final XMPPServerConnection _cw;
-
     private final MaxcastFilterReceiver _mcfr;
-    private final SignalledPipeFanout _spf;
-    private final Multicast _mc = new Multicast(this);
 
-    private final TransportDiagnosisState _tds = new TransportDiagnosisState();
+    private final XMPPPresenceManager _xpm = new XMPPPresenceManager();
+    private final Multicast _mc;
+    private final XMPPServerConnection _xsc;
+    private SignalledPipeFanout _spf;
 
-    private final Map<PBTPHeader.Type, ISignallingClient> _processors = new HashMap<PBTPHeader.Type, ISignallingClient>();
-
-    private final MobileServerZephyrConnector _mobileConnector;
-
-    private static final Logger l = Util.l(XMPP.class);
+    protected static final Logger l = Util.l(XMPP.class);
 
     //
     // constants

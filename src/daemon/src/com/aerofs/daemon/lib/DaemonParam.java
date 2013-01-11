@@ -40,35 +40,6 @@ public class DaemonParam
         public static final String SERVER_DOMAIN        = "aerofs.com";
 
 
-        public static enum PACKETROUTE
-        {
-            JINGLE("jingle"),
-            ZEPHYR("zephyr"),
-            BADBAD("badbad"); // this must _always_ be last
-
-            private PACKETROUTE(String id)
-            {
-                _id = id;
-            }
-
-            public String id()
-            {
-                return _id;
-            }
-
-            public int pref()
-            {
-                return ordinal();
-            }
-
-            @Override
-            public String toString()
-            {
-                return _id;
-            }
-
-            private final String _id;
-        }
     }
 
     public static class Zephyr

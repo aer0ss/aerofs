@@ -86,7 +86,7 @@ public class C
     public static final long GB = 1024 * MB;
 
     // This number increments every time the protocol is updated
-    public static final int CORE_MAGIC                  = 0x637265BF;
+    public static final int CORE_MAGIC                  = 0x637265C0;
     public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
 
     // Make sure to also update:
@@ -97,8 +97,6 @@ public class C
     public static final int SP_PROTOCOL_VERSION         = 19;
     public static final int SS_PROTOCOL_VERSION         = 6;
 
-    public static final String TRANSPORT_ID_XMPP        = "x";
-    public static final String TRANSPORT_ID_TCP         = "t";
     public static final String LOG_FILE_EXT             = ".log";
     public static final String HPROF_FILE_EXT           = ".hprof";
 

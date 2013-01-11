@@ -29,13 +29,13 @@ public interface IIdentifier
      * This should also probably be unique, but again, it is the implementer's
      * responsibility to guarantee this.
      */
-    int pref();
+    int rank();
 
     /**
      * A concrete implementation of {@link IIdentifier} that defines comparison
-     * and equality based <em>only</em> on the value returned by <code>pref()</code>.
+     * and equality based <em>only</em> on the value returned by <code>rank()</code>.
      * Given two instances <code>i1</code> and <code>i2</code> of
-     * <code>BasicIdentifier</code>, if <code>i1</code> has a lower <code>pref()</code>
+     * <code>BasicIdentifier</code>, if <code>i1</code> has a lower <code>rank()</code>
      * value than <code>i2</code>, then <code>i1</code> is higher-ranked than
      * <code>i2</code>.
      */
@@ -45,12 +45,12 @@ public interface IIdentifier
          * Constructor
          *
          * @param id Idenitfier to initialize to. Once set, it cannot be changed.
-         * @param pref Ranking relative to siblings. Once set, it cannot be changed.
+         * @param rank Ranking relative to siblings. Once set, it cannot be changed.
          */
-        public BasicIdentifier(String id, int pref)
+        public BasicIdentifier(String id, int rank)
         {
             _id = id;
-            _pref = pref;
+            _rank = rank;
         }
 
         @Override
@@ -60,15 +60,15 @@ public interface IIdentifier
         }
 
         @Override
-        public int pref()
+        public int rank()
         {
-            return _pref;
+            return _rank;
         }
 
         @Override
         public int hashCode()
         {
-            return new Integer(_pref).hashCode(); // yeah, yeah, getting called all the time, but I doubt this is an issue
+            return new Integer(_rank).hashCode(); // yeah, yeah, getting called all the time, but I doubt this is an issue
         }
 
         /**
@@ -76,7 +76,7 @@ public interface IIdentifier
          * <ol>
          *     <li><code>false</code> if this is not an instance of
          *         <code>BasicIdentifier</code></li>
-         *     <li><code>false</code> if the value returned by <code>pref()</code>
+         *     <li><code>false</code> if the value returned by <code>rank()</code>
          *         for the compared object is different from our value.</li>
          * </ol>
          *
@@ -89,11 +89,11 @@ public interface IIdentifier
             if (o instanceof BasicIdentifier) return false;
 
             BasicIdentifier bi = (BasicIdentifier) o;
-            return bi.pref() == _pref;
+            return bi.rank() == _rank;
         }
 
         private final String _id;
-        private final int _pref;
+        private final int _rank;
     }
 
     /**
@@ -104,14 +104,14 @@ public interface IIdentifier
      * use <code>DefaultComparator</code> to compare implementations of
      * <code>IIdentifier</code> you must implement <code>equals()</code> and
      * <code>hashcode()</code> to use <em>only</em> the value returned by
-     * <code>pref()</code> in equality and comparison operations.
+     * <code>rank()</code> in equality and comparison operations.
      */
     public static class DefaultComparator implements Comparator<IIdentifier>
     {
         @Override
         public int compare(IIdentifier i1, IIdentifier i2)
         {
-            return i1.pref() - i2.pref();
+            return i1.rank() - i2.rank();
         }
     }
 }

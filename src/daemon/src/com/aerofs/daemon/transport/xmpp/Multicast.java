@@ -1,6 +1,8 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
 import com.aerofs.daemon.lib.Prio;
@@ -8,11 +10,7 @@ import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.base.id.SID;
-
 import org.apache.log4j.Logger;
 import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.SmackConfiguration;
@@ -27,7 +25,10 @@ import org.jivesoftware.smackx.muc.MultiUserChat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 public class Multicast implements IMaxcast
 {
@@ -38,10 +39,14 @@ public class Multicast implements IMaxcast
     private final Map<SID, MultiUserChat> _mucs = new TreeMap<SID, MultiUserChat>();
 
     private final Set<SID> _all = new TreeSet<SID>();
+    private final DID localdid;
+    private final String xmppTransportId;
 
-    Multicast(XMPP x)
+    public Multicast(XMPP x, DID localdid, String xmppTransportId)
     {
         this.x = x;
+        this.localdid = localdid;
+        this.xmppTransportId = xmppTransportId;
     }
 
     private void leaveMUC(SID sid) throws XMPPException
@@ -63,7 +68,7 @@ public class Multicast implements IMaxcast
      * joined. this class automatically re-join the rooms after xmpp
      * reconnection.
      */
-    public MultiUserChat getMUC(SID sid) throws XMPPException
+    private MultiUserChat getMUC(SID sid) throws XMPPException
     {
         try {
             boolean create;
@@ -75,7 +80,7 @@ public class Multicast implements IMaxcast
             }
 
             if (create) {
-                String name = ID.sid2muc(sid);
+                String roomName = ID.sid2muc(sid);
                 // This has to be called to ensure that the connection is initialized (and thus the
                 // smack static initializers have run) before using MultiUserChat, since
                 // otherwise the MultiUserChat static initializer might deadlock with the
@@ -114,16 +119,15 @@ public class Multicast implements IMaxcast
                     at java.lang.Thread.run(Thread.java:680)
                  */
 
-                XMPPConnection conn = x.cw().conn();
-                muc = new MultiUserChat(conn, name);
+                XMPPConnection conn = x.xmppServerConnection().conn();
+                muc = new MultiUserChat(conn, roomName);
 
                 try {
-                    l.info("gri:" + name);
-                    MultiUserChat.getRoomInfo(conn, name);
+                    l.info("gri:" + roomName);
+                    MultiUserChat.getRoomInfo(conn, roomName);
                 } catch (XMPPException e) {
-                    if (e.getXMPPError() != null
-                            && e.getXMPPError().getCode() == 404) {
-                        l.info("muc " + name + " not exists. create now.");
+                    if (e.getXMPPError() != null && e.getXMPPError().getCode() == 404) {
+                        l.info("muc " + roomName + " not exists. create now.");
                         createRoom(muc);
                     } else {
                         l.error(e.getMessage());
@@ -151,7 +155,6 @@ public class Multicast implements IMaxcast
         try {
             OutArg<Integer> len = new OutArg<Integer>();
             getMUC(sid).sendMessage(XMPP.encodeBody(len, mcastid, bs));
-            //_bytesOut += len.get();
         } catch (IllegalStateException e) {
             throw new XMPPException(e);
         }
@@ -168,10 +171,10 @@ public class Multicast implements IMaxcast
         history.setMaxChars(0);
 
         try {
-            muc.join(ID.did2user(Cfg.did()), null, history,
-                SmackConfiguration.getPacketReplyTimeout());
-
-            muc.addMessageListener(new PacketListener() {
+            muc.join(ID.getMUCRoomNickname(localdid, xmppTransportId),
+                    null, history, SmackConfiguration.getPacketReplyTimeout());
+            muc.addMessageListener(new PacketListener()
+            {
                 @Override
                 public void processPacket(Packet packet)
                 {
@@ -203,7 +206,7 @@ public class Multicast implements IMaxcast
         l.info("creating " + muc.getRoom());
 
         try {
-            muc.create(ID.did2user(Cfg.did()));
+            muc.create(ID.getMUCRoomNickname(localdid, xmppTransportId));
 
             // create an instant room using the server's default configuration
             // see: http://www.igniterealtime.org/builds/smack/docs/latest/documentation/extensions/muc.html
@@ -224,7 +227,7 @@ public class Multicast implements IMaxcast
     {
         String[] tokens = ID.tokenize(msg.getFrom());
         DID did = ID.jid2did(tokens);
-        if (did.equals(Cfg.did())) return;
+        if (did.equals(localdid)) return;
 
         assert ID.isMUCAddress(tokens);
 
@@ -244,11 +247,8 @@ public class Multicast implements IMaxcast
                             int wirelen)
             throws IOException, ExNoResource
     {
-        // NOTE: Assume that ep.did() != Cfg.did(),
-        // as this is checked in recvMessage(Message msg)
-        //if (ep.did().equals(Cfg.did())) return;
-        x.sink().enqueueThrows(new EIMaxcastMessage(ep, sid, is, wirelen),
-            Prio.LO);
+        // NOTE: Assume that ep.did() != localdid as this is checked in recvMessage(Message msg)
+        x.sink().enqueueThrows(new EIMaxcastMessage(ep, sid, is, wirelen), Prio.LO);
     }
 
     public synchronized void xmppServerDisconnected()
