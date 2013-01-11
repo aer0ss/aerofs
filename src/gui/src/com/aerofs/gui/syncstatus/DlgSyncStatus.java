@@ -8,6 +8,7 @@ import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
+import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
@@ -78,7 +79,8 @@ public class DlgSyncStatus extends AeroFSDialog
         shell.setSize(300, 250);
         shell.setLayout(grid);
 
-        addLabelPreImage(_path.toStringFormal(), getPathIcon(_path), shell);
+        addLabelPreImage(_path.isEmpty() ? L.get().rootAnchorName() : _path.last(),
+                getPathIcon(_path), shell);
 
         ScrolledComposite sc = new ScrolledComposite(shell, SWT.V_SCROLL | SWT.BORDER);
         sc.setExpandHorizontal(true);
