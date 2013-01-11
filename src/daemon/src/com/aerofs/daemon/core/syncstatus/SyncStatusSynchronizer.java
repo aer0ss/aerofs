@@ -418,9 +418,10 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 // each call added to the exp retry is assigned a sequence number
                 final long _seq = ++_scanSeq;
 
-                // exp retry (w/ forced server reconnect) in case of failure
+                // exp retry (w/ forced server reconnect) in case of failure.
+                // ssap == SyncStatActivityPush
                 // TODO(huguesb): reduce latency of retry when connection to server comes back
-                _er.retry("SyncStatActivityPush", new Callable<Void>()
+                _er.retry("ssap", new Callable<Void>()
                 {
                     @Override
                     public Void call() throws Exception
