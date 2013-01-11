@@ -13,8 +13,10 @@ message PBNotification {
         UPLOAD = 1;
         BAD_CREDENTIAL = 2;
         PATH_STATUS = 3;
-        CLEAR_STATUS = 4; // clear any cached path status
-        CONFLICT_COUNT = 5;  // number of files with conflicts changed
+        CLEAR_STATUS = 4;               // clear any cached path status
+        CONFLICT_COUNT = 5;             // number of files with conflicts changed
+        SHARED_FOLDER_JOIN = 6;         // joined a shared folder
+        SHARED_FOLDER_KICKOUT = 7;      // kicked out of a shared folder
     }
 
     required Type type = 1;
@@ -22,7 +24,8 @@ message PBNotification {
     optional PBDownloadEvent download = 2;
     optional PBUploadEvent upload = 3;
     optional PBPathStatusEvent path_status = 4;
-    optional int32 conflict_count = 5; // number of files with existing conflicts
+    optional int32 conflict_count = 5;          // number of files with existing conflicts
+    optional PBPath path = 6;                   // path of shared folder joined/left
 }
 
 // TODO change to PBUpload/DownloadNotification?

@@ -3,10 +3,8 @@ package com.aerofs.gui.setup;
 import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
@@ -255,13 +253,6 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                             + inv.getFolderName(), UIUtil.e2msgSentenceNoBracket(e), null);
                 }
             }
-            UI.get().notify(MessageType.INFO, "Successfully joined the shared folders", new Runnable() {
-                @Override
-                public void run()
-                {
-                    GUIUtil.launch(Cfg.absRootAnchor());
-                }
-            });
         } finally {
             ritual.close();
             UI.get().removeProgress(prog);
