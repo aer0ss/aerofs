@@ -9,7 +9,9 @@ public class ExNoComponentWithSpecifiedVersion extends AbstractExPermanentError
 
     public ExNoComponentWithSpecifiedVersion()
     {
-        super();
+        // Avoid using the type name as the error message since it would be too long and verbose.
+        // See AbstractExWirable.getMessage()
+        super("ncwsv");
     }
 
     public ExNoComponentWithSpecifiedVersion(PBException pb)
