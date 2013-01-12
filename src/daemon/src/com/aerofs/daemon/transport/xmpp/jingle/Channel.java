@@ -135,10 +135,12 @@ public class Channel implements IProxyObjectContainer
 
         _s.Close();
 
+        // notify the core that the current outgoing packet failed to be sent
         if (_outCur != null && _outCur.waiter() != null) {
             _outCur.waiter().error(e);
         }
 
+        // notify the core that the queued packets failed to be sent
         while (!_q.isEmpty_()) {
             SendData sd = _q.dequeue_();
             if (sd.waiter() != null) sd.waiter().error(e);
