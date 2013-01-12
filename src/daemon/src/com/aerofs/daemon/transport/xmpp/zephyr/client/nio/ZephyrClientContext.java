@@ -344,6 +344,12 @@ public class ZephyrClientContext implements IStateContext
 
         l.warn(toString() + ": shutting down: cause:" + _haltex);
 
+        // notify the core that the current outgoing packet failed to be sent
+        if (_wrcurrout != null) {
+            handleError(_remdid, _wrcurrout._waiter, _haltex, l);
+        }
+
+        // notify the core that the queued packets failed to be sent
         while (!_txq.isEmpty_()) {
             Out o = _txq.dequeue_();
             handleError(_remdid, o._waiter, _haltex, l);
