@@ -1,13 +1,15 @@
 package com.aerofs.daemon.transport.xmpp.jingle;
 
+import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.JabberID;
+import org.apache.log4j.Logger;
+
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.lib.INetworkStats;
 import com.aerofs.daemon.transport.lib.IPipeController;
-import com.aerofs.daemon.transport.xmpp.ID;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.daemon.transport.xmpp.XMPP;
 import com.aerofs.j.Jid;
@@ -19,7 +21,6 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Files;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Transport.PBTPHeader;
-import org.apache.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
@@ -451,12 +452,12 @@ public class Jingle implements ISignalledPipe, IJingle
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(ID.did2user(did), DaemonParam.XMPP.SERVER_DOMAIN, JINGLE_RESOURCE_NAME);
+        return new Jid(JabberID.did2user(did), Xmpp.SERVER_DOMAIN, JINGLE_RESOURCE_NAME);
     }
 
     static DID jid2did(Jid jid) throws ExFormatError
     {
-        return ID.user2did(jid.node());
+        return JabberID.user2did(jid.node());
     }
 
     //

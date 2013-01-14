@@ -3,6 +3,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
@@ -688,13 +689,13 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
         // NOTE: if the device goes offline then _zm will catch this since
         // the TCP connection via Zephyr will break
 
-        String[] tokens = ID.tokenize(p.getFrom());
-        if (!ID.isMUCAddress(tokens)) return;
+        String[] tokens = JabberID.tokenize(p.getFrom());
+        if (!JabberID.isMUCAddress(tokens)) return;
         if (tokens[1].startsWith("mobile_")) return; // Ignore presence from mobile devices (they don't have a valid did)
         if (tokens.length == 3 && (tokens[2].compareToIgnoreCase(id()) != 0)) return; // ignore presence from other xmpp-based transports
 
-        SID sid = ID.muc2sid(tokens[0]);
-        DID did = ID.user2did(tokens[1]);
+        SID sid = JabberID.muc2sid(tokens[0]);
+        DID did = JabberID.user2did(tokens[1]);
         if (did.equals(_localdid)) return;
 
         if (p.isAvailable()) {

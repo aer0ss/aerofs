@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
@@ -54,7 +54,7 @@ public abstract class ID
      */
     public static String did2jid(DID did, boolean ucast)
     {
-        return did2user(did) + '@' + DaemonParam.XMPP.SERVER_DOMAIN +
+        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN +
                 '/' + resource(ucast);
     }
 
@@ -134,7 +134,7 @@ public abstract class ID
 
     public static String sid2muc(SID sid)
     {
-        return sid.toStringFormal() + '@' + DaemonParam.XMPP.MUC_ADDR;
+        return sid.toStringFormal() + '@' + Xmpp.MUC_ADDR;
     }
 
     //

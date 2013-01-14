@@ -40,9 +40,6 @@ public class DaemonParam
     {
         public static final long CONNECT_TIMEOUT        = 30 * C.SEC;
         public static final int QUEUE_LENGTH            = QUEUE_LENGTH_DEFAULT;
-        public static final String MUC_ADDR             = "c." + XMPP.SERVER_DOMAIN;
-        public static final String SERVER_DOMAIN        = "aerofs.com";
-
 
     }
 

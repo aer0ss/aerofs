@@ -2,6 +2,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
@@ -80,7 +81,7 @@ public class Multicast implements IMaxcast
             }
 
             if (create) {
-                String roomName = ID.sid2muc(sid);
+                String roomName = JabberID.sid2muc(sid);
                 // This has to be called to ensure that the connection is initialized (and thus the
                 // smack static initializers have run) before using MultiUserChat, since
                 // otherwise the MultiUserChat static initializer might deadlock with the
@@ -171,7 +172,7 @@ public class Multicast implements IMaxcast
         history.setMaxChars(0);
 
         try {
-            muc.join(ID.getMUCRoomNickname(localdid, xmppTransportId),
+            muc.join(JabberID.getMUCRoomNickname(localdid, xmppTransportId),
                     null, history, SmackConfiguration.getPacketReplyTimeout());
             muc.addMessageListener(new PacketListener()
             {
@@ -206,7 +207,7 @@ public class Multicast implements IMaxcast
         l.info("creating " + muc.getRoom());
 
         try {
-            muc.create(ID.getMUCRoomNickname(localdid, xmppTransportId));
+            muc.create(JabberID.getMUCRoomNickname(localdid, xmppTransportId));
 
             // create an instant room using the server's default configuration
             // see: http://www.igniterealtime.org/builds/smack/docs/latest/documentation/extensions/muc.html
@@ -225,11 +226,11 @@ public class Multicast implements IMaxcast
     private void recvMessage(Message msg) throws IOException, ExFormatError,
             ExNoResource
     {
-        String[] tokens = ID.tokenize(msg.getFrom());
-        DID did = ID.jid2did(tokens);
+        String[] tokens = JabberID.tokenize(msg.getFrom());
+        DID did = JabberID.jid2did(tokens);
         if (did.equals(localdid)) return;
 
-        assert ID.isMUCAddress(tokens);
+        assert JabberID.isMUCAddress(tokens);
 
         OutArg<Integer> wirelen = new OutArg<Integer>();
         byte [] bs = x.decodeBody(did, wirelen, msg.getBody());
@@ -240,7 +241,7 @@ public class Multicast implements IMaxcast
         Endpoint ep = new Endpoint(x, did);
 
         ByteArrayInputStream is = new ByteArrayInputStream(bs);
-        recvMessage(ep, ID.muc2sid(tokens[0]), is, wirelen.get());
+        recvMessage(ep, JabberID.muc2sid(tokens[0]), is, wirelen.get());
     }
 
     private void recvMessage(Endpoint ep, SID sid, ByteArrayInputStream is,
