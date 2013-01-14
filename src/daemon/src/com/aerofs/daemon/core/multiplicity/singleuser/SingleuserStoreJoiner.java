@@ -7,17 +7,20 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
@@ -30,16 +33,18 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final ObjectDeleter _od;
     private final DirectoryService _ds;
     private final CfgRootSID _cfgRootSID;
+    private final RitualNotificationServer _rns;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
-            ObjectDeleter od, CfgRootSID cfgRootSID)
+            ObjectDeleter od, CfgRootSID cfgRootSID, RitualNotificationServer rns)
     {
         _ds = ds;
         _oc = oc;
         _od = od;
         _stores = stores;
         _cfgRootSID = cfgRootSID;
+        _rns = rns;
     }
 
     @Override
@@ -113,9 +118,12 @@ public class SingleuserStoreJoiner implements IStoreJoiner
             }
         }
 
-        // TODO: send path of joined folder via Ritual Notification
-
         l.debug("joined " + sid + " at " + folderName);
+
+        _rns.sendEvent_(PBNotification.newBuilder()
+                .setType(PBNotification.Type.SHARED_FOLDER_JOIN)
+                .setPath(Path.fromString(folderName).toPB())
+                .build());
     }
 
     @Override
@@ -135,9 +143,14 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         // NB: isDeleted may be expensive and !expelled => !deleted
         if (oa.isExpelled() && _ds.isDeleted_(oa)) return;
 
+        Path path = _ds.resolve_(oa);
+
         l.info("leaving share: " + sidx + " " + sid);
         _od.delete_(anchor, PhysicalOp.APPLY, null, t);
 
-        // TODO: send path of folder left via Ritual notification?
+        _rns.sendEvent_(PBNotification.newBuilder()
+                .setType(PBNotification.Type.SHARED_FOLDER_KICKOUT)
+                .setPath(path.toPB())
+                .build());
     }
 }

@@ -237,7 +237,7 @@ public class RitualNotificationServer implements IConnectionManager
                 .build());
     }
 
-    void sendEvent_(PBNotification pb)
+    public void sendEvent_(PBNotification pb)
     {
         // only core threads can access cr._snapshotSent
         assert _tc.isCoreThread();

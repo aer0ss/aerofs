@@ -84,6 +84,21 @@ public class SingleuserTrayMenu implements ITrayMenu
                 _icon.showNotification(NotificationReason.CONFLICT, pb.getConflictCount() > 0);
                 // TODO: schedule GUI update in case the menu is currently visible?
                 break;
+            case Type.SHARED_FOLDER_JOIN_VALUE:
+                final Path p = new Path(pb.getPath());
+                UI.get().notify(MessageType.INFO,
+                        "You have joined \"" + p.last() + "\"", new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        GUIUtil.launch(p.toAbsoluteString(Cfg.absRootAnchor()));
+                    }
+                });
+                break;
+            case Type.SHARED_FOLDER_KICKOUT_VALUE:
+                UI.get().notify(MessageType.INFO,
+                        "You were kicked out from \"" + new Path(pb.getPath()) + "\"");
+                break;
             default: break;
             }
         }
