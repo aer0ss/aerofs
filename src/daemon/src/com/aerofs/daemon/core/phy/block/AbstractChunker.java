@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.C;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
 import com.aerofs.daemon.lib.HashStream;
-import com.aerofs.lib.C;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;

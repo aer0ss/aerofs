@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.IProgram;
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;

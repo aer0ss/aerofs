@@ -15,7 +15,8 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.IDatabaseParams;
@@ -163,7 +164,7 @@ public class CfgDatabase
         public String url()
         {
             return "jdbc:sqlite:" + (_inMemory ? ":memory:" : Cfg.absRTRoot() + File.separator +
-                    C.CFG_DATABASE);
+                    Param.CFG_DATABASE);
         }
 
         @Override

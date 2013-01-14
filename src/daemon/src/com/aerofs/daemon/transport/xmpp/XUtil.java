@@ -6,8 +6,8 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.C;
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.lib.Param;
 
 import java.io.*;
 
@@ -30,7 +30,7 @@ public class XUtil
         ByteArrayOutputStream bos = new ByteArrayOutputStream(getHeaderLen());
         DataOutputStream os = new DataOutputStream(bos);
         try {
-            os.writeInt(C.CORE_MAGIC);
+            os.writeInt(Param.CORE_MAGIC);
             os.writeInt(bodylen);
             os.close();
         } catch (Exception e) {
@@ -49,9 +49,9 @@ public class XUtil
             assert header.length == getHeaderLen();
             DataInputStream is = new DataInputStream(new ByteArrayInputStream(header));
             int magic = is.readInt();
-            if (magic != C.CORE_MAGIC) {
+            if (magic != Param.CORE_MAGIC) {
                 throw new ExFormatError("magic doesn't match. expect " +
-                        C.CORE_MAGIC + " received " + magic);
+                        Param.CORE_MAGIC + " received " + magic);
             }
 
             int len = is.readInt();

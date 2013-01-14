@@ -6,7 +6,7 @@ import java.io.IOException;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -48,7 +48,7 @@ abstract class AbstractLinuxUpdater extends Updater
             if (userId == null) userId = "null";
 
             SystemUtil.execBackground("/bin/bash", upFile.getAbsolutePath(),
-                    appRoot + File.separator, Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, instfile),
+                    appRoot + File.separator, Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, instfile),
                     newVer, userId,
                     //need to pass in username
                     UI.isGUI() ? "1" : "0" // run GUI on startup? or cli?

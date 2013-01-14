@@ -12,6 +12,7 @@ import java.sql.SQLException;
 
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ex.ExAlreadyRunning;
 import com.aerofs.base.id.UserID;
 import com.aerofs.ui.IUI.MessageType;
@@ -21,8 +22,8 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 
 import com.aerofs.gui.shellext.ShellextService;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.C;
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.C;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -101,7 +102,7 @@ class Launcher
     {
         if (!Cfg.inited()) return false;
 
-        return !new File(Util.join(absRTRoot(), C.SETTING_UP)).exists();
+        return !new File(Util.join(absRTRoot(), Param.SETTING_UP)).exists();
     }
 
     private boolean needsLogin()
@@ -136,7 +137,7 @@ class Launcher
         if (OSUtil.isOSX()
                 && !L.get().isStaging()
                 && !new File(AppRoot.abs()).getAbsolutePath().startsWith("/Applications/")
-                && !new File(_rtRoot, C.NO_OSX_APP_FOLDER_CHECK).exists()) {
+                && !new File(_rtRoot, Param.NO_OSX_APP_FOLDER_CHECK).exists()) {
             throw new ExAborted("Please copy the " + L.PRODUCT +
                     " program into /Applications and try again.");
         }
@@ -146,7 +147,7 @@ class Launcher
     {
         // make sure only one instance of the application is running
         try {
-            _ss = new ServerSocket(Cfg.port(PortType.UI_SINGLETON), 0, C.LOCALHOST_ADDR);
+            _ss = new ServerSocket(Cfg.port(PortType.UI_SINGLETON), 0, Param.LOCALHOST_ADDR);
         } catch (BindException e) {
             throw new ExAlreadyRunning();
         }
@@ -283,7 +284,7 @@ class Launcher
             SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
         }
 
-        new CommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(), C.CA_CERT)).start();
+        new CommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(), Param.CA_CERT)).start();
 
         new HeartInvitesPoller().start();
 

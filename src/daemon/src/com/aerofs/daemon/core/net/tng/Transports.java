@@ -21,7 +21,7 @@ import com.aerofs.daemon.core.net.SVReporter;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineFactory;
 import com.aerofs.daemon.tng.diagnosis.PeerDiagnoser;
 import com.aerofs.daemon.tng.xmpp.XMPPBasedTransportFactory;
-import com.aerofs.lib.Param.Zephyr;
+import com.aerofs.base.BaseParam.Zephyr;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;

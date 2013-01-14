@@ -1,6 +1,7 @@
 package com.aerofs.gui.netutil;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -10,7 +11,7 @@ import org.eclipse.swt.layout.GridLayout;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -192,7 +193,7 @@ public class CompBandwidth extends Composite {
                 if (now - lastRpc > RPC_INTERVAL) {
                     rpcFloodQuery(ritual, seqStart, timeStart, bytesStart);
                     lastRpc = now;
-                    if (timeStart.get() == C.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
+                    if (timeStart.get() == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
                         if (now - timeoutStart > Cfg.timeout()) throw new ExTimeout();
                     } else {
                         state = State.QUERY_END;
@@ -207,7 +208,7 @@ public class CompBandwidth extends Composite {
                 if (now - lastRpc > RPC_INTERVAL) {
                     rpcFloodQuery(ritual, seqEnd, timeEnd, bytesEnd);
                     lastRpc = now;
-                    if (timeEnd.get() == C.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
+                    if (timeEnd.get() == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
                         if (now - timeoutStart > Cfg.timeout()) throw new ExTimeout();
                     } else {
                         long bytes = bytesEnd.get() - bytesStart.get();

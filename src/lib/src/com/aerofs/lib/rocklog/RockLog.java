@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.rocklog;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;
 

@@ -1,6 +1,6 @@
 package com.aerofs.gui;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.os.OSUtil;
 
 public class GUIParam {

@@ -9,7 +9,7 @@ import javax.inject.Inject;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -97,7 +97,7 @@ public class SharedFolderTagFileAndIcon
         // in-memory store list, therefore we have to fall back to getAbsent.
         if (sid == null) sid = _sidx2sid.getAbsent_(sidx);
 
-        String absPathTagFile = Util.join(absPath, C.SHARED_FOLDER_TAG);
+        String absPathTagFile = Util.join(absPath, Param.SHARED_FOLDER_TAG);
 
         // delete the tag file first in case the user created a folder in place of the tag file
         // which would cause writing the file to fail.
@@ -120,7 +120,7 @@ public class SharedFolderTagFileAndIcon
         String absPath = path.toAbsoluteString(_cfgAbsRootAnchor.get());
         _dr.setFolderIcon(absPath, "");
 
-        deleteTagFile(Util.join(absPath, C.SHARED_FOLDER_TAG));
+        deleteTagFile(Util.join(absPath, Param.SHARED_FOLDER_TAG));
     }
 
     private void deleteTagFile(String absPathTagFile) throws IOException

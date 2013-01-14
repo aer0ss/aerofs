@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ex.ExFileNotFound;
 import org.apache.log4j.Logger;
 
@@ -18,7 +19,7 @@ import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.Util;
 import static com.aerofs.lib.Util.join;
-import com.aerofs.lib.C.AuxFolder;
+
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SOKID;
@@ -45,7 +46,7 @@ public class LinkedFile implements IPhysicalFile
         _sokid = sokid;
         _f = factFile.create(sokid.kidx().equals(KIndex.MASTER) ?
                 join(cfgAbsRootAnchor.get(), join(path.elements())) :
-                join(pathAuxRoot, AuxFolder.CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
+                join(pathAuxRoot, Param.AuxFolder.CONFLICT._name, LinkedStorage.makeAuxFileName(sokid)));
         _fidm = factFIDMan.create_(sokid, _f);
     }
 

@@ -1,7 +1,7 @@
 package com.aerofs.gui;
 
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.graphics.Image;
@@ -30,7 +30,7 @@ public class CompSpin extends Composite {
         if (s_imgs == null) {
             // image downloaded from http://ajaxload.info/
             ImageLoader loader = new ImageLoader();
-            loader.load(AppRoot.abs() + C.ICONS_DIR + Images.ICON_SPIN);
+            loader.load(AppRoot.abs() + Param.ICONS_DIR + Images.ICON_SPIN);
             s_delay = loader.data[0].delayTime;
             s_imgs = new Image[loader.data.length];
             for (int i = 0; i < loader.data.length; i++) {

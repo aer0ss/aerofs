@@ -4,7 +4,7 @@ import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.IZephyrMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.testlib.AbstractTest;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -56,7 +56,7 @@ public class TestZephyrFrameDecoder extends AbstractTest
 
         // Generate the incoming client message
         ChannelBuffer input = ChannelBuffers.dynamicBuffer();
-        input.writeInt(C.CORE_MAGIC);
+        input.writeInt(Param.CORE_MAGIC);
         input.writeInt(expectedMessage.length);
         input.writeBytes(expectedMessage);
 

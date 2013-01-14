@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.SystemUtil;
 
 public class SQLiteDBCW extends AbstractDBCW implements IDBCW

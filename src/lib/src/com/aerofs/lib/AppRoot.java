@@ -34,8 +34,8 @@ public class AppRoot
             // Second case: aerofs.jar is on the classpath when using a normal deployed jar
             // N.B. we have a library named ./lib/guice-aerofs.jar , which will match
             // C.AEROFS_JAR without the separator
-            if (s.contains(File.separator + C.AEROFS_JAR)) {
-                v = s.substring(0,s.length() - C.AEROFS_JAR.length() - 1);
+            if (s.contains(File.separator + Param.AEROFS_JAR)) {
+                v = s.substring(0,s.length() - Param.AEROFS_JAR.length() - 1);
                 break;
             }
         }

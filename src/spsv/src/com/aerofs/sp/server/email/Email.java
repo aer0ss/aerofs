@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SV;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

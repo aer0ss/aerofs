@@ -1,6 +1,6 @@
 package com.aerofs.lib.ritual;
 
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 
@@ -68,7 +68,7 @@ public class RitualClientFactory
     private static Channel getConnectedChannel()
     {
         ChannelFuture future = _bootstrap.connect(
-                new InetSocketAddress(C.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL)));
+                new InetSocketAddress(Param.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL)));
 
         return future.getChannel();
     }

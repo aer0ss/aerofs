@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.lib.cert;
 
 import com.aerofs.base.BaseUtil;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import sun.security.pkcs.PKCS10;

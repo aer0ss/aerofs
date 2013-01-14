@@ -8,7 +8,7 @@ import com.aerofs.gui.AeroFSDialog;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import static com.aerofs.lib.Param.Throttling.*;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;

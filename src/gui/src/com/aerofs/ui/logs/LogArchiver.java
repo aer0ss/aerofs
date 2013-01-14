@@ -4,7 +4,7 @@
 
 package com.aerofs.ui.logs;
 
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.sv.client.SVClient;
 import org.apache.log4j.Logger;
@@ -34,7 +34,7 @@ public final class LogArchiver
         @Override
         public boolean accept(File arg0, String arg1)
         {
-            return arg1.contains(C.LOG_FILE_EXT + ".") && !arg1.endsWith(".gz");
+            return arg1.contains(Param.LOG_FILE_EXT + ".") && !arg1.endsWith(".gz");
         }
     };
 
@@ -43,7 +43,7 @@ public final class LogArchiver
         @Override
         public boolean accept(File arg0, String arg1)
         {
-            return arg1.contains(C.LOG_FILE_EXT + ".") && arg1.endsWith(".gz");
+            return arg1.contains(Param.LOG_FILE_EXT + ".") && arg1.endsWith(".gz");
         }
     };
 

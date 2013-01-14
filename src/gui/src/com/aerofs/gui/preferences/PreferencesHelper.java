@@ -7,7 +7,7 @@ package com.aerofs.gui.preferences;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.ThreadUtil;

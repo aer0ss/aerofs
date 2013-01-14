@@ -2,7 +2,7 @@ package com.aerofs.lib.analytics;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.DelayedRunner;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;

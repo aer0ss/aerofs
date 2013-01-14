@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.acl.ExConcurrentACLUpdate;
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;

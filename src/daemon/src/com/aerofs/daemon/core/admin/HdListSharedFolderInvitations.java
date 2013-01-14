@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
@@ -11,7 +12,6 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIListSharedFolderInvitations;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.Param.SP;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;

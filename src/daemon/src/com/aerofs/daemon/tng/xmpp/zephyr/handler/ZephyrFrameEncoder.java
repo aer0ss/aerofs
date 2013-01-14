@@ -7,7 +7,7 @@ package com.aerofs.daemon.tng.xmpp.zephyr.handler;
 import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
 import com.aerofs.daemon.tng.xmpp.zephyr.exception.ExInvalidZephyrMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrBindRequest;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.ChannelDownstreamHandler;
@@ -46,7 +46,7 @@ public class ZephyrFrameEncoder implements ChannelDownstreamHandler
             ChannelBuffer payload = (ChannelBuffer) e.getMessage();
 
             out = ChannelBuffers.buffer(Constants.ZEPHYR_CLIENT_HDR_LEN + payload.readableBytes());
-            out.writeInt(C.CORE_MAGIC);
+            out.writeInt(Param.CORE_MAGIC);
             out.writeInt(payload.readableBytes());
             out.writeBytes(payload);
         } else if (e.getMessage() instanceof ZephyrBindRequest) {

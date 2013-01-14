@@ -4,7 +4,7 @@
 
 package com.aerofs.sv.client;
 
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.Util;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.lib.ex.Exceptions;

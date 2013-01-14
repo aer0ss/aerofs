@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.protocol.IDownloadStateListener.Started;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.CID;
@@ -208,7 +208,7 @@ public class TestPathFlagAggregator extends AbstractTest
         simulateTransferStart(direction, o1, "foo/bar/hello");
         assertStateEquals(direction, "", "foo", "foo/bar", "foo/bar/hello");
 
-        simulateTransferEnd(direction, o1, Util.join(C.TRASH, "deadbeef"));
+        simulateTransferEnd(direction, o1, Util.join(Param.TRASH, "deadbeef"));
     }
 
     /**

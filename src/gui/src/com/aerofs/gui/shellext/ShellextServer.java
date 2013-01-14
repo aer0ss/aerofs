@@ -1,6 +1,7 @@
 package com.aerofs.gui.shellext;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
@@ -67,7 +68,7 @@ class ShellextServer
                         Executors.newCachedThreadPool()));
 
         bootstrap.setPipelineFactory(_factory);
-        bootstrap.bind(new InetSocketAddress(C.LOCALHOST_ADDR, _port));
+        bootstrap.bind(new InetSocketAddress(Param.LOCALHOST_ADDR, _port));
         l.info("ShellextServer started on port " + _port);
     }
 

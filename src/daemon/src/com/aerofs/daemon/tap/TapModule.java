@@ -10,7 +10,7 @@ import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
 import com.aerofs.daemon.tng.base.http.Proxies;
-import com.aerofs.lib.Param.Zephyr;
+import com.aerofs.base.BaseParam.Zephyr;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.id.DID;

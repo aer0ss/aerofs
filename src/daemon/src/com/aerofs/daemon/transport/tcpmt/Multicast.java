@@ -11,7 +11,7 @@ import com.aerofs.daemon.transport.lib.CRCByteArrayInputStream;
 import com.aerofs.daemon.transport.lib.CRCByteArrayOutputStream;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -191,8 +191,8 @@ class Multicast implements IMaxcast
 
                 // read magic
                 int pktmagic = new DataInputStream(is).readInt();
-                if (pktmagic != C.CORE_MAGIC) {
-                    l.warn("magic mismatch exp:" + C.CORE_MAGIC + " act:" + pktmagic);
+                if (pktmagic != Param.CORE_MAGIC) {
+                    l.warn("magic mismatch exp:" + Param.CORE_MAGIC + " act:" + pktmagic);
                     continue;
                 }
 
@@ -260,7 +260,7 @@ class Multicast implements IMaxcast
         DataOutputStream dos = new DataOutputStream(cos);
         try {
              // magic
-            dos.writeInt(C.CORE_MAGIC);
+            dos.writeInt(Param.CORE_MAGIC);
             dos.flush();
 
 

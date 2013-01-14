@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;

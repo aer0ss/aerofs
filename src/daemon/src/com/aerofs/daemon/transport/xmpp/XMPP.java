@@ -29,8 +29,8 @@ import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.xmpp.XMPPServerConnection.IXMPPServerConnectionWatcher;
 import com.aerofs.daemon.transport.xmpp.routing.SignalledPipeFanout;
-import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -689,7 +689,6 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
         // the TCP connection via Zephyr will break
 
         String[] tokens = ID.tokenize(p.getFrom());
-
         if (!ID.isMUCAddress(tokens)) return;
         if (tokens[1].startsWith("mobile_")) return; // Ignore presence from mobile devices (they don't have a valid did)
         if (tokens.length == 3 && (tokens[2].compareToIgnoreCase(id()) != 0)) return; // ignore presence from other xmpp-based transports
@@ -877,7 +876,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
         try {
             DataOutputStream os = new DataOutputStream(new Base64.OutputStream(bos));
 
-            os.writeInt(C.CORE_MAGIC);
+            os.writeInt(Param.CORE_MAGIC);
 
             // TODO consider adding mcastid to chksum?
             // if so, don't forget to check in decodeBody
@@ -929,8 +928,10 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
             is = new DataInputStream(new Base64.InputStream(bos));
 
             int magic = is.readInt();
-            if (magic != C.CORE_MAGIC) {
-                l.warn("magic mismatch d:" + did + " exp:" + C.CORE_MAGIC + " act:" + magic + " bdy:" + body);
+            if (magic != Param.CORE_MAGIC) {
+                l.warn("magic mismatch " +
+                        "d:" + did + " exp:" + Param.CORE_MAGIC + " act:" + magic + " bdy:" + body);
+
                 return null;
             }
 

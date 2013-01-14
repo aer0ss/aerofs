@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import com.aerofs.base.C;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil.FileName;
 import org.apache.log4j.Appender;
@@ -101,10 +102,10 @@ public abstract class Util
             }
         }
 
-        if (app.equals(C.SH_NAME)) {
+        if (app.equals(Param.SH_NAME)) {
             Logger.getRootLogger().addAppender(new NullAppender());
         } else {
-            setupLog4JLayoutAndAppenders(rtRoot + File.separator + app + C.LOG_FILE_EXT,
+            setupLog4JLayoutAndAppenders(rtRoot + File.separator + app + Param.LOG_FILE_EXT,
                     L.get().isStaging(), true);
         }
 
@@ -724,7 +725,7 @@ public abstract class Util
         File[] heapDumps = new File(absRTRoot()).listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File arg0, String arg1) {
-                    return arg1.endsWith(C.HPROF_FILE_EXT);
+                    return arg1.endsWith(Param.HPROF_FILE_EXT);
                 }
             });
         if (heapDumps == null) {

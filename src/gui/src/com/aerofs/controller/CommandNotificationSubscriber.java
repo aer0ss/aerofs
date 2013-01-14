@@ -4,7 +4,8 @@
 
 package com.aerofs.controller;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -52,7 +53,7 @@ public final class CommandNotificationSubscriber
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());
 
-        this._topic = C.CMD_CHANNEL_TOPIC_PREFIX + userId.toString();
+        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + userId.toString();
         this._subscriber = factory.create();
     }
 

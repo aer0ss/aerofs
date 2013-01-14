@@ -1,7 +1,7 @@
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.ex.ExBadArgs;
@@ -45,7 +45,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     private long getInitialServerACL()
     {
         //noinspection PointlessArithmeticExpression
-        return C.INITIAL_ACL_EPOCH + 1;
+        return Param.INITIAL_ACL_EPOCH + 1;
     }
 
     //

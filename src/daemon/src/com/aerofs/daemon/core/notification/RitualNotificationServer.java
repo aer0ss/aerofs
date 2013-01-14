@@ -144,8 +144,8 @@ public class RitualNotificationServer implements IConnectionManager
         SPBlockingClient.setListener(new DaemonBadCredentialListener(this));
 
         _proactor = new TCPProactorMT("notifier", this,
-                C.LOCALHOST_ADDR, Cfg.port(Cfg.PortType.RITUAL_NOTIFICATION),
-                C.RITUAL_NOTIFICATION_MAGIC, true, Integer.MAX_VALUE);
+                Param.LOCALHOST_ADDR, Cfg.port(Cfg.PortType.RITUAL_NOTIFICATION),
+                Param.RITUAL_NOTIFICATION_MAGIC, true, Integer.MAX_VALUE);
     }
 
     public void start_()

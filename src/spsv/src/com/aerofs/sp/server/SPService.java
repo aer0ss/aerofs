@@ -6,7 +6,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
 import com.aerofs.lib.acl.SubjectRolePairs;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExAlreadyInvited;

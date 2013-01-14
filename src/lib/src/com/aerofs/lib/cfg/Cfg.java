@@ -8,7 +8,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
@@ -74,7 +74,7 @@ public class Cfg
     static {
         long pst;
         try {
-            Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), C.PROFILER)));
+            Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), Param.PROFILER)));
             try {
                 pst = Integer.parseInt(s.nextLine());
             } finally {
@@ -114,13 +114,13 @@ public class Cfg
 
         _portbase = readPortbase();
         _rootSID = SID.rootSID(_user);
-        _useDM = disabledByFile(rtRoot, C.NODM);
-        _useTCP = disabledByFile(rtRoot, C.NOTCP);
-        _useXMPP = disabledByFile(rtRoot, C.NOXMPP);
-        _useJingle = disabledByFile(rtRoot, C.NOSTUN);
-        _useZephyr = disabledByFile(rtRoot, C.NOZEPHYR);
-        _useAutoUpdate = disabledByFile(rtRoot, C.NOAUTOUPDATE);
-        _isAggressiveCheckingEnabled = enabledByFile(rtRoot, C.AGGRESSIVE_CHECKS);
+        _useDM = disabledByFile(rtRoot, Param.NODM);
+        _useTCP = disabledByFile(rtRoot, Param.NOTCP);
+        _useXMPP = disabledByFile(rtRoot, Param.NOXMPP);
+        _useJingle = disabledByFile(rtRoot, Param.NOSTUN);
+        _useZephyr = disabledByFile(rtRoot, Param.NOZEPHYR);
+        _useAutoUpdate = disabledByFile(rtRoot, Param.NOAUTOUPDATE);
+        _isAggressiveCheckingEnabled = enabledByFile(rtRoot, Param.AGGRESSIVE_CHECKS);
 
         _inited = true;
     }
@@ -150,7 +150,7 @@ public class Cfg
 
     public static void writePortbase(String rtRoot, int portbase) throws IOException
     {
-        File file = new File(rtRoot, C.PORTBASE);
+        File file = new File(rtRoot, Param.PORTBASE);
         PrintStream ps = new PrintStream(new FileOutputStream(file));
         try {
             ps.println(portbase);
@@ -161,7 +161,7 @@ public class Cfg
 
     private static int readPortbase() throws IOException
     {
-        Scanner s = new Scanner(new File(_absRTRoot, C.PORTBASE));
+        Scanner s = new Scanner(new File(_absRTRoot, Param.PORTBASE));
         try {
             return Integer.parseInt(s.nextLine());
         } finally {
@@ -173,7 +173,7 @@ public class Cfg
     {
         if (_ver == null) {
             try {
-                Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), C.VERSION)));
+                Scanner s = new Scanner(new File(Util.join(AppRoot.abs(), Param.VERSION)));
                 try {
                     _ver = s.nextLine();
                 } finally {
@@ -210,7 +210,7 @@ public class Cfg
     {
         String shortDid = did.toStringFormal().substring(0, 6);
         File parent = new File(path).getParentFile();
-        File auxRoot = new File(parent, C.AUXROOT_PREFIX + shortDid);
+        File auxRoot = new File(parent, Param.AUXROOT_PREFIX + shortDid);
         return auxRoot.getAbsolutePath();
     }
 
@@ -286,7 +286,7 @@ public class Cfg
 
     public static boolean useFSTypeCheck(String rtRoot)
     {
-        return !new File(rtRoot, C.NO_FS_TYPE_CHECK).exists();
+        return !new File(rtRoot, Param.NO_FS_TYPE_CHECK).exists();
     }
 
     public static int port(PortType type)
@@ -296,7 +296,7 @@ public class Cfg
 
     public static boolean lotsOfLog(String rtRoot)
     {
-        return new File(Util.join(rtRoot, C.LOL)).exists();
+        return new File(Util.join(rtRoot, Param.LOL)).exists();
     }
 
     public static boolean useProfiler()
@@ -370,7 +370,7 @@ public class Cfg
     {
         // decrypt device_private_key using b64(scrypt(p|u))
         char[] pbePasswd = Base64.encodeBytes(scrypted).toCharArray();
-        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + C.DEVICE_KEY);
+        byte[] encryptedKey = Base64.decodeFromFile(absRTRoot() + File.separator + Param.DEVICE_KEY);
         _privKey = SecUtil.decryptPrivateKey(encryptedKey, pbePasswd);
 
         // do it after decryption has succeeded
@@ -395,7 +395,7 @@ public class Cfg
     public static X509Certificate cert() throws IOException, CertificateException
     {
         if (_cert == null) {
-            InputStream in = new FileInputStream(absRTRoot() + File.separator + C.DEVICE_CERT);
+            InputStream in = new FileInputStream(absRTRoot() + File.separator + Param.DEVICE_CERT);
             try {
                 CertificateFactory cf = CertificateFactory.getInstance("X.509");
                 _cert = (X509Certificate) cf.generateCertificate(in);

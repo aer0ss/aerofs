@@ -1,15 +1,15 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.BaseParam;
+import com.aerofs.base.C;
 import com.aerofs.labeling.L;
 
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class Param
+public class Param extends BaseParam
 {
-    // recommended size for file I/O buffers
-    public static final int FILE_BUF_SIZE                    = 512 * C.KB;
     // the block size used for content hashing and block storage (see BlockStorage)
     public static final int FILE_BLOCK_SIZE                  = 4 * C.MB;
     public static final int MIN_PASSWD_LENGTH                = 6;
@@ -17,29 +17,106 @@ public class Param
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;
     public static final long EXP_RETRY_MAX_DEFFAULT          = 60 * C.SEC;
 
-    private static final String XMPP_SERVER_PROP = "aerofs.xmpp";
-    private static final String ZEPHYR_SERVER_PROP = "aerofs.zephyr";
+    ////////
+    // file and folder names
 
-    private static InetSocketAddress parseAddress(String str)
-    {
-        if (str == null) return null;
-        int pos = str.lastIndexOf(':');
-        if (pos == -1) return null;
-        String host = str.substring(0, pos);
-        int port = Integer.parseInt(str.substring(pos + 1));
-        return InetSocketAddress.createUnresolved(host, port);
-    }
+    public static final String TRASH                   = ".trash$$$";
+    public static final String AEROFS_JAR              = "aerofs.jar";
+    public static final String PORTBASE                = "pb";
+    public static final String NODM                    = "nodm";
+    public static final String NOSTUN                  = "nostun";
+    public static final String NOTCP                   = "notcp";
+    public static final String NOXMPP                  = "noxmpp";
+    public static final String NOZEPHYR                = "nozephyr";
+    public static final String NOAUTOUPDATE            = "noautoupdate";
+    public static final String LOL                     = "lol";
+    public static final String AGGRESSIVE_CHECKS       = "ac";
+    public static final String VERSION                 = "version";
+    public static final String DEFAULT_RTROOT          = "DEFAULT";
+    public static final String DEVICE_CERT             = "cert";
+    public static final String DEVICE_KEY              = "key";
+    public static final String CA_CERT                 = "cacert.pem";
+    public static final String CORE_DATABASE           = "db";
+    public static final String OBF_CORE_DATABASE       = "obf-db";
+    public static final String CFG_DATABASE            = "conf";
+    public static final String ICONS_DIR               = "/icons/";
+    public static final String UPDATE_DIR              = "update";
+    public static final String UPDATE_VER              = "update_ver";
+    public static final String SETTING_UP              = "su";
+    public static final String PROFILER                = "profiler";
+    public static final String NO_FS_TYPE_CHECK        = "nofstypecheck";
+    public static final String NO_OSX_APP_FOLDER_CHECK = "noappfoldercheck";
+    public static final String SHARED_FOLDER_TAG       = ".aerofs";
+    public static final String LAST_SENT_DEFECT        = "lsd";
 
-    public static InetSocketAddress xmppAddress()
+    /**
+     * AuxRoot (auxiliary root) is the location where AeroFS stores temporary, conflict, and history
+     * files for a given path that hosts AeroFS physical files.
+     *
+     * AuxRoot has the same parent folder as RootAnchor to ensure they are on the same filesystem.
+     * AuxRoot's name is AUXROOT_PREFIX + the first 6 characters of the device id, to avoid
+     * conflicting AuxRoots in case of multiple installations
+     */
+    public static final String AUXROOT_PREFIX = ".aerofs.";
+    public static enum AuxFolder
     {
-        InetSocketAddress address = parseAddress(System.getProperty(XMPP_SERVER_PROP));
-        if (address == null) {
-            address = L.get().isStaging() ?
-                    InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
-                    InetSocketAddress.createUnresolved("x.aerofs.com", 443);
+        PREFIX("p"),
+        CONFLICT("c"),
+        REVISION("r");
+
+        /**
+         * the base name of the auxiliary folder
+         */
+        public final String _name;
+
+        private AuxFolder(String name)
+        {
+            _name = name;
         }
-        return address;
     }
+
+    // This number increments every time the protocol is updated
+    public static final int CORE_MAGIC                  = 0x637265C0;
+    public static final int RITUAL_NOTIFICATION_MAGIC   = 0x73209DEF;
+
+    public static final String LOG_FILE_EXT             = ".log";
+    public static final String HPROF_FILE_EXT           = ".hprof";
+
+    public static final long TRANSPORT_DIAGNOSIS_STATE_PENDING = -1;
+
+    public static final String GUI_NAME                 = "gui";
+    public static final String CLI_NAME                 = "cli";
+    public static final String SH_NAME                  = "sh";
+    public static final String TOOLS_NAME               = "tools";
+    public static final String END_OF_DEFECT_MESSAGE    = "---EOM---";
+
+    public static final InetAddress LOCALHOST_ADDR;
+    static {
+        InetAddress ia;
+        try {
+            // don't use "localhost" as some systems (as least Mac) treat it and the
+            // numeric address differently
+            ia = InetAddress.getByName("127.0.0.1");
+        } catch (Exception e) {
+            SystemUtil.fatal(e);
+            ia = null;
+        }
+        LOCALHOST_ADDR = ia;
+    }
+
+    // Epochs initial values
+    public static final int INITIAL_ACL_EPOCH = 0;
+    public static final int INITIAL_SYNC_PULL_EPOCH = 0;
+    public static final int INITIAL_SYNC_PUSH_EPOCH = 0;
+
+    // Command Server
+    public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd/";
+
+    // Team Server password: Team Servers use certificates to login to servers. Therefore, they do
+    // not need a password for remote communication. However, a password is still needed to retrieve
+    // private keys locally. (SP  disables password login for team servers by storing invalid
+    // password values.)
+    public static final char[] TEAM_SERVER_LOCAL_PASSWORD = "password".toCharArray();
 
     public static class Daemon
     {
@@ -68,74 +145,6 @@ public class Param
         public static final long MIN_BANDWIDTH_UI = 10 * C.KB;
     }
 
-    public static class Zephyr
-    {
-        public static InetSocketAddress zephyrAddress()
-        {
-            InetSocketAddress address = parseAddress(System.getProperty(ZEPHYR_SERVER_PROP));
-            if (address == null) {
-                String host;
-                int port;
-                if (L.get().isStaging()) {
-                    host = "staging.aerofs.com";
-                    port = 8888;
-                } else {
-                    host = "zephyr.aerofs.com";
-                    port = 443;
-                }
-                address = InetSocketAddress.createUnresolved(host, port);
-            }
-            return address;
-        }
-
-        public static String zephyrHost()
-        {
-            // Hostname here will not do a reverse lookup since
-            // the zephyrAddress() was created with a hostname.
-            return zephyrAddress().getHostName();
-        }
-
-        public static short zephyrPort()
-        {
-            return (short)zephyrAddress().getPort();
-        }
-    }
-
-    public static class SV
-    {
-        public static final String
-            DOWNLOAD_LINK = SP.WEB_BASE + "/download",
-            DOWNLOAD_BASE = "https://cache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
-            NOCACHE_DOWNLOAD_BASE = "https://nocache.client." + (L.get().isStaging() ? "stg." : "") + "aerofs.com",
-            SUPPORT_EMAIL_ADDRESS = "support@aerofs.com";
-
-        public static final long CONNECT_TIMEOUT = 1 * C.MIN;
-        public static final long READ_TIMEOUT = 30 * C.SEC;
-    }
-
-    public static class SP
-    {
-        public static final String WEB_BASE = "https://www.aerofs.com";
-        public static final String ADMIN_PANEL_BASE = "https://my.aerofs.com";
-        public static final String TEAM_MANAGEMENT_LINK = ADMIN_PANEL_BASE + "/admin/users";
-        public static final URL URL;
-
-        static {
-            URL url;
-            try {
-                // in staging, the SP war is deployed under /sp by defualt
-                // allowing users to deploy their own sp war's (e.g. /yuriSP/sp, /weihanSP/sp, etc.)
-                url = L.get().isStaging() ?
-                        new URL("https://staging.aerofs.com/sp/sp") :
-                        new URL("https://sp.aerofs.com/sp");
-            } catch (MalformedURLException e) {
-                SystemUtil.fatal(e);
-                url = null;
-            }
-            URL = url;
-        }
-    }
-
     public static class Verkehr
     {
         public static final String VERKEHR_HOST = L.get().isStaging() ? "staging.aerofs.com" : "verkehr.aerofs.com";
@@ -145,6 +154,9 @@ public class Param
 
     public static class SyncStat
     {
+        public static final String SS_POST_PARAM_PROTOCOL  = SP.SP_POST_PARAM_PROTOCOL;
+        public static final String SS_POST_PARAM_DATA      = SP.SP_POST_PARAM_DATA;
+        public static final int SS_PROTOCOL_VERSION         = 6;
         public static final URL URL;
 
         static {

@@ -1,7 +1,7 @@
 package com.aerofs.lib;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 
 public class S
 {

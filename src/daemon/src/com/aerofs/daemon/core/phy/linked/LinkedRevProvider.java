@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseUtil;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.os.OSUtil;
@@ -22,8 +23,7 @@ import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
-import com.aerofs.lib.C;
-import com.aerofs.lib.C.AuxFolder;
+import com.aerofs.base.C;
 import com.aerofs.lib.ExternalSorter;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -169,7 +169,7 @@ public class LinkedRevProvider implements IPhysicalRevProvider
     // called from LocalStorage
     void init_(String pathAuxRoot) throws IOException
     {
-        _pathBase = Util.join(pathAuxRoot, AuxFolder.REVISION._name);
+        _pathBase = Util.join(pathAuxRoot, Param.AuxFolder.REVISION._name);
         InjectableFile fBase = _factFile.create(_pathBase);
         if (!fBase.exists()) fBase.mkdirs();
         if (_startCleanerScheduler) {

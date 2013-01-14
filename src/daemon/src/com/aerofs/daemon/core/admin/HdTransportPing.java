@@ -11,7 +11,7 @@ import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.net.EOTransportPing;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.google.inject.Inject;
 
@@ -51,11 +51,11 @@ public class HdTransportPing extends AbstractHdIMC<EITransportPing>
                     rtt = PENDING;
                 }
                 if (rtt == null) rtt = FORGOTTEN;
-                else if (rtt == C.TRANSPORT_DIAGNOSIS_STATE_PENDING) rtt = PENDING;
+                else if (rtt == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING) rtt = PENDING;
                 min = Math.min(rtt, min);
             }
             if (min == FORGOTTEN) ev.setResult_(null);
-            else if (min == PENDING) ev.setResult_(C.TRANSPORT_DIAGNOSIS_STATE_PENDING);
+            else if (min == PENDING) ev.setResult_(Param.TRANSPORT_DIAGNOSIS_STATE_PENDING);
             else ev.setResult_(min);
         }
     }

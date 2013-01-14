@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import org.apache.log4j.Logger;
@@ -20,10 +21,9 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
 import com.aerofs.daemon.core.phy.linked.fid.IFIDMaintainer;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
-import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.C.AuxFolder;
+import com.aerofs.lib.Param.AuxFolder;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
@@ -66,7 +66,7 @@ public class LinkedStorage implements IPhysicalStorage
     public void init_() throws IOException
     {
         // create aux folders. other codes assume these folders already exist.
-        for (C.AuxFolder af : C.AuxFolder.values()) {
+        for (AuxFolder af : Param.AuxFolder.values()) {
             InjectableFile f = _factFile.create(Util.join(_cfgAbsAuxRoot.get(), af._name));
             if (!f.exists()) f.mkdirs();
         }
@@ -117,8 +117,8 @@ public class LinkedStorage implements IPhysicalStorage
         // delete aux files other than revision files. no need to register for deletion rollback
         // since these files are not important.
         String prefix = makeAuxFilePrefix(sidx);
-        deleteFiles_(AuxFolder.CONFLICT, prefix);
-        deleteFiles_(AuxFolder.PREFIX, prefix);
+        deleteFiles_(Param.AuxFolder.CONFLICT, prefix);
+        deleteFiles_(Param.AuxFolder.PREFIX, prefix);
     }
 
     private void deleteFiles_(AuxFolder af, final String prefix) throws IOException

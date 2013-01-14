@@ -6,7 +6,7 @@ import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -85,7 +85,7 @@ public class StoreCreator
         _mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);
 
         // create trash directory
-        _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, C.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
+        _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, Param.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
 
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);

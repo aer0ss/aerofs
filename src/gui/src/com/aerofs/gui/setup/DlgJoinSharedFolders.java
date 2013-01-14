@@ -107,6 +107,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                             // - display a different dialog that says we must verify the email address
                             // - dialog has 3 buttons: "send email" and "continue", "cancel"
                             throw new NotImplementedException();
+
                         } else {
                             l.warn("list pending folders:" + Util.e(throwable));
                             UI.get().show(MessageType.ERROR, throwable.toString());

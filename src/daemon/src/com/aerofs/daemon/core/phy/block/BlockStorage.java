@@ -20,8 +20,8 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.C.AuxFolder;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
@@ -86,7 +86,7 @@ class BlockStorage implements IPhysicalStorage
     @Override
     public void init_() throws IOException
     {
-        _prefixDir = _fileFactory.create(_absAuxRoot.get(), AuxFolder.PREFIX._name);
+        _prefixDir = _fileFactory.create(_absAuxRoot.get(), Param.AuxFolder.PREFIX._name);
         if (!_prefixDir.isDirectory()) _prefixDir.mkdirs();
 
         _bsb.init_();

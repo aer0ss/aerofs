@@ -15,6 +15,7 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.controller.ControllerService;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.labeling.L;
@@ -31,7 +32,6 @@ import com.aerofs.gui.GUI;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.lib.injectable.InjectableFile;
-import com.aerofs.lib.Param.SV;
 import com.aerofs.lib.Versions.CompareResult;
 import com.aerofs.lib.os.OSUtil.OSArch;
 import com.aerofs.ui.UI;
@@ -117,7 +117,7 @@ public abstract class Updater
 
         l.info("checking for downloaded update");
 
-        File updateVersionFile = new File(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, C.UPDATE_VER));
+        File updateVersionFile = new File(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, Param.UPDATE_VER));
         if (!updateVersionFile.exists()) {
             l.info("no pending updates found");
             setUpdateStatus(Status.ERROR, -1);
@@ -163,7 +163,7 @@ public abstract class Updater
     private boolean doesUpdateFileExist(String wantedVersion)
     {
         String installationFilename = createFilename(_installerFilenameFormat, wantedVersion);
-        File f = new File(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installationFilename));
+        File f = new File(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, installationFilename));
         if (f.exists()) {
             _installationFilename = installationFilename;
             return true;
@@ -185,7 +185,7 @@ public abstract class Updater
         } else {
             // Remove the update folder if it exists, since the downloaded update version is either
             // already applied or there is no downloaded update.
-            InjectableFile f = _factFile.create(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR));
+            InjectableFile f = _factFile.create(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR));
             f.deleteIgnoreErrorRecursively();
         }
     }
@@ -312,7 +312,7 @@ public abstract class Updater
             }
 
             // create the ./ver file
-            File temp = new File(Util.join(dirName, C.UPDATE_VER));
+            File temp = new File(Util.join(dirName, Param.UPDATE_VER));
             BufferedWriter bw = new BufferedWriter(new FileWriter(temp));
             try {
                 bw.write(ver);
@@ -322,7 +322,7 @@ public abstract class Updater
 
             // rename the tmp download directory to be the update directory
 
-            dirName = Util.join(Cfg.absRTRoot(), C.UPDATE_DIR);
+            dirName = Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR);
             InjectableFile updateDirFolder = _factFile.create(dirName);
 
             updateDirFolder.deleteOrThrowIfExistRecursively();
@@ -443,7 +443,7 @@ public abstract class Updater
                 // no update is available locally
 
                 // remove the update directory if it exists
-                _factFile.create(Util.join(Cfg.absRTRoot(), C.UPDATE_DIR))
+                _factFile.create(Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR))
                          .deleteOrThrowIfExistRecursively();
 
                 // IMPORTANT: _installationFilename is set by checkForDownloadedUpdate()

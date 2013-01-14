@@ -30,7 +30,7 @@ import com.aerofs.gui.diagnosis.DlgDiagnosis;
 import com.aerofs.gui.misc.DlgFolderlessInvite;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;

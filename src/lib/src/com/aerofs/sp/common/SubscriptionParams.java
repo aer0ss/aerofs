@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.common;
 
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.SystemUtil;
 
 import java.net.MalformedURLException;

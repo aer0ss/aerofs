@@ -4,7 +4,7 @@ import java.util.Collections;
 
 import javax.annotation.Nullable;
 
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.S;

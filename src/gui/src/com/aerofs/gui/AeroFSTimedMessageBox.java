@@ -4,7 +4,7 @@
 
 package com.aerofs.gui;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;

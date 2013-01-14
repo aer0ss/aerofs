@@ -4,8 +4,9 @@
 
 package com.aerofs.daemon.core.update;
 
-import com.aerofs.lib.C.AuxFolder;
+import com.aerofs.lib.Param.AuxFolder;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -38,7 +39,7 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
             FileUtil.mkdirs(new File(newAuxRoot));
             OSUtil.get().markHiddenSystemFile(newAuxRoot);
 
-            for (AuxFolder auxFolder : AuxFolder.values()) {
+            for (AuxFolder auxFolder : Param.AuxFolder.values()) {
                 File src = new File(oldAuxRoot, auxFolder._name);
                 File dst = new File(newAuxRoot, auxFolder._name);
                 l.info("Migrating aux folder from " + src + " to " + dst);

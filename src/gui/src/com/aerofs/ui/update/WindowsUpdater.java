@@ -3,7 +3,7 @@ package com.aerofs.ui.update;
 import java.io.IOException;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -30,7 +30,7 @@ class WindowsUpdater extends Updater
         } else {
             try {
                 SystemUtil.execBackground(
-                        Util.join(Cfg.absRTRoot(), C.UPDATE_DIR, installerFilename), "/S");
+                        Util.join(Cfg.absRTRoot(), Param.UPDATE_DIR, installerFilename), "/S");
 
                 UI.get().shutdown();
                 System.exit(0);

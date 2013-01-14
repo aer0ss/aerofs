@@ -6,6 +6,7 @@ package com.aerofs;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.JsonFormat;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Files.PBDumpStat;
@@ -13,7 +14,7 @@ import com.aerofs.proto.Files.PBDumpStat.PBTransport;
 import com.aerofs.proto.Ritual.TransportPingReply;
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
 
@@ -104,7 +105,7 @@ public class InternalDiagnostics
                 forceNext = true;
                 rttMaybeNull = true;
 
-            } else if (rtt != null && rtt != C.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
+            } else if (rtt != null && rtt != Param.TRANSPORT_DIAGNOSIS_STATE_PENDING) {
                 // has received pong
                 assert rtt >= 0;
                 newPing = true;
@@ -120,7 +121,7 @@ public class InternalDiagnostics
                 sleep = false;
 
             } else {
-                assert rtt == null || rtt == C.TRANSPORT_DIAGNOSIS_STATE_PENDING;
+                assert rtt == null || rtt == Param.TRANSPORT_DIAGNOSIS_STATE_PENDING;
                 // keep waiting
                 newPing = false;
                 newSeq = false;

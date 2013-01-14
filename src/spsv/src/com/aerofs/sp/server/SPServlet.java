@@ -1,8 +1,8 @@
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.id.UserID;
@@ -106,8 +106,8 @@ public class SPServlet extends AeroServlet
             _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
-    private final DoPostDelegate _postDelegate = new DoPostDelegate(C.SP_POST_PARAM_PROTOCOL,
-            C.SP_POST_PARAM_DATA);
+    private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
+            SP.SP_POST_PARAM_DATA);
 
     @Override
     public void init(ServletConfig config) throws ServletException
@@ -165,8 +165,8 @@ public class SPServlet extends AeroServlet
 
         // Receive protocol version number.
         int protocol = _postDelegate.getProtocolVersion(req);
-        if (protocol != C.SP_PROTOCOL_VERSION) {
-            l.warn("protocol version mismatch. servlet: " + C.SP_PROTOCOL_VERSION + " client: " +
+        if (protocol != SP.SP_PROTOCOL_VERSION) {
+            l.warn("protocol version mismatch. servlet: " + SP.SP_PROTOCOL_VERSION + " client: " +
                     protocol);
             resp.sendError(400, "prototcol version mismatch");
             return;

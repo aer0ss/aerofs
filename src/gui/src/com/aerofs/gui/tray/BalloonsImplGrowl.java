@@ -6,9 +6,10 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import com.aerofs.labeling.L;
+import com.aerofs.lib.Param;
 import org.apache.log4j.Logger;
 import com.aerofs.gui.Images;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 import com.aerofs.ui.IUI.MessageType;
@@ -21,8 +22,8 @@ public class BalloonsImplGrowl implements IBalloonsImpl {
 
     BalloonsImplGrowl() throws IOException
     {
-        RenderedImage aeroIcon = ImageIO.read(new File(AppRoot.abs() + C.ICONS_DIR + Images.ICON_LOGO32));
-        RenderedImage aeroIconError = ImageIO.read(new File(AppRoot.abs() + C.ICONS_DIR + Images.ICON_LOGO32_ERROR));
+        RenderedImage aeroIcon = ImageIO.read(new File(AppRoot.abs() + Param.ICONS_DIR + Images.ICON_LOGO32));
+        RenderedImage aeroIconError = ImageIO.read(new File(AppRoot.abs() + Param.ICONS_DIR + Images.ICON_LOGO32_ERROR));
 
         _growl.setDefaultIcon(aeroIcon);
         _gInfo.setDefaultIcon(aeroIcon);

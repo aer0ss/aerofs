@@ -3,7 +3,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.net.EOTransportPing;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.proto.Transport.PBTransportDiagnosis;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -44,6 +44,6 @@ public class HdTransportPing extends AbstractHdIMC<EOTransportPing>
         }
 
         ev.setResult_(l != null && l < 0 ? (Long)
-                C.TRANSPORT_DIAGNOSIS_STATE_PENDING : l);
+                Param.TRANSPORT_DIAGNOSIS_STATE_PENDING : l);
     }
 }

@@ -15,7 +15,7 @@ import org.eclipse.swt.layout.GridLayout;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.InternalDiagnostics.IPingCallback;
 import com.aerofs.sv.client.SVClient;

@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import com.aerofs.daemon.lib.db.CoreDBCW;
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.db.dbcw.IDBCW;
 
 public class DPUTUpdateSchemaForSyncStatus implements IDaemonPostUpdateTask
@@ -66,7 +66,7 @@ public class DPUTUpdateSchemaForSyncStatus implements IDaemonPostUpdateTask
                 s.executeUpdate("alter table " + T_EPOCH +
                                 " add column " + C_EPOCH_SYNC_PUSH + _dbcw.longType());
                 s.executeUpdate("update " + T_EPOCH +
-                                " set " + C_EPOCH_SYNC_PUSH + "=" + C.INITIAL_SYNC_PUSH_EPOCH);
+                                " set " + C_EPOCH_SYNC_PUSH + "=" + Param.INITIAL_SYNC_PUSH_EPOCH);
             }
 
             // create and fill bootstrap table

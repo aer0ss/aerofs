@@ -101,7 +101,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
         // see http://stackoverflow.com/questions/2401059/openssl-with-unicode-paths)
         // we copy the certificate files to elsewhere if the path is non-ASCII
 
-        String pathCACert = Util.join(AppRoot.abs(), C.CA_CERT);
+        String pathCACert = Util.join(AppRoot.abs(), Param.CA_CERT);
         if (!Util.isASCII(AppRoot.abs())) {
             InjectableFile fTmp = _f._factFile.createTempFile("caa", "cert");
             _f._factFile.create(pathCACert).copy(fTmp, false, false);
@@ -109,7 +109,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
             pathCACert = fTmp.getPath();
         }
 
-        String pathDevCert = Util.join(Cfg.absRTRoot(), C.DEVICE_CERT);
+        String pathDevCert = Util.join(Cfg.absRTRoot(), Param.DEVICE_CERT);
         if (!Util.isASCII(Cfg.absRTRoot())) {
             InjectableFile f = _f._factFile.createTempFile("dev", "cert");
             _f._factFile.create(pathDevCert).copy(f, false, false);

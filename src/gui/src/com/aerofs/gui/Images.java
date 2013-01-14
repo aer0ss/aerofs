@@ -3,13 +3,12 @@ package com.aerofs.gui;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.program.Program;
 import org.eclipse.swt.widgets.Display;
 
-import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.Util;
 
@@ -64,7 +63,7 @@ public class Images {
     {
         Image img = s_imgs.get(key);
         if (img == null) {
-            String path = AppRoot.abs() + C.ICONS_DIR + key;
+            String path = AppRoot.abs() + Param.ICONS_DIR + key;
             try {
                 img = new Image(Display.getCurrent(), path);
                 s_imgs.put(key, img);

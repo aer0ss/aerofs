@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.aerofs.lib.Param;
 import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Assert;
@@ -16,7 +17,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.aerofs.daemon.core.phy.linked.LinkedRevProvider.LinkedRevFile;
-import com.aerofs.lib.C.AuxFolder;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -48,7 +48,7 @@ public class TestLinkedRevProvider extends AbstractTest
         _dataDir = _factFile.create(_rootDir, "data");
         _dataDir.mkdirs();
         _auxDir = _factFile.create(_rootDir, "aux");
-        _revDir = _factFile.create(_auxDir, AuxFolder.REVISION._name);
+        _revDir = _factFile.create(_auxDir, Param.AuxFolder.REVISION._name);
 
         _localRevProvider = new LinkedRevProvider(_factFile);
         _localRevProvider._startCleanerScheduler = false;

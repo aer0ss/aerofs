@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.linker;
 
 import java.util.Set;
 
-import com.aerofs.lib.C;
+import com.aerofs.lib.Param;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -20,7 +20,7 @@ public class IgnoreList
                 ".DS_Store",
                 "desktop.ini",
                 "Thumbs.db",
-                C.SHARED_FOLDER_TAG);
+                Param.SHARED_FOLDER_TAG);
     }
 
     /**

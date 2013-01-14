@@ -15,7 +15,7 @@ import com.aerofs.daemon.core.net.RawMessage;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;

@@ -22,6 +22,7 @@ import java.util.PriorityQueue;
 
 import javax.annotation.Nonnull;
 
+import com.aerofs.base.C;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 

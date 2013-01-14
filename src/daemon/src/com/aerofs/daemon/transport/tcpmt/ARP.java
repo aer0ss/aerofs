@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.transport.tcpmt.Stores.Prefix;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.ex.ExDeviceOffline;

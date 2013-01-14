@@ -38,7 +38,7 @@ import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase.OCIDAndCS;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;

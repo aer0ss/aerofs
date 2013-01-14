@@ -5,8 +5,9 @@
 package com.aerofs.shell;
 
 import com.aerofs.cli.CLI;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.labeling.L;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -43,7 +44,7 @@ public class CmdDefect implements IShellCommand<ShProgram>
         }
 
         try {
-            SVClient.logSendDefectSync(false, message + "\n" + C.END_OF_DEFECT_MESSAGE, null,
+            SVClient.logSendDefectSync(false, message + "\n" + Param.END_OF_DEFECT_MESSAGE, null,
                     daemonStatus, dumpFileNames);
             UI.get().notify(MessageType.INFO, "Problem submitted. Thank you!");
         } catch (Exception e) {

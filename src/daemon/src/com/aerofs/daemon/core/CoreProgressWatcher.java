@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.C;
 import com.aerofs.daemon.lib.IStartable;
-import com.aerofs.lib.C;
 import com.aerofs.lib.Param.Daemon;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;

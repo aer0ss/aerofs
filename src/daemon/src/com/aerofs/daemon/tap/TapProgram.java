@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tap;
 
 import com.aerofs.daemon.tng.base.EventQueueBasedEventLoop;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;

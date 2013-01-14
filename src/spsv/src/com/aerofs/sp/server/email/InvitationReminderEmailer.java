@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Param.SP;
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;

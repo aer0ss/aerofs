@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.id.UserID;
@@ -15,7 +16,6 @@ import org.apache.log4j.Logger;
 import com.google.inject.CreationException;
 import com.google.inject.spi.Message;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.IProgram;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.IProgram.ExProgramNotFound;
@@ -56,7 +56,7 @@ public class Main {
 
     private static void mainImpl(String rtRoot, String prog, String ... appArgs)
     {
-        if (rtRoot.equals(C.DEFAULT_RTROOT)) {
+        if (rtRoot.equals(Param.DEFAULT_RTROOT)) {
             rtRoot = OSUtil.get().getDefaultRTRoot();
         }
 
@@ -125,7 +125,7 @@ public class Main {
     private static void launchProgram(String rtRoot, String prog, String ... progArgs)
             throws Exception
     {
-        boolean ui = prog.equals(C.GUI_NAME) || prog.equals(C.CLI_NAME);
+        boolean ui = prog.equals(Param.GUI_NAME) || prog.equals(Param.CLI_NAME);
         boolean controller = prog.equals(CONTROLLER_NAME);
 
         Class<?> cls;

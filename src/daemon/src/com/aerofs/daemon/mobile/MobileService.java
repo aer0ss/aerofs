@@ -9,7 +9,7 @@ import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;

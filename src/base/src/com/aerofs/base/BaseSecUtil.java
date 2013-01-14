@@ -62,9 +62,6 @@ public abstract class BaseSecUtil
             '%', ' ', 'H', 'Z', 'S' };
     private static final int PASSWD_RANDOM_BYTES = 16;
 
-    // TODO (GS): This is duplicated from Param.java - FIXME
-    private static final int FILE_BUF_SIZE = 512 * 1024;
-
     // this object is thread safe
     // http://stackoverflow.com/questions/1461568/is-securerandom-thread-safe
     static final SecureRandom s_rand;
@@ -599,7 +596,7 @@ public abstract class BaseSecUtil
 
         FileInputStream is = new FileInputStream(f);
         try {
-            byte[] bs = new byte[FILE_BUF_SIZE];
+            byte[] bs = new byte[BaseParam.FILE_BUF_SIZE];
             while (true) {
                 int read = is.read(bs);
                 if (read < 0) break;

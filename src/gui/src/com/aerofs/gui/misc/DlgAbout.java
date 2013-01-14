@@ -13,7 +13,7 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.Images;
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.S;
 import com.aerofs.ui.UI;

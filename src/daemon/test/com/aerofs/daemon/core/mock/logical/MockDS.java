@@ -18,8 +18,8 @@ import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.BitVector;
-import com.aerofs.lib.C;
 import com.aerofs.lib.CounterVector;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExNotFound;
@@ -130,7 +130,7 @@ public class MockDS
         SIndex sidx = new SIndex(_nextSidx++);
         _sid = SID.generate(); // TODO: use valid root store id
         _root = new MockDSDir(OA.ROOT_DIR_NAME, null, new SOID(sidx, OID.ROOT));
-        _trash = new MockDSDir(C.TRASH, _root, true, new SOID(sidx, OID.TRASH));
+        _trash = new MockDSDir(Param.TRASH, _root, true, new SOID(sidx, OID.TRASH));
 
         mockSIDMap(_sid, sidx);
 
@@ -698,7 +698,7 @@ public class MockDS
 
             // create root dir
             _root = new MockDSDir(OA.ROOT_DIR_NAME, this, new SOID(sidx, OID.ROOT));
-            _trash = new MockDSDir(C.TRASH, _root, true, new SOID(sidx, OID.TRASH));
+            _trash = new MockDSDir(Param.TRASH, _root, true, new SOID(sidx, OID.TRASH));
 
             if (!expelled) {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(_root.soid());

@@ -3,8 +3,8 @@ package com.aerofs.sv.client;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
-import com.aerofs.lib.C;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Util;
@@ -48,7 +48,7 @@ import java.util.Stack;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.aerofs.lib.C.LAST_SENT_DEFECT;
+import static com.aerofs.lib.Param.LAST_SENT_DEFECT;
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.Param.FILE_BUF_SIZE;
 import static com.aerofs.lib.ThreadUtil.startDaemonThread;
@@ -541,13 +541,13 @@ public final class SVClient
                             {
                                 // Note: the core database consists of three files:
                                 // db, db-wal, and db-shm.
-                                return (sendLogs && arg1.endsWith(C.LOG_FILE_EXT))
+                                return (sendLogs && arg1.endsWith(Param.LOG_FILE_EXT))
                                         ||
-                                        (sendDB && (arg1.startsWith(C.OBF_CORE_DATABASE) ||
+                                        (sendDB && (arg1.startsWith(Param.OBF_CORE_DATABASE) ||
                                                             arg1.endsWith("wal")        ||
                                                             arg1.endsWith("shm")))
                                         ||
-                                        (sendHeapDumps && arg1.endsWith(C.HPROF_FILE_EXT));
+                                        (sendHeapDumps && arg1.endsWith(Param.HPROF_FILE_EXT));
                             }
                         });
 

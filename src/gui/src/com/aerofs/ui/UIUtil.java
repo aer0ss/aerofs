@@ -8,7 +8,7 @@ import com.aerofs.gui.setup.DlgTutorial;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
-import com.aerofs.lib.Param.SV;
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.*;
@@ -103,7 +103,7 @@ public class UIUtil
     public static boolean isSystemFile(PBPath path)
     {
         for (String elem : path.getElemList()) {
-            if (elem.equals(C.TRASH)) return true;
+            if (elem.equals(Param.TRASH)) return true;
         }
         return false;
     }
@@ -141,7 +141,7 @@ public class UIUtil
     {
         // delete the password.
         Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
-        factFile.create(Util.join(Cfg.absRTRoot(), C.SETTING_UP)).createNewFile();
+        factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
         UI.get().shutdown();
         System.exit(0);
     }

@@ -1,6 +1,6 @@
 package com.aerofs.ui;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 
 public class UIParam
 {

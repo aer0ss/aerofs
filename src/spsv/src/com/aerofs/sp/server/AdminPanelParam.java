@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server;
 
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
 
 public class AdminPanelParam
 {

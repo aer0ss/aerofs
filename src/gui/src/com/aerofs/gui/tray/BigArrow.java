@@ -7,7 +7,7 @@ package com.aerofs.gui.tray;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.tray.TrayIcon.TrayPosition;
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.google.common.collect.Lists;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;

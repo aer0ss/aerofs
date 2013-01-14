@@ -5,10 +5,10 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
@@ -71,11 +71,11 @@ public class RitualNotificationClient
 
     private void thdRecv_() throws IOException
     {
-        Socket s = new Socket(C.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
+        Socket s = new Socket(Param.LOCALHOST_ADDR, Cfg.port(PortType.RITUAL_NOTIFICATION));
         try {
             DataInputStream is = new DataInputStream(new BufferedInputStream(s.getInputStream()));
             while (true) {
-                byte[] bs = Util.readMessage(is, C.RITUAL_NOTIFICATION_MAGIC, Integer.MAX_VALUE);
+                byte[] bs = Util.readMessage(is, Param.RITUAL_NOTIFICATION_MAGIC, Integer.MAX_VALUE);
 
                 if (_stopping) return;
 

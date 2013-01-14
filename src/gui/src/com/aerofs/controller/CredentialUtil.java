@@ -6,8 +6,8 @@ package com.aerofs.controller;
 
 import com.aerofs.base.Base64;
 import com.aerofs.base.id.DID;
-import com.aerofs.lib.C;
-import com.aerofs.lib.Param.SP;
+import com.aerofs.base.BaseParam.SP;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
@@ -148,7 +148,7 @@ public class CredentialUtil
         writePrivateKey(scrypted, privKey);
 
         // write certificate
-        File file = new File(Cfg.absRTRoot(), C.DEVICE_CERT);
+        File file = new File(Cfg.absRTRoot(), Param.DEVICE_CERT);
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file));
         try {
             writer.write(cert);
@@ -162,6 +162,6 @@ public class CredentialUtil
     {
         char[] pbePass = Base64.encodeBytes(scrypted).toCharArray();
         byte[] bs = SecUtil.encryptPrivateKey(privKey, pbePass);
-        Base64.encodeToFile(bs, new File(Cfg.absRTRoot(), C.DEVICE_KEY).getPath());
+        Base64.encodeToFile(bs, new File(Cfg.absRTRoot(), Param.DEVICE_KEY).getPath());
     }
 }

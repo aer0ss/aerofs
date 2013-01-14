@@ -16,9 +16,10 @@ import java.util.regex.Pattern;
 
 import javax.mail.MessagingException;
 
+import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Param.SV;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
@@ -27,7 +28,7 @@ import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;
 import org.apache.log4j.Logger;
 
-import com.aerofs.lib.C;
+import com.aerofs.base.C;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
@@ -231,7 +232,7 @@ public class SVReactor
         _transaction.commit();
 
         // send email to the customer support system
-        int eom = desc.indexOf(C.END_OF_DEFECT_MESSAGE);
+        int eom = desc.indexOf(Param.END_OF_DEFECT_MESSAGE);
         if (eom >= 0) {
             String msg = desc.substring(0, eom);
             Future<Void> f = EmailSender.sendEmail(header.getUser(),
