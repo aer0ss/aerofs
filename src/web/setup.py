@@ -6,7 +6,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
-# TODO: Add aerofs.py-lib here
+# TODO: Add aerofs.python-lib here
 requires = [
     'protobuf',
     'pyramid',
