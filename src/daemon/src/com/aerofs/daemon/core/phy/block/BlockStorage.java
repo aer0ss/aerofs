@@ -265,7 +265,6 @@ class BlockStorage implements IPhysicalStorage
                 } finally {
                     t.end_();
                 }
-                // TODO: pass a Token downwards to allow backend to release core lock
                 _bsb.deleteBlock(h, tk);
             }
         } finally {

@@ -49,10 +49,11 @@ public class CmdInvitations implements IShellCommand<ShProgram>
             return;
         }
 
-        s.out().println("Shared Folder Identifier         Shared Folder Name");
-        s.out().println("---------------------------------------------------");
+        s.out().println("Shared Folder Identifier         Shared Folder Name    Sharer");
+        s.out().println("-------------------------------------------------------------");
         for (PBFolderInvitation inv : invitations) {
-            s.out().println(new SID(inv.getShareId()).toStringFormal() + " " + inv.getFolderName());
+            s.out().println(new SID(inv.getShareId()).toStringFormal() + " " +
+                    inv.getFolderName() + " " + inv.getSharer() + " ");
         }
     }
 }
