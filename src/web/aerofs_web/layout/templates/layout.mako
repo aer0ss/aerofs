@@ -80,7 +80,7 @@
 
 <%def name="render_top_right_navigation()">
 
-    # TODO (WW) CSS for navgar buttons is completely broken.
+    ## TODO (WW) CSS for navgar buttons is completely broken.
 
     <div class="pull-right" style="margin-top: 2em;">
         % if request.session['group'] == ADMIN:
