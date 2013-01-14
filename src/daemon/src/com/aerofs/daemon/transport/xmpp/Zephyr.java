@@ -10,6 +10,8 @@ import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
+import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.lib.INetworkStats.BasicStatsCounter;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientManager;
@@ -46,6 +48,11 @@ public class Zephyr extends XMPP implements ISignallingChannel
         super(localdid, id, rank, sink, mcfr);
         ZephyrClientManager zcm = new ZephyrClientManager(id, rank, this, new BasicStatsCounter(), this);
         setPipe_(zcm);
+    }
+
+    public void setMobileServiceFactory(MobileService.Factory mobileServiceFactory)
+    {
+        _msc = new MobileServerZephyrConnector(mobileServiceFactory);
     }
 
     @Override
@@ -177,6 +184,10 @@ public class Zephyr extends XMPP implements ISignallingChannel
             }
         }, new MessageTypeFilter(Message.Type.normal));
 
+        if (_msc != null) {
+            _msc.setConnection(conn);
+        }
+
         super.xmppServerConnected(conn);
     }
 
@@ -223,4 +234,6 @@ public class Zephyr extends XMPP implements ISignallingChannel
     //
 
     private final Map<Type, ISignallingClient> _processors = newHashMap();
+
+    private MobileServerZephyrConnector _msc;
 }

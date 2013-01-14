@@ -20,6 +20,7 @@ import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.IDumpStat;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.IStartable;
+import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
@@ -161,7 +162,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
     private final LinkStateService _lss;
 
     @Inject
-    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss)
+    public Transports(CfgLocalDID localdid, CoreQueue q, TC tc, LinkStateService lss, MobileService.Factory mobileServiceFactory)
     {
         this._tc = tc;
         this._lss = lss;
@@ -174,6 +175,12 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
         for (TransportImplementation i : TransportImplementation.values()) {
             if (i.isEnabled()) {
                 ITransport tp = i.newTransport_(localdid.get(), q, mcfr);
+
+                // [sigh] hack because the enums assume that all transports take the same params
+                // FIXME (AG): revert to the old style of construction without enums
+                if (i == TransportImplementation.ZEPHYR && MobileService.Factory.isEnabled()) {
+                    ((Zephyr) tp).setMobileServiceFactory(mobileServiceFactory);
+                }
 
                 l.info("add transport " + tp);
 
