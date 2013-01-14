@@ -3,11 +3,13 @@ package com.aerofs.lib.injectable;
 import java.io.File;
 import java.io.IOException;
 
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExFileNoPerm;
 import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.swig.driver.CpuUsage;
 import com.aerofs.swig.driver.Driver;
 import com.google.inject.Inject;
 
@@ -65,6 +67,16 @@ public class InjectableDriver
         {
             _fid = fid;
             _dir = dir;
+        }
+    }
+
+    public static class CpuUsage {
+        public long kernel_time_nanos;
+        public long user_time_nanos;
+        public CpuUsage(long kernel_time, long user_time)
+        {
+            kernel_time_nanos = kernel_time;
+            user_time_nanos = user_time;
         }
     }
 
@@ -169,4 +181,16 @@ public class InjectableDriver
         int b4 = (0xff & (bs[3]));
         return b1 + b2 + b3 + b4;
     }
+    public CpuUsage getCpuUsage()
+    {
+        final com.aerofs.swig.driver.CpuUsage NativeCpuUsage = Driver.getCpuUsage();
+        long ktime = NativeCpuUsage.getKernel_time();
+        long utime = NativeCpuUsage.getUser_time();
+        if (ktime < 0) {
+            // Fatal system error.  Error code passed in utime.
+            SystemUtil.fatal("Couldn't get CPU usage: " + utime);
+        }
+        return new CpuUsage(ktime, utime);
+    }
+
 }

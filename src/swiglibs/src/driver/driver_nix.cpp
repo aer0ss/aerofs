@@ -18,10 +18,14 @@
 #include <signal.h>
 #include <memory>
 #include <stdlib.h>
+#include <sys/resource.h> // for getrusage()
 
 #include "../logger.h"
 #include "AeroFS.h"
 #include "Driver.h"
+
+#define NSEC_PER_SEC 1000000000
+#define NSEC_PER_USEC 1000
 
 using namespace std;
 
@@ -138,6 +142,24 @@ TrayPosition getTrayPosition()
     // Windows only - return nothing on *nix
     TrayPosition result = {};
     return result;
+}
+
+CpuUsage getCpuUsage()
+{
+    CpuUsage retval;
+    int res;
+    struct rusage usage;
+    res = getrusage(RUSAGE_SELF, &usage);
+    if (res == -1) {
+        // Realistically, this should never happen.
+        retval.kernel_time = -1;
+        retval.user_time = errno;
+        return retval;
+    }
+
+    retval.kernel_time = (usage.ru_stime.tv_sec * NSEC_PER_SEC) + (usage.ru_stime.tv_usec * NSEC_PER_USEC);
+    retval.user_time = (usage.ru_utime.tv_sec * NSEC_PER_SEC) + (usage.ru_utime.tv_usec * NSEC_PER_USEC);
+    return retval;
 }
 
 }//namespace Driver

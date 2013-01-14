@@ -471,4 +471,33 @@ TrayPosition getTrayPosition()
     return result;
 }
 
+CpuUsage getCpuUsage()
+{
+    CpuUsage retval;
+    FILETIME creation_time, exit_time, kernel_time, user_time;
+    // N.B. we currently ignore creation time and exit time,
+    // but they're required arguments to GetProcessTimes().
+    BOOL success = GetProcessTimes(GetCurrentProcess(),
+            &creation_time,
+            &exit_time,
+            &kernel_time,
+            &user_time);
+    if (success == 0) {
+        retval.kernel_time = -1;
+        retval.user_time = GetLastError();
+        return retval;
+    }
+    // Convert the FILETIME struct to a int64_t representing nanoseconds.
+    // Windows gives times in 100-nanosecond ticks, so multiply by 100
+    ULARGE_INTEGER ktime;
+    ktime.LowPart = kernel_time.dwLowDateTime;
+    ktime.HighPart = kernel_time.dwHighDateTime;
+    retval.kernel_time = ktime.QuadPart * 100;
+    ULARGE_INTEGER utime;
+    utime.LowPart = user_time.dwLowDateTime;
+    utime.HighPart = user_time.dwHighDateTime;
+    retval.user_time = utime.QuadPart * 100;
+    return retval;
+}
+
 }  // namespace Driver
