@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
+import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IIncomingUnicastConnectionListener;
 import com.aerofs.daemon.tng.base.INetworkStats;
@@ -333,7 +333,7 @@ public final class JingleUnicastConnectionService
      */
     static Jid did2jid(DID did)
     {
-        return new Jid(ID.did2user(did), DaemonParam.XMPP.SERVER_DOMAIN, ID.resource(true));
+        return new Jid(ID.did2user(did), Xmpp.SERVER_DOMAIN, ID.resource(true));
     }
 
     static DID jid2did(Jid jid)

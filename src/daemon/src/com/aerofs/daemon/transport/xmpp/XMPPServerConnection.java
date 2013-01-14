@@ -6,7 +6,8 @@
 package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.Base64;
-import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
@@ -50,7 +51,7 @@ public class XMPPServerConnection implements IDumpStatMisc
     synchronized boolean ready()
     {
         return _conn != null && _conn.isConnected() && _conn.isAuthenticated();
-    }
+   }
 
     /**
      * @throws XMPPException if not connected to the server
@@ -101,9 +102,10 @@ public class XMPPServerConnection implements IDumpStatMisc
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Param.xmppAddress();
-        ConnectionConfiguration cc = new ConnectionConfiguration(address.getHostName(), address.getPort());
-        cc.setServiceName(DaemonParam.XMPP.SERVER_DOMAIN);
+        InetSocketAddress address = Xmpp.xmppAddress();
+        ConnectionConfiguration cc = new ConnectionConfiguration(
+                address.getHostName(), address.getPort());
+        cc.setServiceName(Xmpp.SERVER_DOMAIN);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);
@@ -160,8 +162,7 @@ public class XMPPServerConnection implements IDumpStatMisc
             }, Exception.class);
     }
 
-    private void connect_()
-        throws XMPPException
+    private void connect_() throws XMPPException
     {
         try {
             connectImpl_();
@@ -190,7 +191,7 @@ public class XMPPServerConnection implements IDumpStatMisc
         l.info("connecting to " + c.getHost() + ":" + c.getPort());
         c.connect();
 
-        l.info("logging in as " + ID.did2FormAJid(Cfg.did(), _resource)); // done to show relationship
+        l.info("logging in as " + JabberID.did2FormAJid(Cfg.did(), _resource)); // done to show relationship
         c.login(_user, shaedXMPP(), _resource);
         l.info("logged in");
 
@@ -207,7 +208,6 @@ public class XMPPServerConnection implements IDumpStatMisc
 
         // I would prefer to only set _conn _after_ calling _watcher.connected, but apparently
         // Multicast.java uses conn() internally...
-
         try {
             if (_watcher != null) {
                 _watcher.xmppServerConnected(c);
@@ -332,7 +332,7 @@ public class XMPPServerConnection implements IDumpStatMisc
 
     private final String _resource;
     private final IXMPPServerConnectionWatcher _watcher;
-    private final String _user = ID.did2user(Cfg.did());
+    private final String _user = JabberID.did2user(Cfg.did());
 
     private static String s_shaedXmpp; // sha256(scrypt(p|u)|XMPP_PASSWORD_SALT)
 

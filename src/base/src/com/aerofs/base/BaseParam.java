@@ -32,15 +32,21 @@ public class BaseParam
         return InetSocketAddress.createUnresolved(host, port);
     }
 
-    public static InetSocketAddress xmppAddress()
+    public static class Xmpp
     {
-        InetSocketAddress address = parseAddress(System.getProperty(XMPP_SERVER_PROP));
-        if (address == null) {
-            address = L.get().isStaging() ?
-                    InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
-                    InetSocketAddress.createUnresolved("x.aerofs.com", 443);
+        public static final String SERVER_DOMAIN        = "aerofs.com";
+        public static final String MUC_ADDR             = "c." + SERVER_DOMAIN;
+
+        public static InetSocketAddress xmppAddress()
+        {
+            InetSocketAddress address = parseAddress(System.getProperty(XMPP_SERVER_PROP));
+            if (address == null) {
+                address = L.get().isStaging() ?
+                        InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
+                        InetSocketAddress.createUnresolved("x.aerofs.com", 443);
+            }
+            return address;
         }
-        return address;
     }
 
     public static class Zephyr

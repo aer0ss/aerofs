@@ -6,6 +6,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.JabberID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
@@ -32,7 +33,7 @@ import org.jivesoftware.smack.packet.Packet;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.aerofs.daemon.transport.xmpp.ID.did2FormAJid;
+import static com.aerofs.base.id.JabberID.did2FormAJid;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Maps.newHashMap;
@@ -204,7 +205,7 @@ public class Zephyr extends XMPP implements ISignallingChannel
     {
         assertDispThread();
 
-        DID did = ID.jid2did(m.getFrom());
+        DID did = JabberID.jid2did(m.getFrom());
         PBTPHeader hdr;
         try {
             OutArg<Integer> wirelen = new OutArg<Integer>(0);

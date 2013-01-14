@@ -1,12 +1,14 @@
-package com.aerofs.daemon.transport.xmpp;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
 
+package com.aerofs.base.id;
+
+import com.aerofs.base.BaseParam.Xmpp;
+import com.aerofs.base.Loggers;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.regex.Pattern;
 
@@ -20,13 +22,13 @@ import static java.lang.System.arraycopy;
  *  Form B: <chatroom>@c.aerofs.com/<did>
  */
 
-public abstract class ID
+public abstract class JabberID
 {
-    private static final Logger l = Util.l(ID.class);
+    private final static Logger l = Loggers.getLogger(JabberID.class);
 
-    private ID()
+    private JabberID()
     {
-        // private to enforce uninstantiability
+            // private to enforce uninstantiability
     }
 
     public static String did2user(DID did)
@@ -45,7 +47,7 @@ public abstract class ID
      */
     public static String did2FormAJid(DID did, String xmppTransportId)
     {
-        return did2user(did) + '@' + DaemonParam.XMPP.SERVER_DOMAIN + '/' + xmppTransportId;
+        return did2user(did) + '@' + Xmpp.SERVER_DOMAIN + '/' + xmppTransportId;
     }
 
     /**
@@ -54,7 +56,7 @@ public abstract class ID
      */
     public static String getMUCRoomNickname(DID did, String xmppTransportId)
     {
-        return ID.did2user(did) + "-" + xmppTransportId;
+        return JabberID.did2user(did) + "-" + xmppTransportId;
     }
 
     /**
@@ -148,6 +150,6 @@ public abstract class ID
 
     public static String sid2muc(SID sid)
     {
-        return sid.toStringFormal() + '@' + DaemonParam.XMPP.MUC_ADDR;
+        return sid.toStringFormal() + '@' + Xmpp.MUC_ADDR;
     }
 }

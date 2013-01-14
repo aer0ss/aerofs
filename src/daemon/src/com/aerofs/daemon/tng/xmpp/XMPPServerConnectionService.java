@@ -4,10 +4,10 @@
 
 package com.aerofs.daemon.tng.xmpp;
 
+import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
-import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.tng.base.http.ProxyAwareSocketFactory;
@@ -256,10 +256,10 @@ final class XMPPServerConnectionService implements ILinkStateListener, IStartabl
         // The xmpp server address is an unresolved hostname.
         // We avoid resolving the hostname ourselves and let
         // SMACK do the DNS query on its thread.
-        InetSocketAddress address = Param.xmppAddress();
+        InetSocketAddress address = Xmpp.xmppAddress();
         ConnectionConfiguration cc = new ConnectionConfiguration(
                 address.getHostName(), address.getPort());
-        cc.setServiceName(DaemonParam.XMPP.SERVER_DOMAIN);
+        cc.setServiceName(Xmpp.SERVER_DOMAIN);
         cc.setSecurityMode(SecurityMode.required);
         cc.setSelfSignedCertificateEnabled(true);
         cc.setVerifyChainEnabled(false);
