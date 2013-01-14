@@ -19,6 +19,7 @@ import com.aerofs.sp.server.lib.device.DeviceDatabase.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
 import sun.security.pkcs.PKCS10;
 
 import javax.annotation.Nonnull;
@@ -29,6 +30,8 @@ import java.sql.SQLException;
 
 public class Device
 {
+    private static final Logger l = Util.l(Device.class);
+
     public static class Factory
     {
         private DeviceDatabase _db;
@@ -180,7 +183,7 @@ public class Device
         // not the CA anyway.
         _f._certdb.insertCertificate(cert.getSerial(), _id, cert.getExpiry());
 
-        Util.l(this).info("created certificate for " + _id.toStringFormal() + " with serial " +
+        l.info("created certificate for " + _id.toStringFormal() + " with serial " +
                 cert.getSerial() + " (expires on " + cert.getExpiry() + ")");
 
         return cert;

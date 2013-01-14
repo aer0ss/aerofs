@@ -175,8 +175,6 @@ public class InvitationEmailer
             });
         }
 
-        // TODO (MP) this email needs to be tweaked and beautified. Go go Linda/Yuri/Greg!
-
         public InvitationEmailer createOrganizationInvitationEmailer(@Nonnull final User inviter,
                 @Nonnull final User invitee, @Nonnull Organization organization)
                 throws IOException, SQLException, ExNotFound
@@ -200,7 +198,7 @@ public class InvitationEmailer
                     "invitation: " + AdminPanelParam.ADMIN_ACCEPT_LINK +
                     "\n\n" +
                     "Once you join the team, all the files in your " + S.ROOT_ANCHOR + " will be" +
-                    " synced to the team's AeroFS Team Server." + // TODO (WW) labeling
+                    " synced to the team's AeroFS Team Server." +
                     "\n\n" +
                     "If you do not wish to join the team, simply ignore this email.";
 

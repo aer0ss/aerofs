@@ -15,6 +15,7 @@ import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
+import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
@@ -114,8 +115,9 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     // To simulate service.signIn(USER, PASSWORD), subclasses can call setSessionUser(UserID)
     @Spy protected MockSessionUser sessionUser;
 
-    @Spy PasswordManagement _passwordManagement = new PasswordManagement(db, factUser,
+    @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
             mock(PasswordResetEmailer.class));
+    @Spy DeviceCertifiedEmailer deviceCertifiedEmailer = mock(DeviceCertifiedEmailer.class);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,

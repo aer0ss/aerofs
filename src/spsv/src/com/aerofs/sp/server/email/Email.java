@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.email;
 
 import com.aerofs.base.BaseParam.SV;
+import com.aerofs.labeling.L;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -49,5 +50,10 @@ public class Email implements IEmail
     public String getHTMLEmail()
     {
         return _htmlEmail.getEmail();
+    }
+
+    public void addDefaultSignature() throws IOException
+    {
+        addSignature("Happy Syncing,", "The " + L.PRODUCT + " Team", Email.DEFAULT_PS);
     }
 }

@@ -19,7 +19,6 @@ import java.io.FileNotFoundException;
 
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class TestLocalBackend extends AbstractBlockTest

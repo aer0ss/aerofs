@@ -26,6 +26,7 @@ import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -125,6 +126,7 @@ public class SPService implements ISPService
     private final ISessionUser _sessionUser;
 
     private final PasswordManagement _passwordManagement;
+    private final DeviceCertifiedEmailer _deviceCertifiedEmailer;
     private final CertificateAuthenticator _certificateAuthenticator;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
@@ -140,7 +142,7 @@ public class SPService implements ISPService
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
-            InvitationEmailer.Factory factEmailer)
+            InvitationEmailer.Factory factEmailer, DeviceCertifiedEmailer deviceCertifiedEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -150,6 +152,7 @@ public class SPService implements ISPService
         _transaction = transaction;
         _sessionUser = sessionUser;
         _passwordManagement = passwordManagement;
+        _deviceCertifiedEmailer = deviceCertifiedEmailer;
         _certificateAuthenticator = certificateAuthenticator;
         _factUser = factUser;
         _factOrg = factOrg;
@@ -578,6 +581,7 @@ public class SPService implements ISPService
         device.save(tsUser, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = certifyDevice(csr, device);
 
+        _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(_sessionUser.get());
         _transaction.commit();
 
         return createReply(reply);
@@ -657,6 +661,11 @@ public class SPService implements ISPService
 
         CertifyDeviceReply reply = certifyDevice(csr, device);
 
+        // Do not send email notification when we are recertifying.
+        if (!recertify) {
+            _deviceCertifiedEmailer.sendDeviceCertifiedEmail(_sessionUser.get(), device.getName());
+        }
+
         _transaction.commit();
 
         return createReply(reply);
@@ -667,6 +676,7 @@ public class SPService implements ISPService
             ExAlreadyExist, SQLException, CertificateException
     {
         CertificateGenerationResult cert = device.certify(new PKCS10(csr.toByteArray()));
+
         return CertifyDeviceReply.newBuilder()
                 .setCert(cert.toString())
                 .build();

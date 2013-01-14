@@ -170,7 +170,8 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
         MaxcastFilterReceiver mcfr = new MaxcastFilterReceiver(); // shared by all transports
 
         ImmutableMap.Builder<ITransport, IIMCExecutor> transportBuilder = ImmutableMap.builder();
-        ImmutableSortedSet.Builder<ITransport> rankedBuilder = ImmutableSortedSet.orderedBy(PREFERENCE_COMPARATOR);
+        ImmutableSortedSet.Builder<ITransport> rankedBuilder =
+                ImmutableSortedSet.orderedBy(PREFERENCE_COMPARATOR);
 
         for (TransportImplementation i : TransportImplementation.values()) {
             if (i.isEnabled()) {
@@ -264,7 +265,9 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
             try {
                 for (ITransport tp : _availableTransports.keySet()) {
                     ps.println(indent + tp.id());
-                    tp.dumpStatMisc(indent + indentUnit, indentUnit, ps); // TODO use core-to-tp events instead
+
+                    // TODO use core-to-tp events instead
+                    tp.dumpStatMisc(indent + indentUnit, indentUnit, ps);
                 }
             } finally {
                 tcb.pseudoResumed_();

@@ -10,13 +10,12 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.base.id.UserID;
+import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 
 import java.io.IOException;
-
-import static com.aerofs.sp.server.lib.SPParam.*;
 
 // TODO (WW) the pattern of this class is inconsistent with InvitationEmailer. Need refactoring
 // and/or merging.
@@ -26,7 +25,7 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = L.PRODUCT + " password request";
+        String subject = L.PRODUCT + " Password Request";
 
         Email email = new Email(subject, false ,null);
 
@@ -37,14 +36,12 @@ public class PasswordResetEmailer
                "to reset your password:\n\n" + url + "\n\n" +
                 "If you didn't request this email please ignore this message.";
 
-        email.addSection(L.PRODUCT + " password request", HEADER_SIZE.H1, body);
-
-        email.addSignature("Happy Syncing,", "The " + L.PRODUCT + " Team",
-                Email.DEFAULT_PS);
+        email.addSection(L.PRODUCT + " Password Request", HEADER_SIZE.H1, body);
+        email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME, userId.toString(), null,
-                    subject, email.getTextEmail(), email.getHTMLEmail(), true,
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.toString(),
+                    null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
             throw new IOException(e);
@@ -57,7 +54,7 @@ public class PasswordResetEmailer
             throws IOException
 
     {
-        String subject = L.PRODUCT + " password request confirmation";
+        String subject = L.PRODUCT + " Password Request Confirmation";
 
         Email email = new Email(subject, false, null);
 
@@ -67,15 +64,15 @@ public class PasswordResetEmailer
                 "If you didn't request a password reset, " +
                 "please email " + SV.SUPPORT_EMAIL_ADDRESS + " right away.";
 
-        email.addSection(L.PRODUCT + " password request was successful", HEADER_SIZE.H1, body);
+        email.addSection(L.PRODUCT + " Password Request was Successful", HEADER_SIZE.H1, body);
 
         email.addSignature("Thank you for using " + L.PRODUCT + ",",
                 "The " + L.PRODUCT + " Support Team",
                 Email.DEFAULT_PS);
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SP_EMAIL_NAME, userId.toString(), null,
-                    subject, email.getTextEmail(), email.getHTMLEmail(), true,
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.toString(),
+                    null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
             throw new IOException(e);
