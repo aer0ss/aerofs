@@ -1,7 +1,6 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.gui.history.DlgHistory;
-import com.aerofs.gui.setup.DlgJoinSharedFolders;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
@@ -114,7 +113,8 @@ public class SingleuserTrayMenu implements ITrayMenu
 
         _transferTrayMenuSection = new TransferTrayMenuSection(_trayMenuPopulator);
 
-        _menu.addMenuListener(new MenuListener() {
+        _menu.addMenuListener(new MenuListener()
+        {
             @Override
             public void menuShown(MenuEvent event)
             {
@@ -155,21 +155,13 @@ public class SingleuserTrayMenu implements ITrayMenu
             _trayMenuPopulator.addLaunchingMenuItem();
             _trayMenuPopulator.addMenuSeparator();
         } else {
-
-            addShareFolderMenuItem();
-            // Disable this for now.
-            //addAcceptInvitationMenuitem();
-            createManageSharedFoldersMenu();
-
-            _trayMenuPopulator.addMenuSeparator();
-
+            createSharedFoldersMenu();
             createRecentActivitesMenu();
             addVersionHistoryMenuItem();
 
             _trayMenuPopulator.addMenuSeparator();
 
             _transferTrayMenuSection.populate();
-
             addPauseOrResumeSyncingMenuItem();
 
             _trayMenuPopulator.addMenuSeparator();
@@ -216,45 +208,31 @@ public class SingleuserTrayMenu implements ITrayMenu
                 });
     }
 
-    private void addShareFolderMenuItem()
-    {
-        _trayMenuPopulator.addMenuItem("Share Folder...",
-                new AbstractListener(CLICKED_TASKBAR_SHARE_FOLDER)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        new DlgFolders(GUI.get().sh()).openDialog();
-                    }
-                });
-    }
-
-    private void addAcceptInvitationMenuitem()
-    {
-        _trayMenuPopulator.addMenuItem("Accept Invitations...",
-                new AbstractListener(CLICKED_TASKBAR_ACCEPT_INVITE)
-                {
-                    @Override
-                    protected void handleEventImpl(Event event)
-                    {
-                        new DlgJoinSharedFolders(GUI.get().sh()).showDialog();
-                    }
-                });
-    }
-
-    private void createManageSharedFoldersMenu()
+    private void createSharedFoldersMenu()
     {
         MenuItem mi = new MenuItem(_menu, SWT.CASCADE);
-        mi.setText("Manage Shared Folders");
+        mi.setText("Shared Folders");
         final Menu menuManage = new Menu(_menu.getShell(), SWT.DROP_DOWN);
         mi.setMenu(menuManage);
-        final TrayMenuPopulator manageTrayMenuPopulator = new TrayMenuPopulator(menuManage);
+        final TrayMenuPopulator populater = new TrayMenuPopulator(menuManage);
         menuManage.addMenuListener(new MenuAdapter()
         {
             @Override
             public void menuShown(MenuEvent event)
             {
-                manageTrayMenuPopulator.clearAllMenuItems();
+                populater.clearAllMenuItems();
+
+                populater.addMenuItem("Share Folder...",
+                        new AbstractListener(CLICKED_TASKBAR_SHARE_FOLDER)
+                        {
+                            @Override
+                            protected void handleEventImpl(Event event)
+                            {
+                                new DlgFolders(GUI.get().sh()).openDialog();
+                            }
+                        });
+
+                populater.addMenuSeparator();
 
                 boolean added = addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor()
                 {
@@ -266,7 +244,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                 });
 
                 if (!added) {
-                    manageTrayMenuPopulator.addMenuItem("No shared folder", null).setEnabled(false);
+                    populater.addMenuItem("No shared folder", null).setEnabled(false);
                 }
             }
         });

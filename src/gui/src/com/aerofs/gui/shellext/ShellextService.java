@@ -227,7 +227,7 @@ public class ShellextService
                     @Override
                     public void onFailure(Throwable throwable)
                     {
-                        l.warn("sync status overview fetch (for shellext) failed ", throwable);
+                        l.warn("ss overview fetch for shellext: " + Util.e(throwable));
                         _ritual = null;
                         // TODO: send clear cache? retry?
                     }

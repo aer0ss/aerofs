@@ -3,6 +3,7 @@ package com.aerofs.gui.sharing.folders;
 import javax.annotation.Nullable;
 
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.labeling.L;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -40,7 +41,7 @@ public class CompFolders extends Composite
         GridData gd_lblNewLabel = new GridData(SWT.CENTER, SWT.CENTER, false, false, 1, 1);
         gd_lblNewLabel.heightHint = 26;
         lblNewLabel.setLayoutData(gd_lblNewLabel);
-        lblNewLabel.setText("Select a folder to share:");
+        lblNewLabel.setText("Select an " + L.PRODUCT + " folder to share:");
 
         _compList = new CompFoldersTree(this, new IListener() {
             @Override
