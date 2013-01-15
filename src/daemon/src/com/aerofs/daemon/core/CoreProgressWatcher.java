@@ -21,7 +21,7 @@ import static com.aerofs.lib.ThreadUtil.startDaemonThread;
 final class CoreProgressWatcher implements IStartable
 {
     private static final int INTERVAL_BETWEEN_CHECKS = (int) (Daemon.HEARTBEAT_INTERVAL / 5);
-    private static final int INITIAL_DELAY = INTERVAL_BETWEEN_CHECKS;
+    private static final int INITIAL_DELAY = (int) (30 * C.SEC);
 
     static {
         assert INTERVAL_BETWEEN_CHECKS > 0 && INITIAL_DELAY > 0;
