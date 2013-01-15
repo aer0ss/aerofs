@@ -73,6 +73,12 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         SOID anchor = new SOID(root, SID.storeSID2anchorOID(sid));
         OA oaAnchor = _ds.getOANullable_(anchor);
 
+        /**
+         * By default, we do not increment version vector on purpose to avoid false conflicts
+         * between multiple devices of the same user joining the shared folder
+         */
+        boolean updateVersion = false;
+
         /*
          * If we receive the ACL update after HdShareFolder successfully migrates the folder,
          * ACLSynchronizer will detect we were granted access to a new store and call this method
@@ -94,6 +100,11 @@ public class SingleuserStoreJoiner implements IStoreJoiner
                  * delete the existing OA and proceed to re-create it as if it had never existed
                  */
                 _ds.deleteOA_(anchor, t);
+
+                /**
+                 * when restoring a deleted anchor we are forced to update the version
+                 */
+                updateVersion = true;
             } else {
                 l.info("anchor already present");
                 return;
@@ -104,14 +115,9 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         while (true) {
             try {
-                /**
-                 * We do not increment version vector on purpose to avoid false conflicts
-                 * between multiple devices of the same user joining the shared folder
-                 *
-                 * TODO: do we need to keep detectEmigration set to true?
-                 */
+                // TODO: do we need to keep detectEmigration set to true?
                 _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, 0, PhysicalOp.APPLY,
-                        true, false, t);
+                        true, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
                 folderName = Util.nextFileName(folderName);
