@@ -29,6 +29,19 @@ class _SPServiceWrapper(object):
         scrypted_password = scrypt(password, user_id)
         self._service.sign_in(user_id, scrypted_password)
 
+    def list_shared_folders(self):
+        sids = []
+        reply = self._service.get_acl(0)
+        for s in reply.store_acl:
+            sids.append(s.store_id)
+        return sids
+
+    def leave_shared_folder(self, sid):
+        self._service.leave_shared_folder(sid)
+
     def list_pending_folder_invitations(self):
         reply = self._service.list_pending_folder_invitations()
-        return reply.invitations
+        return reply.invitation
+
+    def ignore_shared_folder_invitation(self, sid):
+        self._service.ignore_shared_folder_invitation(sid)

@@ -7,6 +7,7 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;
@@ -21,6 +22,7 @@ import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -124,8 +126,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
 
         try {
             joinSharedFolder(USER_2, TEST_SID_1);
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExAlreadyExist e) {
             trans.handleException();
         }
@@ -137,8 +138,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     {
         try {
             joinSharedFolder(USER_2, SID.generate());
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExNotFound e) {
             trans.handleException();
         }
@@ -153,8 +153,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
 
         try {
             joinSharedFolder(USER_3, TEST_SID_1);
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExNoPerm e) {
             trans.handleException();
         }
@@ -171,8 +170,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         try {
             // should throw ExNoPerm because user 2 is an editor
             shareFolder(USER_2, TEST_SID_1, USER_3, Role.EDITOR);
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExNoPerm e) {
             trans.handleException();
         }
@@ -195,9 +193,24 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         try {
             // should throw ExNoPerm because user 4 is unverified
             shareFolder(TEST_USER_4, TEST_SID_1, USER_2, Role.EDITOR);
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExNoPerm e) {
+            trans.handleException();
+        }
+        assertTrue(published.isEmpty());
+    }
+
+    @Test
+    public void shouldThrowExBadArgsWhenTryingToShareRootStore() throws Exception
+    {
+        trans.begin();
+        sfdb.insert(SID.rootSID(USER_1), "root:" + USER_1);
+        trans.commit();
+
+        try {
+            shareFolder(USER_1, SID.rootSID(USER_1), USER_2, Role.EDITOR);
+            fail();
+        } catch (ExBadArgs e) {
             trans.handleException();
         }
         assertTrue(published.isEmpty());
@@ -226,6 +239,22 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
+    public void shouldThrowExBadArgsWhenTryingToLeaveRootStore() throws Exception
+    {
+        trans.begin();
+        sfdb.insert(SID.rootSID(USER_1), "root:" + USER_1);
+        trans.commit();
+
+        try {
+            leaveSharedFolder(USER_1, SID.rootSID(USER_1));
+            fail();
+        } catch (ExBadArgs e) {
+            trans.handleException();
+        }
+        assertTrue(published.isEmpty());
+    }
+
+    @Test
     public void shouldThrowExNotFoundWhenNonMemberTriesToLeaveShareFolder() throws Exception
     {
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
@@ -233,8 +262,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
 
         try {
             leaveSharedFolder(USER_3, TEST_SID_1);
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExNotFound e) {
             trans.handleException();
         }
@@ -246,8 +274,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     {
         try {
             leaveSharedFolder(USER_1, TEST_SID_1);
-            // must not reach here
-            assertTrue(false);
+            fail();
         } catch (ExNotFound e) {
             trans.handleException();
         }

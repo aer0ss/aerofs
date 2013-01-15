@@ -713,6 +713,8 @@ public class SPService implements ISPService
             throws Exception
     {
         SharedFolder sf = _factSharedFolder.create(shareId);
+        if (sf.id().isRoot()) throw new ExBadArgs("Cannot share root");
+
         User sharer = _sessionUser.get();
         List<SubjectRolePair> srps = SubjectRolePairs.listFromPB(rolePairs);
 
@@ -870,15 +872,21 @@ public class SPService implements ISPService
         if (!sf.exists()) {
             throw new ExNotFound("No such shared folder");
         }
-        if (!sf.isInvited(user)) {
-            throw new ExNoPerm("You have not been invited to this shared folder");
-        }
         if (sf.isMember(user)) {
             throw new ExAlreadyExist("You have already accepted this invitation");
         }
+        if (!sf.isInvited(user)) {
+            throw new ExNoPerm("You have not been invited to this shared folder");
+        }
 
         // Ignore the invitation by deleting the ACL.
-        sf.deleteACL(Collections.singleton(user.id()));
+        try {
+            sf.deleteACL(Collections.singleton(user.id()));
+        } catch (ExNoPerm e) {
+            // we should be able to ignore an invitation even if the shared folder somehow lost
+            // all its owners...
+            l.debug("owner-less folder " + sf);
+        }
 
         _transaction.commit();
 
@@ -896,6 +904,8 @@ public class SPService implements ISPService
         l.info(user + " leave " + sf);
 
         if (!sf.exists()) throw new ExNotFound("No such shared folder");
+
+        if (sf.id().isRoot()) throw new ExBadArgs("Cannot leave root folder");
 
         // silently ignore leave call from pending users
         if (!sf.isInvited(user)) {

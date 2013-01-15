@@ -210,11 +210,11 @@ public class SharedFolder
 
         _f._db.deleteACL(_sid, subjects);
 
-        throwIfNoOwnerLeft();
-
         for (UserID userID : subjects) {
             deleteTeamServerACLImpl(_f._factUser.create(userID));
         }
+
+        throwIfNoOwnerLeft();
 
         return affectedUsers;
     }
