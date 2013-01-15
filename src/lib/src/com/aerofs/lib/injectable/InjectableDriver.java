@@ -9,7 +9,6 @@ import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.ex.ExFileIO;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.swig.driver.CpuUsage;
 import com.aerofs.swig.driver.Driver;
 import com.google.inject.Inject;
 

@@ -36,6 +36,7 @@ import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.servlets.lib.DoPostDelegate;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
@@ -49,6 +50,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.SP_DATABASE_REFERENCE_PARAMETER;
@@ -123,6 +125,7 @@ public class SPServlet extends AeroServlet
 
         _service.setUserTracker(getUserTracker());
         _service.setSessionInvalidator(getSessionInvalidator());
+        _service.setSessionExtender(getSessionExtender());
 
         String dbResourceName =
                 getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
@@ -157,6 +160,11 @@ public class SPServlet extends AeroServlet
     private SPSessionInvalidator getSessionInvalidator()
     {
         return (SPSessionInvalidator) getServletContext().getAttribute(SESSION_INVALIDATOR);
+    }
+
+    private SPSessionExtender getSessionExtender()
+    {
+        return (SPSessionExtender) getServletContext().getAttribute(SESSION_EXTENDER);
     }
 
     @Override

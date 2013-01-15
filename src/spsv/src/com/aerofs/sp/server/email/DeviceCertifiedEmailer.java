@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.email;
 
-import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.labeling.L;
 import com.aerofs.base.ex.AbstractExWirable;

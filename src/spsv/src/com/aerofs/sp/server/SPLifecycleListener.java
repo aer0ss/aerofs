@@ -7,6 +7,7 @@ import com.aerofs.sp.server.lib.session.HttpSessionUser;
 import com.aerofs.sp.server.lib.session.IHttpSessionProvider;
 import com.aerofs.sp.server.session.SPActiveTomcatSessionTracker;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
@@ -25,6 +26,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import static com.aerofs.lib.Util.join;
+import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
 import static com.aerofs.sp.server.lib.SPParam.VERKEHR_ACK_TIMEOUT;
@@ -50,6 +52,9 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
     // Session invalidator.
     private final SPSessionInvalidator _sessionInvalidator =
             new SPSessionInvalidator(_userSessionTracker, _tomcatSessionTracker);
+
+    // Session extender.
+    private final SPSessionExtender _sessionExtender = new SPSessionExtender(_tomcatSessionTracker);
 
     @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
@@ -86,9 +91,10 @@ public class SPLifecycleListener implements ServletContextListener, HttpSessionL
         admin.start();
         ctx.setAttribute(VERKEHR_ADMIN_ATTRIBUTE, admin);
 
-        // Set up the user session tracker and the session invalidator.
+        // Set up the user session objects.
         ctx.setAttribute(SESSION_USER_TRACKER, _userSessionTracker);
         ctx.setAttribute(SESSION_INVALIDATOR, _sessionInvalidator);
+        ctx.setAttribute(SESSION_EXTENDER, _sessionExtender);
     }
 
     private VerkehrAdmin getAdmin(String host, short adminPort,

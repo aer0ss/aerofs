@@ -15,7 +15,7 @@ public interface ISessionUser
 {
     /**
      * @return the user of this session
-     * @throws ExNoPerm if no user has been set for the session
+     * @throws ExNoPerm if no user has been set for the session (i.e. does not exist).
      */
     @Nonnull User get() throws ExNoPerm;
 

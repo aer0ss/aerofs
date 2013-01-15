@@ -38,4 +38,9 @@ public class SPActiveTomcatSessionTracker
         _sessionMap.remove(sessionID);
         return session;
     }
+
+    public synchronized @Nullable HttpSession getSession(String sessionID)
+    {
+        return _sessionMap.get(sessionID);
+    }
 }

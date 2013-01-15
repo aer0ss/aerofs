@@ -4,7 +4,6 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from modules.login.views import groupfinder
 from modules.login.models import RootFactory
-from modules.login.views import forbidden_view
 import re
 import modules
 

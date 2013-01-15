@@ -511,6 +511,14 @@ service SPService {
      *   ExNotFound if the user does not have a pending invitation for the specified organization.
      */
     rpc IgnoreOrganizationInvitation(IgnoreOrganizationInvitationCall) returns(Void);
+
+    /**
+     * Extend the tomcat session. Does not throw, since we are guaranteed by tomcat that the session
+     * will exist in the tracker.
+     *
+     * Required Auth Level: user
+     */
+    rpc ExtendSession(Void) returns(Void);
 }
 
 message SignUpCall {

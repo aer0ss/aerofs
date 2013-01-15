@@ -25,6 +25,7 @@ public class SPParam
 
     public static final String SESSION_USER_TRACKER = "session_user_tracker";
     public static final String SESSION_INVALIDATOR = "session_invalidator";
+    public static final String SESSION_EXTENDER = "session_extender";
 
     // Verkehr constants.
     public static final long VERKEHR_RECONNECT_DELAY = 5 * C.SEC; // milliseconds

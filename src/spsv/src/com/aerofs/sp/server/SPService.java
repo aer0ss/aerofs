@@ -41,6 +41,7 @@ import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
+import com.aerofs.sp.server.session.SPSessionExtender;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -117,6 +118,7 @@ public class SPService implements ISPService
 
     private SPActiveUserSessionTracker _userTracker;
     private SPSessionInvalidator _sessionInvalidator;
+    private SPSessionExtender _sessionExtender;
 
     // Several methods in this SPService require access to the HttpSession's user id.
     // Since the Protobuf plugin cannot get access to the session user,
@@ -185,6 +187,12 @@ public class SPService implements ISPService
         _sessionInvalidator = sessionInvalidator;
     }
 
+    public void setSessionExtender(SPSessionExtender sessionExtender)
+    {
+        assert sessionExtender != null;
+        _sessionExtender = sessionExtender;
+    }
+
     @Override
     public PBException encodeError(Throwable e)
     {
@@ -203,6 +211,22 @@ public class SPService implements ISPService
 
         // Don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
+    }
+
+    @Override
+    public ListenableFuture<Void> extendSession()
+            throws ExNoPerm
+    {
+        // If the user has not signed in throw ExNoPerm. Deters but does not prevent DoS attacks.
+        if (!_sessionUser.exists()) {
+            throw new ExNoPerm();
+        }
+
+        String sessionID = _sessionUser.getSessionID();
+        l.info("Extend session: " + sessionID);
+
+        _sessionExtender.extendSession(sessionID);
+        return createVoidReply();
     }
 
     @Override
