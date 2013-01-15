@@ -46,9 +46,3 @@ def mako_exception(context, request):
 def not_found_view(request):
     request.response_status = 404
     return {'navigation':[]}
-
-# Forbidden view
-@forbidden_view_config()
-def forbidden_view(request):
-    request.response_status = 403
-    return {'navigation':[]}

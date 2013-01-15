@@ -4,7 +4,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
 from modules.login.views import groupfinder
 from modules.login.models import RootFactory
-from web.views import forbidden_view
+from modules.login.views import forbidden_view
 import re
 import modules
 
@@ -66,7 +66,4 @@ def main(global_config, **settings):
             config.include(modulePackageName + module)
             config.scan(package=modulePackageName + module)
 
-    # Need to add this manually because scan for the forbidden view is broken in some versions of
-    # pyramid.
-    config.add_forbidden_view(forbidden_view, renderer='forbidden.mako')
     return config.make_wsgi_app()
