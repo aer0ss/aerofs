@@ -7,7 +7,10 @@ Run AeroFS website in a virtual environment
 sudo easy_install pip
 sudo pip install virtualenv
 
-virtualenv ~/env && ~/env/bin/pip install protobuf pycrypto
+# Set up virtualenv and install packages.
+# NOTE: requests is pinned because version 1.0.0 is not backwards compatible
+# TODO: (PH) fix code to use requests >=1.0.0
+virtualenv ~/env && ~/env/bin/pip install protobuf pycrypto requests==0.14.2
 
 # Then, install AeroFS python library:
 cd ~/repos/aerofs/src/python-lib && ~/env/bin/python setup.py develop
