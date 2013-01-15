@@ -112,6 +112,18 @@ struct TrayPosition {
 
 TrayPosition getTrayPosition();
 
+struct CpuUsage {
+    long long kernel_time; // Nanoseconds of time spent in kernel mode (syscalls)
+    long long user_time; // Nanoseconds of time spent in user mode (regular usage)
+};
+
+/**
+ * Retrieve the current process's CPU usage, as measured by the platform.
+ * On error, the return value's kernel_time field will be negative and user_time will contain the
+ * platform error code.
+ */
+CpuUsage getCpuUsage();
+
 }
 
 #endif //AEROFS_DRIVER_H_

@@ -49,4 +49,8 @@ public class Driver implements DriverConstants {
     return new TrayPosition(DriverJNI.getTrayPosition(), true);
   }
 
+  public static CpuUsage getCpuUsage() {
+    return new CpuUsage(DriverJNI.getCpuUsage(), true);
+  }
+
 }

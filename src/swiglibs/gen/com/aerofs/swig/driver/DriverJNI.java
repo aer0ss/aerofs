@@ -42,4 +42,11 @@ public class DriverJNI {
   public final static native long new_TrayPosition();
   public final static native void delete_TrayPosition(long jarg1);
   public final static native long getTrayPosition();
+  public final static native void CpuUsage_kernel_time_set(long jarg1, CpuUsage jarg1_, long jarg2);
+  public final static native long CpuUsage_kernel_time_get(long jarg1, CpuUsage jarg1_);
+  public final static native void CpuUsage_user_time_set(long jarg1, CpuUsage jarg1_, long jarg2);
+  public final static native long CpuUsage_user_time_get(long jarg1, CpuUsage jarg1_);
+  public final static native long new_CpuUsage();
+  public final static native void delete_CpuUsage(long jarg1);
+  public final static native long getCpuUsage();
 }
