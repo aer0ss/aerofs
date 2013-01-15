@@ -663,7 +663,7 @@ public class SPService implements ISPService
 
         // Do not send email notification when we are recertifying.
         if (!recertify) {
-            _deviceCertifiedEmailer.sendDeviceCertifiedEmail(_sessionUser.get(), device.getName());
+            _deviceCertifiedEmailer.sendDeviceCertifiedEmail(_sessionUser.get());
         }
 
         _transaction.commit();

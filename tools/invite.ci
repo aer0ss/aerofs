@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ x"$1" == x ]; then
+    echo "usage: $0 <email_address>"
+    exit
+fi
+
+ARG="--no-check-certificate"
+
+ENCODED=`echo $1 | sed -e 's/+/%2B/g'`
+
+FROM=`osascript -e "long user name of (system info)"`
+if [ x"$FROM" == x ]; then
+    FROM="An AeroFS Dude"
+fi
+FROM=`echo "$FROM" | sed -e 's/ /+/g'`
+
+wget -q $ARG -O- "https://spci.aerofs.com/sp?aerofs=love&fromPerson=$FROM&to=$ENCODED"

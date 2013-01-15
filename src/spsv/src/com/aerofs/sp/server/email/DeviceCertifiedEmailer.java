@@ -46,7 +46,7 @@ public class DeviceCertifiedEmailer
         EmailUtil.emailSPNotification(user.id() + " team server device certified email.", "");
     }
 
-    public void sendDeviceCertifiedEmail(User user, String deviceName)
+    public void sendDeviceCertifiedEmail(User user)
             throws IOException
     {
         String subject = L.PRODUCT + " Device Installed";
@@ -54,7 +54,7 @@ public class DeviceCertifiedEmailer
 
         String body = "Hi,\n\n" +
                 "This email is to notify you that AeroFS has recently been installed on a new " +
-                "device (" + deviceName + ") using your account.\n\n" +
+                "device using your account.\n\n" +
                 "If this device does not belong to you, please email us at " +
                 SV.SUPPORT_EMAIL_ADDRESS +
                 " and we will take the necessary steps to undo this action and secure your " +
