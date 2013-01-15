@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty.handler;
 
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.IZephyrIOEventSink;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception.ExInvalidZephyrMessage;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrBindRequest;
@@ -52,7 +52,7 @@ public class ZephyrClientFrameEncoder implements ChannelDownstreamHandler
             ChannelBuffer payload = (ChannelBuffer) e.getMessage();
 
             out = ChannelBuffers.buffer(
-                    Constants.ZEPHYR_CLIENT_HDR_LEN + payload.readableBytes());
+                    ZephyrConstants.ZEPHYR_CLIENT_HDR_LEN + payload.readableBytes());
             out.writeInt(Param.CORE_MAGIC);
             out.writeInt(payload.readableBytes());
             out.writeBytes(payload);
@@ -62,13 +62,13 @@ public class ZephyrClientFrameEncoder implements ChannelDownstreamHandler
             // payload length
             ZephyrBindRequest request = (ZephyrBindRequest) e.getMessage();
 
-            if (request.remoteZid == Constants.ZEPHYR_INVALID_CHAN_ID) {
+            if (request.remoteZid == ZephyrConstants.ZEPHYR_INVALID_CHAN_ID) {
                 throw new ExInvalidZephyrMessage("Attempting to bind to invalid remote ZID");
             }
 
-            out = ChannelBuffers.buffer(Constants.ZEPHYR_BIND_MSG_LEN);
-            out.writeBytes(Constants.ZEPHYR_MAGIC);
-            out.writeInt(Constants.ZEPHYR_BIND_PAYLOAD_LEN);
+            out = ChannelBuffers.buffer(ZephyrConstants.ZEPHYR_BIND_MSG_LEN);
+            out.writeBytes(ZephyrConstants.ZEPHYR_MAGIC);
+            out.writeInt(ZephyrConstants.ZEPHYR_BIND_PAYLOAD_LEN);
             out.writeInt(request.remoteZid);
 
             e.getFuture().addListener(new ChannelFutureListener() {
@@ -90,7 +90,7 @@ public class ZephyrClientFrameEncoder implements ChannelDownstreamHandler
         assert out != null : ("No data to output");
 
         // Make sure the endianness is ok
-        assert out.order() == Constants.ZEPHYR_MSG_BYTE_ORDER :
+        assert out.order() == ZephyrConstants.ZEPHYR_MSG_BYTE_ORDER :
             ("ChannelBuffer has incorrect byte order");
 
         Channels.write(ctx, e.getFuture(), out);

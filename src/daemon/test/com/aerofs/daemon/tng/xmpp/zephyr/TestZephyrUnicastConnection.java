@@ -1,6 +1,7 @@
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
@@ -702,7 +703,7 @@ public class TestZephyrUnicastConnection extends AbstractTest
             _did = did;
             _hasDestination = false;
             _source = source;
-            _destination = Constants.ZEPHYR_INVALID_CHAN_ID;
+            _destination = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
         }
 
         public ZephyrSignalMatcher(DID did, int source, int destination)

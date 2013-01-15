@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty.handler;
 
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.IZephyrIOEventSink;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception.ExInvalidZephyrMessage;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrServerMessage;
@@ -30,7 +30,7 @@ public class ZephyrRegistrationHandler extends SimpleChannelUpstreamHandler {
         ZephyrServerMessage message = (ZephyrServerMessage) e.getMessage();
         ChannelBuffer buffer = message.payload;
 
-        if (buffer.readableBytes() < Constants.ZEPHYR_REG_PAYLOAD_LEN) {
+        if (buffer.readableBytes() < ZephyrConstants.ZEPHYR_REG_PAYLOAD_LEN) {
             // The registration message is too short
             throw new ExInvalidZephyrMessage("Zephyr registration message too short");
         }

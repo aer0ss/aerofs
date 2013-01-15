@@ -1,6 +1,6 @@
 package com.aerofs.daemon.tng.xmpp.zephyr.handler;
 
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.IZephyrMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrDataMessage;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrRegistrationMessage;
@@ -32,7 +32,7 @@ public class TestZephyrFrameDecoder extends AbstractTest
 
         // Generate the incoming registration message
         ChannelBuffer input = ChannelBuffers.dynamicBuffer();
-        input.writeBytes(Constants.ZEPHYR_MAGIC);
+        input.writeBytes(ZephyrConstants.ZEPHYR_MAGIC);
         input.writeInt(4);
         input.writeInt(expectedZid);
 

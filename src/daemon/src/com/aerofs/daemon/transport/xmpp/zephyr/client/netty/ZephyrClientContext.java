@@ -1,7 +1,7 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
+import com.aerofs.base.net.ZephyrConstants;
 import org.jboss.netty.channel.Channel;
 
 public class ZephyrClientContext {
@@ -25,8 +25,8 @@ public class ZephyrClientContext {
         _localDID = localDID;
         _remoteDID = remoteDid;
         _channel = channel;
-        _remoteZid = Constants.ZEPHYR_INVALID_CHAN_ID;
-        _localZid = Constants.ZEPHYR_INVALID_CHAN_ID;
+        _remoteZid = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
+        _localZid = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
         _bytesRead = 0;
         _bytesWritten = 0;
@@ -74,7 +74,7 @@ public class ZephyrClientContext {
 
     public boolean isRegistered_()
     {
-        return _localZid != Constants.ZEPHYR_INVALID_CHAN_ID;
+        return _localZid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
     }
 
     public void setBound_(boolean value)

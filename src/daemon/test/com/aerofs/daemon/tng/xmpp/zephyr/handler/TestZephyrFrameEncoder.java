@@ -1,6 +1,6 @@
 package com.aerofs.daemon.tng.xmpp.zephyr.handler;
 
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.tng.xmpp.zephyr.message.ZephyrBindRequest;
 import com.aerofs.lib.Param;
 import com.aerofs.testlib.AbstractTest;
@@ -28,7 +28,7 @@ public class TestZephyrFrameEncoder extends AbstractTest
         // Generate the expected output buffer
         final int expectedZid = 1;
         ChannelBuffer expectedOutputBuffer = ChannelBuffers.dynamicBuffer();
-        expectedOutputBuffer.writeBytes(Constants.ZEPHYR_MAGIC);
+        expectedOutputBuffer.writeBytes(ZephyrConstants.ZEPHYR_MAGIC);
         expectedOutputBuffer.writeInt(4);
         expectedOutputBuffer.writeInt(expectedZid);
         final byte[] expectedOutput = new byte[expectedOutputBuffer.readableBytes()];

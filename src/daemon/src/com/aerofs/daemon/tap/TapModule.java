@@ -41,8 +41,7 @@ public class TapModule extends AbstractModule
         // All singletons here
         // Change the Zephyr host and port if you want to test with your own Zephyr relay
         bind(InetSocketAddress.class).annotatedWith(TransportFactory.ZephyrAddress.class)
-                .toInstance(
-                        new InetSocketAddress(Zephyr.zephyrHost(), Zephyr.zephyrPort()));
+                .toInstance(Zephyr.zephyrAddress());
         bind(EventQueueBasedEventLoop.class).toInstance(executor);
         bind(ISingleThreadedPrioritizedExecutor.class).toInstance(executor);
         bind(DID.class).annotatedWith(TransportFactory.LocalDID.class).toInstance(Cfg.did());

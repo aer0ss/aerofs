@@ -4,8 +4,8 @@
 
 package com.aerofs.daemon.tng.xmpp.zephyr.handler;
 
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.tng.ex.ExTransport;
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
 import com.aerofs.daemon.tng.xmpp.zephyr.IZephyrUnicastEventSink;
 import com.aerofs.daemon.tng.xmpp.zephyr.exception.ExInvalidZephyrId;
 import com.aerofs.daemon.tng.xmpp.zephyr.exception.ExInvalidZephyrMessage;
@@ -163,7 +163,7 @@ public class ZephyrProtocolHandler extends SimpleChannelHandler
     {
         switch (_state) {
         case REGISTERING: {
-            if (message.zid == Constants.ZEPHYR_INVALID_CHAN_ID || message.zid < 0) {
+            if (message.zid == ZephyrConstants.ZEPHYR_INVALID_CHAN_ID || message.zid < 0) {
                 throw new ExInvalidZephyrId(message.zid);
             }
 
@@ -229,7 +229,7 @@ public class ZephyrProtocolHandler extends SimpleChannelHandler
         // lock on this class while processing downstream
 
         // Check the request for validity
-        if (bindRequest.remoteZid == Constants.ZEPHYR_INVALID_CHAN_ID ||
+        if (bindRequest.remoteZid == ZephyrConstants.ZEPHYR_INVALID_CHAN_ID ||
                 bindRequest.remoteZid < 0) {
             throw new ExInvalidZephyrId(bindRequest.remoteZid);
         }

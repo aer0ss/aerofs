@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 
+import static com.aerofs.base.net.ZephyrConstants.*;
+
 /**
  * Channel handler to negotiate a Zephyr connection.
  *
@@ -219,12 +221,6 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         }
         _recvLocalZid.setSuccess();
     }
-
-    public static final byte[] ZEPHYR_MAGIC = ZephyrConstants.ZEPHYR_MAGIC;
-    public static final int ZEPHYR_REG_PAYLOAD_LEN = ZephyrConstants.ZEPHYR_REG_PAYLOAD_LEN;
-    public static final int ZEPHYR_BIND_PAYLOAD_LEN = ZephyrConstants.ZEPHYR_BIND_PAYLOAD_LEN;
-    public static final int ZEPHYR_ID_LEN = ZephyrConstants.ZEPHYR_ID_LEN;
-    public static int ZEPHYR_INVALID_CHAN_ID = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
     private static ChannelBuffer encodeZephyrID(int zid)
     {

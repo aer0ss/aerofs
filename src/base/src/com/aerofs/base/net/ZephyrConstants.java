@@ -4,48 +4,53 @@
 
 package com.aerofs.base.net;
 
-import java.net.InetSocketAddress;
+import java.nio.ByteOrder;
 
-public class ZephyrConstants
+/**
+ * Constants required by both Zephyr and Zephyr clients
+ */
+public final class ZephyrConstants
 {
-    ZephyrConstants() {}
-
-    public static final String ZEPHYR_HOST = "zephyr.aerofs.com";
-
-    public static final int ZEPHYR_PORT = 443;
-
-    public static final InetSocketAddress ZEPHYR_ADDRESS =
-            InetSocketAddress.createUnresolved(ZEPHYR_HOST, ZEPHYR_PORT);
-
-    public static final String ZEPHYR_STAGING_HOST = "staging.aerofs.com";
-
-    public static final int ZEPHYR_STAGING_PORT = 8888;
-
-    public static final InetSocketAddress ZEPHYR_STAGING_ADDRESS =
-            InetSocketAddress.createUnresolved(ZEPHYR_STAGING_HOST, ZEPHYR_STAGING_PORT);
-
+    /**
+     * byte-ordering for all zephyr messages
+     */
+    public static final ByteOrder ZEPHYR_MSG_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
     /**
      * magic number identifying incoming messages
      */
-    public static final byte[] ZEPHYR_MAGIC = {(byte)0x82, (byte)0x96, (byte)0x44, (byte)0xa1};
-
+    public static final byte[] ZEPHYR_MAGIC = {(byte) 0x82, (byte) 0x96, (byte) 0x44, (byte) 0xa1};
+    /**
+     * length of the header for any message directed to/from zephyr
+     */
+    public static final int ZEPHYR_SERVER_HDR_LEN = ZEPHYR_MAGIC.length + (Integer.SIZE / 8); // 8
+    /**
+     * length of the header for any message to/from a client via zephyr
+     */
+    public static final int ZEPHYR_CLIENT_HDR_LEN = ZEPHYR_SERVER_HDR_LEN;
     /**
      * Length of the Zephyr Server registration payload (it's a zid)
      */
-    public static final int ZEPHYR_REG_PAYLOAD_LEN = 4;
-
+    public static final int ZEPHYR_REG_PAYLOAD_LEN = Integer.SIZE / 8;
+    /**
+     * zephyr registration message length
+     */
+    public static final int ZEPHYR_REG_MSG_LEN =
+            ZEPHYR_SERVER_HDR_LEN + ZEPHYR_REG_PAYLOAD_LEN; // 12
     /**
      * Length of the Zephyr bind message payload
      */
-    public static final int ZEPHYR_BIND_PAYLOAD_LEN = 4;
-
+    public static final int ZEPHYR_BIND_PAYLOAD_LEN = Integer.SIZE / 8;
+    /**
+     * zephyr client bind message length
+     */
+    public static final int ZEPHYR_BIND_MSG_LEN =
+            ZEPHYR_SERVER_HDR_LEN + ZEPHYR_BIND_PAYLOAD_LEN; // 12
     /**
      * Length of a zid
      */
     public static final int ZEPHYR_ID_LEN = 4;
-
     /**
-     * Invalid zid
+     * invalid zephyr channel id
      */
     public static final int ZEPHYR_INVALID_CHAN_ID = -1;
 }

@@ -5,6 +5,7 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
+import com.aerofs.base.BaseParam.Zephyr;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IState;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.IStateEventType;
@@ -16,16 +17,15 @@ import com.aerofs.zephyr.core.ZUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_MAGIC;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_SERVER_HDR_LEN;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_MAGIC;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_SERVER_HDR_LEN;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.BOUND;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.CONNECTED;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.HANDSHAKE_COMPLETE;
@@ -42,8 +42,6 @@ import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEve
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientEventType.WRITE_COMPLETE;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.HALT;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.CoreEvent.PARK;
-import static com.aerofs.base.BaseParam.Zephyr.zephyrHost;
-import static com.aerofs.base.BaseParam.Zephyr.zephyrPort;
 
 /**
  * State functions for a ZephyrClient
@@ -72,7 +70,7 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
             SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
             try {
-                sc.connect(new InetSocketAddress(zephyrHost(), zephyrPort()));
+                sc.connect(Zephyr.zephyrAddress());
             } catch (IOException e) {
                 return halt_(ctx, "connect failed", e);
             }

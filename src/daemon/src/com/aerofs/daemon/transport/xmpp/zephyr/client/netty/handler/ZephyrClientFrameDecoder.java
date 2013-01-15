@@ -1,6 +1,6 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty.handler;
 
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.exception.ExInvalidZephyrMessage;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrClientMessage;
 import com.aerofs.daemon.transport.xmpp.zephyr.client.netty.message.ZephyrServerMessage;
@@ -24,10 +24,10 @@ public class ZephyrClientFrameDecoder extends FrameDecoder {
     {
         // Made the assumption that both client and server headers are the
         // same size
-        assert Constants.ZEPHYR_CLIENT_HDR_LEN == Constants.ZEPHYR_SERVER_HDR_LEN;
+        assert ZephyrConstants.ZEPHYR_CLIENT_HDR_LEN == ZephyrConstants.ZEPHYR_SERVER_HDR_LEN;
 
         if (!_isHeaderDone) {
-            if (buffer.readableBytes() < Constants.ZEPHYR_SERVER_HDR_LEN) {
+            if (buffer.readableBytes() < ZephyrConstants.ZEPHYR_SERVER_HDR_LEN) {
                 // The entire header must be available in order to process
                 // the payload.
                 return null;
@@ -46,9 +46,9 @@ public class ZephyrClientFrameDecoder extends FrameDecoder {
                 // matches the server magic value
                 buffer.resetReaderIndex();
 
-                byte[] server_magic = new byte[Constants.ZEPHYR_MAGIC.length];
+                byte[] server_magic = new byte[ZephyrConstants.ZEPHYR_MAGIC.length];
                 buffer.readBytes(server_magic);
-                if (!Arrays.equals(server_magic, Constants.ZEPHYR_MAGIC)) {
+                if (!Arrays.equals(server_magic, ZephyrConstants.ZEPHYR_MAGIC)) {
                     // The magic values differ, meaning that
                     // These clients may be incompatible
                     throw new ExInvalidZephyrMessage("Core magic values don't match");

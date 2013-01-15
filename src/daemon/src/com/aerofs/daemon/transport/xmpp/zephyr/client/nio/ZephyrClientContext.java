@@ -32,10 +32,10 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.aerofs.daemon.lib.DaemonParam.Zephyr.QUEUE_LENGTH;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_BIND_MSG_LEN;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_INVALID_CHAN_ID;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_MSG_BYTE_ORDER;
-import static com.aerofs.daemon.tng.xmpp.zephyr.Constants.ZEPHYR_REG_MSG_LEN;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_BIND_MSG_LEN;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_MSG_BYTE_ORDER;
+import static com.aerofs.base.net.ZephyrConstants.ZEPHYR_REG_MSG_LEN;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ClientConstants.ZEPHYR_CLIENT_HDR_LEN;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.ACK;
 import static com.aerofs.daemon.transport.xmpp.zephyr.client.nio.ZephyrClientContext.HandshakeMessageType.SYN;

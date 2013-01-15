@@ -19,19 +19,6 @@ public class BaseParam
     // recommended size for file I/O buffers
     public static final int FILE_BUF_SIZE                    = 512 * C.KB;
 
-    private static final String XMPP_SERVER_PROP = "aerofs.xmpp";
-    private static final String ZEPHYR_SERVER_PROP = "aerofs.zephyr";
-
-    private static InetSocketAddress parseAddress(String str)
-    {
-        if (str == null) return null;
-        int pos = str.lastIndexOf(':');
-        if (pos == -1) return null;
-        String host = str.substring(0, pos);
-        int port = Integer.parseInt(str.substring(pos + 1));
-        return InetSocketAddress.createUnresolved(host, port);
-    }
-
     public static class Xmpp
     {
         public static final String SERVER_DOMAIN        = "aerofs.com";
@@ -39,13 +26,9 @@ public class BaseParam
 
         public static InetSocketAddress xmppAddress()
         {
-            InetSocketAddress address = parseAddress(System.getProperty(XMPP_SERVER_PROP));
-            if (address == null) {
-                address = L.get().isStaging() ?
-                        InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
-                        InetSocketAddress.createUnresolved("x.aerofs.com", 443);
-            }
-            return address;
+            return L.get().isStaging() ?
+                    InetSocketAddress.createUnresolved("staging.aerofs.com", 9328) :
+                    InetSocketAddress.createUnresolved("x.aerofs.com", 443);
         }
     }
 
@@ -53,25 +36,9 @@ public class BaseParam
     {
         public static InetSocketAddress zephyrAddress()
         {
-            InetSocketAddress address = parseAddress(System.getProperty(ZEPHYR_SERVER_PROP));
-            if (address == null) {
-                address = L.get().isStaging() ?
-                        InetSocketAddress.createUnresolved("staging.aerofs.com", 8888) :
-                        InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443);
-            }
-            return address;
-        }
-
-        public static String zephyrHost()
-        {
-            // Hostname here will not do a reverse lookup since
-            // the zephyrAddress() was created with a hostname.
-            return zephyrAddress().getHostName();
-        }
-
-        public static short zephyrPort()
-        {
-            return (short)zephyrAddress().getPort();
+            return L.get().isStaging() ?
+                    InetSocketAddress.createUnresolved("staging.aerofs.com", 8888) :
+                    InetSocketAddress.createUnresolved("zephyr.aerofs.com", 443);
         }
     }
 

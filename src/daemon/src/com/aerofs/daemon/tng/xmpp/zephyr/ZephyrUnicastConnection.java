@@ -5,6 +5,7 @@
 package com.aerofs.daemon.tng.xmpp.zephyr;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
 import com.aerofs.daemon.lib.Prio;
@@ -74,8 +75,8 @@ public class ZephyrUnicastConnection
     private UncancellableFuture<ImmutableList<WireData>> _pendingReceive = null;
     private final List<WireData> _incomingData = new LinkedList<WireData>();
 
-    private int _localZid = Constants.ZEPHYR_INVALID_CHAN_ID;
-    private int _remoteZid = Constants.ZEPHYR_INVALID_CHAN_ID;
+    private int _localZid = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
+    private int _remoteZid = ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
     public static ZephyrUnicastConnection getInstance_(ISingleThreadedPrioritizedExecutor executor,
             DID localDID, DID remoteDID, InetSocketAddress zephyrAddress,
@@ -328,13 +329,13 @@ public class ZephyrUnicastConnection
 
     private void sendZephyrKnowledgeMessage_()
     {
-        assert _localZid != Constants.ZEPHYR_INVALID_CHAN_ID;
+        assert _localZid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
         // Construct the Zephyr message
         PBZephyrCandidateInfo.Builder zephyrMessageBuilder = PBZephyrCandidateInfo.newBuilder();
         zephyrMessageBuilder.setSourceZephyrId(_localZid);
 
-        if (_remoteZid != Constants.ZEPHYR_INVALID_CHAN_ID) {
+        if (_remoteZid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID) {
             zephyrMessageBuilder.setDestinationZephyrId(_remoteZid);
         }
 
@@ -376,7 +377,7 @@ public class ZephyrUnicastConnection
             @Override
             public void run()
             {
-                assert zid >= 0 && zid != Constants.ZEPHYR_INVALID_CHAN_ID;
+                assert zid >= 0 && zid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
                 // Store our local ZID
                 _localZid = zid;
@@ -399,7 +400,7 @@ public class ZephyrUnicastConnection
         buffer.readBytes(data);
 
         // Wirelen must represent the entire payload with headers
-        return new WireData(data, len + Constants.ZEPHYR_CLIENT_HDR_LEN);
+        return new WireData(data, len + ZephyrConstants.ZEPHYR_CLIENT_HDR_LEN);
     }
 
     @Override
@@ -545,7 +546,7 @@ public class ZephyrUnicastConnection
                     _remoteZid = remoteInfo.getSourceZephyrId();
                 }
 
-                if (_localZid == Constants.ZEPHYR_INVALID_CHAN_ID) {
+                if (_localZid == ZephyrConstants.ZEPHYR_INVALID_CHAN_ID) {
                     // If we haven't registered with the relay, then there is no need
                     // to check the destination zephyr id since the peer can't possibly know it
                     // We return here because we have no _localZid to send back yet
@@ -570,8 +571,8 @@ public class ZephyrUnicastConnection
 
                 if (stable) {
                     assert _channel != null;
-                    assert _localZid != Constants.ZEPHYR_INVALID_CHAN_ID;
-                    assert _remoteZid != Constants.ZEPHYR_INVALID_CHAN_ID;
+                    assert _localZid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
+                    assert _remoteZid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
                     // The zid's have stablizied and each remote peer knows which zid to bind to,
                     // so we can finish the connection process by binding
@@ -597,7 +598,7 @@ public class ZephyrUnicastConnection
         {
             // Once the local zid is set to something other than the ZEPHYR_INVALID_CHAN_ID,
             // it will never be changed.
-            assert _localZid != Constants.ZEPHYR_INVALID_CHAN_ID;
+            assert _localZid != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID;
 
             if (!signallingMessage.did.equals(_remoteDID)) {
                 l.info("predicate(" + _localZid + ") not my remote DID");

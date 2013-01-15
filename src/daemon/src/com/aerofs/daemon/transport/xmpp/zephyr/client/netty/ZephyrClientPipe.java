@@ -1,10 +1,10 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.tng.xmpp.zephyr.Constants;
 import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.daemon.transport.lib.INetworkStats;
 import com.aerofs.daemon.transport.lib.IPipeController;
@@ -563,7 +563,7 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
                 // Send this client's Zid to the peer
                 sendZidToPeer_(ctx);
 
-                if (ctx.getRemoteZid_() != Constants.ZEPHYR_INVALID_CHAN_ID) {
+                if (ctx.getRemoteZid_() != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID) {
                     // The remote Zephyr Id of the peer to connect to has been
                     // set before registration, meaning a bind was attempted but
                     // could not proceed due to registration not being finished.
@@ -863,7 +863,7 @@ public class ZephyrClientPipe extends AbstractEventLoop<IZephyrEvent>
     {
         assertEventThread();
 
-        assert ctx.getLocalZid_() != Constants.ZEPHYR_INVALID_CHAN_ID
+        assert ctx.getLocalZid_() != ZephyrConstants.ZEPHYR_INVALID_CHAN_ID
                 : ("Invalid Zid");
 
         PBTPHeader message = PBTPHeader.newBuilder()
