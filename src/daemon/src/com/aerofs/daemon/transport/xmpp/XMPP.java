@@ -691,7 +691,7 @@ public abstract class XMPP implements ITransportImpl, IPipeController, IUnicast,
 
         String[] tokens = JabberID.tokenize(p.getFrom());
         if (!JabberID.isMUCAddress(tokens)) return;
-        if (tokens[1].startsWith("mobile_")) return; // Ignore presence from mobile devices (they don't have a valid did)
+        if (JabberID.isMobileUser(tokens[1])) return;
         if (tokens.length == 3 && (tokens[2].compareToIgnoreCase(id()) != 0)) return; // ignore presence from other xmpp-based transports
 
         SID sid = JabberID.muc2sid(tokens[0]);

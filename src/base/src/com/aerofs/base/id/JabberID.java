@@ -25,6 +25,7 @@ import static java.lang.System.arraycopy;
 public abstract class JabberID
 {
     private final static Logger l = Loggers.getLogger(JabberID.class);
+    private final static String MOBILE_PREFIX = "mobile_";
 
     private JabberID()
     {
@@ -39,6 +40,16 @@ public abstract class JabberID
     public static DID user2did(String user) throws ExFormatError
     {
         return new DID(user);
+    }
+
+    public static String did2mobileUser(DID did)
+    {
+        return MOBILE_PREFIX + did2user(did);
+    }
+
+    public static boolean isMobileUser(String user)
+    {
+        return user != null && user.startsWith(MOBILE_PREFIX);
     }
 
     /**

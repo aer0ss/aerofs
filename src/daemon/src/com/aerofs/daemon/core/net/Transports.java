@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.net;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.net.link.ILinkStateListener;
@@ -90,7 +91,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
                 return Cfg.useXMPP() && Cfg.useJingle();
             }
         },
-        ZEPHYR("z")
+        ZEPHYR(BaseParam.Zephyr.TRANSPORT_ID)
         {
             @Override
             public ITransport newTransport_(DID localdid, IBlockingPrioritizedEventSink<IEvent> q, MaxcastFilterReceiver mcfr)

@@ -34,6 +34,8 @@ public class BaseParam
 
     public static class Zephyr
     {
+        public static String TRANSPORT_ID = "z";
+
         public static InetSocketAddress zephyrAddress()
         {
             return L.get().isStaging() ?
