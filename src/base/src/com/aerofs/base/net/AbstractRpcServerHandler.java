@@ -31,8 +31,6 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
     @Override
     public void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
-        l.info("MobileService: message received");
-
         try {
             ChannelBuffer cb = (ChannelBuffer)e.getMessage();
             byte[] message = toByteArray(cb);
@@ -80,7 +78,7 @@ public abstract class AbstractRpcServerHandler extends SimpleChannelUpstreamHand
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
-        l.info("MobileService: exception caught ");
+        l.warn("exception caught", e.getCause());
         // Close the connection when an exception is raised
         e.getChannel().close();
     }

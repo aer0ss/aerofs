@@ -14,6 +14,7 @@ import com.aerofs.base.C;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.ex.ExNotFound;
@@ -129,11 +130,10 @@ public class MobileService implements IMobileService
     }
 
     @Override
-    public ListenableFuture<StartDownloadReply> startDownload(String user, PBPath source)
+    public ListenableFuture<StartDownloadReply> startDownload(PBPath source)
             throws Exception
     {
-        EIDownloadPacket ev = new EIDownloadPacket(UserID.fromExternal(user),
-                _imce, new Path(source), -1, -1);
+        EIDownloadPacket ev = new EIDownloadPacket(Cfg.user(), _imce, new Path(source), -1, -1);
         ev.execute(PRIO);
 
         StartDownloadReply.Builder b = StartDownloadReply.newBuilder()
@@ -144,13 +144,12 @@ public class MobileService implements IMobileService
     }
 
     @Override
-    public ListenableFuture<DownloadPacketReply> downloadPacket(String user, PBPath source,
+    public ListenableFuture<DownloadPacketReply> downloadPacket(PBPath source,
             ByteString cookie, Long offset, Integer length) throws Exception
     {
         DownloadCookie inCookie = DownloadCookie.parseFrom(cookie);
 
-        EIDownloadPacket ev = new EIDownloadPacket(UserID.fromExternal(user), _imce,
-                new Path(source), offset, length);
+        EIDownloadPacket ev = new EIDownloadPacket(Cfg.user(), _imce, new Path(source), offset, length);
         ev._inFileLength = inCookie.getLength();
         ev._inFileModTime = inCookie.getModTime();
         ev._inVersion = new Version(inCookie.getVersion());

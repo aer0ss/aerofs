@@ -96,6 +96,11 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
         _channel.disconnect();
     }
 
+    public boolean isConnected()
+    {
+        return _channel.isConnected();
+    }
+
     @Override
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
     {
