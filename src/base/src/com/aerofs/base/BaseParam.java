@@ -88,4 +88,10 @@ public class BaseParam
             URL = url;
         }
     }
+
+    public static class MobileService
+    {
+        public static final byte[] MAGIC_BYTES = "MOBL".getBytes();
+        public static final int VERSION_NUMBER = 2;
+    }
 }

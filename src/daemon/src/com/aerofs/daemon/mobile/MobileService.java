@@ -1,5 +1,6 @@
 package com.aerofs.daemon.mobile;
 
+import com.aerofs.base.BaseParam;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ds.CA;
@@ -72,10 +73,8 @@ public class MobileService implements IMobileService
     private final static Logger l = Util.l(MobileService.class);
 
     private static final Prio PRIO = Prio.LO;
-
-    private static final byte[] MAGIC_BYTES = "MOBL".getBytes();
-    private static final int VERSION_NUMBER = 2;
-    private static final MagicHeader MAGIC_HEADER = new MagicHeader(MAGIC_BYTES, VERSION_NUMBER);
+    private static final MagicHeader MAGIC_HEADER = new MagicHeader(
+            BaseParam.MobileService.MAGIC_BYTES, BaseParam.MobileService.VERSION_NUMBER);
 
     private final IIMCExecutor _imce;
 
