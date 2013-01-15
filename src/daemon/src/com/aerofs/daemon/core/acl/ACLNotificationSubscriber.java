@@ -99,7 +99,7 @@ public final class ACLNotificationSubscriber
         {
             assert topic.equals(_topic);
 
-            l.info("recv notification t:" + topic);
+            l.info("recv t:" + topic);
             launchExpRetryAclSync(payload);
         }
 
