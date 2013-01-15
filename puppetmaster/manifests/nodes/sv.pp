@@ -24,4 +24,10 @@ node "sv.aerofs.com" inherits default {
         hour    => "0",
         minute  => "0"
     }
+
+    cron{"remove old logs":
+        command => 'find /var/svlogs_prod/archived/ -iname \*.gz -mtime +120 | xargs rm',
+        hour    => "0",
+        minute  => "0"
+    }
 }
