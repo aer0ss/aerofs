@@ -884,7 +884,9 @@ public abstract class Util
     {
         CRC32 crc = new CRC32();
         crc.update(bytes);
-        return Long.toHexString(crc.getValue());
+        // It's helpful for a CRC32 to actually describe 32 bits. It's very
+        // easy to see a 7-char CRC and forget that there are leading zeros.
+        return String.format("%08x", crc.getValue());
     }
 
     public static void initDriver(String logFileName)
