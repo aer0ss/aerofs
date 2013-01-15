@@ -2,16 +2,18 @@ from pyramid.config import Configurator
 from pyramid.authentication import SessionAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
 from pyramid_beaker import session_factory_from_settings
-
 from modules.login.views import groupfinder
 from modules.login.models import RootFactory
-
+from web.views import forbidden_view
 import re
 import modules
+
+# N.B. this is required for config.scan() to work, do not remove.
 from modules import *
 
 def main(global_config, **settings):
-    """ This function returns a Pyramid WSGI application.
+    """
+    This function returns a Pyramid WSGI application.
     """
 
     authn_policy = SessionAuthenticationPolicy(callback=groupfinder)
@@ -19,7 +21,9 @@ def main(global_config, **settings):
     admin_session_factory = session_factory_from_settings(settings)
 
     modulePackageName = 'modules.'
-    builtinfunc = re.compile('__\w+__') # Regular expression for python builtin module names (i.e. __init__)
+
+    # Regular expression for python builtin module names (i.e. __init__)
+    builtinfunc = re.compile('__\w+__')
 
     # Import template directories from modules
     for module in dir(modules):
@@ -49,10 +53,10 @@ def main(global_config, **settings):
     config.add_route('homepage', '/')
 
     config.scan()
-    # Config commiting. Pyramid does some great config conflict detection. This conflict detection is
-    # limited to configuration changes between commits. Since some of the default configuration is
-    # overridden in modules, we have to commit the default configuration before including the modules.
-    # otherwise we get a ConfigurationConflictError.
+    # Config commiting. Pyramid does some great config conflict detection. This conflict detection
+    # is limited to configuration changes between commits. Since some of the default configuration
+    # is overridden in modules, we have to commit the default configuration before including the
+    # modules. Otherwise we get a ConfigurationConflictError.
     # See http://pyramid.readthedocs.org/en/latest/narr/advconfig.html for more details.
     config.commit()
 
@@ -62,4 +66,7 @@ def main(global_config, **settings):
             config.include(modulePackageName + module)
             config.scan(package=modulePackageName + module)
 
+    # Need to add this manually because scan for the forbidden view is broken in some versions of
+    # pyramid.
+    config.add_forbidden_view(forbidden_view, renderer='forbidden.mako')
     return config.make_wsgi_app()

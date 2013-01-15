@@ -1,14 +1,12 @@
 import logging
 from pyramid.httpexceptions import HTTPFound
-
+from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
+from pyramid.view import forbidden_view_config
 from aerofs_sp.gen.sp_pb2 import USER
 
-from aerofs_web.helper_functions import flash_error
-
 log = logging.getLogger(__name__)
-
 
 # Global view configuration
 
@@ -25,7 +23,6 @@ def homepage(request):
     else:
         return {}
 
-
 # Exception handlers
 
 # Server errors
@@ -40,9 +37,9 @@ def mako_exception(context, request):
     request.response_status = 500
     return {}
 
-# 404 not found
+# Not found view
 @view_config(
-    context='pyramid.exceptions.NotFound',
+    context=NotFound,
     permission=NO_PERMISSION_REQUIRED,
     renderer = 'not_found.mako'
 )
@@ -50,18 +47,8 @@ def not_found_view(request):
     request.response_status = 404
     return {'navigation':[]}
 
-# 401 unauthorized
-@view_config(
-    context='pyramid.exceptions.Forbidden',
-    renderer = 'login.mako',
-    permission=NO_PERMISSION_REQUIRED
-)
-def not_authorized_view(request):
-    _ = request.translate
-
-    request.response_status = 401
-    return {
-        'next': request.matched_route.path,
-        'not_authorized': _("You are not authorized to view this page. Please log in to continue."),
-        'did_fail': False
-    }
+# Forbidden view
+@forbidden_view_config()
+def forbidden_view(request):
+    request.response_status = 403
+    return {'navigation':[]}
