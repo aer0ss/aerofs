@@ -242,25 +242,25 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                     return prefixWalk(oldParent, oa);
                 }
 
-            @Override
-            public void postfixWalk_(String oldParent, OA oa)
-                    throws IOException, SQLException
-            {
-                // Root objects have null FIDs
-                if (!oa.soid().oid().isRoot() && oa.fid() != null) {
-                    FID newFID = _dr.getFID(oldParent + oa.name());
+                @Override
+                public void postfixWalk_(String oldParent, OA oa)
+                        throws IOException, SQLException
+                {
+                    // Root objects have null FIDs
+                    if (!oa.soid().oid().isRoot() && oa.fid() != null) {
+                        FID newFID = _dr.getFID(oldParent + oa.name());
 
-                    // newFID can be null if it is removed by filesystem during relocation
-                    if (newFID == null) {
-                        newFID = oa.fid();
-                        assert newFID != null : oa;
+                        // newFID can be null if it is removed by filesystem during relocation
+                        if (newFID == null) {
+                            newFID = oa.fid();
+                            assert newFID != null : oa;
+                        }
+
+                        byte[] bytesFID = Arrays.copyOf(newFID.getBytes(), _dr.getFIDLength() + 1);
+                        _ds.setFID_(oa.soid(), new FID(bytesFID), t);
                     }
-
-                    byte[] bytesFID = Arrays.copyOf(newFID.getBytes(), _dr.getFIDLength() + 1);
-                    _ds.setFID_(oa.soid(), new FID(bytesFID), t);
                 }
-            }
-        });
+            });
 
             _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
             {
@@ -270,19 +270,18 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
                     return prefixWalk(oldParent, oa);
                 }
 
-            @Override
-            public void postfixWalk_(String oldParent, OA oa)
-                    throws IOException, SQLException
-{
-                if (!oa.soid().oid().isRoot() && oa.fid() != null) {
-                    assert oa.fid().getBytes().length == _dr.getFIDLength() + 1;
+                @Override
+                public void postfixWalk_(String oldParent, OA oa)
+                        throws IOException, SQLException {
+                    if (!oa.soid().oid().isRoot() && oa.fid() != null) {
+                        assert oa.fid().getBytes().length == _dr.getFIDLength() + 1;
 
-                    byte[] bytesFID = Arrays.copyOf(oa.fid().getBytes(), _dr.getFIDLength());
-                    _ds.setFID_(oa.soid(), new FID(bytesFID), t);
+                        byte[] bytesFID = Arrays.copyOf(oa.fid().getBytes(), _dr.getFIDLength());
+                        _ds.setFID_(oa.soid(), new FID(bytesFID), t);
+                    }
                 }
-            }
-        });
-    }
+            });
+        }
 
         /**
          * oldParent has the File.separator affixed to the end of the path (except root)
