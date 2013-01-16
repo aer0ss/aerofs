@@ -63,13 +63,14 @@ node "z.arrowfs.org" inherits default {
     require => Class["pagerduty"]
   }
 
-  #hourly
+  # every 10 minutes
   pagerduty::probe::base{[
     # Production
     "web url http://www.aerofs.com",
     "sv url https://sv.aerofs.com/sv_beta/sv",
     "sss url https://sss.aerofs.com/syncstat 10",
     "sp url https://sp.aerofs.com/sp",
+    "my.aerofs.com url https://my.aerofs.com",
     "verkehr port verkehr.aerofs.com 443",
     "zephyr port zephyr.aerofs.com 443",
     "x port x.aerofs.com 443",
