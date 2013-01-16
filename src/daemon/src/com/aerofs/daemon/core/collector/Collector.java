@@ -47,6 +47,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class Collector implements IDumpStatMisc
@@ -119,7 +120,7 @@ public class Collector implements IDumpStatMisc
      * been added to the db before this method is called. otherwise the method
      * would discard the filter without attempting downloading these objects
      */
-    public void add_(DID did, BFOID filter, Trans t) throws SQLException
+    public void add_(DID did, @Nonnull BFOID filter, Trans t) throws SQLException
     {
         if (_cfs.addDBFilter_(did, filter, t)) {
             l.debug("adding filter to " + did + " triggers collector 4 " + _sidx);
@@ -224,7 +225,8 @@ public class Collector implements IDumpStatMisc
     /**
      * this method can only be called by start() or collectOne()
      */
-    private void collect_(@Nullable Trans t) throws Exception
+    private void collect_(@Nullable Trans t)
+            throws SQLException
     {
         // depending on _occs, we may either perform a iterating continuation or
         // start a new iteration

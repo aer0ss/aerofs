@@ -39,6 +39,8 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.Core.PBGetVersReply;
 import com.aerofs.proto.Core.PBGetVersReplyBlock;
 
+import javax.annotation.Nullable;
+
 public class GetVersReply
 {
     private static final Logger l = Util.l(GetVersReply.class);
@@ -106,10 +108,7 @@ public class GetVersReply
         }
     }
 
-    /**
-     * @param filter may be null
-     */
-    private void processAtomicReply_(SIndex sidx, DID from, InputStream is, BFOID filter)
+    private void processAtomicReply_(SIndex sidx, DID from, InputStream is, @Nullable BFOID filter)
             throws SQLException, ExProtocolError, IOException, ExNotFound
     {
         Version vKwlgLocal = _nvc.getKnowledgeExcludeSelf_(sidx);
@@ -135,11 +134,8 @@ public class GetVersReply
 
     private static final int MIN_BLOCKS_PER_TX = 100;
 
-    /**
-     * @param filter may be null
-     */
     private void processStreamReply_(SIndex sidx, DID from, StreamKey streamKey,
-            ByteArrayInputStream is, BFOID filter, Token tk)
+            ByteArrayInputStream is, @Nullable BFOID filter, Token tk)
         throws SQLException, IOException, ExProtocolError, ExTimeout, ExStreamInvalid, ExAborted,
             ExNoResource, ExNotFound
     {
@@ -188,7 +184,8 @@ public class GetVersReply
      * @return the current device_id
      */
     private DID processStreamBlocks_(SIndex sidx, DID from, DID didBlock,
-            Queue<PBGetVersReplyBlock> qblocks, BFOID filter) throws SQLException, ExNotFound
+            Queue<PBGetVersReplyBlock> qblocks, @Nullable BFOID filter)
+            throws SQLException, ExNotFound
     {
         assert !qblocks.isEmpty();
 
@@ -219,7 +216,7 @@ public class GetVersReply
      * @return the current device_id specified in the block
      */
     private DID processBlock_(SIndex sidx, PBGetVersReplyBlock block, DID didBlock,
-            Version vKwlgLocal, Version vImmKwlgLocal, DID from, BFOID filter,
+            Version vKwlgLocal, Version vImmKwlgLocal, DID from, @Nullable BFOID filter,
             Trans t) throws SQLException, ExNotFound
     {
         assert block.getObjectIdCount() == block.getComIdCount() &&
