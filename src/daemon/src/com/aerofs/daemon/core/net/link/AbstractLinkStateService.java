@@ -210,7 +210,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                 // Otherwise, we should implement this method.
                 //
                 while (true) {
-                    l.info("check link state");
+                    l.debug("check link state");
                     execute(runCheckLinkState);
                     // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
                     if (Driver.waitForNetworkInterfaceChange() != DriverConstants.DRIVER_SUCCESS) {
