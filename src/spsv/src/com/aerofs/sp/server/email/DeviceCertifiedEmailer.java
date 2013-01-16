@@ -28,8 +28,7 @@ public class DeviceCertifiedEmailer
                 "on a new device using your account.\n\n" +
                 "If you did not authorize this, please email us at " +
                 SV.SUPPORT_EMAIL_ADDRESS +
-                " and we will take the necessary steps to undo this action and secure your " +
-                "account.";
+                " and we will take the necessary steps to secure your account.";
 
         email.addSection(L.PRODUCT + " device installed", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
@@ -56,8 +55,7 @@ public class DeviceCertifiedEmailer
                 "device using your account.\n\n" +
                 "If this device does not belong to you, please email us at " +
                 SV.SUPPORT_EMAIL_ADDRESS +
-                " and we will take the necessary steps to undo this action and secure your " +
-                "account.";
+                " and we will take the necessary steps to secure your account.";
 
         email.addSection(L.PRODUCT + " Device Installed", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
