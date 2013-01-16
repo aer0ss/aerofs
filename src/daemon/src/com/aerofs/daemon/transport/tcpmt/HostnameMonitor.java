@@ -3,30 +3,36 @@ package com.aerofs.daemon.transport.tcpmt;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
+import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.TreeMap;
 
 // hostname here can be either hostname or textual ip address
 
-class HostnameMonitor {
+class HostnameMonitor implements IARPChangeListener
+{
     private static final Logger l = Util.l(HostnameMonitor.class);
 
-    private static class Entry {
+    private static class Host
+    {
         final String _hostname;
         final int _port;
+
         boolean _online;
         boolean _errorLogged;
 
-        Entry(String hostname, int port)
+        Host(String hostname, int port)
         {
             _hostname = hostname;
             _port = port;
@@ -34,13 +40,16 @@ class HostnameMonitor {
     }
 
     private final TCP t;
-    private final Map<DID, Entry> _map = new TreeMap<DID, Entry>();
+    private final Map<DID, Host> _monitoredHosts = Maps.newTreeMap();
+
     private boolean _notified;
     private long _lastRound;
 
-    public HostnameMonitor(TCP t)
+    public HostnameMonitor(TCP t, ARP arp)
     {
         this.t = t;
+
+        arp.addARPChangeListener(this); // FIXME (AG): not safe to leak 'this' during construction
     }
 
     public void start()
@@ -56,8 +65,7 @@ class HostnameMonitor {
 
     private void thdMonitor()
     {
-        ArrayList<Map.Entry<DID, Entry>> list =
-            new ArrayList<Map.Entry<DID, Entry>>();
+        ArrayList<Map.Entry<DID, Host>> list = Lists.newArrayList();
 
         while (true) {
             synchronized (this) {
@@ -69,7 +77,7 @@ class HostnameMonitor {
                 list.clear();
 
                 // make a copy so that we won't hold the lock for too long
-                for (Map.Entry<DID, Entry> en : _map.entrySet()) {
+                for (Map.Entry<DID, Host> en : _monitoredHosts.entrySet()) {
                     if (!en.getValue()._online) list.add(en);
                 }
             }
@@ -82,7 +90,7 @@ class HostnameMonitor {
 
             _lastRound = System.currentTimeMillis();
 
-            for (Map.Entry<DID, Entry> en : list) {
+            for (Map.Entry<DID, Host> en : list) {
                 String host = en.getValue()._hostname;
                 try {
                     // resolve
@@ -91,14 +99,13 @@ class HostnameMonitor {
                             en.getValue()._port);
 
                     // try send something
-                    PBTPHeader h = PBTPHeader.newBuilder()
-                        .setType(Type.TCP_NOP)
-                        .build();
+                    PBTPHeader h = PBTPHeader
+                            .newBuilder()
+                            .setType(Type.TCP_NOP)
+                            .build();
                     t.ucast().sendControl(en.getKey(), ep, h, Prio.LO);
 
-                    // arp entry will be added when we receive TCP_STORES
-                    //t.arp().put(en.getKey(), ep);
-
+                    // arp entry is added when we receive TCP_STORES
                 } catch (Exception e) {
                     if (!en.getValue()._errorLogged) {
                         en.getValue()._errorLogged = true;
@@ -113,7 +120,7 @@ class HostnameMonitor {
 
     public synchronized void online(DID did)
     {
-        Entry en = _map.get(did);
+        Host en = _monitoredHosts.get(did);
         if (en == null) return;
 
         en._online = true;
@@ -122,7 +129,7 @@ class HostnameMonitor {
 
     public synchronized void offline(DID did)
     {
-        Entry en = _map.get(did);
+        Host en = _monitoredHosts.get(did);
         if (en == null) return;
 
         en._online = false;
@@ -133,8 +140,8 @@ class HostnameMonitor {
 
     public synchronized void put(DID did, String hostname, int port)
     {
-        Entry en = new Entry(hostname, port);
-        _map.put(did, en);
+        Host en = new Host(hostname, port);
+        _monitoredHosts.put(did, en);
 
         // don't delay it
         _lastRound = 0;
@@ -152,11 +159,23 @@ class HostnameMonitor {
      */
     public synchronized boolean has(DID did)
     {
-        return (_map.get(did) != null);
+        return (_monitoredHosts.get(did) != null);
     }
 
     public synchronized void remove(DID did)
     {
-        _map.remove(did);
+        _monitoredHosts.remove(did);
+    }
+
+    //
+    // IARPChangeListener methods
+    //
+
+    @Override
+    public void onArpChange_(DID did, ARPChange chg)
+    {
+        if (chg == ARPChange.ADD) {
+            online(did);
+        }
     }
 }
