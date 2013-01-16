@@ -61,6 +61,20 @@ class ejabberd(
         notify => Service["ejabberd"]
     }
 
+    file { "/etc/default/ejabberd":
+        source => "puppet:///modules/ejabberd/default_ejabberd",
+        mode   => "755",
+        owner  => "root",
+        group  => "root",
+        notify => Service["ejabberd"]
+    }
+
+    file { "/usr/lib/ejabberd/ebin":
+        source  => "puppet:///modules/ejabberd/ebin",
+        notify  => Service["ejabberd"],
+        recurse => true
+    }
+
     $ejabberd_check = "/etc/ejabberd/ejabberd_check"
     file { $ejabberd_check:
         source => "puppet:///modules/ejabberd/ejabberd_check",
