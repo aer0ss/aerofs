@@ -2,6 +2,7 @@ package com.aerofs.sp.server.lib.organization;
 
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.db.DBSearchUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -144,8 +145,8 @@ public class Organization
 
     public class UsersAndQueryCount
     {
-        public final ImmutableList<User> _users;
-        public final int _count;
+        private final ImmutableList<User> _users;
+        private final int _count;
 
         public UsersAndQueryCount(Collection<UserID> userIDs, int count)
         {
@@ -153,6 +154,16 @@ public class Organization
             for (UserID userID : userIDs) builder.add(_f._factUser.create(userID));
             _users = builder.build();
             _count = count;
+        }
+
+        public ImmutableList<User> users()
+        {
+            return _users;
+        }
+
+        public int count()
+        {
+            return _count;
         }
     }
 
@@ -164,8 +175,8 @@ public class Organization
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-        throwOnInvalidOffset(offset);
-        throwOnInvalidMaxResults(maxResults);
+        DBSearchUtil.throwOnInvalidOffset(offset);
+        DBSearchUtil.throwOnInvalidMaxResults(maxResults);
 
         assert offset >= 0;
 
@@ -198,38 +209,19 @@ public class Organization
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-        throwOnInvalidOffset(offset);
-        throwOnInvalidMaxResults(maxResults);
-
-        assert offset >= 0;
+        DBSearchUtil.throwOnInvalidOffset(offset);
+        DBSearchUtil.throwOnInvalidMaxResults(maxResults);
 
         List<UserID> userIDs;
         int count;
         if (search.isEmpty()) {
             userIDs = _f._db.listUsers(_id, offset, maxResults);
-            count = _f._db.listUsersCount(_id);
+            count = totalUserCount();
         } else {
-            assert !search.isEmpty();
             userIDs = _f._db.searchUsers(_id, offset, maxResults, search);
             count = _f._db.searchUsersCount(_id, search);
         }
         return new UsersAndQueryCount(userIDs, count);
-    }
-
-    private static void throwOnInvalidOffset(int offset)
-            throws ExBadArgs
-    {
-        if (offset < 0) throw new ExBadArgs("offset is negative");
-    }
-
-    // To avoid DoS attacks, do not permit listUsers queries to exceed 1000 returned results
-    private static final int ABSOLUTE_MAX_RESULTS = 1000;
-
-    private static void throwOnInvalidMaxResults(int maxResults)
-            throws ExBadArgs
-    {
-        if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
-        else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
     }
 
     public int countSharedFolders()

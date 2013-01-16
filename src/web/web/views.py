@@ -3,29 +3,26 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
-from pyramid.view import forbidden_view_config
 from aerofs_sp.gen.sp_pb2 import USER
 
 log = logging.getLogger(__name__)
 
-# Global view configuration
+# Global view configuration.
 
-# basic homepage view with links to pages
+# Redirects to either the user or the admin homepage.
 @view_config(
     route_name = 'homepage',
-    renderer = 'admin_home.mako',
     permission = 'user'
 )
 def homepage(request):
     if request.session['group'] == USER:
-        # direct non-admin users to the invitation page
-        return HTTPFound(request.route_url('accept'))
+        return HTTPFound(request.route_url('user_home'))
     else:
-        return {}
+        return HTTPFound(request.route_url('admin_home'))
 
-# Exception handlers
+# Exception handlers.
 
-# Server errors
+# Server errors.
 @view_config(
     context=Exception,
     permission=NO_PERMISSION_REQUIRED,
@@ -37,7 +34,7 @@ def mako_exception(context, request):
     request.response_status = 500
     return {}
 
-# Not found view
+# Not found view.
 @view_config(
     context=NotFound,
     permission=NO_PERMISSION_REQUIRED,

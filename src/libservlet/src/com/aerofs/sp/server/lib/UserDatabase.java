@@ -40,6 +40,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_SHARER;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_FROM;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
@@ -190,7 +191,10 @@ public class UserDatabase extends AbstractSQLDatabase
         }
     }
 
-    public ImmutableList<DID> getDevices(UserID userId)
+    /**
+     * List all devices belonging to a the provided user.
+     */
+    public ImmutableList<DID> listDevices(UserID userId)
             throws SQLException, ExFormatError
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=?",
@@ -210,6 +214,100 @@ public class UserDatabase extends AbstractSQLDatabase
         }
 
         return builder.build();
+    }
+
+    /**
+     * List all devices belonging to a the provided user.
+     * @param offset Starting index of the results list from the database.
+     * @param maxResults Maximum number of results returned from the database.
+     */
+    public ImmutableList<DID> listDevices(UserID userId, int offset, int maxResults)
+            throws SQLException, ExFormatError
+    {
+        PreparedStatement ps = prepareStatement("select " + C_DEVICE_ID + " from " + T_DEVICE +
+                " where " + C_DEVICE_OWNER_ID + " =? order by " + C_DEVICE_NAME +
+                " limit ? offset ?");
+
+        ps.setString(1, userId.toString());
+        ps.setInt(2, maxResults);
+        ps.setInt(3, offset);
+
+        ImmutableList.Builder<DID> builder = ImmutableList.builder();
+        ResultSet rs = ps.executeQuery();
+        try {
+            while (rs.next()) {
+                String didString = rs.getString(1);
+                builder.add(new DID(didString));
+            }
+        } finally {
+            rs.close();
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * List all devices belonging to a the provided user.
+     * @param offset Starting index of the results list from the database.
+     * @param maxResults Maximum number of results returned from the database.
+     * @param search Search term that we want to match in the device database.
+     */
+    public ImmutableList<DID> searchDevices(UserID userId, int offset, int maxResults, String search)
+            throws SQLException, ExFormatError
+    {
+        PreparedStatement ps = prepareStatement("select " + C_DEVICE_ID + " from " + T_DEVICE +
+                " where " + C_DEVICE_OWNER_ID + " =? and " + C_DEVICE_NAME + " like ? order by " +
+                C_DEVICE_NAME + " limit ? offset ?");
+
+        ps.setString(1, userId.toString());
+        ps.setString(2, "%" + search + "%");
+        ps.setInt(3, maxResults);
+        ps.setInt(4, offset);
+
+        ImmutableList.Builder<DID> builder = ImmutableList.builder();
+        ResultSet rs = ps.executeQuery();
+        try {
+            while (rs.next()) {
+                String didString = rs.getString(1);
+                builder.add(new DID(didString));
+            }
+        } finally {
+            rs.close();
+        }
+
+        return builder.build();
+    }
+
+    public int listDevicesCount(UserID userId)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement("select count(*) from " + T_DEVICE + " where " +
+                C_DEVICE_OWNER_ID + "=?");
+
+        ps.setString(1, userId.toString());
+        ResultSet rs = ps.executeQuery();
+        try {
+            return count(rs);
+        } finally {
+            rs.close();
+        }
+    }
+
+    public int searchDecvicesCount(UserID userId, String search)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement("select count(*) from " + T_DEVICE + " where " +
+                C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_NAME + " like ?");
+
+        ps.setString(1, userId.toString());
+        ps.setString(2, "%" + search + "%");
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            return count(rs);
+        } finally {
+            rs.close();
+        }
     }
 
     private ResultSet queryUser(UserID userId, String ... fields)

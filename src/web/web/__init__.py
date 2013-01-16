@@ -62,6 +62,7 @@ def main(global_config, **settings):
     # Import routes from modules
     for module in dir(modules):
         if not builtinfunc.match(module):
+            print modulePackageName + module
             config.include(modulePackageName + module)
             config.scan(package=modulePackageName + module)
 

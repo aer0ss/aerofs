@@ -14,7 +14,6 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 
