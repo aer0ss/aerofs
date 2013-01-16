@@ -12,8 +12,9 @@ import java.util.List;
 public class UserID extends StringID
 {
     public final static char TEAM_SERVER_PREFIX = ':';
-
     public final static UserID UNKNOWN = UserID.fromInternal("(unknown)");
+
+    private static final String AEROFS_EMAIL_DOMAIN = "@aerofs.com";
 
     /**
      * This method normalizes {@code str}, ie. convert {@code str} to lower case, before using it to
@@ -60,6 +61,11 @@ public class UserID extends StringID
     public boolean isTeamServerID()
     {
         return toString().charAt(0) == TEAM_SERVER_PREFIX;
+    }
+
+    public boolean isAeroFSUser()
+    {
+        return toString().endsWith(AEROFS_EMAIL_DOMAIN);
     }
 
     /**

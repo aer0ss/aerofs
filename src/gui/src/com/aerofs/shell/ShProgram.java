@@ -118,7 +118,7 @@ public class ShProgram implements IProgram, ICallback
         _s.addCommand_(new CmdResolve());
 
         // TODO(huguesb): remove conditional when sync stat is enabled in prod
-        if (Cfg.user().toString().endsWith("@aerofs.com")) {
+        if (Cfg.user().isAeroFSUser()) {
             _s.addCommand_(new CmdSyncStatus());
         }
 

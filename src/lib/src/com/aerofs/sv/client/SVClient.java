@@ -407,7 +407,7 @@ public final class SVClient
         if (ignoreDefect) return;
 
         // Send the defect to RockLog
-        if (header.getUser().endsWith("@aerofs.com")) {
+        if (UserID.fromInternal(header.getUser()).isAeroFSUser()) {
             RockLog.newDefect("svclient.test").setMsg(desc).setEx(cause).send();
         }
 

@@ -246,8 +246,6 @@ public class MobileService implements IMobileService
 
     public static class Factory implements ChannelPipelineFactory
     {
-        //private static final String PROPERTY = "aerofs.mobile.enabled";
-
         private static final int MAX_FRAME_LENGTH = 1 * C.MB;
         private static final int LENGTH_FIELD_SIZE = 4;
 
@@ -258,8 +256,7 @@ public class MobileService implements IMobileService
 
         public static boolean isEnabled()
         {
-//            return Boolean.getBoolean(PROPERTY) && L.get().isStaging();
-            return L.get().isStaging();
+            return L.get().isStaging() || Cfg.user().isAeroFSUser();
         }
 
         private final IIMCExecutor _imce;
