@@ -11,8 +11,12 @@ then
         # this is a hack, and this is the one that's preventing me from running
         # a cron for the staging ejabberd
         echo "killing epmd"
-        EPMD_PID=`ps -ef | grep 'epmd' | grep -v 'grep' | awk '{print $2}'`
+        EPMD_PID=`pgrep epmd`
         kill -9 $EPMD_PID || echo "epmd is dead"
+
+        echo "killing beam"
+        BEAM_PID=`pgrep beam`
+        kill -9 $BEAM_PID || echo "beam is dead"
 
         echo "restarting ejabberd"
         service ejabberd start
