@@ -95,6 +95,7 @@ public class ShProgram implements IProgram, ICallback
         _s.addCommand_(new CmdMkdir());
         _s.addCommand_(new CmdInvitations());
         _s.addCommand_(new CmdAccept());
+        _s.addCommand_(new CmdLeave());
         _s.addCommand_(new CmdInvite());
         _s.addCommand_(new CmdUsers());
         _s.addCommand_(new CmdDelUser());
