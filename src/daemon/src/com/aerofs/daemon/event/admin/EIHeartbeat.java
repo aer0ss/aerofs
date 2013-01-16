@@ -9,7 +9,6 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 
 public class EIHeartbeat extends AbstractEBIMC
 {
-
     public EIHeartbeat(IIMCExecutor imce)
     {
         super(imce);

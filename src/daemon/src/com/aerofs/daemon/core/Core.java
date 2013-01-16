@@ -1,8 +1,13 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.db.CoreDBSetup;
+import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
 import com.aerofs.daemon.core.syncstatus.SyncStatusNotificationSubscriber;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
+import com.aerofs.lib.SystemUtil;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.IModule;
@@ -21,6 +26,7 @@ import com.aerofs.daemon.lib.db.CoreDBCW;
 
 public class Core implements IModule
 {
+    private final FirstLaunch _fl;
     private final CoreDBCW _dbcw;
     private final NativeVersionControl _nvc;
     private final ImmigrantVersionControl _ivc;
@@ -41,6 +47,7 @@ public class Core implements IModule
 
     @Inject
     public Core(
+            FirstLaunch fl,
             TC tc,
             CoreIMCExecutor imce,
             Transports tps,
@@ -61,6 +68,7 @@ public class Core implements IModule
             CoreProgressWatcher cpw)
     {
         _imce2core = imce.imce();
+        _fl = fl;
         _tc = tc;
         _ss = ss;
         _lss = lss;
@@ -132,6 +140,70 @@ public class Core implements IModule
 
         _cpw.start_();
 
+        if (_fl.isFirstLaunch_()) {
+            _tc.start_();
+
+            // start a scan
+            _linker.scan(_fl.onFirstLaunch_(new CoreScanCompletionCallback()));
+        } else {
+            startAll_();
+
+            // because events handling is kicked off once tc starts, and replying
+            // to heart beats requires that everything is ready, tc should start last.
+            _tc.start_();
+        }
+    }
+
+    private class CoreScanCompletionCallback extends ScanCompletionCallback {
+        /**
+         * The start up sequence is sort of messy and the addition of an uninterruptible scan on
+         * first launch brings many issues to the surface:
+         *   * the first scan uses ScanSessionQueue and needs an operational TC
+         *   * the regular startup sequence needs to be done from a non-core thread
+         *   * events enqueued by the regular startup sequence should be delayed until the end of
+         *   said startup sequence
+         *   * the end-of-scan callback is run in a core thread
+         *
+         *   => we need some absurdly contorted gymnastic to release the core lock around a
+         *   temporary thread that executes the regular startup sequence
+         *   => we need to suspend event processing in TC during that time
+         */
+        @Override
+        public void done_()
+        {
+            _tc.suspend_();
+
+            Token tk = _tc.acquire_(Cat.UNLIMITED, "first-launch");
+            try {
+                TCB tcb = null;
+                try {
+                    tcb = tk.pseudoPause_("first-launch");
+
+                    Thread t = new Thread() {
+                        @Override
+                        public void run()
+                        {
+                            startAll_();
+                        }
+                    };
+
+                    t.start();
+                    t.join();
+                } finally {
+                    if (tcb != null) tcb.pseudoResumed_();
+                }
+            } catch (Exception e) {
+                SystemUtil.fatal(e);
+            } finally {
+                tk.reclaim_();
+            }
+
+            _tc.resume_();
+        }
+    }
+
+    private void startAll_()
+    {
         // transports
 
         _tps.start_();
@@ -139,9 +211,6 @@ public class Core implements IModule
 
         // rest of the system
 
-        // because events handling is kicked off once tc starts, and replying
-        // to heart beats requires that everything is ready, tc should start last.
-        _tc.start_();
         _linker.start_();
         _vksub.start_();
         _notifier.start_();

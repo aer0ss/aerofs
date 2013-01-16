@@ -6,6 +6,7 @@ import com.aerofs.daemon.core.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.linker.event.EIMightDeleteNotification;
 import com.aerofs.daemon.core.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.core.linker.notifier.INotifier;
+import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.IEventHandler;
@@ -81,15 +82,7 @@ public class Linker implements ILinker
 
     private void fullScan()
     {
-        // can't use enqueueBlocking here to avoid deadlocks
-        _sched.schedule(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_()
-            {
-                Set<String> root = Collections.singleton(Cfg.absRootAnchor());
-                _ssq.scanImmediately_(root, true);
-            }
-        }, 0);
+        scan(new ScanCompletionCallback());
     }
 
     @Override
@@ -118,6 +111,20 @@ public class Linker implements ILinker
 
         l.info("begin scan");
         fullScan();
+    }
+
+    @Override
+    public void scan(final ScanCompletionCallback callback)
+    {
+        _sched.schedule(new AbstractEBSelfHandling()
+        {
+            @Override
+            public void handle_()
+            {
+                Set<String> root = Collections.singleton(Cfg.absRootAnchor());
+                _ssq.scanImmediately_(root, true, callback);
+            }
+        }, 0);
     }
 
     /**

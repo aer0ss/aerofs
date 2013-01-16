@@ -16,6 +16,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
@@ -132,14 +133,21 @@ public class ScanSessionQueue implements IDumpStatMisc
         _sys = sys;
     }
 
+    public void scanImmediately_(Set<String> absPaths, boolean recursive,
+            @Nonnull ScanCompletionCallback callback)
+    {
+        scanImpl_(new PathKey(absPaths, recursive), 0, callback);
+    }
+
     public void scanImmediately_(Set<String> absPaths, boolean recursive)
     {
-        scanImpl_(new PathKey(absPaths, recursive), 0);
+        scanImpl_(new PathKey(absPaths, recursive), 0, new ScanCompletionCallback());
     }
 
     public void scanAfterDelay_(Set<String> absPaths, boolean recursive)
     {
-        scanImpl_(new PathKey(absPaths, recursive), Param.EXP_RETRY_MIN_DEFAULT);
+        scanImpl_(new PathKey(absPaths, recursive), Param.EXP_RETRY_MIN_DEFAULT,
+                new ScanCompletionCallback());
     }
 
     /**
@@ -147,13 +155,13 @@ public class ScanSessionQueue implements IDumpStatMisc
      *
      * N.B this method is available only to core threads
      */
-    private void scanImpl_(PathKey pk, long delay)
+    private void scanImpl_(PathKey pk, long delay, @Nonnull ScanCompletionCallback callback)
     {
         assert delay >= 0;
         assert _tc.isCoreThread();
 
         long time = enqueue_(pk, delay);
-        schedule_(delay, time);
+        schedule_(delay, time, callback);
     }
 
     /**
@@ -196,7 +204,7 @@ public class ScanSessionQueue implements IDumpStatMisc
      * @param delay relative timeout
      * @param time absolute timeout
      */
-    private void schedule_(long delay, long time)
+    private void schedule_(long delay, long time, final ScanCompletionCallback callback)
     {
         assert delay >= 0;
 
@@ -223,7 +231,7 @@ public class ScanSessionQueue implements IDumpStatMisc
 
                 assert !_ongoing;
                 _ongoing = true;
-                runAll_();
+                runAll_(callback);
             }
         }, delay);
     }
@@ -232,13 +240,20 @@ public class ScanSessionQueue implements IDumpStatMisc
      * The method runs all the scan sessions one after another. It schedules the current session and
      * returns if it can't be run immediately (due to failure, continuation, or required delays).
      */
-    private void runAll_()
+    private void runAll_(final ScanCompletionCallback callback)
     {
         assert _ongoing;
 
         while (true) {
             if (_time2path.isEmpty()) {
                 _ongoing = false;
+                _sched.schedule(new AbstractEBSelfHandling() {
+                    @Override
+                    public void handle_()
+                    {
+                        callback.done_();
+                    }
+                }, 0);
                 return;
             }
 
@@ -247,7 +262,7 @@ public class ScanSessionQueue implements IDumpStatMisc
             if (tk._time > now) {
                 // Reset _ongoing first so schedule_() won't be an no-op.
                 _ongoing = false;
-                schedule_(tk._time - now, tk._time);
+                schedule_(tk._time - now, tk._time, callback);
                 return;
 
             } else {
@@ -260,7 +275,7 @@ public class ScanSessionQueue implements IDumpStatMisc
                 Util.verify(_path2time.remove(pk) == tk);
 
                 final ScanSession ss = _factSS.create_(pk._absPaths, pk._recursive);
-                if (!run_(tk, pk, ss)) return;
+                if (!run_(tk, pk, ss, callback)) return;
             }
         }
     }
@@ -272,7 +287,8 @@ public class ScanSessionQueue implements IDumpStatMisc
      *
      * @return whether the caller should run subsequent sessions in the queue.
      */
-    private boolean run_(final TimeKey tk, final PathKey pk, final ScanSession ss)
+    private boolean run_(final TimeKey tk, final PathKey pk, final ScanSession ss,
+            final ScanCompletionCallback callback)
     {
         try {
             if (ss.scan_()) {
@@ -285,7 +301,7 @@ public class ScanSessionQueue implements IDumpStatMisc
                     {
                         // N.B. run_() doesn't call schedule_() if the scan session fails. It relies
                         // on runAll_() to do the work.
-                        if (run_(tk, pk, ss)) runAll_();
+                        if (run_(tk, pk, ss, callback)) runAll_(callback);
                     }
                 };
 

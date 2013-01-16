@@ -6,8 +6,11 @@ import com.aerofs.lib.Util;
 import com.aerofs.base.async.FutureUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.proto.Ritual.IRitualService;
 import com.aerofs.proto.Ritual.RitualServiceReactor;
+import com.aerofs.proto.Ritual.RitualServiceReactor.ServiceRpcTypes;
+import com.aerofs.proto.RpcService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
@@ -87,6 +90,20 @@ public class RitualServer
                 byte[] message = ((ChannelBuffer) e.getMessage()).array();
 
                 final Channel channel = e.getChannel();
+
+                // OK, this is not pretty but duplicating this line in every method of RitualService
+                // would be a lot worse. Basically we want to make sure callers are aware that a
+                // potentially lengthy first-launch indexing is in progress so that they can convey
+                // the need for patience back to the user. To that end, we all accept incoming calls
+                // and throw a sufficiently specific exception until the indexing succeeds.
+                if (Cfg.db().getBoolean(Key.FIRST_START)) {
+                    RpcService.Payload p = RpcService.Payload.newBuilder()
+                            .setType(ServiceRpcTypes.__ERROR__.ordinal())
+                            .setPayloadData(_service.encodeError(new ExIndexing()).toByteString())
+                            .build();
+                    channel.write(ChannelBuffers.copiedBuffer(p.toByteArray()));
+                    return;
+                }
                 ListenableFuture<byte[]> future = _reactor.react(message);
 
                 FutureUtil.addCallback(future, new FutureCallback<byte[]>()

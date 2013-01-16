@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
+import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.analytics.Analytics;
@@ -58,6 +59,7 @@ public abstract class AbstractTestMightCreate extends AbstractTest
     @Mock InjectableDriver dr;
     @Mock CfgAbsRootAnchor cfgAbsRootAnchor;
     @Mock IDeletionBuffer delBuffer;
+    @Mock SharedFolderTagFileAndIcon sfti;
     @Mock Trans t;
     @Mock Analytics a;
 

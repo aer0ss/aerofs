@@ -85,6 +85,7 @@ public class Exceptions
                                     return new ExDeviceIDAlreadyExists(pb);
         case NO_COMPONENT_WITH_SPECIFIED_VERSION:
                                     return new ExNoComponentWithSpecifiedVersion(pb);
+        case INDEXING:              return new ExIndexing(pb);
         default: assert false : "unsupported PBException type"; return null;
         }
     }
