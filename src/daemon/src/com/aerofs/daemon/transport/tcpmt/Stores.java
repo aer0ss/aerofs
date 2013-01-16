@@ -268,6 +268,10 @@ public class Stores
             removed.removeAll(sids);
         }
 
+        if (l.isDebugEnabled()) {
+            l.debug("send prs d:" + did + " add:" + added + " rem:" + removed);
+        }
+
         if (!added.isEmpty()) {
             // enqueue mustn't fail because we won't enqueue again after
             // arp already added the entry
@@ -283,6 +287,10 @@ public class Stores
 
     void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
     {
+        if (l.isDebugEnabled()) {
+            l.debug("ups add:" + Arrays.toString(sidsAdded) +  " rem:" + Arrays.toString(sidsRemoved));
+        }
+
         final Map<SID, int[]> added = new TreeMap<SID, int[]>();
         for (SID sid : sidsAdded) {
             int[] index = BFSID.HASH.hash(sid);
