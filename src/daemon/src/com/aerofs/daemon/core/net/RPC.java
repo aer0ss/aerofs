@@ -96,7 +96,7 @@ public class RPC
         DigestedMessage reply = me._reply;
         assert reply != null;
 
-        l.debug("got reply");
+        l.debug("got reply " + reply.ep());
 
         if (to != null) to.add_(reply.did());
 
