@@ -187,10 +187,10 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private void callSP_(SID sid, String folderName, List<PBSubjectRolePair> roles,
             String emailNote) throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "spacl");
+        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "sp-share");
         TCB tcb = null;
         try {
-            tcb = tk.pseudoPause_("spacl");
+            tcb = tk.pseudoPause_("sp-share");
             SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
             sp.signInRemote();
             sp.shareFolder(folderName, sid.toPB(), roles, emailNote);
