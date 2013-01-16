@@ -134,7 +134,7 @@ body {
   font-size: 11pt;
   line-height: 16.5pt;
   color: #333333;
-  background-color: #e4f1f9;
+  background-color: #e7eef3;
 }
 a {
   color: #0088cc;
@@ -2924,15 +2924,15 @@ input[type="submit"].btn.btn-mini {
 .navbar .nav .active > a:hover {
   color: #ffffff;
   text-decoration: none;
-  background-color: #e4f1f9;
+  background-color: #e7eef3;
 }
 .navbar .divider-vertical {
   height: 80px;
   width: 1px;
   margin: 0 9px;
   overflow: hidden;
-  background-color: #e4f1f9;
-  border-right: 1px solid #e4f1f9;
+  background-color: #e7eef3;
+  border-right: 1px solid #e7eef3;
 }
 .navbar .nav.pull-right {
   margin-left: 10px;
@@ -2944,7 +2944,7 @@ input[type="submit"].btn.btn-mini {
   padding: 7px 10px;
   margin-left: 5px;
   margin-right: 5px;
-  background-color: #e4f1f9;
+  background-color: #e7eef3;
   -webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 1px 0 rgba(255,255,255,.075);
   -moz-box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 1px 0 rgba(255,255,255,.075);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 1px 0 rgba(255,255,255,.075);
