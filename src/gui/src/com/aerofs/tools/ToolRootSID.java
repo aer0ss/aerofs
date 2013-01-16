@@ -10,7 +10,7 @@ public class ToolRootSID implements ITool {
     public void run(String[] args) throws Exception
     {
         if (args.length == 0) System.out.println(Cfg.rootSID().toStringFormal());
-        for (String arg : args) System.out.println(SID.rootSID(UserID.fromExternal(arg))
+        for (String arg : args) System.out.println("rootsid: " + SID.rootSID(UserID.fromExternal(arg))
                 .toStringFormal());
     }
 
