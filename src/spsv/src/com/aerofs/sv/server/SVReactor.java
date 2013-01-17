@@ -225,32 +225,16 @@ public class SVReactor
         }
 
         // save to db
-        String dc = defect.hasCfgDb() ? defect.getCfgDb() : "(unknown)";
         _transaction.begin();
-        int id = _db.insertDefect(header, client, defect.getAutomatic(), desc, dc,
+        int id = _db.insertDefect(header, client, defect.getAutomatic(), desc, defect.getCfgDb(),
                 javaEnv.toString());
         _transaction.commit();
 
-        // send email to the customer support system
-        int eom = desc.indexOf(Param.END_OF_DEFECT_MESSAGE);
-        if (eom >= 0) {
-            String msg = desc.substring(0, eom);
-            Future<Void> f = EmailSender.sendEmail(header.getUser(),
-                                  header.getUser(),
-                                  SV.SUPPORT_EMAIL_ADDRESS,
-                                  null,
-                                  L.PRODUCT + " Problem # " + id,
-                                  msg,
-                                  null,
-                                  true,
-                                  EmailCategory.SUPPORT);
-            try {
-                f.get(); // block to make sure email reaches support system
-            } catch (Exception e) {
-                // the only type of exception that EmailSender.sendEmail() can throw throw the
-                // executor service is a MessagingException
-                throw new MessagingException(e.getCause().getMessage());
-            }
+        if (!defect.getAutomatic()) {
+            // old clients may not populate the contact email field
+            String contactEmail = defect.hasContactEmail() ? defect.getContactEmail() :
+                    header.getUser();
+            emailCustomerSupport(desc, id, contactEmail);
         }
 
         // create defect file directory
@@ -276,13 +260,31 @@ public class SVReactor
         String body = desc
                 + "\n\n" + header.getVersion() + " on dev " + (header.hasDeviceId() ?
                      BaseUtil.hexEncode(header.getDeviceId().toByteArray()) : "(unknown)")
-                + "\n" + dc
+                + "\n" + defect.getCfgDb()
                 + "\n\n" + javaEnv.toString();
 
         String subject = (defect.getAutomatic() ? "" : "Priority ") + " Defect " +
             id + ": " + header.getUser();
 
         emailSVNotification(subject, body);
+    }
+
+    private void emailCustomerSupport(String desc, int id, String contactEmail)
+            throws MessagingException, UnsupportedEncodingException
+    {
+        int eom = desc.indexOf(Param.END_OF_DEFECT_MESSAGE);
+        String msg =  eom >= 0 ? desc.substring(0, eom) : desc;
+
+        Future<Void> f = EmailSender.sendEmail(contactEmail, contactEmail,
+                SV.SUPPORT_EMAIL_ADDRESS, null, L.PRODUCT + " Problem # " + id, msg, null, true,
+                EmailCategory.SUPPORT);
+        try {
+            f.get(); // block to make sure email reaches support system
+        } catch (Exception e) {
+            // the only type of exception that EmailSender.sendEmail() can throw throw the
+            // executor service is a MessagingException
+            throw new MessagingException(e.getCause().getMessage());
+        }
     }
 
     // in short, we want to take something like:

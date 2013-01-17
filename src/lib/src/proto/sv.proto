@@ -16,7 +16,8 @@ message PBSVCall {
     }
 
     required Type type = 1;
-    optional PBSVHeader header = 2;    // may be absent only for BLACKHOLEs
+    // may be absent for EMAIL calls
+    optional PBSVHeader header = 2;
 
     optional PBSVDefect defect = 3;
     optional PBSVGzippedLog gzipped_log = 5;
@@ -40,11 +41,16 @@ message PBSVHeader {
 message PBSVDefect {
     required bool automatic = 1;
     required string description = 3;
+    optional string cfg_db = 5;
     repeated string java_env_name = 6;
     repeated string java_env_value = 7;
-    optional string cfg_db = 5;
 
-    optional string stacktrace = 8; //for backwards compatability as some old clients may still put stacktrace in description
+    // for backwards compatability as old clients still put stacktrace in description
+    optional string stacktrace = 8;
+
+    // for backwards compatability as old clients don't have this field
+    optional string contact_email = 9;
+
     // followed by zipped logs
 }
 

@@ -19,6 +19,7 @@ import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVCall;
 import com.aerofs.proto.Sv.PBSVCall.Type;
 import com.aerofs.proto.Sv.PBSVDefect;
+import com.aerofs.proto.Sv.PBSVDefect.Builder;
 import com.aerofs.proto.Sv.PBSVEmail;
 import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
@@ -391,10 +392,6 @@ public final class SVClient
         if (cause == null) cause = new Exception(desc); // FIXME (AG): bogus
         String stackTrace = Util.stackTrace2string(cause);
 
-        //
-        // basic defect info
-        //
-
         if (L.get().isStaging()) {
             l.warn("##### DEFECT #####\n" + desc + "\n" + Util.e(cause));
             l.warn("(sv defect sending disabled on staging.)");
@@ -411,6 +408,46 @@ public final class SVClient
             RockLog.newDefect("svclient.test").setMsg(desc).setEx(cause).send();
         }
 
+        StringBuilder sbDesc = createDefectDescription(desc, secret);
+
+        PBSVDefect pbDefect = createPBDefect(isAutoBug, header, cfgDB, rtRoot, stackTrace, sbDesc);
+
+        File defectFilesZip = compressDefectLogs(rtRoot, sendLogs, sendDB, sendHeapDumps,
+                sendUnobfuscatedFileMapping);
+
+        PBSVCall call = PBSVCall
+                .newBuilder()
+                .setType(Type.DEFECT)
+                .setHeader(header)
+                .setDefect(pbDefect)
+                .build();
+
+        l.debug("send defect");
+
+        try {
+            getRpcClient().doRPC(call, defectFilesZip);
+        } finally {
+            if (defectFilesZip != null) {
+                deleteOrOnExit(defectFilesZip);
+            }
+        }
+
+        l.debug("complete send defect");
+
+        //
+        // clean up state locally
+        //
+
+        setLastSentDefect(cause.getMessage(), stackTrace);
+
+        if (Cfg.inited() && sendHeapDumps) deleteOldHeapDumps();
+
+        // FIXME (AG): really? I'm pretty sure we won't be able to do any of this no?
+        if (cause instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
+    }
+
+    private static StringBuilder createDefectDescription(String desc, String secret)
+    {
         StringBuilder sbDesc = new StringBuilder();
 
         if (desc != null) {
@@ -423,12 +460,76 @@ public final class SVClient
             sbDesc.append(secret);
             sbDesc.append("\n");
         }
+        return sbDesc;
+    }
 
-        PBSVDefect.Builder bdDefect = PBSVDefect
+    private static File compressDefectLogs(String rtRoot, final boolean sendLogs,
+            final boolean sendDB, final boolean sendHeapDumps, boolean sendUnobfuscatedFileMapping)
+    {
+        File defectFilesZip = null;
+        if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps || sendUnobfuscatedFileMapping)) {
+            try {
+                // add log files
+                File[] files = new File(rtRoot).listFiles(
+                        new FilenameFilter() {
+                            @Override
+                            public boolean accept(File arg0, String arg1)
+                            {
+                                // Note: the core database consists of three files:
+                                // db, db-wal, and db-shm.
+                                return (sendLogs && arg1.endsWith(Param.LOG_FILE_EXT))
+                                        ||
+                                        (sendDB && (arg1.startsWith(Param.OBF_CORE_DATABASE) ||
+                                                            arg1.endsWith("wal")        ||
+                                                            arg1.endsWith("shm")))
+                                        ||
+                                        (sendHeapDumps && arg1.endsWith(Param.HPROF_FILE_EXT));
+                            }
+                        });
+
+                if (files == null) {
+                    l.error("rtroot not found");
+                    files = new File[0];
+                }
+
+                if (sendUnobfuscatedFileMapping) {
+                    // Send base64encoded(utf8 encoded <filename>)> crc32(<filename>) mapping.
+                    File nameMap = createNameMapFile();
+                    if (nameMap != null) {
+                        files = Arrays.copyOf(files, files.length + 1);
+                        files[files.length - 1] = nameMap;
+                    }
+                }
+
+                l.debug("compressing " + files.length + " logs/db/hprof files");
+
+                OutputStream os = null;
+                try {
+                    defectFilesZip = File.createTempFile("$$$", "zip");
+                    os = new FileOutputStream(defectFilesZip);
+                    compress(files, os);
+                } finally {
+                    if (os != null) os.close();
+                }
+            } catch (Throwable e) {
+                l.error("compress defect logs, ignore: " + Util.e(e));
+            }
+        }
+        return defectFilesZip;
+    }
+
+    private static PBSVDefect createPBDefect(boolean isAutoBug, PBSVHeader header,
+            Map<Key, String> cfgDB, String rtRoot, String stackTrace, StringBuilder sbDesc)
+    {
+        String contactEmail = L.get().isMultiuser() ? cfgDB.get(Key.MULTIUSER_CONTACT_EMAIL) :
+                header.getUser();
+
+        Builder bdDefect = PBSVDefect
                 .newBuilder()
                 .setAutomatic(isAutoBug)
                 .setDescription(sbDesc.toString())
-                .setStacktrace(stackTrace);
+                .setStacktrace(stackTrace)
+                .setContactEmail(contactEmail);
 
         try {
             bdDefect.addJavaEnvName("os full name");
@@ -526,101 +627,7 @@ public final class SVClient
         }
         bdDefect.setCfgDb(sbCfgDB.toString());
 
-        //
-        // zip defect logs
-        //
-
-        File defectFilesZip = null;
-        if (Cfg.inited() && Cfg.useArchive() && (sendLogs || sendDB || sendHeapDumps || sendUnobfuscatedFileMapping)) {
-            try {
-                // add log files
-                File[] files = new File(rtRoot).listFiles(
-                        new FilenameFilter() {
-                            @Override
-                            public boolean accept(File arg0, String arg1)
-                            {
-                                // Note: the core database consists of three files:
-                                // db, db-wal, and db-shm.
-                                return (sendLogs && arg1.endsWith(Param.LOG_FILE_EXT))
-                                        ||
-                                        (sendDB && (arg1.startsWith(Param.OBF_CORE_DATABASE) ||
-                                                            arg1.endsWith("wal")        ||
-                                                            arg1.endsWith("shm")))
-                                        ||
-                                        (sendHeapDumps && arg1.endsWith(Param.HPROF_FILE_EXT));
-                            }
-                        });
-
-                if (files == null) {
-                    l.error("rtroot not found");
-                    files = new File[0];
-                }
-
-                if (sendUnobfuscatedFileMapping) {
-                    // Send base64encoded(utf8 encoded <filename>)> crc32(<filename>) mapping.
-                    File nameMap = createNameMapFile();
-                    if (nameMap != null) {
-                        files = Arrays.copyOf(files, files.length + 1);
-                        files[files.length - 1] = nameMap;
-                    }
-                }
-
-                l.debug("compressing " + files.length + " logs/db/hprof files");
-
-                OutputStream os = null;
-                try {
-                    defectFilesZip = File.createTempFile("$$$", "zip");
-                    os = new FileOutputStream(defectFilesZip);
-                    compress(files, os);
-                } finally {
-                    if (os != null) os.close();
-                }
-            } catch (Throwable e) {
-                l.error("compress defect logs, ignore: " + Util.e(e));
-            }
-        }
-
-        //
-        // construct the defect report
-        //
-
-        PBSVCall call = PBSVCall
-                .newBuilder()
-                .setType(Type.DEFECT)
-                .setHeader(header)
-                .setDefect(bdDefect)
-                .build();
-
-        //
-        // make the rpc call
-        //
-
-        l.debug("send defect");
-
-        try {
-            getRpcClient().doRPC(call, defectFilesZip);
-        } finally {
-            if (defectFilesZip != null) {
-                deleteOrOnExit(defectFilesZip);
-            }
-        }
-
-        l.debug("complete send defect");
-
-        //
-        // clean up state locally
-        //
-
-        setLastSentDefect(cause.getMessage(), stackTrace);
-
-        if (Cfg.inited()) {
-            if (sendHeapDumps) {
-                deleteOldHeapDumps();
-            }
-        }
-
-        // FIXME (AG): really? I'm pretty sure we won't be able to do any of this no?
-        if (cause instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
+        return bdDefect.build();
     }
 
     //-------------------------------------------------------------------------

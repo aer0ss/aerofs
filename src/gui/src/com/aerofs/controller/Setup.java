@@ -257,6 +257,8 @@ class Setup
         signIn(tsUserId, tsScrypted, tsSP);
 
         setupCommon(tsDID, deviceName, rootAnchorPath, tsSP);
+
+        Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, userID.toString());
     }
 
     private void setupCommon(DID did, String deviceName, String rootAnchorPath, SPBlockingClient sp)
