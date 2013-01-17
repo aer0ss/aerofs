@@ -25,7 +25,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     {
         // Create a new organization (name doesn't matter). The session user will now be an admin
         // of this new organization.
-        service.addOrganization(_organizationName);
+        service.addOrganization(_organizationName, null, null, null);
     }
 
     private void sendInvitation(UserID userID)

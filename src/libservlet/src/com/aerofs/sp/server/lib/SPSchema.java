@@ -17,9 +17,14 @@ public final class SPSchema
             C_USER_SIGNUP_INVITATIONS_QUOTA = "u_storeless_invites_quota",
             C_USER_ACL_EPOCH                = "u_acl_epoch",
 
-            T_ORG                           = "sp_organization",
-            C_ORG_ID                        = "o_id",
-            C_ORG_NAME                      = "o_name",
+            // (eric) made the columns match the SQL names here, easier to autocomplete in IDE
+            // when the prefix used here matches that in the SQL schema
+            T_ORGANIZATION                  = "sp_organization",
+            C_O_ID                          = "o_id",
+            C_O_NAME                        = "o_name",
+            C_O_USER_COUNT                  = "o_user_count",
+            C_O_CONTACT_PHONE               = "o_contact_phone",
+            C_O_STRIPE_CUSTOMER_ID          = "o_stripe_customer_id",
 
             T_OI                            = "sp_organization_invite",
             C_OI_INVITER                    = "m_from",

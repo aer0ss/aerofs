@@ -101,7 +101,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
         shareAndJoinFolder(USER_1, TEST_SID_2, USER_3, Role.EDITOR);
 
         // add a new org so user 1 can haz permissions to list folders
-        service.addOrganization("test org");
+        service.addOrganization("test org", null, null, null);
 
         return service.listSharedFolders(100, 0).get().getSharedFoldersList();
     }

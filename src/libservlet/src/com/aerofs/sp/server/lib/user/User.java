@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -32,6 +33,7 @@ import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -318,17 +320,12 @@ public class User
      *
      * @throws ExNoPerm if the user is a non-admin in a non-default organization
      */
-    public Set<UserID> addAndMoveToOrganization(String orgName)
+    public Set<UserID> addAndMoveToOrganization(final String organizationName, final Integer organizationSize,
+            final String organizationPhone, final StripeCustomerID stripeCustomer)
             throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException
     {
-        // TODO (WW) move permission check to the upper layer?
-
-        // only users in the default organization or admins can add organizations.
-        if (!getOrganization().isDefault() && getLevel() != AuthorizationLevel.ADMIN) {
-            throw new ExNoPerm("you have no permission to create new teams");
-        }
-
-        Organization org = _f._factOrg.save(orgName);
+        Organization org = _f._factOrg.save(organizationName, organizationSize, organizationPhone,
+                stripeCustomer);
         setLevel(AuthorizationLevel.ADMIN);
         return setOrganization(org);
     }

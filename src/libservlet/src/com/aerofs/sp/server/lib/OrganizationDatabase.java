@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.lib;
 
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -19,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,13 +34,16 @@ import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_STORE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_ORG_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_ORG_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_NAME;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_CONTACT_PHONE;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_STRIPE_CUSTOMER_ID;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_USER_COUNT;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
-import static com.aerofs.sp.server.lib.SPSchema.T_ORG;
+import static com.aerofs.sp.server.lib.SPSchema.T_ORGANIZATION;
 import static com.aerofs.sp.server.lib.SPSchema.T_USER;
 
 /**
@@ -54,14 +59,19 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     /**
      * @throws ExAlreadyExist if the organization ID already exists
      */
-    public void insert(OrganizationID orgID, String name)
+    public void insert(OrganizationID organizationId, String organizationName,
+            Integer organizationSize, String organizationPhone, StripeCustomerID stripeCustomer)
             throws SQLException, ExAlreadyExist
     {
         try {
-            PreparedStatement ps = prepareStatement(DBUtil.insert(T_ORG, C_ORG_ID, C_ORG_NAME));
+            PreparedStatement ps = prepareStatement(DBUtil.insert(T_ORGANIZATION, C_O_ID, C_O_NAME,
+                    C_O_USER_COUNT, C_O_CONTACT_PHONE, C_O_STRIPE_CUSTOMER_ID));
 
-            ps.setInt(1, orgID.getInt());
-            ps.setString(2, name);
+            ps.setInt(1, organizationId.getInt());
+            ps.setString(2, organizationName);
+            ps.setInt(3, organizationSize);
+            ps.setString(4, organizationPhone);
+            ps.setString(5, stripeCustomer.getID());
             ps.executeUpdate();
         } catch (SQLException e) {
             throwOnConstraintViolation(e, "organization ID already exists");
@@ -69,10 +79,27 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
+    @Nullable
+    public StripeCustomerID getStripeCustomerID(final OrganizationID orgID) throws SQLException, ExNotFound
+    {
+        final ResultSet rs = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID);
+
+        // For clarity, the SQL query that I'm trying to build/execute:
+        //   select o_stripe_customer_id from sp_organization where o_id=?
+
+        try {
+            final String stripeCustomerId = rs.getString(1);
+
+            return StripeCustomerID.newInstance(stripeCustomerId);
+        } finally {
+            rs.close();
+        }
+    }
+
     public @Nonnull String getName(OrganizationID orgID)
             throws SQLException, ExNotFound
     {
-        ResultSet rs = queryOrg(orgID, C_ORG_NAME);
+        ResultSet rs = queryOrg(orgID, C_O_NAME);
         try {
             return rs.getString(1);
         } finally {
@@ -84,7 +111,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setName(OrganizationID orgID, String name)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_ORG, C_ORG_ID + "=?", C_ORG_NAME));
+        PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_NAME));
 
         ps.setString(1, name);
         ps.setInt(2, orgID.getInt());
@@ -95,7 +122,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     private ResultSet queryOrg(OrganizationID orgID, String field)
             throws SQLException, ExNotFound
     {
-        PreparedStatement ps = prepareStatement(selectWhere(T_ORG, C_ORG_ID + "=?", field));
+        PreparedStatement ps = prepareStatement(selectWhere(T_ORGANIZATION, C_O_ID + "=?", field));
         ps.setInt(1, orgID.getInt());
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {

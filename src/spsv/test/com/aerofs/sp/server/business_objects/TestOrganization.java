@@ -65,6 +65,6 @@ public class TestOrganization extends AbstractBusinessObjectTest
     private Organization save()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        return factOrg.save("test");
+        return factOrg.save("test", null, null, null);
     }
 }

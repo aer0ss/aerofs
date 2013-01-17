@@ -36,8 +36,8 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     public void setup()
         throws Exception
     {
-        odb.insert(orgId, "test");
-        odb.insert(nonQueriedOrgId, "dummy");
+        odb.insert(orgId, "test", null, null, null);
+        odb.insert(nonQueriedOrgId, "dummy", null, null, null);
 
         setupUsers();
     }

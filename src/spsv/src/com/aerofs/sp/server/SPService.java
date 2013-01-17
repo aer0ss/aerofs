@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
@@ -24,6 +25,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
+import com.aerofs.proto.Sp.GetStripeCustomerIDReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
@@ -453,21 +455,6 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> addOrganization(final String orgName)
-            throws Exception
-    {
-        User user = _sessionUser.get();
-
-        _transaction.begin();
-        Set<UserID> users = user.addAndMoveToOrganization(orgName);
-        // send verkehr notification as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
-        _transaction.commit();
-
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<GetOrganizationInvitationsReply> getOrganizationInvitations()
             throws Exception
     {
@@ -572,10 +559,8 @@ public class SPService implements ISPService
 
         Set<UserID> users;
 
-        // Create the organzation if necessary
-        if (user.getOrganization().isDefault()) {
-            users = user.addAndMoveToOrganization("An Awesome Team");
-        } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
+        if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
+            // users in default organization should always get this
             throw new ExNoPerm();
         } else {
             users = Collections.emptySet();
@@ -1108,6 +1093,77 @@ public class SPService implements ISPService
         _transaction.commit();
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetStripeCustomerIDReply> getStripeCustomerID()
+            throws Exception {
+        final User currentUser = _sessionUser.get();
+
+        try {
+            _transaction.begin();
+
+            if (!currentUser.isAdmin()) {
+                // we should only be requesting the billing information / stripe customer ID for
+                // organization administrators
+                final String msg = "Non-admin requesting Stripe Customer ID, user: " +
+                        currentUser.id() + " organization: " + currentUser.getOrganization();
+                l.info(msg);
+                throw new ExNoPerm(msg);
+            }
+
+            final Organization organization = currentUser.getOrganization();
+            if (organization == null) {
+                // this should never happen, being defensive
+                return createReply(GetStripeCustomerIDReply.getDefaultInstance());
+            }
+
+            final StripeCustomerID stripeCustomerID = organization.getStripeCustomerID();
+            if (stripeCustomerID == null) {
+                return createReply(GetStripeCustomerIDReply.getDefaultInstance());
+            }
+
+            return createReply(GetStripeCustomerIDReply.newBuilder()
+                    .setStripeCustomerId(stripeCustomerID.getID())
+                    .build());
+        } finally {
+            _transaction.commit();
+        }
+    }
+
+    @Override
+    public ListenableFuture<Void> addOrganization(final String organizationName,
+            final Integer organizationSize, final String organizationPhone,
+            final String stripeCustomerID)
+            throws Exception {
+        final User currentUser = _sessionUser.get();
+
+        _transaction.begin();
+
+        if (isPermittedToAddOrUpdateOrganization(currentUser)) {
+            throw new ExNoPerm("you have no permission to create new teams");
+        }
+
+        try {
+            final StripeCustomerID stripeCustomer = StripeCustomerID.newInstance(stripeCustomerID);
+            currentUser.addAndMoveToOrganization(organizationName, organizationSize, organizationPhone, stripeCustomer);
+        } catch (final IllegalArgumentException e) {
+            l.error("Failed to set create organization, organizationName: " + organizationName +
+                    " organizationSize: " + organizationSize + " organizationPhone: " + organizationPhone +
+                    " stripeCustomerID: " + stripeCustomerID, e);
+
+            // contract does not allow specifying cause!?
+            throw new ExBadArgs(e.getMessage());
+        } finally {
+            _transaction.commit();
+        }
+
+        return createVoidReply();
+    }
+
+    private boolean isPermittedToAddOrUpdateOrganization(User user) throws ExNotFound, SQLException
+    {
+        return !user.getOrganization().isDefault() && user.getLevel() != AuthorizationLevel.ADMIN;
     }
 
     @Override

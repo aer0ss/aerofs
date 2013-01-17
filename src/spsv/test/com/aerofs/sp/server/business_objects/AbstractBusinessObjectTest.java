@@ -84,7 +84,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     protected Organization saveOrganization()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        return factOrg.save("test org");
+        return factOrg.save("test org", null, null, null);
     }
 
     SharedFolder newSharedFolder()

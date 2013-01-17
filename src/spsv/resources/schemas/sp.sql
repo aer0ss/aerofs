@@ -4,6 +4,12 @@ CREATE TABLE `sp_organization` (
   `o_id` INTEGER NOT NULL, -- corresponding Java type: OrganizationID
   `o_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- organization friendly name, displayed to the user.
                                               -- May include spaces and all.
+  `o_size` INTEGER, -- the organization user count specified when the user created the organization
+  `o_contact_phone` VARCHAR(50), -- trying to leave enough room to handle international phone
+                                 -- numbers we are not doing any very restrained validation
+                                 -- on this input
+  `o_stripe_customer_id` VARCHAR(255),  -- https://answers.stripe.com/questions/what-is-the-max-length-of-ids
+                                        -- There's no well-defined maximum length on IDs, but VARCHAR(255) is certainly sufficient
   PRIMARY KEY (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -25,8 +31,8 @@ CREATE TABLE `sp_acl` (
   `a_pending` BOOLEAN NOT NULL DEFAULT FALSE,
   `a_sharer` VARCHAR(320),
   PRIMARY KEY (`a_sid`,`a_id`),
-  KEY `a_sid` (`a_sid`),
-  KEY `a_id` (`a_id`),
+  INDEX `a_sid` (`a_sid`),
+  INDEX `a_id` (`a_id`),
   CONSTRAINT `a_sid_foreign` FOREIGN KEY (`a_sid`) REFERENCES `sp_shared_folder` (`sf_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1; -- latin1 because a_id is email address
 

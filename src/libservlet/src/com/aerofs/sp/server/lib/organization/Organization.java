@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBSearchUtil;
@@ -62,23 +63,24 @@ public class Organization
         /**
          * Add a new organization as well as its team server account to the DB
          */
-        public Organization save(@Nonnull String name)
+        public Organization save(@Nonnull String organizationName, Integer organizationSize,
+                String organizationPhone, StripeCustomerID stripeCustomer)
                 throws SQLException, ExNoPerm, IOException, ExNotFound
         {
             while (true) {
                 // Use a random ID only to prevent competitors from figuring out total number of
                 // orgs. It is NOT a security measure.
-                OrganizationID orgID = new OrganizationID(Util.rand().nextInt());
+                OrganizationID organizationID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _db.insert(orgID, name);
-                    Organization org = create(orgID);
+                    _db.insert(organizationID, organizationName, organizationSize, organizationPhone, stripeCustomer);
+                    Organization org = create(organizationID);
                     saveTeamServerUser(org);
                     l.info(org + " created");
                     return org;
                 } catch (ExAlreadyExist e) {
                     // Ideally we should use return value rather than exceptions on expected
                     // conditions.
-                    l.info("duplicate ord id " + orgID + ". try a new one.");
+                    l.info("duplicate organization id " + organizationID + ". trying a new one.");
                 }
             }
         }
@@ -238,5 +240,14 @@ public class Organization
             builder.add(_f._factSharedFolder.create(sid));
         }
         return builder.build();
+    }
+
+    /**
+     * Gets the Stripe Customer ID used to make Stripe API calls
+     */
+    @Nullable
+    public StripeCustomerID getStripeCustomerID() throws SQLException, ExNotFound
+    {
+        return _f._db.getStripeCustomerID(_id);
     }
 }

@@ -34,33 +34,11 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
         user = sessionUser.get();
     }
 
-    @Test
-    public void shouldCreateOrgIfUserIsInDefaultOrg()
-            throws Exception
-    {
-        // make sure the user is set up properly
-        trans.begin();
-        assertTrue(user.getOrganization().isDefault());
-        trans.commit();
-
-        getTeamServerUserID();
-        verify(odb).insert(any(OrganizationID.class), anyString());
-    }
-
-    @Test
-    public void shouldCreateUserIDThatIsConsistentWithOrganizationID()
-            throws Exception
-    {
-        UserID tsUserID = getTeamServerUserID();
-        verify(odb).insert(capOrganizationID.capture(), anyString());
-        assertEquals(capOrganizationID.getValue().toTeamServerUserID(), tsUserID);
-    }
-
     @Test(expected = ExNoPerm.class)
     public void shouldThrowIfUserIsNonAdminInNonDefaultOrg()
             throws Exception
     {
-        service.addOrganization("test");
+        service.addOrganization("test", null, null, null);
 
         trans.begin();
         user.setLevel(AuthorizationLevel.USER);

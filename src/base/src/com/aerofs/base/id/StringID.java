@@ -13,6 +13,10 @@ public class StringID implements Comparable<StringID>
         _i = i;
     }
 
+    public String getID() {
+        return _i;
+    }
+
     @Override
     public int compareTo(StringID arg0)
     {

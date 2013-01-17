@@ -24,7 +24,7 @@ public class TestSP_OrganizationPreferences extends AbstractSPTest
         String oldName = "hahaha";
         String newName = "hohoho";
 
-        service.addOrganization(oldName);
+        service.addOrganization(oldName, null, null, null);
 
         assertEquals(service.getOrgPreferences().get().getOrganizationName(), oldName);
 

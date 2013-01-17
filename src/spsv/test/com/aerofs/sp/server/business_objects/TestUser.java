@@ -132,7 +132,7 @@ public class TestUser extends AbstractBusinessObjectTest
         Organization org = saveOrganization();
         User user = newUser();
         saveUser(user, org);
-        user.addAndMoveToOrganization("test");
+        user.addAndMoveToOrganization("test", null, null, null);
     }
 
     @Test
@@ -141,7 +141,7 @@ public class TestUser extends AbstractBusinessObjectTest
     {
         User user = newUser();
         saveUser(user, factOrg.getDefault());
-        user.addAndMoveToOrganization("test");
+        user.addAndMoveToOrganization("test", null, null, null);
 
         assertFalse(user.getOrganization().isDefault());
         assertEquals(user.getLevel(), AuthorizationLevel.ADMIN);

@@ -28,7 +28,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
             throws Exception
     {
         // switch user_1 to a different organization
-        service.addOrganization("test");
+        service.addOrganization("test", null, null, "__TEST__stripe_customer_id");
         assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
 
         try {

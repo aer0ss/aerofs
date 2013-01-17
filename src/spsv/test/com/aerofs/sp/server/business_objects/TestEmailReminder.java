@@ -69,7 +69,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
-        odb.insert(ORG_ID, "Test Organization");
+        odb.insert(ORG_ID, "Test Organization", null, null, null);
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,
