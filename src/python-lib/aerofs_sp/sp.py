@@ -36,6 +36,15 @@ class _SPServiceWrapper(object):
             sids.append(s.store_id)
         return sids
 
+    def list_shared_folders_with_names(self):
+        sids = self.list_shared_folders()
+        names = self._service.get_shared_folder_names(sids)
+        zipped_array = zip(sids, names.folder_name)
+        shared_folders = [
+            {"name":name, "sid":sid.encode("hex")} for (sid, name) in zipped_array
+        ]
+        return shared_folders
+
     def leave_shared_folder(self, sid):
         self._service.leave_shared_folder(sid)
 
