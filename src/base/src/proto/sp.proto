@@ -519,6 +519,18 @@ service SPService {
      * Required Auth Level: user
      */
     rpc ExtendSession(Void) returns(Void);
+
+    /**
+     * TODO (downtime) move this under GetDeviceInfo.
+     *
+     * List all user devices (used in the admin panel device management page).
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExBadArgs: if the offset is negative or max results is too large.
+     */
+    rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 }
 
 message SignUpCall {
@@ -680,35 +692,35 @@ message ListUsersCall {
     optional string search = 1;
 
     // Maximum number of users returned on one page.
-    // The SP server should enforce a reasonable upper bound for this parameter (like 1000)
+    // The SP server should enforce a reasonable upper bound for this parameter (like 1000).
     required int32 max_results = 2;
 
-    // Offset to start retrieving the results
+    // Offset to start retrieving the results.
     required int32 offset = 3;
 }
 
 message ListUsersReply {
-    // A subset of the users. There will be at most 'max_results' users
+    // A subset of the users. There will be at most 'max_results' users.
     repeated PBUser users = 1;
 
-    // Total number of users in the database
+    // Total number of users in the database.
     required int32 total_count = 2;
 
-    // Total number of users in the database that match the 'search' parameter
+    // Total number of users in the database that match the 'search' parameter.
     required int32 filtered_count = 3;
 }
 
 message ListUsersAuthCall {
-    // Return only admins whose name match this string. Empty string matches all admins
+    // Return only admins whose name match this string. Empty string matches all admins.
     optional string search = 1;
 
-    // Authentication level of the users that we want to fetch
+    // Authentication level of the users that we want to fetch.
     required PBAuthorizationLevel auth_level = 2;
 
-    // Maximum number of admins returned on one page
+    // Maximum number of admins returned on one page.
     required int32 max_results = 3;
 
-    // Offet to start retrieving the results
+    // Offet to start retrieving the results.
     required int32 offset = 4;
 }
 
@@ -848,7 +860,39 @@ message GetSharedFolderNamesReply {
     repeated string folder_name = 1;
 }
 
-// TODO (downtime) move this under AcceptOrganizationInvitationCall
+// TODO (downtime) move this under AcceptOrganizationInvitationCall.
 message IgnoreOrganizationInvitationCall {
     required int32 organization_id = 1;
+}
+
+// TODO (downtime) move these under the GetDeviceInfo messages.
+message ListUserDevicesCall {
+    // Return only users whose name match this string. Empty string matches all users.
+    required string search = 1;
+
+    // Maximum number of users returned on one page.
+    required int32 max_results = 2;
+
+    // Offset to start retrieving the results.
+    required int32 offset = 3;
+}
+
+message ListUserDevicesReply {
+
+    message PBDeviceInfo {
+        // These fields are absent if:
+        // 1) the device ID is not found, or
+        // 2) the caller is not sharing any folder with the device owner.
+        required string device_name = 1;
+        required string os = 2;
+    }
+
+    // List of device names.
+    repeated PBDeviceInfo device_info = 1;
+
+    // Total number of users in the database.
+    required int32 total_count = 2;
+
+    // Total number of users in the database that match the 'search' parameter.
+    required int32 filtered_count = 3;
 }

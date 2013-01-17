@@ -1,5 +1,6 @@
 package com.aerofs.sp.server;
 
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
@@ -25,6 +26,7 @@ import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
 import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
+import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -39,6 +41,7 @@ import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
+import com.aerofs.sp.server.lib.user.User.DevicesAndQueryCount;
 import com.aerofs.sp.server.lib.user.User.PendingSharedFolder;
 import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionExtender;
@@ -53,7 +56,6 @@ import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Sp.GetDeviceInfoReply;
-import com.aerofs.proto.Sp.GetDeviceInfoReply.PBDeviceInfo;
 import com.aerofs.proto.Sp.GetHeartInvitesQuotaReply;
 import com.aerofs.proto.Sp.GetOrgPreferencesReply;
 import com.aerofs.proto.Sp.GetPreferencesReply;
@@ -286,8 +288,8 @@ public class SPService implements ISPService
         UsersAndQueryCount listAndCount = org.listUsers(search, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(users2PBUserLists(listAndCount._users))
-                .setFilteredCount(listAndCount._count)
+                .addAllUsers(users2PBUserLists(listAndCount .users()))
+                .setFilteredCount(listAndCount.count())
                 .setTotalCount(org.totalUserCount())
                 .build();
 
@@ -312,8 +314,8 @@ public class SPService implements ISPService
         UsersAndQueryCount listAndCount = org.listUsersAuth(search, level, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(users2PBUserLists(listAndCount._users))
-                .setFilteredCount(listAndCount._count)
+                .addAllUsers(users2PBUserLists(listAndCount.users()))
+                .setFilteredCount(listAndCount.count())
                 .setTotalCount(org.totalUserCount(level))
                 .build();
 
@@ -1445,7 +1447,7 @@ public class SPService implements ISPService
 
         User user = _sessionUser.get();
 
-        ImmutableList<Device> userDevices = user.getDevices();
+        ImmutableList<Device> userDevices = user.listDevices();
         ImmutableList.Builder<Long> serials = ImmutableList.builder();
 
         for (Device device : userDevices) {
@@ -1479,7 +1481,8 @@ public class SPService implements ISPService
         return createVoidReply();
     }
 
-    private static final PBDeviceInfo EMPTY_DEVICE_INFO = PBDeviceInfo.newBuilder().build();
+    private static final GetDeviceInfoReply.PBDeviceInfo EMPTY_DEVICE_INFO =
+            GetDeviceInfoReply.PBDeviceInfo.newBuilder().build();
 
     /**
      * Given a list of device IDs, this call will return a list of device info objects of the same
@@ -1502,7 +1505,7 @@ public class SPService implements ISPService
             // If there is a permission error or the device does not exist, simply provide an empty
             // device info object.
             if (info != null && sharedUsers.contains(info._ownerID)) {
-                builder.addDeviceInfo(PBDeviceInfo.newBuilder()
+                builder.addDeviceInfo(GetDeviceInfoReply.PBDeviceInfo.newBuilder()
                     .setDeviceName(info._deviceName)
                     .setOwner(PBUser.newBuilder()
                         .setUserEmail(info._ownerID.toString())
@@ -1515,6 +1518,32 @@ public class SPService implements ISPService
 
         _transaction.commit();
 
+        return createReply(builder.build());
+    }
+
+    @Override
+    public ListenableFuture<ListUserDevicesReply> listUserDevices(String search, Integer maxResults,
+            Integer offset)
+            throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExBadArgs
+    {
+        l.debug("LUD: search=" + search + " max=" + maxResults + " offset=" + offset);
+
+        _transaction.begin();
+        ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
+
+        User user = _sessionUser.get();
+        DevicesAndQueryCount devicesAndQueryCount= user.listDevices(search, maxResults, offset);
+
+        builder.setTotalCount(user.totalDeviceCount());
+        builder.setFilteredCount(devicesAndQueryCount.count());
+
+        for (Device device : devicesAndQueryCount.devices()) {
+            builder.addDeviceInfo(ListUserDevicesReply.PBDeviceInfo.newBuilder()
+                    .setDeviceName(device.getName())
+                    .setOs(device.getOS()));
+        }
+
+        _transaction.commit();
         return createReply(builder.build());
     }
 

@@ -163,8 +163,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement psSLU = prepareStatement("select " + C_USER_ID + " from " + T_USER +
-                " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " + andNotTeamServer() +
-                " order by " + C_USER_ID + " limit ? offset ?");
+                " where " + C_USER_ORG_ID + "=? and " + C_USER_ID + " like ? " +
+                andNotTeamServer() + " order by " + C_USER_ID + " limit ? offset ?");
 
         psSLU.setInt(1, orgId.getInt());
         psSLU.setString(2, "%" + search + "%");

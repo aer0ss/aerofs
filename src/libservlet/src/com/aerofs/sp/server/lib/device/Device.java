@@ -99,6 +99,12 @@ public class Device
         return _f._db.getName(_id);
     }
 
+    public String getOS()
+    {
+        // TODO (MP) need a dput to collect os info...
+        return "(unknown)";
+    }
+
     public Certificate getCertificate()
             throws ExNotFound, SQLException
     {
