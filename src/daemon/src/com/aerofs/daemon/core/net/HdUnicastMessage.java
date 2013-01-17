@@ -5,6 +5,7 @@ import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EIUnicastMessage;
 import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.sv.client.SVClient;
@@ -18,6 +19,7 @@ public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
 {
     private static final Logger l = Util.l(HdUnicastMessage.class);
 
+    private final FrequentDefectSender _fds = new FrequentDefectSender();
     private final UnicastInputOutputStack _stack;
     private final IMapSID2SIndex _sid2sidx;
 
@@ -40,7 +42,7 @@ public class HdUnicastMessage implements IEventHandler<EIUnicastMessage>
             // causing the remote peer to timeout and start pulsing
             //
 
-            SVClient.logSendDefectAsync(true, "no local sidx for incoming uc sid:" + ev._sid);
+            _fds.logSendAsync("no local sidx for incoming uc sid:" + ev._sid);
         } else {
             PeerContext pc = new PeerContext(ev._ep, sidx);
             RawMessage r = new RawMessage(ev.is(), ev.wireLength());
