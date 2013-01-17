@@ -4,8 +4,7 @@
 
 package com.aerofs.lib.cfg;
 
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.ssl.AbstractKeyManagersProvider;
+import com.aerofs.base.ssl.AbstractKeyManagersProvider;
 
 import java.io.IOException;
 import java.security.PrivateKey;

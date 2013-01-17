@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.lib.ssl;
+package com.aerofs.base.ssl;
 
 import java.io.IOException;
 import java.security.PrivateKey;
