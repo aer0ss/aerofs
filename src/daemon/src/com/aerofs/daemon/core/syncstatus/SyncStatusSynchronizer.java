@@ -4,25 +4,23 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.persistency.PersistentQueueDriver;
+import com.aerofs.daemon.core.persistency.IPersistentQueue;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.syncstatus.SyncStatusConnection.ExSignIn;
-import com.aerofs.daemon.core.tc.Cat;
-import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.ExponentialRetry;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
@@ -98,8 +96,6 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
-    private final TC _tc;
-    private final CoreQueue _q;
     private final TransManager _tm;
     private final ISyncStatusDatabase _ssdb;
     private final SyncStatusConnection _ssc;
@@ -109,6 +105,76 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     private final MapSIndex2DeviceBitMap _sidx2dbm;
     private final DirectoryService _ds;
     private final ExponentialRetry _er;
+    private final CoreScheduler _sched;
+
+    class SVHBatch
+    {
+        final long _lastIndex;
+        final long _nextIndex;
+        final Map<SIndex, Set<OID>> _soids;
+        SVHBatch(long last, long next, Map<SIndex, Set<OID>> soids)
+        {
+            _lastIndex = last;
+            _nextIndex = next;
+            _soids = soids;
+        }
+    }
+
+    /**
+     * SSPQ stands for SyncStatusPushQueue. It is a persistent queue of setVersionHash RPCs
+     */
+    private class SSPQ implements IPersistentQueue<SOID, SVHBatch>
+    {
+        private final long PUSH_DELAY = 500; // 500ms wait between two pushes
+
+        @Override
+        public void enqueue_(SOID soid, Trans t) throws SQLException
+        {
+            _ssdb.insertModifiedObject_(soid, t);
+        }
+
+        @Override
+        public SVHBatch front_() throws SQLException
+        {
+            long lastIndex = _ssdb.getPushEpoch_();
+            Map<SIndex, Set<OID>> soids = Maps.newHashMap();
+            long nextIndex = getModifiedObjectBatch_(lastIndex, soids);
+            return soids.isEmpty() ? null : new SVHBatch(lastIndex, nextIndex, soids);
+        }
+
+        @Override
+        public boolean process_(SVHBatch batch, Token tk) throws Exception
+        {
+            try {
+                // push version hashes to server
+                pushVersionHashBatch_(batch._soids, batch._lastIndex, batch._nextIndex, tk);
+            } catch (final ExSignIn e) {
+                // sign-in handling needs to be done with core lock held
+                onSignIn_(e._epoch);
+                // immediately retry making the call now that we're signed-in
+                return false;
+            }
+
+            // TODO(hugues): remove this throttling code at some point
+            TCB tcb = tk.pseudoPause_("svh-throttle");
+            try {
+                Thread.sleep(PUSH_DELAY);
+            } finally {
+                tcb.pseudoResumed_();
+            }
+
+            return true;
+        }
+
+        @Override
+        public void dequeue_(SVHBatch batch, Trans t) throws SQLException
+        {
+            // update push epoch
+            _ssdb.setPushEpoch_(batch._nextIndex, t);
+        }
+    }
+
+    private final PersistentQueueDriver<SOID, SVHBatch> _pq;
 
     public static interface IListener
     {
@@ -118,26 +184,26 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     private final List<IListener> _listeners = Lists.newArrayList();
 
     @Inject
-    public SyncStatusSynchronizer(CoreQueue q, CoreScheduler sched, TC tc, TransManager tm,
+    public SyncStatusSynchronizer(TransManager tm, CoreScheduler sched,
             DirectoryService ds, SyncStatusConnection ssc, ISyncStatusDatabase ssdb,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, MapSIndex2DeviceBitMap sidx2dbm,
-            NativeVersionControl nvc)
+            NativeVersionControl nvc, PersistentQueueDriver.Factory f)
     {
-        _q = q;
-        _tc = tc;
         _tm = tm;
         _ds = ds;
         _ssc = ssc;
         _ssdb = ssdb;
         _nvc = nvc;
+        _sched = sched;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
+        _pq = f.newDriver(new SSPQ());
 
         nvc.addListener_(this);
 
-        scheduleStartup();
+        _pq.scheduleScan_();
     }
 
     public void addListener_(IListener listener)
@@ -181,33 +247,17 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
         }
     }
 
-    private void scheduleStartup()
-    {
-        _q.enqueueBlocking(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_()
-            {
-                _er.retry("SyncStatStart", new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        scanPushQueue_();
-                        return null;
-                    }
-                });
-            }
-        }, Prio.LO);
-    }
-
     /**
      * Schedule a pull from the sync status server with exponential retry
      */
     private long _pullSeq = 0;
     void schedulePull_()
     {
-        schedule_(new AbstractEBSelfHandling() {
+        _sched.schedule(new AbstractEBSelfHandling()
+        {
             @Override
-            public void handle_() {
+            public void handle_()
+            {
                 // avoid a pile-up of failing pulls in exponential retry
                 final long seq = ++_pullSeq;
 
@@ -215,7 +265,8 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 _er.retry("SyncStatPull", new Callable<Void>()
                 {
                     @Override
-                    public Void call() throws Exception
+                    public Void call()
+                            throws Exception
                     {
                         if (seq != _pullSeq) return null;
                         pullSyncStatus_();
@@ -223,32 +274,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                     }
                 });
             }
-        });
-    }
-
-    /**
-     * Schedule a self handling event : try non-blocking enqueue first and on filaure release core
-     * lock and do a blocking enqueue
-     */
-    private void schedule_(AbstractEBSelfHandling eb)
-    {
-        // try non-blocking scheduling w/ core lock held
-        if (_q.enqueue_(eb, Prio.LO)) return;
-
-        // fall back on blocking w/o core lock held
-        try {
-            Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatq");
-            TCB tcb = null;
-            try {
-                tcb = tk.pseudoPause_("syncstatq");
-                _q.enqueueBlocking(eb, Prio.LO);
-            } finally {
-                if (tcb != null) tcb.pseudoResumed_();
-                tk.reclaim_();
-            }
-        } catch (Exception e) {
-            l.error("Failed to schedule sync status pull", e);
-        }
+        }, 0);
     }
 
     /**
@@ -269,7 +295,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
             } catch (ExSignIn e) {
                 if (onSignIn_(e._epoch)) {
                     // need to schedule a new scan to resend vh after epoch rollback
-                    scanPushQueue_();
+                    _pq.scheduleScan_();
                 }
                 // immediately retry making the call now that we're signed-in
                 continue;
@@ -399,133 +425,10 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     }
 
     /**
-     * Scans the activity log table and push new version hashes to the server
-     *
-     * Exponential retry in case of failure and automatic "batching" of concurrent scans (new scans
-     * will abort if a scan is already in progress and old failed scans will abort the exponential
-     * retry if a new scan comes in).
-     */
-    private long _scanSeq = 0;
-    private boolean _scanInProgress = false;
-    private void scanPushQueue_()
-    {
-        if (_scanInProgress) return;
-
-        schedule_(new AbstractEBSelfHandling() {
-            @Override
-            public void handle_() {
-                // to avoid unbounded queueing of failing scans when connection to server is lost,
-                // each call added to the exp retry is assigned a sequence number
-                final long _seq = ++_scanSeq;
-
-                // exp retry (w/ forced server reconnect) in case of failure.
-                // ssap == SyncStatActivityPush
-                // TODO(huguesb): reduce latency of retry when connection to server comes back
-                _er.retry("ssap", new Callable<Void>()
-                {
-                    @Override
-                    public Void call() throws Exception
-                    {
-                        if (_scanSeq != _seq) return null;
-                        scanPushQueueInternal_();
-                        return null;
-                    }
-                });
-            }
-        });
-    }
-
-    private boolean _abortScan = false;
-    private void scanPushQueueInternal_() throws Exception
-    {
-        final int PUSH_DELAY = 500; // 500 ms delay.
-
-        // avoid concurrent scans : this method is called with the core lock held
-        // but pushVersionHash releases the core lock during the RPC call so we
-        // need an extra check to avoid concurrent scans.
-        if (_scanInProgress) return;
-        _scanInProgress = true;
-
-        try {
-            boolean firstTimeThroughLoop = true;
-            long lastIndex;
-            long nextIndex = _ssdb.getPushEpoch_();
-            Map<SIndex, Set<OID>> soids = Maps.newHashMap();
-
-            while (true) {
-                // batch DB reads
-                lastIndex = nextIndex;
-                nextIndex = getModifiedObjectBatch_(lastIndex, soids);
-
-                // reached end of activity log
-                if (soids.isEmpty()) break;
-
-                // Delay when sending subsequent batches to prevent high client side cpu.
-                if (!firstTimeThroughLoop)
-                {
-                    Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpause");
-                    TCB tcb = null;
-                    try {
-                        tcb = tk.pseudoPause_("syncstatpause");
-                        Thread.sleep(PUSH_DELAY);
-                    } finally {
-                        if (tcb != null) tcb.pseudoResumed_();
-                        tk.reclaim_();
-                    }
-                }
-
-                firstTimeThroughLoop = false;
-
-                try {
-                    // push version hashes to server
-                    pushVersionHashBatch_(soids, lastIndex, nextIndex);
-
-                    // another RPC got an ExSignIn exception while we were waiting and the push
-                    // epoch was rolled back, we need to restart from the rollback point
-                    if (_abortScan) {
-                        _abortScan = false;
-                        nextIndex = _ssdb.getPushEpoch_();
-                        continue;
-                    }
-                } catch (ExSignIn e) {
-                    // restart scan in case of push epoch rollback
-                    if (onSignIn_(e._epoch)) {
-                        _abortScan = false;
-                        nextIndex = _ssdb.getPushEpoch_();
-                    } else {
-                        nextIndex = lastIndex;
-                    }
-                    // immediately retry making the call now that we're signed-in
-                    continue;
-                }
-
-                // update push epoch
-                setPushEpoch_(nextIndex);
-            }
-        } finally {
-            _scanInProgress = false;
-        }
-    }
-
-    /**
-     * Wrap SyncStatusDatabase.setLastActivityIndex in a transaction
-     */
-    private void setPushEpoch_(long idx) throws SQLException
-    {
-        Trans t = _tm.begin_();
-        try {
-            _ssdb.setPushEpoch_(idx, t);
-            t.commit_();
-        } finally {
-            t.end_();
-        }
-    }
-
-    /**
      * Make the actual SetVersionHash call to the sync status server
      */
     private void pushVersionHashBatch_(Map<SIndex, Set<OID>> soids, long currentEpoch,
-            long nextEpoch) throws Exception
+            long nextEpoch, Token tk) throws Exception
     {
         int i = 0;
         for (Entry<SIndex, Set<OID>> e : soids.entrySet()) {
@@ -549,7 +452,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
             l.debug("vh push: " + sidx + " " + oids.size());
             // only notify the server of the latest client epoch in the last chunk
             long clientEpoch = (++i == soids.size() ? nextEpoch : currentEpoch);
-            _ssc.setVersionHash_(sid, oids, vhs, clientEpoch);
+            _ssc.setVersionHash_(sid, oids, vhs, clientEpoch, tk);
         }
     }
 
@@ -666,7 +569,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                         _ssdb.setPushEpoch_(0, t);
                     }
 
-                    if (_scanInProgress) _abortScan = true;
+                    _pq.restartScan_();
 
                     rollback = true;
                 }
@@ -691,7 +594,6 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
         }
     }
 
-
     private final TransLocal<Set<SOID>> _tlModified = new TransLocal<Set<SOID>>() {
         @Override
         protected Set<SOID> initialValue(Trans t)
@@ -701,13 +603,13 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 @Override
                 public void committing_(Trans t) throws SQLException
                 {
-                    for (SOID soid : set) _ssdb.insertModifiedObject_(soid, t);
+                    for (SOID soid : set) _pq.enqueue_(soid, t);
                 }
 
                 @Override
                 public void committed_()
                 {
-                    scanPushQueue_();
+                    _pq.scheduleScan_();
                 }
             });
             return set;
@@ -750,7 +652,8 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     {}
 
     @Override
-    public void objectContentCreated_(SOKID obj, Path path, Trans t) throws SQLException
+    public void objectContentCreated_(SOKID obj, Path path, Trans t)
+            throws SQLException
     {}
 
     @Override

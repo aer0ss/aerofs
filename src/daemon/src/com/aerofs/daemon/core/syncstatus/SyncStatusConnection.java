@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Single persistent connection to sync status server
@@ -127,19 +128,16 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
     }
 
     /**
-     * Releases the core lock around the setVersionHash RPC call
+     * Releases the core lock around the setVersionHash RPC
      */
-    public void setVersionHash_(SID sid, List<ByteString> oids, List<ByteString> vhs,
-            long clientEpoch) throws Exception
+    void setVersionHash_(SID sid, List<ByteString> oids, List<ByteString> vhs, long clientEpoch,
+            Token tk) throws Exception
     {
-        Token tk = _tc.acquireThrows_(Cat.UNLIMITED, "syncstatpush");
-        TCB tcb = null;
+        TCB tcb = tk.pseudoPause_("svh");
         try {
-            tcb = tk.pseudoPause_("syncstatpush");
             setVersionHash(sid, oids, vhs, clientEpoch);
         } finally {
-            if (tcb != null) tcb.pseudoResumed_();
-            tk.reclaim_();
+            tcb.pseudoResumed_();
         }
     }
 
@@ -148,36 +146,21 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      *
      * NOTE: should not be called with the core lock held
      */
-    public synchronized void setVersionHash(SID sid, List<ByteString> oids, List<ByteString> vhs,
-            long clientEpoch) throws Exception
+    public synchronized void setVersionHash(final SID sid, final List<ByteString> oids,
+            final List<ByteString> vhs, final long clientEpoch) throws Exception
     {
-        int attempts = 0;
-
-        // Use a while loop to avoid code dup and to allow for a single retry when we our session is
-        // expired.
-        while (true) {
-            attempts++;
-            ensureConnected_();
-
-            try {
+        do_(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception
+            {
                 _client.setVersionHash(sid.toPB(), oids, vhs, clientEpoch);
-                notifyOnFirstSuccessfulCall_();
-                return;
-            } catch (ExNoPerm e) {
-                reset_();
-
-                if (attempts > 1) {
-                    throw e;
-                }
-            } catch (Exception e) {
-                reset_();
-                throw e;
+                return null;
             }
-        }
+        });
     }
 
     /**
-     * Releases the core lock around the getSyncStatus RPC call
+     * Releases the core lock around the getSyncStatus RPC
      */
     public GetSyncStatusReply getSyncStatus_(long ssEpoch) throws Exception
     {
@@ -197,7 +180,18 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
      *
      * NOTE: should not be called with the core lock held
      */
-    public synchronized GetSyncStatusReply getSyncStatus(long ssEpoch) throws Exception
+    public synchronized GetSyncStatusReply getSyncStatus(final long ssEpoch) throws Exception
+    {
+        return do_(new Callable<GetSyncStatusReply>() {
+            @Override
+            public GetSyncStatusReply call() throws Exception
+            {
+                return _client.getSyncStatus(ssEpoch);
+            }
+        });
+    }
+
+    private <T> T do_(Callable<T> c) throws Exception
     {
         int attempts = 0;
 
@@ -208,7 +202,7 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
             ensureConnected_();
 
             try {
-                GetSyncStatusReply r = _client.getSyncStatus(ssEpoch);
+                T r = c.call();
                 notifyOnFirstSuccessfulCall_();
                 return r;
             } catch (ExNoPerm e) {
@@ -223,4 +217,5 @@ public class SyncStatusConnection extends AbstractConnectionStatusNotifier
             }
         }
     }
+
 }

@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.mock.logical.MockDS;
+import com.aerofs.daemon.core.persistency.PersistentQueueDriver.Factory;
 import com.aerofs.daemon.core.store.DeviceBitMap;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.tc.Cat;
@@ -23,7 +24,6 @@ import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
 import com.aerofs.daemon.lib.db.SyncStatusDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -57,7 +57,6 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -72,7 +71,6 @@ import java.util.Set;
 public class TestSyncStatusSynchronizer extends AbstractTest
 {
     @Mock Trans t;
-    @Mock CoreQueue q;
     @Mock CoreScheduler sched;
     @Mock TC tc;
     @Mock TCB tcb;
@@ -107,7 +105,8 @@ public class TestSyncStatusSynchronizer extends AbstractTest
     private void createSynchronizer()
     {
         // Create synchronizer with mix of mocks and real objects operating on mock DB
-        sync = new SyncStatusSynchronizer(q, sched, tc, tm, ds, ssc, ssdb, sm, sm, sidx2dbm, nvc);
+        sync = new SyncStatusSynchronizer(tm, sched, ds, ssc, ssdb, sm, sm, sidx2dbm, nvc,
+                new Factory(tc, tm, sched));
     }
 
     private SOID resolve(String s) throws Exception
@@ -164,7 +163,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         for (Entry<SIndex, List<ByteString>> e : chunks.entrySet()) {
             SID sid = sm.get_(e.getKey());
             verify(ssc, times(1)).setVersionHash_(eq(sid), setEq(e.getValue()),
-                    anyListOf(ByteString.class), anyLong());
+                    anyListOf(ByteString.class), anyLong(), any(Token.class));
         }
     }
 
@@ -206,6 +205,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         when(tm.begin_()).thenReturn(t);
 
         // Stub thread control
+        when(tc.acquire_(any(Cat.class), any(String.class))).thenReturn(tk);
         when(tc.acquireThrows_(any(Cat.class), any(String.class))).thenReturn(tk);
         when(tk.pseudoPause_(any(String.class))).thenReturn(tcb);
 
@@ -222,10 +222,7 @@ public class TestSyncStatusSynchronizer extends AbstractTest
                 return true;
             }
         };
-        doAnswer(qa).when(q).enqueueBlocking(any(IEvent.class), any(Prio.class));
-        doAnswer(qa).when(q).enqueueBlocking_(any(IEvent.class), any(Prio.class));
-        doAnswer(qa).when(q).enqueue(any(IEvent.class), any(Prio.class));
-        doAnswer(qa).when(q).enqueue_(any(IEvent.class), any(Prio.class));
+        doAnswer(qa).when(sched).schedule(any(IEvent.class), anyLong());
 
         // update mock MapSIndex2DeviceBitMap reactively
         when(sidx2dbm.addDevice_(any(SIndex.class), any(DID.class), any(Trans.class)))
@@ -487,8 +484,8 @@ public class TestSyncStatusSynchronizer extends AbstractTest
         createSynchronizer();
 
         // check that no version hash is pushed for invalid SOID
-        verify(ssc, never()).setVersionHash_(
-                any(SID.class), anyListOf(ByteString.class), anyListOf(ByteString.class), anyLong());
+        verify(ssc, never()).setVersionHash(any(SID.class), anyListOf(ByteString.class),
+                anyListOf(ByteString.class), anyLong());
 
         // check that push epoch was increased past invalid SOID
         Assert.assertEquals(1, ssdb.getPushEpoch_());

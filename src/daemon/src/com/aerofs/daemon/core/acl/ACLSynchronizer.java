@@ -209,7 +209,7 @@ public class ACLSynchronizer
     {
         Set<SIndex> stores = _lacl.getAccessibleStores_();
 
-        l.info("accessible stores: " + stores);
+        l.debug("accessible stores: " + stores);
 
         _lacl.clear_(t);
 
@@ -224,7 +224,6 @@ public class ACLSynchronizer
 
             // create a new SIndex if needed
             SIndex sidx = getOrCreateSIndex_(sid, t);
-            l.info(" acl for " + sidx);
 
             if (!stores.contains(sidx) && !noAutoJoin) {
                 // not known and accessible: auto-join

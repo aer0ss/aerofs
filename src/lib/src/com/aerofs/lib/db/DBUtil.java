@@ -89,7 +89,6 @@ public class DBUtil
         sb.append(')');
 
         return sb;
-
     }
 
     /**
