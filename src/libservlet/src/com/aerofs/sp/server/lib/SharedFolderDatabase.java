@@ -16,7 +16,6 @@ import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -86,23 +85,23 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void insertACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
+    public void insertMemberACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
-        insertACLImpl(sid, pairs, sharer, false);
+        insertACL(sid, pairs, sharer, false);
     }
 
     public void insertPendingACL(SID sid, UserID sharer, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExAlreadyExist
     {
-        insertACLImpl(sid, pairs, sharer, true);
+        insertACL(sid, pairs, sharer, true);
     }
 
-    private void insertACLImpl(SID sid, Iterable<SubjectRolePair> pairs, UserID sharer,
-            boolean pending) throws SQLException, ExAlreadyExist
+    private void insertACL(SID sid, Iterable<SubjectRolePair> pairs, UserID sharer, boolean pending)
+            throws SQLException, ExAlreadyExist
     {
-        PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC,
-                C_AC_STORE_ID, C_AC_USER_ID, C_AC_ROLE, C_AC_PENDING, C_AC_SHARER));
+        PreparedStatement ps = prepareStatement(DBUtil.insert(T_AC, C_AC_STORE_ID, C_AC_USER_ID,
+                C_AC_ROLE, C_AC_PENDING, C_AC_SHARER));
 
         int pairCount = 0;
         for (SubjectRolePair pair : pairs) {
@@ -145,25 +144,25 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         if (rows != 1) throw new ExNotFound();
     }
 
-    public @Nullable Role getRoleNullable(SID sid, UserID userId)
+    public @Nullable Role getMemberRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
-        return getRoleNullableImpl(sid, userId, C_AC_PENDING + "=0");
+        return getRoleNullable(sid, userId, C_AC_PENDING + "=0");
     }
 
     public @Nullable Role getPendingRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
-        return getRoleNullableImpl(sid, userId, C_AC_PENDING + "=1");
+        return getRoleNullable(sid, userId, C_AC_PENDING + "=1");
     }
 
-    public @Nullable Role getRoleOrPendingNullable(SID sid, UserID userId)
+    public @Nullable Role getMemberOrPendingRoleNullable(SID sid, UserID userId)
             throws SQLException
     {
-        return getRoleNullableImpl(sid, userId, "");
+        return getRoleNullable(sid, userId, "");
     }
 
-    private @Nullable Role getRoleNullableImpl(SID sid, UserID userId, String filter)
+    private @Nullable Role getRoleNullable(SID sid, UserID userId, String filter)
             throws SQLException
     {
         String pendingFilter = filter.isEmpty() ? "" : " and " + filter;
@@ -188,17 +187,12 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public Set<UserID> getACLUsers(SID sid) throws SQLException
+    public Set<UserID> getMembers(SID sid) throws SQLException
     {
-        return getACLUsers(sid, false);
+        return getUsers(sid, false);
     }
 
-    public Set<UserID> getPendingACLUsers(SID sid) throws SQLException
-    {
-        return getACLUsers(sid, true);
-    }
-
-    private Set<UserID> getACLUsers(SID sid, boolean pending)
+    private Set<UserID> getUsers(SID sid, boolean pending)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
@@ -217,7 +211,29 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void deleteACL(SID sid, Collection<UserID> subjects)
+    public List<SubjectRolePair> getMemberACL(SID sid) throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
+                C_AC_STORE_ID + "=? and " + C_AC_PENDING + "=?",
+                C_AC_USER_ID, C_AC_ROLE));
+
+        ps.setBytes(1, sid.getBytes());
+        ps.setBoolean(2, false);
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            List<SubjectRolePair> srps = Lists.newArrayList();
+            while (rs.next()) {
+                srps.add(new SubjectRolePair(UserID.fromInternal(rs.getString(1)),
+                        Role.fromOrdinal(rs.getInt(2))));
+            }
+            return srps;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void deleteMemberOrPendingACL(SID sid, Collection<UserID> subjects)
             throws ExNotFound, SQLException
     {
         PreparedStatement ps = prepareStatement(
@@ -255,7 +271,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public void updateACL(SID sid, Iterable<SubjectRolePair> pairs)
+    public void updateMemberACL(SID sid, Iterable<SubjectRolePair> pairs)
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(updateWhere(T_AC,
@@ -325,28 +341,6 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
             throw new ExNotFound("shared folder " + sid);
         } else {
             return rs;
-        }
-    }
-
-    public List<SubjectRolePair> getACL(SID sid) throws SQLException
-    {
-        PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_PENDING + "=?",
-                C_AC_USER_ID, C_AC_ROLE));
-
-        ps.setBytes(1, sid.getBytes());
-        ps.setBoolean(2, false);
-
-        ResultSet rs = ps.executeQuery();
-        try {
-            List<SubjectRolePair> srps = Lists.newArrayList();
-            while (rs.next()) {
-                srps.add(new SubjectRolePair(UserID.fromInternal(rs.getString(1)),
-                        Role.fromOrdinal(rs.getInt(2))));
-            }
-            return srps;
-        } finally {
-            rs.close();
         }
     }
 }

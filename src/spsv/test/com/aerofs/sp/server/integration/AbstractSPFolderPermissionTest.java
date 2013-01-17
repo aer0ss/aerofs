@@ -78,8 +78,7 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
             throws Exception
     {
         setSessionUser(sharer);
-        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role),
-                "");
+        service.shareFolder(sid.toStringFormal(), sid.toPB(), toPB(sharee, role), "");
     }
 
     protected void joinSharedFolder(UserID sharee, SID sid) throws Exception

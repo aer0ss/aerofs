@@ -79,7 +79,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void addACL_shouldThrowExAlreadyExistsIfSubjectExists()
+    public void addMemberACL_shouldThrowExAlreadyExistsIfSubjectExists()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
@@ -87,41 +87,41 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = newUser();
         saveUser(user, saveOrganization());
 
-        sf.addACL(user, Role.EDITOR);
+        sf.addMemberACL(user, Role.EDITOR);
 
         trans.commit();
         trans.begin();
 
         try {
-            sf.addACL(user, Role.OWNER);
+            sf.addMemberACL(user, Role.OWNER);
             assertTrue(false);
         } catch (ExAlreadyExist e) {
             trans.handleException();
             trans.begin();
         }
 
-        assertEquals(Role.EDITOR, sf.getRoleNullable(user));
+        assertEquals(Role.EDITOR, sf.getMemberRoleNullable(user));
     }
 
     @Test
-    public void addACL_shouldAddTeamServer()
+    public void addMemberACL_shouldAddTeamServer()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
         saveUser(owner, saveOrganization());
         SharedFolder sf = saveSharedFolder(owner);
 
-        assertEquals(sf.getRoleNullable(getTeamServerUser(owner)), Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(owner)), Role.EDITOR);
 
         User user = newUser();
         saveUser(user, saveOrganization());
 
         // why 4? owner, user, owner's team server, user's team server id
-        assertEquals(sf.addACL(user, Role.EDITOR).size(), 4);
-        assertEquals(sf.getRoleNullable(getTeamServerUser(user)), Role.EDITOR);
+        assertEquals(sf.addMemberACL(user, Role.EDITOR).size(), 4);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user)), Role.EDITOR);
 
         // why 4? owner, user, owner's team server, user's team server id
-        assertEquals(sf.getUsers().size(), 4);
+        assertEquals(sf.getMembers().size(), 4);
     }
 
     @Test
@@ -129,15 +129,15 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
-        List<User> users = Lists.newArrayList(sf.getUsers());
+        List<User> users = Lists.newArrayList(sf.getMembers());
 
         User user = newUser();
         saveUser(user, factOrg.getDefault());
         User tsUser = getTeamServerUser(user);
 
         sf.addTeamServerACL(user);
-        assertNull(sf.getRoleNullable(tsUser));
-        assertEquals(users, sf.getUsers());
+        assertNull(sf.getMemberRoleNullable(tsUser));
+        assertEquals(users, sf.getMembers());
     }
 
     @Test
@@ -154,17 +154,17 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         saveUser(user2, org);
 
         sf.addTeamServerACL(user1);
-        List<User> users = Lists.newArrayList(sf.getUsers());
+        List<User> users = Lists.newArrayList(sf.getMembers());
 
         sf.addTeamServerACL(user2);
-        assertEquals(users, sf.getUsers());
+        assertEquals(users, sf.getMembers());
 
-        assertEquals(sf.getRoleNullable(getTeamServerUser(user1)), Role.EDITOR);
-        assertEquals(sf.getRoleNullable(getTeamServerUser(user2)), Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user1)), Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user2)), Role.EDITOR);
     }
 
     @Test
-    public void deleteACL_shouldThrowIfNoOwnerLeft()
+    public void deleteMemberOrPendingACL_shouldThrowIfNoOwnerLeft()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
@@ -173,11 +173,11 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = newUser();
         saveUser(user1, saveOrganization());
-        sf.addACL(user1, Role.OWNER);
-        sf.updateACL(singleSRP(owner, Role.EDITOR));
+        sf.addMemberACL(user1, Role.OWNER);
+        sf.updateMemberACL(singleSRP(owner, Role.EDITOR));
 
         try {
-            sf.deleteACL(Collections.singleton(user1.id()));
+            sf.deleteMemberOrPendingACL(Collections.singleton(user1.id()));
             assertTrue(false);
         } catch (ExNoPerm e) {
             trans.handleException();
@@ -185,7 +185,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void deleteACL_shouldThrowIfNoUserNotFound()
+    public void deleteMemberOrPendingACL_shouldThrowIfNoUserNotFound()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
@@ -194,7 +194,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         saveUser(user, saveOrganization());
 
         try {
-            sf.deleteACL(Collections.singleton(user.id()));
+            sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
             assertTrue(false);
         } catch (ExNotFound e) {
             trans.handleException();
@@ -202,7 +202,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test
-    public void deleteACL_shouldDeleteTeamServer()
+    public void deleteMemberOrPendingACL_shouldDeleteTeamServer()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
@@ -215,26 +215,26 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         saveUser(user2, user1.getOrganization());
         assertEquals(getTeamServerUser(user2), tsUser);
 
-        sf.addACL(user1, Role.EDITOR);
-        assertEquals(sf.getRoleNullable(tsUser), Role.EDITOR);
+        sf.addMemberACL(user1, Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(tsUser), Role.EDITOR);
 
-        sf.addACL(user2, Role.OWNER);
-        assertEquals(sf.getRoleNullable(tsUser), Role.EDITOR);
+        sf.addMemberACL(user2, Role.OWNER);
+        assertEquals(sf.getMemberRoleNullable(tsUser), Role.EDITOR);
 
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server id
-        assertEquals(sf.deleteACL(Collections.singleton(user1.id())).size(), 5);
+        assertEquals(sf.deleteMemberOrPendingACL(Collections.singleton(user1.id())).size(), 5);
 
-        assertNull(sf.getRoleNullable(user1));
+        assertNull(sf.getMemberRoleNullable(user1));
 
         // since user1 & 2 share the same org, the team server shouldn't have been removed.
-        assertEquals(sf.getRoleNullable(tsUser), Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(tsUser), Role.EDITOR);
 
         // why 4? owner, user2, owner's team server, user2's team server id
-        assertEquals(sf.deleteACL(Collections.singleton(user2.id())).size(), 4);
+        assertEquals(sf.deleteMemberOrPendingACL(Collections.singleton(user2.id())).size(), 4);
 
-        assertNull(sf.getRoleNullable(user2));
+        assertNull(sf.getMemberRoleNullable(user2));
 
-        assertNull(sf.getRoleNullable(tsUser));
+        assertNull(sf.getMemberRoleNullable(tsUser));
     }
 
     @Test
@@ -245,13 +245,13 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user = newUser();
         saveUser(user, factOrg.getDefault());
-        sf.addACL(user, Role.OWNER);
+        sf.addMemberACL(user, Role.OWNER);
 
-        Collection<User> users = sf.getUsers();
-        assertNull(sf.getRoleNullable(getTeamServerUser(user)));
+        Collection<User> users = sf.getMembers();
+        assertNull(sf.getMemberRoleNullable(getTeamServerUser(user)));
 
         assertEquals(sf.deleteTeamServerACL(user).size(), 0);
-        assertEquals(users, sf.getUsers());
+        assertEquals(users, sf.getMembers());
     }
 
     @Test(expected = AssertionError.class)
@@ -274,31 +274,31 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = newUser();
         saveUser(user1, saveOrganization());
-        sf.addACL(user1, Role.OWNER);
+        sf.addMemberACL(user1, Role.OWNER);
 
         User user2 = newUser();
         saveUser(user2, user1.getOrganization());
-        sf.addACL(user2, Role.EDITOR);
+        sf.addMemberACL(user2, Role.EDITOR);
 
         // delete user1's team server with user2 being in the same org
         assertEquals(sf.deleteTeamServerACL(user1).size(), 0);
 
         // the team server should remain
-        assertEquals(sf.getRoleNullable(getTeamServerUser(user1)), Role.EDITOR);
+        assertEquals(sf.getMemberRoleNullable(getTeamServerUser(user1)), Role.EDITOR);
 
         // now, delete user2
         // why 5? owner, user1, user2, owner's team server, user1 & 2's team server
-        assertEquals(sf.deleteACL(Collections.singletonList(user2.id())).size(), 5);
+        assertEquals(sf.deleteMemberOrPendingACL(Collections.singletonList(user2.id())).size(), 5);
 
         // why 4? owner, user1, owner's team server, user1's team server
         assertEquals(sf.deleteTeamServerACL(user1).size(), 4);
 
         // the team server should go away
-        assertNull(sf.getRoleNullable(getTeamServerUser(user1)));
+        assertNull(sf.getMemberRoleNullable(getTeamServerUser(user1)));
     }
 
     @Test
-    public void updateACL_shouldThrowIfNoOwnerLeft()
+    public void updateMemberACL_shouldThrowIfNoOwnerLeft()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         User owner = newUser();
@@ -307,13 +307,13 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         User user1 = newUser();
         saveUser(user1, saveOrganization());
-        sf.addACL(user1, Role.OWNER);
+        sf.addMemberACL(user1, Role.OWNER);
 
         // why 4? owner, user, owner's team server, user's team server
-        assertEquals(sf.updateACL(singleSRP(owner, Role.EDITOR)).size(), 4);
+        assertEquals(sf.updateMemberACL(singleSRP(owner, Role.EDITOR)).size(), 4);
 
         try {
-            sf.updateACL(singleSRP(user1, Role.EDITOR));
+            sf.updateMemberACL(singleSRP(user1, Role.EDITOR));
             assertTrue(false);
         } catch (ExNoPerm e) {
             trans.handleException();
@@ -321,7 +321,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
     }
 
     @Test(expected = ExNotFound.class)
-    public void updateACL_shouldThrowIfNoUserNotFound()
+    public void updateMemberACL_shouldThrowIfNoUserNotFound()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
@@ -329,31 +329,31 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
         User user = newUser();
         saveUser(user, saveOrganization());
 
-        sf.updateACL(singleSRP(user, Role.EDITOR));
+        sf.updateMemberACL(singleSRP(user, Role.EDITOR));
     }
 
     @Test
-    public void updateACL_shouldUpdate()
+    public void updateMemberACL_shouldUpdate()
             throws ExNoPerm, IOException, ExNotFound, SQLException, ExAlreadyExist
     {
         SharedFolder sf = saveUserAndOrgAndSharedFolder();
 
         User user1 = newUser();
         saveUser(user1, saveOrganization());
-        sf.addACL(user1, Role.EDITOR);
+        sf.addMemberACL(user1, Role.EDITOR);
 
         User user2 = newUser();
         saveUser(user2, saveOrganization());
-        sf.addACL(user2, Role.OWNER);
+        sf.addMemberACL(user2, Role.OWNER);
 
         // intentionally make a no-op change
         // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.updateACL(singleSRP(user1, Role.EDITOR)).size(), 6);
-        assertEquals(sf.getRoleNullable(user1), Role.EDITOR);
+        assertEquals(sf.updateMemberACL(singleSRP(user1, Role.EDITOR)).size(), 6);
+        assertEquals(sf.getMemberRoleNullable(user1), Role.EDITOR);
 
         // wh 6? owner, user1, user2, and their perspective team servers
-        assertEquals(sf.updateACL(singleSRP(user2, Role.EDITOR)).size(), 6);
-        assertEquals(sf.getRoleNullable(user2), Role.EDITOR);
+        assertEquals(sf.updateMemberACL(singleSRP(user2, Role.EDITOR)).size(), 6);
+        assertEquals(sf.getMemberRoleNullable(user2), Role.EDITOR);
     }
 
     private User getTeamServerUser(User user)

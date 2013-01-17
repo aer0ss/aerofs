@@ -106,16 +106,16 @@ public class TestUser extends AbstractBusinessObjectTest
         // insert the colliding root store
         SharedFolder sf = factSharedFolder.create(SID.rootSID(user.id()));
         sf.save("haha", attacker);
-        sf.addACL(attacker2, Role.EDITOR);
-        assertEquals(sf.getRoleThrows(attacker), Role.OWNER);
-        assertEquals(sf.getRoleThrows(attacker2), Role.EDITOR);
+        sf.addMemberACL(attacker2, Role.EDITOR);
+        assertEquals(sf.getMemberRoleThrows(attacker), Role.OWNER);
+        assertEquals(sf.getMemberRoleThrows(attacker2), Role.EDITOR);
 
         // create the ligitimate user
         saveUser(user, org);
 
         // the collision should have been corrected
-        assertNull(sf.getRoleNullable(attacker));
-        assertNull(sf.getRoleNullable(attacker2));
+        assertNull(sf.getMemberRoleNullable(attacker));
+        assertNull(sf.getMemberRoleNullable(attacker2));
     }
 
     @Test(expected = ExBadCredential.class)
@@ -162,20 +162,20 @@ public class TestUser extends AbstractBusinessObjectTest
         sf1.save("haha", user);
         sf2.save("haha", user);
 
-        assertEquals(sfRoot.getRoleNullable(tsUserOld), Role.EDITOR);
-        assertEquals(sf1.getRoleNullable(tsUserOld), Role.EDITOR);
-        assertEquals(sf2.getRoleNullable(tsUserOld), Role.EDITOR);
+        assertEquals(sfRoot.getMemberRoleNullable(tsUserOld), Role.EDITOR);
+        assertEquals(sf1.getMemberRoleNullable(tsUserOld), Role.EDITOR);
+        assertEquals(sf2.getMemberRoleNullable(tsUserOld), Role.EDITOR);
 
         Organization orgNew = saveOrganization();
         User tsUserNew = newUser(orgNew.id().toTeamServerUserID());
 
         user.setOrganization(orgNew);
 
-        assertNull(sfRoot.getRoleNullable(tsUserOld));
-        assertNull(sf1.getRoleNullable(tsUserOld));
-        assertNull(sf2.getRoleNullable(tsUserOld));
-        assertEquals(sfRoot.getRoleNullable(tsUserNew), Role.EDITOR);
-        assertEquals(sf1.getRoleNullable(tsUserNew), Role.EDITOR);
-        assertEquals(sf2.getRoleNullable(tsUserNew), Role.EDITOR);
+        assertNull(sfRoot.getMemberRoleNullable(tsUserOld));
+        assertNull(sf1.getMemberRoleNullable(tsUserOld));
+        assertNull(sf2.getMemberRoleNullable(tsUserOld));
+        assertEquals(sfRoot.getMemberRoleNullable(tsUserNew), Role.EDITOR);
+        assertEquals(sf1.getMemberRoleNullable(tsUserNew), Role.EDITOR);
+        assertEquals(sf2.getMemberRoleNullable(tsUserNew), Role.EDITOR);
     }
 }

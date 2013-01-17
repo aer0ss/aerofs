@@ -26,6 +26,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -101,65 +102,6 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
-    public void shouldJoinFolder() throws Exception
-    {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-
-        assertEquals(1, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        published.clear();
-
-        joinSharedFolder(USER_2, TEST_SID_1);
-
-        assertEquals(2, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_2.toString()));
-    }
-
-    @Test
-    public void shouldThrowExAlreadyExistWhenJoinFolderTwice() throws Exception
-    {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        joinSharedFolder(USER_2, TEST_SID_1);
-        published.clear();
-
-        try {
-            joinSharedFolder(USER_2, TEST_SID_1);
-            fail();
-        } catch (ExAlreadyExist e) {
-            trans.handleException();
-        }
-        assertTrue(published.isEmpty());
-    }
-
-    @Test
-    public void shouldThrowExNotFoundWhenTryingToJoinNonExistingFolder() throws Exception
-    {
-        try {
-            joinSharedFolder(USER_2, SID.generate());
-            fail();
-        } catch (ExNotFound e) {
-            trans.handleException();
-        }
-        assertTrue(published.isEmpty());
-    }
-
-    @Test
-    public void shouldThrowExNoPermWhenTryingToJoinWithoutBeingInvited() throws Exception
-    {
-        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
-
-        try {
-            joinSharedFolder(USER_3, TEST_SID_1);
-            fail();
-        } catch (ExNoPerm e) {
-            trans.handleException();
-        }
-        assertTrue(published.isEmpty());
-    }
-
-    @Test
     public void shouldThrowExNoPermWhenEditorTriesToInviteToFolder()
             throws Exception
     {
@@ -216,67 +158,28 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
-    public void shouldAllowMemberToLeaveShareFolder() throws Exception
+    public void shouldThrowExAlreadyExistWhenInvitingExistingMember()
+            throws Exception
     {
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
         published.clear();
 
-        leaveSharedFolder(USER_2, TEST_SID_1);
-        assertEquals(2, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_2.toString()));
+        try {
+            shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+            fail();
+        } catch (ExAlreadyExist e) {
+            trans.handleException();
+        }
+        assertTrue(published.isEmpty());
     }
 
     @Test
-    public void shouldAllowPendingMemberToLeaveShareFolder() throws Exception
+    public void shouldAllowInvitingExistingPendingUsers()
+            throws Exception
     {
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
 
-        leaveSharedFolder(USER_2, TEST_SID_1);
-        assertTrue(published.isEmpty());
-    }
-
-    @Test
-    public void shouldThrowExBadArgsWhenTryingToLeaveRootStore() throws Exception
-    {
-        trans.begin();
-        sfdb.insert(SID.rootSID(USER_1), "root:" + USER_1);
-        trans.commit();
-
-        try {
-            leaveSharedFolder(USER_1, SID.rootSID(USER_1));
-            fail();
-        } catch (ExBadArgs e) {
-            trans.handleException();
-        }
-        assertTrue(published.isEmpty());
-    }
-
-    @Test
-    public void shouldThrowExNotFoundWhenNonMemberTriesToLeaveShareFolder() throws Exception
-    {
+        // the second call should not fail
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
-        published.clear();
-
-        try {
-            leaveSharedFolder(USER_3, TEST_SID_1);
-            fail();
-        } catch (ExNotFound e) {
-            trans.handleException();
-        }
-        assertTrue(published.isEmpty());
-    }
-
-    @Test
-    public void shouldThrowExNotFoundWhenTryingToLeaveNonExistingSharedFolder() throws Exception
-    {
-        try {
-            leaveSharedFolder(USER_1, TEST_SID_1);
-            fail();
-        } catch (ExNotFound e) {
-            trans.handleException();
-        }
-        assertTrue(published.isEmpty());
     }
 }

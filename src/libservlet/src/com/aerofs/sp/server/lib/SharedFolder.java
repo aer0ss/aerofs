@@ -107,7 +107,7 @@ public class SharedFolder
         _f._db.insert(_sid, folderName);
 
         try {
-            return addACL(owner, Role.OWNER);
+            return addMemberACL(owner, Role.OWNER);
         } catch (ExAlreadyExist e) {
             throw SystemUtil.fatalWithReturn(e);
         }
@@ -123,31 +123,34 @@ public class SharedFolder
      * @return A set of user IDs for which epoch should be increased and published via verkehr
      * @throws ExAlreadyExist if the user is already added.
      */
-    public Set<UserID> addACL(User user, Role role)
+    public Set<UserID> addMemberACL(User user, Role role)
             throws ExAlreadyExist, SQLException, ExNotFound
     {
-        if (isMemberOrInvited(user)) throw new ExAlreadyExist(user + " is already invited");
+        if (isMemberOrPending(user)) throw new ExAlreadyExist(user + " is already invited");
 
-        _f._db.insertACL(_sid, user.id(),
+        _f._db.insertMemberACL(_sid, user.id(),
                 Collections.singletonList(new SubjectRolePair(user.id(), role)));
 
         addTeamServerACLImpl(user);
 
-        return _f._db.getACLUsers(_sid);
+        return _f._db.getMembers(_sid);
     }
 
     public void addPendingACL(User sharer, User sharee, Role role)
             throws SQLException, ExAlreadyExist
     {
-        if (isMemberOrInvited(sharee)) throw new ExAlreadyExist(sharee + " is already invited");
+        if (isMemberOrPending(sharee)) throw new ExAlreadyExist(sharee + " is already invited");
 
         _f._db.insertPendingACL(_sid, sharer.id(),
                 Collections.singletonList(new SubjectRolePair(sharee.id(), role)));
     }
 
+    /**
+     * Set a user as pending
+     */
     public Set<UserID> setPending(User user) throws SQLException, ExNotFound
     {
-        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+        Set<UserID> affectedUsers = _f._db.getMembers(_sid);
 
         _f._db.setPending(_sid, user.id(), true);
 
@@ -158,13 +161,16 @@ public class SharedFolder
         return affectedUsers;
     }
 
-    public Set<UserID> resetPending(User user) throws SQLException, ExNotFound, ExAlreadyExist
+    /**
+     * Set a user as member
+     */
+    public Set<UserID> setMember(User user) throws SQLException, ExNotFound, ExAlreadyExist
     {
         _f._db.setPending(_sid, user.id(), false);
 
         addTeamServerACLImpl(user);
 
-        return _f._db.getACLUsers(_sid);
+        return _f._db.getMembers(_sid);
     }
 
 
@@ -176,13 +182,15 @@ public class SharedFolder
             throws ExNotFound, ExAlreadyExist, SQLException
     {
         if (addTeamServerACLImpl(user)) {
-            return _f._db.getACLUsers(_sid);
+            return _f._db.getMembers(_sid);
         } else {
             return Collections.emptySet();
         }
     }
 
     /**
+     * No-op if the team server ACL already exists
+     *
      * @return whether actual operations are performed
      */
     private boolean addTeamServerACLImpl(User user)
@@ -192,23 +200,23 @@ public class SharedFolder
         if (org.isDefault()) return false;
 
         User tsUser = _f._factUser.create(org.id().toTeamServerUserID());
-        if (getRoleNullable(tsUser) == null) {
+        if (getMemberRoleNullable(tsUser) == null) {
             SubjectRolePair srp = new SubjectRolePair(tsUser.id(), Role.EDITOR);
-            _f._db.insertACL(_sid, user.id(), Collections.singletonList(srp));
+            _f._db.insertMemberACL(_sid, user.id(), Collections.singletonList(srp));
             return true;
         } else {
             return false;
         }
     }
 
-    public Set<UserID> deleteACL(Collection<UserID> subjects)
+    public Set<UserID> deleteMemberOrPendingACL(Collection<UserID> subjects)
             throws SQLException, ExNotFound, ExNoPerm
     {
         // retrieve the list of affected users _before_ performing the deletion, so that all the
         // users including the deleted ones will get notifications.
-        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+        Set<UserID> affectedUsers = _f._db.getMembers(_sid);
 
-        _f._db.deleteACL(_sid, subjects);
+        _f._db.deleteMemberOrPendingACL(_sid, subjects);
 
         for (UserID userID : subjects) {
             deleteTeamServerACLImpl(_f._factUser.create(userID));
@@ -226,7 +234,7 @@ public class SharedFolder
     public Set<UserID> deleteTeamServerACL(User user)
             throws SQLException, ExNotFound
     {
-        Set<UserID> affectedUsers = _f._db.getACLUsers(_sid);
+        Set<UserID> affectedUsers = _f._db.getMembers(_sid);
 
         if (deleteTeamServerACLImpl(user)) {
             return affectedUsers;
@@ -244,14 +252,15 @@ public class SharedFolder
         Organization org = user.getOrganization();
         if (org.isDefault()) return false;
 
-        for (User otherUser : getUsers()) {
+        for (User otherUser : getMembers()) {
             if (otherUser.equals(user)) continue;
             if (otherUser.id().isTeamServerID()) continue;
             if (otherUser.getOrganization().equals(org)) return false;
         }
 
         try {
-            _f._db.deleteACL(_sid, Collections.singleton(org.id().toTeamServerUserID()));
+            _f._db.deleteMemberOrPendingACL(_sid,
+                    Collections.singleton(org.id().toTeamServerUserID()));
         } catch (ExNotFound e) {
             // the team server id must exists.
             assert false : this + " " + user;
@@ -260,48 +269,48 @@ public class SharedFolder
         return true;
     }
 
-    public Collection<User> getUsers()
+    public Collection<User> getMembers()
             throws SQLException
     {
         Builder<User> builder = ImmutableList.builder();
-        for (UserID userID : _f._db.getACLUsers(_sid)) {
+        for (UserID userID : _f._db.getMembers(_sid)) {
             builder.add(_f._factUser.create(userID));
         }
         return builder.build();
     }
 
-    public List<SubjectRolePair> getACL() throws SQLException
+    public List<SubjectRolePair> getMemberACL() throws SQLException
     {
-        return _f._db.getACL(_sid);
+        return _f._db.getMemberACL(_sid);
     }
 
     /**
      * @return new ACL epochs for each affected user id, to be published via verkehr
-     * @throws ExNotFound if trying to add new users to the store
+     * @throws ExNotFound if trying to add new users to the store or update a pending user's ACL
      */
-    public Set<UserID> updateACL(List<SubjectRolePair> srps)
+    public Set<UserID> updateMemberACL(List<SubjectRolePair> srps)
             throws ExNoPerm, ExNotFound, SQLException
     {
-        _f._db.updateACL(_sid, srps);
+        _f._db.updateMemberACL(_sid, srps);
 
         throwIfNoOwnerLeft();
 
-        return _f._db.getACLUsers(_sid);
+        return _f._db.getMembers(_sid);
     }
 
-    public @Nullable Role getRoleNullable(User user)
+    public @Nullable Role getMemberRoleNullable(User user)
             throws SQLException
     {
-        return _f._db.getRoleNullable(_sid, user.id());
+        return _f._db.getMemberRoleNullable(_sid, user.id());
     }
 
     /**
-     * @throws ExNoPerm if the user is not found
+     * @throws ExNoPerm if the user is pending or not found
      */
-    public @Nonnull Role getRoleThrows(User user)
+    public @Nonnull Role getMemberRoleThrows(User user)
             throws SQLException, ExNoPerm
     {
-        Role role = getRoleNullable(user);
+        Role role = getMemberRoleNullable(user);
         if (role == null) throw new ExNoPerm();
         return role;
     }
@@ -321,22 +330,22 @@ public class SharedFolder
     private boolean isOwner(User user)
             throws SQLException
     {
-        Role role = getRoleNullable(user);
+        Role role = getMemberRoleNullable(user);
         return role != null && role.covers(Role.OWNER);
     }
 
     public boolean isMember(User user) throws SQLException
     {
-        return _f._db.getRoleNullable(_sid, user.id()) != null;
+        return _f._db.getMemberRoleNullable(_sid, user.id()) != null;
     }
 
-    public boolean isInvited(User user) throws SQLException
+    public boolean isPending(User user) throws SQLException
     {
         return _f._db.getPendingRoleNullable(_sid, user.id()) != null;
     }
 
-    public boolean isMemberOrInvited(User user) throws SQLException
+    public boolean isMemberOrPending(User user) throws SQLException
     {
-        return _f._db.getRoleOrPendingNullable(_sid, user.id()) != null;
+        return _f._db.getMemberOrPendingRoleNullable(_sid, user.id()) != null;
     }
 }

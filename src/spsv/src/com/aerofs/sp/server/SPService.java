@@ -382,13 +382,13 @@ public class SPService implements ISPService
     private List<PBSubjectRolePair> getACL(SharedFolder sf)
             throws SQLException
     {
-        Collection<User> sfusers = sf.getUsers();
+        Collection<User> sfusers = sf.getMembers();
         List<PBSubjectRolePair> pbsrps = Lists.newArrayListWithCapacity(sfusers.size());
         for (User sfuser : sfusers) {
             // skip team server ids.
             // TODO (WW) should we move it to SharedFolderDatabase.getUsers()?
             if (sfuser.id().isTeamServerID()) continue;
-            Role role = sf.getRoleNullable(sfuser);
+            Role role = sf.getMemberRoleNullable(sfuser);
             assert role != null;
             pbsrps.add(PBSubjectRolePair.newBuilder()
                     .setSubject(sfuser.id().toString())
@@ -633,7 +633,7 @@ public class SPService implements ISPService
         for (ByteString shareId : shareIds) {
             SharedFolder sf = _factSharedFolder.create(shareId);
             // throws ExNoPerm if the user doesn't have permission to view the name
-            sf.getRoleThrows(user);
+            sf.getMemberRoleThrows(user);
             names.add(sf.getName());
         }
 
@@ -788,9 +788,10 @@ public class SPService implements ISPService
             User sharee, Role role, String note, String folderName)
             throws SQLException, IOException, ExNotFound, ExAlreadyExist
     {
-        // add ACL entry w/ pending bit
-        // TODO: silently ignore already invited users instead of throwing?
-        sf.addPendingACL(sharer, sharee, role);
+        if (sf.isMember(sharee)) throw new ExAlreadyExist(sharee.id() + " is already a member");
+
+        // Add a pending ACL entry if the user doesn't exist in the ACL
+        if (!sf.isPending(sharee)) sf.addPendingACL(sharer, sharee, role);
 
         InvitationEmailer emailer;
         if (sharee.exists()) {
@@ -843,12 +844,12 @@ public class SPService implements ISPService
             throw new ExAlreadyExist("You are already a member of this shared folder");
         }
 
-        if (!sf.isInvited(user)) {
+        if (!sf.isPending(user)) {
             throw new ExNoPerm("Your have not been invited to this shared folder");
         }
 
         // reset pending bit to make user a member of the shared folder
-        Set<UserID> users = sf.resetPending(user);
+        Set<UserID> users = sf.setMember(user);
 
         // send verkehr notifications as the last step of the transaction
         publish_(incrementACLEpochs_(users));
@@ -874,13 +875,13 @@ public class SPService implements ISPService
         if (sf.isMember(user)) {
             throw new ExAlreadyExist("You have already accepted this invitation");
         }
-        if (!sf.isInvited(user)) {
+        if (!sf.isPending(user)) {
             throw new ExNoPerm("You have not been invited to this shared folder");
         }
 
         // Ignore the invitation by deleting the ACL.
         try {
-            sf.deleteACL(Collections.singleton(user.id()));
+            sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
         } catch (ExNoPerm e) {
             // we should be able to ignore an invitation even if the shared folder somehow lost
             // all its owners...
@@ -907,7 +908,7 @@ public class SPService implements ISPService
         if (sf.id().isRoot()) throw new ExBadArgs("Cannot leave root folder");
 
         // silently ignore leave call from pending users
-        if (!sf.isInvited(user)) {
+        if (!sf.isPending(user)) {
             if (!sf.isMember(user)) {
                 throw new ExNotFound("You are not a member of this shared folder");
             }
@@ -1119,7 +1120,7 @@ public class SPService implements ISPService
                 l.info("add s:" + sf.id());
                 PBStoreACL.Builder aclBuilder = PBStoreACL.newBuilder();
                 aclBuilder.setStoreId(sf.id().toPB());
-                for (SubjectRolePair srp : sf.getACL()) {
+                for (SubjectRolePair srp : sf.getMemberACL()) {
                     l.info("add j:" + srp._subject + " r:" + srp._role.getDescription());
                     aclBuilder.addSubjectRole(srp.toPB());
                 }
@@ -1148,7 +1149,7 @@ public class SPService implements ISPService
 
         _transaction.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
-        Set<UserID> users = sf.updateACL(srps);
+        Set<UserID> users = sf.updateMemberACL(srps);
         // send verkehr notification as the last step of the transaction
         publish_(incrementACLEpochs_(users));
         _transaction.commit();
@@ -1177,7 +1178,7 @@ public class SPService implements ISPService
 
         _transaction.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
-        Set<UserID> users = sf.deleteACL(subjects);
+        Set<UserID> users = sf.deleteMemberOrPendingACL(subjects);
         // send verkehr notification as the last step of the transaction
         publish_(incrementACLEpochs_(users));
         _transaction.commit();
