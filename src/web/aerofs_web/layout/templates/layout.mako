@@ -183,12 +183,10 @@
 ## param links: list of tuples (route_name, text_to_display)
 ## example: sidebar_links([('route1', "Link Name"), ('route2', "Another Link")])
 <%def name="sidebar_links(links)">
-    % if links:
-        <ul class="nav">
-            % for link in links:
-                <li ${'class="active"' if request.matched_route.name == link[0] else '' | n }>
-                    <a href="${request.route_path(link[0])}">${link[1]}</a></li>
-            % endfor
-        </ul>
-    % endif
+    <ul class="nav">
+        % for link in links:
+            <li ${'class="active"' if request.matched_route.name == link[0] else '' | n }>
+                <a href="${request.route_path(link[0])}">${link[1]}</a></li>
+        % endfor
+    </ul>
 </%def>

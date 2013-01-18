@@ -275,6 +275,8 @@ public class SPService implements ISPService
         }
 
         if (deviceId != null) {
+            // TODO (MP) need to send push notifications to the user when their device name changes.
+            l.info(_sessionUser.get().id() + ": set device name: " + deviceName);
             _factDevice.create(deviceId).setName(deviceName);
         }
 
@@ -1575,6 +1577,7 @@ public class SPService implements ISPService
         for (Device device : devicesAndQueryCount.devices()) {
             builder.addDeviceInfo(ListUserDevicesReply.PBDeviceInfo.newBuilder()
                     .setDeviceName(device.getName())
+                    .setDeviceId(ByteString.copyFrom(device.id().getBytes()))
                     .setOs(device.getOS()));
         }
 

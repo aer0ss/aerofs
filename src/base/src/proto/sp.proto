@@ -640,11 +640,10 @@ message SetPreferencesCall {
     optional string first_name = 2;
     optional string last_name = 4;
 
-    // if set, it doesn't change the device id, but it allows setting
-    // the device name (below)
+    // If set, it doesn't change the device id, but it allows setting the device name (below).
     optional bytes device_id = 1;
 
-    // valid iff device_id is present
+    // Valid iff device_id is present.
     optional string device_name = 3;
 }
 
@@ -866,7 +865,7 @@ message IgnoreOrganizationInvitationCall {
     required int32 organization_id = 1;
 }
 
-// TODO (downtime) move these under the GetDeviceInfo messages.
+// TODO (downtime) move this under the GetDeviceInfo messages.
 message ListUserDevicesCall {
     // Return only users whose name match this string. Empty string matches all users.
     required string search = 1;
@@ -878,14 +877,12 @@ message ListUserDevicesCall {
     required int32 offset = 3;
 }
 
+// TODO (downtime) move this under the GetDeviceInfo messages.
 message ListUserDevicesReply {
-
     message PBDeviceInfo {
-        // These fields are absent if:
-        // 1) the device ID is not found, or
-        // 2) the caller is not sharing any folder with the device owner.
         required string device_name = 1;
         required string os = 2;
+        required bytes device_id = 3;
     }
 
     // List of device names.

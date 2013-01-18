@@ -257,7 +257,7 @@ public class SPDatabase extends AbstractSQLDatabase
         ResultSet rs = ps.executeQuery();
         try {
             while (rs.next()) {
-                // TODO (MP) yuck. why do we store did's are CHAR(32) instead of BINARY(16)?
+                // TODO (MP) why do we store did's as CHAR(32) instead of BINARY(16)?
                 String did = rs.getString(1);
                 UserID userId = UserID.fromInternal(rs.getString(2));
                 UserDevice ud = new UserDevice(new DID(did).getBytes(), userId);
