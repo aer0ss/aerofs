@@ -10,6 +10,10 @@ import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.shell.CmdDefect;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ShellAdapter;
+import org.eclipse.swt.events.ShellEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
@@ -27,7 +31,10 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Link;
 
+import javax.annotation.Nullable;
 import java.sql.SQLException;
+
+import static com.aerofs.gui.GUIUtil.getNewText;
 
 public class DlgDefect extends AeroFSJFaceDialog
 {
@@ -99,6 +106,15 @@ public class DlgDefect extends AeroFSJFaceDialog
             }
         });
 
+        getShell().addShellListener(new ShellAdapter()
+        {
+            @Override
+            public void shellActivated(ShellEvent shellEvent)
+            {
+                verify(null);
+            }
+        });
+
         return container;
     }
 
@@ -120,6 +136,16 @@ public class DlgDefect extends AeroFSJFaceDialog
             final Text txtEmailAddress = new Text(composite, SWT.BORDER);
             txtEmailAddress.setLayoutData(gridData);
             txtEmailAddress.setText(Cfg.db().get(Key.MULTIUSER_CONTACT_EMAIL));
+
+            txtEmailAddress.addVerifyListener(new VerifyListener()
+            {
+                @Override
+                public void verifyText(VerifyEvent verifyEvent)
+                {
+                    verify(getNewText(txtEmailAddress, verifyEvent));
+                }
+            });
+
             _contactEmailGetter = new IContactEmailGetter()
             {
                 @Override
@@ -143,6 +169,12 @@ public class DlgDefect extends AeroFSJFaceDialog
                 }
             };
         }
+    }
+
+    private void verify(@Nullable String contactEmail)
+    {
+        if (contactEmail == null) contactEmail = _contactEmailGetter.get();
+        getButton(IDialogConstants.OK_ID).setEnabled(Util.isValidEmailAddress(contactEmail));
     }
 
     @Override
