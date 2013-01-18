@@ -7,8 +7,7 @@ package com.aerofs.sp.server.business_objects;
 import com.aerofs.base.C;
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.common.InvitationCode;
-import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
 import com.aerofs.sp.server.email.EmailReminder;
 import com.aerofs.sp.server.email.InvitationReminderEmailer;
@@ -90,7 +89,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
 
         for (UserID user: users) {
             l.info("adding signup code for: " + user);
-            String signupCode = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+            String signupCode = Base62CodeGenerator.generate();
             udb.insertSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
                     System.currentTimeMillis() - age);
 

@@ -21,35 +21,40 @@ public class InvitationReminderEmailer
 
         public InvitationReminderEmailer createReminderEmail(final String from,
                 final String fromName,
-                final String to, String signupCode, String unsubscribeId)
+                final String to, String signUpCode, String unsubscribeId)
                         throws IOException
         {
-            String url = SPParam.getWebDownloadLink(signupCode);
+            String url = InvitationEmailer.getSignUpLink(signUpCode);
 
             final String subject = "Reminder: You've recently been invited to try AeroFS!";
 
-            final String body = "\nHi there!\n\n" +
+            final String body = "\n" +
+                    "Hi there!\n" +
+                    "\n" +
                     "You've recently been invited to try out " + L.PRODUCT +
-                    " (" + SP.WEB_BASE + ") \n\n " +
-                    "We realize you might be quite busy and may have missed our invitation email " +
-                    "so we want to remind you that your invitation is still " +
-                    "waiting!\n\n" +
-                    "As a quick refresher: " + L.PRODUCT + " allows you to sync, share, and " +
-                    "collaborate on files privately and securely.\n\n Any data that you put inside your "+
-                    L.PRODUCT + " will be synced *only* with your personal devices, and anyone you " +
-                    "invite to share with you.\n\n Please keep in mind that " + L.PRODUCT +
-                    " is still in beta! We release updates regularly and appreciate any and all " +
-                    "feedback.\n\n You can download " + L.PRODUCT + " at:\n\n" + url + "\n\n" +
-                    "And when prompted, enter the following invitation code:\n\n" + signupCode;
+                    " (" + SP.WEB_BASE + ") \n" +
+                    "\n " +
+                    "We realize you might be quite busy and may have missed our invitation email" +
+                    " so we want to remind you that your invitation is still waiting!\n" +
+                    "\n" +
+                    "As a quick refresher: " + L.PRODUCT + " allows you to sync, share, and" +
+                    " collaborate on files privately and securely.\n" +
+                    "\n" +
+                    "Any data that you put inside your " + L.PRODUCT + " will be synced *only*" +
+                    " with your personal devices, and anyone you invite to share with you.\n" +
+                    "\n" +
+                    "Please keep in mind that " + L.PRODUCT + " is still in beta! We release" +
+                    " updates regularly and appreciate any and all feedback.\n" +
+                    "\n" +
+                    "You can download " + L.PRODUCT + " at:\n" +
+                    "\n" +
+                    url;
 
 
             final Email email = new Email(subject, true, unsubscribeId);
 
             email.addSection("Reminder: You're invited to " + L.PRODUCT +"!", HEADER_SIZE.H1, body);
-
-            email.addSignature("Happy Syncing :)", fromName,
-                    "p.s. Let us know what you think at " + SV.SUPPORT_EMAIL_ADDRESS +
-                    ". We'd love to hear your feedback!");
+            email.addDefaultSignature();
 
             return new InvitationReminderEmailer(new Callable<Void>()
             {

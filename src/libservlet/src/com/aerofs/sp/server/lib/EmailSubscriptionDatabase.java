@@ -66,8 +66,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
 
         Timestamp ts = new Timestamp(currentTime);
 
-        String token = Base62CodeGenerator.newRandomBase62String(
-                SubscriptionParams.TOKEN_ID_LENGTH);
+        String token = Base62CodeGenerator.generate();
 
         ps.setString(1, userId.toString());
         ps.setString(2, token);

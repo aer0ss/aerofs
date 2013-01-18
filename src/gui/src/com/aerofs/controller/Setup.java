@@ -14,37 +14,28 @@ import java.util.TreeMap;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.FullName;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.ExNotSetup;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.lib.ex.ExNotDir;
-import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
-import com.aerofs.sp.common.InvitationCode.CodeType;
 import org.apache.log4j.Logger;
 
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.RootAnchorUtil;
-import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.ex.ExAlreadyExist;
-import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sp.common.InvitationCode;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
@@ -90,62 +81,11 @@ class Setup
     }
 
     /**
-     * Return the name of the user invited in the signup code.
-     *
-     * @throws ExNotFound if the signup code was not found
-     */
-    String getInvitedUser(final String code) throws Exception
-    {
-        SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-        if (InvitationCode.getType(code) == CodeType.TARGETED_SIGNUP) {
-            return sp.resolveTargetedSignUpCode(code).getEmailAddress();
-        } else {
-            throw new ExNotFound(S.INVITATION_CODE_NOT_FOUND);
-        }
-    }
-
-    /**
-     * Run setup for new users
-     *
-     * @throws ExAlreadyExist if the desired anchor root already exists.
-     * @throws ExNoPerm if we couldn't read/write to the anchor root
-     *
-     * TODO: needs organization
-     * TODO: gui needs to handle case where a no-invite user has signed up already
-     */
-    void setupNewUser(UserID userId, char[] password, String rootAnchorPath,
-            String deviceName, String signUpCode, String firstName, String lastName,
-            PBS3Config s3cfg)
-            throws Exception
-    {
-        try {
-            // basic preconditions - all of these should be enforced at the UI level
-            // new sign ups must have a decent password length
-            assert password.length >= Param.MIN_PASSWD_LENGTH;
-            assert signUpCode != null; // can be empty, but can't be null
-            assert !firstName.isEmpty();
-            assert !lastName.isEmpty();
-
-            PreSetupResult res = preSetup(userId, password, rootAnchorPath);
-
-            // sign up the user
-            FullName fullName = new FullName(firstName, lastName);
-            new SignupHelper(res._sp).signUp(userId, res._scrypted, signUpCode, fullName);
-
-            setupSingluser(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
-
-            SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + userId);
-        } catch (Exception e) {
-            handleSetupException(userId, e);
-        }
-    }
-
-    /**
      * Runs setup for existing users.
      *
      * See setupNewUser's comments for more.
      */
-    void setupExistingUser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
+    void setupSingleuser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
             PBS3Config s3cfg)
             throws Exception
     {
@@ -161,7 +101,7 @@ class Setup
 
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupSingluser(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupSingluserImpl(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
 
             SVClient.sendEventSync(Sv.PBSVEvent.Type.SIGN_RETURNING, "");
 
@@ -170,14 +110,14 @@ class Setup
         }
     }
 
-    void setupTeamServer(UserID userId, char[] password, String rootAnchorPath, String deviceName,
+    void setupMultiuser(UserID userId, char[] password, String rootAnchorPath, String deviceName,
             PBS3Config s3cfg)
             throws Exception
     {
         try {
             PreSetupResult res = preSetup(userId, password, rootAnchorPath);
 
-            setupMultiuser(userId, rootAnchorPath, deviceName, s3cfg, res._scrypted, res._sp);
+            setupMultiuserImpl(userId, rootAnchorPath, deviceName, s3cfg, res._sp);
 
         } catch (Exception e) {
             handleSetupException(userId, e);
@@ -197,7 +137,7 @@ class Setup
      * Perform pre-setup sanity checks and generate information needed by later setup steps
      */
     private PreSetupResult preSetup(UserID userID, char[] password, String rootAnchorPath)
-            throws IOException, ExNoPerm, ExNotDir, ExAlreadyExist, ExUIMessage
+            throws Exception
     {
         assert !rootAnchorPath.isEmpty();
 
@@ -213,19 +153,19 @@ class Setup
         // which doesn't work with regular clients, we force a null connection configurator.
         res._sp = SPClientFactory.newBlockingClientWithNullConnectionConfigurator(SP.URL, userID);
 
+        signIn(userID, res._scrypted, res._sp);
+
         return res;
     }
 
     /**
      * @param sp must have been signed in
      */
-    private void setupSingluser(UserID userID, String rootAnchorPath, String deviceName,
+    private void setupSingluserImpl(UserID userID, String rootAnchorPath, String deviceName,
             PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
-
-        signIn(userID, scrypted, sp);
 
         DID did = CredentialUtil.certifyAndSaveDeviceKeys(userID, scrypted, sp);
 
@@ -236,13 +176,11 @@ class Setup
         addToFavorite(rootAnchorPath);
     }
 
-    private void setupMultiuser(UserID userID, String rootAnchorPath, String deviceName,
-            PBS3Config s3config, byte[] scrypted, SPBlockingClient sp)
+    private void setupMultiuserImpl(UserID userID, String rootAnchorPath, String deviceName,
+            PBS3Config s3config, SPBlockingClient sp)
             throws Exception
     {
         assert deviceName != null; // can be empty, but can't be null
-
-        signIn(userID, scrypted, sp);
 
         // Retrieve the team server user ID
         UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());

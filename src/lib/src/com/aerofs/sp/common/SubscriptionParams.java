@@ -12,9 +12,6 @@ import java.net.URL;
 
 public class SubscriptionParams
 {
-    // length of Base62 email ID to be generated
-    public static int TOKEN_ID_LENGTH = 12;
-
     public static final URL UNSUBSCRIPTION_URL;
 
     public static final String UNSUB_TOKEN = "u";

@@ -29,9 +29,10 @@ public abstract class AbstractSQLDatabase
     }
 
     // TODO use DBCW.throwOnConstraintViolation() instead
-    protected static void throwOnConstraintViolation(SQLException e) throws ExAlreadyExist
+    protected static void throwOnConstraintViolation(SQLException e, String errorMessage)
+            throws ExAlreadyExist
     {
-        if (isConstraintViolation(e)) throw new ExAlreadyExist(e);
+        if (isConstraintViolation(e)) throw new ExAlreadyExist(errorMessage);
     }
 
     protected static boolean isConstraintViolation(SQLException e)

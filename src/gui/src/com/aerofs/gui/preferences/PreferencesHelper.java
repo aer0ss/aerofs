@@ -130,7 +130,7 @@ public class PreferencesHelper
 
         Label lblLastName = new Label(_comp, SWT.NONE);
         lblLastName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblLastName.setText(S.SETUP_LAST_NAME + ":");
+        lblLastName.setText("Last name:");
 
         _txtLastName = new Text(_comp, SWT.BORDER);
         _txtLastName.setLayoutData(getTextFieldGridData());
@@ -150,7 +150,7 @@ public class PreferencesHelper
     {
         Label lblFirstName = new Label(_comp, SWT.NONE);
         lblFirstName.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-        lblFirstName.setText(S.SETUP_FIRST_NAME + ":");
+        lblFirstName.setText("First name:");
 
         _txtFirstName = new Text(_comp, SWT.BORDER);
         _txtFirstName.setLayoutData(getTextFieldGridData());

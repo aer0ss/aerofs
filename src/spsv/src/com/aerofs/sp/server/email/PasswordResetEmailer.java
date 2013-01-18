@@ -65,10 +65,7 @@ public class PasswordResetEmailer
                 "please email " + SV.SUPPORT_EMAIL_ADDRESS + " right away.";
 
         email.addSection(L.PRODUCT + " Password Request was Successful", HEADER_SIZE.H1, body);
-
-        email.addSignature("Thank you for using " + L.PRODUCT + ",",
-                "The " + L.PRODUCT + " Support Team",
-                Email.DEFAULT_PS);
+        email.addDefaultSignature();
 
         try {
             SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.toString(),

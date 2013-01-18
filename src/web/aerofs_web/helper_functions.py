@@ -60,6 +60,7 @@ def valid_password_test(request, password, password_confirmation):
 def get_error(exception): # parse RPC errors into something more user friendly
     ''' Returns an error message for the given protobuf exception.
         Expects the exception to be of type 'ExceptionReply'
+        TODO (WW) capitalize the first letter?
     '''
     return str(exception.reply.message)
 

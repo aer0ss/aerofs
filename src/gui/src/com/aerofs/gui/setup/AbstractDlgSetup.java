@@ -1,9 +1,10 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.gui.setup;
 
+import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUI.ISWTWorker;
@@ -31,7 +32,6 @@ import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Event;
@@ -44,43 +44,20 @@ import org.eclipse.swt.widgets.Text;
 import javax.annotation.Nullable;
 import java.net.ConnectException;
 
-public class DlgSetupCommon
+public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
 {
-    private static final Logger l = Util.l(DlgSetupCommon.class);
+    protected static final Logger l = Util.l(AbstractDlgSetup.class);
 
-    static public interface IDlgSetupCommonCallbacks
-    {
-        void createButtonBarButton(Composite parent, int id, String text, boolean setDefault);
+    /**
+     * This method is called in a non-GUI thread
+     */
+    abstract protected void setup(String userID, char[] passwd) throws Exception;
 
-        Button getButtonBarButton(int id);
+    /**
+     * This method is called in the GUI thread, after setup succeeds.
+     */
+    abstract protected void postSetup();
 
-        /**
-         * This method is called in the GUI thread, right before runSetup()
-         */
-        void preSetup();
-
-        /**
-         * This method is called in a non-GUI thread
-         */
-        void runSetup(String userID, char[] passwd) throws Exception;
-
-        /**
-         * This method is called in the GUI thread, after setup succeeds.
-         */
-        void postSetup();
-
-        void closeDialog();
-
-        Shell getShell();
-
-        void setControlState(boolean enabled);
-
-        void verify(@Nullable String newText);
-
-        @Nullable Composite getBottomCompositeTopControlWhenEnabled();
-    }
-
-    private final IDlgSetupCommonCallbacks _callbacks;
     private String _absRootAnchor;
     private String _deviceName;
 
@@ -92,49 +69,37 @@ public class DlgSetupCommon
     private Label _lblStatus;
     private final StackLayout _layoutStack = new StackLayout();
 
-    public Text getUserIDText()
-    {
-        return _txtUserID;
-    }
-
-    public Text getPasswordText()
-    {
-        return _txtPasswd;
-    }
-
     private Text _txtUserID;
     private Text _txtPasswd;
 
     private boolean _okay;
     private boolean _inProgress;
 
-    public DlgSetupCommon(IDlgSetupCommonCallbacks callbacks)
+    protected AbstractDlgSetup(Shell parentShell)
             throws Exception
     {
-        _callbacks = callbacks;
+        super(null, parentShell, false, shouldAlwaysOnTop(), false);
 
         GetSetupSettingsReply defaults = UI.controller().getSetupSettings();
         _absRootAnchor = defaults.getRootAnchor();
         _deviceName = defaults.getDeviceName();
     }
 
-    public String getAbsRootAnchor()
+    protected String getAbsRootAnchor()
     {
         return _absRootAnchor;
     }
 
-    public String getDeviceName()
+    protected String getDeviceName()
     {
         return _deviceName;
     }
 
-    public Composite getStackComposite()
+    @Override
+    protected void configureShell(final Shell newShell)
     {
-        return _compStack;
-    }
+        super.configureShell(newShell);
 
-    public void configureShell(final Shell newShell)
-    {
         newShell.addTraverseListener(new TraverseListener() {
             @Override
             public void keyTraversed(TraverseEvent e)
@@ -151,8 +116,44 @@ public class DlgSetupCommon
             }
         });
     }
+    /**
+     * Create contents of the dialog
+     */
+    @Override
+    protected Control createDialogArea(Composite parent)
+    {
+        Control area = super.createDialogArea(parent);
+        Composite container = createContainer(area, 2);
 
-    public Composite createContainer(Control dialogArea, int columns)
+        // row 1
+
+        createUserIDInputLabelAndText(container);
+
+        // row 2
+
+        createPasswordLabelAndText(container);
+
+        // row 3
+
+        new Label(container, SWT.NONE);
+        new Label(container, SWT.NONE);
+
+        // row 4
+
+        createBottomComposite(container);
+
+        // done with rows
+
+        setTitle("Setup " + L.PRODUCT + " (beta) " + (L.get().isStaging() ? "staging" : ""));
+
+        _txtUserID.setFocus();
+
+        container.setTabList(new Control[] { _txtUserID, _txtPasswd });
+
+        return area;
+    }
+
+    private Composite createContainer(Control dialogArea, int columns)
     {
         final Composite container = new Composite((Composite) dialogArea, SWT.NONE);
         final GridLayout gridLayout = new GridLayout();
@@ -168,7 +169,7 @@ public class DlgSetupCommon
         return container;
     }
 
-    public void createBottomComposite(Composite container)
+    private void createBottomComposite(Composite container)
     {
         Composite comp = new Composite(container, SWT.NONE);
         GridLayout glComp = new GridLayout(3, false);
@@ -206,35 +207,31 @@ public class DlgSetupCommon
         _compBlank = new Composite(_compStack, SWT.NONE);
         _compBlank.setLayout(new GridLayout(1, false));
 
+        _layoutStack.topControl = _compForgotPassword;
+
         createStatusComponents(comp);
     }
 
-    public void setBottomCompositeTopControlForEnabledState()
-    {
-        Composite top = _callbacks.getBottomCompositeTopControlWhenEnabled();
-        _layoutStack.topControl = top == null ? _compForgotPassword : top;
-        _compStack.layout();
-    }
-
-    static public boolean shouldAlwaysOnTop()
+    static private boolean shouldAlwaysOnTop()
     {
         // On 10.5 the cocoasudo dialog goes behind the setup dialog if it's always on top.
         return !(OSUtil.isOSX() && System.getProperty("os.version").startsWith("10.5"));
     }
 
-    public void createButtonBarButtons(final Composite parent)
+    @Override
+    protected void createButtonsForButtonBar(Composite parent)
     {
-        _callbacks.createButtonBarButton(parent, OK_ID, "Finish", true);
-        _callbacks.createButtonBarButton(parent, CANCEL_ID, CANCEL_LABEL, false);
-        _callbacks.createButtonBarButton(parent, DETAILS_ID, S.BTN_ADVANCED, false);
+        createButton(parent, OK_ID, "Finish", true);
+        createButton(parent, CANCEL_ID, CANCEL_LABEL, false);
+        createButton(parent, DETAILS_ID, S.BTN_ADVANCED, false);
 
-        _callbacks.getButtonBarButton(OK_ID).setEnabled(false);
-        _callbacks.getButtonBarButton(DETAILS_ID).addSelectionListener(new SelectionAdapter()
+        getButton(OK_ID).setEnabled(false);
+        getButton(DETAILS_ID).addSelectionListener(new SelectionAdapter()
         {
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                DlgSetupAdvanced advanced = new DlgSetupAdvanced(_callbacks.getShell(), _deviceName,
+                DlgSetupAdvanced advanced = new DlgSetupAdvanced(getShell(), _deviceName,
                         _absRootAnchor);
                 if (advanced.open() != IDialogConstants.OK_ID) return;
 
@@ -244,12 +241,7 @@ public class DlgSetupCommon
         });
     }
 
-    public String getTitle()
-    {
-        return "Setup " + L.PRODUCT + " (beta) " + (L.get().isStaging() ? "staging" : "");
-    }
-
-    public void createUserIDInputLabelAndText(Composite container)
+    private void createUserIDInputLabelAndText(Composite container)
     {
         final Label emailAddressLabel = new Label(container, SWT.NONE);
         emailAddressLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
@@ -265,12 +257,12 @@ public class DlgSetupCommon
             @Override
             public void verifyText(final VerifyEvent ev)
             {
-                _callbacks.verify(GUIUtil.getNewText(_txtUserID.getText(), ev));
+                verify(GUIUtil.getNewText(_txtUserID.getText(), ev));
             }
         });
     }
 
-    public void createPasswordLabelAndText(Composite container)
+    private void createPasswordLabelAndText(Composite container)
     {
 
         final Label lblPass = new Label(container, SWT.NONE);
@@ -287,12 +279,22 @@ public class DlgSetupCommon
             @Override
             public void modifyText(ModifyEvent ev)
             {
-                _callbacks.verify(null);
+                verify(null);
             }
         });
     }
 
-    public boolean isReady(@Nullable String email)
+    // TODO (WW) use ModifyListener instead of VerifyListener throughout the codebase.
+    private void verify(@Nullable String email)
+    {
+        boolean ready = isReady(email);
+
+        getButton(OK_ID).setEnabled(ready);
+
+        setOkayStatus();
+    }
+
+    private boolean isReady(@Nullable String email)
     {
         if (email == null) email = _txtUserID.getText();
         String passwd = _txtPasswd.getText();
@@ -311,20 +313,20 @@ public class DlgSetupCommon
         return ready;
     }
 
-    public void setInProgressStatus()
+    private void setInProgressStatus()
     {
         _compSpin.start();
         setStatusImpl("", "Performing magic...");
 
     }
 
-    public void setOkayStatus()
+    private void setOkayStatus()
     {
         _compSpin.stop();
         setStatusImpl("", "");
     }
 
-    public void setErrorStatus(String error)
+    private void setErrorStatus(String error)
     {
         _compSpin.error();
         setStatusImpl(error, "");
@@ -363,7 +365,17 @@ public class DlgSetupCommon
         _lblError.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
     }
 
-    public void work()
+    @Override
+    protected void buttonPressed(int buttonId)
+    {
+        if (buttonId == IDialogConstants.OK_ID) {
+            work();
+        } else {
+            super.buttonPressed(buttonId);
+        }
+    }
+
+    private void work()
     {
         _inProgress = true;
 
@@ -374,15 +386,13 @@ public class DlgSetupCommon
 
         setInProgressStatus();
 
-        _callbacks.preSetup();
-
         GUI.get().safeWork(_txtUserID, new ISWTWorker()
         {
             @Override
             public void run()
                     throws Exception
             {
-                _callbacks.runSetup(userID, passwd);
+                setup(userID, passwd);
             }
 
             @Override
@@ -402,7 +412,7 @@ public class DlgSetupCommon
 
                 _inProgress = false;
 
-                _callbacks.getButtonBarButton(OK_ID).setText("Try Again");
+                getButton(OK_ID).setText("Try Again");
                 setControlState(true);
             }
 
@@ -410,31 +420,25 @@ public class DlgSetupCommon
             public void okay()
             {
                 _okay = true;
-                _callbacks.closeDialog();
+                close();
 
-                _callbacks.postSetup();
+                postSetup();
             }
         });
     }
 
     private void setControlState(boolean enabled)
     {
-        _callbacks.getButtonBarButton(OK_ID).setEnabled(enabled);
-        _callbacks.getButtonBarButton(CANCEL_ID).setEnabled(enabled);
-        _callbacks.getButtonBarButton(DETAILS_ID).setEnabled(enabled);
+        getButton(OK_ID).setEnabled(enabled);
+        getButton(CANCEL_ID).setEnabled(enabled);
+        getButton(DETAILS_ID).setEnabled(enabled);
 
         _txtUserID.setEnabled(enabled);
         _txtPasswd.setEnabled(enabled);
 
-        if (!enabled) {
-            _layoutStack.topControl = _compBlank;
-            _compStack.layout();
-        } else {
-            setBottomCompositeTopControlForEnabledState();
-        }
-
-
-        _callbacks.setControlState(enabled);
+        if (!enabled) _layoutStack.topControl = _compBlank;
+        else _layoutStack.topControl = _compForgotPassword;
+        _compStack.layout();
     }
 
     public boolean isCanelled()

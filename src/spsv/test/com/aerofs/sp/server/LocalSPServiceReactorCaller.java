@@ -136,7 +136,6 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         trans.begin();
         udb.insertUser(ADMIN_ID, new FullName("first", "last"), cred, OrganizationID.DEFAULT,
                 AuthorizationLevel.ADMIN);
-        udb.setVerified(ADMIN_ID);
         trans.commit();
     }
 

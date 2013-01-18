@@ -152,13 +152,10 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         trans.begin();
         udb.insertUser(USER_1, new FullName(USER_1.toString(), USER_1.toString()), USER_1_CRED,
                 orgId, level);
-        udb.setVerified(USER_1);
         udb.insertUser(USER_2, new FullName(USER_2.toString(), USER_2.toString()), USER_2_CRED,
                 orgId, level);
-        udb.setVerified(USER_2);
         udb.insertUser(USER_3, new FullName(USER_3.toString(), USER_3.toString()), USER_3_CRED,
                 orgId, level);
-        udb.setVerified(USER_3);
         trans.commit();
     }
 

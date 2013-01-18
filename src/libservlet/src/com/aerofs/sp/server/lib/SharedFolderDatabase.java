@@ -81,7 +81,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         try {
             Util.verify(ps.executeUpdate() == 1);
         } catch (SQLException e) {
-            throwOnConstraintViolation(e);
+            throwOnConstraintViolation(e, "shared folder ID already exists");
             throw e;
         }
     }

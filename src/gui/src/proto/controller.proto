@@ -25,33 +25,18 @@ service ControllerService {
     rpc GetSetupSettings(Void) returns(GetSetupSettingsReply);
 
     /**
-     * Resolves an invitation code
-     * Throws:
-     *  - NotFound if the invitation code was not found or is invalid
-     */
-    rpc ResolveSignUpCode(ResolveSignUpCodeCall) returns(ResolveSignUpCodeReply);
-
-    /**
-     * Sets up a new AeroFS user.
-     * See SetupNewUserCall for more information on the arguments
+     * Sets up an existing (returning) AeroFS user
      *
      * TODO (GS) Document what exceptions this can throw
      */
-    rpc SetupNewUser(SetupNewUserCall) returns(Void);
+    rpc SetupSingleuser(SetupExistingUserCall) returns(Void);
 
     /**
      * Sets up an existing (returning) AeroFS user
      *
      * TODO (GS) Document what exceptions this can throw
      */
-    rpc SetupExistingUser(SetupExistingUserCall) returns(Void);
-
-    /**
-     * Sets up an existing (returning) AeroFS user
-     *
-     * TODO (GS) Document what exceptions this can throw
-     */
-    rpc SetupTeamServer(SetupExistingUserCall) returns(Void);
+    rpc SetupMultiuser(SetupExistingUserCall) returns(Void);
 
     /**
      * Resets the password of an AeroFS user
@@ -180,14 +165,6 @@ message ChangePasswordCall {
 message UpdateStoredPasswordCall {
     required string user_id = 1;
     required string password = 2;
-}
-
-message ResolveSignUpCodeCall {
-    required string code = 1;
-}
-
-message ResolveSignUpCodeReply {
-    required string email = 1; // empty string if batch invite
 }
 
 message UpdateConfigCall {

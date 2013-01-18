@@ -67,12 +67,4 @@ public class SPParam
     // SP Constants go here
 
     public static final long PASSWORD_RESET_TOKEN_VALID_DURATION = 1 * C.DAY;
-    public static final int PASSWORD_RESET_TOKEN_LENGTH = 10;
-
-    private static final String WEB_DOWNLOAD_PARAM_NAME_IC = "a";
-
-    public static String getWebDownloadLink(String signUpCode)
-    {
-        return SV.DOWNLOAD_LINK + "?" + WEB_DOWNLOAD_PARAM_NAME_IC + "=" + signUpCode;
-    }
 }

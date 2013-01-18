@@ -17,7 +17,7 @@ public class MockInvitationEmailerFactory extends InvitationEmailer.Factory
     @Override
     public InvitationEmailer createSignUpInvitationEmailer(@Nullable final String inviter,
             final String invitee, final String inviterName, @Nullable final String folderName,
-            @Nullable final String note, final String signupCode)
+            @Nullable final String note, final String signUpCode)
     {
         return createNullEmailer();
     }

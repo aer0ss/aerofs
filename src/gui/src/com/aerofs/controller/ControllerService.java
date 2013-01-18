@@ -18,7 +18,6 @@ import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.proto.ControllerProto.IControllerService;
 import com.aerofs.proto.ControllerProto.PBConfig;
 import com.aerofs.proto.ControllerProto.PBS3Config;
-import com.aerofs.proto.ControllerProto.ResolveSignUpCodeReply;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.GeneratedMessageLite;
 
@@ -126,43 +125,22 @@ public class ControllerService implements IControllerService
     }
 
     @Override
-    public ListenableFuture<ResolveSignUpCodeReply> resolveSignUpCode(String code)
-            throws Exception
-    {
-        ResolveSignUpCodeReply reply = ResolveSignUpCodeReply.newBuilder()
-                .setEmail(_setup.getInvitedUser(code))
-                .build();
-        return UncancellableFuture.createSucceeded(reply);
-    }
-
-    @Override
-    public ListenableFuture<Common.Void> setupNewUser(String userId, String password,
-            String rootAnchor, String deviceName, String signUpCode, String firstName,
-            String lastName, PBS3Config s3config)
-            throws Exception
-    {
-        _setup.setupNewUser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
-                deviceName, signUpCode, firstName, lastName, s3config);
-        return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
-    }
-
-    @Override
-    public ListenableFuture<Common.Void> setupExistingUser(String userId, String password,
+    public ListenableFuture<Common.Void> setupSingleuser(String userId, String password,
             String rootAnchor, String deviceName, PBS3Config s3config)
             throws Exception
     {
-        _setup.setupExistingUser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
+        _setup.setupSingleuser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
                 deviceName, s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }
 
 
     @Override
-    public ListenableFuture<Common.Void> setupTeamServer(String userId, String password,
+    public ListenableFuture<Common.Void> setupMultiuser(String userId, String password,
             String rootAnchor, String deviceName, PBS3Config s3config)
             throws Exception
     {
-        _setup.setupTeamServer(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
+        _setup.setupMultiuser(UserID.fromExternal(userId), password.toCharArray(), rootAnchor,
                 deviceName, s3config);
         return UncancellableFuture.createSucceeded(Common.Void.getDefaultInstance());
     }

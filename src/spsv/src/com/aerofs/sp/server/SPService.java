@@ -21,6 +21,7 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -28,6 +29,7 @@ import com.aerofs.proto.Sp.GetTeamServerUserIDReply;
 import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.PBUser;
+import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
@@ -68,7 +70,6 @@ import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
-import com.aerofs.proto.Sp.ResolveTargetedSignUpCodeReply;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -213,6 +214,13 @@ public class SPService implements ISPService
 
         // Don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
+    }
+
+    @Override
+    public ListenableFuture<Void> noop()
+            throws Exception
+    {
+        return createVoidReply();
     }
 
     @Override
@@ -743,13 +751,6 @@ public class SPService implements ISPService
     private Set<UserID> addSharedFolderIfNecessary(String folderName, SharedFolder sf, User sharer)
             throws ExNotFound, SQLException, ExNoPerm, IOException, ExAlreadyExist
     {
-        // Only verified users can share
-        if (!sharer.isVerified()) {
-            // TODO (GS): We want to throw a specific exception if the inviter isn't verified
-            // to allow easier error handling on the client-side
-            throw new ExNoPerm(sharer + " is not yet verified");
-        }
-
         if (sf.exists()) {
             sf.throwIfNotOwnerAndNotAdmin(sharer);
             return Collections.emptySet();
@@ -810,7 +811,7 @@ public class SPService implements ISPService
     }
 
     /**
-     * Call this method to use an inviter name from inviter.getFullName()._first
+     * Call this method to use an inviter name different from inviter.getFullName()._first
      */
     InvitationEmailer inviteToSignUp(User invitee, User inviter, String inviterName,
             @Nullable String folderName, @Nullable String note)
@@ -845,10 +846,6 @@ public class SPService implements ISPService
         if (!sf.isInvited(user)) {
             throw new ExNoPerm("Your have not been invited to this shared folder");
         }
-
-        // Because the folder code is valid and was received by email, the user is verified.
-        // TODO: can we still assume the user to be verified by virtue of joining a shared folder?
-        user.setVerified();
 
         // reset pending bit to make user a member of the shared folder
         Set<UserID> users = sf.resetPending(user);
@@ -937,12 +934,6 @@ public class SPService implements ISPService
 
         Collection<PendingSharedFolder> psfs = user.getPendingSharedFolders();
 
-        // Throw ExNoPerm only if user isn't verified AND there are shared folder invitations to
-        // accept.
-        if (!psfs.isEmpty() && !user.isVerified()) {
-            throw new ExNoPerm("email address not verified");
-        }
-
         ListPendingFolderInvitationsReply.Builder builder =
                 ListPendingFolderInvitationsReply.newBuilder();
         for (PendingSharedFolder psf : psfs) {
@@ -970,8 +961,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<ResolveTargetedSignUpCodeReply>
-            resolveTargetedSignUpCode(String tsc)
+    public ListenableFuture<ResolveSignUpCodeReply> resolveSignUpCode(String tsc)
             throws SQLException, ExNotFound
     {
         l.info("tsc: " + tsc);
@@ -980,9 +970,8 @@ public class SPService implements ISPService
         UserID result = _db.getSignUpInvitation(tsc);
         _transaction.commit();
 
-        return createReply(ResolveTargetedSignUpCodeReply.newBuilder()
-                .setEmailAddress(result.toString())
-                .build());
+        return createReply(
+                ResolveSignUpCodeReply.newBuilder().setEmailAddress(result.toString()).build());
     }
 
     @Override
@@ -1293,28 +1282,6 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> signUp(String userIdString, ByteString credentials,
-            String firstName, String lastName)
-            throws ExNotFound, SQLException, ExAlreadyExist, ExBadArgs, IOException, ExNoPerm
-    {
-        if (!Util.isValidEmailAddress(userIdString)) throw new ExBadArgs("invalid email address");
-
-        User user = _factUser.createFromExternalID(userIdString);
-        FullName fullName = new FullName(firstName, lastName);
-        byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
-
-        _transaction.begin();
-
-        user.save(shaedSP, fullName, _factOrg.getDefault());
-
-        //unsubscribe user from the aerofs invitation reminder mailing list
-        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-        _transaction.commit();
-
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<Void> sendPasswordResetEmail(String userIdString)
             throws Exception
     {
@@ -1349,30 +1316,34 @@ public class SPService implements ISPService
 
         return createVoidReply();
     }
+
     @Override
-    public ListenableFuture<Void> signUpWithTargeted(String targetedInvite, ByteString credentials,
+    public ListenableFuture<Void> signUpWithCode(String signUpCode, ByteString credentials,
             String firstName, String lastName)
             throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException, ExNoPerm
     {
-        l.info("targeted sign-up: " + targetedInvite);
+        l.info("signUp with code " + signUpCode);
+
+        // Sanitize names
+        firstName = firstName.trim();
+        lastName = lastName.trim();
+        if (firstName.isEmpty() || lastName.isEmpty()) {
+            throw new ExBadArgs("First and last names must not be empty");
+        }
+        FullName fullName = new FullName(firstName, lastName);
 
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
-        FullName fullName = new FullName(firstName, lastName);
 
         _transaction.begin();
 
-        UserID userID  = _db.getSignUpInvitation(targetedInvite);
+        UserID userID  = _db.getSignUpInvitation(signUpCode);
         User user = _factUser.create(userID);
 
         // All new users start in the default organization.
         user.save(shaedSP, fullName, _factOrg.getDefault());
 
-        // Since no exceptions were thrown, and the signup code was received via email,
-        // mark the user as verified
-        user.setVerified();
-
-        // TODO (WW) don't we need to unsubscribe the user from the reminder mailing list, similar
-        // to signUp()?
+        // Unsubscribe user from the aerofs invitation reminder mailing list
+        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         _transaction.commit();
 

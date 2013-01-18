@@ -64,7 +64,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             ps.setString(2, name);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throwOnConstraintViolation(e);
+            throwOnConstraintViolation(e, "organization ID already exists");
             throw e;
         }
     }

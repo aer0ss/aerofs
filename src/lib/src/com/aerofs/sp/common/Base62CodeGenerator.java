@@ -7,12 +7,19 @@ package com.aerofs.sp.common;
 import com.aerofs.lib.SecUtil;
 
 /**
- * Base62CodeGeneraor is use by the invitation mailer and by the password reset mailer
- * It generates random tokens of an arbitrary length.
+ * Base62CodeGeneraor is use by the invitation mailer and by the password reset mailer.
+ * It generates securely random tokens.
  */
 public class Base62CodeGenerator
 {
-    public static String newRandomBase62String(int len)
+    private final static int CODE_LENGTH = 8;
+
+    public static String generate()
+    {
+        return newRandomBase62String(CODE_LENGTH);
+    }
+
+    private static String newRandomBase62String(int len)
     {
         assert len > 0;
         StringBuilder sb = new StringBuilder(len);

@@ -308,10 +308,9 @@ public class CLI implements IUI {
     }
 
     @Override
-    public SetupType setup_(String rtRoot) throws Exception
+    public void setup_(String rtRoot) throws Exception
     {
-        return new CLISetup(this, rtRoot).isExistingUser() ? SetupType.EXISTING_USER :
-                SetupType.NEW_USER;
+        new CLISetup(this, rtRoot);
     }
 
     public void enterMainLoop_()

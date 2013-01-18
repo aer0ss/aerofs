@@ -17,8 +17,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.common.InvitationCode;
-import com.aerofs.sp.common.InvitationCode.CodeType;
+import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.UserDatabase;
@@ -157,12 +156,6 @@ public class User
         return _f._udb.getShaedSP(_id);
     }
 
-    public boolean isVerified()
-            throws ExNotFound, SQLException
-    {
-        return _f._udb.isVerified(_id);
-    }
-
     public AuthorizationLevel getLevel()
             throws ExNotFound, SQLException
     {
@@ -180,12 +173,6 @@ public class User
             throws SQLException
     {
         _f._udb.setLevel(_id, auth);
-    }
-
-    // TODO (WW) throw ExNotFound if the user doesn't exist?
-    public void setVerified() throws SQLException
-    {
-        _f._udb.setVerified(_id);
     }
 
     // TODO (WW) throw ExNotFound if the user doesn't exist?
@@ -419,7 +406,7 @@ public class User
     {
         assert !exists();
 
-        String code = InvitationCode.generate(CodeType.TARGETED_SIGNUP);
+        String code = Base62CodeGenerator.generate();
         _f._udb.insertSignupCode(code, inviter.id(), _id);
         return code;
     }

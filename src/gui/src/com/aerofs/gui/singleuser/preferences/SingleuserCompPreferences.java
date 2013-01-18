@@ -6,13 +6,10 @@ package com.aerofs.gui.singleuser.preferences;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.exclusion.DlgExclusion;
-import com.aerofs.gui.password.DlgPasswordChange;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -20,10 +17,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
@@ -38,8 +32,6 @@ import org.eclipse.swt.widgets.Label;
 
 public class SingleuserCompPreferences extends Composite
 {
-    private final static Logger l = Util.l(SingleuserCompPreferences.class);
-
     private final Button _btnNotify;
     private final Label _lblId2;
     private final Label _lblId;
@@ -169,35 +161,6 @@ public class SingleuserCompPreferences extends Composite
                 new DlgThrottling(getShell(), true).openDialog();
             }
         });
-
-        Button btnChangePassword;
-        if (L.get().isStaging()) {
-            btnChangePassword = new Button(composite, SWT.NONE);
-            btnChangePassword.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-            btnChangePassword.setText("Change Password...");
-            btnChangePassword.addSelectionListener(new SelectionAdapter()
-            {
-                @Override
-                public void widgetSelected(SelectionEvent selectionEvent)
-                {
-                    DlgPasswordChange dPC = new DlgPasswordChange(getShell());
-                    if (dPC.open() == IDialogConstants.OK_ID) {
-                        String newPassword = dPC.getPassword();
-                        String oldPassword = dPC.getOldPassword();
-                        try {
-                            UI.controller().changePassword(Cfg.user().toString(),
-                                    oldPassword, newPassword);
-                            GUI.get().show(getShell(), MessageType.INFO,
-                                    "Password Changed Successfully!");
-                        } catch (Exception e) {
-                            l.warn(Util.e(e));
-                            GUI.get().show(getShell(), MessageType.ERROR,
-                                    "Couldn't change password. Please try again.");
-                        }
-                    }
-                }
-            });
-        }
 
         if (showTransfers) {
             Button btnShowTransfers = new Button(composite, SWT.NONE);

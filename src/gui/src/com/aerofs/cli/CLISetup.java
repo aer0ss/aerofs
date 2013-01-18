@@ -9,13 +9,11 @@ import java.util.Properties;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
-import com.aerofs.lib.Param;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgDatabase;
-import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
@@ -51,21 +49,14 @@ public class CLISetup
             PROP_USERID = "userid",
             PROP_PASSWORD = "password",
             PROP_DEVICE = "device",
-            PROP_ROOT = "root",
-            PROP_INVITE = "invite",
-            PROP_FIRST_NAME = "first_name",
-            PROP_LAST_NAME = "last_name";
+            PROP_ROOT = "root";
 
-    private boolean _isExistingUser;
     private boolean _isUnattendedSetup;
 
-    private String _signUpCode = null;
     private UserID _userID = null;
     private char[] _passwd;
     private String _anchorRoot = null;
     private String _deviceName = null;
-    private String _firstName = null;
-    private String _lastName = null;
     private PBS3Config _s3config = null;
 
     CLISetup(CLI cli, String rtRoot) throws Exception
@@ -82,10 +73,12 @@ public class CLISetup
 
         processSetupFile(rtRoot);
 
+        cli.show(MessageType.INFO, "Welcome to " + L.PRODUCT + ".");
+
         if (L.get().isMultiuser()) {
-            multiUserSetup(cli);
+            setupMultiuser(cli);
         } else {
-            singleUserSetup(cli);
+            setupSingleuser(cli);
         }
 
         cli.notify(MessageType.INFO,
@@ -97,7 +90,7 @@ public class CLISetup
 
     private void processSetupFile(String rtRoot) throws Exception
     {
-        String s3BucketId = null;
+        String s3BucketId;
         String s3AccessKey = null;
         String s3SecretKey = null;
         char[] s3EncryptionPassword = null;
@@ -115,27 +108,11 @@ public class CLISetup
             in.close();
         }
 
-        _signUpCode = props.getProperty(PROP_INVITE);
-
-        if (_signUpCode != null) {
-            _userID = UserID.fromInternal(UI.controller().resolveSignUpCode(_signUpCode)
-                    .getEmail());
-        }
-        if (_userID == null) {
-            _userID = UserID.fromExternal(props.getProperty(PROP_USERID));
-        }
+        if (_userID == null) _userID = UserID.fromExternal(props.getProperty(PROP_USERID));
 
         _passwd = props.getProperty(PROP_PASSWORD).toCharArray();
         _anchorRoot = props.getProperty(PROP_ROOT, _anchorRoot);
         _deviceName = props.getProperty(PROP_DEVICE, _deviceName);
-
-        _isExistingUser = (_signUpCode == null);
-
-        if (!_isExistingUser) {
-            FullName defaultName = UIUtil.getDefaultFullName();
-            _firstName = props.getProperty(PROP_FIRST_NAME, defaultName._first);
-            _lastName = props.getProperty(PROP_LAST_NAME, defaultName._last);
-        }
 
         s3BucketId = props.getProperty(CfgDatabase.Key.S3_BUCKET_ID.keyString());
         if (s3BucketId != null) {
@@ -159,10 +136,8 @@ public class CLISetup
         _isUnattendedSetup = true;
     }
 
-    private void multiUserSetup(CLI cli) throws Exception
+    private void setupMultiuser(CLI cli) throws Exception
     {
-        cli.show(MessageType.INFO, "Welcome to " + L.PRODUCT + ".");
-
         if (!_isUnattendedSetup) {
             getUser(cli);
             getPassword(cli);
@@ -172,27 +147,15 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
-        UI.controller().setupTeamServer(_userID.toString(), new String(_passwd), _anchorRoot, _deviceName, null);
+        UI.controller().setupMultiuser(_userID.toString(), new String(_passwd), _anchorRoot,
+                _deviceName, null);
     }
 
-    private void singleUserSetup(CLI cli) throws Exception
+    private void setupSingleuser(CLI cli) throws Exception
     {
         if (!_isUnattendedSetup) {
-            _isExistingUser = cli.ask(MessageType.INFO, "Welcome! Do you have an " + L.PRODUCT +
-                    " account already?");
-
-            if (_isExistingUser) {
-
-                getUser(cli);
-                getPassword(cli);
-
-            } else {
-                getSignUpCode(cli);
-                _passwd = inputAndConfirmPasswd(cli, S.SETUP_PASSWD);
-                getFullName(cli);
-
-            }
-
+            getUser(cli);
+            getPassword(cli);
             getDeviceName(cli);
 
             if (cli.ask(MessageType.INFO, S.SETUP_S3)) {
@@ -200,41 +163,19 @@ public class CLISetup
             } else {
                 getRootAnchor(cli);
             }
-
-            if (!_isExistingUser) {
-                // tos
-                if (!cli.ask(MessageType.INFO, S.SETUP_I_AGREE_TO_THE + " " + S.TERMS_OF_SERVICE +
-                        " (" + S.TOS_URL + ")")) {
-                    throw new ExAborted();
-                }
-            }
         }
 
         cli.progress("Performing magic");
 
-        if (_isExistingUser) {
-            UI.controller().setupExistingUser(_userID.toString(), new String(_passwd), _anchorRoot,
-                    _deviceName, _s3config);
-        } else {
-            UI.controller().setupNewUser(_userID.toString(), new String(_passwd), _anchorRoot,
-                    _deviceName, _signUpCode, _firstName, _lastName, _s3config);
-        }
+        UI.controller().setupSingleuser(_userID.toString(), new String(_passwd), _anchorRoot,
+                _deviceName, _s3config);
 
         if (_s3config != null) SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
     }
 
     private void getUser(CLI cli) throws ExNoConsole
     {
-        // input user name - keep going as long as it's invalid
-        while (true) {
-            String user = cli.askText(S.SETUP_USER_ID, null);
-            if (!Util.isValidEmailAddress(user)) {
-                cli.show(MessageType.ERROR, S.SETUP_INVALID_USER_ID);
-            } else {
-                _userID = UserID.fromExternal(user);
-                break;
-            }
-        }
+        _userID = UserID.fromExternal(cli.askText(S.SETUP_USER_ID, null));
     }
 
     private void getPassword(CLI cli) throws Exception
@@ -242,34 +183,6 @@ public class CLISetup
         cli.show(MessageType.INFO, "If you forgot your password, go to " +
                 S.PASSWORD_RESET_REQUEST_URL + " to reset it.");
         _passwd =  cli.askPasswd(S.SETUP_PASSWD);
-    }
-
-    private void getSignUpCode(CLI cli) throws Exception
-    {
-        _signUpCode = cli.askText(S.SETUP_IC, null);
-        while (true) {
-            try {
-                cli.progress("Verifying invitation code");
-                _userID = UserID.fromInternal(UI.controller().resolveSignUpCode(_signUpCode)
-                        .getEmail());
-                assert !_userID.toString().isEmpty();
-                cli.show(MessageType.INFO, S.SETUP_USER_ID + ": " + _userID);
-                break;
-            } catch (Exception e) {
-                cli.show(MessageType.ERROR, S.SETUP_CANT_VERIFY_IIC + UIUtil.e2msg(e));
-            }
-        }
-    }
-
-    private void getFullName(CLI cli) throws Exception
-    {
-        FullName defaultName = UIUtil.getDefaultFullName();
-        while (_firstName == null || _firstName.isEmpty()) {
-            _firstName = cli.askText(S.SETUP_FIRST_NAME, defaultName._first);
-        }
-        while (_lastName == null || _lastName.isEmpty()) {
-            _lastName = cli.askText(S.SETUP_LAST_NAME, defaultName._last);
-        }
     }
 
     private void getRootAnchor(CLI cli) throws Exception
@@ -320,26 +233,22 @@ public class CLISetup
                     .setEncryptionKey(scrypted)
                     .build();
         }
-
     }
 
-    public boolean isExistingUser()
-    {
-         return _isExistingUser;
-    }
+    private static final int MIN_PASSWD_LENGTH = 6;
 
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole
     {
         while (true) {
             char[] passwd = cli.askPasswd(prompt);
-            if (passwd.length < Param.MIN_PASSWD_LENGTH) {
-                cli.show(MessageType.ERROR, S.SETUP_PASSWD_TOO_SHORT);
+            if (passwd.length < MIN_PASSWD_LENGTH) {
+                cli.show(MessageType.ERROR, "Password is too short");
             } else if (!Util.isValidPassword(passwd)) {
-                cli.show(MessageType.ERROR, S.SETUP_PASSWD_INVALID);
+                cli.show(MessageType.ERROR, "Password contains invalid characters");
             } else {
-                char[] passwd2 = cli.askPasswd(S.SETUP_RETYPE_PASSWD);
+                char[] passwd2 = cli.askPasswd("Retype password");
                 if (!Arrays.equals(passwd, passwd2)) {
-                    cli.show(MessageType.ERROR, S.SETUP_PASSWD_DONT_MATCH);
+                    cli.show(MessageType.ERROR, "Passwords do not match");
                 } else {
                     return passwd;
                 }

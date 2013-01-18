@@ -52,7 +52,7 @@ public class CertificateDatabase extends AbstractSQLDatabase
             ps.setTimestamp(3, new Timestamp(expiry.getTime()));
             ps.executeUpdate();
         } catch (SQLException e) {
-            throwOnConstraintViolation(e);
+            throwOnConstraintViolation(e, "certificate serial number already exists");
             throw e;
         }
     }

@@ -9,8 +9,6 @@ public class S
             PREFERENCES              = "Preferences",
             TRANSFERS                = "Transfers",
 
-            TERMS_OF_SERVICE         = "Terms of Service",
-
             BTN_APPLY_UPDATE         = "Apply Update",
             BTN_CHECK_UPDATE         = "Update Now",
 
@@ -22,19 +20,9 @@ public class S
 
             SETUP_USER_ID            = "Email",
             SETUP_PASSWD             = "Password",
-            SETUP_FIRST_NAME         = "First name",
-            SETUP_LAST_NAME          = "Last name",
             SETUP_DEV_ALIAS          = "Computer name",
             ROOT_ANCHOR              = L.get().isMultiuser() ? "Data Storage folder" :
                 L.PRODUCT + " folder",
-            SETUP_IC                 = "Invitation code",
-            SETUP_CANT_VERIFY_IIC    = "Couldn't verify invitation code ",
-            SETUP_INVALID_USER_ID    = "Email address is not valid.",
-            SETUP_PASSWD_TOO_SHORT   = "Password is too short.",
-            SETUP_PASSWD_INVALID     = "Password must contain ASCII letters only.",
-            SETUP_PASSWD_DONT_MATCH  = "Passwords do not match.",
-            SETUP_RETYPE_PASSWD      = "Retype password",
-            SETUP_I_AGREE_TO_THE     = "I agree to the",
 
             SETUP_S3                 = "Do you wish to set up this client to use Amazon S3 for " +
                 "storage (EXPERIMENTAL)?",
@@ -78,7 +66,6 @@ public class S
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.PRODUCT + " again.",
             PRIVACY_URL = SP.WEB_BASE + "/privacy",
-            TOS_URL = SP.WEB_BASE + "/tos",
             PASSWORD_RESET_REQUEST_URL = SP.WEB_BASE + "/request_password_reset",
             PASSWORD_RESET_URL = SP.WEB_BASE + "/password_reset",
             // use trailing spaces to force right margins

@@ -22,7 +22,6 @@ import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
 import com.aerofs.ui.IUI.MessageType;
-import com.aerofs.ui.IUI.SetupType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.protobuf.ByteString;
@@ -283,7 +282,7 @@ public class UIUtil
         }
 
         UI.get().preSetupUpdateCheck_();
-        SetupType st = UI.get().setup_(rtRoot);
+        UI.get().setup_(rtRoot);
         if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
 
         if (shouldShowTutorial()) {
@@ -291,7 +290,8 @@ public class UIUtil
             new DlgTutorial(GUI.get().sh()).openDialog();
         }
 
-        if (st == SetupType.NEW_USER && UI.isGUI()) {
+        // TODO (WW) don't show this dialog
+        if (UI.isGUI()) {
             // Check if there are any shared folder invitations to accept
             new DlgJoinSharedFolders(GUI.get().sh()).showDialogIfNeeded();
             // TODO (GS): Needs a similar class for CLI, too

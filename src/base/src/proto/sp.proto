@@ -16,20 +16,11 @@ service SPService {
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
 
-    /**
-     * Sign up a user without a signup code
-     * The user will be marked as unverified, and an email verification code will be sent.
-     *
-     * Required Auth Level: none
-     *
-     * Throws:
-     *   ExAlreadyExist if the email address is unavailable
-     */
-    rpc SignUp(SignUpCall) returns(Void);
+    // TODO (WW) remove it next time the proto number changes
+    rpc Noop(Void) returns(Void);
 
     /**
-     * Sign up a user using a targeted signup code.
-     * Since the invitation has been delivered by mail, the user will be marked as verified.
+     * Sign up a user using a signup code.
      *
      * Required Auth Level: none
      *
@@ -37,7 +28,7 @@ service SPService {
      *   ExAlreadyExist if the email address is unavailable
      *   ExNotFound if the targeted signup code was not found
      */
-    rpc SignUpWithTargeted(SignUpWithTargetedCall) returns(Void);
+    rpc SignUpWithCode(SignUpWithCodeCall) returns(Void);
 
     /**
      * Sign into the SP server. Return the authorization level of the caller.
@@ -59,8 +50,8 @@ service SPService {
      * Throws:
      *   ExNotFound if the signup code wasn't found
      */
-    rpc ResolveTargetedSignUpCode(ResolveTargetedSignUpCodeCall)
-            returns (ResolveTargetedSignUpCodeReply);
+    rpc ResolveSignUpCode(ResolveSignUpCodeCall)
+            returns (ResolveSignUpCodeReply);
 
     /**
      * Send a verification code to the user's email address. This function will be called
@@ -113,7 +104,7 @@ service SPService {
     /**
      * Invite a person to become an AeroFS user. The will be entered into the default organization
      * The person will receive an email instructing him/her to download AeroFS. The email will also
-     * contain a sign-up code to be used in the SignUpWithTargeted call. The user is silently
+     * contain a sign-up code to be used in the SignUpWithCode call. The user is silently
      * ignored if she is already an AeroFS user.
      *
      * Required Auth Level: user
@@ -533,15 +524,8 @@ service SPService {
     rpc ListUserDevices(ListUserDevicesCall) returns(ListUserDevicesReply);
 }
 
-message SignUpCall {
-    required string user_id = 1;
-    required bytes credentials = 2; // hashed credentials (some combo of password, etc.)
-    required string first_name = 3;
-    required string last_name = 4;
-}
-
-message SignUpWithTargetedCall {
-    required string targeted_signup_code = 1;
+message SignUpWithCodeCall {
+    required string signup_code = 1;
     required bytes credentials = 3; // hashed credentials (some combo of password, etc.)
     required string first_name = 4;
     required string last_name = 5;
@@ -552,11 +536,11 @@ message SignInCall {
     optional bytes credentials = 2;
 }
 
-message ResolveTargetedSignUpCodeCall {
-    required string tsc = 1;
+message ResolveSignUpCodeCall {
+    required string code = 1;
 }
 
-message ResolveTargetedSignUpCodeReply {
+message ResolveSignUpCodeReply {
     required string email_address = 1;
 }
 

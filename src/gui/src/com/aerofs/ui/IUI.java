@@ -87,15 +87,11 @@ public interface IUI {
 
     void preSetupUpdateCheck_() throws Exception;
 
-    public enum SetupType {
-        NEW_USER,
-        EXISTING_USER;
-    }
     /**
      * Do the setup process
      * @throws ExAborted if the user canceled the setup
      */
-    SetupType setup_(String rtRoot) throws Exception;
+    void setup_(String rtRoot) throws Exception;
 
     void shutdown();
 

@@ -4,10 +4,9 @@ import com.aerofs.gui.AeroFSMessageBox.ButtonType;
 import com.aerofs.gui.AeroFSMessageBox.IconType;
 import com.aerofs.gui.multiuser.MultiuserDlgSetup;
 import com.aerofs.gui.multiuser.tray.MultiuserMenuProvider;
-import com.aerofs.gui.password.DlgLogin;
+import com.aerofs.gui.setup.AbstractDlgSetup;
 import com.aerofs.gui.setup.DlgPreSetupUpdateCheck;
 import com.aerofs.gui.singleuser.SingleuserDlgSetup;
-import com.aerofs.gui.setup.IDlgSetup;
 import com.aerofs.gui.singleuser.tray.SingleuserMenuProvider;
 import com.aerofs.gui.tray.SystemTray;
 import com.aerofs.lib.InOutArg;
@@ -540,14 +539,12 @@ public class GUI implements IUI
     }
 
     @Override
-    public SetupType setup_(String rtRoot) throws Exception
+    public void setup_(String rtRoot) throws Exception
     {
-        IDlgSetup dlg = L.get().isMultiuser() ? new MultiuserDlgSetup(_sh) :
+        AbstractDlgSetup dlg = L.get().isMultiuser() ? new MultiuserDlgSetup(_sh) :
                 new SingleuserDlgSetup(_sh);
-
-        dlg.openDialog();
-        if (dlg.isCancelled()) throw new ExAborted("user canceled setup");
-        return dlg.isExistingUser() ? SetupType.EXISTING_USER : SetupType.NEW_USER;
+        dlg.open();
+        if (dlg.isCanelled()) throw new ExAborted("user canceled setup");
     }
 
     public void enterMainLoop_()

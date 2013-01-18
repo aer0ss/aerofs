@@ -54,7 +54,6 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_INVITATIONS_QUOTA;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_VERIFIED;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 import static com.aerofs.sp.server.lib.SPSchema.T_TI;
@@ -100,7 +99,7 @@ public class UserDatabase extends AbstractSQLDatabase
         try {
             ps.executeUpdate();
         } catch (SQLException e) {
-            throwOnConstraintViolation(e);
+            throwOnConstraintViolation(e, "user " + id.toString() + " already exists");
             throw e;
         }
     }
@@ -164,17 +163,6 @@ public class UserDatabase extends AbstractSQLDatabase
         } catch (IOException e) {
             // Base64.decode should not throw any way.
             throw new SQLException(e);
-        } finally {
-            rs.close();
-        }
-    }
-
-    public boolean isVerified(UserID userId)
-            throws SQLException, ExNotFound
-    {
-        ResultSet rs = queryUser(userId, C_USER_VERIFIED);
-        try {
-            return rs.getBoolean(1);
         } finally {
             rs.close();
         }
@@ -322,16 +310,6 @@ public class UserDatabase extends AbstractSQLDatabase
         } else {
             return rs;
         }
-    }
-
-    public void setVerified(UserID userId)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement("update " +
-                T_USER + " set " + C_USER_VERIFIED + "=true where " + C_USER_ID + "=?");
-
-        ps.setString(1, userId.toString());
-        Util.verify(ps.executeUpdate() == 1);
     }
 
     public void setLevel(UserID userId, AuthorizationLevel authLevel)

@@ -44,8 +44,7 @@ public class PasswordManagement
             return;
         }
 
-        String token = Base62CodeGenerator.newRandomBase62String(
-                SPParam.PASSWORD_RESET_TOKEN_LENGTH);
+        String token = Base62CodeGenerator.generate();
         _db.insertPasswordResetToken(user.id(), token);
         _passwordResetEmailer.sendPasswordResetEmail(user.id(), token);
         l.info("Password Reset Email sent to " + user.id());
