@@ -51,7 +51,8 @@ public class DaemonPostUpdateTasks
             new DPUTUpdateSIDGeneration(cfgUser, dbcw),
             null,  // used to be DPUTMigrateDeadAnchorsAndEmigratedNames
             new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
-            new DPUTMarkAuxRootAsHidden(absAuxRoot)
+            new DPUTMarkAuxRootAsHidden(absAuxRoot),
+            new DPUTCreateLeaveQueueTable(dbcw)
             // new tasks go here
         };
 

@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.persistency.PersistentQueueDriver;
 import com.aerofs.daemon.core.persistency.IPersistentQueue;
@@ -40,7 +40,6 @@ import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.id.SOKID;
 import com.aerofs.proto.SpNotifications.PBSyncStatNotification;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply;
 import com.aerofs.proto.SyncStatus.GetSyncStatusReply.DeviceSyncStatus;
@@ -92,7 +91,8 @@ import java.util.concurrent.Callable;
  *  some rare cases it is possible that the epoch cannot be rolled back far enough and a full
  *  bootstrap is necessary to ensure all lost version hashes are re-sent
  */
-public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersionControlListener
+public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
+        implements IVersionControlListener
 {
     private static final Logger l = Util.l(SyncStatusSynchronizer.class);
 
@@ -107,7 +107,10 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     private final ExponentialRetry _er;
     private final CoreScheduler _sched;
 
-    class SVHBatch
+    /**
+     * A batch of SOIDs for which a SetVersionHash should be sent to the sync status server
+     */
+    private static class SVHBatch
     {
         final long _lastIndex;
         final long _nextIndex;
@@ -174,7 +177,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
         }
     }
 
-    private final PersistentQueueDriver<SOID, SVHBatch> _pq;
+    private final PersistentQueueDriver<SOID, SVHBatch> _pqd;
 
     public static interface IListener
     {
@@ -187,7 +190,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
     public SyncStatusSynchronizer(TransManager tm, CoreScheduler sched,
             DirectoryService ds, SyncStatusConnection ssc, ISyncStatusDatabase ssdb,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, MapSIndex2DeviceBitMap sidx2dbm,
-            NativeVersionControl nvc, PersistentQueueDriver.Factory f)
+            NativeVersionControl nvc, PersistentQueueDriver.Factory factPQD)
     {
         _tm = tm;
         _ds = ds;
@@ -199,11 +202,11 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
         _sid2sidx = sid2sidx;
         _sidx2dbm = sidx2dbm;
         _er = new ExponentialRetry(sched);
-        _pq = f.newDriver(new SSPQ());
+        _pqd = factPQD.create(new SSPQ());
 
         nvc.addListener_(this);
 
-        _pq.scheduleScan_();
+        _pqd.scheduleScan_();
     }
 
     public void addListener_(IListener listener)
@@ -295,7 +298,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
             } catch (ExSignIn e) {
                 if (onSignIn_(e._epoch)) {
                     // need to schedule a new scan to resend vh after epoch rollback
-                    _pq.scheduleScan_();
+                    _pqd.scheduleScan_();
                 }
                 // immediately retry making the call now that we're signed-in
                 continue;
@@ -569,7 +572,7 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                         _ssdb.setPushEpoch_(0, t);
                     }
 
-                    _pq.restartScan_();
+                    _pqd.restartScan_();
 
                     rollback = true;
                 }
@@ -603,13 +606,13 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
                 @Override
                 public void committing_(Trans t) throws SQLException
                 {
-                    for (SOID soid : set) _pq.enqueue_(soid, t);
+                    for (SOID soid : set) _pqd.enqueue_(soid, t);
                 }
 
                 @Override
                 public void committed_()
                 {
-                    _pq.scheduleScan_();
+                    _pqd.scheduleScan_();
                 }
             });
             return set;
@@ -641,43 +644,4 @@ public class SyncStatusSynchronizer implements IDirectoryServiceListener, IVersi
          */
         if (!(obj.oid().isRoot() || obj.oid().isTrash())) _tlModified.get(t).add(obj);
     }
-
-    @Override
-    public void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectMoved_(SOID obj, OID parentFrom, OID parentTo, Path pathFrom, Path pathTo,
-            Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectContentCreated_(SOKID obj, Path path, Trans t)
-            throws SQLException
-    {}
-
-    @Override
-    public void objectContentDeleted_(SOKID obj, Path path, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectContentModified_(SOKID obj, Path path, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectExpelled_(SOID obj, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectAdmitted_(SOID obj, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus,
-            Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t) throws SQLException
-    {}
 }

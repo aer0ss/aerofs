@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.notification;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -30,7 +30,7 @@ import java.util.Map.Entry;
  * Keep track of all objects for which conflict branches have been added/removed
  * during a transaction and emit a notification when the transaction is committed.
  */
-public class ConflictState implements IDirectoryServiceListener
+public class ConflictState extends AbstractDirectoryServiceListener
 {
     private final DirectoryService _ds;
     private final List<IConflictStateListener> _listeners = Lists.newArrayList();
@@ -119,10 +119,6 @@ public class ConflictState implements IDirectoryServiceListener
     }
 
     @Override
-    public void objectCreated_(SOID obj, OID parent, Path pathTo, Trans t) throws SQLException
-    {}
-
-    @Override
     public void objectDeleted_(SOID obj, OID parent, Path pathFrom, Trans t) throws SQLException
     {
         OA oa = _ds.getOANullable_(obj);
@@ -133,11 +129,6 @@ public class ConflictState implements IDirectoryServiceListener
             add(obj, pathFrom, t);
         }
     }
-
-    @Override
-    public void objectMoved_(SOID obj, OID parentFrom, OID parentTo, Path pathFrom, Path pathTo,
-            Trans t) throws SQLException
-    {}
 
     private void add(SOID soid, Path path, Trans t)
     {
@@ -164,19 +155,6 @@ public class ConflictState implements IDirectoryServiceListener
     {
         if (!sokid.kidx().equals(KIndex.MASTER)) add(sokid.soid(), path, t);
     }
-
-    @Override
-    public void objectExpelled_(SOID obj, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectAdmitted_(SOID obj, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus,
-            Trans t) throws SQLException
-    {}
 
     @Override
     public void objectObliterated_(OA oa, BitVector bv, Path pathFrom, Trans t) throws SQLException

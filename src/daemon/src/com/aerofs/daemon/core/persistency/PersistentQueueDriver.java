@@ -61,7 +61,7 @@ public class PersistentQueueDriver<I, O>
             _sched = sched;
         }
 
-        public <I, O> PersistentQueueDriver<I, O> newDriver(IPersistentQueue<I, O> q)
+        public <I, O> PersistentQueueDriver<I, O> create(IPersistentQueue<I, O> q)
         {
             return new PersistentQueueDriver<I, O>(_tc, _tm, _sched, q);
         }

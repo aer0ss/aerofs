@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.daemon.core.acl.SharedFolderAutoLeaver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
@@ -34,10 +35,12 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final DirectoryService _ds;
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
+    private final SharedFolderAutoLeaver _lod;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
-            ObjectDeleter od, CfgRootSID cfgRootSID, RitualNotificationServer rns)
+            ObjectDeleter od, CfgRootSID cfgRootSID, RitualNotificationServer rns,
+            SharedFolderAutoLeaver lod)
     {
         _ds = ds;
         _oc = oc;
@@ -45,6 +48,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         _stores = stores;
         _cfgRootSID = cfgRootSID;
         _rns = rns;
+        _lod = lod;
     }
 
     @Override
@@ -63,7 +67,8 @@ public class SingleuserStoreJoiner implements IStoreJoiner
          * before the original move propagates)
          */
         OID oid = SID.convertedStoreSID2folderOID(sid);
-        if (_ds.hasOA_(new SOID(root, oid))) {
+        OA oaFolder = _ds.getOANullable_(new SOID(root, oid));
+        if (oaFolder != null && !_ds.isDeleted_(oaFolder)) {
             l.info("original folder already present");
             return;
         }
@@ -112,6 +117,9 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         }
 
         l.info("joining share: " + sidx + " " + folderName);
+
+        // make sure we don't have an old "leave request" queued
+        _lod.removeFromQueue_(sid, t);
 
         while (true) {
             try {
