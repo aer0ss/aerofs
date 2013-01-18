@@ -64,11 +64,21 @@ class _RitualServiceWrapper(object):
         srps = self._convert_acl(acl)
         return self._service.share_folder(pbpath, srps, note)
 
+    def list_shared_folders(self):
+        r = []
+        for p in self._service.list_shared_folders().path:
+            r.append(convert.pbpath_to_absolute(p))
+        return r
+
     def list_shared_folder_invitations(self):
         return self._service.list_shared_folder_invitations().invitation
 
     def join_shared_folder(self, shared_folder_code):
         self._service.join_shared_folder(shared_folder_code)
+
+    def leave_shared_folder(self, path):
+        pbpath = convert.absolute_to_pbpath(path)
+        self._service.leave_shared_folder(pbpath)
 
     def exclude_folder(self, path):
         pbpath = self.wait_path(path)
