@@ -17,6 +17,7 @@ import com.aerofs.zephyr.core.ZUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -70,7 +71,10 @@ public enum ZephyrClientState implements IState<ZephyrClientContext>
 
             SocketChannel sc = ZUtil.getSocketChannel(ctx._k);
             try {
-                sc.connect(Zephyr.zephyrAddress());
+                // our address parameters are unresolved and have to be resolved prior to use
+                InetSocketAddress resaddr = new InetSocketAddress(
+                        Zephyr.zephyrAddress().getHostName(), Zephyr.zephyrAddress().getPort());
+                sc.connect(resaddr);
             } catch (IOException e) {
                 return halt_(ctx, "connect failed", e);
             }
