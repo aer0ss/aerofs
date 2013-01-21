@@ -459,8 +459,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
     {
         OA oa = _ds.getOA_(soid);
         assert oa.isExpelled() : soid;
-        Path path = _ds.resolve_(soid);
-        SOID parent = new SOID(soid.sidx(), oa.parent());
 
         // NOTE: it would theoretically be possible to handle expulsion resulting from deletion
         // and selective sync the same way which one might think would be cleaner but it would
@@ -470,11 +468,12 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         if (_ds.isDeleted_(oa)) {
             if (l.isInfoEnabled()) l.info("expel deleted " + soid);
             if (oa.isDir()) _ds.setAggregateSyncStatus_(soid, new CounterVector(), t);
-            return;
+        } else {
+            Path path = _ds.resolve_(soid);
+            SOID parent = new SOID(soid.sidx(), oa.parent());
+            if (l.isInfoEnabled()) l.info("expelled " + soid);
+            updateParentAggregateOnDeletion_(soid, parent, path, false, t);
         }
-
-        if (l.isInfoEnabled()) l.info("expelled " + soid);
-        updateParentAggregateOnDeletion_(soid, parent, path, false, t);
     }
 
     /**

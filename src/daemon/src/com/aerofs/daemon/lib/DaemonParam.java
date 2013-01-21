@@ -96,11 +96,7 @@ public class DaemonParam
 
     public static final long ANTI_ENTROPY_INTERVAL = 30 * C.SEC;
 
-    public static final long  STORE_RECONFIG_DELAY      = 5 * C.SEC;
-
     public static final boolean MAXCAST_IF_NO_AVAILABLE_DEVICES = true;
-
-    public static final int FIND_NEXT_PARTITION_INTERVAL        = 5;
 
     public static final long LINK_STATE_POLLING_INTERVAL        = 10 * C.SEC;
 
@@ -109,14 +105,6 @@ public class DaemonParam
     public static final long TC_RECLAIM_DELAY           = 30 * C.SEC;
 
     public static final long HOSTNAME_MONITOR_MIN_DELAY = 15 * C.SEC;
-
-    public static final long SCANNER_RESCAN_DELAY_MIN   = 500;
-    public static final long SCANNER_RESCAN_DELAY_MAX   = 5 * C.SEC;
-
-    public static final long WIN_NOTIFIER_DELETE_WAIT = 5 * C.SEC;
-    public static final long WIN_NOTIFIER_DR_DELETE_DELAY =
-        WIN_NOTIFIER_DELETE_WAIT + 1 * C.SEC;
-    public static final long WIN_NOTIFIER_DR_SCAN_DELAY = 5 * C.SEC;
 
     // TODO use a unified session management system where a session is consistently deleted from
     // caches at all the layers at once

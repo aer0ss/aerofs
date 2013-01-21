@@ -6,12 +6,14 @@ import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.Set;
 
 public class CoreEventDispatcher extends EventDispatcher
 {
     private volatile long _executedEventCount;
+    private volatile @Nullable IEvent _evCurrent;
 
     @Inject
     public CoreEventDispatcher(Set<ICoreEventHandlerRegistrar> registrars)
@@ -43,7 +45,19 @@ public class CoreEventDispatcher extends EventDispatcher
     {
         _executedEventCount++;
 
+        _evCurrent = ev;
+
         super.dispatch_(ev, prio);
+
+        _evCurrent = null;
+    }
+
+    /**
+     * @return the current event being dispatched. Null otherwise.
+     */
+    public @Nullable IEvent getCurrentEventNullable()
+    {
+        return _evCurrent;
     }
 
     public long getExecutedEventCount()
