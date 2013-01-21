@@ -51,6 +51,7 @@ import java.util.Arrays;
 public abstract class BaseSecUtil
 {
     private static final int KEY_STRENGTH = 2048;
+    protected static final String CERTIFICATE_TYPE = "X.509";
     protected static final String SHA1_WITH_RSA = "SHA1withRSA";
     protected static final String ORGANIZATION_UNIT = "na";
     protected static final String ORGANIZATION_NAME = "aerofs.com";
@@ -75,6 +76,7 @@ public abstract class BaseSecUtil
     }
 
     private final static int MAX_PLAIN_TEXT_SIZE = 117;
+
     public static byte[] newChallengeData() throws GeneralSecurityException
     {
         return newRandomBytes(MAX_PLAIN_TEXT_SIZE);
@@ -723,7 +725,7 @@ public abstract class BaseSecUtil
     {
         InputStream in = new FileInputStream(serverCertFilename);
         try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            CertificateFactory cf = CertificateFactory.getInstance(CERTIFICATE_TYPE);
             return cf.generateCertificate(in);
         } finally {
             in.close();
