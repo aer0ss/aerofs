@@ -20,6 +20,7 @@ import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
+import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
@@ -154,8 +155,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> joinSharedFolder(ByteString sid)
             throws Exception
     {
-        EIJoinSharedFolder ev = new EIJoinSharedFolder(new SID(sid));
-        ev.execute(PRIO);
+        new EIJoinSharedFolder(new SID(sid)).execute(PRIO);
         return createVoidReply();
     }
 
@@ -163,7 +163,7 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> leaveSharedFolder(PBPath path)
             throws Exception
     {
-        // TODO:
+        new EILeaveSharedFolder(new Path(path)).execute(PRIO);
         return createVoidReply();
     }
 

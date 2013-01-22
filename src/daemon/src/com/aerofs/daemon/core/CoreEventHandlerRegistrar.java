@@ -32,6 +32,7 @@ import com.aerofs.daemon.core.fs.HdGetAttr;
 import com.aerofs.daemon.core.fs.HdGetChildrenAttr;
 import com.aerofs.daemon.core.fs.HdImportFile;
 import com.aerofs.daemon.core.fs.HdJoinSharedFolder;
+import com.aerofs.daemon.core.fs.HdLeaveSharedFolder;
 import com.aerofs.daemon.core.fs.HdListSharedFolders;
 import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.fs.HdSetAttr;
@@ -56,6 +57,7 @@ import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
+import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.admin.EIListExpelledObjects;
 import com.aerofs.daemon.event.admin.EIListRevChildren;
@@ -102,6 +104,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdDeleteObject _hddo;
     private final HdDeleteBranch _hddb;
     private final HdJoinSharedFolder _hdJoinSharedFolder;
+    private final HdLeaveSharedFolder _hdLeaveSharedFolder;
     private final HdListSharedFolders _hdListSharedFolders;
     private final HdListSharedFolderInvitations _hdListSharedFolderInvitations;
     private final HdSetExpelled _hdSetExpelled;
@@ -163,13 +166,14 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdListRevHistory hdListRevHistory, HdExportRevision hdExportRevision,
             HdGetSyncStatus hdGetSyncStatus, HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat, HdGetActivities hdGetActivities,
-            HdDownloadPacket hdDownloadPacket)
+            HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder)
     {
         _hdco = hdco;
         _hdMoveObject = hdMoveObject;
         _hddo = hddo;
         _hddb = hddb;
         _hdJoinSharedFolder = hdJoinSharedFolder;
+        _hdLeaveSharedFolder = hdLeaveSharedFolder;
         _hdListSharedFolders = hdListSharedFolders;
         _hdListSharedFolderInvitations = hdListSharedFolderInvitations;
         _hdSetExpelled = hdSetExpelled;
@@ -234,6 +238,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIDumpStat.class, _hdDumpStat)
                 .setHandler_(EIShareFolder.class, _hdShareFolder)
                 .setHandler_(EIJoinSharedFolder.class, _hdJoinSharedFolder)
+                .setHandler_(EILeaveSharedFolder.class, _hdLeaveSharedFolder)
                 .setHandler_(EIListSharedFolders.class, _hdListSharedFolders)
                 .setHandler_(EIListSharedFolderInvitations.class, _hdListSharedFolderInvitations)
                 .setHandler_(EITransportPing.class, _hdTransportPing)
