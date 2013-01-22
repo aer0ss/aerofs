@@ -5,15 +5,9 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.SID;
-import com.aerofs.base.id.UserID;
-import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
-import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
-import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
-import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,12 +16,6 @@ import java.util.Set;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  * Test basic functionality and permission enforcement of SP's shareFolder call, but don't test its

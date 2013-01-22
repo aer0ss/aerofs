@@ -41,20 +41,18 @@ import java.util.Arrays;
 public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 {
     private static final Logger l = Util.l(HdRelocateRootAnchor.class);
-    private final DirectoryService _ds;
     private final InjectableFile.Factory _factFile;
     private final TransManager _tm;
-    private final InjectableDriver _dr;
+    private final ICrossFSRelocator _crossFSRelocator;
     private final CfgAbsAuxRoot _cfgAbsAuxRoot;
 
     @Inject
-    public HdRelocateRootAnchor(DirectoryService ds, InjectableFile.Factory factFile,
-            TransManager tm, InjectableDriver dr, CfgAbsAuxRoot cfgAbsAuxRoot)
+    public HdRelocateRootAnchor(InjectableFile.Factory factFile, TransManager tm,
+            ICrossFSRelocator differentFSRelocator, CfgAbsAuxRoot cfgAbsAuxRoot)
     {
-        _ds = ds;
         _factFile = factFile;
         _tm = tm;
-        _dr = dr;
+        _crossFSRelocator = differentFSRelocator;
         _cfgAbsAuxRoot = cfgAbsAuxRoot;
     }
 
@@ -88,9 +86,15 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         if (!fNewRoot.exists()) fNewRoot.mkdirs();
         boolean sameFS = OSUtil.get().isInSameFileSystem(absOldRoot, absNewRoot);
 
-        AbstractRelocator relocator = sameFS ?
-                new SameFSRelocator(fOldRoot, fNewRoot)
-                : new DifferentFSRelocator(fOldRoot, fNewRoot);
+        IRelocator relocator;
+
+        if (sameFS) {
+            relocator = new SameFSRelocator(_factFile, _cfgAbsAuxRoot, fOldRoot, fNewRoot);
+        } else {
+            // Injection provides the correct different FS relocator, we just have to initialize it.
+            _crossFSRelocator.init_(fOldRoot, fNewRoot);
+            relocator = _crossFSRelocator;
+        }
 
         // Delete the empty new root that we just created, so that the move and copy operations
         // work properly. Note: we know this is empty because either we just created it or we
@@ -131,14 +135,38 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         ExitCode.RELOCATE_ROOT_ANCHOR.exit();
     }
 
-    private abstract class AbstractRelocator
+    public interface IRelocator
     {
-        final InjectableFile _oldRoot;
-        final InjectableFile _newRoot;
-        final InjectableFile _oldAuxRoot;
-        final InjectableFile _newAuxRoot;
+        void doWork(Trans t) throws Exception;
 
-        AbstractRelocator(InjectableFile oldRoot, InjectableFile newRoot)
+        /**
+         * Called if doWork throws.
+         */
+        void rollback() throws Exception;
+
+        /**
+         * Called after the transaction has been successfully completed.
+         */
+        void onSuccessfulTransaction();
+    }
+
+    private static abstract class AbstractRelocator implements IRelocator
+    {
+        private final InjectableFile.Factory _factFile;
+        private final CfgAbsAuxRoot _cfgAbsAuxRoot;
+
+        AbstractRelocator(InjectableFile.Factory factFile, CfgAbsAuxRoot cfgAbsAuxRoot)
+        {
+            _factFile = factFile;
+            _cfgAbsAuxRoot = cfgAbsAuxRoot;
+        }
+
+        protected InjectableFile _oldRoot;
+        protected InjectableFile _newRoot;
+        protected InjectableFile _oldAuxRoot;
+        protected InjectableFile _newAuxRoot;
+
+        public void init_(InjectableFile oldRoot, InjectableFile newRoot)
         {
             _oldRoot = oldRoot;
             _newRoot = newRoot;
@@ -146,29 +174,19 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             _oldAuxRoot = _factFile.create(_cfgAbsAuxRoot.get());
             _newAuxRoot = _factFile.create(_cfgAbsAuxRoot.forPath(_newRoot.getPath()));
         }
-
-        abstract void doWork(Trans t) throws Exception;
-
-        /**
-         * Called if doWork throws
-         */
-        abstract void rollback() throws Exception;
-
-        /**
-         * Called after the transaction has been successfully ended
-         */
-        abstract void onSuccessfulTransaction();
-    }
+   }
 
     private class SameFSRelocator extends AbstractRelocator
     {
-        SameFSRelocator(InjectableFile oldRoot, InjectableFile newRoot)
+        SameFSRelocator(InjectableFile.Factory factFile, CfgAbsAuxRoot cfgAbsAuxRoot,
+                InjectableFile oldRoot, InjectableFile newRoot)
         {
-            super(oldRoot, newRoot);
+            super(factFile, cfgAbsAuxRoot);
+            init_(oldRoot, newRoot);
         }
 
         @Override
-        void doWork(Trans t) throws Exception
+        public void doWork(Trans t) throws Exception
         {
             try {
                 _oldRoot.moveInSameFileSystem(_newRoot);
@@ -184,49 +202,96 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         }
 
         @Override
-        void rollback() throws Exception
+        public void rollback() throws Exception
         {
             if (_newAuxRoot.exists()) _newAuxRoot.moveInSameFileSystem(_oldAuxRoot);
             if (_newRoot.exists()) _newRoot.moveInSameFileSystem(_oldRoot);
         }
 
         @Override
-        void onSuccessfulTransaction() {}
+        public void onSuccessfulTransaction()
+        {
+            // Nothing to do.
+        }
     }
 
-    private class DifferentFSRelocator extends AbstractRelocator
+    public interface ICrossFSRelocator extends IRelocator
     {
-        DifferentFSRelocator(InjectableFile oldRoot, InjectableFile newRoot)
+        /**
+         * Initialize file parameters.
+         */
+        void init_(InjectableFile oldRoot, InjectableFile newRoot);
+
+        /**
+         * Called after the root directory has been copied.
+         */
+        void afterRootCopy(Trans t) throws Exception;
+    }
+
+    protected static abstract class AbstractCrossFSRelocator
+            extends AbstractRelocator
+            implements ICrossFSRelocator
+    {
+        protected final DirectoryService _ds;
+        protected final InjectableDriver _dr;
+
+        protected AbstractCrossFSRelocator(InjectableFile.Factory factFile,
+                CfgAbsAuxRoot cfgAbsAuxRoot, DirectoryService ds, InjectableDriver dr)
         {
-            super(oldRoot, newRoot);
+            super(factFile, cfgAbsAuxRoot);
+
+            _ds = ds;
+            _dr = dr;
         }
 
         @Override
-        void doWork(Trans t) throws Exception
+        public void doWork(Trans t) throws Exception
         {
             OSUtil.get().copyRecursively(_oldRoot, _newRoot, true, true);
-
-            // Only update FIDs in the single user case.
-            if (!L.get().isMultiuser()) {
-                updateFID(_ds.resolveThrows_(new Path()), _newRoot.getAbsolutePath(), t);
-            }
-
+            afterRootCopy(t);
             OSUtil.get().copyRecursively(_oldAuxRoot, _newAuxRoot, false, false);
             OSUtil.get().markHiddenSystemFile(_newAuxRoot.getAbsolutePath());
         }
 
         @Override
-        void rollback() throws Exception
+        public void rollback() throws Exception
         {
             deleteFolders(_newRoot, _newAuxRoot);
         }
 
         @Override
-        void onSuccessfulTransaction()
+        public void onSuccessfulTransaction()
         {
             // We only delete the old folders once we're absolutely sure everything was successful
             // Otherwise we risk deleting user data
             deleteFolders(_oldRoot, _oldAuxRoot);
+        }
+
+        private void deleteFolders(InjectableFile rootAnchor, InjectableFile auxRoot)
+        {
+            if (!rootAnchor.deleteIgnoreErrorRecursively()) {
+                l.warn("couldn't delete " + rootAnchor + ". ignored.");
+            }
+            if (!auxRoot.deleteIgnoreErrorRecursively()) {
+                l.warn("couldn't delete " + auxRoot + ". ignored.");
+            }
+        }
+    }
+
+    public static class SingleuserCrossFSRelocator extends AbstractCrossFSRelocator
+    {
+        @Inject
+        public SingleuserCrossFSRelocator(InjectableFile.Factory factFile,
+                CfgAbsAuxRoot cfgAbsAuxRoot, DirectoryService ds, InjectableDriver dr)
+        {
+            super(factFile, cfgAbsAuxRoot, ds, dr);
+        }
+
+        @Override
+        public void afterRootCopy(Trans t)
+                throws Exception
+        {
+            updateFID(_ds.resolveThrows_(new Path()), _newRoot.getAbsolutePath(), t);
         }
 
         private void updateFID(SOID newRootSOID, String absNewRoot, final Trans t) throws Exception
@@ -298,20 +363,27 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
             switch (oa.type()) {
             case ANCHOR: return oldParent + oa.name();
             case DIR:    return (oa.soid().oid().isRoot()) ? oldParent + File.separator
-                                                           : oldParent + oa.name() + File.separator;
+                    : oldParent + oa.name() + File.separator;
             case FILE:   return null;
             default:     assert false; return null;
             }
         }
+    }
 
-        private void deleteFolders(InjectableFile rootAnchor, InjectableFile auxRoot)
+    public static class MultiuserCrossFSRelocator extends AbstractCrossFSRelocator
+    {
+        @Inject
+        public MultiuserCrossFSRelocator(InjectableFile.Factory factFile,
+                CfgAbsAuxRoot cfgAbsAuxRoot, DirectoryService ds, InjectableDriver dr)
         {
-            if (!rootAnchor.deleteIgnoreErrorRecursively()) {
-                l.warn("couldn't delete " + rootAnchor + ". ignored.");
-            }
-            if (!auxRoot.deleteIgnoreErrorRecursively()) {
-                l.warn("couldn't delete " + auxRoot + ". ignored.");
-            }
+            super(factFile, cfgAbsAuxRoot, ds, dr);
+        }
+
+        @Override
+        public void afterRootCopy(Trans t)
+                throws Exception
+        {
+            // Nothing to do.
         }
     }
 }

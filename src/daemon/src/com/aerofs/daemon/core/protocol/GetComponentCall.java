@@ -77,7 +77,6 @@ public class GetComponentCall
         _a2t = a2t;
     }
 
-
     /**
      * @return the response Message received from the remote peer
      */

@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.multiplicity.singleuser;
 
+import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
+import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.SingleuserCrossFSRelocator;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -15,6 +17,7 @@ import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantDetector;
+import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
 
@@ -23,6 +26,8 @@ public class SingleuserModule extends AbstractModule
     @Override
     protected void configure()
     {
+        Util.l(this).info("single user mode");
+
         bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
 
         binder().disableCircularProxies();
@@ -36,5 +41,7 @@ public class SingleuserModule extends AbstractModule
         bind(IImmigrantDetector.class).to(ImmigrantDetector.class);
 
         bind(IStoreJoiner.class).to(SingleuserStoreJoiner.class);
+
+        bind(ICrossFSRelocator.class).to(SingleuserCrossFSRelocator.class);
     }
 }

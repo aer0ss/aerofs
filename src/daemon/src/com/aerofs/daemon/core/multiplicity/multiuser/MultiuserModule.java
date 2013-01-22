@@ -5,6 +5,8 @@
 package com.aerofs.daemon.core.multiplicity.multiuser;
 
 import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
+import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
+import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.MultiuserCrossFSRelocator;
 import com.aerofs.daemon.core.ds.IPathResolver;
 import com.aerofs.daemon.core.migration.IEmigrantCreator;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
@@ -28,7 +30,7 @@ public class MultiuserModule extends AbstractModule
     @Override
     protected void configure()
     {
-        Util.l(this).info("multiuser mode");
+        Util.l(this).info("multi user mode");
 
         bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
 
@@ -45,5 +47,7 @@ public class MultiuserModule extends AbstractModule
         bind(IImmigrantDetector.class).to(NullImmigrantDetector.class);
 
         bind(IStoreJoiner.class).to(MultiuserStoreJoiner.class);
+
+        bind(ICrossFSRelocator.class).to(MultiuserCrossFSRelocator.class);
     }
 }

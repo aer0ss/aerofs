@@ -58,7 +58,7 @@ public class DaemonProgram implements IProgram
             multiplicityModule = new MultiuserModule();
             /**
              * NB: Do not change the proxy chain in a backward incompatible way unless you write
-             * a DPUT to convert all user data
+             * a DPUT to convert all user data.
              */
             storageModule = BlockStorageModules.proxy(new LocalBackendModule(),
                     new GZipBackendModule());
@@ -72,7 +72,7 @@ public class DaemonProgram implements IProgram
              * NB: Do not ever change the proxy chain in a backward incompatible way unless you
              * write a DPUT to convert all (known) user data. Note that you'd have to change the
              * storage schema on the S3 side to avoid conflicts with unknown user data (i.e blocks
-             * leftover from previous installs of S3 client on the same bucket)
+             * leftover from previous installs of S3 client on the same bucket).
              */
             storageModule = BlockStorageModules.proxy(new S3BackendModule(),
                     new CacheBackendModule(), new GZipBackendModule());
