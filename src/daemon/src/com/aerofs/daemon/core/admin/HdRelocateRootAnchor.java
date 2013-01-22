@@ -4,7 +4,6 @@
 
 package com.aerofs.daemon.core.admin;
 
-
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
@@ -64,7 +63,6 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
     {
         if (!new File(ev._newRootAnchor).isAbsolute()) {
             throw new ExBadArgs("the path to new " + L.PRODUCT + " location is not absolute");
-
         }
 
         SVClient.sendEventAsync(Type.MOVE_ROOT);
@@ -79,15 +77,14 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
      */
     private void move_(String absOldRoot, String absNewRoot) throws Exception
     {
-        // sanity checking
-
+        // Sanity checking.
         RootAnchorUtil.checkNewRootAnchor(absOldRoot, absNewRoot);
         RootAnchorUtil.checkRootAnchor(absNewRoot, Cfg.absRTRoot(), false);
 
         InjectableFile fNewRoot = _factFile.create(absNewRoot);
         InjectableFile fOldRoot = _factFile.create(absOldRoot);
 
-        // The new root folder must be created so that getAuxRoot() below won't fail
+        // The new root folder must be created so that getAuxRoot() below won't fail.
         if (!fNewRoot.exists()) fNewRoot.mkdirs();
         boolean sameFS = OSUtil.get().isInSameFileSystem(absOldRoot, absNewRoot);
 
@@ -100,8 +97,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         // asserted its emptiness in RootAnchorUtil.checkRootAnchor above.
         fNewRoot.delete();
 
-        // perform actual operations
-
+        // Perform actual operations.
         l.warn(absOldRoot + " -> " + absNewRoot + ". same fs? " + sameFS);
 
         Trans t = _tm.begin_();
@@ -113,7 +109,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
         } catch (Exception e) {
 
-            l.warn("move failed. rollback: " + Util.e(e));
+            l.warn("Move failed. Rollback: " + Util.e(e));
 
             Cfg.db().set(Key.ROOT, absOldRoot);
             // Restart Cfg settings since the daemon keeps running
@@ -209,7 +205,12 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         void doWork(Trans t) throws Exception
         {
             OSUtil.get().copyRecursively(_oldRoot, _newRoot, true, true);
-            updateFID(_ds.resolveThrows_(new Path()), _newRoot.getAbsolutePath(), t);
+
+            // Only update FIDs in the single user case.
+            if (!L.get().isMultiuser()) {
+                updateFID(_ds.resolveThrows_(new Path()), _newRoot.getAbsolutePath(), t);
+            }
+
             OSUtil.get().copyRecursively(_oldAuxRoot, _newAuxRoot, false, false);
             OSUtil.get().markHiddenSystemFile(_newAuxRoot.getAbsolutePath());
         }
@@ -230,9 +231,10 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
 
         private void updateFID(SOID newRootSOID, String absNewRoot, final Trans t) throws Exception
         {
-            // Initial walk inserts extra byte to each new FID to avoid duplicate key conflicts in the
-            // database in case some files in the new location happen to have identical FIDs with
-            // original files -- although it should be very rare. Second walk removes this extra byte.
+            // Initial walk inserts extra byte to each new FID to avoid duplicate key conflicts in
+            // the database in case some files in the new location happen to have identical FIDs
+            // with original files -- although it should be very rare. Second walk removes this
+            // extra byte.
 
             _ds.walk_(newRootSOID, absNewRoot, new IObjectWalker<String>()
             {
@@ -284,7 +286,7 @@ public class HdRelocateRootAnchor extends AbstractHdIMC<EIRelocateRootAnchor>
         }
 
         /**
-         * oldParent has the File.separator affixed to the end of the path (except root)
+         * oldParent has the File.separator affixed to the end of the path (except root).
          */
         private @Nullable String prefixWalk(String oldParent, OA oa)
         {
