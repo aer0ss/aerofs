@@ -7,6 +7,7 @@ package com.aerofs.base.id;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.aerofs.base.Loggers;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
