@@ -74,6 +74,13 @@ class TestProtobufRpcPlugin(unittest.TestCase):
     def setUp(self):
         self._service = AddressBookServiceRpcStub(TestConnectionService())
 
+    def test_optional_params(self):
+        person = Person()
+        person.name = 'AeroFS Dude'
+        person.email = 'dude@aerofs.com'
+        response = self._service.add_person(person, None)
+        self.assertEqual(1, response.id)
+
     def test_add_person_call(self):
         person = Person()
         person.name = 'AeroFS Dude'
