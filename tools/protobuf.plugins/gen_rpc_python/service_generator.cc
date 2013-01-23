@@ -275,7 +275,14 @@ string messageFieldAssignmentToString(const Descriptor *message)
     for (int i = 0; i < message->field_count(); i++) {
         const FieldDescriptor* field = message->field(i);
 
-        assignment << endl << INDENT << INDENT << "m." << field->name();
+        assignment << endl << INDENT << INDENT;
+
+        if (field->is_optional()) {
+          // The field is optional, do not perform any assignment if the value is None
+          assignment <<  "if " << field->name() << " is not None: ";
+        }
+
+        assignment << "m." << field->name();
 
         if (field->is_repeated()) {
             // The field is repeated, so we need to use extend()
