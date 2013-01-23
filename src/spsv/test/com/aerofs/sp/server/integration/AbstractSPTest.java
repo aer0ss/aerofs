@@ -25,7 +25,7 @@ import com.aerofs.sp.server.lib.SharedFolderDatabase;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
-import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.OrganizationDatabase;
@@ -186,7 +186,7 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
 
     protected void mockCertificateGeneratorAndIncrementSerialNumber() throws Exception
     {
-        CertificateGenerationResult cert = mock(CertificateGenerationResult.class);
+        CertificationResult cert = mock(CertificationResult.class);
 
         // Just stub out the certificate generator. Make sure it doesn't try to contact the CA.
         when(certgen.generateCertificate(any(UserID.class), any(DID.class),

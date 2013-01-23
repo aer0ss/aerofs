@@ -62,47 +62,6 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
         service.certifyDevice(_did.toPB(), csr, false).get().getCert();
     }
 
-    /**
-     * Test that the certificate is not created when we try to recertify a device that doesn't
-     * exist.
-     */
-    @Test(expected = ExNotFound.class)
-    public void shouldNotCreateCertificateWhenRecertifyNonExistingDevice()
-        throws Exception
-    {
-        service.certifyDevice(_did.toPB(), newCSR(_did), true).get().getCert();
-    }
-
-    /**
-     * Test that the certificate is not created when we try to recertify a device that belongs to
-     * someone else.
-     */
-    @Test(expected = ExNoPerm.class)
-    public void shouldNotCreateCertificateWhenRecertifyByDifferentOwner()
-        throws Exception
-    {
-        boolean noExceptionCaught = true;
-        String cert = null;
-        ByteString csr = newCSR(_did);
-
-        // Need a try catch here, because without one if the first certifyDevice call fails with
-        // ExNoPerm the test would still pass, which would be incorrect.
-        try {
-            // Create a cert and expect the creation to succeed.
-            cert = service.certifyDevice(_did.toPB(), csr, false).get().getCert();
-        }
-        catch (ExNoPerm e) {
-            noExceptionCaught = false;
-        }
-
-        assertTrue(noExceptionCaught);
-        assertTrue(cert.equals(RETURNED_CERT));
-
-        // Try to recertify using the wrong session user.
-        setSessionUser(TEST_2_USER);
-        service.certifyDevice(_did.toPB(), csr, true).get().getCert();
-    }
-
     @Test
     public void shouldCreateCertificateForTwoDevicesWithSameName()
         throws Exception
