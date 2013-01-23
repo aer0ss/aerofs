@@ -353,7 +353,10 @@ service SPService {
     rpc GetCRL(Void) returns(GetCRLReply);
 
     /**
-     * Revoke the certificate of a specific device. This will trigger a verkehr notification.
+     * Revoke the certificate of a specific device. This will trigger a verkehr notification for the
+     * CRL.
+     *
+     * TODO (MP) also send unlink command to the device itself and clean device database.
      *
      * Q. Why is this needed? Isn't it sufficient to manage users only by the ACL system?
      * A. Consider the case where a user quits AeroFS and we revoke all privileges via ACLs. Their
@@ -367,17 +370,23 @@ service SPService {
      *   ExNoPerm   if the user does not own the certificate that they are trying to revoke.
      *   ExNotFound if the user is trying to revoke certificate that does not exist.
      */
-    rpc RevokeUserDeviceCertificate(RevokeUserDeviceCertificateCall) returns(Void);
+    rpc UnlinkUserDevice(UnlinkUserDeviceCall) returns(Void);
 
     /**
-     * Revoke all certificates belonging to one user. This will trigger a verkehr notification.
+     * Revoke all certificates belonging to one user. This will trigger a verkehr notification for
+     * the CRL.
+     *
+     * TODO (MP) also send unlink commands to all devices and clean device database.
      *
      * Required Auth Level: user
      */
-    rpc RevokeAllUserDeviceCertificates(Void) returns(Void);
+    rpc UnlinkAllUserDevices(Void) returns(Void);
 
     /**
-     * Revoke the certificate of a specific team server. This will trigger a verkehr notification.
+     * Revoke the certificate of a specific team server. This will trigger a verkehr notification
+     * for the CRL.
+     *
+     * TODO (MP) also send unlink command to the device itself and clean device database.
      *
      * Required Auth Level: admin
      *
@@ -385,18 +394,20 @@ service SPService {
      *   ExNoPerm   if the user is not an admin of the organization that owns the team server.
      *   ExNotFound if the user is trying to revoke a certificate that does not exist.
      */
-    rpc RevokeTeamServerDeviceCertificate(RevokeTeamServerDeviceCertificateCall) returns(Void);
+    rpc UnlinkTeamServerDevice(UnlinkTeamServerDeviceCall) returns(Void);
 
     /**
      * Revoke all team server certificates in the callers organization. This will trigger a verkehr
-     * notification.
+     * notification for the CRL.
+     *
+     * TODO (MP) also send unlink commands to all devices and clean device database.
      *
      * Required Auth Level: admin
      *
      * Throws:
      *   ExNoPerm if the user is not an admin of the organization.
      */
-    rpc RevokeAllTeamServerDeviceCertificates(Void) returns(Void);
+    rpc UnlinkAllTeamServerDevices(Void) returns(Void);
 
     /**
      * Get information about a device ID.
@@ -777,11 +788,11 @@ message GetCRLReply {
     repeated uint64 serial = 1;
 }
 
-message RevokeUserDeviceCertificateCall {
+message UnlinkUserDeviceCall {
     required bytes device_id = 1;
 }
 
-message RevokeTeamServerDeviceCertificateCall {
+message UnlinkTeamServerDeviceCall {
     required bytes device_id = 1;
 }
 

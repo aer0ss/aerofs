@@ -134,11 +134,16 @@ public class UIUtil
     }
 
     /**
-     * unlink and exit AeroFS
+     * Unlink and exit AeroFS.
+     *
+     * TODO (MP) delete this.
+     * Once we have unlinking implemented on the web admin panel it should be removed from the
+     * client, just like we did with signup. Until the server side is completely implemented,
+     * leave this here for now.
      */
     public static void unlinkAndExit(InjectableFile.Factory factFile) throws SQLException, IOException
     {
-        // delete the password.
+        // Delete the password.
         Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
         factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
         UI.get().shutdown();
