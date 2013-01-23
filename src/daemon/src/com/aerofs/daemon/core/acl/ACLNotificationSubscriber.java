@@ -13,6 +13,7 @@ import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 public final class ACLNotificationSubscriber
@@ -88,7 +89,7 @@ public final class ACLNotificationSubscriber
 
                             return null;
                         }
-                    });
+                    }, IOException.class);
                 };
             });
         }
