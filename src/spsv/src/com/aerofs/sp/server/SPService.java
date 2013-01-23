@@ -21,7 +21,6 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -36,7 +35,7 @@ import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
-import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
@@ -603,20 +602,35 @@ public class SPService implements ISPService
             IOException, ExBadArgs, NoSuchAlgorithmException, CertificateException,
             ExDeviceIDAlreadyExists
     {
-        _transaction.begin();
+
 
         User user = _sessionUser.get();
-        user.throwIfNotAdmin();
 
+        // We need two transactions. The first is read only, so no rollback ability needed. In
+        // between the transaction we make an RPC call.
+        _transaction.begin();
+
+        user.throwIfNotAdmin();
         User tsUser = _factUser.create(user.getOrganization().id().toTeamServerUserID());
 
-        // Certify device
-        Device device = _factDevice.create(deviceId);
-        device.save(tsUser, UNKNOWN_DEVICE_NAME);
-        CertifyDeviceReply reply = certifyDevice(csr, device);
-
-        _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(_sessionUser.get());
         _transaction.commit();
+
+        // This should not be part of a transaction because it involves an RPC call
+        // FIXME: (PH) This leaves us vulnerable to a situation where the users organization changes
+        // between the first transaction and the second transaction. This would result in a no-sync
+        // on the team server.
+        Device device = _factDevice.create(deviceId);
+        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), tsUser);
+
+        _transaction.begin();
+        // Certify device
+        device.save(tsUser, UNKNOWN_DEVICE_NAME);
+        CertifyDeviceReply reply = addCertificate(device, cert);
+
+        _transaction.commit();
+
+        // Sending an email doesn't need to be a part of the transaction
+        _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(_sessionUser.get());
 
         return createReply(reply);
     }
@@ -672,44 +686,37 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
+    /**
+     * recertify should never be used.
+     */
     @Override
     public ListenableFuture<CertifyDeviceReply> certifyDevice(final ByteString deviceId,
-            final ByteString csr, final Boolean recertify)
+            final ByteString csr, final Boolean recertify_do_not_use)
             throws Exception
     {
-        _transaction.begin();
-
         User user = _sessionUser.get();
         Device device = _factDevice.create(deviceId);
 
+        CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
+
+        _transaction.begin();
+
         // Test the device id's availability/validity
-        if (recertify) {
-            User owner = device.getOwner();
-            if (!owner.equals(user)) {
-                throw new ExNoPerm("Recertify a device by a different owner: " +
-                        user + " != " + owner);
-            }
-        } else {
-            device.save(user, UNKNOWN_DEVICE_NAME);
-        }
-
-        CertifyDeviceReply reply = certifyDevice(csr, device);
-
-        // Do not send email notification when we are recertifying.
-        if (!recertify) {
-            _deviceCertifiedEmailer.sendDeviceCertifiedEmail(_sessionUser.get());
-        }
+        device.save(user, UNKNOWN_DEVICE_NAME);
+        CertifyDeviceReply reply = addCertificate(device, cert);
 
         _transaction.commit();
+
+        _deviceCertifiedEmailer.sendDeviceCertifiedEmail(_sessionUser.get());
 
         return createReply(reply);
     }
 
-    private CertifyDeviceReply certifyDevice(ByteString csr, Device device)
+    private CertifyDeviceReply addCertificate(Device device, CertificationResult cert)
             throws SignatureException, IOException, NoSuchAlgorithmException, ExBadArgs, ExNotFound,
             ExAlreadyExist, SQLException, CertificateException
     {
-        CertificateGenerationResult cert = device.certify(new PKCS10(csr.toByteArray()));
+        device.addCertificate(cert);
 
         return CertifyDeviceReply.newBuilder()
                 .setCert(cert.toString())

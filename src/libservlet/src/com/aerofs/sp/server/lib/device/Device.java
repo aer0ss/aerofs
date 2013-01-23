@@ -14,7 +14,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
-import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificateGenerationResult;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.DeviceDatabase.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
@@ -163,26 +163,14 @@ public class Device
     }
 
     /**
-     * Issue a device certificate
+     * add certificate for device
      *
      * @throws ExNotFound if the device doesn't exist
      */
-    public CertificateGenerationResult certify(PKCS10 csr)
+    public void addCertificate(CertificationResult cert)
             throws IOException, ExNotFound, SQLException, ExBadArgs, ExAlreadyExist,
             SignatureException, CertificateException
     {
-        // Verify the device ID and user ID matches what is specified in CSR.
-        String cname = csr.getSubjectName().getCommonName();
-
-        User owner = getOwner();
-
-        if (!cname.equals(SecUtil.getCertificateCName(owner.id(), _id))) {
-            throw new ExBadArgs("cname doesn't match: hash(" + owner + " + " +
-                    _id.toStringFormal() + ") != " + cname);
-        }
-
-        CertificateGenerationResult cert = _f._certgen.generateCertificate(owner.id(), _id, csr);
-
         // Create the required entry in the certificate table. If this operation fails then
         // the CA will still have a record of the certificate, but we will not return it.
         // This is okay, since the DRL (device revocation list) is maintained by the SP and
@@ -191,7 +179,24 @@ public class Device
 
         l.info("created certificate for " + _id.toStringFormal() + " with serial " +
                 cert.getSerial() + " (expires on " + cert.getExpiry() + ")");
+    }
 
-        return cert;
+    /**
+     * Generate a certificate for device. This method does not require a db transaction.
+     */
+    public CertificationResult certify(PKCS10 csr, User owner)
+            throws IOException, SQLException, ExBadArgs, ExNotFound, CertificateException,
+            SignatureException
+    {
+        // Verify the device ID and user ID matches what is specified in CSR.
+        String cname = csr.getSubjectName().getCommonName();
+
+        if (!cname.equals(SecUtil.getCertificateCName(owner.id(), _id))) {
+            throw new ExBadArgs("cname doesn't match: hash(" + owner + " + " +
+                    _id.toStringFormal() + ") != " + cname);
+        }
+
+        return _f._certgen.generateCertificate(owner.id(), _id, csr);
+
     }
 }

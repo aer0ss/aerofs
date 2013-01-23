@@ -551,7 +551,8 @@ message VerifyBatchSignUpCodeCall {
 message CertifyDeviceCall {
     required bytes device_id = 1;
     required bytes csr = 2;
-    required bool recertify = 3;
+    // DEPRECATED: (PH) recertify code has been removed. It will be added back in as a new call.
+    required bool recertify_do_not_use= 3;
 }
 
 message CertifyDeviceReply {
