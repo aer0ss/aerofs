@@ -290,7 +290,7 @@ class Stores implements IARPChangeListener
     private void sendPresence_(DID did, boolean online, Set<SID> sids)
     {
         if (l.isDebugEnabled()) {
-            l.debug("notify prs:" + (online ? "online" : "offline") + " sids:" + sids);
+            l.debug("notify did:" + did + " prs:" + (online ? "on" : "off") + " sids:" + sids);
         }
 
         // enqueue must not fail because if it does the core will not receive this presence update
