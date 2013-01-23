@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.id.TestStripeCustomerID;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
@@ -65,6 +66,6 @@ public class TestOrganization extends AbstractBusinessObjectTest
     private Organization save()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        return factOrg.save("test", null, null, null);
+        return factOrg.save("test", null, null, TestStripeCustomerID.TEST);
     }
 }

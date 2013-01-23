@@ -6,6 +6,7 @@ package com.aerofs.sp.server.business_objects;
 
 import com.aerofs.base.C;
 import com.aerofs.base.BaseParam.SV;
+import com.aerofs.base.id.TestStripeCustomerID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
@@ -69,7 +70,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
                 anyString(), anyString()))
                 .thenReturn(new InvitationReminderEmailer());
 
-        odb.insert(ORG_ID, "Test Organization", null, null, null);
+        odb.insert(ORG_ID, "Test Organization", null, null, TestStripeCustomerID.TEST);
 
         _twoDayUsers = setupUsers(NUM_TWO_DAY_USERS, TWO_DAYS_IN_MILLISEC, TWO_DAY_USERS_PREFIX);
         _threeDayUsers = setupUsers(NUM_THREE_DAY_USERS, THREE_DAYS_IN_MILLISEC,

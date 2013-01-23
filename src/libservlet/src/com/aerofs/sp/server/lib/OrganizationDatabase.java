@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
@@ -63,6 +64,9 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             Integer organizationSize, String organizationPhone, StripeCustomerID stripeCustomer)
             throws SQLException, ExAlreadyExist
     {
+        checkNotNull(organizationId, "'organizationId' cannot be null");
+        checkNotNull(stripeCustomer, "'stripeCustomer' cannot be null");
+
         try {
             PreparedStatement ps = prepareStatement(DBUtil.insert(T_ORGANIZATION, C_O_ID, C_O_NAME,
                     C_O_USER_COUNT, C_O_CONTACT_PHONE, C_O_STRIPE_CUSTOMER_ID));

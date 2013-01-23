@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.TestStripeCustomerID;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
@@ -101,7 +102,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
         shareAndJoinFolder(USER_1, TEST_SID_2, USER_3, Role.EDITOR);
 
         // add a new org so user 1 can haz permissions to list folders
-        service.addOrganization("test org", null, null, null);
+        service.addOrganization("test org", null, null, TestStripeCustomerID.TEST.getID());
 
         return service.listSharedFolders(100, 0).get().getSharedFoldersList();
     }

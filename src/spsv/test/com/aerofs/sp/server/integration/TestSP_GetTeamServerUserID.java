@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.TestStripeCustomerID;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
@@ -17,7 +18,6 @@ import org.mockito.Captor;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 public class TestSP_GetTeamServerUserID extends AbstractSPTest
@@ -38,7 +38,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
     public void shouldThrowIfUserIsNonAdminInNonDefaultOrg()
             throws Exception
     {
-        service.addOrganization("test", null, null, null);
+        service.addOrganization("test", null, null, TestStripeCustomerID.TEST.getID());
 
         trans.begin();
         user.setLevel(AuthorizationLevel.USER);
