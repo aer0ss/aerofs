@@ -11,7 +11,6 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.proto.Sp.GetCRLReply;
 import com.aerofs.proto.Common.Void;
-import com.aerofs.servlets.lib.db.AbstractSQLDatabase.ExBatchSizeMismatch;
 import com.google.common.collect.ImmutableList;
 import org.junit.Before;
 import org.junit.Ignore;

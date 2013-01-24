@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.aerofs.base.BaseUtil;
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.lib.S;
 import com.aerofs.base.id.UserID;
 
@@ -205,15 +206,15 @@ public class SPDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * TODO (WW) remove this class and use Device and User classes instead
+     * TODO (WW) remove this class and use Device and User classes instead.
      * A class to hold both a username and a device ID.
      */
     public static class UserDevice
     {
-        public final byte[] _did;
+        public final DID _did;
         public final UserID _userId;
 
-        public UserDevice(byte[] did, UserID userId)
+        public UserDevice(DID did, UserID userId)
         {
             _did = did;
             _userId = userId;
@@ -223,7 +224,7 @@ public class SPDatabase extends AbstractSQLDatabase
         public int hashCode()
         {
             HashCodeBuilder builder = new HashCodeBuilder();
-            builder.append(BaseUtil.hexEncode(_did));
+            builder.append(BaseUtil.hexEncode(_did.getBytes()));
             builder.append(_userId);
             return builder.toHashCode();
         }
@@ -233,7 +234,7 @@ public class SPDatabase extends AbstractSQLDatabase
         {
             if (!(o instanceof UserDevice)) return false;
             UserDevice od = (UserDevice)o;
-            return Arrays.equals(_did, od._did) && _userId.equals(od._userId);
+            return Arrays.equals(_did.getBytes(), od._did.getBytes()) && _userId.equals(od._userId);
         }
     }
 
@@ -244,7 +245,7 @@ public class SPDatabase extends AbstractSQLDatabase
      * Note that all the devices belonging to the owner are always included in the interested
      * devices set (regardless of exclusion).
      */
-    public Set<UserDevice> getInterestedDevicesSet(byte[] sid, UserID ownerId)
+    public Set<UserDevice> getInterestedDevicesSet(SID sid, UserID ownerId)
             throws SQLException, ExFormatError
     {
         Set<UserDevice> result = Sets.newHashSet();
@@ -253,14 +254,14 @@ public class SPDatabase extends AbstractSQLDatabase
                 "select " + C_DEVICE_ID + ", " + C_DEVICE_OWNER_ID + " from " + T_AC +
                         " acl join " + T_DEVICE + " dev on " + C_AC_USER_ID + " = " +
                         C_DEVICE_OWNER_ID + " where " + C_AC_STORE_ID + " = ?");
-        ps.setBytes(1, sid);
+        ps.setBytes(1, sid.getBytes());
         ResultSet rs = ps.executeQuery();
         try {
             while (rs.next()) {
                 // TODO (MP) why do we store did's as CHAR(32) instead of BINARY(16)?
                 String did = rs.getString(1);
                 UserID userId = UserID.fromInternal(rs.getString(2));
-                UserDevice ud = new UserDevice(new DID(did).getBytes(), userId);
+                UserDevice ud = new UserDevice(new DID(did), userId);
 
                 result.add(ud);
             }
@@ -277,8 +278,7 @@ public class SPDatabase extends AbstractSQLDatabase
             while (rs.next()) {
                 // TODO (MP) ditto here.
                 String did = rs.getString(1);
-                UserDevice ud = new UserDevice(new DID(did).getBytes(), ownerId);
-
+                UserDevice ud = new UserDevice(new DID(did), ownerId);
                 result.add(ud);
             }
         } finally {
