@@ -9,7 +9,6 @@ import com.aerofs.base.BaseUtil;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -21,9 +20,9 @@ import com.google.inject.Inject;
 public class OSUtilOSX extends AbstractOSUtilLinuxOSX
 {
     @Inject
-    public OSUtilOSX(InjectableFile.Factory factFile, ProgressIndicators pi)
+    public OSUtilOSX(InjectableFile.Factory factFile)
     {
-        super(factFile, pi);
+        super(factFile);
     }
 
     @Override

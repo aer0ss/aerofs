@@ -29,15 +29,10 @@ public class InjectableFile
     {
         private final ProgressIndicators _pi;
 
+        @Inject
         public Factory()
         {
-            _pi = null;
-        }
-
-        @Inject
-        public Factory(ProgressIndicators pi)
-        {
-            _pi = pi;
+            _pi = ProgressIndicators.get();  // sigh, this should be injected
         }
 
         public InjectableFile create(String path)
