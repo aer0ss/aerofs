@@ -20,10 +20,10 @@ class BlockFolder implements IPhysicalFolder
 {
     private static final Logger l = Util.l(BlockFolder.class);
 
-    private final SOID _soid;
-    private final Path _path;
+    final SOID _soid;
+    final Path _path;
 
-    BlockFolder(BlockStorage s, SOID soid, Path path)
+    BlockFolder(SOID soid, Path path)
     {
         _soid = soid;
         _path = path;
@@ -39,20 +39,20 @@ class BlockFolder implements IPhysicalFolder
     public void create_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
         if (l.isDebugEnabled()) l.debug(this + ".create_(" + op + ")");
-        // Nop: we do not need to maintain any explicit folder structure
+        // Noop: we do not need to maintain any explicit folder structure
     }
 
     @Override
     public void delete_(PhysicalOp op, Trans t) throws IOException, SQLException
     {
         if (l.isDebugEnabled()) l.debug(this + ".delete_(" + op + ")");
-        // Nop: we do not need to maintain any explicit folder structure
+        // Noop: we do not need to maintain any explicit folder structure
     }
 
     @Override
     public void move_(IPhysicalObject to, PhysicalOp op, Trans t) throws IOException, SQLException
     {
         if (l.isDebugEnabled()) l.debug(this + ".move_(" + to + ", " + op + ")");
-        // Nop: we do not need to maintain any explicit folder structure
+        // Noop: we do not need to maintain any explicit folder structure
     }
 }

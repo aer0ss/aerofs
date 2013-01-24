@@ -13,9 +13,11 @@ import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Versions;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -424,5 +426,15 @@ public class Cfg
         }
 
         return contents;
+    }
+
+    @Nullable public static String absAutoExportFolder()
+    {
+        // It doesn't make sense to try to get the autoexport folder if there's no config loaded
+        // to read.
+        Preconditions.checkState(inited());
+        String path = db().getNullable(Key.AUTO_EXPORT_FOLDER);
+        if (path == null) return null;
+        return new File(path).getAbsolutePath();
     }
 }

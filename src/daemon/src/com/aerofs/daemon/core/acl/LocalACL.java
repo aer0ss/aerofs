@@ -97,7 +97,7 @@ public class LocalACL
      * @return whether the {@code subject}'s role allows operations that are allowed by
      * {@code role}. operations on the subjects' root store are always allowed.
      */
-    public boolean check_(UserID subject, SIndex sidx, Role role) throws ExNotFound, SQLException
+    public boolean check_(UserID subject, SIndex sidx, Role role) throws SQLException
     {
         Role roleActual = get_(sidx).get(subject);
         boolean allowed = roleActual != null && roleActual.covers(role);
@@ -110,9 +110,10 @@ public class LocalACL
 
     /**
      * @return the map of subjects to their permissions for a given store
+     * If the sidx is not in the LocalACL table, returns an empty map.
      */
     public @Nonnull ImmutableMap<UserID, Role> get_(SIndex sidx)
-            throws ExNotFound, SQLException
+            throws SQLException
     {
         ImmutableMap<UserID, Role> subject2role = _cache.get(sidx);
         if (subject2role == null) {
@@ -124,9 +125,10 @@ public class LocalACL
 
     /**
      * Read the subject-to-role mapping for the given store from the database.
+     * If the sidx is not available locally, returns an empty map.
      */
     private @Nonnull ImmutableMap<UserID, Role> readFromDB_(SIndex sidx)
-            throws SQLException, ExNotFound
+            throws SQLException
     {
         ImmutableMap.Builder<UserID, Role> builder = ImmutableMap.builder();
         IDBIterator<Map.Entry<UserID, Role>> iter = _adb.get_(sidx);

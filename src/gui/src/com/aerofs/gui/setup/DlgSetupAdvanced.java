@@ -107,7 +107,7 @@ public class DlgSetupAdvanced extends AeroFSJFaceDialog {
             }
         });
         btnUserDefaultLocation.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-        btnUserDefaultLocation.setText("User Default");
+        btnUserDefaultLocation.setText("Use Default");
 
         getShell().addListener(SWT.Show, new Listener() {
 
