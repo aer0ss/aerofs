@@ -162,11 +162,6 @@ public class TC implements IDumpStatMisc
         _tokenManager = tokenManager;
     }
 
-    public StrictLock getLock()
-    {
-        return _l;
-    }
-
     private void newThread_()
     {
         _total++;

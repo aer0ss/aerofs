@@ -202,6 +202,11 @@ public class CoreSchema implements ISchema
             C_SSPQ_SIDX     = "sspq_s",
             C_SSPQ_OID      = "sspq_o",
 
+            // SP Leave (Shared Folder) Queue
+            T_SPQ           = "spq",
+            C_SPQ_IDX       = "spq_i",
+            C_SPQ_SID       = "spq_s",
+
             // DID-to-User mapping
             T_D2U            = "d",
             C_D2U_DID        = "d_d",       // DID
@@ -536,6 +541,7 @@ public class CoreSchema implements ISchema
         createStoreTables(s, _dbcw);
         createActivityLogTables(s, _dbcw);
         createSyncStatusPushQueueTable(s, _dbcw);
+        createLeaveQueueTable(s, _dbcw);
     }
 
     @Override
@@ -566,8 +572,7 @@ public class CoreSchema implements ISchema
                 "create index " + T_SH + "0 on " + T_SH + "(" + C_SH_SIDX + ")");
 
         // for getChildren()
-        s.executeUpdate(
-                "create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
+        s.executeUpdate("create index " + T_SH + "1 on " + T_SH + "(" + C_SH_PARENT_SIDX + ")");
     }
 
     public static void createSyncStatusPushQueueTable(Statement s, IDBCW dbcw) throws SQLException
@@ -576,6 +581,14 @@ public class CoreSchema implements ISchema
                 C_SSPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
                 C_SSPQ_SIDX + " integer not null," +
                 C_SSPQ_OID + dbcw.uniqueIdType() + " not null" +
+                ")");
+    }
+
+    public static void createLeaveQueueTable(Statement s, IDBCW dbcw) throws SQLException
+    {
+        s.executeUpdate("create table " + T_SPQ + "(" +
+                C_SPQ_IDX + dbcw.longType() + " primary key " + dbcw.autoIncrement() + "," +
+                C_SPQ_SID + dbcw.uniqueIdType() + " not null" +
                 ")");
     }
 

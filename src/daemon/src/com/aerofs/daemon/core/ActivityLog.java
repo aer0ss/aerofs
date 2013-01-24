@@ -15,7 +15,7 @@ import javax.inject.Inject;
 
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
@@ -55,7 +55,7 @@ import com.google.common.collect.Sets;
  * Fortunately, most transactions only deal with a small number of objects at a time. Transactions
  * by the scanner may be big, but its size is limited by ScanSession.CONTINUATION_UPDATES_THRESHOLD.
  */
-public class ActivityLog implements IDirectoryServiceListener, IVersionControlListener
+public class ActivityLog extends AbstractDirectoryServiceListener implements IVersionControlListener
 {
     // the per-object entry for the trans-local map
     private static class ActivityEntry
@@ -182,19 +182,6 @@ public class ActivityLog implements IDirectoryServiceListener, IVersionControlLi
         // NOTE: ww says it's not worth the engineering effort at this time (11/12)
         setEntryFields_(sokid.soid(), MODIFICATION_VALUE, path, t);
     }
-
-    @Override
-    public void objectExpelled_(SOID soid, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectAdmitted_(SOID soid, Trans t) throws SQLException
-    {}
-
-    @Override
-    public void objectSyncStatusChanged_(SOID obj, BitVector oldStatus, BitVector newStatus,
-            Trans t) throws SQLException
-    {}
 
     @Override
     public void localVersionAdded_(SOCKID sockid, Version vLocalAdded, Trans t)  throws SQLException

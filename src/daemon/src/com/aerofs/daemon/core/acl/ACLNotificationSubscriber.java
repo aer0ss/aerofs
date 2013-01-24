@@ -89,7 +89,7 @@ public final class ACLNotificationSubscriber
 
                             return null;
                         }
-                    }, IOException.class);
+                    }, IOException.class , ExConcurrentACLUpdate.class);
                 };
             });
         }
