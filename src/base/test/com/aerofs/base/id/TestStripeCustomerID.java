@@ -12,7 +12,6 @@ import static org.junit.Assert.*;
 public class TestStripeCustomerID
 {
     private static final String ACTUAL_STRIPE_CUSTOMER_ID = "cus_17GQKmjD4CqCcM";
-    public static final StripeCustomerID TEST = StripeCustomerID.newInstance(ACTUAL_STRIPE_CUSTOMER_ID);
 
     @Test
     public void testNullStripeCustomerIDIsNull() {

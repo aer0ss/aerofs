@@ -18,6 +18,12 @@ import org.slf4j.Logger;
 public class StripeCustomerID extends StringID {
     private static final Logger logger = Loggers.getLogger(StripeCustomerID.class);
 
+    // TODO (eric) tests in muliple jar's depend on this value, we do not have test-jars setup properly
+    // so I can not move this to the test package at this time.
+    // http://maven.apache.org/guides/mini/guide-attached-tests.html
+    @VisibleForTesting
+    public static final StripeCustomerID TEST = newInstance("cus_17GQKmjD4CqCcM");
+
     private StripeCustomerID(final String stripeCustomerId) {
         super(stripeCustomerId);
     }

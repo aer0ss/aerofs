@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.id.TestStripeCustomerID;
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -85,7 +85,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     protected Organization saveOrganization()
             throws ExNoPerm, IOException, ExNotFound, SQLException
     {
-        return factOrg.save("test org", null, null, TestStripeCustomerID.TEST);
+        return factOrg.save("test org", null, null, StripeCustomerID.TEST);
     }
 
     SharedFolder newSharedFolder()
