@@ -67,8 +67,7 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
         throws Exception
     {
         trans.begin();
-        Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1.getBytes(),
-                sessionUser.get().id());
+        Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1, sessionUser.get().id());
         trans.commit();
 
         // The size is correct (only the correct devices were returned).

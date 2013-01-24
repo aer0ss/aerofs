@@ -4,20 +4,13 @@
 
 package com.aerofs.base.id;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import com.aerofs.base.Loggers;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
-import org.slf4j.Logger;
 
 // TODO (eric) refactor StringID, it should be a contract with an abstract implementation... and it
 // should be generic instead of type specific
 public class StripeCustomerID extends StringID {
-    private static final Logger logger = Loggers.getLogger(StripeCustomerID.class);
-
     // TODO (eric) tests in muliple jar's depend on this value, we do not have test-jars setup properly
     // so I can not move this to the test package at this time.
     // http://maven.apache.org/guides/mini/guide-attached-tests.html
