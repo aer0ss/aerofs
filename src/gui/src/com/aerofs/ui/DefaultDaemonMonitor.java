@@ -279,7 +279,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             Uninterruptibles.getUninterruptibly(ritual.heartbeat(),
                     Daemon.HEARTBEAT_TIMEOUT, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            _fdsHeartbeatGone.logSendAsync("daemon hb gone. kill: " + e);
+            _fdsHeartbeatGone.logSendAsync("daemon hb gone. " + e);
             return false;
         } finally {
             ritual.close();
@@ -308,16 +308,10 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 } catch (SocketTimeoutException e) {
                     l.debug("hb test");
 
-                    if (!tryHeartBeat()) {
-                        // If the hearbeat failed, kill the daemon
-                        try {
-                            l.warn("hb failed. kill daemon");
-                            kill();
-                        } catch (Exception e2) {
-                            l.warn("kill failed after hb gone: " + Util.e(e2));
-                        }
-                        return;
-                    }
+                    // CoreProgressWatcher should kill the daemon if it gets stuck so we don't need
+                    // to do it here anymore. However, we still do regular heartbeat checks to log
+                    // occurences of busy daemons
+                    tryHeartBeat();
                 } catch (SocketException e) {
                     l.warn("socket closed");
                     break;

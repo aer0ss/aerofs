@@ -7,6 +7,7 @@ package com.aerofs.daemon.core;
 import com.aerofs.base.C;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.lib.Param.Daemon;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -30,13 +31,16 @@ final class CoreProgressWatcher implements IStartable
     private static final Logger l = Util.l(CoreProgressWatcher.class);
 
     private final CoreEventDispatcher _disp;
+    private final ProgressIndicators _pi;
 
     private long _prevNumExecutedEvents = Long.MIN_VALUE; // only touched by "progress-watcher"
+    private long _prevNumWalkedObjects = Long.MIN_VALUE;
 
     @Inject
     CoreProgressWatcher(CoreEventDispatcher disp)
     {
-        this._disp = disp;
+        _disp = disp;
+        _pi = ProgressIndicators.get();  // sigh, this should be injected...
     }
 
     @Override
@@ -61,12 +65,7 @@ final class CoreProgressWatcher implements IStartable
 
     private void checkDaemon_()
     {
-        long currNumExecutedEvents = _disp.getExecutedEventCount();
-
-        if (currNumExecutedEvents != _prevNumExecutedEvents) {
-            _prevNumExecutedEvents = currNumExecutedEvents;
-
-        } else if (_disp.getCurrentEventNullable() != null) {
+        if (!hasMadeProgress_() && !isIdle()) {
             l.warn("no progress after n:" + _prevNumExecutedEvents + " ev:" +
                     _disp.getCurrentEventNullable());
             // dump thread stacks three times so we can see which thread is not making progress.
@@ -80,5 +79,23 @@ final class CoreProgressWatcher implements IStartable
 
             SystemUtil.fatal("stuck daemon");
         }
+
+        _prevNumExecutedEvents = _disp.getExecutedEventCount();
+        _prevNumWalkedObjects = _pi.getMonotonicProgress();
+    }
+
+    /**
+     * @return whether any the daemon has made any sort of progress since the last check
+     */
+    private boolean hasMadeProgress_()
+    {
+        return _disp.getExecutedEventCount() != _prevNumExecutedEvents ||
+                _pi.getMonotonicProgress() != _prevNumWalkedObjects ||
+                _pi.hasInProgressSyscall();
+    }
+
+    private boolean isIdle()
+    {
+        return _disp.getCurrentEventNullable() == null;
     }
 }

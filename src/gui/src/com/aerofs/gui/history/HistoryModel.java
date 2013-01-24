@@ -342,7 +342,7 @@ public class HistoryModel
             Version version = v.get(v.size() - 1);
             export(version);
 
-            FileUtil.moveInOrAcrossFileSystem(new File(version.tmpFile), dst);
+            FileUtil.moveInOrAcrossFileSystem(new File(version.tmpFile), dst, null);
         }
         return false;
     }

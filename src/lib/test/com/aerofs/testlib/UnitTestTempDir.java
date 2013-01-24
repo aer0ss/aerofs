@@ -36,7 +36,7 @@ public class UnitTestTempDir extends TestWatcher
             String name = _description.getClassName() + File.separatorChar +
                     _description.getMethodName();
             File testDir = new File(rootDir, name);
-            if (testDir.isDirectory()) FileUtil.deleteRecursively(testDir);
+            if (testDir.isDirectory()) FileUtil.deleteRecursively(testDir, null);
             FileUtil.mkdirs(testDir);
             _testDir = testDir;
         }

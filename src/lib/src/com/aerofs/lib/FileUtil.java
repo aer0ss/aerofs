@@ -143,15 +143,16 @@ public abstract class FileUtil
         return deleted;
     }
 
-    public static void deleteRecursively(File file) throws IOException
+    public static void deleteRecursively(File file, @Nullable ProgressIndicators pi) throws IOException
     {
         File[] children = file.listFiles();
         if (children != null) {
             for (File child : children) {
-                deleteRecursively(child);
+                deleteRecursively(child, pi);
             }
         }
         if (!file.delete()) throw new ExFileIO("could not delete file", file);
+        if (pi != null) pi.incrementMonotonicProgress();
     }
 
     private static File _javaTempDir;
@@ -317,18 +318,23 @@ public abstract class FileUtil
         }
     }
 
+    public static void moveInOrAcrossFileSystem(File from, File to) throws IOException
+    {
+        moveInOrAcrossFileSystem(from, to, null);
+    }
+
     /**
      * Equivalent to a copy+delete sequence with optimized code path when source and
      * destination reside on same filesystem.
      *
      * Destination will silently be overwritten if it exists.
      */
-    public static void moveInOrAcrossFileSystem(File from, File to)
+    public static void moveInOrAcrossFileSystem(File from, File to, @Nullable ProgressIndicators pi)
             throws IOException
     {
         if (!from.renameTo(to)) {
             try {
-                 copy(from, to, false, true);
+                 copy(from, to, false, true, pi);
             } catch (IOException e) {
                 throw new ExFileIO("couldn't rename {} to {}", from, to);
             }
@@ -353,29 +359,40 @@ public abstract class FileUtil
             throw new ExFileIO("couldn't delete file", f);
         }
     }
+    public static void deleteOrThrowIfExistRecursively(File f) throws IOException
+    {
+        deleteOrThrowIfExistRecursively(f, null);
+    }
 
     /**
      * Delete a file recursively. Throw if deletion failed and the file still exists.
      */
-    public static void deleteOrThrowIfExistRecursively(File f)
+    public static void deleteOrThrowIfExistRecursively(File f, @Nullable ProgressIndicators pi)
             throws IOException
     {
         File[] children = f.listFiles();
         if (children != null) {
             for (File child : children) {
-                deleteOrThrowIfExistRecursively(child);
+                deleteOrThrowIfExistRecursively(child, pi);
             }
         }
 
         // The directory is now empty so delete it
         deleteOrThrowIfExist(f);
+        if (pi != null) pi.incrementMonotonicProgress();
+    }
+
+    public static void copy(File from, File to, boolean exclusive, boolean keepMTime)
+            throws IOException
+    {
+        copy(from, to, exclusive, keepMTime, null);
     }
 
     /**
      *  @param keepMTime whether to preserve mtime
      */
-    public static void copy(File from, File to, boolean exclusive, boolean keepMTime)
-            throws IOException
+    public static void copy(File from, File to, boolean exclusive, boolean keepMTime,
+            @Nullable ProgressIndicators pi) throws IOException
     {
         if (exclusive && !to.createNewFile()) {
             throw new ExFileIO("file {} already exists", to);
@@ -386,9 +403,10 @@ public abstract class FileUtil
         try {
             in = new FileInputStream(from).getChannel();
             out = new FileOutputStream(to).getChannel();
+            if (pi != null) pi.startSyscall();
             out.transferFrom(in, 0, in.size());
-
         } finally {
+            if (pi != null) pi.endSyscall();
             if (in != null) in.close();
             if (out != null) out.close();
         }
@@ -402,6 +420,12 @@ public abstract class FileUtil
     public static void copyRecursively(File from, File to, boolean exclusive, boolean keepMTime)
             throws IOException
     {
+        copyRecursively(from, to, exclusive, keepMTime, null);
+    }
+
+    public static void copyRecursively(File from, File to, boolean exclusive, boolean keepMTime,
+            @Nullable ProgressIndicators pi) throws IOException
+    {
         // if directory is changed to a different file midway list will return null,
         // avoids nullpointer exception when iterating over children
         String[] children = from.list();
@@ -414,26 +438,34 @@ public abstract class FileUtil
             for (String child : children) {
                 File fChildFrom = new File(from, child);
                 File fChildTo = new File(to, child);
-                copyRecursively(fChildFrom, fChildTo, exclusive, keepMTime);
+                copyRecursively(fChildFrom, fChildTo, exclusive, keepMTime, pi);
             }
         } else {
-            copy(from, to, exclusive, keepMTime);
+            copy(from, to, exclusive, keepMTime, pi);
         }
+        if (pi != null) pi.incrementMonotonicProgress();
+    }
+
+    public static boolean deleteIgnoreErrorRecursively(File f)
+    {
+        return deleteIgnoreErrorRecursively(f, null);
     }
 
     /**
      * Delete the file recursively. Return false on failure
      */
-    public static boolean deleteIgnoreErrorRecursively(File f)
+    public static boolean deleteIgnoreErrorRecursively(File f, @Nullable ProgressIndicators pi)
     {
         File[] children = f.listFiles();
         if (children != null) {
             for (File child : children) {
-                if (!deleteIgnoreErrorRecursively(child)) return false;
+                if (!deleteIgnoreErrorRecursively(child, pi)) return false;
             }
         }
 
-        return f.delete();
+        boolean ok = f.delete();
+        if (pi != null) pi.incrementMonotonicProgress();
+        return ok;
     }
 
     public static void deleteOrOnExit(File f)

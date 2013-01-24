@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UniqueID;
@@ -29,6 +28,7 @@ import com.aerofs.lib.BitVector;
 import com.aerofs.lib.CounterVector;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FrequentDefectSender;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
@@ -64,6 +64,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     private IMapSID2SIndex _sid2sidx;
     private FrequentDefectSender _fds;
     private IPathResolver _pathResolver;
+    private ProgressIndicators _pi;
 
     private DBCache<Path, SOID> _cacheDS;
     private DBCache<SOID, OA> _cacheOA;
@@ -161,6 +162,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         _sid2sidx = sid2sidx;
         _fds = fds;
         _pathResolver = pathResolver;
+        _pi = ProgressIndicators.get();  // sigh, this should be injected
 
         _cacheDS = new DBCache<Path, SOID>(tm, true, DaemonParam.DB.DS_CACHE_SIZE);
         _cacheOA = new DBCache<SOID, OA>(tm, DaemonParam.DB.OA_CACHE_SIZE);
@@ -669,6 +671,9 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         }
 
         w.postfixWalk_(cookieFromParent, oa);
+
+        // make sure a long-running DirectoryService.walk_ doesn't cause the daemon to be killed
+        _pi.incrementMonotonicProgress();
     }
 
     @Override

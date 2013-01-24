@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
 import org.apache.log4j.Logger;
@@ -16,11 +17,13 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
 {
     protected static final Logger l = Util.l(AbstractOSUtilLinuxOSX.class);
     protected final InjectableFile.Factory _factFile;
+    protected final ProgressIndicators _pi;
 
-    protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile)
+    protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile, ProgressIndicators pi)
     {
         loadLibrary("aerofsd");
         _factFile = factFile;
+        _pi = pi;
     }
 
     @Override
@@ -82,10 +85,15 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
             arguments = keepMTime ? "-fpPR" : "-fPR";
         }
 
-        int exitCode = SystemUtil.execForeground("cp", arguments, absFromPath, absToPath);
-        if (exitCode != 0) {
-            throw new IOException("cp " + absFromPath + " to " + absToPath + "failed with exit " +
-                    "code: " + exitCode);
+        try {
+            _pi.startSyscall();
+            int exitCode = SystemUtil.execForeground("cp", arguments, absFromPath, absToPath);
+            if (exitCode != 0) {
+                throw new IOException("cp " + absFromPath + " to " + absToPath +
+                        "failed with exit code: " + exitCode);
+            }
+        } finally {
+            _pi.endSyscall();
         }
     }
 }

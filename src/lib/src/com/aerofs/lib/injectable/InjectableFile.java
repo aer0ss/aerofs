@@ -16,6 +16,8 @@ import java.io.OutputStream;
 import javax.annotation.Nullable;
 
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.ProgressIndicators;
+import com.google.inject.Inject;
 
 /**
  * A wrapper class of java.io.File for common file operations. This class also
@@ -25,6 +27,19 @@ public class InjectableFile
 {
     public static class Factory
     {
+        private final ProgressIndicators _pi;
+
+        public Factory()
+        {
+            _pi = null;
+        }
+
+        @Inject
+        public Factory(ProgressIndicators pi)
+        {
+            _pi = pi;
+        }
+
         public InjectableFile create(String path)
         {
             return create((InjectableFile)null, path);
@@ -248,23 +263,23 @@ public class InjectableFile
 
     public void deleteOrThrowIfExistRecursively() throws IOException
     {
-        FileUtil.deleteOrThrowIfExistRecursively(_f);
+        FileUtil.deleteOrThrowIfExistRecursively(_f, _factory._pi);
     }
 
     public void copy(InjectableFile to, boolean exclusive, boolean keepMTime) throws IOException
     {
-        FileUtil.copy(_f, to._f, exclusive, keepMTime);
+        FileUtil.copy(_f, to._f, exclusive, keepMTime, _factory._pi);
     }
 
     public void copyRecursively(InjectableFile to, boolean exclusive, boolean keepMTime)
             throws IOException
     {
-        FileUtil.copyRecursively(_f, to._f, exclusive, keepMTime);
+        FileUtil.copyRecursively(_f, to._f, exclusive, keepMTime, _factory._pi);
     }
 
     public boolean deleteIgnoreErrorRecursively()
     {
-        return FileUtil.deleteIgnoreErrorRecursively(_f);
+        return FileUtil.deleteIgnoreErrorRecursively(_f, _factory._pi);
     }
 
     public void deleteOnExit()

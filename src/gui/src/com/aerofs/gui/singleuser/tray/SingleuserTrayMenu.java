@@ -9,6 +9,7 @@ import com.aerofs.gui.tray.TrayIcon;
 import com.aerofs.gui.tray.TrayIcon.NotificationReason;
 import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
+import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.ui.UIUtil;
 import org.apache.log4j.Logger;
 import org.eclipse.swt.SWT;
@@ -36,7 +37,6 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Common.PBPath;
@@ -234,7 +234,7 @@ public class SingleuserTrayMenu implements ITrayMenu
 
                 populater.addMenuSeparator();
 
-                boolean added = addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor()
+                addSharedFoldersSubmenu(menuManage, new ISharedFolderMenuExecutor()
                 {
                     @Override
                     public void run(Path path)
@@ -242,52 +242,62 @@ public class SingleuserTrayMenu implements ITrayMenu
                         new DlgManageSharedFolder(GUI.get().sh(), path).openDialog();
                     }
                 });
-
-                if (!added) {
-                    populater.addMenuItem("No shared folder", null).setEnabled(false);
-                }
             }
         });
     }
 
-    /**
-     * @return true if one or more menu item is added
-     */
-    private boolean addSharedFoldersSubmenu(Menu submenu, final ISharedFolderMenuExecutor lme)
+    private void addSharedFoldersSubmenu(Menu submenu, final ISharedFolderMenuExecutor lme)
     {
-        boolean added = false;
-        TrayMenuPopulator sharedTrayMenuPopulator = new TrayMenuPopulator(submenu);
-        try {
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-            try {
-                for (PBPath pbpath : ritual.listSharedFolders().getPathList()) {
-                    final Path path = new Path(pbpath);
-                    sharedTrayMenuPopulator.addMenuItem(path.last(),
-                            new GUIUtil.AbstractListener(CLICKED_TASKBAR_MANAGER_SHARED_FOLDER)
-                            {
-                                @Override
-                                protected void handleEventImpl(Event event)
+        final TrayMenuPopulator sharedTrayMenuPopulator = new TrayMenuPopulator(submenu);
+
+        final MenuItem loading = sharedTrayMenuPopulator.addMenuItem(S.GUI_LOADING, null);
+        loading.setEnabled(false);
+
+        // asynchronously fetch results, as GetActivities call may be slow. (see ritual.proto)
+        final RitualClient ritual = RitualClientFactory.newClient();
+        Futures.addCallback(ritual.listSharedFolders(),
+                new FutureCallback<ListSharedFoldersReply>()
+                {
+                    @Override
+                    public void onFailure(Throwable e)
+                    {
+                        loading.dispose();
+                        sharedTrayMenuPopulator.addErrorMenuItem("Couldn't list shared folders");
+                        l.warn(Util.e(e));
+                        ritual.close();
+                    }
+
+                    @Override
+                    public void onSuccess(ListSharedFoldersReply reply)
+                    {
+                        loading.dispose();
+                        for (PBPath pbpath : reply.getPathList()) {
+                            addSharedFolderEntry(new Path(pbpath));
+                        }
+                        if (reply.getPathCount() == 0) {
+                            sharedTrayMenuPopulator.addMenuItem("No shared folder", null)
+                                    .setEnabled(false);
+                        }
+                        ritual.close();
+                    }
+
+                    private void addSharedFolderEntry(final Path path)
+                    {
+                        sharedTrayMenuPopulator.addMenuItem(path.last(),
+                                new GUIUtil.AbstractListener(CLICKED_TASKBAR_MANAGER_SHARED_FOLDER)
                                 {
-                                    try {
-                                        lme.run(path);
-                                    } catch (Exception e) {
-                                        Util.l(this).warn("menu handler: " + Util.e(e));
+                                    @Override
+                                    protected void handleEventImpl(Event event)
+                                    {
+                                        try {
+                                            lme.run(path);
+                                        } catch (Exception e) {
+                                            Util.l(this).warn("menu handler: " + Util.e(e));
+                                        }
                                     }
-                                }
-                            });
-
-                    added = true;
-                }
-            } finally {
-                ritual.close();
-            }
-
-        } catch (Exception e) {
-            sharedTrayMenuPopulator.addErrorMenuItem("Couldn't list shared folders");
-            added = true;
-        }
-
-        return added;
+                                });
+                    }
+                }, new GUIExecutor(submenu));
     }
 
     private void createRecentActivitesMenu()

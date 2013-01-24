@@ -53,6 +53,9 @@ class _RitualServiceWrapper(object):
         self._service = rpc_service
         self._user = user
 
+    def heartbeat(self):
+        self._service.heartbeat()
+
     def share_folder(self, path, acl = {}, note = ""):
         """
         @param acl a dict of {subject:role}

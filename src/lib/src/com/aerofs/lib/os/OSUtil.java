@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.aerofs.lib.AppRoot;
 import com.aerofs.lib.OutArg;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.sv.client.SVClient;
@@ -42,14 +43,15 @@ public abstract class OSUtil
     static {
         String os = getOSName();
         // TODO use real dependency-injection
-        InjectableFile.Factory factFile = new InjectableFile.Factory();
+        ProgressIndicators pi = ProgressIndicators.get();
+        InjectableFile.Factory factFile = new InjectableFile.Factory(pi);
 
         if (os.startsWith("Windows")) {
             _os = new OSUtilWindows();
             // Execution on Windows is limited to a 32-bit JVM.
             _arch = System.getProperty("os.arch").equals("x86") ? OSArch.X86 : null;
         } else if (os.startsWith("Linux")) {
-            _os = new OSUtilLinux(factFile);
+            _os = new OSUtilLinux(factFile, pi);
             OSArch arch;
             try {
                 OutArg<String> commandOutput = new OutArg<String>();
@@ -72,7 +74,7 @@ public abstract class OSUtil
             _arch = arch;
 
         } else if (os.startsWith("Mac OS X")) {
-            _os = new OSUtilOSX(factFile);
+            _os = new OSUtilOSX(factFile, pi);
             _arch = System.getProperty("os.arch").equals("x86_64") ? OSArch.X86_64 : null;
 
         } else {
@@ -139,7 +141,7 @@ public abstract class OSUtil
     public static String getIconPath(Icon icon)
     {
         // TODO use real dependency-injection
-        InjectableFile.Factory factFile = new InjectableFile.Factory();
+        InjectableFile.Factory factFile = new InjectableFile.Factory(ProgressIndicators.get());
 
         InjectableFile result = factFile.create(AppRoot.abs());
         if (OSUtil.isOSX())  {
