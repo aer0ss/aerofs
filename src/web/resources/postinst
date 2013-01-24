@@ -18,6 +18,9 @@ $PYHOME/bin/pip install protobuf
 cd /opt/web
 $PYTHON setup.py install
 
+# Install stripe module
+$PYHOME/bin/pip install --index-url https://code.stripe.com --upgrade stripe
+
 # Install aerofs.python-lib
 # cd to directory first because setuptools can't find setup.py otherwise
 cd /opt/web/extra/python-lib
