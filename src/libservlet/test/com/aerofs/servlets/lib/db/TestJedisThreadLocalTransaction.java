@@ -7,11 +7,12 @@ package com.aerofs.servlets.lib.db;
 import javax.annotation.Nullable;
 
 import com.aerofs.testlib.AbstractTest;
+import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.JedisPooledConnection;
 import junit.framework.Assert;
+import redis.clients.jedis.JedisPooledConnection;
 
 public class TestJedisThreadLocalTransaction extends AbstractTest
 {

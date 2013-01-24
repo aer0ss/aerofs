@@ -10,8 +10,8 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.UserID;
-import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;

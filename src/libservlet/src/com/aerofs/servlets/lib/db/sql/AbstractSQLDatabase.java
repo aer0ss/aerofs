@@ -2,9 +2,11 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.servlets.lib.db;
+package com.aerofs.servlets.lib.db.sql;
 
 import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.servlets.lib.db.ExDbInternal;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

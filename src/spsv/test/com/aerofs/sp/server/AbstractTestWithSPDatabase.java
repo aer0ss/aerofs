@@ -7,7 +7,7 @@ package com.aerofs.sp.server;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.testlib.AbstractTest;
 import org.junit.After;
 import org.junit.Before;

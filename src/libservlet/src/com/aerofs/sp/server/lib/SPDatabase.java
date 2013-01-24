@@ -15,8 +15,8 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.Base64;
 import com.aerofs.lib.Util;
-import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 

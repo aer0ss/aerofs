@@ -6,22 +6,15 @@ package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePairs;
-import com.aerofs.base.async.UncancellableFuture;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.sp.server.lib.user.User;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static junit.framework.Assert.assertFalse;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
 
 public class AbstractSPFolderPermissionTest extends AbstractSPTest
 {

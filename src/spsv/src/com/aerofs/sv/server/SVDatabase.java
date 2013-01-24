@@ -5,6 +5,7 @@ import java.sql.Connection;
 import javax.annotation.Nullable;
 
 import com.aerofs.base.BaseUtil;
+import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.sv.common.Event;
 
 import java.sql.PreparedStatement;
@@ -19,7 +20,6 @@ import com.aerofs.proto.Sv.PBSVHeader;
 
 import static com.aerofs.sv.server.SVSchema.*;
 
-import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 
 public class SVDatabase extends AbstractSQLDatabase

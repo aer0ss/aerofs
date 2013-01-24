@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.base.id.UserID;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.SPParam;
 import org.apache.log4j.Logger;

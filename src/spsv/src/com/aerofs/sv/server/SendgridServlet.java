@@ -6,8 +6,8 @@ package com.aerofs.sv.server;
 
 import com.aerofs.lib.Util;
 import com.aerofs.servlets.AeroServlet;
-import com.aerofs.servlets.lib.db.PooledSQLConnectionProvider;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sv.common.Event;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

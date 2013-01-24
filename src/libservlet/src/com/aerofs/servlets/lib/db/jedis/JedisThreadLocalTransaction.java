@@ -2,9 +2,13 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.servlets.lib.db;
+package com.aerofs.servlets.lib.db.jedis;
 
 import com.aerofs.lib.Util;
+import com.aerofs.servlets.lib.db.AbstractThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.ExDbInternal;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
+import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import org.apache.log4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.Transaction;
@@ -19,13 +23,14 @@ public class JedisThreadLocalTransaction
 {
     private static final Logger l = Util.l(JedisThreadLocalTransaction.class);
 
-    private IPooledJedisConnectionProvider _provider;
+    private IDatabaseConnectionProvider<JedisPooledConnection> _provider;
 
     // The Jedis API requires that we hold on to the transaction object as well. Encapsulate all
     // the objects we need to hold in the jedis holder object.
-    private ThreadLocal<JedisThreadLocalObjectHolder> _jedisHolder = new ThreadLocal<JedisThreadLocalObjectHolder>();
+    private ThreadLocal<JedisThreadLocalObjectHolder> _jedisHolder =
+            new ThreadLocal<JedisThreadLocalObjectHolder>();
 
-    public JedisThreadLocalTransaction(IPooledJedisConnectionProvider provider)
+    public JedisThreadLocalTransaction(IDatabaseConnectionProvider<JedisPooledConnection> provider)
     {
         _provider = provider;
     }
@@ -53,10 +58,17 @@ public class JedisThreadLocalTransaction
 
     @Override
     public void begin()
+            throws JedisException
     {
         assert !isInTransaction();
+        JedisPooledConnection jedis;
 
-        JedisPooledConnection jedis = _provider.getConnection();
+        try {
+            jedis = _provider.getConnection();
+        } catch (ExDbInternal e) {
+            throw new JedisException(e);
+        }
+
         Transaction transaction = jedis.multi();
 
         _jedisHolder.set(new JedisThreadLocalObjectHolder(jedis, transaction));

@@ -2,16 +2,19 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.servlets.lib.db;
+package com.aerofs.servlets.lib.db.jedis;
 
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisPooledConnection;
 
-public class PooledJedisConnectionProvider implements IPooledJedisConnectionProvider
+public class PooledJedisConnectionProvider
+        implements IDatabaseConnectionProvider<JedisPooledConnection>
 {
     private JedisPool _jedisPool = null;
 
+    @Override
     public JedisPooledConnection getConnection()
     {
         // Must call init first.

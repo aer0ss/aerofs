@@ -15,7 +15,7 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
-import com.aerofs.servlets.lib.db.SQLThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;

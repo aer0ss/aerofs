@@ -2,7 +2,10 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.servlets.lib.db;
+package com.aerofs.servlets.lib.db.sql;
+
+import com.aerofs.servlets.lib.db.ExDbInternal;
+import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
