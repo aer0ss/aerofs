@@ -16,6 +16,7 @@ import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -73,7 +74,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
             ps.setInt(1, organizationId.getInt());
             ps.setString(2, organizationName);
-            ps.setInt(3, organizationSize);
+            ps.setInt(3, Objects.firstNonNull(organizationSize, -1));
             ps.setString(4, organizationPhone);
             ps.setString(5, stripeCustomer.getID());
             ps.executeUpdate();
