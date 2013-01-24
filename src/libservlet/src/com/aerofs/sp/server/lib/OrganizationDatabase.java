@@ -40,7 +40,7 @@ import static com.aerofs.sp.server.lib.SPSchema.C_O_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_CONTACT_PHONE;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_STRIPE_CUSTOMER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_USER_COUNT;
+import static com.aerofs.sp.server.lib.SPSchema.C_O_SIZE;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
@@ -70,7 +70,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
 
         try {
             PreparedStatement ps = prepareStatement(DBUtil.insert(T_ORGANIZATION, C_O_ID, C_O_NAME,
-                    C_O_USER_COUNT, C_O_CONTACT_PHONE, C_O_STRIPE_CUSTOMER_ID));
+                    C_O_SIZE, C_O_CONTACT_PHONE, C_O_STRIPE_CUSTOMER_ID));
 
             ps.setInt(1, organizationId.getInt());
             ps.setString(2, organizationName);
