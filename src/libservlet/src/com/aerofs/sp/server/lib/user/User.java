@@ -324,10 +324,19 @@ public class User
             final String organizationPhone, final StripeCustomerID stripeCustomer)
             throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException
     {
+        if (isPermittedToAddOrUpdateOrganization()) {
+            throw new ExNoPerm("you have no permission to create new teams");
+        }
+
         Organization org = _f._factOrg.save(organizationName, organizationSize, organizationPhone,
                 stripeCustomer);
         setLevel(AuthorizationLevel.ADMIN);
         return setOrganization(org);
+    }
+
+    private boolean isPermittedToAddOrUpdateOrganization() throws ExNotFound, SQLException
+    {
+        return !getOrganization().isDefault() && getLevel() != AuthorizationLevel.ADMIN;
     }
 
     /**

@@ -1142,10 +1142,6 @@ public class SPService implements ISPService
 
         _transaction.begin();
 
-        if (isPermittedToAddOrUpdateOrganization(currentUser)) {
-            throw new ExNoPerm("you have no permission to create new teams");
-        }
-
         try {
             final StripeCustomerID stripeCustomer = StripeCustomerID.newInstance(stripeCustomerID);
             currentUser.addAndMoveToOrganization(organizationName, organizationSize, organizationPhone, stripeCustomer);
@@ -1161,11 +1157,6 @@ public class SPService implements ISPService
         }
 
         return createVoidReply();
-    }
-
-    private boolean isPermittedToAddOrUpdateOrganization(User user) throws ExNotFound, SQLException
-    {
-        return !user.getOrganization().isDefault() && user.getLevel() != AuthorizationLevel.ADMIN;
     }
 
     @Override

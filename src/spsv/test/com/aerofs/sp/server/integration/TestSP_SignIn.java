@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.base.async.UncancellableFuture;
@@ -97,6 +98,8 @@ public class TestSP_SignIn extends AbstractSPTest
             throws Exception
     {
         mockCertificateAuthenticatorSetAuthenticatedState();
+
+        service.addOrganization("An Awesome Team", null, null, StripeCustomerID.TEST.getID());
 
         UserID tsUserID = UserID.fromInternal(service.getTeamServerUserID().get().getId());
         DID tsDID = new DID(UniqueID.generate());
