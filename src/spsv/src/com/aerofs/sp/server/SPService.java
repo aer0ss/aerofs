@@ -561,7 +561,13 @@ public class SPService implements ISPService
 
         Set<UserID> users;
 
-        if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
+        // TODO (eric) this first condition needs to be removed when we decide to enforce billing
+        // using StripeCustomerID.TEST here to pass preconditions associated with creating an
+        // organization and to make identifying these users trivial (anyone registered with this ID
+        // needs to be messaged/upgraded to a paying account).
+        if (user.getOrganization().isDefault()) {
+            users = user.addAndMoveToOrganization("An Awesome Team", null, null, StripeCustomerID.TEST);
+        } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
             // users in default organization should always get this
             throw new ExNoPerm();
         } else {
