@@ -67,7 +67,6 @@ public final class IncomingStreams
         TCB _tcb;
         InvalidationReason _invalidationReason;
         int _seq; // the last seq received. see IUnicastOutputLayer.sendOutgoingStreamChunk comment
-        public int _seqMismatchChunkCount;
 
         IncomingStream(PeerContext pc)
         {
@@ -167,8 +166,6 @@ public final class IncomingStreams
         if (stream == null) {
             l.warn("recv chunk after end " + stream + ":" + key);
         } else if (seq != ++stream._seq) {
-            stream._seqMismatchChunkCount++; // [puzzled] this should happen only once, no?
-
             if (stream._invalidationReason == null) { // not aborted
                 _fds.logSendAsync("istrm " + stream._pc.tp() +
                         ":" + key + " expect seq " + stream._seq + " actual " + seq);

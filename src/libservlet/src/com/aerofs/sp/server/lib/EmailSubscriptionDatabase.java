@@ -12,7 +12,6 @@ import com.aerofs.servlets.lib.db.AbstractSQLDatabase;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.sp.common.Base62CodeGenerator;
 import com.aerofs.sp.common.SubscriptionCategory;
-import com.aerofs.sp.common.SubscriptionParams;
 import com.google.common.collect.Sets;
 
 import java.sql.Connection;

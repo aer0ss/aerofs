@@ -6,7 +6,6 @@ package com.aerofs.sp.server.lib;
 
 import com.aerofs.labeling.L;
 import com.aerofs.base.C;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.SecUtil;
 
 public class SPParam

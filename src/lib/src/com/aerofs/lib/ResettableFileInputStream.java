@@ -4,9 +4,6 @@
 
 package com.aerofs.lib;
 
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

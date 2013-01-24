@@ -9,11 +9,9 @@ import java.util.concurrent.Callable;
 
 import com.aerofs.labeling.L;
 import com.aerofs.base.BaseParam.SP;
-import com.aerofs.base.BaseParam.SV;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
-import com.aerofs.sp.server.lib.SPParam;
 
 public class InvitationReminderEmailer
 {

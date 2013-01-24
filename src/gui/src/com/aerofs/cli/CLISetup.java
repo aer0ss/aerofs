@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Properties;
 
 import com.aerofs.base.Base64;
-import com.aerofs.lib.FullName;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.RootAnchorUtil;
 import com.aerofs.lib.S;
@@ -23,7 +22,6 @@ import com.aerofs.proto.ControllerProto.PBS3Config;
 import com.aerofs.proto.Sv;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
 
 public class CLISetup
 {

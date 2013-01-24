@@ -5,7 +5,6 @@ import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUIParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -40,7 +39,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.List;
 

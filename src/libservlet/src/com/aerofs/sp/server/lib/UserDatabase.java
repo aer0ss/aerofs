@@ -5,7 +5,6 @@
 package com.aerofs.sp.server.lib;
 
 import com.aerofs.base.Base64;
-import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
@@ -24,7 +23,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

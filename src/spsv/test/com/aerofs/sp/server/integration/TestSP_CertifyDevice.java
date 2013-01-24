@@ -7,8 +7,6 @@ package com.aerofs.sp.server.integration;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
-import com.aerofs.lib.ex.ExNoPerm;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.Sets;

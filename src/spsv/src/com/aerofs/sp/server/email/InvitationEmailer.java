@@ -17,7 +17,6 @@ import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
-import com.aerofs.sp.server.lib.SPParam;
 import com.aerofs.sp.server.lib.user.User;
 
 import javax.annotation.Nonnull;
