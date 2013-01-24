@@ -1448,7 +1448,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> revokeUserDeviceCertificate(final ByteString deviceId)
+    public ListenableFuture<Void> unlinkUserDevice(final ByteString deviceId)
         throws Exception
     {
         _transaction.begin();
@@ -1456,6 +1456,8 @@ public class SPService implements ISPService
         User user = _sessionUser.get();
         Device device = _factDevice.create(deviceId);
         User owner = device.getOwner();
+
+        l.info(user.id() + ": unlink " + device.id());
 
         if (!owner.equals(user)) {
             throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
@@ -1477,12 +1479,13 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> revokeAllUserDeviceCertificates()
+    public ListenableFuture<Void> unlinkAllUserDevices()
         throws Exception
     {
         _transaction.begin();
 
         User user = _sessionUser.get();
+        l.info(user.id() + ": unlink all");
 
         ImmutableList<Device> userDevices = user.listDevices();
         ImmutableList.Builder<Long> serials = ImmutableList.builder();
@@ -1503,7 +1506,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> revokeTeamServerDeviceCertificate(final ByteString deviceId)
+    public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId)
     {
         // TODO (MP) finish this... when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
 
@@ -1511,7 +1514,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> revokeAllTeamServerDeviceCertificates()
+    public ListenableFuture<Void> unlinkAllTeamServerDevices()
     {
         // TODO (MP) finish this... when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
 
