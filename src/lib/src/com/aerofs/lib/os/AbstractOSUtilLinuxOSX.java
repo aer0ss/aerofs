@@ -19,11 +19,11 @@ abstract class AbstractOSUtilLinuxOSX implements IOSUtil
     protected final InjectableFile.Factory _factFile;
     protected final ProgressIndicators _pi;
 
-    protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile, ProgressIndicators pi)
+    protected AbstractOSUtilLinuxOSX(InjectableFile.Factory factFile)
     {
         loadLibrary("aerofsd");
         _factFile = factFile;
-        _pi = pi;
+        _pi = ProgressIndicators.get();  // sigh, this should be injected
     }
 
     @Override

@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.OutArg;
-import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;
@@ -24,9 +23,9 @@ public class OSUtilLinux extends AbstractOSUtilLinuxOSX
 {
     private String _fullOSName;
 
-    public OSUtilLinux(InjectableFile.Factory factFile, ProgressIndicators pi)
+    public OSUtilLinux(InjectableFile.Factory factFile)
     {
-        super(factFile, pi);
+        super(factFile);
     }
 
     @Override
