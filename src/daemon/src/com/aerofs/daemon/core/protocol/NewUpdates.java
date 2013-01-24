@@ -1,6 +1,8 @@
 package com.aerofs.daemon.core.protocol;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,6 +16,7 @@ import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.ex.ExNotFound;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -113,7 +116,8 @@ public class NewUpdates
         }
     }
 
-    public void process_(DigestedMessage msg) throws Exception
+    public void process_(DigestedMessage msg)
+            throws ExNotFound, SQLException, IOException
     {
         l.debug("recv from " + msg.ep());
 
