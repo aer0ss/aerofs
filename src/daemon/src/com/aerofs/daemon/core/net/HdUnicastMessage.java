@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.sv.client.SVClient;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 

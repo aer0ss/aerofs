@@ -1,50 +1,49 @@
 package com.aerofs.daemon.transport.tcpmt;
 
-import com.aerofs.base.C;
 import com.aerofs.base.id.DID;
+import com.aerofs.daemon.transport.tcpmt.Stores.Prefix;
+import com.aerofs.base.C;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.bf.BFSID;
 import com.aerofs.lib.ex.ExDeviceOffline;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.aerofs.base.id.SID;
+import com.google.common.collect.ImmutableSet;
+
 import org.apache.log4j.Logger;
 
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+
+import javax.annotation.Nullable;
 
 import static com.aerofs.daemon.transport.lib.AddressUtils.printaddr;
-import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.ADD;
-import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.REM;
-import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.UPD;
+import static com.aerofs.daemon.transport.tcpmt.ARP.ARPChange.*;
 
-class ARP
+public class ARP
 {
+    boolean isMulticastUnreachableOnlineDevice(DID did)
+    {
+        return _muod.contains(did);
+    }
+
     Set<DID> getMulticastUnreachableOnlineDevices()
     {
         return _muod;
     }
 
-    synchronized void addARPChangeListener(IARPChangeListener listener)
+    synchronized void addARPWatcher(IARPWatcher w)
     {
-        _listeners.add(listener);
+        _arpwatchers.add(w);
     }
 
     // may return null
     synchronized ARPEntry get(DID did)
     {
         ARPEntry en = _did2en.get(did);
-        if (en != null && en._isa.isUnresolved()) {
-            throw new IllegalStateException("unresolved addr:" + en._isa);
-        }
+        if (en != null) assert !en._isa.isUnresolved();
         return en;
     }
 
-    /**
-     * @throws ExDeviceOffline if there is no routing information for this peer
-     */
     ARPEntry getThrows(DID did)
         throws ExDeviceOffline
     {
@@ -59,10 +58,12 @@ class ARP
      * @param multicast whether the message is received from IP multicast
      * @return true if there was no old entry
      */
-    synchronized boolean put(DID did, InetSocketAddress isa, boolean multicast)
+    synchronized boolean put(DID did, InetSocketAddress isa, @Nullable BFSID filter, int filterSeq,
+            @Nullable ImmutableSet<Prefix> prefixes, @Nullable ImmutableSet<SID> sidsOnline,
+            boolean multicast, long now)
     {
-        ARPEntry oldEntry = _did2en.put(did, new ARPEntry(isa, System.currentTimeMillis()));
-        boolean isNew = (oldEntry == null);
+        boolean isNew = _did2en.put(did, new ARPEntry(isa, filter, filterSeq, prefixes, sidsOnline,
+                now)) == null;
 
         if (isNew) {
             assert !_muod.contains(did);
@@ -79,7 +80,7 @@ class ARP
             }
         }
 
-        notifyListeners_(did, isNew ? ADD : UPD);
+        notifyWatchers_(did, isNew ? ADD : UPD);
 
         if (l.isDebugEnabled()) {
             l.debug("arp: add: d:" + did + " rem:" + printaddr(isa) + " m:" + multicast + " n:" + isNew);
@@ -111,7 +112,7 @@ class ARP
         }
 
 
-        notifyListeners_(did, REM);
+        notifyWatchers_(did, REM);
 
         if (l.isDebugEnabled()) {
             l.debug("arp: rem: d:" + (ret == null ? "null" : did + "rem:" + printaddr(ret._isa)) + " m:" + onmulticast);
@@ -132,12 +133,12 @@ class ARP
         }
     }
 
-    private void notifyListeners_(DID did, ARPChange chg)
+    private void notifyWatchers_(DID did, ARPChange chg)
     {
-        // I could really make a copy of _listeners and use that so that
+        // I could really make a copy of _arpwatchers and use that so that
         // this doesn't have to be called in a synchronized block
-        for (IARPChangeListener w : _listeners) {
-            w.onArpChange_(did, chg);
+        for (IARPWatcher w : _arpwatchers) {
+            w.arpChange_(did, chg);
         }
     }
 
@@ -153,12 +154,8 @@ class ARP
         long now = System.currentTimeMillis();
         for (Map.Entry<DID, ARPEntry> en : _did2en.entrySet()) {
             String a = en.getKey().toString();
-            sb.append(a)
-              .append(" -> ")
-              .append(en.getValue()._isa)
-              .append(", ")
-              .append((now - en.getValue()._lastUpdated) / C.SEC)
-              .append("s");
+            sb.append(a + " -> " + en.getValue()._isa +
+                ", " + ((now - en.getValue()._lastUpdated) / C.SEC) + "s");
             sb.append('\n');
         }
         sb.append("muod: ");
@@ -191,7 +188,7 @@ class ARP
     /**
      * To be implemented by classes that want to know about ARP changes
      */
-    interface IARPChangeListener
+    interface IARPWatcher
     {
         /**
          * Called whenever an ARP entry changes. Changes can take 3 forms:
@@ -204,18 +201,28 @@ class ARP
          * @param did {@link DID} for which the change occurs
          * @param chg {@link ARPChange} indicating what type the change is
          */
-        void onArpChange_(DID did, ARPChange chg);
+        void arpChange_(DID did, ARPChange chg);
     }
 
     static class ARPEntry
     {
         final InetSocketAddress _isa;
         long _lastUpdated;
+        final int _filterSeq;           // can be Stores.FILTER_SEQ_INVALID
+        final @Nullable BFSID _filter;
+        final @Nullable ImmutableSet<Prefix> _prefixes;
+        final @Nullable ImmutableSet<SID> _sidsOnline;
 
-        ARPEntry(InetSocketAddress isa, long lastUpdate)
+        ARPEntry(InetSocketAddress isa, @Nullable BFSID filter, int filterSeq,
+            @Nullable ImmutableSet<Prefix> prefixes, @Nullable ImmutableSet<SID> sidsOnline,
+            long lastUpdate)
         {
             _isa = isa;
             _lastUpdated = lastUpdate;
+            _filter = filter;
+            _filterSeq = filterSeq;
+            _prefixes = prefixes;
+            _sidsOnline = sidsOnline;
         }
     }
 
@@ -229,8 +236,8 @@ class ARP
     // must be immutable
     private Set<DID> _muod = Collections.emptySet();
 
-    private final Map<DID, ARPEntry> _did2en = Maps.newTreeMap();
-    private final Set<IARPChangeListener> _listeners = Sets.newHashSet();
+    private final Map<DID, ARPEntry> _did2en = new TreeMap<DID, ARPEntry>();
+    private final Set<IARPWatcher> _arpwatchers = new HashSet<IARPWatcher>();
 
     private static final Logger l = Util.l(ARP.class);
 }

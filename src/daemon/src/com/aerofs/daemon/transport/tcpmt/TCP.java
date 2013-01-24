@@ -11,6 +11,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
+import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.event.net.Endpoint;
@@ -28,7 +29,6 @@ import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.lib.TransportDiagnosisState;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPEntry;
-import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
@@ -48,7 +48,6 @@ import org.apache.log4j.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.PrintStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.util.List;
 import java.util.Set;
@@ -57,7 +56,7 @@ import static com.aerofs.daemon.lib.DaemonParam.TCP.ARP_GC_INTERVAL;
 import static com.aerofs.daemon.lib.DaemonParam.TCP.QUEUE_LENGTH;
 import static com.aerofs.daemon.transport.lib.PulseManager.newCheckPulseReply;
 
-public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
+public class TCP implements ITransportImpl, IPipeController, ARP.IARPWatcher
 {
     private static final Logger l = Util.l(TCP.class);
 
@@ -75,10 +74,10 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     private final BlockingPrioQueue<IEvent> _q = new BlockingPrioQueue<IEvent>(QUEUE_LENGTH);
     private final Scheduler _sched;
     private final EventDispatcher _disp = new EventDispatcher();
+    private final HostnameMonitor _hm = new HostnameMonitor(this);
     private final StreamManager _sm = new StreamManager();
     private final TransportDiagnosisState _tds = new TransportDiagnosisState();
-    private final Stores _stores = new Stores(Cfg.did(), this, _arp, Cfg.isSP()); // FIXME (AG): ugh. I hate Cfg
-    private final HostnameMonitor _hm = new HostnameMonitor(this, _arp);
+    private final Stores _ss = new Stores(this, _arp, _hm);
     private final PulseManager _pm = new PulseManager();
 
     public TCP(String id, int pref, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
@@ -90,8 +89,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         _sink = sink;
         _mcfr = mcfr;
 
-        _arp.addARPChangeListener(this);
-
+        _arp.addARPWatcher(this);
         _pm.addGenericPulseDeletionWatcher(this, _sink);
 
         _disp.setHandler_(EOTransportReconfigRemoteDevice.class, new HdTransportReconfigRemoteDevice(this)); // FIXME: this should move to init()
@@ -113,7 +111,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
             internalPort = null;
         }
 
-        _ucast = new Unicast(this, _arp, _stores, port, internalPort);
+        _ucast = new Unicast(this, _arp, _ss, port, internalPort);
 
         // must be called *after* the Unicast object is initialized.
 
@@ -201,6 +199,11 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
             l.info("remove: disconnect connections");
             _ucast.disconnect(arpentry._isa);
 
+            if (notifyOffline) {
+                l.info("remove: send offline presence");
+                _sink.enqueueBlocking(new EIPresence(this, false, did, arpentry._sidsOnline),
+                        Prio.LO);
+            }
         }
     }
 
@@ -321,7 +324,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
 
     Stores ss()
     {
-        return _stores;
+        return _ss;
     }
 
     MaxcastFilterReceiver mcfr()
@@ -339,7 +342,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     public void updateStores_(SID[] sidsAdded, SID[] sidsRemoved)
     {
         assert _ready;
-        _stores.updateStores(sidsAdded, sidsRemoved);
+        _ss.updateStores_(sidsAdded, sidsRemoved);
     }
 
     @Override
@@ -477,7 +480,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
         case TCP_NOP:
             break;
         default:
-            throw new ExProtocolError(((Object)hdr.getType()).getClass()); // FIXME (AG): cast for IDEA12 bug
+            throw new ExProtocolError(hdr.getType().getClass());
         }
 
         return ret;
@@ -510,7 +513,8 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
      */
     private PBTPHeader processPing(boolean multicast)
     {
-        return _stores.newPongMessage(multicast);
+        PBTPHeader pong = _ss.newPongMessage(multicast);
+        return pong;
     }
 
     /**
@@ -524,10 +528,7 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
      */
     private void processPong(InetAddress rem, DID did, PBTCPPong pong, boolean multicast)
     {
-        InetSocketAddress isa = new InetSocketAddress(rem, pong.getUnicastListeningPort());
-
-        _arp.put(did, isa, multicast);
-        _stores.filterReceived(did, pong.getFilter());
+        _ss.filterReceived(did, rem, pong.getUnicastListeningPort(), pong.getFilter(), multicast);
     }
 
     /**
@@ -560,11 +561,11 @@ public class TCP implements ITransportImpl, IPipeController, IARPChangeListener
     }
 
     //
-    // IARPChangeListener methods
+    // IARPWatcher methods
     //
 
     @Override
-    public synchronized void onArpChange_(DID did, ARPChange chg)
+    public synchronized void arpChange_(DID did, ARPChange chg)
     {
         if (chg == ARPChange.ADD) {
             l.info("rcv online presence d:" + did);

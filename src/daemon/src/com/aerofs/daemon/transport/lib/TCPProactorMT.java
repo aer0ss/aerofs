@@ -268,7 +268,6 @@ public class TCPProactorMT
                 if (preamble != null) syncSend(s, out, preamble);
             }
 
-            //noinspection InfiniteLoopStatement
             while (true) {
                 // receive the message
                 byte[] bs = Util.readMessage(in, _magic, _maxRecvMsgSize);
@@ -305,7 +304,7 @@ public class TCPProactorMT
     {
         assert _sendable;
 
-        Peer p;
+        Peer p = null;
         synchronized (_map) {
             p = _map.get(remaddr);
             if (p == null) {

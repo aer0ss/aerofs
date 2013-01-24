@@ -1,7 +1,6 @@
 package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
@@ -16,6 +15,7 @@ import com.aerofs.lib.Param;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.base.id.SID;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import org.apache.log4j.Logger;
@@ -123,6 +123,7 @@ class Multicast implements IMaxcast
 
             } catch (IOException e) {
                 l.warn("can't add mcast iface: " + e);
+                continue;
             }
         }
 
@@ -209,7 +210,8 @@ class Multicast implements IMaxcast
                 {
                     assert h.hasMcastId() && h.hasSid();
                     // filter packets from core that were sent on other interface
-                    if (!t.mcfr().isRedundant(did, h.getMcastId())) {
+                    if (false == t.mcfr().isRedundant(did, h.getMcastId()))
+                    {
                         t.sink().enqueueThrows(
                                 new EIMaxcastMessage(new Endpoint(t, did),
                                         new SID(h.getSid()), is, pkt.getLength()),
@@ -302,7 +304,7 @@ class Multicast implements IMaxcast
                 }
             }
         } finally {
-            dos.close();
+            if (dos != null) dos.close();
         }
     }
 }

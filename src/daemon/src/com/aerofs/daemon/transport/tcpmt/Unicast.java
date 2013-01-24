@@ -20,6 +20,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Files;
+import com.aerofs.proto.Transport;
 import com.aerofs.proto.Transport.PBTCPUnicastPreamble;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
@@ -43,7 +44,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
      * we listen to the internal port but getListingPort() returns the external
      * port.
      */
-    Unicast(IPipeController pc, ARP arp, Stores stores, int port, Integer internalPort)
+    Unicast(IPipeController pc, ARP arp, Stores ss, int port, Integer internalPort)
             throws IOException
     {
         // external port must be a specific value if internal port is specified
@@ -51,7 +52,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
 
         _pc = pc;
         _arp = arp;
-        _stores = stores;
+        _ss = ss;
         _proactor = new TCPProactorMT("tp", this, null, internalPort == null ? port : internalPort,
                 Param.CORE_MAGIC, true, DaemonParam.MAX_TRANSPORT_MESSAGE_SIZE);
         _port = internalPort == null ? _proactor.getListeningPort() : port;
@@ -263,45 +264,68 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
         {
             ByteArrayInputStream is = new ByteArrayInputStream(bs);
             PBTPHeader h = TPUtil.processUnicastHeader(is);
-            Type type = h.getType();
-            PBTPHeader ret = null;
 
-            if (!connectionInitialized() && type != Type.TCP_UNICAST_PREAMBLE) {
-                l.warn("connection used before preamble rem:" + printaddr(_printaddr)+ " - discard");
-            } else if (TPUtil.isPayload(h)) {
-                _pc.processUnicastPayload(_did, h, is, wirelen);
+            PBTPHeader ret = null;
+            Type type = h.getType();
+            if (TPUtil.isPayload(h)) {
+                if (_did == null) {
+                    l.warn("payload before preamble rem:" + printaddr(_printaddr)+ " - discard");
+                    return null;
+                }
+
+                _pc.processUnicastPayload(_did, h, is, wirelen); // silently discard data
             } else if (type == Type.TCP_UNICAST_PREAMBLE) {
                 PBTCPUnicastPreamble preamble = h.getTcpPreamble();
-                if (_did != null) {
-                    throw new ExInvalidProtocolState(
-                            "reseat did old:" + _did + " new:" + new DID(preamble.getDeviceId()));
-                }
 
                 _did = new DID(preamble.getDeviceId());
                 _remoteListeningPort = preamble.getListeningPort();
-                _remisa = new InetSocketAddress(_remaddr, _remoteListeningPort);
 
-                l.info("recv preamble d:" + _did + " rem:" + _remaddr + " l:" + _remoteListeningPort);
+                if (l.isInfoEnabled()) {
+                    l.info("recv preamble d:" + _did +
+                        " rem:" + _remaddr + " l:" + _remoteListeningPort);
+                }
 
-                _arp.put(_did, _remisa, false);
+                // reuse incoming connection for outgoing requests to the
+                // peer's announced listening port
+                InetSocketAddress isa = new InetSocketAddress(_remaddr, _remoteListeningPort);
 
-                // reuse incoming connection for outgoing requests to the peer's announced listening port
-                _proactor.reuseForOutgoingConnection(_remisa, _c);
+                _proactor.reuseForOutgoingConnection(isa, _c);
 
                 // for SP, send member stores only after receiving the peer's
 
                 if (!Cfg.isSP()) {
                     ret = PBTPHeader.newBuilder()
                         .setType(Type.TCP_STORES)
-                        .setTcpStores(_stores.newStoresForNonSP())
+                        .setTcpStores(_ss.newStoresForNonSP(_did))
                         .build();
                 }
             } else if (type == Type.TCP_STORES) {
-                _stores.storesReceived(_did, h.getTcpStores());
+                if (_did == null) {
+                    l.warn("payload before preamble rem:" + printaddr(_printaddr) + " - discard");
+                    return null;
+                }
+
+                _ss.storesReceived(_did, _remaddr,
+                    _remoteListeningPort, h.getTcpStores(), false);
+
+                if (Cfg.isSP()) {
+                    ARPEntry arpentry = _arp.get(_did);
+                    if (arpentry == null || arpentry._prefixes == null) {
+                        // don't send member stores if the peer doesn't provide
+                        // the prefixes. so it's critical for non-SP client
+                        // always send prefixes (not filters) to SP.
+                        ret = null;
+                    } else {
+                        ret = PBTPHeader.newBuilder()
+                                .setType(Type.TCP_STORES)
+                                .setTcpStores(_ss.newStoresForSP(_did, arpentry._prefixes))
+                                .build();
+                    }
+                }
             } else if (type == Type.TCP_PONG) {
-                // FIXME (AG): I need to use the same code path as Multicast (see TCP::processPong)
-                _arp.put(_did, _remisa, false);
-                _stores.filterReceived(_did, h.getTcpPong().getFilter());
+                Transport.PBTCPPong pong = h.getTcpPong();
+                _ss.filterReceived(_did, _remaddr,
+                    pong.getUnicastListeningPort(), pong.getFilter(), false);
             } else {
                 _pc.processUnicastControl(_did, h);
             }
@@ -318,18 +342,12 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             if (_did != null) _pc.closePeerStreams(_did, false, true);
         }
 
-        private boolean connectionInitialized()
-        {
-            return _did != null;
-        }
-
         private final InetAddress _remaddr;
         private final InetSocketAddress _printaddr; // FIXME: remove this
         private final IConnection _c;
 
         private DID _did;
         private int _remoteListeningPort;
-        private InetSocketAddress _remisa;
     }
 
     public void pauseAccept()
@@ -348,7 +366,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
 
     private final IPipeController _pc;
     private final ARP _arp;
-    private final Stores _stores;
+    private final Stores _ss;
     private final TCPProactorMT _proactor;
     private final int _port;
 
