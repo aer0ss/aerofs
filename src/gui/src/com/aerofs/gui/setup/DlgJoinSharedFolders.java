@@ -64,11 +64,6 @@ public class DlgJoinSharedFolders extends AeroFSDialog
         showDialog(true);
     }
 
-    public void showDialog()
-    {
-        showDialog(false);
-    }
-
     // todo: spinner while waiting for list of invitations
     private void showDialog(final boolean silent)
     {
@@ -100,18 +95,8 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                     {
                         ritual.close();
 
-                        if (throwable instanceof ExNoPerm) {
-                            l.info("join shared folders: needs email verification");
-
-                            // TODO (GS): Deal with this case.
-                            // - display a different dialog that says we must verify the email address
-                            // - dialog has 3 buttons: "send email" and "continue", "cancel"
-                            throw new NotImplementedException();
-
-                        } else {
-                            l.warn("list pending folders:" + Util.e(throwable));
-                            UI.get().show(MessageType.ERROR, throwable.toString());
-                        }
+                        l.warn("list pending folders:" + Util.e(throwable));
+                        UI.get().show(MessageType.ERROR, throwable.toString());
                     }
                 });
     }

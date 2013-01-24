@@ -35,6 +35,7 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.lib.id.SIndex;
@@ -275,7 +276,7 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
                         pullSyncStatus_();
                         return null;
                     }
-                });
+                }, ExNoPerm.class);
             }
         }, 0);
     }

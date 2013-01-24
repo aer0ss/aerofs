@@ -115,7 +115,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
 
                 enableAll(false);
                 _compSpin.start();
-                setStatusText(S.SENDING_INVITATION + "...", false);
+                setStatusText(S.INVITING, false);
 
                 GUI.get().safeWork(getShell(), DlgFolderlessInvite.this);
             }

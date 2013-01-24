@@ -3,6 +3,7 @@ package com.aerofs.gui.sharing;
 import java.util.Collection;
 import java.util.List;
 
+import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.id.UserID;
 import com.aerofs.ui.UIUtil;
@@ -54,16 +55,29 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     private final Text _txtNote;
 
     private final Path _path;
+    private static final String CONVERT_TO_SHARED_FOLDER = "Converting to a shared folder...";
     private String _fromPerson;
 
     private final Label _lblStatus;
     private final CompSpin _compSpin;
     private final CompEmailAddressTextBox _compAddresses;
+    private final boolean _newSharedFolder;
 
-    public CompInviteUsers(Composite parent, Path path)
+    static public CompInviteUsers createForExistingSharedFolder(Composite parent, Path path)
+    {
+        return new CompInviteUsers(parent, path, false);
+    }
+
+    static public CompInviteUsers createForNewSharedFolder(Composite parent, Path path)
+    {
+        return new CompInviteUsers(parent, path, true);
+    }
+
+    private CompInviteUsers(Composite parent, Path path, boolean newSharedFolder)
     {
         super(parent, SWT.NONE);
         _path = path;
+        _newSharedFolder = newSharedFolder;
 
         GridLayout glShell = new GridLayout(1, false);
         glShell.marginHeight = GUIParam.MARGIN;
@@ -108,7 +122,9 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         _compSpin = new CompSpin(composite1, SWT.NONE);
 
         _lblStatus = new Label(composite1, SWT.NONE);
-        _lblStatus.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+        GridData gridData = new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1);
+        gridData.widthHint = GUIUtil.getExtent(_lblStatus, CONVERT_TO_SHARED_FOLDER).x;
+        _lblStatus.setLayoutData(gridData);
 
         Composite composite = new Composite(composite1, SWT.NONE);
         FillLayout fl = new FillLayout(SWT.HORIZONTAL);
@@ -209,7 +225,12 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
     private void work()
     {
         _compSpin.start();
-        setStatusText(S.SENDING_INVITATION + "...");
+
+        if (_newSharedFolder) {
+            setStatusText(CONVERT_TO_SHARED_FOLDER);
+        } else {
+            setStatusText(S.INVITING);
+        }
 
         final List<UserID> subjects = _compAddresses.getValidUserIDs();
         final String note = _txtNote.getText().trim();
@@ -267,7 +288,8 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     ritual.close();
                 }
 
-                SVClient.sendEventAsync(Sv.PBSVEvent.Type.INVITE_SENT,Integer.toString(subjects.size()));
+                SVClient.sendEventAsync(Sv.PBSVEvent.Type.INVITE_SENT,
+                        Integer.toString(subjects.size()));
             }
         });
     }

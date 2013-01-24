@@ -45,7 +45,7 @@ public class DlgManageSharedFolder extends AeroFSDialog
         TabItem tbtmInvite = new TabItem(tabFolder, SWT.NONE);
         tbtmInvite.setText("Invite Others");
 
-        Composite compInvite = new CompInviteUsers(tabFolder, _path);
+        Composite compInvite = CompInviteUsers.createForExistingSharedFolder(tabFolder, _path);
         tbtmInvite.setControl(compInvite);
 
         final TabItem tbtmManage = new TabItem(tabFolder, SWT.NONE);

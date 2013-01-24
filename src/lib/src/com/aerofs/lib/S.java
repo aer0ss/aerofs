@@ -70,7 +70,6 @@ public class S
             PASSWORD_RESET_URL = SP.WEB_BASE + "/password_reset",
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
-            SENDING_INVITATION = "Inviting",
             INVITATION_WAS_SENT = "Invited successfully.",
             COULDNT_SEND_INVITATION = "Couldn't invite users.",
             VERSION_HISTORY = "version history",
@@ -88,6 +87,6 @@ public class S
             SS_IN_SYNC_TOOLTIP = "Remote peer has the same version.",
             SS_IN_PROGRESS_TOOLTIP = "Remote peer has a different version and is currently" +
                     " online. This may happen if the remote peer is using selective sync.",
-            SS_OFFLINE_TOOLTIP = "Remote peer has a different version and is currently offline.";
-
+            SS_OFFLINE_TOOLTIP = "Remote peer has a different version and is currently offline.",
+            INVITING = "Inviting...";
 }
