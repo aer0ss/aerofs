@@ -394,7 +394,7 @@ public abstract class Updater
     public void checkForUpdate(boolean newThread)
     {
         // retrieve server update.properties
-        l.info("checking for update");
+        l.debug("checking for update");
 
         synchronized (this) {
             if (_ongoing) return;
@@ -423,7 +423,7 @@ public abstract class Updater
      */
     @Nullable private String checkAndDownload()
     {
-        l.info("check and download update");
+        l.debug("check and download update");
 
         _percentDownloaded = 0; //reset downloaded statistics
         setUpdateStatus(Status.ONGOING, -1); // signal that the process is ongoing
@@ -433,7 +433,7 @@ public abstract class Updater
             CompareResult cr = verServer == null ? null : Versions.compare(Cfg.ver(), verServer);
 
             if (cr == null || cr == CompareResult.NO_CHANGE) {
-                l.info("no update available");
+                l.debug("no update available");
 
                 setUpdateStatus(Status.LATEST, -1);
                 return null;

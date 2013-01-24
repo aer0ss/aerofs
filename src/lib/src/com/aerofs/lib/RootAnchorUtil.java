@@ -75,26 +75,34 @@ public abstract class RootAnchorUtil
             if (!fToCheck.canWrite()) throwExNoPerm(Perm.WRITE, fToCheck);
         }
 
-        // Check if it's a supported file system
-        if (Cfg.useFSTypeCheck(rtRoot)) {
-            OutArg<Boolean> remote = new OutArg<Boolean>();
-            String type = OSUtil.get().getFileSystemType(fToCheck.getAbsolutePath(), remote);
-            if (unsupportedFsBetterNames.containsKey(type)) {
-                    type = unsupportedFsBetterNames.get(type);
-            }
-            boolean supported = OSUtil.get().isFileSystemTypeSupported(type.toUpperCase(), remote.get());
-            if (!supported) {
-                String r = remote.get() != null && remote.get() ? "remote " : "";
-                // sync instead of async to make sure we get it
-                SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
-                        null, UserID.fromInternal("n/a"), rtRoot);
-
-                throw new ExUIMessage(L.PRODUCT + " doesn't support " + r + type +
-                        " filesystems on " + OSUtil.getOSName() + " at this moment");
-            }
+        // Check if it's a supported filesystem. We only support filesystems that have persistent
+        // i-node numbers. This is to allow the linker to work propoerly.
+        // This is not needed for Mutliuser.
+        if (!L.get().isMultiuser() && Cfg.useFSTypeCheck(rtRoot)) {
+            checkFilesystemType(rtRoot, fToCheck);
         }
 
         checkAuxRoot(rootAnchor);
+    }
+
+    private static void checkFilesystemType(String rtRoot, File fToCheck)
+            throws IOException, ExUIMessage
+    {
+        OutArg<Boolean> remote = new OutArg<Boolean>();
+        String type = OSUtil.get().getFileSystemType(fToCheck.getAbsolutePath(), remote);
+        if (unsupportedFsBetterNames.containsKey(type)) {
+                type = unsupportedFsBetterNames.get(type);
+        }
+        boolean supported = OSUtil.get().isFileSystemTypeSupported(type.toUpperCase(), remote.get());
+        if (!supported) {
+            String r = remote.get() != null && remote.get() ? "remote " : "";
+            // sync instead of async to make sure we get it
+            SVClient.logSendDefectSyncNoCfgIgnoreErrors(true, "unsupported fs: " + r + type,
+                    null, UserID.fromInternal("n/a"), rtRoot);
+
+            throw new ExUIMessage(L.PRODUCT + " doesn't support " + r + type +
+                    " filesystems on " + OSUtil.getOSName() + " at this moment");
+        }
     }
 
     private static void checkAuxRoot(String rootAnchor)
