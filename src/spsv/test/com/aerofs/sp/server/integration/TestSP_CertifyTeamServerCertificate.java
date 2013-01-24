@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
@@ -57,7 +58,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
             throws Exception
     {
         // this moves the user to a new organization
-        UserID tsUserID = getTeamServerUserID();
+        UserID tsUserID = setupTeamServer();
 
         trans.begin();
         assertFalse(user.getOrganization().isDefault());
@@ -71,7 +72,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
     public void shouldCreateTeamServerUser()
             throws Exception
     {
-        UserID tsUserID = getTeamServerUserID();
+        UserID tsUserID = setupTeamServer();
         certifyTeamServerDevice(tsUserID);
 
         // Can't conveniently use verify() since udb.insertUser() may be called many times during test
@@ -85,7 +86,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
     public void shouldAddAndCertifyDevice()
             throws Exception
     {
-        UserID tsUserID = getTeamServerUserID();
+        UserID tsUserID = setupTeamServer();
         certifyTeamServerDevice(tsUserID);
 
         verify(certgen).generateCertificate(eq(tsUserID), eq(tsDID), any(PKCS10.class));
@@ -105,9 +106,10 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
         service.certifyTeamServerDevice(tsDID.toPB(), newCSR(userID, tsDID));
     }
 
-    private UserID getTeamServerUserID()
+    private UserID setupTeamServer()
             throws Exception
     {
+        service.addOrganization("An Awesome Team", null, null, StripeCustomerID.TEST.getID());
         return UserID.fromInternal(service.getTeamServerUserID().get().getId());
     }
 }
