@@ -22,7 +22,7 @@ public final class SPSchema
             T_ORGANIZATION                  = "sp_organization",
             C_O_ID                          = "o_id",
             C_O_NAME                        = "o_name",
-            C_O_USER_COUNT                  = "o_user_count",
+            C_O_SIZE                        = "o_size",
             C_O_CONTACT_PHONE               = "o_contact_phone",
             C_O_STRIPE_CUSTOMER_ID          = "o_stripe_customer_id",
 
