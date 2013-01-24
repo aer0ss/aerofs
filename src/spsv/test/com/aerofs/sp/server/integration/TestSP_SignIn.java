@@ -86,7 +86,7 @@ public class TestSP_SignIn extends AbstractSPTest
         UserID tsUserID = setupTeamServer();
 
         // Revoke all device certificates including the one just created.
-        service.revokeAllTeamServerDeviceCertificates();
+        service.unlinkAllTeamServerDevices();
 
         // Expect the sign in to fail even when the cert has been verified with nginx.
         mockCertificateAuthenticatorSetAuthenticatedState();

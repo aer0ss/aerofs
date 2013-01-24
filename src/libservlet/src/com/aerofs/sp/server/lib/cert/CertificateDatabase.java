@@ -80,7 +80,8 @@ public class CertificateDatabase extends AbstractSQLDatabase
             ps.addBatch();
         }
 
-        executeBatch(ps, serials.size(), 1);
+        // Blindly execute, since revocation of the same device twice is allowed.
+        ps.executeBatch();
     }
 
     /**

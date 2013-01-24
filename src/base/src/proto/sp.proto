@@ -241,8 +241,10 @@ service SPService {
     rpc GetPreferences(GetPreferencesCall) returns (GetPreferencesReply);
 
     /**
-     * Set the user's preferences (name, device name, etc)
-     * Optional fields that aren't present won't be changed
+     * TODO (MP) send verkehr notification(s) when we change the device name.
+     *
+     * Set the user's preferences (name, device name, etc). Optional fields that aren't present
+     * won't be changed.
      *
      * Required Auth Level: user
      */

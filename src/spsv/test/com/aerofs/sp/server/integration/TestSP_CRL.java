@@ -68,7 +68,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Follow a typical certify-revoke cycle.
-        service.revokeUserDeviceCertificate(_did.toPB());
+        service.unlinkUserDevice(_did.toPB());
 
         // Verify that only one certificate has been revoked, as expected.
         GetCRLReply reply = service.getCRL().get();
@@ -80,8 +80,8 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     public void shouldThrowIfRevokeDeviceCertificateMoreThanOnce()
             throws Exception
     {
-        service.revokeUserDeviceCertificate(_did.toPB());
-        service.revokeUserDeviceCertificate(_did.toPB());
+        service.unlinkUserDevice(_did.toPB());
+        service.unlinkUserDevice(_did.toPB());
     }
 
     @Test(expected = ExNotFound.class)
@@ -89,7 +89,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
             throws Exception
     {
         // Try to revoke the certificate without first certifying the device
-        service.revokeUserDeviceCertificate(new DID(UniqueID.generate()).toPB());
+        service.unlinkUserDevice(new DID(UniqueID.generate()).toPB());
     }
 
     @Test(expected = ExNoPerm.class)
@@ -98,7 +98,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     {
         // Switch to a different user and try to revoke the previous user's device.
         setSessionUser(TEST_2_USER);
-        service.revokeUserDeviceCertificate(_did.toPB());
+        service.unlinkUserDevice(_did.toPB());
     }
 
     //
@@ -115,7 +115,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 0);
 
-        service.revokeAllUserDeviceCertificates();
+        service.unlinkAllUserDevices();
 
         // And after one revocation, the list will be of length 1.
         reply = service.getCRL().get();
