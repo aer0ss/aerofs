@@ -6,18 +6,14 @@ package com.aerofs.base.ssl;
 
 import java.io.IOException;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 /**
- * An interface to provide private keys and certificates. Used as a tool to de-dup code between
- * verkehr tests and the daemon.
+ * An interface to provide private keys and certificates.
  */
 public interface IPrivateKeyProvider
 {
-    public PrivateKey getPrivateKey()
-            throws IOException;
-
-    public X509Certificate getCert()
-            throws CertificateException, IOException;
+    public PrivateKey getPrivateKey() throws IOException;
+    public Certificate getCert() throws CertificateException, IOException;
 }
