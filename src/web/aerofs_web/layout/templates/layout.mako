@@ -31,7 +31,7 @@
         <div id="empty_message_bar" class="offset5 message_container">View Message</div>
     </div>
     <div class="container">
-        <div id="message_bar" class="span12 message_container">
+        <div id="message_bar" class="span6 offset3 message_container">
             % if request.session.peek_flash(queue='error_queue'):
                 % for message in request.session.pop_flash(queue='error_queue'):
                     <div class="flash_message error_message">
@@ -52,21 +52,39 @@
     <div class="navbar">
         <div class="navbar-inner">
             <div class="container">
-                <a class="brand" href="/">
-                    <img src="${request.static_url('aerofs_web.layout:static/img/aerofs-logo-navbar.png')}" width="151" height="44" alt="AeroFS" />
-                </a>
+                <div class="row">
+                    <div class="span10 offset1">
+                        <a class="brand" href="/">
+                            <img src="${request.static_url('aerofs_web.layout:static/img/aerofs-logo-navbar.png')}" width="151" height="44" alt="AeroFS" />
+                        </a>
 
-                %if 'username' in request.session:
-                    ${render_top_right_navigation()}
-                %endif
-
+                        %if 'username' in request.session:
+                            ${render_top_right_navigation()}
+                        %endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <div class="container">
         <div class="row">
-            ${next.body()}
+            %if 'username' in request.session:
+                <div class="span2 offset1">
+                    %if request.session['group'] == ADMIN:
+                        ${render_left_navigation_for_admin()}
+                    %else:
+                        ${render_left_navigation_for_nonadmin()}
+                    %endif
+                </div>
+                <div class="span8">
+                    ## all pages that require sign in are bounded by "span8"
+                    ${next.body()}
+                </div>
+            %else:
+                ## all pages that don't require sign in are bounded by "row"
+                ${next.body()}
+            %endif
         </div>
     </div>
 
@@ -80,13 +98,13 @@
 
 <%def name="render_top_right_navigation()">
 
-    ## TODO (WW) CSS for navgar buttons is completely broken.
+    ## TODO (WW) CSS for navbar buttons is completely broken.
 
     <div class="pull-right" style="margin-top: 2em;">
         % if request.session['group'] == ADMIN:
-            ${render_client_and_server_download_links()}
+            ${render_download_link_for_admin()}
         % else:
-            ${render_client_download_link()}
+            ${render_download_link_for_nonadmin()}
         % endif
 
         <span class="btn-group" style="margin-left: 3em; padding-bottom: 8px;">
@@ -106,13 +124,13 @@
 
 </%def>
 
-<%def name="render_client_download_link()">
+<%def name="render_download_link_for_nonadmin()">
     <a href="https://www.aerofs.com/download" target="_blank">
         ${render_download_text()}
     </a>
 </%def>
 
-<%def name="render_client_and_server_download_links()">
+<%def name="render_download_link_for_admin()">
     <span class="btn-group" style="margin-left: 3em; padding-bottom: 8px;">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
             ## see the previous occurrance of the UNICODE char for comments
@@ -133,7 +151,63 @@
     Install
 </%def>
 
+<%def name="render_left_navigation_for_nonadmin()">
+    <ul class="nav nav-list">
+        ${render_nonadmin_links()}
+    </ul>
+</%def>
+
+<%def name="render_left_navigation_for_admin()">
+    <ul class="nav nav-list">
+        <li class="nav-header">My AeroFS</li>
+        ${render_nonadmin_links()}
+        <li class="nav-header">My Team</li>
+        ${render_admin_links()}
+    </ul>
+</%def>
+
+<%def name="render_nonadmin_links()">
+    <%
+        links = [
+            ('accept', _("Invitations")),
+            # ('devices', _("Devices"))
+        ]
+    %>
+    % for link in links:
+        ${render_navigation_link(link)}
+    % endfor
+</%def>
+
+<%def name="render_admin_links()">
+    <%
+        links = [
+            ('admin_users', _("Members")),
+            ('admin_shared_folders', _("Shared Folders")),
+            ('admin_settings', _("Settings"))
+        ]
+    %>
+    % for link in links:
+        ${render_navigation_link(link)}
+    % endfor
+</%def>
+
+## param link: tuple (route_name, text_to_display)
+<%def name="render_navigation_link(link)">
+    <li
+        %if request.matched_route and request.matched_route.name == link[0]:
+            class="active"
+        %endif
+    ><a href="${request.route_path(link[0])}">${link[1]}</a></li>
+</%def>
+
 ## Remove the footer for now.
+##
+## sets a global variable with the current year, for copyright notices
+##<%!
+##    import datetime
+##    year = datetime.datetime.now().year
+##%>
+##
 ##<footer>
 ##    <div class="container">
 ##        <div class="row">
@@ -172,21 +246,3 @@
 
 </body>
 </html>
-
-## sets a global variable with the current year, for copyright notices
-##<%!
-##    import datetime
-##    year = datetime.datetime.now().year
-##%>
-
-## Outputs the sidebar navigation
-## param links: list of tuples (route_name, text_to_display)
-## example: sidebar_links([('route1', "Link Name"), ('route2', "Another Link")])
-<%def name="sidebar_links(links)">
-    <ul class="nav">
-        % for link in links:
-            <li ${'class="active"' if request.matched_route.name == link[0] else '' | n }>
-                <a href="${request.route_path(link[0])}">${link[1]}</a></li>
-        % endfor
-    </ul>
-</%def>

@@ -26,11 +26,13 @@ div.input_container a.btn {
 div.input_container.submit {
   margin-top: 25px;
 }
-div#admin_table_container {
-  margin-top: 35px;
-  margin-bottom: 35px;
+.nav-list > .active > a, .nav-list > .active > a:hover {
+  background: transparent;
+  text-shadow: none;
+  font-weight: bolder;
+  color: #005580;
 }
-div#folders_table_container {
+.page_block {
   margin-bottom: 30px;
 }
 a.delete_permission {

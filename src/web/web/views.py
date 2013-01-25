@@ -9,16 +9,13 @@ log = logging.getLogger(__name__)
 
 # Global view configuration.
 
-# Redirects to either the user or the admin homepage.
 @view_config(
     route_name = 'homepage',
     permission = 'user'
 )
 def homepage(request):
-    if request.session['group'] == USER:
-        return HTTPFound(request.route_url('user_home'))
-    else:
-        return HTTPFound(request.route_url('admin_home'))
+    # Redirects to the accept page.
+    return HTTPFound(request.route_url('accept'))
 
 # Exception handlers.
 

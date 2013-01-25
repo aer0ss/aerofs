@@ -42,20 +42,20 @@ div.input_container.submit {
     margin-top: 25px;
 }
 
-// Company settings view
-// ------------------
+// these overwrite the default behavior
+.nav-list > .active > a, .nav-list > .active > a:hover {
+  background: transparent;
+  text-shadow: none;
+  font-weight: bolder;
+  color: @linkColorHover;
+}
 
-div#admin_table_container {
-    margin-top: 35px;
-    margin-bottom: 35px;
+.page_block {
+  margin-bottom: 30px;
 }
 
 // Shared folders view
 // ------------------
-
-div#folders_table_container {
-    margin-bottom: 30px;
-}
 
 a.delete_permission {
     color: @red;
