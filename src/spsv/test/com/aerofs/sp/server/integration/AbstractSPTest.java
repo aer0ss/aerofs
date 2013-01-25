@@ -47,6 +47,8 @@ import org.junit.Before;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import sun.security.pkcs.PKCS10;
 
 import java.io.IOException;
@@ -54,6 +56,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -150,12 +154,12 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
 
         // Add all the users to the db.
         trans.begin();
-        udb.insertUser(USER_1, new FullName(USER_1.toString(), USER_1.toString()), USER_1_CRED,
-                orgId, level);
-        udb.insertUser(USER_2, new FullName(USER_2.toString(), USER_2.toString()), USER_2_CRED,
-                orgId, level);
-        udb.insertUser(USER_3, new FullName(USER_3.toString(), USER_3.toString()), USER_3_CRED,
-                orgId, level);
+        factUser.create(USER_1).save(USER_1_CRED, new FullName(USER_1.toString(), USER_1.toString()),
+                factOrg.getDefault());
+        factUser.create(USER_2).save(USER_2_CRED, new FullName(USER_2.toString(), USER_2.toString()),
+                factOrg.getDefault());
+        factUser.create(USER_3).save(USER_3_CRED, new FullName(USER_3.toString(), USER_3.toString()),
+                factOrg.getDefault());
         trans.commit();
     }
 
@@ -170,13 +174,6 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
             throws ExAlreadyExist, SQLException
     {
         addTestUser(udb, userId);
-    }
-
-    // User based tests will probably need to mock verkehr publishes, so include this utility here.
-    protected void setupMockVerkehrToSuccessfullyPublish()
-    {
-        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
-                .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 
     protected void setSessionUser(UserID userId)
@@ -221,5 +218,21 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         KeyPair kp = SecUtil.newRSAKeyPair();
         return ByteString.copyFrom(SecUtil.newCSR(kp.getPublic(), kp.getPrivate(), userID, did)
                 .getEncoded());
+    }
+
+    protected Set<String> mockAndCaptureVerkehrPublish()
+    {
+        final Set<String> published = new HashSet<String>();
+        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
+                .then(new Answer<Object>() {
+                    @Override
+                    public Object answer(InvocationOnMock invocation)
+                            throws Throwable
+                    {
+                        published.add((String)invocation.getArguments()[0]);
+                        return UncancellableFuture.createSucceeded(null);
+                    }
+                });
+        return published;
     }
 }

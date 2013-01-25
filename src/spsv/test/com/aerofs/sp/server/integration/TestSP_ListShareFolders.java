@@ -28,7 +28,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
     @Before
     public void setup()
     {
-        mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        mockAndCaptureVerkehrPublish();
     }
 
     @Test(expected = ExNoPerm.class)

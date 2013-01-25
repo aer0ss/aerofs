@@ -28,7 +28,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
     @Before
     public void setupTestSPShareFolder()
     {
-        published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        published = mockAndCaptureVerkehrPublish();
     }
 
     @Test
@@ -56,10 +56,6 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExBadArgsWhenTryingToLeaveRootStore() throws Exception
     {
-        trans.begin();
-        sfdb.insert(SID.rootSID(USER_1), "root:" + USER_1);
-        trans.commit();
-
         try {
             leaveSharedFolder(USER_1, SID.rootSID(USER_1));
             fail();

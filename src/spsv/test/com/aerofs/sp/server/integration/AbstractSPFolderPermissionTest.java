@@ -36,22 +36,6 @@ public class AbstractSPFolderPermissionTest extends AbstractSPTest
         return SubjectRolePairs.mapToPB(Collections.singletonMap(sharee, role));
     }
 
-    protected Set<String> mockVerkehrToSuccessfullyPublishAndStoreSubscribers()
-    {
-        final Set<String> published = new HashSet<String>();
-        when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
-                .then(new Answer<Object>() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation)
-                            throws Throwable
-                    {
-                        published.add((String)invocation.getArguments()[0]);
-                        return UncancellableFuture.createSucceeded(null);
-                    }
-                });
-        return published;
-    }
-
     /**
      * Shares a folder through service.shareFolder with the given user and verifies that an
      * invitation email would've been sent.

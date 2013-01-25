@@ -12,14 +12,27 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
+import com.aerofs.sp.server.lib.organization.OrganizationID;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestSP_OrganizationMovement extends AbstractSPTest
 {
     private static final String _organizationName = "Some Awesome Organization";
+
+    Set<String> published;
+
+    @Before
+    public void setup()
+    {
+        published = mockAndCaptureVerkehrPublish();
+    }
 
     private void addOrganization()
             throws Exception
@@ -35,12 +48,22 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
        service.inviteToOrganization(userID.toString());
     }
 
+    private void acceptOrganizationInvitation(int orgID, UserID userID)
+            throws Exception
+    {
+        published.clear();
+        service.acceptOrganizationInvitation(orgID);
+        // when the user changes the org, the ACL of its root store must be updated to inlucde
+        // the team server user id.
+        assertTrue(published.contains(userID.getID()));
+        assertTrue(published.contains(new OrganizationID(orgID).toTeamServerUserID().getID()));
+    }
+
     /**
      * Accept the first inviation returned by the get organization invites call.
      * @return the ID of the organization that we have joined.
-     * @throws Exception
      */
-    private int acceptFirstInvitation()
+    private int acceptFirstInvitation(UserID userID)
             throws Exception
     {
         // Switch to the invited user.
@@ -48,7 +71,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
 
         // Accept the invite.
         int orgID = pending.getOrganizationInvitationsList().get(0).getOrganizationId();
-        service.acceptOrganizationInvitation(orgID);
+        acceptOrganizationInvitation(orgID, userID);
 
         return orgID;
     }
@@ -71,12 +94,6 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         return orgID;
     }
 
-    private void acceptSpecificInvitation(int orgID)
-            throws Exception
-    {
-        service.acceptOrganizationInvitation(orgID);
-    }
-
     @Test
     public void shouldMoveUserToNewOrganizationViaAcceptOrganizationInvitationCall()
             throws Exception
@@ -85,7 +102,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         addOrganization();
         sendInvitation(USER_2);
         setSessionUser(USER_2);
-        acceptFirstInvitation();
+        acceptFirstInvitation(USER_2);
 
         // Verify user 2 is indeed in the new organization.
         assertEquals(service.getOrgPreferences().get().getOrganizationName(), _organizationName);
@@ -113,7 +130,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             addOrganization();
             sendInvitation(USER_2);
         } catch (Exception e) {
-            assertTrue(false);
+            fail();
         }
 
         sendInvitation(USER_2);
@@ -130,12 +147,12 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             addOrganization();
             sendInvitation(USER_2);
             setSessionUser(USER_2);
-            orgID = acceptFirstInvitation();
+            orgID = acceptFirstInvitation(USER_2);
         } catch (Exception e) {
-            assertTrue(false);
+            fail();
         }
 
-        acceptSpecificInvitation(orgID);
+        acceptOrganizationInvitation(orgID, USER_2);
     }
 
     @Test (expected = ExNotFound.class)
@@ -149,13 +166,13 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             addOrganization();
             sendInvitation(USER_2);
             setSessionUser(USER_2);
-            orgID = acceptFirstInvitation();
+            orgID = acceptFirstInvitation(USER_2);
             setSessionUser(USER_3);
         } catch (Exception e) {
-            assertTrue(false);
+            fail();
         }
 
-        acceptSpecificInvitation(orgID);
+        acceptOrganizationInvitation(orgID, USER_2);
     }
 
     @Test
@@ -173,7 +190,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
 
         // User 1 accept invite to user 2's org.
         setSessionUser(USER_1);
-        acceptFirstInvitation();
+        acceptFirstInvitation(USER_1);
 
         // Verify user 1 is not an admin in user 2's organization.
         GetAuthorizationLevelReply reply = service.getAuthorizationLevel().get();
@@ -193,10 +210,10 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             setSessionUser(USER_2);
             orgID = ignoreFirstInvitation();
         } catch (Exception e) {
-            assertTrue(false);
+            fail();
         }
 
         // Verify that the organization invite has indeed been deleted (ignored).
-        acceptSpecificInvitation(orgID);
+        acceptOrganizationInvitation(orgID, USER_2);
     }
 }

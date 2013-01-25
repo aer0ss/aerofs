@@ -39,7 +39,7 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
         throws Exception
     {
         // Before we proceed make sure verkehr is set up to publish successfully (for ACLs).
-        setupMockVerkehrToSuccessfullyPublish();
+        mockAndCaptureVerkehrPublish();
 
         trans.begin();
 

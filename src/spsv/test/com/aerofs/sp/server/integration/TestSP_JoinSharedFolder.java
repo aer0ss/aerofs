@@ -29,7 +29,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
     @Before
     public void setupTestSPShareFolder()
     {
-        published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        published = mockAndCaptureVerkehrPublish();
     }
 
     @Test

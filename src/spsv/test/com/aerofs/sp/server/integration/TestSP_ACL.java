@@ -41,6 +41,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     // Another random person (in addition to the ones created by our parent).
     private static final UserID TEST_USER_4 = UserID.fromInternal("user_4");
     private static final byte[] TEST_USER_4_CRED = "CREDENTIALS".getBytes();
+    Set<String> published;
 
     private long getInitialServerACL()
     {
@@ -48,57 +49,24 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         return Param.INITIAL_ACL_EPOCH + 1;
     }
 
-    //
-    // UTILITY
-    //
-
-    private List<PBSubjectRolePair> assertValidACLReplyAndGetPairs(GetACLReply getACLReply,
-            long expectedEpoch, int numberOfACLEntries)
-    {
-        assertEquals(expectedEpoch, getACLReply.getEpoch());
-        assertEquals(1, getACLReply.getStoreAclCount());
-        assertEquals(numberOfACLEntries, getACLReply.getStoreAcl(0).getSubjectRoleCount());
-
-        return getACLReply.getStoreAcl(0).getSubjectRoleList();
-    }
-
-    // FIXME: [sigh] think up a more efficient way
-    private void assertACLContains(UserID subject, Role expectedRole, List<PBSubjectRolePair> pairs)
-    {
-        boolean found = false;
-
-        for (PBSubjectRolePair pair : pairs) {
-            try {
-                UserID currentSubject = UserID.fromExternal(pair.getSubject());
-                Role actualRole = Role.fromPB(pair.getRole());
-
-                if (currentSubject.equals(subject) && actualRole.equals(expectedRole)) {
-                    found = true;
-                } else if (currentSubject.equals(subject)) {
-                    fail("j:" + currentSubject + " has r:" + actualRole.getDescription());
-                }
-            } catch (ExBadArgs exBadArgs) {
-                fail("no role for:" + pair.getRole().name());
-            }
-        }
-
-        assertTrue("no entry for j:" + subject + " r:" + expectedRole.getDescription(), found);
-    }
-
     @Before
-    public void setupTestSPACL()
+    public void setup()
             throws Exception
     {
         // set up TEST_USER_4
         trans.begin();
         udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
-        trans.commit();
-    }
 
-    //
-    // TESTS
-    //
+        // remove all root stores to simplify test verifications.
+        sfdb.delete(SID.rootSID(USER_1));
+        sfdb.delete(SID.rootSID(USER_2));
+        sfdb.delete(SID.rootSID(USER_3));
+
+        trans.commit();
+
+        published = mockAndCaptureVerkehrPublish();
+    }
 
     @Test(expected = ExBadArgs.class)
     public void shareFolder_shouldThrowOnEmptyInviteeList()
@@ -113,8 +81,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void shareFolder_shouldAllowToShareIfNoACLExists()
             throws Exception
     {
-        setupMockVerkehrToSuccessfullyPublish();
-
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.OWNER);
 
         GetACLReply getAcl = service.getACL(0L).get();
@@ -134,8 +100,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void shareFolder_shouldAllowOwnerToShareAndNotifyAllAffectedUsers()
             throws Exception
     {
-        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
-
         // create shared folder and invite a first user
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.OWNER);
         assertEquals(1, published.size());
@@ -173,8 +137,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void shareFolder_shouldForbidNonOwnerToShare()
             throws Exception
     {
-        setupMockVerkehrToSuccessfullyPublish();
-
         // share folder and invitea new editor
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
@@ -190,8 +152,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void deleteACL_shouldAllowOwnerToDeleteAndNotifyAllAffectedUsers()
             throws Exception
     {
-        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
-
         // share a folder and add a second person (as owner)
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.OWNER);
         published.clear(); // don't care
@@ -239,8 +199,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void deleteACL_shouldReturnSuccessfullyEvenIfACLDoesntContainSubject()
             throws Exception
     {
-        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
-
         // share folder
         shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         published.clear(); // don't care
@@ -271,8 +229,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void deleteACL_shouldForbitNonOwnerToDeleteACLs()
             throws Exception
     {
-        setupMockVerkehrToSuccessfullyPublish();
-
         // share folder with an editor
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
@@ -290,8 +246,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void getACL_shouldAllowAnyUserWithAnyRoleToGetACL()
             throws Exception
     {
-        setupMockVerkehrToSuccessfullyPublish();
-
         // share store # 1
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_3, Role.EDITOR);
 
@@ -332,8 +286,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     @Test
     public void getACL_shouldNotIncludePendingMembers() throws Exception
     {
-        setupMockVerkehrToSuccessfullyPublish();
-
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
         shareFolder(USER_1, TEST_SID_1, USER_3, Role.OWNER);
 
@@ -387,8 +339,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void updateACL_shouldAllowToChangeExistingACLs()
             throws Exception
     {
-        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
-
         // add user 3 as editor for store # 1
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_3, Role.EDITOR);
 
@@ -424,8 +374,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void updateACL_shouldThrowOnUpdatingNonexistingACLs()
             throws Exception
     {
-        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
-
         // add the owner for store # 1
         shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
         published.clear(); // throw away this notification
@@ -456,8 +404,6 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
     public void updateACL_shouldForbidNonOwnerToUpdateACLs()
             throws Exception
     {
-        Set<String> published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
-
         // add user 3 as editor for store # 1
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_3, Role.EDITOR);
         published.clear(); // throw away these notifications
@@ -485,5 +431,38 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         List<PBSubjectRolePair> pairs = reply.getStoreAcl(0).getSubjectRoleList();
         assertACLContains(USER_1, Role.OWNER, pairs);
         assertACLContains(USER_3, Role.EDITOR, pairs);
+    }
+
+    private List<PBSubjectRolePair> assertValidACLReplyAndGetPairs(GetACLReply getACLReply,
+            long expectedEpoch, int numberOfACLEntries)
+    {
+        assertEquals(expectedEpoch, getACLReply.getEpoch());
+        assertEquals(1, getACLReply.getStoreAclCount());
+        assertEquals(numberOfACLEntries, getACLReply.getStoreAcl(0).getSubjectRoleCount());
+
+        return getACLReply.getStoreAcl(0).getSubjectRoleList();
+    }
+
+    // FIXME: [sigh] think up a more efficient way
+    private void assertACLContains(UserID subject, Role expectedRole, List<PBSubjectRolePair> pairs)
+    {
+        boolean found = false;
+
+        for (PBSubjectRolePair pair : pairs) {
+            try {
+                UserID currentSubject = UserID.fromExternal(pair.getSubject());
+                Role actualRole = Role.fromPB(pair.getRole());
+
+                if (currentSubject.equals(subject) && actualRole.equals(expectedRole)) {
+                    found = true;
+                } else if (currentSubject.equals(subject)) {
+                    fail("j:" + currentSubject + " has r:" + actualRole.getDescription());
+                }
+            } catch (ExBadArgs exBadArgs) {
+                fail("no role for:" + pair.getRole().name());
+            }
+        }
+
+        assertTrue("no entry for j:" + subject + " r:" + expectedRole.getDescription(), found);
     }
 }

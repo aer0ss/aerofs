@@ -64,7 +64,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     @Before
     public void setupTestSPShareFolder()
     {
-        published = mockVerkehrToSuccessfullyPublishAndStoreSubscribers();
+        published = mockAndCaptureVerkehrPublish();
     }
 
     @Test
@@ -142,10 +142,6 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     @Test
     public void shouldThrowExBadArgsWhenTryingToShareRootStore() throws Exception
     {
-        trans.begin();
-        sfdb.insert(SID.rootSID(USER_1), "root:" + USER_1);
-        trans.commit();
-
         try {
             shareFolder(USER_1, SID.rootSID(USER_1), USER_2, Role.EDITOR);
             fail();

@@ -1056,7 +1056,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> acceptOrganizationInvitation(Integer organizationID)
-            throws SQLException, ExNoPerm, ExNotFound, ExAlreadyExist
+            throws Exception
     {
         _transaction.begin();
 
@@ -1076,10 +1076,14 @@ public class SPService implements ISPService
             throw new ExAlreadyExist();
         }
 
-        accepter.setOrganization(invite.getOrganization());
+        Set<UserID> users = accepter.setOrganization(invite.getOrganization());
         accepter.setLevel(AuthorizationLevel.USER);
 
         invite.delete();
+
+        // send verkehr notification as the last step of the transaction
+        publish_(incrementACLEpochs_(users));
+
         _transaction.commit();
 
         return createVoidReply();
@@ -1143,18 +1147,20 @@ public class SPService implements ISPService
     public ListenableFuture<Void> addOrganization(final String organizationName,
             final Integer organizationSize, final String organizationPhone,
             final String stripeCustomerID)
-            throws Exception {
+            throws Exception
+    {
         final User currentUser = _sessionUser.get();
 
         _transaction.begin();
 
         try {
             final StripeCustomerID stripeCustomer = StripeCustomerID.newInstance(stripeCustomerID);
-            currentUser.addAndMoveToOrganization(organizationName, organizationSize, organizationPhone, stripeCustomer);
+            currentUser.addAndMoveToOrganization(organizationName, organizationSize,
+                    organizationPhone, stripeCustomer);
         } catch (final IllegalArgumentException e) {
             l.error("Failed to set create organization, organizationName: " + organizationName +
-                    " organizationSize: " + organizationSize + " organizationPhone: " + organizationPhone +
-                    " stripeCustomerID: " + stripeCustomerID, e);
+                    " organizationSize: " + organizationSize + " organizationPhone: " +
+                    organizationPhone + " stripeCustomerID: " + stripeCustomerID, e);
 
             // contract does not allow specifying cause!?
             throw new ExBadArgs(e.getMessage());
