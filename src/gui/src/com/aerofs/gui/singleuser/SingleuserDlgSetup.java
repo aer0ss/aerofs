@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import com.aerofs.gui.Images;
 import com.aerofs.gui.setup.AbstractDlgSetup;
+import com.aerofs.gui.setup.AbstractDlgSetupAdvanced;
 import com.aerofs.labeling.L;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
@@ -61,5 +62,17 @@ public class SingleuserDlgSetup extends AbstractDlgSetup
     @Override
     public void postSetup()
     {
+    }
+
+    @Override
+    protected AbstractDlgSetupAdvanced createAdvancedSetupDialog()
+    {
+        return new SingleuserDlgSetupAdvanced(getShell(), getDeviceName(), getAbsRootAnchor());
+    }
+
+    @Override
+    protected void processAdvancedSettings()
+    {
+        // no-op
     }
 }

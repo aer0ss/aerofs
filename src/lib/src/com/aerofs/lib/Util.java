@@ -536,15 +536,6 @@ public abstract class Util
         return (ch >> 7) == 0;
     }
 
-    // the caller should throw ExInvalidCharacter if exception is needed
-    public static boolean isValidPassword(char[] passwd)
-    {
-        for (int i = 0; i < passwd.length; i++) {
-            if (!isASCII(passwd[i])) return false;
-        }
-
-        return true;
-    }
 
     public static boolean isValidEmailAddress(String email)
     {

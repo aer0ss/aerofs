@@ -544,7 +544,7 @@ public class GUI implements IUI
         AbstractDlgSetup dlg = L.get().isMultiuser() ? new MultiuserDlgSetup(_sh) :
                 new SingleuserDlgSetup(_sh);
         dlg.open();
-        if (dlg.isCanelled()) throw new ExAborted("user canceled setup");
+        if (dlg.isCancelled()) throw new ExAborted("user canceled setup");
     }
 
     public void enterMainLoop_()

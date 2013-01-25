@@ -12,8 +12,10 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
+import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import org.apache.log4j.Logger;
@@ -62,7 +64,6 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
     private String _deviceName;
 
     private CompSpin _compSpin;
-    private Label _lblError;
     private Composite _compForgotPassword;
     private Composite _compBlank;
     private Composite _compStack;
@@ -148,7 +149,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
 
         _txtUserID.setFocus();
 
-        container.setTabList(new Control[] { _txtUserID, _txtPasswd });
+        container.setTabList(new Control[]{_txtUserID, _txtPasswd});
 
         return area;
     }
@@ -231,10 +232,9 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
             @Override
             public void widgetSelected(SelectionEvent arg0)
             {
-                DlgSetupAdvanced advanced = new DlgSetupAdvanced(getShell(), _deviceName,
-                        _absRootAnchor);
+                AbstractDlgSetupAdvanced advanced = createAdvancedSetupDialog();
                 if (advanced.open() != IDialogConstants.OK_ID) return;
-
+                processAdvancedSettings();
                 _deviceName = advanced.getDeviceName();
                 _absRootAnchor = advanced.getAbsoluteRootAnchor();
             }
@@ -328,27 +328,23 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
 
     private void setErrorStatus(String error)
     {
-        _compSpin.error();
+        _compSpin.stop();
         setStatusImpl(error, "");
     }
 
     private void setStatusImpl(String error, String status)
     {
+        if (!error.isEmpty()) GUI.get().show(null, MessageType.ERROR, error);
         // the following code is becuase the parent component has
         // horizontalSpace == 0 so the icon can be perfectly aligned
-        if (!error.isEmpty()) error = " " + error;
         if (!status.isEmpty()) status = status + " ";
 
-        String prevError = _lblError.getText();
         String prevStatus = _lblStatus.getText();
-        _lblError.setText(error);
         _lblStatus.setText(status);
 
-        if (!prevError.equals(error) || !prevStatus.equals(status)) {
+        if (!prevStatus.equals(status)) {
             _lblStatus.pack();
-            _lblError.pack();
-            _lblError.getParent().layout();
-            _lblError.getParent().pack();
+            _lblStatus.getParent().layout();
             _lblStatus.getShell().pack();
         }
     }
@@ -361,8 +357,8 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
         _compSpin = new CompSpin(composite, SWT.NONE);
         _compSpin.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 
-        _lblError = new Label(composite, SWT.NONE);
-        _lblError.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        Label placeHolder = new Label(composite, SWT.NONE);
+        placeHolder.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
     }
 
     @Override
@@ -402,6 +398,8 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
                 String msg = null;
                 if (e instanceof ConnectException) {
                     msg = "Sorry, couldn't connect to the server. Please try again later.";
+                } else if (e instanceof ExUIMessage) {
+                    msg = e.getMessage();
                 }
 
                 // TODO: Catch ExAlreadyExist and ExNoPerm here, and ask the user if he wants us to
@@ -441,8 +439,12 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
         _compStack.layout();
     }
 
-    public boolean isCanelled()
+    public boolean isCancelled()
     {
         return !_okay;
     }
+
+    abstract protected AbstractDlgSetupAdvanced createAdvancedSetupDialog();
+    abstract protected void processAdvancedSettings();
+
 }

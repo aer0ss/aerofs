@@ -29,7 +29,7 @@ public class S
             SETUP_S3_BUCKET_NAME     = "S3 bucket name",
             SETUP_S3_ACCESS_KEY      = "S3 access key",
             SETUP_S3_SECRET_KEY      = "S3 secret key",
-            S3_ENCRYPTION_PASSWORD   = "S3 data encryption password",
+            S3_ENCRYPTION_PASSWORD   = "S3 data encryption passphrase",
             SETUP_S3_ENCRYPTION_PASSWORD = "Create an " + S3_ENCRYPTION_PASSWORD +
                 " (used to encrypt your data before sending to S3)",
 

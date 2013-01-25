@@ -16,11 +16,11 @@ import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.ex.ExNoConsole;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.proto.ControllerProto.PBS3Config;
-import com.aerofs.proto.Sv;
 import com.aerofs.ui.IUI.MessageType;
+import com.aerofs.ui.PasswordVerifier;
+import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
 import com.aerofs.ui.UI;
 
 public class CLISetup
@@ -140,22 +140,6 @@ public class CLISetup
             getUser(cli);
             getPassword(cli);
             getDeviceName(cli);
-            getRootAnchor(cli);
-        }
-
-        cli.progress("Performing magic");
-
-        UI.controller().setupMultiuser(_userID.toString(), new String(_passwd), _anchorRoot,
-                _deviceName, null);
-    }
-
-    private void setupSingleuser(CLI cli) throws Exception
-    {
-        if (!_isUnattendedSetup) {
-            getUser(cli);
-            getPassword(cli);
-            getDeviceName(cli);
-
             if (cli.ask(MessageType.INFO, S.SETUP_S3)) {
                 getS3Config(cli);
             } else {
@@ -165,10 +149,23 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
-        UI.controller().setupSingleuser(_userID.toString(), new String(_passwd), _anchorRoot,
+        UI.controller().setupMultiuser(_userID.toString(), new String(_passwd), _anchorRoot,
                 _deviceName, _s3config);
+    }
 
-        if (_s3config != null) SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
+    private void setupSingleuser(CLI cli) throws Exception
+    {
+        if (!_isUnattendedSetup) {
+            getUser(cli);
+            getPassword(cli);
+            getDeviceName(cli);
+            getRootAnchor(cli);
+        }
+
+        cli.progress("Performing magic");
+
+        UI.controller().setupSingleuser(_userID.toString(), new String(_passwd), _anchorRoot,
+                _deviceName, null);
     }
 
     private void getUser(CLI cli) throws ExNoConsole
@@ -233,23 +230,21 @@ public class CLISetup
         }
     }
 
-    private static final int MIN_PASSWD_LENGTH = 6;
-
     private char[] inputAndConfirmPasswd(CLI cli, String prompt) throws ExNoConsole
     {
+        PasswordVerifier passwordVerifier = new PasswordVerifier();
+        PasswordVerifierResult result;
         while (true) {
             char[] passwd = cli.askPasswd(prompt);
-            if (passwd.length < MIN_PASSWD_LENGTH) {
-                cli.show(MessageType.ERROR, "Password is too short");
-            } else if (!Util.isValidPassword(passwd)) {
-                cli.show(MessageType.ERROR, "Password contains invalid characters");
-            } else {
+            result = passwordVerifier.verifyPassword(passwd);
+            if (result == PasswordVerifierResult.OK) {
                 char[] passwd2 = cli.askPasswd("Retype password");
-                if (!Arrays.equals(passwd, passwd2)) {
-                    cli.show(MessageType.ERROR, "Passwords do not match");
-                } else {
-                    return passwd;
-                }
+                result = passwordVerifier.confirmPasswords(passwd, passwd2);
+            }
+            if (result != PasswordVerifierResult.OK) {
+                cli.show(MessageType.ERROR, result.getMsg());
+            } else {
+                return passwd;
             }
         }
     }

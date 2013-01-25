@@ -56,12 +56,22 @@ function copy_resources_to_local_release_directories() {
     cp -R "${CLIENT_RESOURCES_DIR}/osx"/* "${AEROFS_RELEASE_OSX_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/win"/* "${AEROFS_RELEASE_WIN_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/linux"/* "${AEROFS_RELEASE_LINUX_DIR}/"
-    cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/"
     cp -R "${CLIENT_RESOURCES_DIR}/linux32"/* "${AEROFS_RELEASE_LINUX32_DIR}/"
     cp -R "${CLIENT_RESOURCES_DIR}/linux64"/* "${AEROFS_RELEASE_LINUX64_DIR}/"
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/INSTALL "${AEROFS_RELEASE_INST_DIR}/"
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
+
+    # Copy S3 libs if necessary
+    cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/"
+    if [ "${AEROFS_PRODUCT_UNIX}"="aerofsts" ]; then
+        cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_WIN_DIR}/lib/"
+        cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_OSX_DIR}/lib/"
+    elif [ "${AEROFS_PRODUCT_UNIX}"!="aerofs" ]; then
+        echo "ERROR: Aerofs product unix is not one of aerofsts, aerofs"
+        echo "Exiting"
+        exit 1
+    fi
 
     # N.B. We put the run scripts from the installer package in the actual aerofs
     # package so we can restart the Linux client automatically, even if aerofs-cli

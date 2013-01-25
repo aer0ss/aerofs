@@ -119,6 +119,9 @@ class Setup
 
             setupMultiuserImpl(userId, rootAnchorPath, deviceName, s3cfg, res._sp);
 
+            // Send event for S3 Setup
+            if (s3cfg != null) SVClient.sendEventAsync(Sv.PBSVEvent.Type.S3_SETUP);
+
         } catch (Exception e) {
             handleSetupException(userId, e);
         }
