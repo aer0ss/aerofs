@@ -112,7 +112,7 @@ public final class SVClient
             @Nullable EmailCategory category)
             throws IOException, AbstractExWirable
     {
-        l.debug("send email " + from + " -> " + to);
+        l.info("send email " + from + " -> " + to);
 
         assert !usingSendGrid || category != null;
 
