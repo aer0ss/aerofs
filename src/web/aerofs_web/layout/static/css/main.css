@@ -35,6 +35,12 @@ div.input_container.submit {
 .page_block {
   margin-bottom: 30px;
 }
+.dataTables_wrapper table thead {
+    display:none;
+}
+.datatable_body {
+    margin-bottom: 15px;
+}
 a.delete_permission {
   color: #9d261d;
   text-decoration: none;

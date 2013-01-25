@@ -42,7 +42,7 @@ div.input_container.submit {
     margin-top: 25px;
 }
 
-// these overwrite the default behavior
+// These overwrite the default behavior
 .nav-list > .active > a, .nav-list > .active > a:hover {
   background: transparent;
   text-shadow: none;
@@ -52,6 +52,15 @@ div.input_container.submit {
 
 .page_block {
   margin-bottom: 30px;
+}
+
+// Suppress datatables colume headers
+.dataTables_wrapper table thead {
+  display: none;
+}
+
+.datatable_body {
+  margin-bottom: 15px;
 }
 
 // Shared folders view

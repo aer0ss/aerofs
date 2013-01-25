@@ -18,6 +18,7 @@ import com.aerofs.sv.client.SVClient;
 import com.aerofs.sv.common.EmailCategory;
 import com.aerofs.sp.server.email.IEmail.HEADER_SIZE;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.base.Strings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,7 +61,7 @@ public class InvitationEmailer
          */
         public InvitationEmailer createSignUpInvitationEmailer(@Nullable final String inviter,
                 final String invitee, final String inviterName, @Nullable final String folderName,
-                @Nullable final String note, final String signUpCode)
+                @Nullable String note, final String signUpCode)
                 throws IOException
         {
             String url = getSignUpLink(signUpCode);
@@ -131,8 +132,9 @@ public class InvitationEmailer
 
             String body = "\n" +
                 nameAndEmail + " has invited you to " +
-                (folderName != null ? "a shared " + L.PRODUCT + " folder" : L.PRODUCT) +
-                (note != null ? ":\n\n" + note : ".") + "\n" +
+                (folderName != null ? "a shared " + L.PRODUCT + " folder " + Util.quote(folderName)
+                         : L.PRODUCT) +
+                (isNoteEmpty(note) ? "." : ":\n\n" + note) + "\n" +
                 "\n" +
                 L.PRODUCT + " is a file syncing, sharing, and collaboration tool that" +
                 " lets you sync files privately without using public cloud. You can learn more" +
@@ -148,6 +150,11 @@ public class InvitationEmailer
             email.addDefaultSignature();
         }
 
+        private boolean isNoteEmpty(@Nullable String note)
+        {
+            return Strings.nullToEmpty(note).trim().isEmpty();
+        }
+
         public InvitationEmailer createFolderInvitationEmailer(@Nonnull final String from,
                 final String to, final String fromPerson, @Nullable final String folderName,
                 @Nullable final String note, final SID sid)
@@ -161,7 +168,7 @@ public class InvitationEmailer
             String body = "\n" +
                     nameAndEmail + " has invited you to a shared " + L.PRODUCT +
                     " folder" +
-                    (note != null ? (":\n\n" + note) : ".") + "\n" +
+                    (isNoteEmpty(note) ? "." : (":\n\n" + note)) + "\n" +
                     "\n" +
                     "Click on this link to view and accept the invitation: " +
                     ACCEPT_INVITATION_LINK;
