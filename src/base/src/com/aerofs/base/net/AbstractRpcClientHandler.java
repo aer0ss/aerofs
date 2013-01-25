@@ -6,9 +6,10 @@ import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 
-import java.io.IOException;
-import java.util.ArrayDeque;
+import java.nio.channels.ClosedChannelException;
 import java.util.Queue;
+
+import static com.google.common.collect.Queues.newArrayDeque;
 
 /**
  * This class is a generic handler implementation for our protobuf rpc services.
@@ -25,27 +26,31 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     // When we receive a reply, we dequeue the future and set it with the reply.
     // So this only works because the server guarantees to process the requests and send the
     // replies in order.
-    private final Queue<UncancellableFuture<byte[]>> _pendingReads
-        = new ArrayDeque<UncancellableFuture<byte[]>>();
+    private final Queue<UncancellableFuture<byte[]>> _pendingReads = newArrayDeque();
 
     // Hold writes until we are connected to the server
-    private final Queue<byte[]> _pendingWrites = new ArrayDeque<byte[]>();
+    private final Queue<byte[]> _pendingWrites = newArrayDeque();
     private Channel _channel;
     private Throwable _lastException = null;
 
+    // true after the channel has been closed. We need this to distinguish from the case where the
+    // channel hasn't been opened yet.
+    private volatile boolean _isClosed;
+
+    // TODO (GS): Add a timeout mechanism
+
     /**
-     * Sends data to the ritual server
+     * Sends data to the server
      * @return a future that will hold the reply
-     * This method is called by the auto-generated RitualServiceStub - you should not call it directly
+     * This method is called by the auto-generated ServiceStub - you should not call it directly
      */
     public ListenableFuture<byte[]> doRPC(byte[] bytes)
     {
         final UncancellableFuture<byte[]> readFuture = UncancellableFuture.create();
         synchronized (this) {
-            if (!_channel.isOpen()) {
+            if (_isClosed) {
                 // The channel has been closed. We can fail the request right away.
-                Throwable e = _lastException == null ? new IOException("connection closed") :
-                    _lastException;
+                Throwable e = _lastException == null ? new ClosedChannelException() : _lastException;
                 readFuture.setException(e);
             } else {
                 _pendingReads.add(readFuture);
@@ -78,11 +83,10 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
         writeFuture.addListener(new ChannelFutureListener()
         {
             @Override
-            public void operationComplete(ChannelFuture channelFuture) throws Exception
+            public void operationComplete(ChannelFuture future) throws Exception
             {
-                if (!channelFuture.isSuccess()) {
-                    readFuture.setException(new ChannelException("Writing to the daemon failed",
-                            channelFuture.getCause()));
+                if (!future.isSuccess()) {
+                    readFuture.setException(future.getCause());
                     synchronized (AbstractRpcClientHandler.this) {
                         _pendingReads.remove(readFuture);
                     }
@@ -108,7 +112,7 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
 
         // If replyFuture is null, we received a reply with no previous query
         if (readFuture == null) {
-            throw new ChannelException("Received an unexpected reply from the daemon.");
+            throw new ChannelException("Received an unexpected RPC reply");
         }
 
         ChannelBuffer buf = (ChannelBuffer) e.getMessage();
@@ -126,7 +130,9 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     @Override
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
     {
-        _channel = e.getChannel();
+        synchronized (this) {
+            _channel = e.getChannel();
+        }
         super.channelOpen(ctx, e);
     }
 
@@ -159,6 +165,7 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
             }
             _pendingReads.clear();
             _pendingWrites.clear();
+            _isClosed = true;
         }
     }
 }
