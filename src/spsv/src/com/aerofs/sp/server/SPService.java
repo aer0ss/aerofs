@@ -885,7 +885,7 @@ public class SPService implements ISPService
         } catch (ExNoPerm e) {
             // we should be able to ignore an invitation even if the shared folder somehow lost
             // all its owners...
-            l.debug("owner-less folder " + sf);
+            l.info("owner-less folder " + sf);
         }
 
         _transaction.commit();
@@ -1319,7 +1319,7 @@ public class SPService implements ISPService
         User user = _factUser.createFromExternalID(userIdString);
 
         if (user.id().isTeamServerID()) {
-            l.debug("TS sign in: " + user);
+            l.info("TS SI: " + user);
 
             // Team servers use certificates (in this case the passed credentials don't matter).
             if (!_certificateAuthenticator.isAuthenticated())
@@ -1334,7 +1334,7 @@ public class SPService implements ISPService
                 throw new ExBadCredential();
             }
         } else {
-            l.debug("User sign in: " + userIdString);
+            l.info("User SI: " + userIdString);
 
             // Regular users still use username/password credentials.
             user.signIn(SPParam.getShaedSP(credentials.toByteArray()));
@@ -1569,7 +1569,7 @@ public class SPService implements ISPService
             Integer offset)
             throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExBadArgs
     {
-        l.debug("LUD: search=" + search + " max=" + maxResults + " offset=" + offset);
+        l.info("LUD: search=" + search + " max=" + maxResults + " offset=" + offset);
 
         _transaction.begin();
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();

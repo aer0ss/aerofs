@@ -37,7 +37,7 @@ class servlet::config::sv(
 
     servlet::log{"/var/log/aerofs/sv.log":
         config_filename => "/usr/share/aerofs-sv/sv/WEB-INF/classes/log4j.properties",
-        log_level       => "DEBUG",
+        log_level       => "INFO",
         require         => Package["aerofs-sv"]
     }
 
