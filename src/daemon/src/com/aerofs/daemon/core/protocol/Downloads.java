@@ -38,6 +38,31 @@ public class Downloads
 {
     private static final Logger l = Util.l(Downloads.class);
 
+    /**
+     * Collector makes a distinction between transient and permanent errors to avoid repeatedly
+     * querying a peer about a component. However if the permanent error is encountered along a
+     * dependency chain (CONTENT dep on META for instance) the error was not correctly propagated.
+     * The component was therefore repeatedly requested and the bloom filters were not cleared
+     * leading to significant bandwidth usage, especially for users with a large number of ghost
+     * KMLs.
+     */
+    static class ExNoAvailDeviceForDep extends ExNoAvailDevice
+    {
+        public final SOCID _socid;
+        public final Map<DID, Exception> _did2e;
+        ExNoAvailDeviceForDep(SOCID socid, Map<DID, Exception> did2e)
+        {
+            _socid = socid;
+            _did2e = did2e;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "noDev4Dep:" + _socid;
+        }
+    }
+
     private class SyncDownloadImpl implements IDownloadCompletionListener
     {
         private TCB _tcb;
@@ -79,7 +104,10 @@ public class Downloads
         public void onPerDeviceErrors_(SOCID socid, Map<DID, Exception> did2e)
         {
             // Technically this method is only caused by an ExNoAvailDevice
-            abortWithError(new ExNoAvailDevice());
+            // We need to propagate the error that caused the failure of this download to make
+            // sure the download chain that it is part of will skip all devices for which there
+            // was a permanent error (and eventually be aborted if all devices fail permanently)
+            abortWithError(new ExNoAvailDeviceForDep(socid, did2e));
         }
 
         @Override

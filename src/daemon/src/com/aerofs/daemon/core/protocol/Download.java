@@ -8,12 +8,14 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
+import com.aerofs.daemon.core.protocol.Downloads.ExNoAvailDeviceForDep;
 import com.aerofs.daemon.core.protocol.dependence.DependencyEdge;
 import com.aerofs.daemon.core.protocol.dependence.DependencyEdge.DependencyType;
 import com.aerofs.daemon.core.protocol.dependence.NameConflictDependencyEdge;
@@ -174,8 +176,15 @@ public class Download
             });
             returnValue = null;
 
-        } catch (final ExNoAvailDevice e) {
+        } catch (ExNoAvailDevice e) {
             l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
+
+            // NB: it's fine to modify _did2e here as the download terminates
+            if (e instanceof ExNoAvailDeviceForDep) {
+                for (Entry<DID, Exception> entry : ((ExNoAvailDeviceForDep)e)._did2e.entrySet()) {
+                    _did2e.put(entry.getKey(), entry.getValue());
+                }
+            }
 
             // This download object tracked all reasons (Exceptions) for why each device was
             // avoided. Thus if the To object indicated no devices were available, then inform

@@ -178,11 +178,24 @@ public class Collector implements IDumpStatMisc
             @Override
             public Void call() throws Exception
             {
+                /**
+                 * The Trans object is only valid on the first call (ExpRetry will schedule any sub-
+                 * sequent retries as separate self-handling events) so we need to make sure we
+                 * reset it before we call collect_ as it may throw...
+                 *
+                 * NB: using ExpRetry within a transaction is Bad(tm) but I'm not familiar enough
+                 * with the code to refactor it now...
+                 *
+                 * TODO(hugues): schedule collection in a trans listener instead?
+                 */
+                boolean isFirst = _first;
+                _first = false;
+
                 // stop this retry thread if someone called start_() again
                 if (startSeq != _startSeq) return null;
 
-                assert !started_() : _first + " " + Collector.this;
-                collect_(_first ? t : null);
+                assert !started_() : isFirst + " " + Collector.this;
+                collect_(isFirst ? t : null);
                 return null;
             }
         });
