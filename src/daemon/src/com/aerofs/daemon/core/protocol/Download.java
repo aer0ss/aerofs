@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DigestedMessage;
 import com.aerofs.daemon.core.net.To;
@@ -88,11 +89,12 @@ public class Download
         private final GetComponentCall _gcc;
         private final GetComponentReply _gcr;
         private final To.Factory _factTo;
+        private final NativeVersionControl _nvc;
 
         @Inject
         public Factory(TC tc, DirectoryService ds, MapSIndex2Store sidx2s,
                 Downloads dls, DownloadState dlstate, GetComponentCall gcc, GetComponentReply gcr,
-                To.Factory factTo)
+                To.Factory factTo, NativeVersionControl nvc)
         {
             _tc = tc;
             _ds = ds;
@@ -102,6 +104,7 @@ public class Download
             _gcc = gcc;
             _gcr = gcr;
             _factTo = factTo;
+            _nvc = nvc;
         }
 
         Download create_(SOCID socid, To src, IDownloadCompletionListener listener, Token tk)
@@ -230,10 +233,21 @@ public class Download
                 // generated exceptions
                 _f._gcr.processReply_(_socid, msg, _requested, _tk);
 
-                // If there are more KMLs for _socid, the Collector algorithm will ensure a new
-                // Download object is created to resolve the KMLs
-                // TODO (MJ) see if any DownloadState code can be simplified.
-                return replier;
+                // If there are more KMLs for _socid, the Collector algorithm would ensure a new
+                // Download object is created to resolve the KMLs. However, the Collector has
+                // assumed that this Download object will query all DIDs in its _src variable,
+                // and could therefore remove the BloomFilters associated with those DIDs.
+                if (_f._nvc.getKMLVersion_(_socid).isZero_()) return replier;
+
+                l.debug("kml > 0 for " + _socid + ". dl again");
+
+                // The idea is that if you get to this point, you're re-running the Download having
+                // successfully resolved some KML last time. We should therefore clear out the
+                // memory of existing dependencies.
+                _requested.clear();
+
+                _src.avoid_(replier);
+                reenqueue(started);
             } catch (ExAborted e) {
                 throw e;
 
