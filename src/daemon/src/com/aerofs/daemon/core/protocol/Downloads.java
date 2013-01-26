@@ -48,6 +48,7 @@ public class Downloads
      */
     static class ExNoAvailDeviceForDep extends ExNoAvailDevice
     {
+        private static final long serialVersionUID = 0;
         public final SOCID _socid;
         public final Map<DID, Exception> _did2e;
         ExNoAvailDeviceForDep(SOCID socid, Map<DID, Exception> did2e)
