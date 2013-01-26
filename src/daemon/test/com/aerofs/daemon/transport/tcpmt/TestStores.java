@@ -15,15 +15,18 @@ import com.aerofs.lib.bf.BFSID;
 import com.aerofs.proto.Transport.PBTCPFilterAndSeq;
 import com.aerofs.proto.Transport.PBTCPStores;
 import com.aerofs.testlib.AbstractTest;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,11 +54,38 @@ public class TestStores extends AbstractTest
     private final Unicast _unicast = mock(Unicast.class);
     private final Multicast _multicast = mock(Multicast.class);
     private final Scheduler _scheduler = mock(Scheduler.class);
-    @SuppressWarnings("unchecked") private final IBlockingPrioritizedEventSink<IEvent> _q =
-            mock(IBlockingPrioritizedEventSink.class);
+    @SuppressWarnings("unchecked") private final IBlockingPrioritizedEventSink<IEvent> _q = mock(IBlockingPrioritizedEventSink.class);
     private final TCP _tcp = mock(TCP.class);
     private final ARP _arp = new ARP();
     private final Stores _stores = new Stores(LOCAL_PEER, _tcp, _arp, false);
+
+    private class PresenceInfo
+    {
+        private final boolean _online;
+        private final SID[] _sids;
+
+        private PresenceInfo(boolean online, SID... sids)
+        {
+            this._online = online;
+            this._sids = sids;
+        }
+
+        public boolean isOnline()
+        {
+            return _online;
+        }
+
+        public SID[] getSids()
+        {
+            return _sids;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "PresenceInfo{o:" + _online + " s:" + (_sids == null ? null : Arrays.asList(_sids)) + "}";
+        }
+    }
 
     @Before
     public void initMockTCP()
@@ -131,7 +161,6 @@ public class TestStores extends AbstractTest
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, false, SID_00, SID_01);
     }
 
-    @Ignore
     @Test
     public void shouldUpdatePresenceCorrectlyIfUpdateStoresIsCalledAfterFiltersReceivedFromRemotePeers()
     {
@@ -166,17 +195,18 @@ public class TestStores extends AbstractTest
 
         InOrder presenceOrder = inOrder(_q);
 
-        // (A)
+        // (A) (I don't know which presence update comes first (due to ordering)...either one is fine)
 
-        verifyPresenceNotification_(presenceOrder, REMOTE_PEER_00, true, SID_01, SID_02);
-        verifyPresenceNotification_(presenceOrder, REMOTE_PEER_01, true, SID_01, SID_02);
+        Map<DID, PresenceInfo> expectedPresences = Maps.newHashMap();
+        expectedPresences.put(REMOTE_PEER_00, new PresenceInfo(true, SID_01, SID_02));
+        expectedPresences.put(REMOTE_PEER_01, new PresenceInfo(true, SID_01, SID_02));
+        verifyUnorderedPresenceNotification_(presenceOrder, expectedPresences);
 
         // (B)
 
         verifyPresenceNotification_(presenceOrder, REMOTE_PEER_01, false, SID_02);
     }
 
-    @Ignore
     @Test
     public void shouldNotSendPresenceIfTheCoreRemovesAStore()
     {
@@ -207,8 +237,10 @@ public class TestStores extends AbstractTest
 
         // (A)
 
-        verifyPresenceNotification_(presenceOrder, REMOTE_PEER_00, true, SID_00, SID_01);
-        verifyPresenceNotification_(presenceOrder, REMOTE_PEER_01, true, SID_00, SID_02);
+        Map<DID, PresenceInfo> expectedPresences = Maps.newHashMap();
+        expectedPresences.put(REMOTE_PEER_00, new PresenceInfo(true, SID_00, SID_01));
+        expectedPresences.put(REMOTE_PEER_01, new PresenceInfo(true, SID_00, SID_02));
+        verifyUnorderedPresenceNotification_(presenceOrder, expectedPresences);
 
         // (B)
 
@@ -283,6 +315,34 @@ public class TestStores extends AbstractTest
         }
 
         _stores.storesReceived(remote, bd.build());
+    }
+
+    private void verifyUnorderedPresenceNotification_(InOrder presenceOrder, Map<DID, PresenceInfo> expectedPresences)
+    {
+        int numupdates = expectedPresences.size();
+
+        for (int i = 0; i < numupdates; i++) {
+            ArgumentCaptor<IEvent> evcaptor = ArgumentCaptor.forClass(IEvent.class);
+            presenceOrder.verify(_q, calls(1)).enqueueBlocking(evcaptor.capture(), eq(Prio.LO));
+
+            EIPresence presenceEvent = (EIPresence) evcaptor.getValue();
+            assertEquals(1, presenceEvent._did2sids.size());
+
+            boolean found = false;
+            Map.Entry<DID, PresenceInfo> entry = null;
+            Iterator<Map.Entry<DID, PresenceInfo>> it = expectedPresences.entrySet().iterator();
+            while (it.hasNext() && !found) {
+                entry = it.next();
+                if (presenceEvent._did2sids.containsKey(entry.getKey())) {
+                    it.remove();
+                    found = true;
+                }
+            }
+
+            assertTrue("cannot find one of:" + expectedPresences, found);
+
+            verifyPresenceEvent(presenceEvent, entry.getKey(), entry.getValue().isOnline(), entry.getValue().getSids());
+        }
     }
 
     private void verifyPresenceNotification_(InOrder presenceOrder, DID did, boolean online, SID... sids)
