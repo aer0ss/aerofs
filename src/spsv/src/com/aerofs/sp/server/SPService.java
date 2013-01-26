@@ -880,13 +880,7 @@ public class SPService implements ISPService
         }
 
         // Ignore the invitation by deleting the ACL.
-        try {
-            sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
-        } catch (ExNoPerm e) {
-            // we should be able to ignore an invitation even if the shared folder somehow lost
-            // all its owners...
-            l.info("owner-less folder " + sf);
-        }
+        sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
 
         _transaction.commit();
 
@@ -907,7 +901,9 @@ public class SPService implements ISPService
 
         if (sf.id().isRoot()) throw new ExBadArgs("Cannot leave root folder");
 
-        // silently ignore leave call from pending users
+        // silently ignore leave call from pending users as multiple device of the same user
+        // may make the call depending on the relative speeds of deletion propagation vs ACL
+        // propagation
         if (!sf.isPending(user)) {
             if (!sf.isMember(user)) {
                 throw new ExNotFound("You are not a member of this shared folder");

@@ -222,7 +222,7 @@ public class SharedFolder
             deleteTeamServerACLImpl(_f._factUser.create(userID));
         }
 
-        throwIfNoOwnerLeft();
+        throwIfNoOwnerMemberOrPendingLeft();
 
         return affectedUsers;
     }
@@ -293,7 +293,7 @@ public class SharedFolder
     {
         _f._db.updateMemberACL(_sid, srps);
 
-        throwIfNoOwnerLeft();
+        throwIfNoOwnerMemberOrPendingLeft();
 
         return _f._db.getMembers(_sid);
     }
@@ -315,10 +315,10 @@ public class SharedFolder
         return role;
     }
 
-    private void throwIfNoOwnerLeft()
+    private void throwIfNoOwnerMemberOrPendingLeft()
             throws ExNoPerm, SQLException
     {
-        if (!_f._db.hasOwner(_sid)) throw new ExNoPerm("there must be at least one owner");
+        if (!_f._db.hasOwnerMemberOrPending(_sid)) throw new ExNoPerm("there must be at least one owner");
     }
 
     public void throwIfNotOwnerAndNotAdmin(User user)

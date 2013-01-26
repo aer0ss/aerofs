@@ -252,16 +252,15 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         }
     }
 
-    public boolean hasOwner(SID sid)
+    public boolean hasOwnerMemberOrPending(SID sid)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_AC,
-                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=? and " + C_AC_PENDING + "=?",
+                C_AC_STORE_ID + "=? and " + C_AC_ROLE + "=?",
                 "count(*)"));
 
         ps.setBytes(1, sid.getBytes());
         ps.setInt(2, Role.OWNER.ordinal());
-        ps.setBoolean(3, false);            // ignore pending entries
 
         ResultSet rs = ps.executeQuery();
         try {

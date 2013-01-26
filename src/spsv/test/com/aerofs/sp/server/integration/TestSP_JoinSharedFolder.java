@@ -9,6 +9,7 @@ import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
+import com.aerofs.proto.Common.PBFolderInvitation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -89,5 +90,74 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             trans.handleException();
         }
         assertTrue(published.isEmpty());
+    }
+
+    @Test
+    public void shouldIgnoreInvitation() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+
+        setSessionUser(USER_2);
+        PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
+        assertEquals(USER_1.toString(), inv.getSharer());
+        assertEquals(TEST_SID_1, new SID(inv.getShareId()));
+
+        service.ignoreSharedFolderInvitation(inv.getShareId());
+    }
+
+    @Test
+    public void shouldThrowExNoPermWhenLastAdminTriesToIgnoreInvitation() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+
+        setSessionUser(USER_1);
+        service.leaveSharedFolder(TEST_SID_1.toPB());
+
+        try {
+            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            fail();
+        } catch (ExNoPerm e) {
+            trans.handleException();
+        }
+    }
+
+    @Test
+    public void shouldThrowExNotFoundWhenTryingToIgnoreInvitationToNonExistingFolder() throws Exception
+    {
+        setSessionUser(USER_1);
+        try {
+            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            fail();
+        } catch (ExNotFound e) {
+            trans.handleException();
+        }
+    }
+
+    @Test
+    public void shouldThrowExNoPermWhenTryingToIgnoreInvitationWithoutBeingInvited() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+
+        setSessionUser(USER_3);
+        try {
+            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            fail();
+        } catch (ExNoPerm e) {
+            trans.handleException();
+        }
+    }
+
+    @Test
+    public void shouldThrowExNotFoundWhenTryingToIgnoreAlreadyAcceptedInvitation() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+
+        setSessionUser(USER_1);
+        try {
+            service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
+            fail();
+        } catch (ExAlreadyExist e) {
+            trans.handleException();
+        }
     }
 }

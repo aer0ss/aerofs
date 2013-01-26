@@ -44,6 +44,14 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
     }
 
     @Test
+    public void shouldAllowAdminToLeaveShareFolder() throws Exception
+    {
+        shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
+
+        leaveSharedFolder(USER_1, TEST_SID_1);
+    }
+
+    @Test
     public void shouldAllowPendingMemberToLeaveShareFolder() throws Exception
     {
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
