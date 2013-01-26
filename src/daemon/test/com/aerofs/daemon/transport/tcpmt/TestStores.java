@@ -17,6 +17,7 @@ import com.aerofs.proto.Transport.PBTCPStores;
 import com.aerofs.testlib.AbstractTest;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -130,6 +131,7 @@ public class TestStores extends AbstractTest
         verifyPresenceEvent(presenceEvent, REMOTE_PEER_00, false, SID_00, SID_01);
     }
 
+    @Ignore
     @Test
     public void shouldUpdatePresenceCorrectlyIfUpdateStoresIsCalledAfterFiltersReceivedFromRemotePeers()
     {
@@ -174,6 +176,7 @@ public class TestStores extends AbstractTest
         verifyPresenceNotification_(presenceOrder, REMOTE_PEER_01, false, SID_02);
     }
 
+    @Ignore
     @Test
     public void shouldNotSendPresenceIfTheCoreRemovesAStore()
     {
