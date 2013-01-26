@@ -4,6 +4,7 @@
 
 package com.aerofs.daemon.core.phy.block;
 
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
@@ -14,6 +15,7 @@ import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorage.FileAlreadyExistsException;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -24,8 +26,11 @@ import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.InMemorySQLiteDBCW;
 import com.aerofs.lib.id.CID;
@@ -77,6 +82,9 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock TransManager tm;
     @Mock CoreScheduler sched;
     @Mock CfgAbsAuxRoot auxRoot;
+    @Mock CfgAbsAutoExportFolder autoExportFolder;
+    @Mock FrequentDefectSender fds;
+    @Mock IMapSIndex2SID sidx2sid;
 
     // use in-memory DB
     InjectableFile.Factory fileFactory = new InjectableFile.Factory();
@@ -97,10 +105,17 @@ public class TestBlockStorage extends AbstractBlockTest
         when(tm.begin_()).thenReturn(t);
         when(tc.acquire_(any(Cat.class), anyString())).thenReturn(tk);
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
-        when(auxRoot.get()).thenReturn(testTempDirFactory.getTestTempDir().getAbsolutePath());
+        String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
+        when(auxRoot.get()).thenReturn(testTempDir);
+        // TODO: DREW finish this
+        when(autoExportFolder.get()).thenReturn(Util.join(testTempDir, "autoexport"));
+        // when fds.sendDefectAsync() -> fail
+        SID sid = SID.generate();
+        when(sidx2sid.get_(any(SIndex.class))).thenReturn(sid);
 
         // no encoding is performed by the mock backend
-        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>() {
+        when(bsb.wrapForEncoding(any(OutputStream.class))).thenAnswer(new Answer<Object>()
+        {
             @Override
             public Object answer(InvocationOnMock invocation)
                     throws Throwable
@@ -121,7 +136,8 @@ public class TestBlockStorage extends AbstractBlockTest
         }).when(sched).schedule(any(IEvent.class), anyLong());
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
-        bs = new BlockStorage(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb);
+        bs = new BlockStorage(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, autoExportFolder,
+                fds);
         bs.init_();
     }
 

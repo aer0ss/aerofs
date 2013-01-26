@@ -305,6 +305,11 @@ public class InjectableFile
         FileUtil.mkdirs(_f);
     }
 
+    public void ensureDirExists() throws IOException
+    {
+        FileUtil.ensureDirExists(_f);
+    }
+
     public boolean canRead()
     {
         return _f.canRead();

@@ -24,9 +24,11 @@ import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.ContentHash;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExAborted;
@@ -35,11 +37,13 @@ import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,6 +74,10 @@ class BlockStorage implements IPhysicalStorage
     private final BlockStorageDatabase _bsdb;
 
     private final BlockRevProvider _revProvider = new BlockRevProvider();
+    private final CfgAbsAutoExportFolder _exportFolder;
+    private final FrequentDefectSender _fds;
+    // ACL use coming soon, but currently breaks injection :( - DF
+    //private final LocalACL _lacl;
 
     public class FileAlreadyExistsException extends IOException
     {
@@ -79,7 +87,10 @@ class BlockStorage implements IPhysicalStorage
 
     @Inject
     public BlockStorage(CfgAbsAuxRoot absAuxRoot, TC tc, TransManager tm, CoreScheduler sched,
-            InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb)
+            InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
+            CfgAbsAutoExportFolder absExportFolder, FrequentDefectSender fds
+            //, LocalACL lacl)
+            )
     {
         _tc = tc;
         _tm = tm;
@@ -88,15 +99,22 @@ class BlockStorage implements IPhysicalStorage
         _absAuxRoot = absAuxRoot;
         _bsb = bsb;
         _bsdb = bsdb;
+        _exportFolder = absExportFolder;
+        _fds = fds;
+        //_lacl = lacl;
 
     }
 
     @Override
     public void init_() throws IOException
     {
-        _prefixDir = _fileFactory.create(_absAuxRoot.get(), Param.AuxFolder.PREFIX._name);
-        if (!_prefixDir.isDirectory()) _prefixDir.mkdirs();
+        initPrefixDirAndEnsureItExists();
+        initializeBlockStorage();
+    }
 
+    private void initializeBlockStorage()
+            throws IOException
+    {
         _bsb.init_();
         try {
             _bsdb.init_();
@@ -105,16 +123,24 @@ class BlockStorage implements IPhysicalStorage
         }
     }
 
+    private void initPrefixDirAndEnsureItExists()
+            throws IOException
+    {
+        final String _prefixDirectoryPath = Objects.firstNonNull(exportRoot(), _absAuxRoot.get());
+        _prefixDir = _fileFactory.create(_prefixDirectoryPath, Param.AuxFolder.PREFIX._name);
+        _prefixDir.ensureDirExists();
+    }
+
     @Override
     public IPhysicalFile newFile_(SOKID sokid, Path path)
     {
-        return new BlockFile(this, sokid, path);
+        return new BlockFileAdapter(this, sokid, path, _fileFactory, _fds);
     }
 
     @Override
     public IPhysicalFolder newFolder_(SOID soid, Path path)
     {
-        return new BlockFolder(this, soid, path);
+        return new BlockFolderAdapter(this, soid, path, _fileFactory);
     }
 
     @Override
@@ -136,9 +162,11 @@ class BlockStorage implements IPhysicalStorage
             Trans t) throws IOException, SQLException
     {
         final BlockPrefix from = (BlockPrefix)prefix;
-        BlockFile to = (BlockFile)file;
+        final BlockFileAdapter targetAdapter = (BlockFileAdapter)file;
+        final BlockFile to = targetAdapter.blockFile;
 
-        Preconditions.checkArgument(from._sockid.sokid().equals(to._sokid));
+        Preconditions.checkArgument(from._sockid.sokid().equals(to._sokid),
+                "tried to move prefix " + from + " to storage loc for " + to);
         assert from._hash != null;
         long length = prefix.getLength_();
 
@@ -154,15 +182,30 @@ class BlockStorage implements IPhysicalStorage
         _bsdb.updateFileInfo(to._path, new FileInfo(id, -1, length, mtime, from._hash), t);
         if (l.isDebugEnabled()) l.debug("inserted " + from._hash.toHex());
 
-        // delete prefix file if transaction succeeds
+        // We figure out the proper export path here before the transaction commits and capture it
+        // in the transaction listener to avoid having to deal with SQLExceptions in the
+        // transaction commit hook.  We check if export is enabled to avoid computing the path if
+        // it won't be used anyway, since it involves scanning the ACL table.
+        // DF: I couldn't come up with a good way to make this pluggable, so I'm leaving it here
+        //     for now.
+        final InjectableFile exportedFile = exportEnabled() ?
+                _fileFactory.create(targetAdapter.exportedAbsPath()) : null;
+        // If transaction succeeds:
+        //   if export enabled, move prefix file to export folder
+        //   otherwise, delete the prefix file
         t.addListener_(new AbstractTransListener() {
             @Override
             public void committed_() {
-                from._f.deleteIgnoreError();
+                targetAdapter.onCommit(from, exportedFile);
             }
         });
 
         return mtime;
+    }
+
+    private boolean exportEnabled()
+    {
+        return _exportFolder.get() != null;
     }
 
     @Override
@@ -220,6 +263,7 @@ class BlockStorage implements IPhysicalStorage
                     {
                         try {
                             removeDeadBlocks_();
+                            // TODO: DREW ensure removal of export folder for deleted store?
                         } catch (Exception e) {
                             l.warn("Failed to cleanup dead blocks: " + Util.e(e));
                         }
@@ -273,6 +317,48 @@ class BlockStorage implements IPhysicalStorage
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    @Nullable public String exportRoot()
+    {
+        return _exportFolder.get();
+    }
+
+    @Nullable public String storeExportFolder(SIndex sidx)
+    {
+        // Exported path is given by:
+        // <Export root>/read-only-export/<sid>/<path components> for shared stores
+
+        // Soon™, we'd like to also show user emails like so:
+        // <Export root>/read-only-export/<user-email>/<path components> for root stores
+        // TODO (DF): map SID in first element of _path to user's email address, if a root store.
+        //            This may not work for all emails (could have / in the address, etc - needs
+        //            more thought)
+        // TODO (DF): symlink (or make a "Where are my files.txt" file) for anchors
+        // Note that BlockPrefix is given by:
+        // <Export root>/prefix/<prefix file>
+
+        // N.B. the first component of a BlockFile's _path is a folder named for the store ID,
+        // so we needn't append it again here to get the desired path structure above.
+        return Util.join(exportRoot(), "read-only-export");
+    }
+
+    /*
+    public String storeFullName(SIndex sidx)
+            throws SQLException
+    {
+        SID sid = _sidx2sid.get_(sidx);
+        String storeTitle = "shared-folder-" + sid.toStringFormal();
+        if (sid.isRoot()) {
+            // Loop over ACL entries, find non-self user, make folder with that name
+            for (UserID uid : _lacl.get_(sidx).keySet()) {
+                if (!uid.isTeamServerID()) {
+                    assert SID.rootSID(uid).equals(sid);
+                    storeTitle = uid.getID();
+                    break;
+                }
+            }
+        }
+        return storeTitle;
+    }*/
 
     private String storePrefix(SIndex sidx)
     {

@@ -306,7 +306,7 @@ public class ACLSynchronizer
         return new ServerACLReturn(serverEpoch, acl, getStoreNames_(sp, newStores));
     }
 
-    private boolean isNewStore_(SID sid) throws ExNotFound, SQLException
+    private boolean isNewStore_(SID sid) throws SQLException
     {
         SIndex sidx = _sid2sidx.getLocalOrAbsentNullable_(sid);
         return (sidx == null || _lacl.get_(sidx).get(_cfgLocalUser.get()) == null);
