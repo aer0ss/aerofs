@@ -48,13 +48,13 @@ import static com.aerofs.daemon.transport.lib.AddressUtils.*;
 
 /*
  * Mutexes used inside the class:
- *      _map:       protect _map. Owner mustn't block
+ *      _peers:       protect _peers. Owner mustn't block
  *      p.getLock() == p._sendq.getLock(). protect fields in the Peer class and
  *                  the event queue. Owner  mustn't block except for queue
  *                  operations
  *      Socket:     protect syncSend()
  *
- *      NB. locking order: _map then p.getLock() then Socket
+ *      NB. locking order: _peers then p.getLock() then Socket
  */
 
 public class TCPProactorMT
@@ -122,9 +122,9 @@ public class TCPProactorMT
 
     public Collection<String> getConnections()
     {
-        synchronized (_map) {
+        synchronized (_peers) {
             ArrayList<String> cs = new ArrayList<String>();
-            for (Map.Entry<InetSocketAddress, Peer> en : _map.entrySet()) {
+            for (Map.Entry<InetSocketAddress, Peer> en : _peers.entrySet()) {
                 assert en.getValue() != null: ("invalid map entry");
 
                 if (en.getValue()._discarded) continue;
@@ -146,16 +146,16 @@ public class TCPProactorMT
 
     public long getBytesRx(InetSocketAddress isa)
     {
-        synchronized (_map) {
-            Peer p = _map.get(isa);
+        synchronized (_peers) {
+            Peer p = _peers.get(isa);
             return p == null ? 0 : p._bytesrx;
         }
     }
 
     public boolean isConnected(InetSocketAddress isa)
     {
-        synchronized (_map){
-            return _map.containsKey(isa);
+        synchronized (_peers) {
+            return _peers.containsKey(isa);
         }
     }
 
@@ -196,9 +196,9 @@ public class TCPProactorMT
     public void disconnect(InetSocketAddress from)
     {
         Peer p;
-        synchronized (_map) {
-            if (!_map.containsKey(from)) return;
-            p = _map.get(from);
+        synchronized (_peers) {
+            if (!_peers.containsKey(from)) return;
+            p = _peers.get(from);
         }
 
         discard(p, new Exception("forceful close"));
@@ -212,8 +212,8 @@ public class TCPProactorMT
     {
         l.info("attempt conn reuse: rem:" + printaddr(remaddr));
 
-        synchronized (_map) {
-            if (_map.containsKey(remaddr)) {
+        synchronized (_peers) {
+            if (_peers.containsKey(remaddr)) {
                 l.info("sender thread already created: rem:" + printaddr(remaddr) + " ignored");
                 return;
             }
@@ -231,7 +231,7 @@ public class TCPProactorMT
 
             assert p._key == null;
             p._key = remaddr;
-            _map.put(remaddr, (Peer) c);
+            _peers.put(remaddr, (Peer)c);
         }
     }
 
@@ -268,6 +268,7 @@ public class TCPProactorMT
                 if (preamble != null) syncSend(s, out, preamble);
             }
 
+            //noinspection InfiniteLoopStatement
             while (true) {
                 // receive the message
                 byte[] bs = Util.readMessage(in, _magic, _maxRecvMsgSize);
@@ -304,17 +305,17 @@ public class TCPProactorMT
     {
         assert _sendable;
 
-        Peer p = null;
-        synchronized (_map) {
-            p = _map.get(remaddr);
+        Peer p;
+        synchronized (_peers) {
+            p = _peers.get(remaddr);
             if (p == null) {
                 p = new Peer(null);
                 p._key = remaddr;
-                _map.put(remaddr, p);
+                _peers.put(remaddr, p);
             }
         }
 
-        // can't nest this critical section within sync (_map) above because
+        // can't nest this critical section within sync (_peers) above because
         // we may block during enqueueBlocking below
         p.getLock().lock();
         try {
@@ -476,9 +477,9 @@ public class TCPProactorMT
 
         Socket is, os;
 
-        // N.B. locking order throughout the code: must always be _map first
+        // N.B. locking order throughout the code: must always be _peers first
         // and p second.
-        synchronized (_map) {
+        synchronized (_peers) {
             p.getLock().lock();
             try {
 
@@ -511,7 +512,7 @@ public class TCPProactorMT
                 p._discarded = true;
 
                 if (p._key != null) {
-                    Util.verify(_map.remove(p._key) == p);
+                    Util.verify(_peers.remove(p._key) == p);
                 }
 
                 is = p._is;
@@ -668,7 +669,7 @@ public class TCPProactorMT
         final BlockingPrioQueue<IEvent> _sendq =
             new BlockingPrioQueue<IEvent>(DaemonParam.TCP.QUEUE_LENGTH);
         final Socket _is;
-        InetSocketAddress _key; // the key used to index peers in _map
+        InetSocketAddress _key; // the key used to index peers in _peers
         Socket _os;
         Thread _sendthd;
         volatile boolean _discarded; // this is to avoid duplicate discards.
@@ -711,7 +712,7 @@ public class TCPProactorMT
     private final Object _resumeAcceptSynchronizer = new Object();
 
     // socket map
-    private final Map<InetSocketAddress, Peer> _map = new HashMap<InetSocketAddress, Peer>();
+    private final Map<InetSocketAddress, Peer> _peers = new HashMap<InetSocketAddress, Peer>();
 
     // tx/rx counts
 
