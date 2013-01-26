@@ -75,7 +75,6 @@ CREATE TABLE `sp_cert` (
 
 CREATE TABLE `sp_signup_code` (
   `t_code` CHAR(8) NOT NULL,
-  `t_from` VARCHAR(320), -- used to be null if the invites was sent by aerofs
   `t_to` VARCHAR(320) NOT NULL,
   `t_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`t_code`),

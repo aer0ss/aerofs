@@ -49,6 +49,15 @@
         </div>
     </div>
 
+<%!
+    ## Set navigation_bars = True in renderer pages to enable top and left
+    ## navigation bars. If navigation bars are enabled, the entire content of
+    ## the renderer page is wrapped by a "span8" div. Otherwise, the content is
+    ## wrapped by a top-level "row" div.
+    ##
+    navigation_bars = False;
+%>
+
     <div class="navbar">
         <div class="navbar-inner">
             <div class="container">
@@ -58,7 +67,8 @@
                             <img src="${request.static_url('aerofs_web.layout:static/img/aerofs-logo-navbar.png')}" width="151" height="44" alt="AeroFS" />
                         </a>
 
-                        %if 'username' in request.session:
+                        %if 'username' in request.session and\
+                                self.attr.navigation_bars is True:
                             ${render_top_right_navigation()}
                         %endif
                     </div>
@@ -69,7 +79,8 @@
 
     <div class="container">
         <div class="row">
-            %if 'username' in request.session:
+            %if 'username' in request.session and \
+                    self.attr.navigation_bars is True:
                 <div class="span2 offset1">
                     %if request.session['group'] == ADMIN:
                         ${render_left_navigation_for_admin()}
@@ -78,11 +89,11 @@
                     %endif
                 </div>
                 <div class="span8">
-                    ## all pages that require sign in are bounded by "span8"
+                    ## pages that require navigation bars are bounded by "span8"
                     ${next.body()}
                 </div>
             %else:
-                ## all pages that don't require sign in are bounded by "row"
+                ## pages that don't require navigation bars are bounded by "row"
                 ${next.body()}
             %endif
         </div>
@@ -154,6 +165,7 @@
 <%def name="render_left_navigation_for_nonadmin()">
     <ul class="nav nav-list">
         ${render_nonadmin_links()}
+        ${render_help_links()}
     </ul>
 </%def>
 
@@ -163,6 +175,7 @@
         ${render_nonadmin_links()}
         <li class="nav-header">My Team</li>
         ${render_admin_links()}
+        ${render_help_links()}
     </ul>
 </%def>
 
@@ -189,6 +202,11 @@
     % for link in links:
         ${render_navigation_link(link)}
     % endfor
+</%def>
+
+<%def name="render_help_links()">
+    <li class="divider"></li>
+    <li><a href="http://support.aerofs.com" target="_blank">Support</a></li>
 </%def>
 
 ## param link: tuple (route_name, text_to_display)

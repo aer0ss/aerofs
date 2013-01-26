@@ -406,13 +406,13 @@ public class User
      * @return the signup code
      * @pre the user doesn't exist
      */
-    public String addSignUpInvitationCode(User inviter)
+    public String addSignUpCode()
             throws SQLException
     {
         assert !exists();
 
         String code = Base62CodeGenerator.generate();
-        _f._udb.insertSignupCode(code, inviter.id(), _id);
+        _f._udb.insertSignupCode(code, _id);
         return code;
     }
 

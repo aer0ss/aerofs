@@ -17,6 +17,7 @@ import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
+import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.SPDatabase;
@@ -121,6 +122,7 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy PasswordManagement passwordManagement = new PasswordManagement(db, factUser,
             mock(PasswordResetEmailer.class));
     @Spy DeviceCertifiedEmailer deviceCertifiedEmailer = mock(DeviceCertifiedEmailer.class);
+    @Spy RequestToSignUpEmailer _requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
 
     // Subclasses can declare a @Mock'd or @Spy'd object for
     // - PasswordManagement,
@@ -148,17 +150,14 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         service.setSessionInvalidator(sessionInvalidator);
         service.setUserTracker(userSessionTracker);
 
-        OrganizationID orgId = OrganizationID.DEFAULT;
-        AuthorizationLevel level = AuthorizationLevel.USER;
-
         // Add all the users to the db.
         trans.begin();
-        factUser.create(USER_1).save(USER_1_CRED, new FullName(USER_1.toString(), USER_1.toString()),
-                factOrg.getDefault());
-        factUser.create(USER_2).save(USER_2_CRED, new FullName(USER_2.toString(), USER_2.toString()),
-                factOrg.getDefault());
-        factUser.create(USER_3).save(USER_3_CRED, new FullName(USER_3.toString(), USER_3.toString()),
-                factOrg.getDefault());
+        factUser.create(USER_1).save(USER_1_CRED,
+                new FullName(USER_1.toString(), USER_1.toString()), factOrg.getDefault());
+        factUser.create(USER_2).save(USER_2_CRED,
+                new FullName(USER_2.toString(), USER_2.toString()), factOrg.getDefault());
+        factUser.create(USER_3).save(USER_3_CRED,
+                new FullName(USER_3.toString(), USER_3.toString()), factOrg.getDefault());
         trans.commit();
     }
 
@@ -192,8 +191,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         when(cert.getSerial()).thenReturn(++AbstractSPCertificateBasedTest._lastSerialNumber);
 
         // Just need some time in the future - say, one year.
-        when(cert.getExpiry()).thenReturn(new Timestamp(System.currentTimeMillis() +
-                1000L*60L*60L*24L*365L));
+        when(cert.getExpiry()).thenReturn(
+                new Timestamp(System.currentTimeMillis() + 1000L * 60L * 60L * 24L * 365L));
     }
 
     protected void mockCertificateAuthenticatorSetAuthenticatedState()

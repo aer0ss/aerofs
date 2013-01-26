@@ -40,7 +40,6 @@ public final class SPSchema
             // TODO rename TI BI and FI to reflect new table/column names
             T_TI                            = "sp_signup_code",
             C_TI_TIC                        = "t_code",
-            C_TI_FROM                       = "t_from",
             C_TI_TO                         = "t_to",
             C_TI_TS                         = "t_ts", //auto generated
 

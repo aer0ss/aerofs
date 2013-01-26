@@ -16,8 +16,16 @@ service SPService {
     // Sets the message type used in case of errors
     rpc __error__(Void) returns(PBException);
 
-    // TODO (WW) remove it next time the proto number changes
-    rpc Noop(Void) returns(Void);
+    /**
+     * Request to sign up a user and enable business plan. The method sends an email to the user
+     * with a sign-up link. After the user signs up, the user is directed to the payment page.
+     *
+     * No-op if the user exists. Do not throw ExAlreadyExist to avoid leaking email information to
+     * attackers.
+     *
+     * Required Auth Level: none
+     */
+    rpc RequestToSignUpWithBusinessPlan(RequestToSignUpWithBusinessPlanCall) returns(Void);
 
     /**
      * Sign up a user using a signup code.
@@ -577,6 +585,7 @@ message VerifyBatchSignUpCodeCall {
 message CertifyDeviceCall {
     required bytes device_id = 1;
     required bytes csr = 2;
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE
     // DEPRECATED: (PH) recertify code has been removed. It will be added back in as a new call.
     required bool recertify_do_not_use= 3;
 }
@@ -587,6 +596,10 @@ message CertifyDeviceReply {
 
 message InviteToSignUpCall {
     repeated string email_addresses = 1;
+}
+
+message RequestToSignUpWithBusinessPlanCall {
+    required string email_address = 1;
 }
 
 message InviteToOrganizationCall {

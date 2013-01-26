@@ -30,15 +30,7 @@ import java.util.concurrent.Callable;
 // and/or merging.
 public class InvitationEmailer
 {
-    private final static String ACCEPT_INVITATION_LINK = SP.ADMIN_PANEL_BASE + "/accept";
-
-    static String getSignUpLink(String signUpCode)
-    {
-        // Redirect the user to the install page right after signing up
-        // N.B. the parameter key strings must be identical to the key strings in signup/views.py.
-        return SP.ADMIN_PANEL_BASE + "/signup?c=" + signUpCode + "&next=" +
-                Util.urlEncode("/install");
-    }
+    private final static String ACCEPT_INVITATION_LINK = SP.DASH_BOARD_BASE + "/accept";
 
     public static class Factory
     {
@@ -64,7 +56,7 @@ public class InvitationEmailer
                 @Nullable String note, final String signUpCode)
                 throws IOException
         {
-            String url = getSignUpLink(signUpCode);
+            String url = RequestToSignUpEmailer.getSignUpLinkWithFreePlan(signUpCode);
 
             // TODO Ideally static email contents should be separate from Java files.
             final String subject = (folderName != null)

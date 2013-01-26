@@ -91,8 +91,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
         for (UserID user: users) {
             l.info("adding signup code for: " + user);
             String signupCode = Base62CodeGenerator.generate();
-            udb.insertSignupCode(signupCode, UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS), user,
-                    System.currentTimeMillis() - age);
+            udb.insertSignupCode(signupCode, user, System.currentTimeMillis() - age);
 
             esdb.insertEmailSubscription(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER,
                     System.currentTimeMillis() - age);

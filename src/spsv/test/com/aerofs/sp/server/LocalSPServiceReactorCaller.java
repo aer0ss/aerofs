@@ -17,6 +17,7 @@ import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
+import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.device.Device;
@@ -103,6 +104,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         PasswordManagement passwordManagement =
                 new PasswordManagement(db, factUser, mock(PasswordResetEmailer.class));
         DeviceCertifiedEmailer deviceCertifiedEmailer = mock(DeviceCertifiedEmailer.class);
+        RequestToSignUpEmailer requestToSignUpEmailer = mock(RequestToSignUpEmailer.class);
 
         ThreadLocalHttpSessionProvider sessionProvider = new ThreadLocalHttpSessionProvider();
         CertificateAuthenticator certificateAuthenticator =
@@ -113,7 +115,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
         SPService service = new SPService(db, trans, new MockSessionUser(),
                 passwordManagement, certificateAuthenticator, factUser, factOrg, factOrgInvite,
                 factDevice, factCert, certdb, esdb, factSharedFolder, factEmailer,
-                deviceCertifiedEmailer);
+                deviceCertifiedEmailer, requestToSignUpEmailer);
 
         service.setUserTracker(userTracker);
         reactor = new SPServiceReactor(service);

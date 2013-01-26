@@ -32,6 +32,7 @@ import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
+import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.SharedFolder.Factory;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -132,7 +133,6 @@ public class SPService implements ISPService
     private final ISessionUser _sessionUser;
 
     private final PasswordManagement _passwordManagement;
-    private final DeviceCertifiedEmailer _deviceCertifiedEmailer;
     private final CertificateAuthenticator _certificateAuthenticator;
     private final User.Factory _factUser;
     private final Organization.Factory _factOrg;
@@ -140,6 +140,9 @@ public class SPService implements ISPService
     private final Device.Factory _factDevice;
     private final Certificate.Factory _factCert;
     private final SharedFolder.Factory _factSharedFolder;
+
+    private final DeviceCertifiedEmailer _deviceCertifiedEmailer;
+    private final RequestToSignUpEmailer _requestToSignUpEmailer;
     private final InvitationEmailer.Factory _factEmailer;
 
     SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
@@ -148,7 +151,8 @@ public class SPService implements ISPService
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
-            InvitationEmailer.Factory factEmailer, DeviceCertifiedEmailer deviceCertifiedEmailer)
+            InvitationEmailer.Factory factEmailer, DeviceCertifiedEmailer deviceCertifiedEmailer,
+            RequestToSignUpEmailer requestToSignUpEmailer)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
@@ -158,7 +162,6 @@ public class SPService implements ISPService
         _transaction = transaction;
         _sessionUser = sessionUser;
         _passwordManagement = passwordManagement;
-        _deviceCertifiedEmailer = deviceCertifiedEmailer;
         _certificateAuthenticator = certificateAuthenticator;
         _factUser = factUser;
         _factOrg = factOrg;
@@ -167,6 +170,9 @@ public class SPService implements ISPService
         _factCert = factCert;
         _esdb = esdb;
         _factSharedFolder = factSharedFolder;
+
+        _deviceCertifiedEmailer = deviceCertifiedEmailer;
+        _requestToSignUpEmailer = requestToSignUpEmailer;
         _factEmailer = factEmailer;
     }
 
@@ -215,13 +221,6 @@ public class SPService implements ISPService
 
         // Don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
-    }
-
-    @Override
-    public ListenableFuture<Void> noop()
-            throws Exception
-    {
-        return createVoidReply();
     }
 
     @Override
@@ -620,10 +619,14 @@ public class SPService implements ISPService
         device.save(tsUser, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = addCertificate(device, cert);
 
+        // Grab these information before releasing the transaction.
+        String emailAddress = user.id().getID();
+        String firstName = user.getFullName()._first;
+
         _transaction.commit();
 
         // Sending an email doesn't need to be a part of the transaction
-        _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(_sessionUser.get());
+        _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(emailAddress, firstName);
 
         return createReply(reply);
     }
@@ -698,9 +701,13 @@ public class SPService implements ISPService
         device.save(user, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = addCertificate(device, cert);
 
+        // Grab these information before releasing the transaction.
+        String emailAddress = user.id().getID();
+        String firstName = user.getFullName()._first;
+
         _transaction.commit();
 
-        _deviceCertifiedEmailer.sendDeviceCertifiedEmail(_sessionUser.get());
+        _deviceCertifiedEmailer.sendDeviceCertifiedEmail(emailAddress, firstName);
 
         return createReply(reply);
     }
@@ -820,7 +827,7 @@ public class SPService implements ISPService
     {
         assert !invitee.exists();
 
-        String code = invitee.addSignUpInvitationCode(inviter);
+        String code = invitee.addSignUpCode();
 
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
@@ -969,6 +976,36 @@ public class SPService implements ISPService
 
         return createReply(
                 ResolveSignUpCodeReply.newBuilder().setEmailAddress(result.toString()).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> requestToSignUpWithBusinessPlan(String emailAddress)
+            throws Exception
+    {
+        User user = _factUser.createFromExternalID(emailAddress);
+
+        _transaction.begin();
+
+        @Nullable String signUpCode;
+        if (user.exists()) {
+            signUpCode = null;
+            // no-op instead of throwing to avoid leaking email information to attackers
+        } else {
+            signUpCode = user.addSignUpCode();
+            // Retrieve the email address from the user id in case the original address is not
+            // normalized.
+            emailAddress = user.id().getID();
+        }
+
+        _transaction.commit();
+
+        if (signUpCode != null) {
+            // Send the email out of the transaction
+            _requestToSignUpEmailer.sendRequestToSignUpWithBusinessPlanEmail(emailAddress,
+                    signUpCode);
+        }
+
+        return createVoidReply();
     }
 
     @Override

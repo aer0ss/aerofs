@@ -59,17 +59,17 @@ public class BaseParam
     public static class SP
     {
         public static final String WEB_BASE = "https://www.aerofs.com";
-        public static final String ADMIN_PANEL_BASE = "https://my.aerofs.com";
-        public static final String TEAM_MANAGEMENT_LINK = ADMIN_PANEL_BASE + "/admin/users";
+        public static final String DASH_BOARD_BASE = "https://my.aerofs.com";
+        public static final String TEAM_MANAGEMENT_LINK = DASH_BOARD_BASE + "/admin/users";
 
         public static final String SP_POST_PARAM_PROTOCOL  = "protocol_vers";
         public static final String SP_POST_PARAM_DATA      = "data";
 
-        // Make sure to also update:
+        // When incrementing SP_PROTOCOL_VERSION, make sure to also update:
         // 1) src/web/development.ini
         // 2) src/web/production.ini
         // 3) syncdet_test/lib/param.py
-        // when incrementing SP_PROTOCOL_VERSION
+        // 4) code with a "WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE" comment
         public static final int SP_PROTOCOL_VERSION         = 20;
 
         public static final java.net.URL URL;

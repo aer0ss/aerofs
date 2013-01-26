@@ -42,7 +42,6 @@ import static com.aerofs.sp.server.lib.SPSchema.C_AC_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OWNER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_TI_FROM;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TIC;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TO;
 import static com.aerofs.sp.server.lib.SPSchema.C_TI_TS;
@@ -338,24 +337,23 @@ public class UserDatabase extends AbstractSQLDatabase
     }
 
     // TODO (WW) move it to a different database class?
-    public void insertSignupCode(String code, UserID from, UserID to)
+    public void insertSignupCode(String code, UserID to)
             throws SQLException
     {
-        insertSignupCode(code, from, to, System.currentTimeMillis());
+        insertSignupCode(code, to, System.currentTimeMillis());
     }
 
     // For testing only
     // TODO (WW) use DI instead
-    public void insertSignupCode(String code, UserID from, UserID to, long currentTime)
+    public void insertSignupCode(String code, UserID to, long currentTime)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.insert(T_TI, C_TI_TIC, C_TI_FROM, C_TI_TO, C_TI_TS));
+                DBUtil.insert(T_TI, C_TI_TIC, C_TI_TO, C_TI_TS));
 
         ps.setString(1, code);
-        ps.setString(2, from.toString());
-        ps.setString(3, to.toString());
-        ps.setTimestamp(4, new Timestamp(currentTime), UTC_CALANDER);
+        ps.setString(2, to.toString());
+        ps.setTimestamp(3, new Timestamp(currentTime), UTC_CALANDER);
         ps.executeUpdate();
     }
 

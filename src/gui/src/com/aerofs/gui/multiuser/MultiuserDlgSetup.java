@@ -8,6 +8,7 @@ import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
 import com.aerofs.gui.setup.AbstractDlgSetup;
 import com.aerofs.base.BaseParam.SP;
+import com.aerofs.labeling.L;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Shell;
@@ -33,7 +34,7 @@ public class MultiuserDlgSetup extends AbstractDlgSetup
     {
         if (GUI.get().ask(MessageType.QUESTION,
                 "Do you want to invite users to your team now?" +
-                " You can also do it later by visiting " + SP.ADMIN_PANEL_BASE + ".",
+                " You can also do it later on the " + L.PRODUCT + " web site.",
                 "Invite Users", "Later")) {
             GUIUtil.launch(SP.TEAM_MANAGEMENT_LINK);
         }

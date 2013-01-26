@@ -11,6 +11,7 @@ import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
+import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.session.HttpSessionUser;
@@ -104,11 +105,12 @@ public class SPServlet extends AeroServlet
     private final PasswordManagement _passwordManagement =
             new PasswordManagement(_db, _factUser, new PasswordResetEmailer());
     private final DeviceCertifiedEmailer _deviceCertifiedEmailer = new DeviceCertifiedEmailer();
+    private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
 
     private final SPService _service = new SPService(_db, _trans, _sessionUser,
             _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factOrgInvite,
             _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer,
-            _deviceCertifiedEmailer);
+            _deviceCertifiedEmailer, _requestToSignUpEmailer);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,

@@ -77,8 +77,6 @@ public class HTMLEmail implements IEmail {
         "                        <td width=\"10\"/>" +
         "                        <td><a style=\"color:#999999;\" href=\"http://www.twitter.com/aerofs\">Twitter</a></td>" +
         "                        <td width=\"10\"/>" +
-        "                        <td><a style=\"color:#999999;\" href=\"http://vote.aerofs.com/\">Vote for Features</a></td>" +
-        "                        <td width=\"10\"/>" +
         "                        <td><a style=\"color:#999999;\" href=\"http://support.aerofs.com/\">Support</a></td>" +
         "                        <td width=\"10\"/>" +
         "                        <td>" + unsubscribeText + "</td>" +

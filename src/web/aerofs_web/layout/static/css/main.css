@@ -41,6 +41,9 @@ div.input_container.submit {
 .datatable_body {
     margin-bottom: 15px;
 }
+[class^="icon-"], [class*=" icon-"] {
+    vertical-align: -2px;
+}
 a.delete_permission {
   color: #9d261d;
   text-decoration: none;
