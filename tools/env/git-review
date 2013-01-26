@@ -9,6 +9,9 @@
 REMOTE="origin"
 CHECK=1
 
+# Repo root is up two levels (tools/env) from here.
+REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../.. && pwd )"
+
 case x"$1" in
     x-n)
         CHECK=0
@@ -59,6 +62,17 @@ if [ "$CHECK" -ne 0 ]; then
         echo "Your commit contains formatting errors."
         echo "Please search your commit diff for the following lines and fix them:"
         echo "$FORMATTING_ISSUES"
+        exit 1
+    fi
+
+    # Check that unit tests were run and a report generated.  This doesn't
+    # guarantee that unit tests passed, but at least it'll remind people to run
+    # them.
+    REPORT_FILE="$REPO_ROOT/out.ant/reports/index.html"
+    if [ ! -f "$REPORT_FILE" ] ; then
+        echo "You don't appear to have run unit tests.  Please run them:"
+        echo "cd \"$REPO_ROOT\" && ant -Dmode=STAGING test_unit"
+        echo "(override possible with git review -n)"
         exit 1
     fi
 fi
