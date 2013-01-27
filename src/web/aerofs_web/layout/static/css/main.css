@@ -26,7 +26,8 @@ div.input_container a.btn {
 div.input_container.submit {
   margin-top: 25px;
 }
-.nav-list > .active > a, .nav-list > .active > a:hover {
+.nav-list > .active > a,
+.nav-list > .active > a:hover {
   background: transparent;
   text-shadow: none;
   font-weight: bolder;
@@ -35,14 +36,26 @@ div.input_container.submit {
 .page_block {
   margin-bottom: 30px;
 }
+.btn,
+.btn:hover {
+  color: #ffffff;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+.btn.active {
+  color: rgba(255, 255, 255, 0.75);
+}
+.btn {
+  line-height: 15.399999999999999pt;
+}
 .dataTables_wrapper table thead {
-    display:none;
+  display: none;
 }
 .datatable_body {
-    margin-bottom: 15px;
+  margin-bottom: 15px;
 }
-[class^="icon-"], [class*=" icon-"] {
-    vertical-align: -2px;
+[class^="icon-"],
+[class*=" icon-"] {
+  vertical-align: -2px;
 }
 a.delete_permission {
   color: #9d261d;

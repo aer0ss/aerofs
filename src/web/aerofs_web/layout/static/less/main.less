@@ -54,6 +54,27 @@ div.input_container.submit {
   margin-bottom: 30px;
 }
 
+// Use alternative buttons' styles for default buttons.
+// Ideally we should do ".btn { .btn-primary; }". However, this would require
+// including buttons.less and thus result in lots of uplicate lines in main.css
+// and with bootstrap.css.
+.btn,
+.btn:hover {
+  color: @white;
+  text-shadow: 0 -1px 0 rgba(0,0,0,.25);
+}
+
+.btn.active {
+  color: rgba(255,255,255,.75);
+}
+
+.btn {
+  // Since the default buttons are dark blues which makes them look bigger,
+  // their height needs to be shortened a bit. Bootstrap's default is
+  // @baseLineHeight = @baseFontSize * 1.5.
+  line-height: @baseFontSize * 1.4;
+}
+
 // Suppress datatables colume headers
 .dataTables_wrapper table thead {
   display: none;
