@@ -66,4 +66,14 @@ class webadmin {
         ensure => directory,
         owner  => "www-data",
     }
+
+    $STRIPE_PUBLISHABLE_KEY = hiera("stripe_publishable_key")
+    $STRIPE_SECRET_KEY = hiera("stripe_secret_key")
+    file{"/etc/uwsgi/apps-enabled/productionAeroFS.ini":
+        content => template("webadmin/productionAeroFS.ini.erb"),
+        owner => root,
+        group => root,
+        require => Package["aerofs-web"],
+        notify => Service["uwsgi"]
+    }
 }
