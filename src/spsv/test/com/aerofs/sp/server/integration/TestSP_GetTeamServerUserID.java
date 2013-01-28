@@ -35,9 +35,9 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
     {
         service.addOrganization("test", null, StripeCustomerID.TEST.getID());
 
-        trans.begin();
+        sqlTrans.begin();
         user.setLevel(AuthorizationLevel.USER);
-        trans.commit();
+        sqlTrans.commit();
 
         getTeamServerUserID();
     }

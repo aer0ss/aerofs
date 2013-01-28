@@ -39,5 +39,4 @@ public class SPClientFactory
                 SSLURLConnectionConfigurator.SSL_URL_CONNECTION_CONFIGURATOR :
                 NullURLConnectionConfigurator.NULL_URL_CONNECTION_CONFIGURATOR;
     }
-
 }

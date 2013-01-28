@@ -4,7 +4,7 @@ import struct
 import aerofs.command.gen.cmd_pb2
 import aerofs.command.gen.verkehr_pb2
 
-class CommandClient(object):
+class TransientCommandClient(object):
     """
     This class is an interface to the verkehr command channel.
     FIXME: can improve this class such that we can keep the connection open.
@@ -30,7 +30,7 @@ class CommandClient(object):
         ssl_sock.settimeout(self._socket_timeout)
         ssl_sock.connect((self._cmd_addr))
 
-        pb_bytes = CommandClient._to_pb(user_email, command_bytes)
+        pb_bytes = TransientCommandClient._to_pb(user_email, command_bytes)
 
         # Be sure to include the netty length header, so they can properly parse our request.
         ssl_sock.send(struct.pack(">H1", (len(pb_bytes))) + pb_bytes)
@@ -45,10 +45,10 @@ class CommandClient(object):
     # verkehr message.
     @staticmethod
     def _to_pb(user_email, command_bytes):
-        commands = aerofs.command.gen.cmd_pb2.Commands()
+        commands = aerofs.command.gen.cmd_pb2.TransientCommands()
 
         for command_byte in command_bytes:
-            command = aerofs.command.gen.cmd_pb2.Command()
+            command = aerofs.command.gen.cmd_pb2.TransientCommand()
             command.ParseFromString(command_byte)
             commands.commands.extend([command])
 

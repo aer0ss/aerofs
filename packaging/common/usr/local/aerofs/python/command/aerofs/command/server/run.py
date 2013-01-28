@@ -1,5 +1,5 @@
 """
-AeroFS Command Server -- Main Script.
+AeroFS Transient Command Server -- Main Script.
 
 This script is used to start the AeroFS command server. The command server is used to execute
 commands on client systems via Verkehr.
@@ -39,7 +39,7 @@ def main():
     else:
         log_level = logging.WARN
 
-    cmdsrv = aerofs.command.server.app.CommandServerApplication(
+    cmdsrv = aerofs.command.server.app.TransientCommandServerApplication(
             int(config.get('cmdsrv', 'request_port')),
             config.get('cmdsrv', 'logfile'),
             log_level,

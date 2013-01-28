@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase;
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DelayedScheduler;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;

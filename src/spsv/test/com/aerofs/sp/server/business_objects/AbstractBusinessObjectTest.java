@@ -4,6 +4,9 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.sp.server.lib.cert.CertificateDatabase;
+import com.aerofs.sp.server.lib.cert.CertificateGenerator;
+import com.aerofs.sp.server.lib.device.DeviceDatabase;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -24,6 +27,7 @@ import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.cert.Certificate;
 import org.mockito.Spy;
 
 import java.io.IOException;
@@ -31,13 +35,18 @@ import java.sql.SQLException;
 
 abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestWithSPDatabase
 {
-    @Spy protected final SPDatabase db = new SPDatabase(trans);
-    @Spy protected final OrganizationDatabase odb = new OrganizationDatabase(trans);
-    @Spy protected final UserDatabase udb = new UserDatabase(trans);
-    @Spy protected final SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
-    @Spy protected final EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
+    @Spy protected final SPDatabase db = new SPDatabase(sqlTrans);
+    @Spy protected final OrganizationDatabase odb = new OrganizationDatabase(sqlTrans);
+    @Spy protected final UserDatabase udb = new UserDatabase(sqlTrans);
+    @Spy protected final SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
+    @Spy protected final EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
     @Spy protected final OrganizationInvitationDatabase oidb =
-            new OrganizationInvitationDatabase(trans);
+            new OrganizationInvitationDatabase(sqlTrans);
+
+    @Spy protected final DeviceDatabase ddb = new DeviceDatabase(sqlTrans);
+    @Spy protected final CertificateDatabase cdb = new CertificateDatabase(sqlTrans);
+    @Spy protected final CertificateGenerator cgen = new CertificateGenerator();
+    @Spy protected final Certificate.Factory factCert = new Certificate.Factory(cdb);
 
     @Spy protected final Organization.Factory factOrg = new Organization.Factory();
     @Spy protected final SharedFolder.Factory factSharedFolder = new SharedFolder.Factory();
@@ -50,6 +59,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     {
         factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factSharedFolder.inject(sfdb, factUser);
+        factDevice.inject(ddb, cdb, cgen, factUser, factCert);
     }
 
     private int nextUserID = 123;

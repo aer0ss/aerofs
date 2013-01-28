@@ -1,7 +1,7 @@
 package com.aerofs.daemon.event.lib.imc;
 
 import com.aerofs.daemon.event.IEBIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 // N.B. core code must use CoreIMC.execute() etc
 //

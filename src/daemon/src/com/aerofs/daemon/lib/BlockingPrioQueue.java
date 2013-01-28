@@ -3,12 +3,17 @@ package com.aerofs.daemon.lib;
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
+
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.StrictLock;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.lib.ex.ExNoResource;
 
-public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, IDumpStatMisc {
+public class BlockingPrioQueue<T> implements IBlockingPrioritizedEventSink<T>, IDumpStatMisc
+{
 
     private final StrictLock _l;
     private final Condition _cvDeq;

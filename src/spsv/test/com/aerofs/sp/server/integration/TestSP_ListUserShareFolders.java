@@ -18,10 +18,8 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.List;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
 
 /**
  * This class doesn't test the ability to set ACL entries (which is is done by TestSP_ACL)
@@ -136,9 +134,9 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
         addOrganization();
 
         // add user 2 to the org
-        trans.begin();
+        sqlTrans.begin();
         factUser.create(USER_2).setOrganization(factUser.create(USER_1).getOrganization());
-        trans.commit();
+        sqlTrans.commit();
     }
 
     private List<PBSharedFolder> queryOtherUser()

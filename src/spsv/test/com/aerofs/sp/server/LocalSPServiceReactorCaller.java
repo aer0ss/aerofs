@@ -15,6 +15,9 @@ import com.aerofs.proto.Sp.SPServiceStub.SPServiceStubCallbacks;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.lib.db.SPDatabaseParams;
 import com.aerofs.servlets.lib.db.LocalTestDatabaseConfigurator;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
+import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
@@ -53,11 +56,11 @@ import static org.mockito.Mockito.mock;
 public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 {
     private final SPDatabaseParams _dbParams = new SPDatabaseParams();
-    private final SQLThreadLocalTransaction trans =
+    private final SQLThreadLocalTransaction sqlTrans =
             new SQLThreadLocalTransaction(_dbParams.getProvider());
     private final SPServiceReactor reactor;
 
-    private final UserDatabase udb = new UserDatabase(trans);
+    private final UserDatabase udb = new UserDatabase(sqlTrans);
 
     // On initialization, a single admin is added to the sp database to enable authenticated calls
     public static final UserID ADMIN_ID = UserID.fromInternal("testadmin@company.com");
@@ -76,13 +79,13 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         assert factEmailer != null;
 
-        SPDatabase db = new SPDatabase(trans);
-        DeviceDatabase ddb = new DeviceDatabase(trans);
-        CertificateDatabase certdb = new CertificateDatabase(trans);
-        EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
-        OrganizationDatabase odb = new OrganizationDatabase(trans);
-        SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
-        OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(trans);
+        SPDatabase db = new SPDatabase(sqlTrans);
+        DeviceDatabase ddb = new DeviceDatabase(sqlTrans);
+        CertificateDatabase certdb = new CertificateDatabase(sqlTrans);
+        EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
+        OrganizationDatabase odb = new OrganizationDatabase(sqlTrans);
+        SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
+        OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(sqlTrans);
 
         CertificateGenerator certgen = new CertificateGenerator();
 
@@ -112,10 +115,14 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
 
         SPActiveUserSessionTracker userTracker = new SPActiveUserSessionTracker();
 
-        SPService service = new SPService(db, trans, new MockSessionUser(),
+        PooledJedisConnectionProvider jedisConProvider = new PooledJedisConnectionProvider();
+        JedisThreadLocalTransaction jedisTrans = new JedisThreadLocalTransaction(jedisConProvider);
+        JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
+
+        SPService service = new SPService(db, sqlTrans, jedisTrans, new MockSessionUser(),
                 passwordManagement, certificateAuthenticator, factUser, factOrg, factOrgInvite,
                 factDevice, factCert, certdb, esdb, factSharedFolder, factEmailer,
-                deviceCertifiedEmailer, requestToSignUpEmailer);
+                deviceCertifiedEmailer, requestToSignUpEmailer, commandQueue);
 
         service.setUserTracker(userTracker);
         reactor = new SPServiceReactor(service);
@@ -135,10 +142,10 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 .toByteArray());
 
         // Add an admin to the db so that authenticated calls can be performed on the SPService
-        trans.begin();
+        sqlTrans.begin();
         udb.insertUser(ADMIN_ID, new FullName("first", "last"), cred, OrganizationID.DEFAULT,
                 AuthorizationLevel.ADMIN);
-        trans.commit();
+        sqlTrans.commit();
     }
 
     @Override

@@ -6,9 +6,7 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.transport.lib.INetworkStats;
 import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.TPUtil;
@@ -20,6 +18,8 @@ import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMach
 import com.aerofs.daemon.transport.xmpp.zephyr.client.nio.statemachine.StateMachineEvent;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;

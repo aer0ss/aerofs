@@ -4,6 +4,8 @@ node "sp.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
+    include redis::aof
+
     # install sp servlet
     class{"servlet::sp":
         mysql_password => hiera("mysql_password"),

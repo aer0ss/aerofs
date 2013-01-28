@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.tc;
 import java.util.HashSet;
 
 import com.aerofs.daemon.core.tc.TC.TCB;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExTimeout;

@@ -54,7 +54,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // set up TEST_USER_4
-        trans.begin();
+        sqlTrans.begin();
         udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
 
@@ -63,7 +63,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         sfdb.delete(SID.rootSID(USER_2));
         sfdb.delete(SID.rootSID(USER_3));
 
-        trans.commit();
+        sqlTrans.commit();
 
         published = mockAndCaptureVerkehrPublish();
     }
@@ -212,7 +212,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
             // must not reach here
             assertTrue(false);
         } catch (ExNotFound e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
 
         setSessionUser(USER_1);
@@ -387,7 +387,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
             assertTrue(false);
         } catch (Exception e) {
             // make sure we clean up after uncommitted transaction(s)
-            trans.handleException();
+            sqlTrans.handleException();
         }
 
         // ensure that nothing was published
@@ -417,7 +417,7 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
             assertTrue(false);
         } catch (ExNoPerm e) {
             // make sure we clean up after uncommitted transaction(s)
-            trans.handleException();
+            sqlTrans.handleException();
         }
 
         // ensure that nothing was published

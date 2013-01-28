@@ -1,4 +1,8 @@
-package com.aerofs.daemon.lib;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.lib.event;
 
 public enum Prio {
     // the smaller the cardinal, the higher the priority

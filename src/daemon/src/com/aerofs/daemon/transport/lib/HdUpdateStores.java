@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EOUpdateStores;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 class HdUpdateStores implements IEventHandler<EOUpdateStores> {
 

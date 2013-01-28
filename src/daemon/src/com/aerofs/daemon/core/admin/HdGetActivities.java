@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.lib.FullName;

@@ -1,8 +1,8 @@
 package com.aerofs.daemon.event.net.tx;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.event.IEvent;
 
 public class EOUnicastMessage implements IEvent, IOutputBuffer
 {

@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus;
 import com.aerofs.daemon.core.serverstatus.ServerConnectionStatus.Server;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames.DeviceInfo;
 import com.aerofs.lib.FullName;

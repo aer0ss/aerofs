@@ -25,15 +25,16 @@ public class TestSP_Preferences extends AbstractSPTest
     @Before
     public void setup()
     {
+        mockAndCaptureVerkehrDeliverPayload();
         setSessionUser(USER_1);
     }
 
     @Test
     public void shouldTrimUserAndDeviceNames() throws Exception
     {
-        trans.begin();
+        sqlTrans.begin();
         ddb.insertDevice(_did, USER_1, "name");
-        trans.commit();
+        sqlTrans.commit();
 
         service.setPreferences("   first ", " last   ", _did.toPB(), "  device names  ").get();
         GetPreferencesReply reply = service.getPreferences(_did.toPB()).get();

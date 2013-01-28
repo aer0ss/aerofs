@@ -3,6 +3,7 @@ option java_package = "com.aerofs.proto";
 option optimize_for = LITE_RUNTIME; // remove reflection
 
 import "common.proto";
+import "cmd.proto";
 
 /**
  * NOTE: When modifying the service declaration below, if you are not appending your new RPC
@@ -576,6 +577,31 @@ service SPService {
      * Required Auth Level: admin
      */
      rpc ListOrganizationInvitedUsers(Void) returns(ListOrganizationInvitedUsersReply);
+
+    /**
+     * Get the head of the command queue for a given device.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNotFound: if the specified device does not exist or does not belong to you.
+     */
+    rpc GetCommandQueueHead(GetCommandQueueHeadCall) returns(GetCommandQueueHeadReply);
+
+    /**
+     * Acknowledge the command at the head of the command queue for a given device. If the client
+     * is unable to process the command they should specify error = true and the command will be
+     * retried later.
+     *
+     * To reduce the number of messages transferred this call also returns the new head of this
+     * device's command queue.
+     *
+     * Required Auth Level: user
+     *
+     * Throws:
+     *   ExNotFound: if the specified device does not exist or does not belong to you.
+     */
+    rpc AckCommandQueueHead(AckCommandQueueHeadCall) returns(AckCommandQueueHeadReply);
 }
 
 message ListOrganizationInvitedUsersReply {
@@ -976,4 +1002,26 @@ message ListUserDevicesReply {
 message PBFullName {
     required string first_name = 1;
     required string last_name = 2;
+}
+
+message GetCommandQueueHeadCall {
+    required bytes device_id = 1;
+}
+
+message GetCommandQueueHeadReply {
+    optional Command command = 1;
+    required int64 queue_size = 2;
+}
+
+message AckCommandQueueHeadCall {
+    required bytes device_id = 1;
+    required uint64 epoch = 2;
+    required bool error = 3;
+}
+
+message AckCommandQueueHeadReply {
+    // This command is the command now at the head of the queue. Included in the ack reply to
+    // reduce the number of round trips when doing a full syncronization.
+    optional Command command = 1;
+    required int64 queue_size = 2;
 }

@@ -4,11 +4,11 @@
 
 package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.zephyr.core.Dispatcher;

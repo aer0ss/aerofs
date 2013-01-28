@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="powermockito">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib.test/powermock-mockito-1.5-full.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib.test/javassist-3.9.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib.test/testng-6.8.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib.test/powermock-mockito-1.5-full.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib.test/javassist-3.9.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../resource/client/common/lib.test/testng-6.8.jar!/" />
+    </SOURCES>
+  </library>
+</component>

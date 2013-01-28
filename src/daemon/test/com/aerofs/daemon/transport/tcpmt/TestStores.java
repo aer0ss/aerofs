@@ -6,11 +6,11 @@ package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.EIPresence;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.bf.BFSID;
 import com.aerofs.proto.Transport.PBTCPFilterAndSeq;
 import com.aerofs.proto.Transport.PBTCPStores;

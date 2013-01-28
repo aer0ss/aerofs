@@ -8,7 +8,6 @@ import java.sql.SQLException;
 
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
-import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Param;

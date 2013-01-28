@@ -1,6 +1,7 @@
 package com.aerofs.daemon.lib;
 
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.sched.Scheduler;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 
 // schedule core activities by a delay. scheduling during the activity schedules
 // the activity again after the same delay.

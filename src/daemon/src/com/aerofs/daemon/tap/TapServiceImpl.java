@@ -7,7 +7,7 @@ package com.aerofs.daemon.tap;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.PeerStreamMap;
 import com.aerofs.daemon.core.net.SVReporter;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IIncomingStream;

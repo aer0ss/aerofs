@@ -1,10 +1,10 @@
 package com.aerofs.daemon.core.net.throttling;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Limit;

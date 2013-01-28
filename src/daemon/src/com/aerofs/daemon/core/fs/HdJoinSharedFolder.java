@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.google.inject.Inject;
 

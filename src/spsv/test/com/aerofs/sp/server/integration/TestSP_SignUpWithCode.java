@@ -27,11 +27,11 @@ public class TestSP_SignUpWithCode extends AbstractSPTest
             throws SQLException
     {
         // emulate inviting to sign up
-        trans.begin();
+        sqlTrans.begin();
         User user = factUser.create(userID);
         code = user.addSignUpCode();
         esdb.insertEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
-        trans.commit();
+        sqlTrans.commit();
     }
 
     @Test

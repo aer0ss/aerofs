@@ -68,7 +68,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
             leaveSharedFolder(USER_1, SID.rootSID(USER_1));
             fail();
         } catch (ExBadArgs e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -83,7 +83,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
             leaveSharedFolder(USER_3, TEST_SID_1);
             fail();
         } catch (ExNotFound e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -95,7 +95,7 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
             leaveSharedFolder(USER_1, TEST_SID_1);
             fail();
         } catch (ExNotFound e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }

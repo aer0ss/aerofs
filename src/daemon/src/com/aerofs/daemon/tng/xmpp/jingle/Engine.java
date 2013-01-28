@@ -7,7 +7,7 @@ package com.aerofs.daemon.tng.xmpp.jingle;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.LRUCache;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.LRUCache.IEvictionListener;
 import com.aerofs.j.Jid;
 import com.aerofs.j.SWIGTYPE_p_cricket__Session;

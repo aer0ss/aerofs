@@ -1,6 +1,8 @@
-package com.aerofs.daemon.event.lib;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
 
-import com.aerofs.daemon.event.IEvent;
+package com.aerofs.lib.event;
 
 /**
  * The abstract class for all self-handling events. An event requires a separate handler object to

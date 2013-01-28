@@ -1,9 +1,9 @@
-package com.aerofs.daemon.lib;
+package com.aerofs.lib.sched;
 
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import org.apache.log4j.Logger;
 
 import java.util.concurrent.Callable;
@@ -12,9 +12,9 @@ public class ExponentialRetry
 {
     private static final Logger l = Util.l(ExponentialRetry.class);
 
-    private final Scheduler _sched;
+    private final IScheduler _sched;
 
-    public ExponentialRetry(Scheduler sched)
+    public ExponentialRetry(IScheduler sched)
     {
         _sched = sched;
     }

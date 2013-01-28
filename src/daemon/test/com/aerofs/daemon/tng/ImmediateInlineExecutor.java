@@ -1,6 +1,6 @@
 package com.aerofs.daemon.tng;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 
 public final class ImmediateInlineExecutor implements ISingleThreadedPrioritizedExecutor

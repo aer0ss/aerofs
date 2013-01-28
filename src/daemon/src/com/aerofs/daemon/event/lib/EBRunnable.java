@@ -1,5 +1,7 @@
 package com.aerofs.daemon.event.lib;
 
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+
 public class EBRunnable extends AbstractEBSelfHandling
 {
     private final Runnable _runnable;

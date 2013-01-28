@@ -2,10 +2,10 @@ package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.net.EIPresence;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.tcpmt.ARP.ARPChange;
 import com.aerofs.daemon.transport.tcpmt.ARP.IARPChangeListener;
 import com.aerofs.lib.Util;

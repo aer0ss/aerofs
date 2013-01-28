@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core;
 
-import com.aerofs.daemon.lib.ExponentialRetry;
+import com.aerofs.lib.sched.ExponentialRetry;
 import com.google.inject.Inject;
 
 /**

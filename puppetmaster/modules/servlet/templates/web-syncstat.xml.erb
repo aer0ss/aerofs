@@ -22,18 +22,18 @@
     <param-value>6379</param-value>
   </context-param>
 
-  <!-- initialization listener -->
+  <!-- Initialization listener -->
   <listener>
     <listener-class>com.aerofs.syncstat.server.SyncStatusLifecycleListener</listener-class>
   </listener>
 
-  <!-- servlets -->
+  <!-- Servlets -->
   <servlet>
     <servlet-name>ServletSyncStatus</servlet-name>
     <servlet-class>com.aerofs.syncstat.server.SyncStatusServlet</servlet-class>
   </servlet>
 
-  <!-- url mapping -->
+  <!-- URL mapping -->
   <servlet-mapping>
     <servlet-name>ServletSyncStatus</servlet-name>
     <url-pattern>/syncstat</url-pattern>

@@ -1,10 +1,10 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.event.IEBIMC;
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;

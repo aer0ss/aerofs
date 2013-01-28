@@ -17,8 +17,9 @@ import org.junit.rules.TestName;
 import org.mockito.MockitoAnnotations;
 
 import com.aerofs.lib.Util;
+import org.powermock.modules.testng.PowerMockTestCase;
 
-public abstract class AbstractTest
+public abstract class AbstractTest extends PowerMockTestCase
 {
     private static boolean _log4JInited;
 

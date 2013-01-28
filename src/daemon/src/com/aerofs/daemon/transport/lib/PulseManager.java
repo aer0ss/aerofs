@@ -6,10 +6,10 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.EIPulseStopped;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.IntegerID;
 import com.aerofs.proto.Transport;

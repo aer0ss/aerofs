@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Util;
 
 import javax.annotation.Nullable;

@@ -4,13 +4,16 @@ import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.OutArg;
 
 /**
  * We don't use the name of "PriorityQueue" to avid conflict with
  * java.util.PriorityQueue
  */
-public class PrioQueue<T> implements IDumpStatMisc {
+public class PrioQueue<T> implements IDumpStatMisc
+{
 
     // we could implement this class using PriorityQueue, but according to
     // java doc, "if multiple elements are tied for least value, the head is

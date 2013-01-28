@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 import com.aerofs.base.C;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.Cfg;
 
 /**

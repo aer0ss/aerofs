@@ -1,12 +1,14 @@
 package com.aerofs.daemon.transport.xmpp;
 
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.Base64;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.event.net.EIPresence;
@@ -14,9 +16,7 @@ import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.daemon.transport.lib.IPipeController;

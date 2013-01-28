@@ -6,7 +6,7 @@ import com.aerofs.daemon.core.net.IUnicastOutputLayer;
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

@@ -21,10 +21,10 @@ class RequestPusher(threading.Thread):
 
         self._resend_secs = resend_secs
         self._l = aerofs.command.server.log.get_logger('cmdsrv-pusher', log_handler, log_level)
-        self._verkehr = aerofs.command.server.verkehr.CommandClient(
+        self._verkehr = aerofs.command.server.verkehr.TransientCommandClient(
             verkehr_cmd_host,
             verkehr_cmd_port)
-        self._command_db = aerofs.command.server.db.CommandDatabase(log_handler, log_level)
+        self._command_db = aerofs.command.server.db.TransientCommandDatabase(log_handler, log_level)
         self._poke_queue = multiprocessing.Queue()
 
         # Thread init.

@@ -1,13 +1,13 @@
 package com.aerofs.daemon.core.net.dtls;
 
+import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.net.dtls.DTLSLayer.Footer;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;

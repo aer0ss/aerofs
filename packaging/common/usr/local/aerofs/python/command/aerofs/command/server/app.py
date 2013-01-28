@@ -4,7 +4,7 @@ import aerofs.command.server.log
 import aerofs.command.server.web.request
 import aerofs.command.server.pusher
 
-class CommandServerApplication(threading.Thread):
+class TransientCommandServerApplication(threading.Thread):
     """
     This class encapsulates the functionality related to the command server application. It is
     really just a wrapper for the other threads that are required by the application.

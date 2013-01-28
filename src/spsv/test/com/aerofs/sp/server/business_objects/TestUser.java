@@ -4,6 +4,10 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.base.id.DID;
+import com.aerofs.base.id.UniqueID;
+import com.aerofs.lib.ex.ExDeviceIDAlreadyExists;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
@@ -16,7 +20,10 @@ import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.aerofs.sp.server.lib.device.Device;
+import com.google.common.collect.ImmutableList;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import junit.framework.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -178,5 +185,44 @@ public class TestUser extends AbstractBusinessObjectTest
         assertEquals(sfRoot.getMemberRoleNullable(tsUserNew), Role.EDITOR);
         assertEquals(sf1.getMemberRoleNullable(tsUserNew), Role.EDITOR);
         assertEquals(sf2.getMemberRoleNullable(tsUserNew), Role.EDITOR);
+    }
+
+    @Test
+    public void shouldListPeerDevices()
+            throws SQLException, ExDeviceIDAlreadyExists, ExAlreadyExist, ExNotFound, ExFormatError,
+            IOException, ExNoPerm
+    {
+        User user1 = newUser();
+        User user2 = newUser();
+        User user3 = newUser();
+        User user4 = newUser();
+
+        user1.save(new byte[0], new FullName("f1", "l1"), factOrg.getDefault());
+        user2.save(new byte[0], new FullName("f2", "l2"), factOrg.getDefault());
+        user3.save(new byte[0], new FullName("f3", "l3"), factOrg.getDefault());
+        user4.save(new byte[0], new FullName("f4", "l4"), factOrg.getDefault());
+
+        // The 4 devices we will expect.
+        factDevice.create(new DID(UniqueID.generate())).save(user1, "Device1a");
+        factDevice.create(new DID(UniqueID.generate())).save(user1, "Device1c");
+        factDevice.create(new DID(UniqueID.generate())).save(user2, "Device2");
+        factDevice.create(new DID(UniqueID.generate())).save(user3, "Device3a");
+        factDevice.create(new DID(UniqueID.generate())).save(user3, "Device3b");
+        factDevice.create(new DID(UniqueID.generate())).save(user3, "Device3c");
+        factDevice.create(new DID(UniqueID.generate())).save(user4, "Device4");
+
+        SharedFolder sf = factSharedFolder.create(SID.generate());
+
+        sf.save("Test Folder", user1);
+        sf.addMemberACL(user2, Role.EDITOR);
+        sf.addMemberACL(user3, Role.EDITOR);
+
+        ImmutableList<Device> userDevices = user1.listUserDevices();
+        ImmutableList<Device> peerDevices = user1.listPeerDevices();
+
+        // Only my devices.
+        Assert.assertEquals(2, userDevices.size());
+        // All devices that I share with (including my own devices).
+        Assert.assertEquals(6, peerDevices.size());
     }
 }

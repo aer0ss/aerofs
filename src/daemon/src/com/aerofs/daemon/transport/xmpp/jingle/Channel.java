@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.xmpp.jingle;
 
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.daemon.transport.xmpp.XUtil;

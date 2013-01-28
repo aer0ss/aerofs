@@ -211,13 +211,23 @@ public class SPDatabase extends AbstractSQLDatabase
      */
     public static class UserDevice
     {
-        public final DID _did;
-        public final UserID _userId;
+        private final DID _did;
+        private final UserID _userId;
 
         public UserDevice(DID did, UserID userId)
         {
             _did = did;
             _userId = userId;
+        }
+
+        public DID getDID()
+        {
+            return _did;
+        }
+
+        public UserID getUserID()
+        {
+            return _userId;
         }
 
         @Override
@@ -238,6 +248,7 @@ public class SPDatabase extends AbstractSQLDatabase
         }
     }
 
+    // TODO (MP) refactor this.
     /**
      * Get the interested devices set for a given SID belonging to a specific owner (i.e. the set
      * of devices that sync with a particular shared folder).
@@ -245,11 +256,12 @@ public class SPDatabase extends AbstractSQLDatabase
      * Note that all the devices belonging to the owner are always included in the interested
      * devices set (regardless of exclusion).
      */
-    public Set<UserDevice> getInterestedDevicesSet(SID sid, UserID ownerId)
+    public Set<UserDevice> getInterestedDevices(SID sid, UserID ownerId)
             throws SQLException, ExFormatError
     {
         Set<UserDevice> result = Sets.newHashSet();
 
+        // People you share with.
         PreparedStatement ps = prepareStatement(
                 "select " + C_DEVICE_ID + ", " + C_DEVICE_OWNER_ID + " from " + T_AC +
                         " acl join " + T_DEVICE + " dev on " + C_AC_USER_ID + " = " +
@@ -269,9 +281,10 @@ public class SPDatabase extends AbstractSQLDatabase
             rs.close();
         }
 
+        // Your own devices.
         PreparedStatement psGIDSDevice = prepareStatement(
-                "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " +
-                        C_DEVICE_OWNER_ID + " = ?");
+                "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " + C_DEVICE_OWNER_ID +
+                        " = ?");
         psGIDSDevice.setString(1, ownerId.toString());
         rs = psGIDSDevice.executeQuery();
         try {

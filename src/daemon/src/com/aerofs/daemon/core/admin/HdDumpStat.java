@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.google.inject.Inject;
 

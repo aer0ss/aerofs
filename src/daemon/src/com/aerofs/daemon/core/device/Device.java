@@ -12,7 +12,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.aerofs.daemon.core.net.Transports;
-import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.id.DID;

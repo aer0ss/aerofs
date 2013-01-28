@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.status;
 
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Path;
 import com.aerofs.proto.PathStatus.PBPathStatus;
 import com.google.common.collect.Lists;

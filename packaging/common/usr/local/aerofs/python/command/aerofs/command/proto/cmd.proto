@@ -1,7 +1,22 @@
-package com.aerofs.proto;
+option java_package = "com.aerofs.proto";
+option optimize_for = LITE_RUNTIME; // remove reflection
+
+// TODO (MP) eventually elimiate transient commands.
 
 /**
- * Steps to add a command:
+ * There are two types of commands: persistent commands (new) and transient commands (old).
+ *
+ * 1. Persistent commands: these commands use the persistent reqis queue on SP and are guaranteed to
+ *    be delivered to clients.
+ *
+ * 2. Transient commands: these commands use the command server redis queue and are not guaranteed
+ *    to be delivered to clients.
+ *
+ * Eventually we will eliminate transient commands in favor of persistent commands, but for now they
+ * will co-exist.
+ *
+ *
+ * Steps to add a transient command:
  *
  * 1. Edit this file to add a CommandType.
  * 2. Edit packaging/python/command/aerofs/command/client/request.py to add support for the command
@@ -11,10 +26,10 @@ package com.aerofs.proto;
  */
 
 //
-// Command Types
+// Transient command messages and enums.
 //
 
-enum CommandType {
+enum TransientCommandType {
     UPLOAD_DATABASE = 0;
 
     CHECK_UPDATE = 1;
@@ -28,25 +43,39 @@ enum CommandType {
     LOG_THREADS = 3;
 }
 
-//
-// Redis and Client Side Messages
-//
-
-message Commands {
-    repeated Command commands = 1;
+message TransientCommands {
+    repeated TransientCommand commands = 1;
 }
 
-message Command {
+message TransientCommand {
     required uint64 command_id = 1;
-    required CommandType type = 2;
+    required TransientCommandType type = 2;
 }
 
-//
-// Command Request
-//
-
-message CommandRequest {
+message TransientCommandRequest {
     required uint32 ttl_hours = 1;
     required string user_email = 2;
-    required Command command = 3;
+    required TransientCommand command = 3;
+}
+
+//
+// Persistent command messages and enums.
+//
+
+enum CommandType {
+    // One or more device names have been updated and the client must update invalidate local cache
+    // of device names.
+    INVALIDATE_DEVICE_NAMES = 0;
+
+    // One or more user first/last name pairs have been updated and the client must invalidate their
+    // local cache of user names.
+    INVALIDATE_USER_NAMES = 1;
+
+    // More command types can be added here...
+}
+
+// Command payload that is sent via verkehr.
+message Command {
+    required uint64 epoch = 1;
+    required CommandType type = 2;
 }

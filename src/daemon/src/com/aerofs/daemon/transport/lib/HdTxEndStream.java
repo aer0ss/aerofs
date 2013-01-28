@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOTxEndStream;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 public class HdTxEndStream implements IEventHandler<EOTxEndStream> {
 

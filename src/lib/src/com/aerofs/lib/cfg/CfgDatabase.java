@@ -63,7 +63,8 @@ public class CfgDatabase
         SHELLEXT_CHECKSUM("shellext_checksum", ""),
 
         // Config for command channel.
-        CMD_CHANNEL_ID("cmd_channel_id", 0),
+        TRANSIENT_CMD_CHANNEL_ID("cmd_channel_id", 0), // TODO (MP) eventually remove this.
+        CMD_CHANNEL_ID("command_channel_id", 0),
 
         // Config for bandwidth throttling
         MAX_DOWN_RATE("max_down_rate", 0),  // 0 is unlimited

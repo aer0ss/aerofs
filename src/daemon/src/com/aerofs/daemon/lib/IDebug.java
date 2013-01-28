@@ -5,6 +5,9 @@
 
 package com.aerofs.daemon.lib;
 
+import com.aerofs.lib.IDumpStat;
+import com.aerofs.lib.IDumpStatMisc;
+
 /**
  * Implemented by classes that want to provide both structured and unstructured
  * debugging information. This is a meta-interface that combines both

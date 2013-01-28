@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.tng.base.pipeline.IConnection;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
 import com.aerofs.daemon.tng.ex.ExTransport;
@@ -13,7 +13,7 @@ import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
 
-import static com.aerofs.daemon.lib.Prio.LO;
+import static com.aerofs.lib.event.Prio.LO;
 import static com.aerofs.daemon.tng.base.ConnectionEvent.Type.CONNECT;
 import static com.aerofs.daemon.tng.base.ConnectionEvent.Type.DISCONNECT;
 import static com.aerofs.testlib.FutureAssert.assertCompletionFutureChainedProperly;

@@ -28,7 +28,7 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
     private static final UserID TEST_USER1 = UserID.fromInternal("test@test.com");
     private static final UserID TEST_USER2 = UserID.fromInternal("test2@test.com");
 
-    protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
+    protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
 
     @Test
     public void shouldSubscribeUserToOneCategory()

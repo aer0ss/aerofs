@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.xmpp.routing;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 
 import java.io.IOException;

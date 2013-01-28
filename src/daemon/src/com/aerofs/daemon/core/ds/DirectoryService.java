@@ -44,7 +44,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;

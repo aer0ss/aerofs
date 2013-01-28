@@ -6,7 +6,7 @@ import com.aerofs.base.id.JabberID;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.IMaxcast;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.OutArg;

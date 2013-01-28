@@ -1,6 +1,6 @@
 package com.aerofs.daemon.event.net.tng.rx;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.rx.IInputBuffer;
 import com.aerofs.daemon.event.net.tng.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;

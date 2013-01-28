@@ -12,6 +12,8 @@ import com.aerofs.daemon.core.admin.HdExportRevision;
 import com.aerofs.daemon.core.admin.HdGetACL;
 import com.aerofs.daemon.core.admin.HdGetActivities;
 import com.aerofs.daemon.core.admin.HdHeartbeat;
+import com.aerofs.daemon.core.admin.HdInvalidateDeviceNameCache;
+import com.aerofs.daemon.core.admin.HdInvalidateUserNameCache;
 import com.aerofs.daemon.core.admin.HdListConflicts;
 import com.aerofs.daemon.core.admin.HdListExpelledObjects;
 import com.aerofs.daemon.core.admin.HdListRevChildren;
@@ -56,6 +58,8 @@ import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
+import com.aerofs.daemon.event.admin.EIInvalidateDeviceNameCache;
+import com.aerofs.daemon.event.admin.EIInvalidateUserNameCache;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.admin.EIListConflicts;
@@ -144,6 +148,8 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdHeartbeat _hdHeartbeat;
     private final HdGetActivities _hdGetActivities;
     private final HdDownloadPacket _hdDownloadPacket;
+    private final HdInvalidateUserNameCache _hdInvalidateUserNameCache;
+    private final HdInvalidateDeviceNameCache _hdInvalidateDeviceNameCache;
 
     @Inject
     public CoreEventHandlerRegistrar(HdCreateObject hdco, HdMoveObject hdMoveObject,
@@ -166,7 +172,9 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdListRevHistory hdListRevHistory, HdExportRevision hdExportRevision,
             HdGetSyncStatus hdGetSyncStatus, HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat, HdGetActivities hdGetActivities,
-            HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder)
+            HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder,
+            HdInvalidateUserNameCache hdInvalidateUserNameCache,
+            HdInvalidateDeviceNameCache hdInvalidateDeviceNameCache)
     {
         _hdco = hdco;
         _hdMoveObject = hdMoveObject;
@@ -213,6 +221,8 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdHeartbeat = hdHeartbeat;
         _hdGetActivities = hdGetActivities;
         _hdDownloadPacket = hdDownloadPacket;
+        _hdInvalidateUserNameCache = hdInvalidateUserNameCache;
+        _hdInvalidateDeviceNameCache = hdInvalidateDeviceNameCache;
     }
 
     @Override
@@ -257,6 +267,8 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIExportRevision.class, _hdExportRevision)
                 .setHandler_(EIHeartbeat.class, _hdHeartbeat)
                 .setHandler_(EIGetActivities.class, _hdGetActivities)
+                .setHandler_(EIInvalidateUserNameCache.class, _hdInvalidateUserNameCache)
+                .setHandler_(EIInvalidateDeviceNameCache.class, _hdInvalidateDeviceNameCache)
 
                 // status events
                 .setHandler_(EIGetSyncStatus.class, _hdGetSyncStatus)

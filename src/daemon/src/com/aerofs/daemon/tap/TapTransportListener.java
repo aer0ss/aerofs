@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tap;
 
 import com.aerofs.daemon.core.net.PeerStreamMap;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.ITransportListener;
 import com.aerofs.daemon.tng.ex.ExStreamAlreadyExists;

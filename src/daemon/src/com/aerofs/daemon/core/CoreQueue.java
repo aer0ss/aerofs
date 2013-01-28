@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
 import com.aerofs.daemon.lib.DaemonParam;
 

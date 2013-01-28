@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.net.throttling;
 
-import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.Util;
 import javax.annotation.Nonnull;
 

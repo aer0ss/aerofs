@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.tng.ImmediateInlineExecutor;
 import com.aerofs.daemon.tng.base.pipeline.IPipeline;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineEvent;
@@ -24,8 +24,8 @@ import org.mockito.stubbing.Answer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.aerofs.daemon.lib.Prio.HI;
-import static com.aerofs.daemon.lib.Prio.LO;
+import static com.aerofs.lib.event.Prio.HI;
+import static com.aerofs.lib.event.Prio.LO;
 import static com.aerofs.daemon.tng.base.ConnectionEvent.Type.CONNECT;
 import static com.aerofs.daemon.tng.base.ConnectionEvent.Type.DISCONNECT;
 import static com.aerofs.testlib.FutureAssert.assertCompletionFutureChainedProperly;

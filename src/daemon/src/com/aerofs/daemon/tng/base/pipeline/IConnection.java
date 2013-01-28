@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base.pipeline;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.google.common.util.concurrent.ListenableFuture;
 
 public interface IConnection

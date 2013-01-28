@@ -16,6 +16,9 @@ public class SPParam
     public static final String VERKEHR_ADMIN_PORT_INIT_PARAMETER = "verkehr_admin_port";
     public static final String VERKEHR_CACERT_INIT_PARAMETER = "verkehr_cacert";
 
+    public static final String REDIS_HOST_INIT_PARAMETER = "redis_host";
+    public static final String REDIS_PORT_INIT_PARAMETER = "redis_port";
+
     public static final String SP_DATABASE_REFERENCE_PARAMETER = "sp_database_resource_reference";
 
     // Context attributes.

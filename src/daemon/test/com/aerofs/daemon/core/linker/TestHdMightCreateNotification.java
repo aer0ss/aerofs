@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.linker;
 
 import com.aerofs.daemon.core.linker.event.EIMightCreateNotification;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Util;

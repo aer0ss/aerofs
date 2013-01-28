@@ -10,13 +10,13 @@ import javax.annotation.Nullable;
 import com.aerofs.daemon.core.device.DevicePresence;
 import com.aerofs.daemon.core.device.OPMDevices;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.lib.IDumpStatMisc;
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.AntiEntropy;
 import com.aerofs.daemon.core.collector.Collector;
 import com.aerofs.daemon.core.collector.SenderFilters;
 import com.aerofs.daemon.core.device.Device;
-import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

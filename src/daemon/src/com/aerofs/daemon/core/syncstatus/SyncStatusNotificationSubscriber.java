@@ -4,11 +4,11 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.verkehr.AbstractVerkehrListener;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.ExponentialRetry;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.sched.ExponentialRetry;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalDID;
-import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.SpNotifications.PBSyncStatNotification;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -30,11 +30,10 @@ public class SyncStatusNotificationSubscriber
 
     @Inject
     public SyncStatusNotificationSubscriber(VerkehrNotificationSubscriber subscriber,
-            CfgLocalUser localUser, CfgLocalDID localDID, CoreQueue q, CoreScheduler sched,
-            SyncStatusSynchronizer sync)
+            CfgLocalDID localDID, CoreQueue q, CoreScheduler sched, SyncStatusSynchronizer sync)
     {
         _subscriber = subscriber;
-        _topic = localDID.get().toStringFormal() + localUser.get();
+        _topic = Param.SSS_CHANNEL_TOPIC_PREFIX + localDID.get().toStringFormal();
         _listener = new VerkehrListener(q, new ExponentialRetry(sched), sync);
     }
 

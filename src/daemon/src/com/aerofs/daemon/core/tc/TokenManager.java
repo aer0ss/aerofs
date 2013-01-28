@@ -10,10 +10,11 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.event.Prio;
 import org.apache.log4j.Logger;
 
-import com.aerofs.daemon.lib.IDumpStatMisc;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;

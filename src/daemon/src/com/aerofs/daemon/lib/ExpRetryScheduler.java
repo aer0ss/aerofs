@@ -4,7 +4,8 @@
 
 package com.aerofs.daemon.lib;
 
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.sched.Scheduler;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;

@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.tcpmt;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

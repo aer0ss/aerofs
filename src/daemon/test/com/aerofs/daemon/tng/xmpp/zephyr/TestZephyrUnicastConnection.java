@@ -3,7 +3,7 @@ package com.aerofs.daemon.tng.xmpp.zephyr;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.net.ZephyrConstants;
 import com.aerofs.daemon.core.net.link.ILinkStateService;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.ImmediateInlineExecutor;
 import com.aerofs.daemon.tng.base.WireData;

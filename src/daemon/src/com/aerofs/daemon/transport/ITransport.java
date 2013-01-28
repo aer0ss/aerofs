@@ -1,11 +1,11 @@
 package com.aerofs.daemon.transport;
 
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.IModule;
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
 import com.aerofs.daemon.lib.IDebug;
 import com.aerofs.daemon.transport.lib.IIdentifier;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 
 import java.util.Set;
 

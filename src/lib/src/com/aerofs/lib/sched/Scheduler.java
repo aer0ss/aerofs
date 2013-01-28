@@ -1,11 +1,17 @@
-package com.aerofs.daemon.lib;
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
+package com.aerofs.lib.sched;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
 
 public class Scheduler implements IScheduler
 {

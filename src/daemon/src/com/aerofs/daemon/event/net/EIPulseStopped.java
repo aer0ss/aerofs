@@ -4,7 +4,7 @@
  */
 package com.aerofs.daemon.event.net;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.base.id.DID;
 

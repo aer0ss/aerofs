@@ -1,9 +1,9 @@
 package com.aerofs.daemon.event.net.rx;
 
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.event.IEvent;
 
 import java.io.ByteArrayInputStream;
 

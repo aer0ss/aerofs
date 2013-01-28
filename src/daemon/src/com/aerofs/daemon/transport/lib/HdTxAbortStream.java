@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOTxAbortStream;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.StreamManager.OutgoingStream;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;

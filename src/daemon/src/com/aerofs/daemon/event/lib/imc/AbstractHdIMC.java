@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.event.IEBIMC;
 import com.aerofs.daemon.event.IEventHandler;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 
 public abstract class AbstractHdIMC<E extends IEBIMC> implements IEventHandler<E> {

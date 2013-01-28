@@ -3,8 +3,8 @@ package com.aerofs.daemon.event.net;
 import java.util.Collection;
 import java.util.Collections;
 
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.base.id.SID;
 import com.google.common.collect.ImmutableList;

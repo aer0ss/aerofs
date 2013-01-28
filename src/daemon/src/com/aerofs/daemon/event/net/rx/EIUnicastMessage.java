@@ -1,6 +1,6 @@
 package com.aerofs.daemon.event.net.rx;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.base.id.SID;
 

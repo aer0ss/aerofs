@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOChunk;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.StreamManager.OutgoingStream;
 
 // cannot use AbstractHdIMC here as we can't reply with okay until the message

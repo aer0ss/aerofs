@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.lib.async;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 import java.util.concurrent.Executor;
 

@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;

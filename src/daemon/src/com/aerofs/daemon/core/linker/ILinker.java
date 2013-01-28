@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.linker;
 
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.IStartable;
 import com.google.inject.Inject;
 

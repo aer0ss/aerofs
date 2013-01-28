@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.verkehr;
 
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber.IVerkehrListener;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
 
 /**
  *

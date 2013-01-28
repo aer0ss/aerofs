@@ -34,9 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// FIXME TODO (huguesb): the local DB is never invalidated when server knowledge change
-// FIXME TODO (WW): DO NOT put business logic in database packages (daemon.lib.db). Move this class
-//      to elsewhere.
+// FIXME TODO (WW): DO NOT put business logic in database packages (daemon.lib.db). Move this class.
 
 /**
  * Wrapper around DID2User and UserAndDeviceNameDatabase that can make SP calls when the content
@@ -242,5 +240,17 @@ public class UserAndDeviceNames
     public @Nullable FullName getUserNameNullable_(UserID userId) throws SQLException
     {
         return _udndb.getUserNameNullable_(userId);
+    }
+
+    public void clearUserNameCache()
+            throws SQLException
+    {
+        _udndb.clearUserNameCache();
+    }
+
+    public void clearDeviceNameCache()
+            throws SQLException
+    {
+        _udndb.clearDeviceNameCache();
     }
 }

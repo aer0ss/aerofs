@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.CoreQueue;
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
 import com.aerofs.daemon.event.net.tng.EIPresence;
 import com.aerofs.daemon.event.net.tng.Endpoint;
@@ -15,7 +15,7 @@ import com.aerofs.daemon.event.net.tng.rx.EIMaxcastMessage;
 import com.aerofs.daemon.event.net.tng.rx.EIStreamAborted;
 import com.aerofs.daemon.event.net.tng.rx.EIStreamBegun;
 import com.aerofs.daemon.event.net.tng.rx.EIUnicastMessage;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.IIncomingStream;
 import com.aerofs.daemon.tng.ITransport;

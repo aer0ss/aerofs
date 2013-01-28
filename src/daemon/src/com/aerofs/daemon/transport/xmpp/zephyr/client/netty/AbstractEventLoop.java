@@ -1,7 +1,7 @@
 package com.aerofs.daemon.transport.xmpp.zephyr.client.netty;
 
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.OutArg;
 
 /**

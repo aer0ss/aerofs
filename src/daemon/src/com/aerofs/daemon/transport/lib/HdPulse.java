@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.IPulseEvent;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.Util;
 import org.apache.log4j.Logger;

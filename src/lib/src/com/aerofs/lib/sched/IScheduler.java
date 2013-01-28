@@ -1,11 +1,10 @@
 /*
- * Created by Allen A. George, Air Computing Inc.
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
-package com.aerofs.daemon.lib;
+package com.aerofs.lib.sched;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 
 /**
  * To be implemented by any classes that allow events to be scheduled for some

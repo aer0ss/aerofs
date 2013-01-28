@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.linker.Linker;
 import com.aerofs.daemon.core.linker.notifier.INotifier;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.injectable.InjectableJNotify;
 import com.google.common.collect.Sets;

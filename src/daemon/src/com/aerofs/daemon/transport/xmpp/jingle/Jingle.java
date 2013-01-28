@@ -7,7 +7,7 @@ import com.aerofs.base.id.JabberID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.INetworkStats;
 import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.xmpp.ISignalledPipe;

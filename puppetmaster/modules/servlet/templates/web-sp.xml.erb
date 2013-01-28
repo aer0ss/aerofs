@@ -1,7 +1,10 @@
+  <!-- CA -->
   <context-param>
     <param-name>ca_url</param-name>
     <param-value>http://joan.aerofs.com:1029/prod/</param-value>
   </context-param>
+
+  <!-- Verkehr -->
   <context-param>
     <param-name>verkehr_host</param-name>
     <param-value>verkehr.aerofs.com</param-value>
@@ -19,21 +22,28 @@
     <param-value>/etc/ssl/certs/AeroFS_CA.pem</param-value>
   </context-param>
 
-  <!-- initialization listener -->
+  <!-- Redis -->
+  <context-param>
+    <param-name>redis_host</param-name>
+    <param-value>localhost</param-value>
+  </context-param>
+  <context-param>
+    <param-name>redis_port</param-name>
+    <param-value>6379</param-value>
+  </context-param>
 
+  <!-- Initialization listener -->
   <listener>
     <listener-class>com.aerofs.sp.server.SPLifecycleListener</listener-class>
   </listener>
 
-  <!-- servlets -->
-
+  <!-- Servlets -->
   <servlet>
     <servlet-name>ServletSP</servlet-name>
     <servlet-class>com.aerofs.sp.server.SPServlet</servlet-class>
   </servlet>
 
-  <!-- url mapping -->
-
+  <!-- URL mapping -->
   <servlet-mapping>
     <servlet-name>ServletSP</servlet-name>
     <url-pattern>/sp</url-pattern>

@@ -128,6 +128,23 @@ public class Device
         }
     }
 
+    public void throwIfDoesNotExist()
+            throws ExNotFound, SQLException
+    {
+        if (!exists()) {
+            throw new ExNotFound();
+        }
+    }
+
+    // Throw the same exception as above to avoid brute force discovery of devices.
+    public void throwIfNotOwner(User owner)
+            throws ExNotFound, SQLException
+    {
+        if (!owner.equals(getOwner())) {
+            throw new ExNotFound();
+        }
+    }
+
     @Override
     public int hashCode()
     {

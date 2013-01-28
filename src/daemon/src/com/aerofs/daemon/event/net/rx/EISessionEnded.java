@@ -1,7 +1,7 @@
 package com.aerofs.daemon.event.net.rx;
 
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.net.Endpoint;
+import com.aerofs.lib.event.IEvent;
 
 // N.B. this message must be delivered successfully. i.e. you can't drop the
 // message due to flow control.
@@ -9,7 +9,8 @@ import com.aerofs.daemon.event.net.Endpoint;
 // It's safe to issue this event multiple times for the same end point. The core
 // ignores this event for unknown end points.
 //
-public class EISessionEnded implements IEvent {
+public class EISessionEnded implements IEvent
+{
 
     private final Endpoint _ep;
     private final boolean _out;

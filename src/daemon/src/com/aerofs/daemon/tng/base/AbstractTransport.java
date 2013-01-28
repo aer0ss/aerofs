@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.base;
 
 import com.aerofs.daemon.core.net.tng.Preference;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
 import com.aerofs.daemon.tng.ITransport;
@@ -19,8 +19,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import java.io.PrintStream;
-
-import static com.aerofs.daemon.lib.Prio.LO;
 
 public abstract class AbstractTransport implements ITransport
 {
@@ -211,7 +209,7 @@ public abstract class AbstractTransport implements ITransport
                 l.info("get muod");
                 returned.chain(_maxcastService.getMaxcastUnreachableOnlineDevices_());
             }
-        }, LO);
+        }, Prio.LO);
 
         return returned;
     }
@@ -232,7 +230,7 @@ public abstract class AbstractTransport implements ITransport
                 l.info("update store interest");
                 returned.chain(_maxcastService.updateLocalStoreInterest_(added, removed));
             }
-        }, LO);
+        }, Prio.LO);
 
         return returned;
     }

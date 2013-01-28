@@ -2,7 +2,7 @@ package com.aerofs.daemon.core;
 
 import com.google.inject.Inject;
 
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.sched.Scheduler;
 
 public class CoreScheduler extends Scheduler
 {

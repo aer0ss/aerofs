@@ -5,7 +5,7 @@
 package com.aerofs.daemon.event.net.tng;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.tng.ITransport;
 import com.aerofs.base.id.SID;
 

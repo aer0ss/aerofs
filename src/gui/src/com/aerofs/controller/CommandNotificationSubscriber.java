@@ -1,23 +1,29 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.controller;
 
-import com.aerofs.base.C;
+import com.aerofs.base.BaseParam.SP;
+import com.aerofs.base.id.DID;
+import com.aerofs.gui.GuiScheduler;
 import com.aerofs.lib.Param;
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
-import com.aerofs.base.id.UserID;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExBadArgs;
+import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
-import com.aerofs.sv.client.SVClient;
+import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.proto.Cmd.Command;
-import com.aerofs.proto.Cmd.Commands;
-import com.aerofs.ui.UI;
+import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
+import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
@@ -26,9 +32,9 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.log4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
+import java.io.IOException;
 import javax.annotation.Nullable;
-import java.sql.SQLException;
-import java.util.Iterator;
+import java.util.concurrent.Callable;
 
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_PORT;
@@ -36,30 +42,62 @@ import static com.aerofs.lib.Param.Verkehr.VERKEHR_RETRY_INTERVAL;
 import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
+/**
+ * This is the verkehr command notification subscriber.
+ *
+ * Commands are sent via verkehr on the fast path or are pulled down via SP and this class is
+ * responsible for scheduling the execution of those commands.
+ *
+ * An important property of commands: they are idempotent. This property is required because in the
+ * current implementation it is possible (albeit rare) that a command can be executed twice. For
+ * example, this can happen in the following situation:
+ *
+ *  1) Receive command # 1, fail to execute, ack with error.
+ *  2) Receive command # 2, execute successfully, ack with success but the server ignores the ack
+ *     because the epoch is too high.
+ *  3) Full sync is triggered, command # 1 is executed and then command # 2 is executed a second
+ *     time.
+ *
+ * If (in the future) we do not want commands to be idempotent, we can store the epoch number and
+ * only execute commands if the epoch provided is higher than what we have stored locally. We will
+ * also need to be smarter about how we schedule syncs, because we cannot execute a command if we've
+ * missed its predecessor and have scheduled a sync, as in the above example.
+ *
+ * For now we assume commands are idempotent because it makes the implementation easier and in fact
+ * all commands that we forsee in the future have this property anyway. Therefore this
+ * implementation has been selected based on the KISS principle.
+ */
 public final class CommandNotificationSubscriber
 {
     private static final Logger l = Util.l(CommandNotificationSubscriber.class);
 
+    private final GuiScheduler _scheduler;
+    private final ExponentialRetry _er;
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
 
-    public CommandNotificationSubscriber(UserID userId, String caCertFilename)
+    public CommandNotificationSubscriber(GuiScheduler scheduler, DID localDevice,
+            String caCertFilename)
     {
+        _scheduler = scheduler;
+        _er = new ExponentialRetry(_scheduler);
+
         VerkehrListener listener = new VerkehrListener();
 
+        l.info("cmd: " + VERKEHR_HOST + ":" + VERKEHR_PORT);
         ClientFactory factory = new ClientFactory(VERKEHR_HOST, VERKEHR_PORT,
                 newCachedThreadPool(), newCachedThreadPool(),
                 caCertFilename, new CfgKeyManagersProvider(),
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());
 
-        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + userId.toString();
+        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + localDevice.toStringFormal();
         this._subscriber = factory.create();
     }
 
     public void start()
     {
-        l.info("started cmd notification subscriber");
+        l.info("cmd: started notification subscriber");
         _subscriber.start();
     }
 
@@ -68,120 +106,38 @@ public final class CommandNotificationSubscriber
         @Override
         public void onConnected()
         {
+            l.info("cmd: subscribe topic=" + _topic);
             _subscriber.subscribe_(_topic);
+
+            // Do a sync with the server when the verkehr channel is first connected.
+            scheduleSyncWithCommandServer();
         }
 
         @Override
         public void onNotificationReceivedFromVerkehr(String topic, @Nullable final byte[] payload)
         {
-            l.info("cmd notification received");
+            l.debug("cmd: notification received");
 
             if (payload == null) {
-                l.error("cmd has empty payload");
+                l.error("cmd: empty payload");
                 return;
             }
 
-            Commands cmds;
+            Command command;
             try {
-                cmds = Commands.parseFrom(payload);
+                command = Command.parseFrom(payload);
             }
             catch (InvalidProtocolBufferException e) {
-                l.error("invalid cmds received (protobuf error): " + e.toString());
+                l.error("cmd: invalid protobuf: " + e.toString());
                 return;
             }
-
-            Iterator<Command> it = cmds.getCommandsList().iterator();
 
             // Only perform the command if its command ID is greater than the local command ID
             // stored in the db. After all operations have been completed, store the new max
-            // command ID for next time.
+            // command ID for next time and send an ack.
 
-            long localMaxCmdId = Long.parseLong(Cfg.db().get(Key.CMD_CHANNEL_ID));
-            long newMaxCmdId = localMaxCmdId;
-
-            while (it.hasNext()) {
-                Command cmd = it.next();
-
-                long cmdId = cmd.getCommandId();
-                newMaxCmdId = newMaxCmdId > cmdId ? newMaxCmdId : cmdId;
-
-                // Skip the command if we have already executed it previously.
-                if (cmdId <= localMaxCmdId) {
-                    l.info("skipping cmdId " + cmdId + "(last recvd cmdId: " + localMaxCmdId);
-                    continue;
-                }
-
-                // Execute the command.
-                try {
-                    switch (cmd.getType()) {
-                    case UPLOAD_DATABASE:
-                        UI.ic().startUploadDatabase();
-                        break;
-                    case CHECK_UPDATE:
-                        checkUpdate();
-                        break;
-                    case SEND_DEFECT:
-                        sendDefect();
-                        break;
-                    case LOG_THREADS:
-                        logThreads();
-                        break;
-                    default:
-                        l.error("unkown cmd type: " + cmd.getType());
-                        break;
-                    }
-                } catch (InvalidProtocolBufferException e) {
-                    l.error("invalid cmd (protobuf error): " + Util.e(e));
-                } catch (Exception e) {
-                    l.warn("execute cmd: " + Util.e(e));
-                }
-            }
-
-            // Save the max command ID.
-            try {
-                Cfg.db().set(Key.CMD_CHANNEL_ID, newMaxCmdId);
-            } catch (SQLException e) {
-                l.error("set cmd channel id: " + Util.e(e));
-            }
-        }
-
-        /**
-         * N.B. this method blocks for a few seconds. See commments below.
-         */
-        private void logThreads() throws Exception
-        {
-            l.info("cmd: log threads");
-
-            // The delay is required by the command (see cmd.proto). It also blocks the subscriber
-            // thread from processing more commands. Otherwise, multiple LOG_THREADS requests would
-            // be processed at the same time, defeating the purpose of the delay. However, this
-            // approach has an undesired side effect: processing of other command types are also
-            // blocked. If it becomes a problem, we can work around by, e.g., having a dedicated
-            // request queue for LOG_THREADS, or by changing the semantics of the command.
-            ThreadUtil.sleepUninterruptable(5 * C.SEC);
-
-            // Log threads for the current process
-            Util.logAllThreadStackTraces();
-
-            // Log threads for the daemon process
-            RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
-            try {
-                ritual.logThreads();
-            } finally {
-                ritual.close();
-            }
-        }
-
-        private void sendDefect()
-        {
-            l.info("cmd: send defect");
-            SVClient.logSendDefectAsync(true, "cmd call");
-        }
-
-        private void checkUpdate()
-        {
-            l.info("cmd: check for updates");
-            UI.updater().checkForUpdate(true);
+            l.info("cmd notification: epoch=" + command.getEpoch() + " type=" + command.getType());
+            scheduleSingleCommandExecution(command);
         }
 
         @Override
@@ -190,5 +146,180 @@ public final class CommandNotificationSubscriber
             // noop
         }
 
+        private void scheduleSyncWithCommandServer()
+        {
+            l.info("cmd: sync scheduled");
+
+            // Schedule the exponential retry execution so that we do not block the verkehr IO
+            // thread.
+            _scheduler.schedule(new AbstractEBSelfHandling()
+            {
+                @Override
+                public void handle_()
+                {
+                    _er.retry("cmd-sync", new Callable<Void>()
+                    {
+                        @Override
+                        public Void call()
+                                throws Exception
+                        {
+                            syncWithCommandServer();
+                            return null;
+                        }
+                    },
+                    ExNoPerm.class, ExBadArgs.class, IOException.class);
+                }
+           }, 0);
+        }
+
+        private void syncWithCommandServer()
+                throws Exception
+        {
+            l.info("cmd: sync attempt");
+            int errorCount = 0;
+
+            // Get the command at the head of the queue and init loop variables.
+            SPBlockingClient sp = newSPClient();
+            GetCommandQueueHeadReply head =
+                    sp.getCommandQueueHead(Cfg.did().toPB());
+
+            long initialQueueSize = head.getQueueSize();
+            boolean more = head.hasCommand();
+
+            if (!more) {
+                l.error("cmd: already up to date");
+                return;
+            }
+
+            Command command = head.getCommand();
+
+            // Need to handle the case where we encounter an error and the queue entry is marked as
+            // "retry later". In this case it will be moved to the tail of the queue and the epoch
+            // will be bumped. We must exponential retry in this case. However, if we encounter an
+            // error AND a new queue entry is added while we are executing this set of commands, we
+            // want to execute that command right away, so in that case we need to schedule a sync
+            // again, right away. Keep this variable around so we can check for that case.
+            long currentQueueSize = 0;
+
+            for (int i = 0; more && i < initialQueueSize; i++) {
+                boolean error = false;
+
+                try {
+                    processCommand(command);
+                } catch (Exception e) {
+                    error = true;
+                    errorCount++;
+                    l.error("cmd: unable to process in sync: " + Util.e(e));
+                }
+
+                AckCommandQueueHeadReply ack = sp.ackCommandQueueHead(
+                        Cfg.did().toPB(), command.getEpoch(), error);
+
+                more = ack.hasCommand();
+                if (more) {
+                    command = ack.getCommand();
+                }
+
+                currentQueueSize = ack.getQueueSize();
+            }
+
+            // In the first case a new command has been enqueued AND we have encountered an error,
+            // so schedule a new sync. In the second case we have just encountered an error, so
+            // exponential retry.
+            if (more && errorCount < currentQueueSize) {
+                scheduleSyncWithCommandServer();
+            } else if (errorCount > 0) {
+                throw new ExAborted("command execution failed");
+            }
+
+            // Everything went perfectly, sync complete.
+            l.info("cmd: sync complete");
+        }
+
+        private void scheduleSingleCommandExecution(final Command command)
+        {
+            _scheduler.schedule(new AbstractEBSelfHandling()
+            {
+                @Override
+                public void handle_()
+                {
+                    boolean error = false;
+                    try {
+                        processCommand(command);
+                    } catch (Exception e) {
+                        error = true;
+
+                        // Use toString()'s in this function for cleaner logs. Only show full stack
+                        // traces when the exponential retry class is in full swing.
+                        l.error("cmd: unable to process single: " + e.toString());
+                    }
+
+                    AckCommandQueueHeadReply ack = null;
+                    try {
+                        SPBlockingClient sp = newSPClient();
+                        ack = sp.ackCommandQueueHead(Cfg.did().toPB(), command.getEpoch(), error);
+                    } catch (Exception e) {
+                        error = true;
+                        l.error("cmd: unable to ack: " + e.toString());
+                    }
+
+                    if (error || ack.hasCommand()) {
+                        scheduleSyncWithCommandServer();
+                    }
+                }
+            }, 0);
+        }
+
+        private void processCommand(Command command)
+                throws Exception
+        {
+            l.info("cmd: process " + command.getType());
+            switch (command.getType()) {
+                case INVALIDATE_DEVICE_NAMES:
+                    invalidateDeviceNameCache();
+                    break;
+                case INVALIDATE_USER_NAMES:
+                    invalidateUserNameCache();
+                    break;
+                default:
+                    throw new Exception("cmd type unknown");
+            }
+        }
+    }
+
+    private static SPBlockingClient newSPClient()
+            throws Exception
+    {
+        SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+        sp.signInRemote();
+        return sp;
+    }
+
+    //
+    // Command implementations.
+    //
+
+    static private void invalidateUserNameCache()
+            throws Exception
+    {
+        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+
+        try {
+            ritual.invalidateUserNameCache();
+        } finally {
+            ritual.close();
+        }
+    }
+
+    static private void invalidateDeviceNameCache()
+            throws Exception
+    {
+        RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
+
+        try {
+            ritual.invalidateDeviceNameCache();
+        } finally {
+            ritual.close();
+        }
     }
 }

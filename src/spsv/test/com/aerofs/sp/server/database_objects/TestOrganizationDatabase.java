@@ -24,8 +24,8 @@ import static junit.framework.Assert.assertTrue;
 
 public class TestOrganizationDatabase extends AbstractAutoTransactionedTestWithSPDatabase
 {
-    OrganizationDatabase odb = new OrganizationDatabase(trans);
-    SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
+    OrganizationDatabase odb = new OrganizationDatabase(sqlTrans);
+    SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
 
     OrganizationID orgID = new OrganizationID(123);
     private SID sid = SID.generate();

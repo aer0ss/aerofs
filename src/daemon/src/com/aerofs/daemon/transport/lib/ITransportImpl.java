@@ -7,7 +7,7 @@ package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.base.id.DID;

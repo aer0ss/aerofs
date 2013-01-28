@@ -6,7 +6,7 @@ package com.aerofs.daemon.tng.base;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
@@ -31,7 +31,6 @@ import java.util.List;
 
 import static com.aerofs.daemon.lib.DaemonParam.CONNECT_TIMEOUT;
 import static com.aerofs.daemon.lib.DaemonParam.QUEUE_LENGTH_DEFAULT;
-import static com.aerofs.daemon.lib.Prio.LO;
 import static com.aerofs.base.async.FutureUtil.addCallback;
 
 class Peer implements IPeer
@@ -173,7 +172,7 @@ class Peer implements IPeer
         assert _connections.isEmpty();
 
         if (_pendingConnection == null) {
-            OutArg<Prio> op = new OutArg<Prio>(LO);
+            OutArg<Prio> op = new OutArg<Prio>(Prio.LO);
             assert _pending.tryDequeue(op) == null;
 
             connect_();
@@ -307,7 +306,7 @@ class Peer implements IPeer
     {
         assert !_connections.isEmpty();
 
-        OutArg<Prio> op = new OutArg<Prio>(LO);
+        OutArg<Prio> op = new OutArg<Prio>(Prio.LO);
         Pending<?, ?> pendingOperation;
 
         List<Pending<?, ?>> succeededOperations = new LinkedList<Pending<?, ?>>();
@@ -344,7 +343,7 @@ class Peer implements IPeer
 
     private void failPendingRequests_(Throwable cause)
     {
-        OutArg<Prio> op = new OutArg<Prio>(LO);
+        OutArg<Prio> op = new OutArg<Prio>(Prio.LO);
         Pending<?, ?> pendingOperation;
 
         List<Pending<?, ?>> failedOperations = new LinkedList<Pending<?, ?>>();

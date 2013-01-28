@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base.pulse;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.tng.base.IncomingAeroFSPacket;
 import com.aerofs.daemon.tng.base.MessageEvent;
 import com.aerofs.daemon.tng.base.OutgoingAeroFSPacket;

@@ -136,13 +136,13 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
 
         // commit the current transaction as we are in auto-transaction mode. See
         // (AbstractAutoTransactionedTestWithSPDatabase)
-        trans.commit();
+        sqlTrans.commit();
 
         er.remind(interval);
         er.remind(interval);
 
         // see the above comment for trans.commit().
-        trans.begin();
+        sqlTrans.begin();
 
         //verify that a user only would have one email sent to them
         verifyEmailRemindersForUsers(_twoDayUsers, times(1));

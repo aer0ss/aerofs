@@ -60,7 +60,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             joinSharedFolder(USER_2, TEST_SID_1);
             fail();
         } catch (ExAlreadyExist e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -72,7 +72,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             joinSharedFolder(USER_2, SID.generate());
             fail();
         } catch (ExNotFound e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -87,7 +87,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             joinSharedFolder(USER_3, TEST_SID_1);
             fail();
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -117,7 +117,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
             fail();
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 
@@ -129,7 +129,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
             fail();
         } catch (ExNotFound e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 
@@ -143,7 +143,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
             fail();
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 
@@ -157,7 +157,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
             service.ignoreSharedFolderInvitation(TEST_SID_1.toPB());
             fail();
         } catch (ExAlreadyExist e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 }

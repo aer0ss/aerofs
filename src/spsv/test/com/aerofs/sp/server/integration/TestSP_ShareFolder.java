@@ -111,7 +111,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             shareFolder(USER_2, TEST_SID_1, USER_3, Role.EDITOR);
             fail();
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -121,10 +121,10 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         // add user 4 to db but don't verify their account
-        trans.begin();
+        sqlTrans.begin();
         udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
-        trans.commit();
+        sqlTrans.commit();
 
         shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.OWNER);
         published.clear();
@@ -134,7 +134,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             shareFolder(TEST_USER_4, TEST_SID_1, USER_2, Role.EDITOR);
             fail();
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -146,7 +146,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             shareFolder(USER_1, SID.rootSID(USER_1), USER_2, Role.EDITOR);
             fail();
         } catch (ExBadArgs e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }
@@ -162,7 +162,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
             fail();
         } catch (ExAlreadyExist e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
         assertTrue(published.isEmpty());
     }

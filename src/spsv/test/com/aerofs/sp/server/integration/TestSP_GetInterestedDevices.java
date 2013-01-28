@@ -26,9 +26,7 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
     // Devices that we will test with.
     private static final DID _deviceA1 = new DID(UniqueID.generate());
     private static final DID _deviceA2 = new DID(UniqueID.generate());
-
     private static final DID _deviceB1 = new DID(UniqueID.generate());
-
     private static final DID _deviceC1 = new DID(UniqueID.generate());
 
     /**
@@ -41,7 +39,7 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
         // Before we proceed make sure verkehr is set up to publish successfully (for ACLs).
         mockAndCaptureVerkehrPublish();
 
-        trans.begin();
+        sqlTrans.begin();
 
         // User 1
         ddb.insertDevice(_deviceA1, USER_1, "Device A1");
@@ -53,7 +51,7 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
         // User 3
         ddb.insertDevice(_deviceC1, USER_3, "Device C2");
 
-        trans.commit();
+        sqlTrans.commit();
 
         setSessionUser(USER_1);
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
@@ -66,9 +64,9 @@ public class TestSP_GetInterestedDevices extends AbstractSPFolderPermissionTest
     public void shouldGetCorrectSetOfInterestedDevices()
         throws Exception
     {
-        trans.begin();
-        Set<UserDevice> interested = db.getInterestedDevicesSet(TEST_SID_1, sessionUser.get().id());
-        trans.commit();
+        sqlTrans.begin();
+        Set<UserDevice> interested = db.getInterestedDevices(TEST_SID_1, sessionUser.get().id());
+        sqlTrans.commit();
 
         // The size is correct (only the correct devices were returned).
         assertEquals(3, interested.size());

@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.Base64;
 import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.ThreadUtil;

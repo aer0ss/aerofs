@@ -6,8 +6,18 @@ import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
 import com.aerofs.proto.Sp.PBSharedFolder;
 import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
+import com.aerofs.proto.Cmd.CommandType;
+import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
+import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
+import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.acl.SubjectRolePair;
@@ -27,6 +37,7 @@ import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
+import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Common.PBFolderInvitation;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
@@ -36,6 +47,7 @@ import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.proto.Sp.ListUserDevicesReply;
 import com.aerofs.proto.Sp.PBUser;
 import com.aerofs.proto.Sp.ResolveSignUpCodeReply;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.SharedFolder;
@@ -75,7 +87,6 @@ import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
-import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.SPDatabase;
 import com.aerofs.sp.server.lib.SPParam;
@@ -120,7 +131,7 @@ public class SPService implements ISPService
     private final CertificateDatabase _certdb;
     private final EmailSubscriptionDatabase _esdb;
 
-    private final IThreadLocalTransaction<SQLException> _transaction;
+    private final SQLThreadLocalTransaction _sqlTrans;
 
     private VerkehrPublisher _verkehrPublisher;
     private VerkehrAdmin _verkehrAdmin;
@@ -149,21 +160,26 @@ public class SPService implements ISPService
     private final RequestToSignUpEmailer _requestToSignUpEmailer;
     private final InvitationEmailer.Factory _factEmailer;
 
-    SPService(SPDatabase db, IThreadLocalTransaction<SQLException> transaction,
-            ISessionUser sessionUser, PasswordManagement passwordManagement,
+    private final JedisEpochCommandQueue _commandQueue;
+    private final JedisThreadLocalTransaction _jedisTrans;
+
+    SPService(SPDatabase db, SQLThreadLocalTransaction sqlTrans,
+            JedisThreadLocalTransaction jedisTrans, ISessionUser sessionUser,
+            PasswordManagement passwordManagement,
             CertificateAuthenticator certificateAuthenticator, User.Factory factUser,
             Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
             Device.Factory factDevice, Certificate.Factory factCert, CertificateDatabase certdb,
             EmailSubscriptionDatabase esdb, Factory factSharedFolder,
             InvitationEmailer.Factory factEmailer, DeviceCertifiedEmailer deviceCertifiedEmailer,
-            RequestToSignUpEmailer requestToSignUpEmailer)
+            RequestToSignUpEmailer requestToSignUpEmailer, JedisEpochCommandQueue commandQueue)
     {
         // FIXME: _db shouldn't be accessible here; in fact you should only have a transaction
         // factory that gives you transactions....
         _db = db;
         _certdb = certdb;
 
-        _transaction = transaction;
+        _sqlTrans = sqlTrans;
+        _jedisTrans = jedisTrans;
         _sessionUser = sessionUser;
         _passwordManagement = passwordManagement;
         _certificateAuthenticator = certificateAuthenticator;
@@ -178,6 +194,8 @@ public class SPService implements ISPService
         _deviceCertifiedEmailer = deviceCertifiedEmailer;
         _requestToSignUpEmailer = requestToSignUpEmailer;
         _factEmailer = factEmailer;
+
+        _commandQueue = commandQueue;
     }
 
     public void setVerkehrClients_(VerkehrPublisher verkehrPublisher, VerkehrAdmin verkehrAdmin)
@@ -221,7 +239,7 @@ public class SPService implements ISPService
                 ExAlreadyExist.class, ExNotFound.class));
 
         // Notify SPTransaction that an exception occurred.
-        _transaction.handleException();
+        _sqlTrans.handleException();
 
         // Don't include stack trace here to avoid expose SP internals to the client side.
         return Exceptions.toPB(e);
@@ -247,7 +265,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetPreferencesReply> getPreferences(ByteString deviceId)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         FullName fn = user.getFullName();
@@ -259,7 +277,7 @@ public class SPService implements ISPService
                 .setDeviceName(device.exists() ? device.getName() : "")
                 .build();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(reply);
     }
@@ -269,21 +287,77 @@ public class SPService implements ISPService
             ByteString deviceId, String deviceName)
             throws Exception
     {
-        _transaction.begin();
+        boolean userNameUpdated = false;
+        boolean deviceNameUpdated = false;
+
+        User user = _sessionUser.get();
+        _sqlTrans.begin();
 
         if (firstName != null || lastName != null) {
-            if (firstName == null || lastName == null)
+            if (firstName == null || lastName == null) {
                 throw new ExBadArgs("First and last name must both be non-null or both null");
-            _sessionUser.get().setName(new FullName(firstName, lastName));
+            }
+
+            FullName fullName = new FullName(firstName, lastName);
+            l.info(user.id() + ": set full name: " + fullName);
+            user.setName(fullName);
+            userNameUpdated = true;
         }
 
         if (deviceId != null) {
-            // TODO (MP) need to send push notifications to the user when their device name changes.
-            l.info(_sessionUser.get().id() + ": set device name: " + deviceName);
+            l.info(user.id() + ": set device name: " + deviceName);
             _factDevice.create(deviceId).setName(deviceName);
+            deviceNameUpdated = true;
         }
 
-        _transaction.commit();
+        // Verkehr messages and command queue related stuff.
+        if (userNameUpdated || deviceNameUpdated)
+        {
+            ImmutableList<Device> peerDevices = user.listPeerDevices();
+
+            for (Device peerDevice : peerDevices) {
+
+                Epoch userEpoch = null;
+                Epoch deviceEpoch = null;
+
+                _jedisTrans.begin();
+
+                if (userNameUpdated) {
+                    userEpoch = _commandQueue.enqueue(peerDevice.id(),
+                            CommandType.INVALIDATE_USER_NAMES);
+                }
+                if (deviceNameUpdated) {
+                    deviceEpoch = _commandQueue.enqueue(peerDevice.id(),
+                            CommandType.INVALIDATE_DEVICE_NAMES);
+                }
+
+                _jedisTrans.commit();
+
+                if (userNameUpdated) {
+                    assert userEpoch != null;
+                    Command command = Command.newBuilder()
+                            .setEpoch(userEpoch.get())
+                            .setType(CommandType.INVALIDATE_USER_NAMES)
+                            .build();
+                    _verkehrAdmin.deliverPayload_(peerDevice.id().toStringFormal(),
+                            command.toByteArray()).get();
+                }
+
+                if (deviceNameUpdated) {
+                    assert deviceEpoch != null;
+                    Command command = Command.newBuilder()
+                            .setEpoch(deviceEpoch.get())
+                            .setType(CommandType.INVALIDATE_DEVICE_NAMES)
+                            .build();
+                    _verkehrAdmin.deliverPayload_(peerDevice.id().toStringFormal(),
+                            command.toByteArray()).get();
+                }
+            }
+        }
+
+        // Wrap the jedis calls and verkehr pushes in the sql transaction so if any of the above
+        // fail we can ask the user to perform the rename later.
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -296,7 +370,7 @@ public class SPService implements ISPService
         throwOnInvalidOffset(offset);
         throwOnInvalidMaxResults(maxResults);
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
@@ -310,7 +384,7 @@ public class SPService implements ISPService
                 .setTotalCount(org.totalUserCount())
                 .build();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(reply);
     }
@@ -323,7 +397,7 @@ public class SPService implements ISPService
         throwOnInvalidOffset(offset);
         throwOnInvalidMaxResults(maxResults);
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
@@ -339,7 +413,7 @@ public class SPService implements ISPService
                 .setTotalCount(org.totalUserCount(level))
                 .build();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(reply);
     }
@@ -367,7 +441,7 @@ public class SPService implements ISPService
         throwOnInvalidOffset(offset);
         throwOnInvalidMaxResults(maxResults);
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
@@ -377,7 +451,7 @@ public class SPService implements ISPService
 
         List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset));
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(ListOrganizationSharedFoldersReply.newBuilder()
                 .addAllSharedFolder(pbs)
@@ -389,7 +463,7 @@ public class SPService implements ISPService
     public ListenableFuture<ListOrganizationInvitedUsersReply> listOrganizationInvitedUsers()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
@@ -400,7 +474,7 @@ public class SPService implements ISPService
             builder.addUserId(oi.getInvitee().id().getID());
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(builder.build());
     }
@@ -409,7 +483,7 @@ public class SPService implements ISPService
     public ListenableFuture<ListUserSharedFoldersReply> listUserSharedFolders(String userID)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User currentUser = _sessionUser.get();
         User specifiedUser = _factUser.createFromExternalID(userID);
@@ -432,7 +506,7 @@ public class SPService implements ISPService
 
         List<PBSharedFolder> pbs = sharedFolders2pb(specifiedUser.getSharedFolders());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(ListUserSharedFoldersReply.newBuilder()
                 .addAllSharedFolder(pbs)
@@ -483,7 +557,7 @@ public class SPService implements ISPService
             final PBAuthorizationLevel authLevel)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User requester = _sessionUser.get();
         User subject = _factUser.createFromExternalID(userIdString);
@@ -510,7 +584,7 @@ public class SPService implements ISPService
         subject.setLevel(newAuth);
         _sessionInvalidator.invalidate(subject.id());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -519,7 +593,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetOrganizationInvitationsReply> getOrganizationInvitations()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
 
@@ -543,7 +617,7 @@ public class SPService implements ISPService
                 .addAllOrganizationInvitations(invitationsWireable)
                 .build();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(reply);
     }
@@ -552,7 +626,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetOrgPreferencesReply> getOrgPreferences()
         throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         final User user = _sessionUser.get();
         final Organization org = user.getOrganization();
@@ -567,7 +641,7 @@ public class SPService implements ISPService
             replyBuilder.setOrganizationContactPhone(contactPhone);
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(replyBuilder.build());
     }
@@ -577,7 +651,7 @@ public class SPService implements ISPService
             @Nullable final String contactPhone)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
@@ -594,7 +668,7 @@ public class SPService implements ISPService
             organization.setContactPhone(contactPhone);
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -603,10 +677,10 @@ public class SPService implements ISPService
     public ListenableFuture<GetUnsubscribeEmailReply> unsubscribeEmail(String unsubscribeToken)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
         String email = _esdb.getEmail(unsubscribeToken);
         _esdb.removeEmailSubscription(unsubscribeToken);
-        _transaction.commit();
+        _sqlTrans.commit();
 
         GetUnsubscribeEmailReply unsubscribeEmail = GetUnsubscribeEmailReply.newBuilder()
                 .setEmailId(email)
@@ -619,11 +693,11 @@ public class SPService implements ISPService
     public ListenableFuture<GetAuthorizationLevelReply> getAuthorizationLevel()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         AuthorizationLevel level = _sessionUser.get().getLevel();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(GetAuthorizationLevelReply.newBuilder().setLevel(level.toPB()).build());
     }
@@ -632,7 +706,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetTeamServerUserIDReply> getTeamServerUserID()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
 
@@ -647,7 +721,7 @@ public class SPService implements ISPService
                 .setId(tsUserID.toString())
                 .build();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(reply);
     }
@@ -665,12 +739,12 @@ public class SPService implements ISPService
 
         // We need two transactions. The first is read only, so no rollback ability needed. In
         // between the transaction we make an RPC call.
-        _transaction.begin();
+        _sqlTrans.begin();
 
         user.throwIfNotAdmin();
         User tsUser = _factUser.create(user.getOrganization().id().toTeamServerUserID());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         // This should not be part of a transaction because it involves an RPC call
         // FIXME: (PH) This leaves us vulnerable to a situation where the users organization changes
@@ -679,7 +753,7 @@ public class SPService implements ISPService
         Device device = _factDevice.create(deviceId);
         CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), tsUser);
 
-        _transaction.begin();
+        _sqlTrans.begin();
         // Certify device
         device.save(tsUser, UNKNOWN_DEVICE_NAME);
         CertifyDeviceReply reply = addCertificate(device, cert);
@@ -688,7 +762,7 @@ public class SPService implements ISPService
         String emailAddress = user.id().getID();
         String firstName = user.getFullName()._first;
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         // Sending an email doesn't need to be a part of the transaction
         _deviceCertifiedEmailer.sendTeamServerDeviceCertifiedEmail(emailAddress, firstName);
@@ -701,7 +775,7 @@ public class SPService implements ISPService
             List<ByteString> shareIds)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         List<String> names = Lists.newArrayListWithCapacity(shareIds.size());
@@ -712,7 +786,7 @@ public class SPService implements ISPService
             names.add(sf.getName());
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(GetSharedFolderNamesReply.newBuilder().addAllFolderName(names).build());
     }
@@ -721,13 +795,13 @@ public class SPService implements ISPService
     public ListenableFuture<Void> emailUser(String userId, String body)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
                 _sessionUser.get().id().toString(), null, UserID.fromExternal(userId).toString(),
                 body, null, true, null);
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -736,13 +810,13 @@ public class SPService implements ISPService
     public ListenableFuture<GetHeartInvitesQuotaReply> noop()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         GetHeartInvitesQuotaReply reply = GetHeartInvitesQuotaReply.newBuilder()
                 .setCount(10)
                 .build();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(reply);
     }
@@ -760,7 +834,7 @@ public class SPService implements ISPService
 
         CertificationResult cert = device.certify(new PKCS10(csr.toByteArray()), user);
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         // Test the device id's availability/validity
         device.save(user, UNKNOWN_DEVICE_NAME);
@@ -770,7 +844,7 @@ public class SPService implements ISPService
         String emailAddress = user.id().getID();
         String firstName = user.getFullName()._first;
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         _deviceCertifiedEmailer.sendDeviceCertifiedEmail(emailAddress, firstName);
 
@@ -803,7 +877,7 @@ public class SPService implements ISPService
         l.info(sharer + " shares " + sf + " with " + srps.size() + " users");
         if (srps.isEmpty()) throw new ExBadArgs("must specify one or more sharee");
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         Set<UserID> users = addSharedFolderIfNecessary(folderName, sf, sharer);
 
@@ -811,9 +885,9 @@ public class SPService implements ISPService
                 sharer, srps);
 
         // send verkehr notification as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
+        publishACLs_(incrementACLEpochs_(users));
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         for (InvitationEmailer emailer : emailers) emailer.send();
 
@@ -918,7 +992,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> joinSharedFolder(ByteString sid) throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
@@ -939,9 +1013,9 @@ public class SPService implements ISPService
         Set<UserID> users = sf.setMember(user);
 
         // send verkehr notifications as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
+        publishACLs_(incrementACLEpochs_(users));
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -949,7 +1023,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> ignoreSharedFolderInvitation(ByteString sid) throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
@@ -969,7 +1043,7 @@ public class SPService implements ISPService
         // Ignore the invitation by deleting the ACL.
         sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -977,7 +1051,7 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> leaveSharedFolder(ByteString sid) throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         SharedFolder sf = _factSharedFolder.create(new SID(sid));
@@ -1000,10 +1074,10 @@ public class SPService implements ISPService
             Set<UserID> users = sf.setPending(user);
 
             // send verkehr notifications as the last step of the transaction
-            publish_(incrementACLEpochs_(users));
+            publishACLs_(incrementACLEpochs_(users));
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1012,7 +1086,7 @@ public class SPService implements ISPService
     public ListenableFuture<ListPendingFolderInvitationsReply> listPendingFolderInvitations()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
 
@@ -1027,7 +1101,7 @@ public class SPService implements ISPService
                     .setSharer(psf._sharer.toString()));
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(builder.build());
     }
@@ -1050,9 +1124,9 @@ public class SPService implements ISPService
     {
         l.info("tsc: " + tsc);
 
-        _transaction.begin();
+        _sqlTrans.begin();
         UserID result = _db.getSignUpCode(tsc);
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(
                 ResolveSignUpCodeReply.newBuilder().setEmailAddress(result.toString()).build());
@@ -1064,7 +1138,7 @@ public class SPService implements ISPService
     {
         User user = _factUser.createFromExternalID(emailAddress);
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         @Nullable String signUpCode;
         if (user.exists()) {
@@ -1077,7 +1151,7 @@ public class SPService implements ISPService
             emailAddress = user.id().getID();
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         // Send the email out of the transaction
         if (signUpCode == null) {
@@ -1098,7 +1172,7 @@ public class SPService implements ISPService
             throw new ExBadArgs("Must specify one or more invitees");
         }
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User inviter = _sessionUser.get();
         l.info("invite " + userIdStrings.size() + " users by " + inviter);
@@ -1116,7 +1190,7 @@ public class SPService implements ISPService
             }
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         for (InvitationEmailer emailer : emailers) emailer.send();
 
@@ -1128,7 +1202,7 @@ public class SPService implements ISPService
             throws SQLException, ExNoPerm, ExNotFound, IOException, ExEmailSendingFailed,
             ExAlreadyExist, ExAlreadyInvited
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User inviter = _sessionUser.get();
         inviter.throwIfNotAdmin();
@@ -1153,7 +1227,7 @@ public class SPService implements ISPService
         _factOrgInvite.save(inviter.id(), invitee.id(), org.id());
         _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1162,7 +1236,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> acceptOrganizationInvitation(Integer organizationID)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User accepter = _sessionUser.get();
         Organization organization = _factOrg.create(new OrganizationID(organizationID));
@@ -1186,9 +1260,9 @@ public class SPService implements ISPService
         invite.delete();
 
         // send verkehr notification as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
+        publishACLs_(incrementACLEpochs_(users));
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1197,7 +1271,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> ignoreOrganizationInvitation(Integer organizationID)
             throws SQLException, ExNoPerm, ExNotFound
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User ignorer = _sessionUser.get();
         Organization organization = _factOrg.create(new OrganizationID(organizationID));
@@ -1206,7 +1280,7 @@ public class SPService implements ISPService
         OrganizationInvitation invite = _factOrgInvite.create(ignorer.id(), organization.id());
 
         invite.delete();
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1215,7 +1289,7 @@ public class SPService implements ISPService
     public ListenableFuture<GetStripeCustomerIDReply> getStripeCustomerID()
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
@@ -1225,7 +1299,7 @@ public class SPService implements ISPService
         GetStripeCustomerIDReply.Builder builder = GetStripeCustomerIDReply.newBuilder();
         if (stripeCustomerID != null) builder.setStripeCustomerId(stripeCustomerID.getID());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(builder.build());
     }
@@ -1237,12 +1311,12 @@ public class SPService implements ISPService
     {
         final User user = _sessionUser.get();
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         final StripeCustomerID stripeCustomer = StripeCustomerID.create(stripeCustomerID);
         user.addAndMoveToOrganization(organizationName, organizationPhone, stripeCustomer);
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1254,7 +1328,7 @@ public class SPService implements ISPService
         User user = _sessionUser.get();
         GetACLReply.Builder bd = GetACLReply.newBuilder();
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         long userEpoch = user.getACLEpoch();
         if (userEpoch == epoch) {
@@ -1271,7 +1345,7 @@ public class SPService implements ISPService
                 bd.addStoreAcl(aclBuilder);
             }
         }
-        _transaction.commit();
+        _sqlTrans.commit();
 
         bd.setEpoch(userEpoch);
         return createReply(bd.build());
@@ -1291,12 +1365,12 @@ public class SPService implements ISPService
         // be done in a single atomic operation. Otherwise, it is possible for us to send out a
         // notification that is newer than what it should be (i.e. we skip an update
 
-        _transaction.begin();
+        _sqlTrans.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
         Set<UserID> users = sf.updateMemberACL(srps);
         // send verkehr notification as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
-        _transaction.commit();
+        publishACLs_(incrementACLEpochs_(users));
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1320,12 +1394,12 @@ public class SPService implements ISPService
 
         List<UserID> subjects = UserID.fromExternal(subjectList);
 
-        _transaction.begin();
+        _sqlTrans.begin();
         sf.throwIfNotOwnerAndNotAdmin(user);
         Set<UserID> users = sf.deleteMemberOrPendingACL(subjects);
         // send verkehr notification as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
-        _transaction.commit();
+        publishACLs_(incrementACLEpochs_(users));
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1351,7 +1425,11 @@ public class SPService implements ISPService
         }
     }
 
-    private void publish_(Map<UserID, Long> epochs)
+    /**
+     * Publish verkehr notificaitons.
+     * @param epochs Map of user ID to their new ACL epoch.
+     */
+    private void publishACLs_(Map<UserID, Long> epochs)
             throws Exception
     {
         for (Map.Entry<UserID, Long> entry : epochs.entrySet()) {
@@ -1362,9 +1440,10 @@ public class SPService implements ISPService
                     .setAclEpoch(entry.getValue())
                     .build();
 
+            // Must match what is done on the client side.
+            String aclTopic = Param.ACL_CHANNEL_TOPIC_PREFIX + entry.getKey().toString();
             ListenableFuture<Void> published =
-                    _verkehrPublisher.publish_(entry.getKey().toString(),
-                    notification.toByteArray());
+                    _verkehrPublisher.publish_(aclTopic, notification.toByteArray());
 
             verkehrFutureGet_(published);
         }
@@ -1382,7 +1461,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
             throws IOException, SQLException, ExBadCredential, ExNotFound
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _factUser.createFromExternalID(userIdString);
 
@@ -1413,7 +1492,7 @@ public class SPService implements ISPService
         // Update the user tracker so we can invalidate sessions if needed.
         _userTracker.signIn(user.id(), _sessionUser.getSessionID());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1430,9 +1509,9 @@ public class SPService implements ISPService
     public ListenableFuture<Void> sendPasswordResetEmail(String userIdString)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
         _passwordManagement.sendPasswordResetEmail(_factUser.createFromExternalID(userIdString));
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1442,9 +1521,9 @@ public class SPService implements ISPService
             ByteString new_credentials)
         throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
         _passwordManagement.resetPassword(password_reset_token, new_credentials);
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1454,10 +1533,10 @@ public class SPService implements ISPService
             ByteString new_credentials)
             throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
         _passwordManagement.changePassword(_sessionUser.get().id(), old_credentials,
                 new_credentials);
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1480,7 +1559,7 @@ public class SPService implements ISPService
 
         byte[] shaedSP = SPParam.getShaedSP(credentials.toByteArray());
 
-        _transaction.begin();
+        _sqlTrans.begin();
 
         UserID userID = _db.getSignUpCode(signUpCode);
         User user = _factUser.create(userID);
@@ -1505,7 +1584,7 @@ public class SPService implements ISPService
             // "if user.exist()" branch.
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1516,7 +1595,7 @@ public class SPService implements ISPService
     {
         throw new UnsupportedOperationException();
 
-        // TODO (MP) make db call
+        // TODO (MP) finish this...
 
         /*GetUserCRLReply reply = GetUserCRLReply.newBuilder()
                 .setCrlEpoch(0L)
@@ -1530,9 +1609,9 @@ public class SPService implements ISPService
     {
         ImmutableList<Long> crl;
 
-        _transaction.begin();
+        _sqlTrans.begin();
         crl = _certdb.getCRL();
-        _transaction.commit();
+        _sqlTrans.commit();
 
         GetCRLReply reply = GetCRLReply.newBuilder()
                 .addAllSerial(crl)
@@ -1545,7 +1624,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> unlinkUserDevice(final ByteString deviceId)
         throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         Device device = _factDevice.create(deviceId);
@@ -1567,7 +1646,7 @@ public class SPService implements ISPService
         // Push revoked serials to verkehr.
         updateCRL_(builder.build());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1576,12 +1655,12 @@ public class SPService implements ISPService
     public ListenableFuture<Void> unlinkAllUserDevices()
         throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         User user = _sessionUser.get();
         l.info(user.id() + ": unlink all");
 
-        ImmutableList<Device> userDevices = user.listDevices();
+        ImmutableList<Device> userDevices = user.listUserDevices();
         ImmutableList.Builder<Long> serials = ImmutableList.builder();
 
         for (Device device : userDevices) {
@@ -1594,7 +1673,7 @@ public class SPService implements ISPService
         // Push revoked serials to verkehr.
         updateCRL_(serials.build());
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createVoidReply();
     }
@@ -1602,7 +1681,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId)
     {
-        // TODO (MP) finish this... when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
+        // TODO (MP) finish this...
+        // when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
 
         return createVoidReply();
     }
@@ -1610,9 +1690,105 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> unlinkAllTeamServerDevices()
     {
-        // TODO (MP) finish this... when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
+        // TODO (MP) finish this...
+        // when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
 
         return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<GetCommandQueueHeadReply> getCommandQueueHead(ByteString deviceID)
+            throws SQLException, ExNoPerm, ExNotFound
+    {
+        Device device = _factDevice.create(deviceID);
+
+        _sqlTrans.begin();
+        device.throwIfDoesNotExist();
+        device.throwIfNotOwner(_sessionUser.get());
+        _sqlTrans.commit();
+
+        l.info("cmd head: " + device.id().toStringFormal());
+
+        _jedisTrans.begin();
+        QueueElement head = _commandQueue.head(device.id());
+        QueueSize size = _commandQueue.size(device.id());
+        _jedisTrans.commit();
+
+        if (!head.exists()) {
+            GetCommandQueueHeadReply reply = GetCommandQueueHeadReply.newBuilder()
+                    .setQueueSize(0L)
+                    .build();
+
+            return createReply(reply);
+        }
+
+        Command command = Command.newBuilder()
+                .setEpoch(head.getEpoch())
+                .setType(head.getType())
+                .build();
+        GetCommandQueueHeadReply reply = GetCommandQueueHeadReply.newBuilder()
+                .setCommand(command)
+                .setQueueSize(size.getSize())
+                .build();
+
+        l.info("cmd head reply: " + device.id().toStringFormal() + " size=" + size.getSize());
+        return createReply(reply);
+    }
+
+    @Override
+    public ListenableFuture<AckCommandQueueHeadReply> ackCommandQueueHead(ByteString deviceID,
+            Long epoch, Boolean error)
+            throws Exception
+    {
+        Device device = _factDevice.create(deviceID);
+
+        _sqlTrans.begin();
+        device.throwIfDoesNotExist();
+        device.throwIfNotOwner(_sessionUser.get());
+        _sqlTrans.commit();
+
+        l.info("cmd ack: " + device.id().toStringFormal() + " epoch=" + epoch + " error=" + error);
+
+        _jedisTrans.begin();
+        SuccessError result;
+        QueueSize size = _commandQueue.size(device.id());
+        if (error) {
+            result = _commandQueue.retryLater(device.id(), epoch);
+        } else {
+            result = _commandQueue.dequeue(device.id(), epoch);
+        }
+        QueueElement head = _commandQueue.head(device.id());
+        _jedisTrans.commit();
+
+        if (result.error()) {
+            // This could happen if the same command was enqueued before we could finish acking
+            // the first instance; therefore this condition is perfectly normal. However, if for
+            // some reason the actual ack functionality is broken and queues are never emptying, we
+            // want some sort of logging to indicate that.
+            l.warn("cmd ack failure: " + device.id().toStringFormal() + " epoch=" + epoch);
+        }
+
+       if (!head.exists()) {
+           AckCommandQueueHeadReply reply = AckCommandQueueHeadReply.newBuilder()
+                   .setQueueSize(0L)
+                   .build();
+
+           return createReply(reply);
+        }
+
+        // Now return the new head.
+        Command command = Command.newBuilder()
+                .setEpoch(head.getEpoch())
+                .setType(head.getType())
+                .build();
+        AckCommandQueueHeadReply reply = AckCommandQueueHeadReply.newBuilder()
+                .setCommand(command)
+                .setQueueSize(size.getSize())
+                .build();
+
+        l.info("cmd ack reply: " + device.id().toStringFormal() + " size=" + size.getSize());
+        return createReply(reply);
+
     }
 
     private static final GetDeviceInfoReply.PBDeviceInfo EMPTY_DEVICE_INFO =
@@ -1626,9 +1802,10 @@ public class SPService implements ISPService
      * not share anything with the owner of the given DID, also return an empty device info object.
      */
     @Override
-    public ListenableFuture<GetDeviceInfoReply> getDeviceInfo(List<ByteString> dids) throws Exception
+    public ListenableFuture<GetDeviceInfoReply> getDeviceInfo(List<ByteString> dids)
+            throws Exception
     {
-        _transaction.begin();
+        _sqlTrans.begin();
 
         Set<UserID> sharedUsers = _db.getSharedUsersSet(_sessionUser.get().id());
 
@@ -1650,7 +1827,7 @@ public class SPService implements ISPService
             }
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
 
         return createReply(builder.build());
     }
@@ -1664,11 +1841,11 @@ public class SPService implements ISPService
         throwOnInvalidOffset(offset);
         throwOnInvalidMaxResults(maxResults);
 
-        _transaction.begin();
+        _sqlTrans.begin();
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
 
         User user = _sessionUser.get();
-        DevicesAndQueryCount devicesAndQueryCount= user.listDevices(search, maxResults, offset);
+        DevicesAndQueryCount devicesAndQueryCount= user.listUserDevices(search, maxResults, offset);
 
         builder.setTotalCount(user.totalDeviceCount());
         builder.setFilteredCount(devicesAndQueryCount.count());
@@ -1680,7 +1857,7 @@ public class SPService implements ISPService
                     .setOs(device.getOS()));
         }
 
-        _transaction.commit();
+        _sqlTrans.commit();
         return createReply(builder.build());
     }
 

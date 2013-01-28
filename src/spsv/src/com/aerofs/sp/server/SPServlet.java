@@ -8,6 +8,9 @@ import com.aerofs.lib.ex.ExEmailSendingFailed;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
+import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
+import com.aerofs.servlets.lib.db.jedis.PooledJedisConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.sp.server.SPService.InviteToSignUpResult;
@@ -52,6 +55,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import static com.aerofs.sp.server.lib.SPParam.REDIS_HOST_INIT_PARAMETER;
+import static com.aerofs.sp.server.lib.SPParam.REDIS_PORT_INIT_PARAMETER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_EXTENDER;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_INVALIDATOR;
 import static com.aerofs.sp.server.lib.SPParam.SESSION_USER_TRACKER;
@@ -65,18 +70,18 @@ public class SPServlet extends AeroServlet
 
     private static final long serialVersionUID = 1L;
 
-    private final PooledSQLConnectionProvider _conProvider = new PooledSQLConnectionProvider();
-    private final SQLThreadLocalTransaction _trans = new SQLThreadLocalTransaction(_conProvider);
+    private final PooledSQLConnectionProvider _sqlConProvider = new PooledSQLConnectionProvider();
+    private final SQLThreadLocalTransaction _sqlTrans = new SQLThreadLocalTransaction(_sqlConProvider);
 
     // TODO (WW) remove dependency on these database classes
-    private final SPDatabase _db = new SPDatabase(_trans);
-    private final OrganizationDatabase _odb = new OrganizationDatabase(_trans);
-    private final UserDatabase _udb = new UserDatabase(_trans);
-    private final DeviceDatabase _ddb = new DeviceDatabase(_trans);
-    private final CertificateDatabase _certdb = new CertificateDatabase(_trans);
-    private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_trans);
-    private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_trans);
-    private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_trans);
+    private final SPDatabase _db = new SPDatabase(_sqlTrans);
+    private final OrganizationDatabase _odb = new OrganizationDatabase(_sqlTrans);
+    private final UserDatabase _udb = new UserDatabase(_sqlTrans);
+    private final DeviceDatabase _ddb = new DeviceDatabase(_sqlTrans);
+    private final CertificateDatabase _certdb = new CertificateDatabase(_sqlTrans);
+    private final EmailSubscriptionDatabase _esdb = new EmailSubscriptionDatabase(_sqlTrans);
+    private final SharedFolderDatabase _sfdb = new SharedFolderDatabase(_sqlTrans);
+    private final OrganizationInvitationDatabase _oidb = new OrganizationInvitationDatabase(_sqlTrans);
 
     private final ThreadLocalHttpSessionProvider _sessionProvider =
             new ThreadLocalHttpSessionProvider();
@@ -108,10 +113,16 @@ public class SPServlet extends AeroServlet
     private final DeviceCertifiedEmailer _deviceCertifiedEmailer = new DeviceCertifiedEmailer();
     private final RequestToSignUpEmailer _requestToSignUpEmailer = new RequestToSignUpEmailer();
 
-    private final SPService _service = new SPService(_db, _trans, _sessionUser,
+    private final PooledJedisConnectionProvider _jedisConProvider =
+            new PooledJedisConnectionProvider();
+    private final JedisThreadLocalTransaction _jedisTrans =
+            new JedisThreadLocalTransaction(_jedisConProvider);
+    private final JedisEpochCommandQueue _commandQueue = new JedisEpochCommandQueue(_jedisTrans);
+
+    private final SPService _service = new SPService(_db, _sqlTrans, _jedisTrans, _sessionUser,
             _passwordManagement, _certificateAuthenticator, _factUser, _factOrg, _factOrgInvite,
             _factDevice, _factCert, _certdb, _esdb, _factSharedFolder, _factEmailer,
-            _deviceCertifiedEmailer, _requestToSignUpEmailer);
+            _deviceCertifiedEmailer, _requestToSignUpEmailer, _commandQueue);
     private final SPServiceReactor _reactor = new SPServiceReactor(_service);
 
     private final DoPostDelegate _postDelegate = new DoPostDelegate(SP.SP_POST_PARAM_PROTOCOL,
@@ -133,7 +144,10 @@ public class SPServlet extends AeroServlet
         String dbResourceName =
                 getServletContext().getInitParameter(SP_DATABASE_REFERENCE_PARAMETER);
 
-        _conProvider.init_(dbResourceName);
+        _sqlConProvider.init_(dbResourceName);
+        _jedisConProvider.init_(
+                getServletContext().getInitParameter(REDIS_HOST_INIT_PARAMETER),
+                Short.parseShort(getServletContext().getInitParameter(REDIS_PORT_INIT_PARAMETER)));
 
         //initialize Email Reminder code
         PooledSQLConnectionProvider erConProvider = new PooledSQLConnectionProvider();
@@ -141,7 +155,7 @@ public class SPServlet extends AeroServlet
 
         InvitationReminderEmailer.Factory emailReminderFactory = new Factory();
 
-        EmailReminder er = new EmailReminder(_esdb, _trans, emailReminderFactory);
+        EmailReminder er = new EmailReminder(_esdb, _sqlTrans, emailReminderFactory);
         er.start();
     }
 
@@ -192,7 +206,8 @@ public class SPServlet extends AeroServlet
         byte [] bytes;
         try {
             bytes = _reactor.react(decodedMessage).get();
-            _trans.cleanUp();
+            _sqlTrans.cleanUp();
+            _jedisTrans.cleanUp();
         } catch (Exception e) {
             l.warn("exception in reactor: " + Util.e(e));
             throw new IOException(e.getCause());
@@ -219,16 +234,16 @@ public class SPServlet extends AeroServlet
             throws IOException
     {
         try {
-            _trans.begin();
+            _sqlTrans.begin();
             if ("love".equals(req.getParameter("aerofs"))) {
                 handleSignUpInvite(req, rsp);
             }
-            _trans.commit();
+            _sqlTrans.commit();
         } catch (SQLException e) {
-            _trans.handleException();
+            _sqlTrans.handleException();
             throw new IOException(e);
         } catch (IOException e) {
-            _trans.handleException();
+            _sqlTrans.handleException();
             throw e;
         }
     }

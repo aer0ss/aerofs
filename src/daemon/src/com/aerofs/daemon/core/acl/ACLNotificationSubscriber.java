@@ -4,8 +4,9 @@ import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.verkehr.AbstractVerkehrListener;
 import com.aerofs.daemon.core.verkehr.VerkehrNotificationSubscriber;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.ExponentialRetry;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.sched.ExponentialRetry;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
@@ -28,7 +29,7 @@ public final class ACLNotificationSubscriber
     public ACLNotificationSubscriber(VerkehrNotificationSubscriber subscriber,
             CfgLocalUser localUser, CoreQueue q, CoreScheduler sched, ACLSynchronizer aclsync)
     {
-        _topic = localUser.get().toString();
+        _topic = Param.ACL_CHANNEL_TOPIC_PREFIX + localUser.get().toString();
         _subscriber = subscriber;
         _listener = new VerkehrListener(q, new ExponentialRetry(sched), aclsync);
     }

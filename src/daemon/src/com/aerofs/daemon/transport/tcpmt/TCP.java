@@ -6,18 +6,18 @@
 
 package com.aerofs.daemon.transport.tcpmt;
 
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
 import com.aerofs.daemon.event.net.Endpoint;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.lib.HdPulse;
 import com.aerofs.daemon.transport.lib.IPipeController;
 import com.aerofs.daemon.transport.lib.ITransportImpl;

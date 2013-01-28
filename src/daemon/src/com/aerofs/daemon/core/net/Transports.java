@@ -13,13 +13,9 @@ import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.event.lib.imc.QueueBasedIMCExecutor;
 import com.aerofs.daemon.event.net.EOLinkStateChanged;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.IDumpStat;
-import com.aerofs.daemon.lib.IDumpStatMisc;
 import com.aerofs.daemon.lib.IStartable;
 import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.ITransport;
@@ -27,9 +23,13 @@ import com.aerofs.daemon.transport.lib.MaxcastFilterReceiver;
 import com.aerofs.daemon.transport.tcpmt.TCP;
 import com.aerofs.daemon.transport.xmpp.Jingle;
 import com.aerofs.daemon.transport.xmpp.Zephyr;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.IDumpStatMisc;
+import com.aerofs.lib.IDumpStat;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.Builder;
 import com.google.common.collect.ImmutableMap;
@@ -50,7 +50,7 @@ import static com.google.common.util.concurrent.MoreExecutors.sameThreadExecutor
 /**
  * The clients of this class may assume the list of transports never changes during run time.
  */
-public class Transports implements IDumpStatMisc, IDumpStat, IStartable
+public class Transports implements IDumpStat, IDumpStatMisc, IStartable
 {
     private static final Logger l = Util.l(Transports.class);
 

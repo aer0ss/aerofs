@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.event.admin.EIListSharedFolders;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Path;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;

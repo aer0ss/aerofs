@@ -72,12 +72,12 @@ public class RoleMenu
             public void widgetSelected(SelectionEvent e)
             {
                 if (GUI.get().ask(_compUserList.getShell(), MessageType.QUESTION,
-                                // The text should be consistent with the text in shared_folders.mako
-                                "Are you sure you want to kick out " + _subject + "?\n" +
-                                "\n" +
-                                "This will delete the folder from the user's computers." +
-                                " However, old content may be still accessible from the" +
-                                " user's version history.")) {
+                        // The text should be consistent with the text in shared_folders.mako
+                        "Are you sure you want to kick out " + _subject + "?\n" +
+                        "\n" +
+                        "This will delete the folder from the user's computers." +
+                        " However, old content may be still accessible from the" +
+                        " user's version history.")) {
                     select(null);
                 }
             }
@@ -105,7 +105,6 @@ public class RoleMenu
     {
         _menu.dispose();
         try {
-
             RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
                 if (role == null) {

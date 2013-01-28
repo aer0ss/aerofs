@@ -6,7 +6,7 @@ import org.jivesoftware.smack.XMPPException;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
 

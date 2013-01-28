@@ -36,7 +36,7 @@ import com.aerofs.daemon.core.ActivityLog;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.net.DID2User;
 import com.aerofs.daemon.event.admin.EIGetActivities;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.db.ActivityLogDatabase;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase.ActivityRow;
 import com.aerofs.daemon.lib.db.UserAndDeviceNameDatabase;

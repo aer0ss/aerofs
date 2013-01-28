@@ -42,7 +42,7 @@ import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.exception.ExDependsOn;
 import com.aerofs.base.C;
 import com.aerofs.lib.Util;

@@ -4,9 +4,9 @@
 
 package com.aerofs.daemon.event.net.tng.rx;
 
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.net.tng.Endpoint;
 import com.aerofs.daemon.lib.id.StreamID;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
 public class EIStreamAborted implements IEvent

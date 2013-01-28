@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.xmpp.jingle;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.tng.base.IUnicastConnection;
 import com.aerofs.daemon.tng.base.WireData;

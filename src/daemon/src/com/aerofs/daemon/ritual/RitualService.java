@@ -20,6 +20,8 @@ import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.event.admin.EIGetACL;
 import com.aerofs.daemon.event.admin.EIGetActivities;
 import com.aerofs.daemon.event.admin.EIHeartbeat;
+import com.aerofs.daemon.event.admin.EIInvalidateDeviceNameCache;
+import com.aerofs.daemon.event.admin.EIInvalidateUserNameCache;
 import com.aerofs.daemon.event.admin.EILeaveSharedFolder;
 import com.aerofs.daemon.event.admin.EIJoinSharedFolder;
 import com.aerofs.daemon.event.admin.EIListConflicts;
@@ -47,7 +49,7 @@ import com.aerofs.daemon.event.fs.EIMoveObject;
 import com.aerofs.daemon.event.fs.EIShareFolder;
 import com.aerofs.daemon.event.status.EIGetStatusOverview;
 import com.aerofs.daemon.event.status.EIGetSyncStatus;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.acl.Role;
@@ -92,6 +94,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 
@@ -106,6 +109,7 @@ import javax.annotation.Nullable;
  */
 public class RitualService implements IRitualService
 {
+    private static final Logger l = Util.l(RitualService.class);
     private static final Prio PRIO = Prio.HI;
 
     @Override
@@ -576,6 +580,22 @@ public class RitualService implements IRitualService
     public ListenableFuture<Void> relocate(String newAbsRootAnchor) throws Exception
     {
         new EIRelocateRootAnchor(newAbsRootAnchor, Core.imce()).execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> invalidateDeviceNameCache()
+            throws Exception
+    {
+        new EIInvalidateUserNameCache().execute(PRIO);
+        return createVoidReply();
+    }
+
+    @Override
+    public ListenableFuture<Void> invalidateUserNameCache()
+            throws Exception
+    {
+        new EIInvalidateDeviceNameCache().execute(PRIO);
         return createVoidReply();
     }
 

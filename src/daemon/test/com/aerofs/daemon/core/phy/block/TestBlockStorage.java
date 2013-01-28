@@ -21,8 +21,8 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.ITransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -157,19 +157,19 @@ public class TestBlockStorage extends AbstractBlockTest
         return new SOKID(newSOID(), KIndex.MASTER);
     }
 
-    private void create(String path, SOKID sokid) throws Exception
+    private void createFile(String path, SOKID sokid) throws Exception
     {
         IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
         file.create_(PhysicalOp.APPLY, t);
     }
 
-    private void delete(String path, SOKID sokid) throws Exception
+    private void deleteFile(String path, SOKID sokid) throws Exception
     {
         IPhysicalFile file = bs.newFile_(sokid, Path.fromString(path));
         file.delete_(PhysicalOp.APPLY, t);
     }
 
-    private void move(String pathFrom, SOKID sokidFrom, String pathTo, SOKID sokidTo)
+    private void moveFile(String pathFrom, SOKID sokidFrom, String pathTo, SOKID sokidTo)
             throws Exception
     {
         IPhysicalFile from = bs.newFile_(sokidFrom, Path.fromString(pathFrom));
@@ -262,7 +262,7 @@ public class TestBlockStorage extends AbstractBlockTest
     {
         SOKID sokid = newSOKID();
 
-        create("foo/bar", sokid);
+        createFile("foo/bar", sokid);
         byte[] result = fetch("foo/bar", sokid);
         verify(bsb, never())
                 .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
@@ -275,10 +275,10 @@ public class TestBlockStorage extends AbstractBlockTest
     {
         SOKID sokid = newSOKID();
 
-        create("foo/bar", sokid);
+        createFile("foo/bar", sokid);
         boolean ok = false;
         try {
-            create("foo/bar", sokid);
+            createFile("foo/bar", sokid);
         } catch (FileAlreadyExistsException e) {
             ok = true;
         }
@@ -307,7 +307,7 @@ public class TestBlockStorage extends AbstractBlockTest
         SOKID sokid = newSOKID();
         byte[] content = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-        create("foo/bar", sokid);
+        createFile("foo/bar", sokid);
         store("foo/bar", sokid, content, true, 0L);
 
         verify(bsb).putBlock(forKey(content), any(InputStream.class), eq((long)content.length),
@@ -340,7 +340,7 @@ public class TestBlockStorage extends AbstractBlockTest
         SOKID sokid = newSOKID();
         byte[] content = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-        create("foo/bar", sokid);
+        createFile("foo/bar", sokid);
         boolean ok = false;
         try {
             store("foo/bar", sokid, content, false, 0L);
@@ -394,8 +394,8 @@ public class TestBlockStorage extends AbstractBlockTest
     {
         SOKID sokid = newSOKID();
 
-        create("foo/bar", sokid);
-        delete("foo/bar", sokid);
+        createFile("foo/bar", sokid);
+        deleteFile("foo/bar", sokid);
 
         Assert.assertFalse(exists("foo/bar", sokid));
 
@@ -411,7 +411,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         boolean ok = false;
         try {
-            delete("foo/bar", sokid);
+            deleteFile("foo/bar", sokid);
         } catch (FileNotFoundException e) {
             ok = true;
         }
@@ -427,8 +427,8 @@ public class TestBlockStorage extends AbstractBlockTest
         SOKID from = newSOKID();
         SOKID to = newSOKID();
 
-        create("foo/bar", from);
-        move("foo/bar", from, "foo/baz/bla", to);
+        createFile("foo/bar", from);
+        moveFile("foo/bar", from, "foo/baz/bla", to);
 
         verify(bsb, never())
                 .putBlock(any(ContentHash.class), any(InputStream.class), anyLong(), anyObject());
@@ -443,7 +443,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         boolean ok = false;
         try {
-            move("foo/bar", from, "foo/baz/bla", to);
+            moveFile("foo/bar", from, "foo/baz/bla", to);
         } catch (FileNotFoundException e) {
             ok = true;
         }
@@ -460,11 +460,11 @@ public class TestBlockStorage extends AbstractBlockTest
         SOKID from = newSOKID();
         SOKID to = newSOKID();
 
-        create("foo/bar", from);
-        create("foo/baz/bla", to);
+        createFile("foo/bar", from);
+        createFile("foo/baz/bla", to);
         boolean ok = false;
         try {
-            move("foo/bar", from, "foo/baz/bla", to);
+            moveFile("foo/bar", from, "foo/baz/bla", to);
         } catch (FileAlreadyExistsException e) {
             ok = true;
         }
@@ -486,13 +486,13 @@ public class TestBlockStorage extends AbstractBlockTest
     public void shouldIgnoreFolderFileCreationConflict() throws Exception
     {
         bs.newFolder_(newSOID(), Path.fromString("foo/bar")).create_(PhysicalOp.APPLY, t);
-        create("foo/bar", newSOKID());
+        createFile("foo/bar", newSOKID());
     }
 
     @Test
     public void shouldIgnoreFileFolderCreationConflict() throws Exception
     {
-        create("foo/bar", newSOKID());
+        createFile("foo/bar", newSOKID());
         bs.newFolder_(newSOID(), Path.fromString("foo/bar")).create_(PhysicalOp.APPLY, t);
     }
 
@@ -533,7 +533,7 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(revChildrenEquals(""));
 
         SOKID sokid = newSOKID();
-        create("foo/bar", sokid);
+        createFile("foo/bar", sokid);
         store("foo/bar", sokid, new byte[0], true, 0L);
 
         Assert.assertTrue(revChildrenEquals("", new Child("foo", true)));
@@ -547,8 +547,8 @@ public class TestBlockStorage extends AbstractBlockTest
         Assert.assertTrue(revChildrenEquals(""));
 
         SOKID sokid = newSOKID();
-        create("foo/bar", sokid);
-        delete("foo/bar", sokid);
+        createFile("foo/bar", sokid);
+        deleteFile("foo/bar", sokid);
 
         Assert.assertTrue(revChildrenEquals("", new Child("foo", true)));
         Assert.assertTrue(revChildrenEquals("foo", new Child("bar", false)));

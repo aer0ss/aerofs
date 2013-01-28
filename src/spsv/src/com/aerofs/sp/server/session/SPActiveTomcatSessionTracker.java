@@ -23,7 +23,7 @@ public class SPActiveTomcatSessionTracker
 
     public synchronized void sessionCreated(HttpSession session)
     {
-        l.info("Session created: " + session.getId());
+        l.debug("Session created: " + session.getId());
         _sessionMap.put(session.getId(), session);
     }
 
@@ -32,7 +32,7 @@ public class SPActiveTomcatSessionTracker
      */
     public synchronized @Nullable HttpSession sessionDestroyed(String sessionID)
     {
-        l.info("Session destroyed: " + sessionID);
+        l.debug("Session destroyed: " + sessionID);
 
         HttpSession session = _sessionMap.get(sessionID);
         _sessionMap.remove(sessionID);

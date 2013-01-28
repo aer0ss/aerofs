@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.admin.EIExportFile;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.id.SOID;
 
 public class HdExportFile extends AbstractHdExport<EIExportFile>

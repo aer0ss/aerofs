@@ -16,12 +16,13 @@ import java.sql.SQLException;
  * Note that both this class and AbstractTestWithSPDatabase cleans up the transaction after each
  * test.
  */
-public class AbstractAutoTransactionedTestWithSPDatabase extends AbstractTestWithSPDatabase
+public class AbstractAutoTransactionedTestWithSPDatabase extends AbstractTestWithDatabase
 {
     @Before
     public final void setupTransaction()
             throws SQLException
     {
-        trans.begin();
+        sqlTrans.begin();
+        jedisTrans.begin();
     }
 }

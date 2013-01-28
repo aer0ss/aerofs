@@ -7,14 +7,14 @@ import redis
 import aerofs.command.server.log
 import aerofs.command.gen.cmd_pb2
 
-class CommandDatabaseException(Exception):
+class TransientCommandDatabaseException(Exception):
     def __init__(self, message):
         self._message = message
         Exception.__init__(self)
     def __str__(self):
         return self._message
 
-class CommandDatabase(object):
+class TransientCommandDatabase(object):
     # Separate different pieces of keys. Use double dot because they are not allowed in email
     # addresses.
     _separator = '..'
@@ -64,7 +64,7 @@ class CommandDatabase(object):
         else:
             next_id = long(next_id)
 
-        self._l.debug('Command ID: ' + str(next_id))
+        self._l.debug('Transient Command ID: ' + str(next_id))
 
         pipeline = self._redis.pipeline()
         pipeline.incr(self._key_command_id)
@@ -86,4 +86,4 @@ class CommandDatabase(object):
 
         # result holds [#commands, #newkeys, pass/fail boolean].
         if not result[2]:
-            raise CommandDatabaseException('Unable to complete redis transaction.')
+            raise TransientCommandDatabaseException('Unable to complete redis transaction.')

@@ -1,7 +1,7 @@
 package com.aerofs.daemon.transport.lib;
 
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.base.id.DID;
 
 import javax.annotation.Nullable;

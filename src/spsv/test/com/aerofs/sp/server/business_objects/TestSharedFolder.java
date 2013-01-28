@@ -89,15 +89,15 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
 
         sf.addMemberACL(user, Role.EDITOR);
 
-        trans.commit();
-        trans.begin();
+        sqlTrans.commit();
+        sqlTrans.begin();
 
         try {
             sf.addMemberACL(user, Role.OWNER);
             assertTrue(false);
         } catch (ExAlreadyExist e) {
-            trans.handleException();
-            trans.begin();
+            sqlTrans.handleException();
+            sqlTrans.begin();
         }
 
         assertEquals(Role.EDITOR, sf.getMemberRoleNullable(user));
@@ -180,7 +180,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             sf.deleteMemberOrPendingACL(Collections.singleton(user1.id()));
             assertTrue(false);
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 
@@ -197,7 +197,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             sf.deleteMemberOrPendingACL(Collections.singleton(user.id()));
             assertTrue(false);
         } catch (ExNotFound e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 
@@ -316,7 +316,7 @@ public class TestSharedFolder extends AbstractBusinessObjectTest
             sf.updateMemberACL(singleSRP(user1, Role.EDITOR));
             assertTrue(false);
         } catch (ExNoPerm e) {
-            trans.handleException();
+            sqlTrans.handleException();
         }
     }
 

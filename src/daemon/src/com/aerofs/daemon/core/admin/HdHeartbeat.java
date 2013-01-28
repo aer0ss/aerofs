@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.admin;
 
 import com.aerofs.daemon.event.admin.EIHeartbeat;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 public class HdHeartbeat extends AbstractHdIMC<EIHeartbeat>
 {

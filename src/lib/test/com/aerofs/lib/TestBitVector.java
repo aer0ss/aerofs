@@ -3,7 +3,6 @@ package com.aerofs.lib;
 import junit.framework.Assert;
 
 import org.junit.Test;
-
 import com.aerofs.testlib.AbstractTest;
 
 public class TestBitVector extends AbstractTest

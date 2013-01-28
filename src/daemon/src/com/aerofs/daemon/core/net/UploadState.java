@@ -8,14 +8,15 @@ import java.util.Map.Entry;
 import com.aerofs.daemon.core.net.IUploadStateListener.Key;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.notifier.ConcurrentlyModifiableListeners;
 
 // see IDownloadListener for valid state transitions
 
 public class UploadState extends ConcurrentlyModifiableListeners<IUploadStateListener>
-implements IDumpStatMisc {
+        implements IDumpStatMisc
+{
 
     private final Map<Key, Value> _state = new HashMap<Key, Value>();
 

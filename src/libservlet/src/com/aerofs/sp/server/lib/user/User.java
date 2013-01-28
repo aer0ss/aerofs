@@ -178,29 +178,41 @@ public class User
         _f._udb.setName(_id, fullName);
     }
 
-    public ImmutableList<Device> listDevices()
+    public ImmutableList<Device> listPeerDevices()
             throws SQLException, ExFormatError
     {
         ImmutableList.Builder<Device> builder = ImmutableList.builder();
 
-        for (DID did : _f._udb.listDevices(id())) {
+        for (DID did : _f._udb.listPeerDevices(id())) {
             builder.add(_f._factDevice.create(did));
         }
 
         return builder.build();
     }
 
-    public DevicesAndQueryCount listDevices(String search, int maxResults, int offset)
+    public ImmutableList<Device> listUserDevices()
+            throws SQLException, ExFormatError
+    {
+        ImmutableList.Builder<Device> builder = ImmutableList.builder();
+
+        for (DID did : _f._udb.listUserDevices(id())) {
+            builder.add(_f._factDevice.create(did));
+        }
+
+        return builder.build();
+    }
+
+    public DevicesAndQueryCount listUserDevices(String search, int maxResults, int offset)
             throws ExBadArgs, SQLException, ExFormatError
     {
         List<DID> devices;
         int count;
 
         if (search.isEmpty()) {
-            devices = _f._udb.listDevices(_id, offset, maxResults);
+            devices = _f._udb.listUserDevices(_id, offset, maxResults);
             count = totalDeviceCount();
         } else {
-            devices = _f._udb.searchDevices(_id, offset, maxResults, search);
+            devices = _f._udb.searchUserDevices(_id, offset, maxResults, search);
             count = _f._udb.searchDecvicesCount(_id, search);
         }
 

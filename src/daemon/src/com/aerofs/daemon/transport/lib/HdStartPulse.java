@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.lib;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOTpStartPulse;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 
 /**
  * Handler that handles incoming {@link EOStartPulse} events from the core

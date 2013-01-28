@@ -1,6 +1,7 @@
 package com.aerofs.daemon.event;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
 
 public interface IEventHandler<E extends IEvent>
 {

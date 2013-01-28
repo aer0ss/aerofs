@@ -63,23 +63,23 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     {
         setUserOneAsAdmin();
 
-        trans.begin();
+        sqlTrans.begin();
         assertEquals(udb.getLevel(USER_2), AuthorizationLevel.USER);
-        trans.commit();
+        sqlTrans.commit();
 
         service.setAuthorizationLevel(USER_2.toString(), PBAuthorizationLevel.ADMIN);
 
-        trans.begin();
+        sqlTrans.begin();
         assertEquals(udb.getLevel(USER_2), AuthorizationLevel.ADMIN);
-        trans.commit();
+        sqlTrans.commit();
     }
 
     private void setUserOneAsAdmin()
             throws SQLException
     {
-        trans.begin();
+        sqlTrans.begin();
         udb.setLevel(USER_1, AuthorizationLevel.ADMIN);
-        trans.commit();
+        sqlTrans.commit();
     }
 
 }

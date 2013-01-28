@@ -25,7 +25,7 @@ public class SPActiveUserSessionTracker
 
     public synchronized void signIn(UserID userID, String sessionID)
     {
-        l.info("Sign in: " + userID + " " + sessionID);
+        l.debug("Sign in: " + userID + " " + sessionID);
 
         if (_userMap.containsKey(userID.toString())) {
             Set<String> sessionSet = _userMap.get(userID.toString());
@@ -42,7 +42,7 @@ public class SPActiveUserSessionTracker
      */
     public synchronized void signOut(UserID userID, String sessionID)
     {
-        l.info("Sign out: " + userID + " " + sessionID);
+        l.debug("Sign out: " + userID + " " + sessionID);
 
         Set<String> sessionSet = _userMap.get(userID.toString());
 

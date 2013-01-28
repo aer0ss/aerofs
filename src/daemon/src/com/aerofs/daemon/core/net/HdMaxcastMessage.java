@@ -4,7 +4,7 @@ import com.aerofs.daemon.core.UnicastInputOutputStack;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.rx.EIMaxcastMessage;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;

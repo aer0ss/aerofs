@@ -42,7 +42,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
     {
         mockAndCaptureVerkehrPublish();
 
-        trans.begin();
+        sqlTrans.begin();
 
         // User 1
         ddb.insertDevice(new DID(UniqueID.generate()), USER_1, "Device A01");
@@ -59,7 +59,7 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         ddb.insertDevice(_deviceC01, USER_3, "Device C01");
         ddb.insertDevice(new DID(UniqueID.generate()), USER_3, "Device C02");
 
-        trans.commit();
+        sqlTrans.commit();
 
         // User 1 shares with User 2, but not with User 3
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);

@@ -2,7 +2,7 @@ package com.aerofs.daemon.transport.xmpp;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EOTransportReconfigRemoteDevice;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.Cfg;
 
 public class HdTransportReconfigRemoteDevice implements

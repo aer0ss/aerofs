@@ -1,5 +1,7 @@
 package com.aerofs.daemon.core.linker;
 
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IEvent;
 import com.aerofs.daemon.core.CoreEventDispatcher;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.linker.event.EIMightCreateNotification;
@@ -8,13 +10,11 @@ import com.aerofs.daemon.core.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.core.linker.notifier.INotifier;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
-import com.aerofs.daemon.event.IEvent;
 import com.aerofs.daemon.event.IEventHandler;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 import net.contentobjects.jnotify.JNotifyException;
 import org.apache.log4j.Logger;

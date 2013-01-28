@@ -6,11 +6,11 @@
 package com.aerofs.daemon.transport.xmpp.routing;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.IScheduler;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.sched.IScheduler;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;

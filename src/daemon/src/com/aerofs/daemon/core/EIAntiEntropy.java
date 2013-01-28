@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.store.Store;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;

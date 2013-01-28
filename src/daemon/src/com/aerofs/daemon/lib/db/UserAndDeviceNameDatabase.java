@@ -23,8 +23,9 @@ import static com.aerofs.daemon.lib.db.CoreSchema.*;
  * When possible, use the UserAndDeviceNames class which provides a high-level wrapper around this
  * low-level class.
  */
-public class UserAndDeviceNameDatabase extends AbstractDatabase
-implements IUserAndDeviceNameDatabase
+public class UserAndDeviceNameDatabase
+        extends AbstractDatabase
+        implements IUserAndDeviceNameDatabase
 {
     @Inject
     public UserAndDeviceNameDatabase(CoreDBCW dbcw)
@@ -130,6 +131,41 @@ implements IUserAndDeviceNameDatabase
         } catch (SQLException e) {
             DBUtil.close(_psGUN);
             _psGUN = null;
+            throw e;
+        }
+    }
+
+
+    private PreparedStatement _psCUNC;
+    @Override
+    public void clearUserNameCache()
+            throws SQLException
+    {
+        try {
+            if (_psCUNC == null) {
+                _psCUNC = c().prepareStatement("delete from " + T_UN);
+            }
+            _psCUNC.execute();
+        } catch (SQLException e) {
+            DBUtil.close(_psCUNC);
+            _psCUNC = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psCDNC;
+    @Override
+    public void clearDeviceNameCache()
+            throws SQLException
+    {
+        try {
+            if (_psCDNC == null) {
+                _psCDNC = c().prepareStatement("delete from " + T_DN);
+            }
+            _psCDNC.execute();
+        } catch (SQLException e) {
+            DBUtil.close(_psCDNC);
+            _psCDNC = null;
             throw e;
         }
     }

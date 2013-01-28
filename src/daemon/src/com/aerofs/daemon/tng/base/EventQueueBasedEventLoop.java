@@ -4,12 +4,12 @@
 
 package com.aerofs.daemon.tng.base;
 
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.EventDispatcher;
 import com.aerofs.daemon.lib.BlockingPrioQueue;
-import com.aerofs.daemon.lib.Prio;
-import com.aerofs.daemon.lib.Scheduler;
+import com.aerofs.lib.event.Prio;
+import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
@@ -19,8 +19,6 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nullable;
 import java.io.PrintStream;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.aerofs.daemon.lib.Prio.LO;
 
 public final class EventQueueBasedEventLoop implements IEventLoop
 {
@@ -87,7 +85,7 @@ public final class EventQueueBasedEventLoop implements IEventLoop
     @Override
     public final void execute(Runnable runnable)
     {
-        execute(runnable, LO);
+        execute(runnable, Prio.LO);
     }
 
     private void executeAfterDelay_(final Runnable runnable, long delayInMilliseconds)

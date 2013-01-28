@@ -17,6 +17,7 @@
     <orderEntry type="library" exported="" name="jnotify-aerofs" level="project" />
     <orderEntry type="library" exported="" name="gson-2.2.2" level="project" />
     <orderEntry type="library" exported="" name="aws" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="powermockito" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="junit" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="mockito" level="project" />
     <orderEntry type="sourceFolder" forTests="false" />

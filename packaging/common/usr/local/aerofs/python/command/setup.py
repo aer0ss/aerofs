@@ -7,7 +7,7 @@ requires = [
         ]
 
 setup(name='command',
-      version='0.13',
+      version='0.14',
       description='command',
       long_description='command',
       packages=find_packages(),

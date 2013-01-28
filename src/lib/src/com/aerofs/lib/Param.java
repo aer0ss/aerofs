@@ -113,8 +113,10 @@ public class Param extends BaseParam
     public static final int INITIAL_SYNC_PULL_EPOCH = 0;
     public static final int INITIAL_SYNC_PUSH_EPOCH = 0;
 
-    // Command Server
+    // Verkehr channel prefixes.
     public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd/";
+    public static final String ACL_CHANNEL_TOPIC_PREFIX = "acl/";
+    public static final String SSS_CHANNEL_TOPIC_PREFIX = "sss/";
 
     // Multiuser password: Multiuser installs use certificates to login to servers. Therefore,
     // they do not need a password for remote communication. However, a password is still needed

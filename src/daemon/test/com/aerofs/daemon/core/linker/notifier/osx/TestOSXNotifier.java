@@ -4,9 +4,9 @@ import java.util.Set;
 
 import com.aerofs.daemon.core.CoreQueue;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.injectable.InjectableJNotify;
 import com.aerofs.testlib.AbstractTest;

@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.base;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.DropDelayedInlineExecutor;
@@ -27,8 +27,8 @@ import org.mockito.stubbing.Answer;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.aerofs.daemon.lib.Prio.HI;
-import static com.aerofs.daemon.lib.Prio.LO;
+import static com.aerofs.lib.event.Prio.HI;
+import static com.aerofs.lib.event.Prio.LO;
 import static com.aerofs.testlib.FutureAssert.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;

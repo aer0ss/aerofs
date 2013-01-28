@@ -8,7 +8,7 @@ import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.admin.EIListConflicts;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.Path;

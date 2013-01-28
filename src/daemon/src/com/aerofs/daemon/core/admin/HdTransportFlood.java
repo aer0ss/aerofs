@@ -11,7 +11,7 @@ import com.aerofs.daemon.event.admin.EITransportFlood;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.event.net.EOTransportFlood;
 import com.aerofs.daemon.event.net.Endpoint;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.ITransport;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.id.SIndex;

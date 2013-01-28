@@ -8,7 +8,7 @@ import com.aerofs.base.BaseParam.Xmpp;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.daemon.lib.DaemonParam.Jingle;
-import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.lib.IDumpStatMisc;
 import com.aerofs.daemon.tng.xmpp.ID;
 import com.aerofs.j.Jid;
 import com.aerofs.j.Message;

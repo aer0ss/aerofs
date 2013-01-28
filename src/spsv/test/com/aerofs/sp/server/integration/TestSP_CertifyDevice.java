@@ -37,9 +37,9 @@ public class TestSP_CertifyDevice extends AbstractSPCertificateBasedTest
         String cert;
         cert = service.certifyDevice(_did.toPB(), newCSR(_did), false).get().getCert();
 
-        trans.begin();
+        sqlTrans.begin();
         assertTrue(ddb.hasDevice(_did));
-        trans.commit();
+        sqlTrans.commit();
 
         verify(certgen).generateCertificate(eq(TEST_1_USER), eq(_did), any(PKCS10.class));
 

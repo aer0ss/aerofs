@@ -21,7 +21,7 @@
 #
 class cmd {
 
-    include redis
+    include redis::aof
 
     # Until redis is rolled out publicly, we have to use our own build.
     package{[

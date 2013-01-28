@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.sql.SQLException;
 
 import com.aerofs.gui.GUIUtil;
+import com.aerofs.gui.GuiScheduler;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ex.ExAlreadyRunning;
@@ -151,6 +152,8 @@ class Launcher
     void launch(final boolean isFirstTime) throws Exception
     {
         try {
+            final GuiScheduler scheduler = new GuiScheduler();
+
             // verify checksums *before* launching the daemon to avoid reporting daemon launching
             // failures due to binary issues.
             if (PostUpdate.updated()) verifyChecksums();
@@ -171,6 +174,8 @@ class Launcher
                 {
                     // delete the socket so another instance can run while we're sending the event
                     Launcher.destroySingletonSocket();
+                    // Shutdown the scheduler.
+                    scheduler.shutdown();
                     // send sv event on exit
                     SVClient.sendEventSync(PBSVEvent.Type.EXIT, null);
                 }
@@ -196,7 +201,7 @@ class Launcher
 
             cleanNativeLogs();
 
-            startWorkerThreads();
+            startWorkerThreads(scheduler);
 
         } catch (Exception ex) {
             SVClient.logSendDefectAsync(true, "launch failed", ex);
@@ -266,7 +271,7 @@ class Launcher
         }
     }
 
-    private void startWorkerThreads()
+    private void startWorkerThreads(GuiScheduler scheduler)
     {
         if (Cfg.useArchive()) new LogArchiver(absRTRoot()).start();
 
@@ -279,7 +284,11 @@ class Launcher
             }
         }
 
-        new CommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(), Param.CA_CERT)).start();
+        new TransientCommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(),
+                Param.CA_CERT)).start();
+
+        new CommandNotificationSubscriber(scheduler, Cfg.did(), Util.join(AppRoot.abs(),
+                Param.CA_CERT)).start();
 
         new BadCredentialNotifier();
 

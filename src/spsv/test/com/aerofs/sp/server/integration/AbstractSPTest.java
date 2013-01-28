@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;
@@ -13,7 +14,8 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
 import com.aerofs.servlets.SecUtilHelper;
-import com.aerofs.sp.server.AbstractTestWithSPDatabase;
+import com.aerofs.sp.server.AbstractTestWithDatabase;
+import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
@@ -43,6 +45,9 @@ import com.aerofs.sp.server.session.SPActiveUserSessionTracker;
 import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
+import com.aerofs.proto.Cmd.Command;
+import com.beust.jcommander.internal.Sets;
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
 import org.mockito.InjectMocks;
@@ -57,8 +62,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -68,7 +73,7 @@ import static org.mockito.Mockito.when;
 /**
  * A base class for all tests using the SPService as the "seam"
  */
-public class AbstractSPTest extends AbstractTestWithSPDatabase
+public class AbstractSPTest extends AbstractTestWithDatabase
 {
     // Some subclasses will add custom mocking to the verkehr objects.
     @Mock protected VerkehrPublisher verkehrPublisher;
@@ -81,16 +86,16 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy protected SPSessionInvalidator sessionInvalidator = new SPSessionInvalidator(
             userSessionTracker, tomcatSessionTracker);
 
-    @Spy protected SPDatabase db = new SPDatabase(trans);
-    @Spy protected DeviceDatabase ddb = new DeviceDatabase(trans);
-    @Spy protected UserDatabase udb = new UserDatabase(trans);
-    @Spy protected CertificateDatabase certdb = new CertificateDatabase(trans);
-    @Spy protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(trans);
-    @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(trans);
-    @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(trans);
+    @Spy protected SPDatabase db = new SPDatabase(sqlTrans);
+    @Spy protected DeviceDatabase ddb = new DeviceDatabase(sqlTrans);
+    @Spy protected UserDatabase udb = new UserDatabase(sqlTrans);
+    @Spy protected CertificateDatabase certdb = new CertificateDatabase(sqlTrans);
+    @Spy protected EmailSubscriptionDatabase esdb = new EmailSubscriptionDatabase(sqlTrans);
+    @Spy protected SharedFolderDatabase sfdb = new SharedFolderDatabase(sqlTrans);
+    @Spy protected OrganizationInvitationDatabase oidb = new OrganizationInvitationDatabase(sqlTrans);
 
     // Can't use @Spy as Device.Factory's constructor needs a non-null certgen object.
-    protected OrganizationDatabase odb = spy(new OrganizationDatabase(trans));
+    protected OrganizationDatabase odb = spy(new OrganizationDatabase(sqlTrans));
 
     // Can't use @Mock as Device.Factory's constructor needs a non-null certgen object.
     protected CertificateGenerator certgen = mock(CertificateGenerator.class);
@@ -101,6 +106,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     @Spy protected Device.Factory factDevice = new Device.Factory();
     @Spy protected OrganizationInvitation.Factory factOrgInvite =
             new OrganizationInvitation.Factory();
+
+    @Spy protected JedisEpochCommandQueue commandQueue = new JedisEpochCommandQueue(jedisTrans);
 
     @Spy protected User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
             factOrgInvite, factSharedFolder);
@@ -152,14 +159,14 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
         service.setUserTracker(userSessionTracker);
 
         // Add all the users to the db.
-        trans.begin();
+        sqlTrans.begin();
         factUser.create(USER_1).save(USER_1_CRED,
                 new FullName(USER_1.toString(), USER_1.toString()), factOrg.getDefault());
         factUser.create(USER_2).save(USER_2_CRED,
                 new FullName(USER_2.toString(), USER_2.toString()), factOrg.getDefault());
         factUser.create(USER_3).save(USER_3_CRED,
                 new FullName(USER_3.toString(), USER_3.toString()), factOrg.getDefault());
-        trans.commit();
+        sqlTrans.commit();
     }
 
     public static void addTestUser(UserDatabase udb, UserID userId)
@@ -221,7 +228,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
 
     protected Set<String> mockAndCaptureVerkehrPublish()
     {
-        final Set<String> published = new HashSet<String>();
+        final Set<String> published = Sets.newHashSet();
+
         when(verkehrPublisher.publish_(any(String.class), any(byte[].class)))
                 .then(new Answer<Object>() {
                     @Override
@@ -232,6 +240,53 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
                         return UncancellableFuture.createSucceeded(null);
                     }
                 });
+
         return published;
+    }
+
+    protected List<VerkehrPayload> mockAndCaptureVerkehrDeliverPayload()
+    {
+        final List<VerkehrPayload> payloads = Lists.newLinkedList();
+
+        when(verkehrAdmin.deliverPayload_(any(String.class), any(byte[].class)))
+                .then(new Answer<Object>()
+                {
+                    @Override
+                    public Object answer(InvocationOnMock invocation)
+                            throws Throwable
+                    {
+                        String did = (String) invocation.getArguments()[0];
+                        byte[] bytes = (byte[]) invocation.getArguments()[1];
+                        Command command = Command.parseFrom(bytes);
+
+                        payloads.add(new VerkehrPayload(did, command));
+                        return UncancellableFuture.createSucceeded(null);
+                    }
+                });
+
+        return payloads;
+    }
+
+    protected static class VerkehrPayload
+    {
+        private final String _did;
+        private final Command _command;
+
+        public VerkehrPayload(String did, Command command)
+        {
+            _did = did;
+            _command = command;
+        }
+
+        public DID getDID()
+                throws ExFormatError
+        {
+            return new DID(_did);
+        }
+
+        public Command getCommand()
+        {
+            return _command;
+        }
     }
 }

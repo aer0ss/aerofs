@@ -4,7 +4,7 @@
 
 package com.aerofs.daemon.tng.base.streams;
 
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.async.ISingleThreadedPrioritizedExecutor;
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.daemon.tng.IOutgoingStream;
@@ -40,7 +40,7 @@ import java.util.concurrent.ExecutionException;
 import static com.aerofs.base.async.FutureUtil.addCallback;
 import static com.aerofs.testlib.FutureAssert.assertThrows;
 import static org.mockito.Mockito.*;
-import static com.aerofs.daemon.lib.Prio.LO;
+import static com.aerofs.lib.event.Prio.LO;
 import static com.aerofs.base.id.UniqueID.ZERO;
 import static com.aerofs.proto.Transport.PBStream.Type.BEGIN_STREAM;
 import static com.aerofs.testlib.FutureAssert.getFutureThrowable;

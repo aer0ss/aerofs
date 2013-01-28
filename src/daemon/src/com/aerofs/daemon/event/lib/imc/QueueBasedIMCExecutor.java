@@ -1,8 +1,8 @@
 package com.aerofs.daemon.event.lib.imc;
 
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.ex.ExNoResource;
 

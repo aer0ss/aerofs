@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.linker.event;
 
-import com.aerofs.daemon.event.IEvent;
+import com.aerofs.lib.event.IEvent;
 
 public class EIMightDeleteNotification implements IEvent
 {

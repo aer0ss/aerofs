@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.xmpp.jingle;
 
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.lib.PrioQueue;
 import com.aerofs.j.StreamEvent;
 import com.aerofs.j.StreamInterface;

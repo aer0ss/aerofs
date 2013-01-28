@@ -7,10 +7,10 @@ package com.aerofs.daemon.transport.xmpp;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.JabberID;
-import com.aerofs.daemon.event.IEvent;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.IBlockingPrioritizedEventSink;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.IBlockingPrioritizedEventSink;
+import com.aerofs.lib.event.IEvent;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.mobile.MobileServerZephyrConnector;
 import com.aerofs.daemon.mobile.MobileService;
 import com.aerofs.daemon.transport.lib.INetworkStats.BasicStatsCounter;
@@ -44,7 +44,8 @@ import static org.jivesoftware.smack.packet.Message.Type.headline;
 
 public class Zephyr extends XMPP implements ISignallingChannel
 {
-    public Zephyr(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink, MaxcastFilterReceiver mcfr)
+    public Zephyr(DID localdid, String id, int rank, IBlockingPrioritizedEventSink<IEvent> sink,
+            MaxcastFilterReceiver mcfr)
     {
         super(localdid, id, rank, sink, mcfr);
         ZephyrClientManager zcm = new ZephyrClientManager(id, rank, this, new BasicStatsCounter(), this);

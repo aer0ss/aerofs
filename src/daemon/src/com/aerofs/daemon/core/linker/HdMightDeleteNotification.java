@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.linker;
 import com.aerofs.daemon.core.linker.event.EIMightDeleteNotification;
 import com.aerofs.daemon.core.linker.scanner.ScanSessionQueue;
 import com.aerofs.daemon.event.IEventHandler;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.Util;
 import com.google.inject.Inject;

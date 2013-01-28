@@ -2,7 +2,7 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.daemon.event.IEventHandler;
 import com.aerofs.daemon.event.net.EITransportMetricsUpdated;
-import com.aerofs.daemon.lib.Prio;
+import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 
 public class HdTransportMetricsUpdated implements IEventHandler<EITransportMetricsUpdated>

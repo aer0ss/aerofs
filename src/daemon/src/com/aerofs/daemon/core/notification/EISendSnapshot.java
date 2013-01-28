@@ -11,7 +11,7 @@ import com.aerofs.daemon.core.net.IUploadStateListener.Key;
 import com.aerofs.daemon.core.net.IUploadStateListener.Value;
 import com.aerofs.daemon.core.net.UploadState;
 import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
+import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.id.SOCID;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 
