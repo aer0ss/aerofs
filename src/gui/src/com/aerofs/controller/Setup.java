@@ -301,6 +301,9 @@ class Setup
             map.put(Key.S3_SECRET_KEY, s3config.getSecretKey());
             map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
         }
+        if (userId.isTeamServerID()) {
+            map.put(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
+        }
 
         CfgDatabase db = Cfg.db();
         db.recreateSchema_();
