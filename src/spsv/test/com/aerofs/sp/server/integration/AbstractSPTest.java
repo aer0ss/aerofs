@@ -244,49 +244,23 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         return published;
     }
 
-    protected List<VerkehrPayload> mockAndCaptureVerkehrDeliverPayload()
+    protected List<Command> mockAndCaptureVerkehrDeliverPayload()
     {
-        final List<VerkehrPayload> payloads = Lists.newLinkedList();
+        final List<Command> payloads = Lists.newLinkedList();
 
-        when(verkehrAdmin.deliverPayload_(any(String.class), any(byte[].class)))
+        when(verkehrAdmin.deliverPayload(any(String.class), any(byte[].class)))
                 .then(new Answer<Object>()
                 {
                     @Override
                     public Object answer(InvocationOnMock invocation)
                             throws Throwable
                     {
-                        String did = (String) invocation.getArguments()[0];
                         byte[] bytes = (byte[]) invocation.getArguments()[1];
-                        Command command = Command.parseFrom(bytes);
-
-                        payloads.add(new VerkehrPayload(did, command));
+                        payloads.add(Command.parseFrom(bytes));
                         return UncancellableFuture.createSucceeded(null);
                     }
                 });
 
         return payloads;
-    }
-
-    protected static class VerkehrPayload
-    {
-        private final String _did;
-        private final Command _command;
-
-        public VerkehrPayload(String did, Command command)
-        {
-            _did = did;
-            _command = command;
-        }
-
-        public DID getDID()
-                throws ExFormatError
-        {
-            return new DID(_did);
-        }
-
-        public Command getCommand()
-        {
-            return _command;
-        }
     }
 }

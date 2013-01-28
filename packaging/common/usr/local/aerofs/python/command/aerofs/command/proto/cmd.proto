@@ -65,13 +65,25 @@ message TransientCommandRequest {
 enum CommandType {
     // One or more device names have been updated and the client must update invalidate local cache
     // of device names.
-    INVALIDATE_DEVICE_NAMES = 0;
+    INVALIDATE_DEVICE_NAME_CACHE = 0;
 
-    // One or more user first/last name pairs have been updated and the client must invalidate their
-    // local cache of user names.
-    INVALIDATE_USER_NAMES = 1;
+    // One or more device names have been updated and the client must update invalidate local cache
+    // of device names.
+    INVALIDATE_USER_NAME_CACHE = 1;
 
-    // More command types can be added here...
+    // The device should unlink itself.
+    UNLINK_SELF = 2;
+
+    // The device should refresh its certificate revocation list.
+    REFRESH_CRL = 3;
+
+    // The device should clean up its local sync status database because it is possible that some
+    // devices they share with have been unlinked.
+    CLEAN_SSS_DATABASE = 4;
+
+    // TODO (MP) ACLs should be moved to the new command server infrastructure.
+
+    // Add more commands here...
 }
 
 // Command payload that is sent via verkehr.

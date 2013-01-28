@@ -41,7 +41,7 @@ import java.util.List;
  * 1. Storage of metadata is broken up so that we can take advantage of the redis incr builtin for
  *    counting retries.
  *
- *  * A picture helps visualize the setup in redis:
+ * A picture helps visualize the setup in redis:
  *
  *  -----    -----    -----
  *  |A,4| => |B,3| => |C,2|
@@ -389,6 +389,9 @@ public class JedisEpochCommandQueue extends AbstractJedisDatabase
                 final Tuple t = Iterables.getOnlyElement(tupleSet);
                 _epoch = (long) t.getScore();
                 _type = CommandType.valueOf(Integer.valueOf(t.getElement()));
+
+                // The Iterables call will fail so we know this is true at this point.
+                _exists = true;
             }
 
             _init = true;

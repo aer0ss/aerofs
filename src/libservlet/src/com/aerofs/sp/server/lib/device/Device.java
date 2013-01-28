@@ -128,7 +128,7 @@ public class Device
         }
     }
 
-    public void throwIfDoesNotExist()
+    public void throwIfNotFound()
             throws ExNotFound, SQLException
     {
         if (!exists()) {
@@ -177,6 +177,16 @@ public class Device
                 name = Util.nextName(name, "");
             }
         }
+    }
+
+    public void delete()
+            throws SQLException, ExNotFound
+    {
+        if (!exists()) {
+            throw new ExNotFound();
+        }
+
+        _f._db.deleteDevice(_id);
     }
 
     /**

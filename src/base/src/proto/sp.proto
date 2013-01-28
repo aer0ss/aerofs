@@ -369,8 +369,6 @@ service SPService {
      * Revoke the certificate of a specific device. This will trigger a verkehr notification for the
      * CRL.
      *
-     * TODO (MP) also send unlink command to the device itself and clean device database.
-     *
      * Q. Why is this needed? Isn't it sufficient to manage users only by the ACL system?
      * A. Consider the case where a user quits AeroFS and we revoke all privileges via ACLs. Their
      * certs will still be valid but it won't matter due to the fact that they lack ACLs.
@@ -385,41 +383,23 @@ service SPService {
      */
     rpc UnlinkUserDevice(UnlinkUserDeviceCall) returns(Void);
 
-    /**
-     * Revoke all certificates belonging to one user. This will trigger a verkehr notification for
-     * the CRL.
-     *
-     * TODO (MP) also send unlink commands to all devices and clean device database.
-     *
-     * Required Auth Level: user
-     */
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
     rpc UnlinkAllUserDevices(Void) returns(Void);
 
     /**
      * Revoke the certificate of a specific team server. This will trigger a verkehr notification
      * for the CRL.
      *
-     * TODO (MP) also send unlink command to the device itself and clean device database.
-     *
      * Required Auth Level: admin
      *
      * Throws:
      *   ExNoPerm   if the user is not an admin of the organization that owns the team server.
      *   ExNotFound if the user is trying to revoke a certificate that does not exist.
+     *   ExBadArgs  if the device specified does not belong to the team server user.
      */
     rpc UnlinkTeamServerDevice(UnlinkTeamServerDeviceCall) returns(Void);
 
-    /**
-     * Revoke all team server certificates in the callers organization. This will trigger a verkehr
-     * notification for the CRL.
-     *
-     * TODO (MP) also send unlink commands to all devices and clean device database.
-     *
-     * Required Auth Level: admin
-     *
-     * Throws:
-     *   ExNoPerm if the user is not an admin of the organization.
-     */
+    // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this.
     rpc UnlinkAllTeamServerDevices(Void) returns(Void);
 
     /**

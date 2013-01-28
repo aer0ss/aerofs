@@ -50,7 +50,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
     @Before
     public void setupVerkehrToCommandSuccessfully()
     {
-        when(verkehrAdmin.updateCRL_(any(ImmutableList.class)))
+        when(verkehrAdmin.updateCRL(any(ImmutableList.class)))
                 .thenReturn(UncancellableFuture.<Void>createSucceeded(null));
     }
 

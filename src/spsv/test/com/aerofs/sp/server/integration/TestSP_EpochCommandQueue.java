@@ -8,6 +8,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.FullName;
+import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
@@ -23,7 +24,7 @@ import java.util.List;
 public class TestSP_EpochCommandQueue extends AbstractSPTest
 {
     // Command verkehr channel to command object mapping.
-    private List<VerkehrPayload> _payloads;
+    private List<Command> _payloads;
 
     // Device that we will use for testing.
     private Device _device;
@@ -78,8 +79,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         updateUserName();
 
         Assert.assertEquals(1, _payloads.size());
-        Assert.assertEquals(CommandType.INVALIDATE_USER_NAMES,
-                _payloads.get(0).getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_USER_NAME_CACHE, _payloads.get(0).getType());
     }
 
     @Test
@@ -89,8 +89,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         updateDeviceName();
 
         Assert.assertEquals(1, _payloads.size());
-        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAMES,
-                _payloads.get(0).getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, _payloads.get(0).getType());
     }
 
     @Test
@@ -113,9 +112,8 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         GetCommandQueueHeadReply reply = service.getCommandQueueHead(_device.id().toPB()).get();
 
         Assert.assertTrue(reply.hasCommand());
-        Assert.assertEquals(CommandType.INVALIDATE_USER_NAMES, reply.getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_USER_NAME_CACHE, reply.getCommand().getType());
     }
-
 
     @Test
     public void shouldGiveCorrectCommandQueueHeadAfterDeviceNameUpdate()
@@ -125,7 +123,7 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         GetCommandQueueHeadReply reply = service.getCommandQueueHead(_device.id().toPB()).get();
 
         Assert.assertTrue(reply.hasCommand());
-        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAMES, reply.getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, reply.getCommand().getType());
     }
 
     @Test
@@ -159,13 +157,13 @@ public class TestSP_EpochCommandQueue extends AbstractSPTest
         headReply2 = service.getCommandQueueHead(_device.id().toPB()).get();
 
         Assert.assertTrue(ackReply.hasCommand());
-        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAMES, ackReply.getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, ackReply.getCommand().getType());
 
         Assert.assertTrue(headReply1.hasCommand());
-        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAMES, headReply1.getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, headReply1.getCommand().getType());
 
         Assert.assertTrue(headReply2.hasCommand());
-        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAMES, headReply2.getCommand().getType());
+        Assert.assertEquals(CommandType.INVALIDATE_DEVICE_NAME_CACHE, headReply2.getCommand().getType());
 
         // The new epoch number should be higher.
         Assert.assertTrue(headReply1.getCommand().getEpoch() < headReply2.getCommand().getEpoch());

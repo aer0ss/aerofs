@@ -34,8 +34,8 @@ public class TestJedisEpochCommandQueue extends AbstractJedisTest
 
     private final DID _d1 = new DID(UniqueID.generate());
 
-    private final CommandType _c1 = CommandType.INVALIDATE_DEVICE_NAMES;
-    private final CommandType _c2 = CommandType.INVALIDATE_USER_NAMES;
+    private final CommandType _c1 = CommandType.INVALIDATE_DEVICE_NAME_CACHE;
+    private final CommandType _c2 = CommandType.INVALIDATE_USER_NAME_CACHE;
 
     @Before
     public void setupTestJedisEpochCommandQueue() throws ExFormatError

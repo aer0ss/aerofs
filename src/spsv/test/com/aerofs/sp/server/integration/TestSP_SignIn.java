@@ -17,7 +17,6 @@ import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.mockito.Matchers.any;
@@ -25,11 +24,18 @@ import static org.mockito.Mockito.when;
 
 public class TestSP_SignIn extends AbstractSPTest
 {
+    private UserID _tsUserID;
+    private DID _tsDID;
+
     @SuppressWarnings("unchecked")
     @Before
-    public void mockVerkehrAdminUpdateCRL()
+    public void mockVerkehr()
     {
-        when(verkehrAdmin.updateCRL_(any(ImmutableList.class)))
+        // Deliver payload for commands.
+        mockAndCaptureVerkehrDeliverPayload();
+
+        // Update CRL for the verkehr CRL.
+        when(verkehrAdmin.updateCRL(any(ImmutableList.class)))
                 .thenReturn(UncancellableFuture.<Common.Void>createSucceeded(null));
     }
 
@@ -45,11 +51,11 @@ public class TestSP_SignIn extends AbstractSPTest
     public void shouldNotAllowNonExistingTeamServerIDToSignIn()
             throws Exception
     {
-        UserID tsUserID = new OrganizationID(123).toTeamServerUserID();
-        ByteString tsUserPass = getTeamServerLocalPassword(tsUserID);
+        UserID _tsUserID = new OrganizationID(123).toTeamServerUserID();
+        ByteString tsUserPass = getTeamServerLocalPassword(_tsUserID);
 
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(tsUserID.toString(), tsUserPass);
+        service.signIn(_tsUserID.toString(), tsUserPass);
     }
 
     @Test(expected = ExBadCredential.class)
@@ -57,10 +63,10 @@ public class TestSP_SignIn extends AbstractSPTest
             throws Exception
     {
         setSessionUser(USER_1);
-        UserID tsUserID = setupTeamServer();
+        setupTeamServer();
 
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(tsUserID.toString(), getTeamServerLocalPassword(tsUserID));
+        service.signIn(_tsUserID.toString(), getTeamServerLocalPassword(_tsUserID));
     }
 
     @Test
@@ -68,15 +74,13 @@ public class TestSP_SignIn extends AbstractSPTest
             throws Exception
     {
         setSessionUser(USER_1);
-        UserID tsUserID = setupTeamServer();
+        setupTeamServer();
 
         // Credentials do not need to be supplied here.
         mockCertificateAuthenticatorSetAuthenticatedState();
-        service.signIn(tsUserID.toString(), ByteString.copyFrom(new byte[0]));
+        service.signIn(_tsUserID.toString(), ByteString.copyFrom(new byte[0]));
     }
 
-    // Ignore until revoke team server device certificate has been completed.
-    @Ignore
     @Test(expected = ExBadCredential.class)
     public void shouldNotAllowTeamServerLoginWithRevokedCertificate()
             throws Exception
@@ -84,33 +88,32 @@ public class TestSP_SignIn extends AbstractSPTest
         setSessionUser(USER_1);
 
         // Setup the team server (obtail device certificate).
-        UserID tsUserID = setupTeamServer();
+        setupTeamServer();
 
         // Revoke all device certificates including the one just created.
-        service.unlinkAllTeamServerDevices();
+        service.unlinkTeamServerDevice(_tsDID.toPB());
 
         // Expect the sign in to fail even when the cert has been verified with nginx.
         mockCertificateAuthenticatorSetAuthenticatedState();
-        service.signIn(tsUserID.toString(), getTeamServerLocalPassword(tsUserID));
+        service.signIn(_tsUserID.toString(), getTeamServerLocalPassword(_tsUserID));
     }
 
-    private UserID setupTeamServer()
+    private void setupTeamServer()
             throws Exception
     {
         mockCertificateAuthenticatorSetAuthenticatedState();
 
         service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getID());
 
-        UserID tsUserID = UserID.fromInternal(service.getTeamServerUserID().get().getId());
-        DID tsDID = new DID(UniqueID.generate());
+        _tsUserID = UserID.fromInternal(service.getTeamServerUserID().get().getId());
+        _tsDID = new DID(UniqueID.generate());
 
         mockCertificateGeneratorAndIncrementSerialNumber();
-        service.certifyTeamServerDevice(tsDID.toPB(), newCSR(tsUserID, tsDID));
-        return tsUserID;
+        service.certifyTeamServerDevice(_tsDID.toPB(), newCSR(_tsUserID, _tsDID));
     }
 
-    private ByteString getTeamServerLocalPassword(UserID tsUserID)
+    private ByteString getTeamServerLocalPassword(UserID _tsUserID)
     {
-        return ByteString.copyFrom(SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, tsUserID));
+        return ByteString.copyFrom(SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, _tsUserID));
     }
 }

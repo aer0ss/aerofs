@@ -64,6 +64,14 @@ public class DeviceDatabase extends AbstractSQLDatabase
         }
     }
 
+    public void deleteDevice(DID did)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(DBUtil.deleteWhere(T_DEVICE, C_DEVICE_ID + "=?"));
+        ps.setString(1, did.toStringFormal());
+        ps.executeUpdate();
+    }
+
     public boolean hasDevice(DID did)
             throws SQLException
     {

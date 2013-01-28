@@ -180,14 +180,13 @@ public final class CommandNotificationSubscriber
 
             // Get the command at the head of the queue and init loop variables.
             SPBlockingClient sp = newSPClient();
-            GetCommandQueueHeadReply head =
-                    sp.getCommandQueueHead(Cfg.did().toPB());
+            GetCommandQueueHeadReply head = sp.getCommandQueueHead(Cfg.did().toPB());
 
             long initialQueueSize = head.getQueueSize();
             boolean more = head.hasCommand();
 
             if (!more) {
-                l.error("cmd: already up to date");
+                l.info("cmd: already up to date");
                 return;
             }
 
@@ -275,16 +274,16 @@ public final class CommandNotificationSubscriber
         {
             l.info("cmd: process " + command.getType());
             switch (command.getType()) {
-                case INVALIDATE_DEVICE_NAMES:
+                case INVALIDATE_DEVICE_NAME_CACHE:
                     invalidateDeviceNameCache();
                     break;
-                case INVALIDATE_USER_NAMES:
+                case INVALIDATE_USER_NAME_CACHE:
                     invalidateUserNameCache();
                     break;
                 default:
                     throw new Exception("cmd type unknown");
             }
-        }
+       }
     }
 
     private static SPBlockingClient newSPClient()

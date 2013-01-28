@@ -316,41 +316,16 @@ public class SPService implements ISPService
             ImmutableList<Device> peerDevices = user.listPeerDevices();
 
             for (Device peerDevice : peerDevices) {
-
-                Epoch userEpoch = null;
-                Epoch deviceEpoch = null;
-
-                _jedisTrans.begin();
-
                 if (userNameUpdated) {
-                    userEpoch = _commandQueue.enqueue(peerDevice.id(),
-                            CommandType.INVALIDATE_USER_NAMES);
-                }
-                if (deviceNameUpdated) {
-                    deviceEpoch = _commandQueue.enqueue(peerDevice.id(),
-                            CommandType.INVALIDATE_DEVICE_NAMES);
-                }
-
-                _jedisTrans.commit();
-
-                if (userNameUpdated) {
-                    assert userEpoch != null;
-                    Command command = Command.newBuilder()
-                            .setEpoch(userEpoch.get())
-                            .setType(CommandType.INVALIDATE_USER_NAMES)
-                            .build();
-                    _verkehrAdmin.deliverPayload_(peerDevice.id().toStringFormal(),
-                            command.toByteArray()).get();
+                    l.info("cmd: inval user cache for " + peerDevice.id().toStringFormal());
+                    addToCommandQueueAndSendVerkehrMessage(peerDevice.id(),
+                            CommandType.INVALIDATE_USER_NAME_CACHE);
                 }
 
                 if (deviceNameUpdated) {
-                    assert deviceEpoch != null;
-                    Command command = Command.newBuilder()
-                            .setEpoch(deviceEpoch.get())
-                            .setType(CommandType.INVALIDATE_DEVICE_NAMES)
-                            .build();
-                    _verkehrAdmin.deliverPayload_(peerDevice.id().toStringFormal(),
-                            command.toByteArray()).get();
+                    l.info("cmd: inval device cache for " + peerDevice.id().toStringFormal());
+                    addToCommandQueueAndSendVerkehrMessage(peerDevice.id(),
+                            CommandType.INVALIDATE_DEVICE_NAME_CACHE);
                 }
             }
         }
@@ -1449,15 +1424,7 @@ public class SPService implements ISPService
         }
     }
 
-    private void updateCRL_(ImmutableList<Long> serials)
-            throws Exception
-    {
-        l.info("command verkehr, #serials: " + serials.size());
-        ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL_(serials);
-        verkehrFutureGet_(succeeded);
-    }
-
-    @Override
+   @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
             throws IOException, SQLException, ExBadCredential, ExNotFound
     {
@@ -1628,72 +1595,93 @@ public class SPService implements ISPService
 
         User user = _sessionUser.get();
         Device device = _factDevice.create(deviceId);
-        User owner = device.getOwner();
 
-        l.info(user.id() + ": unlink " + device.id());
+        l.info(user.id() + ": unlink " + device.id().toStringFormal());
 
-        if (!owner.equals(user)) {
-            throw new ExNoPerm("Cannot revoke cert for device by a different owner: " +
-                    user + " != " + owner);
+        if (!device.getOwner().equals(user)) {
+            throw new ExNoPerm();
         }
 
-        Certificate cert = device.getCertificate();
-        cert.revoke();
-
-        ImmutableList.Builder<Long> builder = ImmutableList.builder();
-        builder.add(cert.serial());
-
-        // Push revoked serials to verkehr.
-        updateCRL_(builder.build());
+        // Perform the actual certificate revocation and update the persistent command queue.
+        unlinkDeviceHelper(device);
 
         _sqlTrans.commit();
 
         return createVoidReply();
     }
 
+    // TODO: remove this (should be replaced by a cancel account call).
     @Override
     public ListenableFuture<Void> unlinkAllUserDevices()
         throws Exception
     {
+        throw new ExBadArgs();
+    }
+
+    @Override
+    public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId)
+            throws Exception
+    {
         _sqlTrans.begin();
 
         User user = _sessionUser.get();
-        l.info(user.id() + ": unlink all");
+        Device device = _factDevice.create(deviceId);
 
-        ImmutableList<Device> userDevices = user.listUserDevices();
-        ImmutableList.Builder<Long> serials = ImmutableList.builder();
+        l.info(user.id() + ": unlink ts " + device.id().toStringFormal());
 
-        for (Device device : userDevices) {
-            Certificate cert = device.getCertificate();
+        user.throwIfNotAdmin();
+        device.throwIfNotFound();
 
-            cert.revoke();
-            serials.add(cert.serial());
+        if (!device.getOwner().id().isTeamServerID()) {
+            throw new ExBadArgs();
         }
 
-        // Push revoked serials to verkehr.
-        updateCRL_(serials.build());
+        // Device does not belong to the same organization as the caller.
+        if (!device.getOwner().getOrganization().equals(user.getOrganization())) {
+            throw new ExNoPerm();
+        }
+
+        // Perform the actual certificate revocation and update the persistent command queue.
+        unlinkDeviceHelper(device);
 
         _sqlTrans.commit();
 
         return createVoidReply();
     }
 
-    @Override
-    public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId)
-    {
-        // TODO (MP) finish this...
-        // when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
-
-        return createVoidReply();
-    }
-
+    // TODO: remove this (should be replaced by a cancel account call).
     @Override
     public ListenableFuture<Void> unlinkAllTeamServerDevices()
+            throws Exception
     {
-        // TODO (MP) finish this...
-        // when finished enable shouldNotAllowTeamServerLoginWithRevokedCertificate.
+        throw new ExBadArgs();
+    }
 
-        return createVoidReply();
+    /**
+     * Helper for the two above unlink device calls. Should be called with a SQL transaction.
+     * @param device the device to unlink.
+     */
+    private void unlinkDeviceHelper(Device device)
+            throws Exception
+    {
+        Certificate cert = device.getCertificate();
+        User owner = device.getOwner();
+
+        cert.revoke();
+        device.delete();
+
+        ImmutableList.Builder<Long> builder = ImmutableList.builder();
+        builder.add(cert.serial());
+        updateVerkehrCRL(builder.build());
+
+        ImmutableList<Device> peerDevices = owner.listPeerDevices();
+
+        // Tell peer devices to clean their sss database and refresh their certificate revocation
+        // list.
+        for (Device peer : peerDevices) {
+            addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
+            addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.CLEAN_SSS_DATABASE);
+        }
     }
 
     @Override
@@ -1703,7 +1691,7 @@ public class SPService implements ISPService
         Device device = _factDevice.create(deviceID);
 
         _sqlTrans.begin();
-        device.throwIfDoesNotExist();
+        device.throwIfNotFound();
         device.throwIfNotOwner(_sessionUser.get());
         _sqlTrans.commit();
 
@@ -1743,13 +1731,14 @@ public class SPService implements ISPService
         Device device = _factDevice.create(deviceID);
 
         _sqlTrans.begin();
-        device.throwIfDoesNotExist();
+        device.throwIfNotFound();
         device.throwIfNotOwner(_sessionUser.get());
         _sqlTrans.commit();
 
         l.info("cmd ack: " + device.id().toStringFormal() + " epoch=" + epoch + " error=" + error);
 
         _jedisTrans.begin();
+
         SuccessError result;
         QueueSize size = _commandQueue.size(device.id());
         if (error) {
@@ -1886,5 +1875,29 @@ public class SPService implements ISPService
     {
         if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
         else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
+    }
+
+    private void addToCommandQueueAndSendVerkehrMessage(DID did, CommandType type)
+            throws ExecutionException, InterruptedException
+    {
+        _jedisTrans.begin();
+        Epoch epoch = _commandQueue.enqueue(did, type);
+        _jedisTrans.commit();
+        assert epoch != null;
+
+        Command command = Command.newBuilder()
+                .setEpoch(epoch.get())
+                .setType(type)
+                .build();
+        _verkehrAdmin.deliverPayload(did.toStringFormal(), command.toByteArray()).get();
+    }
+
+    private void updateVerkehrCRL(ImmutableList<Long> serials)
+            throws Exception
+    {
+        l.info("command verkehr, #serials: " + serials.size());
+        ListenableFuture<Void> succeeded = _verkehrAdmin.updateCRL(serials);
+
+        verkehrFutureGet_(succeeded);
     }
 }
