@@ -3,7 +3,6 @@ package com.aerofs.daemon.mobile;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
-import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AbstractRpcServerHandler;
 import com.aerofs.base.net.MagicHeader;
@@ -19,7 +18,6 @@ import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
@@ -45,7 +43,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
@@ -54,14 +51,11 @@ import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.jboss.netty.handler.codec.frame.LengthFieldPrepender;
 import org.jboss.netty.handler.ssl.SslHandler;
 
-import javax.net.ssl.SSLContext;
 import java.security.cert.Certificate;
 import java.util.Map.Entry;
 
 public class MobileService implements IMobileService
 {
-    private final static Logger l = Util.l(MobileService.class);
-
     private static final Prio PRIO = Prio.LO;
     private static final MagicHeader MAGIC_HEADER = new MagicHeader(
             BaseParam.MobileService.MAGIC_BYTES, BaseParam.MobileService.VERSION_NUMBER);
@@ -247,8 +241,6 @@ public class MobileService implements IMobileService
         private final SSLEngineFactory _sslEngineFactory;
         private final CfgLocalUser _cfgLocalUser;
         private final CfgLocalDID _cfgLocalDID;
-
-        private SSLContext _sslContext;
 
         @Inject
         public Factory(
