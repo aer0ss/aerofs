@@ -12,7 +12,6 @@ import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.event.fs.EIGetAttr;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
@@ -25,7 +24,6 @@ import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.lib.cfg.CfgLocalUser;
-import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
 import com.aerofs.proto.Common;
@@ -37,7 +35,6 @@ import com.aerofs.proto.Mobile.DownloadPacketReply;
 import com.aerofs.proto.Mobile.IMobileService;
 import com.aerofs.proto.Mobile.StartDownloadReply;
 import com.aerofs.proto.Objects.GetChildrenAttributesReply;
-import com.aerofs.proto.Objects.GetObjectAttributesReply;
 import com.aerofs.proto.Objects.PBBranch;
 import com.aerofs.proto.Objects.PBObjectAttributes;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -78,20 +75,6 @@ public class MobileService implements IMobileService
     public ListenableFuture<Void> heartbeat() throws Exception
     {
         return createVoidReply();
-    }
-
-    @Override
-    public ListenableFuture<GetObjectAttributesReply> getObjectAttributes(String user, PBPath path)
-            throws Exception
-    {
-        EIGetAttr ev = new EIGetAttr(UserID.fromExternal(user), _imce, new Path(path));
-        ev.execute(PRIO);
-        if (ev._oa == null) throw new ExNotFound();
-
-        GetObjectAttributesReply reply = GetObjectAttributesReply.newBuilder()
-                .setObjectAttributes(toPB(ev._oa))
-                .build();
-        return createReply(reply);
     }
 
     @Override

@@ -4,12 +4,11 @@
 
 package com.aerofs.daemon.mobile;
 
-import com.aerofs.daemon.mobile.TransportDataExtension.TransportDataIQ;
 import com.aerofs.base.net.AddressResolverHandler;
+import com.aerofs.base.net.ZephyrPipeHandler;
+import com.aerofs.daemon.mobile.TransportDataExtension.TransportDataIQ;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
-import com.aerofs.base.net.TraceHandler;
-import com.aerofs.base.net.ZephyrPipeHandler;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
@@ -62,10 +61,9 @@ public class MobileServerZephyrConnector
                     throws Exception
             {
                 ChannelPipeline p = Channels.pipeline();
+                p.addLast("resolver", new AddressResolverHandler(null));
+                p.addLast("zephyrPipeHandler", new ZephyrPipeHandler());
                 _mobileServiceFactory.appendToPipeline(p);
-                p.addFirst("zephyrPipeHandler", new ZephyrPipeHandler());
-                p.addFirst("resolver", new AddressResolverHandler(null));
-                p.addFirst("tracer", new TraceHandler());
                 return p;
             }
         });

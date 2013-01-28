@@ -45,9 +45,15 @@ public class SSLEngineFactory
      *                     you are who you claim you are. If this parameter is null, this peer will
      *                     not be able to authenticate itself to the remote peer.
      *
-     * @param trustedCA    Who you trust. If this parameter is null, any remote peer will be able to
-     *                     communicate with you. If this parameter is non-null, then the remote
-     *                     peer's certificate will be checked as having been issued by this CA.
+     * @param trustedCA    Who you trust. If this parameter is non-null, then the remote peer's
+     *                     certificate will be checked as having been issued by this CA.
+     *
+     *                     If this parameter is null, the behavior will be as follows:
+     *                       - In server mode, any client will be accepted. (ie: no authentication
+     *                       will be performed on the client)
+     *                       - In client mode, any server with a valid SSL certificate issued by a
+     *                       trusted CA will be accepted. (ie: the server will be authenticated,
+     *                       and self-signed / bogus certificates won't be accepted.)
      *
      * @param crl          Who you distrust. If this parameter is null, no CRL check will be done.
      *                     If it is non-null, the remote peer's certificate serial number will be

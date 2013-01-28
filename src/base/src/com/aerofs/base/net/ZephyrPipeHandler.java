@@ -78,8 +78,7 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e)
-            throws Exception
+    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
     {
         Channel channel = ctx.getChannel();
         _ctx = ctx;
@@ -96,12 +95,10 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
                     _recvLocalZid.setFailure(future.getCause());
                     _sendRemoteZid.setFailure(future.getCause());
                     future.getChannel().close();
-                    return;
                 }
             }
         });
-        ctx.getPipeline().addBefore(ctx.getName(), ctx.getName() + "Decoder",
-                new ZephyrInitDecoder());
+        ctx.getPipeline().addBefore(ctx.getName(), ctx.getName() + "Decoder", new ZephyrInitDecoder());
         super.channelOpen(ctx, e);
     }
 
@@ -169,8 +166,7 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e)
-            throws Exception
+    public void handleDownstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception
     {
         if (e instanceof SendZephyrIDEvent) {
             int zid = ((SendZephyrIDEvent)e).getZephyrID();
@@ -202,8 +198,7 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e)
-            throws Exception
+    public void handleUpstream(ChannelHandlerContext ctx, ChannelEvent e) throws Exception
     {
         if (e instanceof ReceiveZephyrIDEvent) {
             int zid = ((ReceiveZephyrIDEvent)e).getZephyrID();
@@ -233,16 +228,15 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         return buffer;
     }
 
-    private static int decodeZephyrID(ChannelBuffer buffer)
-            throws IOException
+    private static int decodeZephyrID(ChannelBuffer buffer) throws IOException
     {
         if (buffer.readableBytes() < ZEPHYR_MAGIC.length + ZEPHYR_REG_PAYLOAD_LEN) {
             return ZEPHYR_INVALID_CHAN_ID;
         }
 
         buffer.markReaderIndex();
-        for (int i = 0; i < ZEPHYR_MAGIC.length; ++i) {
-            if (ZEPHYR_MAGIC[i] != buffer.readByte()) {
+        for (byte b : ZEPHYR_MAGIC) {
+            if (b != buffer.readByte()) {
                 // whoops
                 buffer.resetReaderIndex();
                 throw new IOException("bad magic header");
@@ -321,8 +315,7 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         }
     }
 
-    private static class ZephyrInitDecoder extends FrameDecoder implements
-            LifeCycleAwareChannelHandler
+    private static class ZephyrInitDecoder extends FrameDecoder implements LifeCycleAwareChannelHandler
     {
         public ZephyrInitDecoder()
         {
@@ -335,21 +328,15 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         {
             int zid = decodeZephyrID(buffer);
             if (zid == ZEPHYR_INVALID_CHAN_ID) return null;
-            l.trace("receiveZid: {}", zid);
+            l.debug("receiveZid: {}", zid);
 
             // remove this handler after reading header
             ctx.getPipeline().remove(this);
 
             ctx.sendUpstream(new ReceiveZephyrIDEvent(channel, zid));
 
-            if (buffer.readable()) {
-                // Hand off the remaining data to the next decoder
-//                return buffer.readBytes(buffer.readableBytes());
-                return buffer;
-            } else {
-                // Nothing to hand off
-                return null;
-            }
+            // Hand off the remaining data to the next decoder
+            return buffer.readable() ? buffer : null;
         }
     }
 }

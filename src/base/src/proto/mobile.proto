@@ -12,10 +12,6 @@ service MobileService {
     // Test if the daemon is responsive
     rpc Heartbeat(Void) returns(Void);
 
-    // Return the attribute of a given file or folder.
-    // Throw NOT_FOUND if the object doesn't exist
-    rpc GetObjectAttributes(GetObjectAttributesCall) returns(GetObjectAttributesReply);
-
     // Return the list of children names as long with their attributes for a given parent folder.
     // Throw NOT_FOUND if the parent path doesn't exist
     // Throw NOT_DIR if the parent path is not a folder
