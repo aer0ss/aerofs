@@ -1,0 +1,4 @@
+#!/bin/bash -u -e
+
+echo "getting devices via c.aerofs.com..."
+ssh c.aerofs.com "getowner $@"

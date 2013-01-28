@@ -1,0 +1,55 @@
+#!/usr/bin/python
+# vim: set expandtab ts=2 sw=2:
+
+import logging
+import MySQLdb
+import sys
+from config import config
+
+logger = logging.getLogger("get_owner")
+
+def get_device_by_id(did, spconn):
+  devices = []
+  spcursor = spconn.cursor()
+  try:
+    # Yes, I know I'm doing substitution via Python rather than via SQL.  The wildcard search requires it.
+    spcursor.execute("""SELECT d_id, d_name, d_owner_id FROM sp_device WHERE d_id LIKE "%s" """ % (did + "%"))
+    row = spcursor.fetchone()
+    while row != None:
+      devices.append(row)
+      row = spcursor.fetchone()
+    return devices
+  except Exception as err:
+    logger.warning('fail get devices err:%s' %err)
+    raise err
+  finally:
+    spcursor.close()
+
+def make_connection(user, host, password, dbname):
+  logger.debug('make db connection %s@%s/%s' %(user, host, dbname))
+  conn = MySQLdb.connect(user=user, host=host, passwd=password, db=dbname)
+  return conn
+
+def setup_logger():
+  logging.basicConfig(level=logging.INFO)
+
+if __name__ == '__main__':
+  if len(sys.argv) != 2:
+    print("usage: %s [device id]" %(sys.argv[0]))
+    sys.exit(1)
+
+  setup_logger()
+
+  try:
+    # TODO get a config file to pull the database information
+    spconn = make_connection('aerofs_sp_ro', config["sp_database"], config["aerofs_sp_ro_password"], 'aerofs_sp')
+
+    did = sys.argv[1]
+
+    logger.debug('find owner of: <%s...>' % did)
+    devices = get_device_by_id(did, spconn)
+    for dev in devices:
+      print dev
+
+  except:
+    logger.error('cannot connect to db')
