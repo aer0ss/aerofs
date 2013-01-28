@@ -75,6 +75,10 @@ div.input_container.submit {
   line-height: @baseFontSize * 1.4;
 }
 
+.full_name {
+  font-weight: bold;
+}
+
 // Suppress datatables colume headers
 .dataTables_wrapper table thead {
   display: none;
@@ -82,6 +86,16 @@ div.input_container.submit {
 
 .datatable_body {
   margin-bottom: 15px;
+}
+
+// Force dataTables info text (e.g. "1-10 of 100") stay close to pagination
+// buttons. The sDom parameter must place the text _after_ pagination,
+// e.g. "<'span3'pi>". See invocations to dataTable() in shared_folder.mako,
+// users.mako, etc for examples.
+.dataTables_info {
+  display: inline;
+  float: right;
+  margin-right: 10px;
 }
 
 // To correct the vertical mis-alignment for icons in bootstrap.css

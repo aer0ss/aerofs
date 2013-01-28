@@ -47,11 +47,19 @@ div.input_container.submit {
 .btn {
   line-height: 15.399999999999999pt;
 }
+.full_name {
+  font-weight: bold;
+}
 .dataTables_wrapper table thead {
   display: none;
 }
 .datatable_body {
   margin-bottom: 15px;
+}
+.dataTables_info {
+  display: inline;
+  float: right;
+  margin-right: 10px;
 }
 [class^="icon-"],
 [class*=" icon-"] {
