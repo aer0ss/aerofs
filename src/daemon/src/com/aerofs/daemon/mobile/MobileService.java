@@ -3,9 +3,11 @@ package com.aerofs.daemon.mobile;
 import com.aerofs.base.BaseParam;
 import com.aerofs.base.BaseSecUtil;
 import com.aerofs.base.C;
+import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.base.net.AbstractRpcServerHandler;
 import com.aerofs.base.net.MagicHeader;
+import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.CoreIMCExecutor;
@@ -22,6 +24,8 @@ import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
 import com.aerofs.lib.cfg.CfgKeyManagersProvider;
+import com.aerofs.lib.cfg.CfgLocalDID;
+import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.KIndex;
@@ -241,6 +245,8 @@ public class MobileService implements IMobileService
 
         private final IIMCExecutor _imce;
         private final SSLEngineFactory _sslEngineFactory;
+        private final CfgLocalUser _cfgLocalUser;
+        private final CfgLocalDID _cfgLocalDID;
 
         private SSLContext _sslContext;
 
@@ -248,9 +254,12 @@ public class MobileService implements IMobileService
         public Factory(
                 CoreIMCExecutor cimce,
                 CfgCACertFilename cfgCACertFilename,
-                CfgKeyManagersProvider cfgKeyManagersProvider)
+                CfgKeyManagersProvider cfgKeyManagersProvider,
+                CfgLocalUser cfgLocalUser, CfgLocalDID cfgLocalDID)
         {
             _imce = cimce.imce();
+            _cfgLocalUser = cfgLocalUser;
+            _cfgLocalDID = cfgLocalDID;
 
             Certificate caCert;
             try {
@@ -283,6 +292,7 @@ public class MobileService implements IMobileService
             p.addLast("frameEncoder", new LengthFieldPrepender(LENGTH_FIELD_SIZE));
             p.addLast("magicHeaderWriter", MAGIC_HEADER.new WriteMagicHeaderHandler());
             p.addLast("magicHeaderReader", MAGIC_HEADER.new ReadMagicHeaderHandler());
+            p.addLast("cname", new CNameVerificationHandler(_cfgLocalUser.get(), _cfgLocalDID.get()));
             p.addLast("mobileServiceHandler", new MobileServiceHandler(mobileService));
         }
     }

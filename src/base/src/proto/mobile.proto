@@ -56,3 +56,12 @@ message DownloadCookie {
     required uint64 modTime = 2;
     required PBVer version = 3;
 }
+
+/**
+ * This message is used for the CName verification process.
+ * See CNameVerifier.java
+ */
+message CNameVerificationInfo {
+    required string user = 1;
+    required bytes did = 2;
+}

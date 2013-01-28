@@ -208,8 +208,9 @@ public class ZephyrPipeHandler extends SimpleChannelHandler
         if (e instanceof ReceiveZephyrIDEvent) {
             int zid = ((ReceiveZephyrIDEvent)e).getZephyrID();
             recvLocalZid(ctx, zid);
+        } else {
+            super.handleUpstream(ctx, e);
         }
-        super.handleUpstream(ctx, e);
     }
 
     private void recvLocalZid(ChannelHandlerContext ctx, int zid)
