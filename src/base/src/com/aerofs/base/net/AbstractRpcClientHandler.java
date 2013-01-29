@@ -4,12 +4,27 @@ import com.aerofs.base.async.UncancellableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelException;
+import org.jboss.netty.channel.ChannelFuture;
+import org.jboss.netty.channel.ChannelFutureListener;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.channel.ChannelStateEvent;
+import org.jboss.netty.channel.ExceptionEvent;
+import org.jboss.netty.channel.MessageEvent;
+import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.util.HashedWheelTimer;
+import org.jboss.netty.util.Timeout;
+import org.jboss.netty.util.Timer;
+import org.jboss.netty.util.TimerTask;
 
+import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.util.Iterator;
 import java.util.Queue;
 
 import static com.google.common.collect.Queues.newArrayDeque;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * This class is a generic handler implementation for our protobuf rpc services.
@@ -30,14 +45,18 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
 
     // Hold writes until we are connected to the server
     private final Queue<byte[]> _pendingWrites = newArrayDeque();
+    private final Timer _timer = new HashedWheelTimer();
+    private final long _timeoutDuration;
+
     private Channel _channel;
-    private Throwable _lastException = null;
 
-    // true after the channel has been closed. We need this to distinguish from the case where the
-    // channel hasn't been opened yet.
-    private volatile boolean _isClosed;
-
-    // TODO (GS): Add a timeout mechanism
+    /**
+     * @param timeoutDuration timeout in milliseconds for the request. Set to 0 to have no timeout.
+     */
+    public AbstractRpcClientHandler(long timeoutDuration)
+    {
+        _timeoutDuration = timeoutDuration;
+    }
 
     /**
      * Sends data to the server
@@ -47,18 +66,34 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     public ListenableFuture<byte[]> doRPC(byte[] bytes)
     {
         final UncancellableFuture<byte[]> readFuture = UncancellableFuture.create();
+
         synchronized (this) {
-            if (_isClosed) {
+            if (_channel.getCloseFuture().isDone()) {
                 // The channel has been closed. We can fail the request right away.
-                Throwable e = _lastException == null ? new ClosedChannelException() : _lastException;
-                readFuture.setException(e);
+                readFuture.setException(getCloseReason(_channel));
             } else {
                 _pendingReads.add(readFuture);
 
-                if (!_channel.isConnected()) {
-                    _pendingWrites.add(bytes);
-                } else {
+                // Add a timeout
+                if (_timeoutDuration > 0) {
+                    _timer.newTimeout(new TimerTask()
+                    {
+                        @Override
+                        public void run(Timeout timeout) throws Exception {
+                            synchronized (AbstractRpcClientHandler.this) {
+                                if (_pendingReads.contains(readFuture)) {
+                                    disconnect(new IOException("request timed out"));
+                                }
+                            }
+                        }
+                    }, _timeoutDuration, MILLISECONDS);
+                }
+
+                // Send the request down the wire or enqueue it if we're not connected yet
+                if (_channel.isConnected()) {
                     doWrite(bytes, readFuture);
+                } else {
+                    _pendingWrites.add(bytes);
                 }
             }
         }
@@ -79,17 +114,14 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
         ChannelBuffer buffer = ChannelBuffers.copiedBuffer(bytes);
         ChannelFuture writeFuture = _channel.write(buffer);
 
-        // If write failed, dequeue and fail the read future
+        // If write failed, drain all requests and close the channel
         writeFuture.addListener(new ChannelFutureListener()
         {
             @Override
             public void operationComplete(ChannelFuture future) throws Exception
             {
                 if (!future.isSuccess()) {
-                    readFuture.setException(future.getCause());
-                    synchronized (AbstractRpcClientHandler.this) {
-                        _pendingReads.remove(readFuture);
-                    }
+                    disconnect(future.getCause());
                 }
             }
         });
@@ -98,6 +130,12 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     public void disconnect()
     {
         _channel.disconnect();
+    }
+
+    private void disconnect(Throwable reason)
+    {
+        drainPendingRequests(reason);
+        disconnect();
     }
 
     public boolean isConnected()
@@ -122,9 +160,8 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e)
     {
-        _lastException = e.getCause();
-        drainPendingRequests(e.getCause());
-        e.getChannel().close();
+        if (_channel == null) _channel = e.getChannel();
+        disconnect(e.getCause());
     }
 
     @Override
@@ -132,6 +169,14 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     {
         synchronized (this) {
             _channel = e.getChannel();
+            _channel.getCloseFuture().addListener(new ChannelFutureListener()
+            {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception
+                {
+                    drainPendingRequests(getCloseReason(_channel));
+                }
+            });
         }
         super.channelOpen(ctx, e);
     }
@@ -140,21 +185,16 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
     {
         synchronized (this) {
-            for (byte[] bytes : _pendingWrites) {
-                doWrite(bytes, _pendingReads.peek());
+            // Flush all pending writes now that we are connected
+            Iterator<byte[]> writeIter = _pendingWrites.iterator();
+            Iterator<UncancellableFuture<byte[]>> readIter = _pendingReads.iterator();
+            while (writeIter.hasNext()) {
+                doWrite(writeIter.next(), readIter.next());
             }
             _pendingWrites.clear();
         }
 
         super.channelConnected(ctx, e);
-    }
-
-    @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
-    {
-        // Fail all pending reads
-        drainPendingRequests(new ChannelException("Connection to the daemon closed"));
-        super.channelClosed(ctx, e);
     }
 
     private void drainPendingRequests(Throwable reason)
@@ -165,7 +205,13 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
             }
             _pendingReads.clear();
             _pendingWrites.clear();
-            _isClosed = true;
         }
+    }
+
+    private static Throwable getCloseReason(Channel channel)
+    {
+        assert channel.getCloseFuture().isDone();
+        Throwable reason = channel.getCloseFuture().getCause();
+        return reason != null ? reason :new ClosedChannelException();
     }
 }
