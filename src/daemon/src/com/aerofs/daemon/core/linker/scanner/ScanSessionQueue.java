@@ -313,7 +313,7 @@ public class ScanSessionQueue implements IDumpStatMisc
 
         // schedule an exponential retry and return
         long millisecondDelay = Math.max(tk._delay * 2, Param.EXP_RETRY_MIN_DEFAULT);
-        millisecondDelay = Math.min(millisecondDelay, Param.EXP_RETRY_MAX_DEFFAULT);
+        millisecondDelay = Math.min(millisecondDelay, Param.EXP_RETRY_MAX_DEFAULT);
         l.warn("retry in " + millisecondDelay + ": " + Util.e(e));
 
         // re-enqueue the request. no need to schedule it since this method assumes that

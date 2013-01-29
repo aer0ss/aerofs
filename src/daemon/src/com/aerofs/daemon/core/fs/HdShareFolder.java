@@ -6,7 +6,6 @@ import java.util.Set;
 
 import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import static com.aerofs.daemon.core.ds.OA.Type.ANCHOR;

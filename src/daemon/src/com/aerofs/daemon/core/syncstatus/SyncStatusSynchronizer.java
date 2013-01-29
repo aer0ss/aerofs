@@ -19,8 +19,7 @@ import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.core.syncstatus.SyncStatusConnection.ExSignIn;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.daemon.lib.ExponentialRetry;
+import com.aerofs.daemon.lib.ExpRetryScheduler;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase;
 import com.aerofs.daemon.lib.db.ISyncStatusDatabase.ModifiedObject;
@@ -35,6 +34,7 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.db.IDBIterator;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.id.CID;
 import com.aerofs.lib.id.KIndex;
@@ -105,8 +105,7 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
     private final IMapSID2SIndex _sid2sidx;
     private final MapSIndex2DeviceBitMap _sidx2dbm;
     private final DirectoryService _ds;
-    private final ExponentialRetry _er;
-    private final CoreScheduler _sched;
+    private final ExpRetryScheduler _ers;
 
     /**
      * A batch of SOIDs for which a SetVersionHash should be sent to the sync status server
@@ -198,12 +197,19 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
         _ssc = ssc;
         _ssdb = ssdb;
         _nvc = nvc;
-        _sched = sched;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _sidx2dbm = sidx2dbm;
-        _er = new ExponentialRetry(sched);
         _pqd = factPQD.create(new SSPQ());
+
+        _ers = new ExpRetryScheduler(sched, "sspull", new Callable<Void>() {
+            @Override
+            public Void call() throws Exception
+            {
+                pullSyncStatus_();
+                return null;
+            }
+        }, ExNoPerm.class, ExBadArgs.class);
 
         nvc.addListener_(this);
 
@@ -254,31 +260,9 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
     /**
      * Schedule a pull from the sync status server with exponential retry
      */
-    private long _pullSeq = 0;
     void schedulePull_()
     {
-        _sched.schedule(new AbstractEBSelfHandling()
-        {
-            @Override
-            public void handle_()
-            {
-                // avoid a pile-up of failing pulls in exponential retry
-                final long seq = ++_pullSeq;
-
-                // exp retry (w/ forced server reconnect) in case of failure
-                _er.retry("SyncStatPull", new Callable<Void>()
-                {
-                    @Override
-                    public Void call()
-                            throws Exception
-                    {
-                        if (seq != _pullSeq) return null;
-                        pullSyncStatus_();
-                        return null;
-                    }
-                }, ExNoPerm.class);
-            }
-        }, 0);
+        _ers.schedule_();
     }
 
     /**

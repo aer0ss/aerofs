@@ -870,7 +870,7 @@ public abstract class Util
             } catch (Exception e) {
                 l.warn(name + ". expo wait " + interval + ": " + e(e, excludes));
                 ThreadUtil.sleepUninterruptable(interval);
-                interval = Math.min(interval * 2, Param.EXP_RETRY_MAX_DEFFAULT);
+                interval = Math.min(interval * 2, Param.EXP_RETRY_MAX_DEFAULT);
             }
         }
     }

@@ -33,7 +33,6 @@ import com.aerofs.proto.Sp.GetSharedFolderNamesReply;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.testlib.AbstractTest;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import org.junit.After;

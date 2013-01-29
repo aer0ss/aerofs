@@ -1,7 +1,5 @@
 package com.aerofs.daemon.core.acl;
 
-import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IACLDatabase;
@@ -10,12 +8,8 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.db.IDBIterator;
-import com.aerofs.lib.ex.ExExpelled;
-import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
-import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.Path;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;

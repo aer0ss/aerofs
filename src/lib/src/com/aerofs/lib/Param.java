@@ -14,7 +14,7 @@ public class Param extends BaseParam
     public static final int FILE_BLOCK_SIZE                  = 4 * C.MB;
     public static final long FREQUENT_DEFECT_SENDER_INTERVAL = 3 * C.HOUR;
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;
-    public static final long EXP_RETRY_MAX_DEFFAULT          = 60 * C.SEC;
+    public static final long EXP_RETRY_MAX_DEFAULT           = 60 * C.SEC;
 
     ////////
     // file and folder names
