@@ -13,6 +13,8 @@ import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.injectable.InjectableFile.Factory;
 import org.apache.log4j.Logger;
 
+import java.util.Arrays;
+
 public class BlockExportedFile
 {
 
@@ -62,6 +64,11 @@ public class BlockExportedFile
     public String exportedAbsPath()
     {
         String storeRoot = _s.storeExportFolder(_sokid.sidx());
-        return _path.toAbsoluteString(storeRoot);
+        // Note: the first element of _path is the SID.toStringFormal().
+        // We already take care of that bit in storeExportFolder, so we
+        // drop the first path element here.
+        String[] elems = _path.elements();
+        String relPath = Util.join(Arrays.copyOfRange(elems, 1, elems.length));
+        return Util.join(storeRoot, relPath);
     }
 }

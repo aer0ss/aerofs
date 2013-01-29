@@ -7,10 +7,12 @@ package com.aerofs.daemon.core.phy.block;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableFile;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class BlockExportedFolder
 {
@@ -97,6 +99,11 @@ public class BlockExportedFolder
     public String exportedAbsPath()
     {
         String storeRoot = _s.storeExportFolder(_soid.sidx());
-        return _path.toAbsoluteString(storeRoot);
+        // Note: the first element of _path is the SID.toStringFormal().
+        // We already take care of that bit in storeExportFolder, so we
+        // drop the first path element here.
+        String[] elems = _path.elements();
+        String relPath = Util.join(Arrays.copyOfRange(elems, 1, elems.length));
+        return Util.join(storeRoot, relPath);
     }
 }

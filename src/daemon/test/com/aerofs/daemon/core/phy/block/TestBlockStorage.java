@@ -6,6 +6,7 @@ package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -85,6 +86,7 @@ public class TestBlockStorage extends AbstractBlockTest
     @Mock CfgAbsAutoExportFolder autoExportFolder;
     @Mock FrequentDefectSender fds;
     @Mock IMapSIndex2SID sidx2sid;
+    @Mock LocalACL lacl;
 
     // use in-memory DB
     InjectableFile.Factory fileFactory = new InjectableFile.Factory();
@@ -107,9 +109,7 @@ public class TestBlockStorage extends AbstractBlockTest
         when(tk.pseudoPause_(anyString())).thenReturn(tcb);
         String testTempDir = testTempDirFactory.getTestTempDir().getAbsolutePath();
         when(auxRoot.get()).thenReturn(testTempDir);
-        // TODO: DREW finish this
         when(autoExportFolder.get()).thenReturn(Util.join(testTempDir, "autoexport"));
-        // when fds.sendDefectAsync() -> fail
         SID sid = SID.generate();
         when(sidx2sid.get_(any(SIndex.class))).thenReturn(sid);
 
@@ -137,7 +137,7 @@ public class TestBlockStorage extends AbstractBlockTest
 
         // shame @InjectMocks does not deal with a mix of Mock and real objects...
         bs = new BlockStorage(auxRoot, tc,  tm, sched, fileFactory, bsb, bsdb, autoExportFolder,
-                fds);
+                fds, lacl, sidx2sid);
         bs.init_();
     }
 

@@ -6,7 +6,10 @@ package com.aerofs.daemon.core.phy.block;
 
 import static com.aerofs.daemon.core.phy.block.BlockStorageDatabase.*;
 
+import com.aerofs.base.id.SID;
+import com.aerofs.base.id.UserID;
 import com.aerofs.daemon.core.CoreScheduler;
+import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
@@ -15,6 +18,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
 import com.aerofs.daemon.core.phy.block.BlockStorageSchema.BlockState;
+import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -27,6 +31,7 @@ import com.aerofs.lib.ContentHash;
 import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Path;
+import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
@@ -76,8 +81,8 @@ class BlockStorage implements IPhysicalStorage
     private final BlockRevProvider _revProvider = new BlockRevProvider();
     private final CfgAbsAutoExportFolder _exportFolder;
     private final FrequentDefectSender _fds;
-    // ACL use coming soon, but currently breaks injection :( - DF
-    //private final LocalACL _lacl;
+    private final LocalACL _lacl;
+    private final IMapSIndex2SID _sidx2sid;
 
     public class FileAlreadyExistsException extends IOException
     {
@@ -88,9 +93,8 @@ class BlockStorage implements IPhysicalStorage
     @Inject
     public BlockStorage(CfgAbsAuxRoot absAuxRoot, TC tc, TransManager tm, CoreScheduler sched,
             InjectableFile.Factory fileFactory, IBlockStorageBackend bsb, BlockStorageDatabase bsdb,
-            CfgAbsAutoExportFolder absExportFolder, FrequentDefectSender fds
-            //, LocalACL lacl)
-            )
+            CfgAbsAutoExportFolder absExportFolder, FrequentDefectSender fds,
+            LocalACL lacl, IMapSIndex2SID sidx2sid)
     {
         _tc = tc;
         _tm = tm;
@@ -101,8 +105,8 @@ class BlockStorage implements IPhysicalStorage
         _bsdb = bsdb;
         _exportFolder = absExportFolder;
         _fds = fds;
-        //_lacl = lacl;
-
+        _lacl = lacl;
+        _sidx2sid = sidx2sid;
     }
 
     @Override
@@ -324,41 +328,53 @@ class BlockStorage implements IPhysicalStorage
 
     @Nullable public String storeExportFolder(SIndex sidx)
     {
-        // Exported path is given by:
-        // <Export root>/read-only-export/<sid>/<path components> for shared stores
+        // For root stores, the exported path is:
+        // <Export root>/read-only-export/<user-email>/<path components>
+        // For non-root stores (shared folders), the exported path is:
+        // <Export root>/read-only-export/<sid>/<path components>
 
-        // Soon™, we'd like to also show user emails like so:
-        // <Export root>/read-only-export/<user-email>/<path components> for root stores
-        // TODO (DF): map SID in first element of _path to user's email address, if a root store.
-        //            This may not work for all emails (could have / in the address, etc - needs
-        //            more thought)
         // TODO (DF): symlink (or make a "Where are my files.txt" file) for anchors
         // Note that BlockPrefix is given by:
-        // <Export root>/prefix/<prefix file>
-
-        // N.B. the first component of a BlockFile's _path is a folder named for the store ID,
-        // so we needn't append it again here to get the desired path structure above.
-        return Util.join(exportRoot(), "read-only-export");
+        // <Export root>/p/<prefix file>
+        return Util.join(exportRoot(), "read-only-export", storeFullName(sidx));
     }
 
-    /*
     public String storeFullName(SIndex sidx)
-            throws SQLException
     {
         SID sid = _sidx2sid.get_(sidx);
-        String storeTitle = "shared-folder-" + sid.toStringFormal();
+        String storeTitle = sid.toStringFormal();
         if (sid.isRoot()) {
             // Loop over ACL entries, find non-self user, make folder with that name
-            for (UserID uid : _lacl.get_(sidx).keySet()) {
-                if (!uid.isTeamServerID()) {
-                    assert SID.rootSID(uid).equals(sid);
-                    storeTitle = uid.getID();
-                    break;
+            try {
+                for (UserID uid : _lacl.get_(sidx).keySet()) {
+                    if (!uid.isTeamServerID()) {
+                        assert SID.rootSID(uid).equals(sid);
+                        storeTitle = purifyEmail(uid.getID());
+                        break;
+                    }
                 }
+            } catch (SQLException e) {
+                // LocalACL.get_ shouldn't throw here - it shouldn't be possible to receive events
+                // about a store for which we have no ACL.
+                SystemUtil.fatal("lacl get " + sidx + " " + sid + " " + e);
             }
         }
         return storeTitle;
-    }*/
+    }
+
+    private String purifyEmail(String email)
+    {
+        // Email addresses can have characters that are forbidden in file names.  Here, we strip
+        // out the characters listed at
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx
+        // (which conveniently also covers all the characters forbidden on Unix systems)
+        // I'm not going to deal with NFC/NFD here because that's over-the-top and the autoexport
+        // folder is write-only, so it shouldn't matter.
+
+        // Note: regex replacement is 3x as fast as chaining String.replace()
+        // Note: the backslash is double-escaped: once for the compiler, and once for the regex.
+        return email.replaceAll("[<>:\"/\\\\|?*]", "_");
+    }
 
     private String storePrefix(SIndex sidx)
     {
