@@ -6,6 +6,10 @@ package com.aerofs.daemon.lib.db;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.DID2User;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FullName;
@@ -30,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// FIXME (huguesb): the local DB is never invalidated when server knowledge change
+// FIXME TODO (huguesb): the local DB is never invalidated when server knowledge change
 // FIXME TODO (WW): DO NOT put business logic in database packages (daemon.lib.db). Move this class
 //      to elsewhere.
 
@@ -73,16 +77,18 @@ public class UserAndDeviceNames
     }
 
     private final CfgLocalUser _localUser;
+    private final TC _tc;
     private final TransManager _tm;
     private final DID2User _d2u;
     private final IUserAndDeviceNameDatabase _udndb;
     private final SPBlockingClient.Factory _factSP;
 
     @Inject
-    public UserAndDeviceNames(CfgLocalUser localUser, TransManager tm, DID2User d2u,
+    public UserAndDeviceNames(CfgLocalUser localUser, TC tc, TransManager tm, DID2User d2u,
             IUserAndDeviceNameDatabase udndb, SPBlockingClient.Factory factSP)
     {
         _localUser = localUser;
+        _tc = tc;
         _tm = tm;
         _d2u = d2u;
         _udndb = udndb;
@@ -99,12 +105,7 @@ public class UserAndDeviceNames
     {
         GetDeviceInfoReply reply;
         try {
-            // TODO(hugues): release core lock around RPC ?
-            SPBlockingClient sp = _factSP.create_(SP.URL, _localUser.get());
-            sp.signInRemote();
-            List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
-            for (DID did : dids) pb.add(did.toPB());
-            reply = sp.getDeviceInfo(pb);
+            reply = getDevicesInfoFromSP_(dids);
         } catch (Exception e) {
             Util.l(this).warn("ignored: " + Util.e(e, IOException.class));
             return false;
@@ -138,6 +139,23 @@ public class UserAndDeviceNames
         }
 
         return true;
+    }
+
+    private GetDeviceInfoReply getDevicesInfoFromSP_(List<DID> dids) throws Exception
+    {
+        Token tk = _tc.acquire_(Cat.UNLIMITED, "sp-devinfo");
+        TCB tcb = null;
+        try {
+            tcb = tk.pseudoPause_("sp-devinfo");
+            SPBlockingClient sp = _factSP.create_(SP.URL, _localUser.get());
+            sp.signInRemote();
+            List<ByteString> pb = Lists.newArrayListWithExpectedSize(dids.size());
+            for (DID did : dids) pb.add(did.toPB());
+            return sp.getDeviceInfo(pb);
+        } finally {
+            if (tcb != null) tcb.pseudoResumed_();
+            tk.reclaim_();
+        }
     }
 
     /**

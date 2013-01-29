@@ -10,6 +10,7 @@ import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MODIFICATI
 import static com.aerofs.proto.Ritual.GetActivitiesReply.ActivityType.MOVEMENT_VALUE;
 import static junit.framework.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.net.URL;
@@ -18,6 +19,10 @@ import java.util.Set;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.NativeVersionControl;
+import com.aerofs.daemon.core.tc.Cat;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.UserAndDeviceNames;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
 import com.aerofs.base.id.UserID;
@@ -65,6 +70,9 @@ public class TestHdGetActivities extends AbstractTest
     @Mock CfgLocalDID cfgLocalDID;
     @Mock DirectoryService ds;
     @Mock DID2User d2u;
+    @Mock TC tc;
+    @Mock Token tk;
+    @Mock TCB tcb;
     @Mock TransManager tm;
     @Mock Trans t;
     @Mock UserAndDeviceNameDatabase udndb;
@@ -106,11 +114,14 @@ public class TestHdGetActivities extends AbstractTest
         addActivity(MOVEMENT_VALUE, new Path("a"), new Path("b"), did1, did2, did3);
 
         al = new ActivityLog(ds, nvc, aldb);
-        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tm, d2u, udndb, factSP);
+        UserAndDeviceNames didinfo = new UserAndDeviceNames(cfgLocalUser, tc,  tm, d2u, udndb, factSP);
 
         hd = new HdGetActivities(al, ds, d2u, didinfo, cfgLocalUser, cfgLocalDID);
 
         when(cfgLocalUser.get()).thenReturn(me);
+
+        when(tc.acquire_(any(Cat.class), anyString())).thenReturn(tk);
+        when(tk.pseudoPause_(anyString())).thenReturn(tcb);
 
         when(tm.begin_()).thenReturn(t);
 
