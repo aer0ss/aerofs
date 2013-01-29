@@ -192,6 +192,7 @@ class Setup
         DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
 
         initializeConfiguration(tsUserId, tsDID, rootAnchorPath, s3config, tsScrypted);
+        Cfg.db().set(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
 
         // sign in with the team server's user ID
         SPBlockingClient tsSP = SPClientFactory.newBlockingClient(SP.URL, tsUserId);
@@ -303,9 +304,6 @@ class Setup
             map.put(Key.S3_ACCESS_KEY, s3config.getAccessKey());
             map.put(Key.S3_SECRET_KEY, s3config.getSecretKey());
             map.put(Key.S3_ENCRYPTION_PASSWORD, s3config.getEncryptionKey());
-        }
-        if (userId.isTeamServerID()) {
-            map.put(Key.AUTO_EXPORT_FOLDER, rootAnchorPath);
         }
 
         CfgDatabase db = Cfg.db();
