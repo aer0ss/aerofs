@@ -7,7 +7,6 @@ package com.aerofs.daemon.core.fs;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.acl.ExConcurrentACLUpdate;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -74,10 +73,6 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
          * Force ACL sync to make sure we do not report success to the Ritual caller before the
          * ACL changes propagate back to us.
          */
-        try {
-            _aclsync.syncToLocal_();
-        } catch (ExConcurrentACLUpdate e) {
-            l.warn("concurrent ACL update. ignore");
-        }
+        _aclsync.syncToLocal_();
     }
 }

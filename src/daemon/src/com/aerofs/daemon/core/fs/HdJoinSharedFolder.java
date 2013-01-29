@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.acl.ExConcurrentACLUpdate;
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -55,10 +54,6 @@ public class HdJoinSharedFolder extends AbstractHdIMC<EIJoinSharedFolder>
          * ACL changes propagate back to us.
          * The actual joining will be performed automatically on reception of updated ACLs
          */
-        try {
-            _aclsync.syncToLocal_();
-        } catch (ExConcurrentACLUpdate e) {
-            l.warn("concurrent ACL update. ignore");
-        }
+        _aclsync.syncToLocal_();
     }
 }

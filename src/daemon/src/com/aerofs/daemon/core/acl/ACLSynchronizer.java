@@ -123,11 +123,8 @@ public class ACLSynchronizer
     /**
      * Fetch ACL from the server and save to the local ACL. This method may block to communicate
      * with SP.
-     * @throws ExConcurrentACLUpdate if multiple requests to syncToLocal_() happen at the same time
-     * (which is possible since the method yield the core lock)
      */
-    public void syncToLocal_()
-            throws Exception
+    public void syncToLocal_() throws Exception
     {
         long localEpochBeforeSPCall = _adb.getEpoch_();
         updateACLFromSP_(localEpochBeforeSPCall);
@@ -136,11 +133,8 @@ public class ACLSynchronizer
     /**
      * Fetch ACL from the server and save to the local ACL. This method may block to communicate
      * with SP.
-     * @throws ExConcurrentACLUpdate if multiple requests to syncToLocal_() happen at the same time
-     * (which is possible since the method yield the core lock)
      */
-    public void syncToLocal_(long serverEpoch)
-            throws Exception
+    public void syncToLocal_(long serverEpoch) throws Exception
     {
         long localEpochBeforeSPCall = _adb.getEpoch_();
         if (serverEpoch == localEpochBeforeSPCall) {
@@ -151,8 +145,16 @@ public class ACLSynchronizer
         updateACLFromSP_(localEpochBeforeSPCall);
     }
 
-    private void updateACLFromSP_(long localEpochBeforeSPCall)
-            throws Exception
+    /**
+     * The most important role of this function is to ensure that ACL update never go backward as
+     * it may cause inconsistent ACL state across clients and more importantly could result in data
+     * loss if a shared folder is accidentally kicked out.
+     *
+     * Because ACL updates are *not incremental* we need to check that whatever epoch corresponds to
+     * the result of the SP call is superior to the local epoch *after* the core lock is retaken
+     * (RPC is done with core lock released).
+     */
+    private void updateACLFromSP_(long localEpochBeforeSPCall) throws Exception
     {
         ServerACLReturn serverACLReturn = getServerACL_(localEpochBeforeSPCall);
 
@@ -160,34 +162,28 @@ public class ACLSynchronizer
         // get the local acl again. we do this to verify that another acl update didn't sneak in
         // while we were parked
         //
-        // hmm...I swear with the exponential retries we're going to have some bouncing here...
-        // maybe it's better to always make the call to sp
-        //
         // IMPORTANT: I can do this check out here (instead of inside the transaction) because I'm
         // now holding the core lock and no one else can operate on the db
         //
 
         long localEpochAfterSPCall = _adb.getEpoch_();
-        if (localEpochAfterSPCall != localEpochBeforeSPCall) {
-            throw new ExConcurrentACLUpdate(localEpochBeforeSPCall, localEpochAfterSPCall);
-        }
-
-        // check if our acls match and don't update the local system if they do
-        if (serverACLReturn._serverEpoch == localEpochAfterSPCall) {
-            l.info("server has no acl updates");
+        if (serverACLReturn._serverEpoch <= localEpochAfterSPCall) {
+            l.info("server has no acl updates " + localEpochBeforeSPCall + " " +
+                    localEpochAfterSPCall + " " + serverACLReturn._serverEpoch);
             return;
         }
 
         /**
-         * Ugly hack: we currently offer no way to properly leave a shared folder. The auto-join
-         * workflow causes all shared folder to be recreated on every new install. For end-users
-         * this is unlikely to be a problem. For system tests however where the same user account
-         * is reused over and over again a huge number of shared folder are accumulated over time
-         * and re-joining them all causes all sort of troubles.
+         * Ugly hack: syncdet test accounts are not currently cleaned and accumulate a huge number
+         * of shared folder over times. The auto-join workflow causes all shared folder to be
+         * recreated on every new install. For end-users this is unlikely to be a problem as we now
+         * automatically leave shared folders when they are deleted. For system tests however where
+         * there is no assurance that the daemon will be in a sane enough state to leave all new
+         * shared folders at the end of the run this becomes a problem very quickly. Leaving folders
+         * *before* running tests would work but it would require serialization of tests to avoid
+         * leaving shared folders used by a syncdet test running in parallel..
          *
-         * The long term solution is to add the missing "leave" part of the sharing workflow but
-         * in the meantime we simply use a flag file to prevent auto-joining on the first ACL update
-         * TODO: implicitly leave shared folder when the user deletes
+         * TODO: sanitize SP db around syncdet runs and remove this nasty hack
          */
         File noJoinFlagFile = new File(Cfg.absRTRoot(), "nojoin");
         boolean noAutoJoin = noJoinFlagFile.exists() && !L.get().isMultiuser();
@@ -219,6 +215,7 @@ public class ACLSynchronizer
 
             // the local user should always be present in the ACL for each store in the reply
             if (!roles.containsKey(_cfgLocalUser.get())) {
+                l.error("Invalid ACL update " + roles);
                 throw new ExProtocolError("Invalid ACL update " + roles);
             }
 

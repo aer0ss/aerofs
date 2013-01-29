@@ -68,11 +68,9 @@ public final class ACLNotificationSubscriber
                 @Override
                 public void handle_()
                 {
-                    _er.retry("aclsync", new Callable<Void>()
-                    {
+                    _er.retry("aclsync", new Callable<Void>() {
                         @Override
-                        public Void call()
-                                throws Exception
+                        public Void call() throws Exception
                         {
                             if (currentACLSyncSeqNum == _aclSyncSeqNum) {
                                 l.debug("sync to local");
@@ -89,7 +87,7 @@ public final class ACLNotificationSubscriber
 
                             return null;
                         }
-                    }, IOException.class , ExConcurrentACLUpdate.class);
+                    }, IOException.class);
                 };
             });
         }

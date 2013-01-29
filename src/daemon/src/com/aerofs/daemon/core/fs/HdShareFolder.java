@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.acl.ExConcurrentACLUpdate;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -143,11 +142,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         if (!alreadyShared) convertToSharedFolder_(ev._path, oa, sid);
 
         // ensure ACLs are updated (at the very least we need an entry for the local user...)
-        try {
-            _aclsync.syncToLocal_();
-        } catch (ExConcurrentACLUpdate e) {
-            l.warn("concurrent ACL update. ignore");
-        }
+        _aclsync.syncToLocal_();
 
         l.info("shared: " + ev._path + " -> " + sid.toStringFormal());
     }
