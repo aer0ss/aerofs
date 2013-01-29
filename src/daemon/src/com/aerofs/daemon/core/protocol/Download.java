@@ -176,29 +176,27 @@ public class Download
             });
             returnValue = null;
 
-        } catch (ExNoAvailDevice e) {
-            l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
-
-            // NB: it's fine to modify _did2e here as the download terminates
-            if (e instanceof ExNoAvailDeviceForDep) {
-                for (Entry<DID, Exception> entry : ((ExNoAvailDeviceForDep)e)._did2e.entrySet()) {
+        } catch (ExNoAvailDeviceForDep e) {
+            // We want to propagate permanent errors along the dependency chain, except when we
+            // don't...
+            // In general CONTENT=>META dependencies are safe, most OBJECT=>PARENT ones are safe
+            // too but everything breaks down when aliasing is involved. This creates subtle
+            // non-deterministic failure conditions so the safest approach for now is to only
+            // propagate dependencies between different components of the same object.
+            if (e._socid.soid().equals(_socid.soid())) {
+                l.info("propagating dep errors: " + _socid + "=>" + e._socid);
+                // merge e._did2e into Download#_did2e
+                // NB: it's fine to modify Download#_did2e here as the download terminates
+                for (Entry<DID, Exception> entry : e._did2e.entrySet()) {
                     _did2e.put(entry.getKey(), entry.getValue());
                 }
             }
 
-            // This download object tracked all reasons (Exceptions) for why each device was
-            // avoided. Thus if the To object indicated no devices were available, then inform
-            // the listener about all attempted devices, and why they failed to deliver the socid.
-            notifyListeners_(new IDownloadCompletionListenerVisitor()
-            {
-                @Override
-                public void notify_(IDownloadCompletionListener l)
-                {
-                    l.onPerDeviceErrors_(_socid, _did2e);
-                }
-            });
+            notifyNoAvail_(e);
             returnValue = e;
-
+        } catch (ExNoAvailDevice e) {
+            notifyNoAvail_(e);
+            returnValue = e;
         } catch (final Exception e) {
             l.warn(_socid + ": " + Util.e(e, ExNoPerm.class));
             notifyListeners_(new IDownloadCompletionListenerVisitor()
@@ -217,6 +215,22 @@ public class Download
 
         _f._dlstate.ended_(_socid, (returnValue == null));
         return returnValue;
+    }
+
+    private void notifyNoAvail_(Exception e)
+    {
+        l.warn(_socid + ": " + Util.e(e, ExNoAvailDevice.class));
+        // This download object tracked all reasons (Exceptions) for why each device was
+        // avoided. Thus if the To object indicated no devices were available, then inform
+        // the listener about all attempted devices, and why they failed to deliver the socid.
+        notifyListeners_(new IDownloadCompletionListenerVisitor()
+        {
+            @Override
+            public void notify_(IDownloadCompletionListener l)
+            {
+                l.onPerDeviceErrors_(_socid, _did2e);
+            }
+        });
     }
 
     DID doImpl_() throws Exception
