@@ -18,7 +18,7 @@ def usage(error):
     for cmd in aerofs.command.client.request.Commands:
         print '                    -', cmd
 
-    print ' -u <user_email>   The email address of the user that you would like to command.'
+    print ' -u <user_id>      The email address or team server id of the user that you would like to command.'
     print ' -h <ttl_hours>    The number of hours the command server will try to send your command to user devices.'
     print
     print 'Example: cmd -t UPLOAD_DATABASE -u matt@aerofs.com -h 24'
@@ -32,7 +32,7 @@ def main():
         sys.exit(1)
 
     command_type = ''
-    user_email = ''
+    user_id = ''
     ttl_hours = 0
 
     for o, a in opts:
@@ -42,10 +42,12 @@ def main():
                 sys.exit(1)
             command_type = a
         elif o == '-u':
-            user_email = a
+            user_id = a
 
-            if len(user_email.split('@')) != 2:
-                usage ('invalid email address: \"' + user_email + '\"')
+            # normal users have user@somedomain.com
+            # team server users have :ab120568
+            if len(user_id.split('@')) != 2 and not user_id.startswith(":"):
+                usage ('invalid user id: \"' + user_id + '\"')
                 sys.exit(1)
         elif o == '-h':
             try:
@@ -60,13 +62,13 @@ def main():
         else:
             assert False, 'unhandled option' + o
 
-    if len(command_type) == 0 or len(user_email) == 0 or ttl_hours <= 0:
+    if len(command_type) == 0 or len(user_id) == 0 or ttl_hours <= 0:
         usage('all switches are required.')
         sys.exit(1)
 
     print 'Command details:'
     print ' >> command_type: ' + command_type
-    print ' >> user_email: ' + user_email
+    print ' >> user_id: ' + user_id
     print ' >> ttl_hours: ' + str(ttl_hours)
     print 'Publishing command...'
 
@@ -74,7 +76,7 @@ def main():
         # Get the protobuf style payload that we will send across the wire.
         command_payload = aerofs.command.client.request.CommandPayload(command_type)
         command_message = aerofs.command.client.request.CommandRequest(
-                user_email,
+                user_id,
                 ttl_hours,
                 command_payload)
         post_data = command_message.get_serialized_pb()
