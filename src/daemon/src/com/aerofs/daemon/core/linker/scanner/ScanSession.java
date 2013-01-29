@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer;
 import com.aerofs.daemon.core.linker.TimeoutDeletionBuffer.Holder;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.ex.ExNotDir;
@@ -57,6 +58,7 @@ class ScanSession
         private final TransManager _tm;
         private final InjectableFile.Factory _factFile;
         private final CfgAbsRootAnchor _cfgAbsRootAnchor;
+        private final ProgressIndicators _pi;
 
         @Inject
         public Factory(DirectoryService ds,
@@ -69,6 +71,7 @@ class ScanSession
             _ds = ds;
             _mc = mc;
             _tm = tm;
+            _pi = ProgressIndicators.get();  // sigh, this should be injected...
             _delBuffer = delBuffer;
             _factFile = factFile;
             _cfgAbsRootAnchor = cfgAbsRootAnchor;
@@ -292,6 +295,7 @@ class ScanSession
                 assert res == FILE || res == EXISTING_FOLDER || res == NEW_OR_REPLACED_FOLDER;
                 potentialUpdates++;
             }
+            _f._pi.incrementMonotonicProgress();
         }
 
         return potentialUpdates;
@@ -319,6 +323,7 @@ class ScanSession
                     l.debug("hold_ on " + soid);
                     _holder.hold_(soid);
                 }
+                _f._pi.incrementMonotonicProgress();
             }
         }
     }
