@@ -36,7 +36,6 @@ import java.util.Set;
 public class LocalACL
 {
     private final CfgLocalUser _cfgLocalUser;
-    private final DirectoryService _ds;
     private final IACLDatabase _adb;
     private final IStores _ss;
 
@@ -44,10 +43,9 @@ public class LocalACL
     private final Map<SIndex, ImmutableMap<UserID, Role>> _cache = Maps.newHashMap();
 
     @Inject
-    public LocalACL(CfgLocalUser cfgLocalUser,  DirectoryService ds, TransManager tm, IStores ss,
+    public LocalACL(CfgLocalUser cfgLocalUser, TransManager tm, IStores ss,
             IACLDatabase adb)
     {
-        _ds = ds;
         _adb = adb;
         _cfgLocalUser = cfgLocalUser;
         _ss = ss;
@@ -60,37 +58,6 @@ public class LocalACL
                 invalidateAll_();
             }
         });
-    }
-
-    /**
-     * @return the SOID corresponding to the specified path
-     */
-    public @Nonnull SOID checkThrows_(UserID subject, Path path, Role role)
-            throws ExNotFound, SQLException, ExNoPerm, ExExpelled
-    {
-        SOID soid = _ds.resolveThrows_(path);
-        OA oa = _ds.getOAThrows_(soid);
-        if (oa.isAnchor()) soid = _ds.followAnchorThrows_(oa);
-        checkThrows_(subject, soid.sidx(), role);
-        return soid;
-    }
-
-    /**
-     * @return the SOID corresponding to the specified path. Do not follow anchor if the resolved
-     * object is an anchor.
-     */
-    public @Nonnull SOID checkNoFollowAnchorThrows_(UserID subject, Path path, Role role)
-            throws ExNotFound, SQLException, ExNoPerm
-    {
-        SOID soid = _ds.resolveThrows_(path);
-        checkThrows_(subject, soid.sidx(), role);
-        return soid;
-    }
-
-    public void checkThrows_(UserID subject, SIndex sidx, Role role)
-            throws SQLException, ExNoPerm, ExNotFound
-    {
-        if (!check_(subject, sidx, role)) throw new ExNoPerm(subject + ", " + role + ", " + sidx);
     }
 
     /**

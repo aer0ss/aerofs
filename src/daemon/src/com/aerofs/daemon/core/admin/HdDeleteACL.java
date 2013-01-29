@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.admin;
 
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
@@ -15,13 +15,13 @@ import com.google.inject.Inject;
 
 public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
 {
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final ACLSynchronizer _aclsync;
 
     @Inject
-    public HdDeleteACL(LocalACL lacl, ACLSynchronizer aclsync)
+    public HdDeleteACL(ACLChecker acl, ACLSynchronizer aclsync)
     {
-        _lacl = lacl;
+        _acl = acl;
         _aclsync = aclsync;
     }
 
@@ -29,7 +29,7 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
     protected void handleThrows_(EIDeleteACL ev, Prio prio)
             throws Exception
     {
-        SOID soid = _lacl.checkThrows_(ev._user, ev._path, Role.OWNER);
+        SOID soid = _acl.checkThrows_(ev._user, ev._path, Role.OWNER);
         if (!soid.oid().isRoot()) throw new ExNotShared();
 
         // log kickouts

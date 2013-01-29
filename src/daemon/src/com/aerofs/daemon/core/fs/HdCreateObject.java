@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -19,15 +19,15 @@ import com.google.inject.Inject;
 public class HdCreateObject extends AbstractHdIMC<EICreateObject>
 {
     private DirectoryService _ds;
-    private LocalACL _lacl;
+    private ACLChecker _acl;
     private TransManager _tm;
     private ObjectCreator _oc;
 
     @Inject
-    public void inject_(DirectoryService ds, LocalACL lacl, TransManager tm, ObjectCreator oc)
+    public void inject_(DirectoryService ds, ACLChecker acl, TransManager tm, ObjectCreator oc)
     {
         _ds = ds;
-        _lacl = lacl;
+        _acl = acl;
         _tm = tm;
         _oc = oc;
     }
@@ -45,7 +45,7 @@ public class HdCreateObject extends AbstractHdIMC<EICreateObject>
 
         // need read_attr right to read ACL.
         Path pathParent = ev._path.removeLast();
-        SOID soidParent = _lacl.checkThrows_(ev.user(), pathParent, Role.EDITOR);
+        SOID soidParent = _acl.checkThrows_(ev.user(), pathParent, Role.EDITOR);
 
         OA oaParent = _ds.getOA_(soidParent);
         if (oaParent.isExpelled() || !oaParent.isDir()) throw new ExBadArgs("Invalid parent");

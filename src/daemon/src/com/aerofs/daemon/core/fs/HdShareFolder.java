@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -57,7 +58,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 {
     private final static Logger l = Util.l(HdShareFolder.class);
 
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final TC _tc;
     private final TransManager _tm;
     private final ObjectCreator _oc;
@@ -71,12 +72,12 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     private final ACLSynchronizer _aclsync;
 
     @Inject
-    public HdShareFolder(LocalACL lacl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
+    public HdShareFolder(ACLChecker acl, TC tc, TransManager tm, ObjectCreator oc, DirectoryService ds,
             IImmigrantCreator imc, ObjectMover om, ObjectDeleter od, IMapSID2SIndex sid2sidx,
             IStores ss, DescendantStores dss, ACLSynchronizer aclsync)
     {
         _ss = ss;
-        _lacl = lacl;
+        _acl = acl;
         _tc = tc;
         _tm = tm;
         _oc = oc;
@@ -173,7 +174,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
     {
         assert !path.isEmpty(); // guaranteed by the above check
         Path pathParent = path.removeLast();
-        _lacl.checkThrows_(user, pathParent, Role.OWNER);
+        _acl.checkThrows_(user, pathParent, Role.OWNER);
     }
 
     /**

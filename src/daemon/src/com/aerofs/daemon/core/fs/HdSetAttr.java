@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.VersionUpdater;
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EISetAttr;
@@ -17,24 +17,24 @@ import com.google.inject.Inject;
 
 public class HdSetAttr extends AbstractHdIMC<EISetAttr>
 {
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final DirectoryService _ds;
     private final TransManager _tm;
     private final VersionUpdater _vu;
 
     @Inject
-    public HdSetAttr(VersionUpdater vu, TransManager tm, DirectoryService ds, LocalACL lacl)
+    public HdSetAttr(VersionUpdater vu, TransManager tm, DirectoryService ds, ACLChecker acl)
     {
         _vu = vu;
         _tm = tm;
         _ds = ds;
-        _lacl = lacl;
+        _acl = acl;
     }
 
     @Override
     protected void handleThrows_(EISetAttr ev, Prio prio) throws Exception
     {
-        SOID soid = _lacl.checkThrows_(ev.user(), ev._path, Role.EDITOR);
+        SOID soid = _acl.checkThrows_(ev.user(), ev._path, Role.EDITOR);
 
         OA oa = _ds.getOA_(soid);
         boolean flg = ev._flags != null && oa.flags() != ev._flags;

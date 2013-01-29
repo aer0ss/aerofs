@@ -3,13 +3,13 @@ package com.aerofs.daemon.mobile;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.aerofs.daemon.core.acl.ACLChecker;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 
 import com.google.inject.Inject;
 
 import com.aerofs.daemon.core.NativeVersionControl;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
@@ -27,16 +27,16 @@ import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 
 public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
 {
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final DirectoryService _ds;
     private final NativeVersionControl _nvc;
 
     @Inject
-    public HdDownloadPacket(LocalACL lacl,
+    public HdDownloadPacket(ACLChecker acl,
             DirectoryService ds,
             NativeVersionControl nvc)
     {
-        _lacl = lacl;
+        _acl = acl;
         _ds = ds;
         _nvc = nvc;
     }
@@ -44,7 +44,7 @@ public class HdDownloadPacket extends AbstractHdIMC<EIDownloadPacket>
     @Override
     protected void handleThrows_(EIDownloadPacket ev, Prio prio) throws Exception
     {
-        SOID soid = _lacl.checkThrows_(ev.user(), ev._path, Role.VIEWER);
+        SOID soid = _acl.checkThrows_(ev.user(), ev._path, Role.VIEWER);
         SOCKID sockid = new SOCKID(soid, CID.CONTENT, KIndex.MASTER);
 
         Version vLocal = _nvc.getLocalVersion_(sockid);

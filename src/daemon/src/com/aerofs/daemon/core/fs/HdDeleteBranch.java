@@ -1,7 +1,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.*;
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.event.fs.EIDeleteBranch;
 import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
@@ -21,7 +21,7 @@ import com.google.inject.Inject;
 
 public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
 {
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final NativeVersionControl _nvc;
     private final TransManager _tm;
     private final VersionUpdater _vu;
@@ -29,12 +29,12 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
 
     @Inject
     public HdDeleteBranch(VersionUpdater vu, TransManager tm, NativeVersionControl nvc,
-            LocalACL lacl, BranchDeleter bd)
+            ACLChecker acl, BranchDeleter bd)
     {
         _vu = vu;
         _tm = tm;
         _nvc = nvc;
-        _lacl = lacl;
+        _acl = acl;
         _bd = bd;
     }
 
@@ -48,7 +48,7 @@ public class HdDeleteBranch extends AbstractHdIMC<EIDeleteBranch>
 
         // we need write_object permission as branch deletion is equivalent
         // to updating content on other devices
-        SOID soid = _lacl.checkThrows_(ev.user(), ev._path, Role.EDITOR);
+        SOID soid = _acl.checkThrows_(ev.user(), ev._path, Role.EDITOR);
 
         SOCKID kBranch = new SOCKID(soid, CID.CONTENT, ev._kidx);
         Version vBranch = _nvc.getLocalVersion_(kBranch);

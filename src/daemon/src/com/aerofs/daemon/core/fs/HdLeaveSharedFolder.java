@@ -6,8 +6,8 @@ package com.aerofs.daemon.core.fs;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.acl.ACLSynchronizer;
-import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.tc.Cat;
@@ -33,22 +33,22 @@ public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 
     private final TC _tc;
     private final DirectoryService _ds;
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final ACLSynchronizer _aclsync;
 
     @Inject
-    public HdLeaveSharedFolder(TC tc, DirectoryService ds, LocalACL lacl, ACLSynchronizer aclsync)
+    public HdLeaveSharedFolder(TC tc, DirectoryService ds, ACLChecker acl, ACLSynchronizer aclsync)
     {
         _tc = tc;
         _ds = ds;
-        _lacl = lacl;
+        _acl = acl;
         _aclsync = aclsync;
     }
 
     @Override
     protected void handleThrows_(EILeaveSharedFolder ev, Prio prio) throws Exception
     {
-        SOID soid = _lacl.checkNoFollowAnchorThrows_(Cfg.user(), ev._path, Role.EDITOR);
+        SOID soid = _acl.checkNoFollowAnchorThrows_(Cfg.user(), ev._path, Role.EDITOR);
         OA oa = _ds.getOAThrows_(soid);
         if (!oa.isAnchor() || !soid.oid().isAnchor()) throw new ExNotShared();
 

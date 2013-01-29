@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -18,18 +18,18 @@ import com.google.inject.Inject;
 public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
 {
     private final DirectoryService _ds;
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final TransManager _tm;
     private final ObjectMover _om;
     private final IImmigrantCreator _imc;
 
     @Inject
-    public HdMoveObject(ObjectMover om, TransManager tm, LocalACL lacl, DirectoryService ds,
+    public HdMoveObject(ObjectMover om, TransManager tm, ACLChecker lacl, DirectoryService ds,
             IImmigrantCreator imc)
     {
         _om = om;
         _tm = tm;
-        _lacl = lacl;
+        _acl = lacl;
         _ds = ds;
         _imc = imc;
     }
@@ -44,8 +44,8 @@ public class HdMoveObject extends AbstractHdIMC<EIMoveObject>
         }
 
         // TODO check REMOVE_CHILD right on the parent, if the parents are different
-        _lacl.checkThrows_(ev.user(), soid.sidx(), Role.EDITOR);
-        SOID soidToParent = _lacl.checkThrows_(ev.user(), ev._toParent, Role.EDITOR);
+        _acl.checkThrows_(ev.user(), soid.sidx(), Role.EDITOR);
+        SOID soidToParent = _acl.checkThrows_(ev.user(), ev._toParent, Role.EDITOR);
 
         Trans t = _tm.begin_();
         try {

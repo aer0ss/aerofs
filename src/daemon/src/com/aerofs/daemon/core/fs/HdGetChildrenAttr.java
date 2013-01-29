@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.fs;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
@@ -18,14 +18,14 @@ import com.google.inject.Inject;
 
 public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
 {
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final DirectoryService _ds;
 
     @Inject
-    public HdGetChildrenAttr(DirectoryService ds, LocalACL lacl)
+    public HdGetChildrenAttr(DirectoryService ds, ACLChecker acl)
     {
         _ds = ds;
-        _lacl = lacl;
+        _acl = acl;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class HdGetChildrenAttr extends AbstractHdIMC<EIGetChildrenAttr>
     private List<OA> getChildrenAttr_(UserID user, Path path)
         throws Exception
     {
-        SOID soid = _lacl.checkThrows_(user, path, Role.VIEWER);
+        SOID soid = _acl.checkThrows_(user, path, Role.VIEWER);
 
         ArrayList<OA> oas = new ArrayList<OA>();
         for (OID oidChild : _ds.getChildren_(soid)) {

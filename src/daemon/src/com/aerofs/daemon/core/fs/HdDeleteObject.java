@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.event.fs.EIDeleteObject;
@@ -16,14 +16,14 @@ import com.google.inject.Inject;
 
 public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
 {
-    private LocalACL _lacl;
+    private ACLChecker _acl;
     private TransManager _tm;
     private ObjectDeleter _od;
 
     @Inject
-    public void inject_(ObjectDeleter od, TransManager tm, LocalACL lacl)
+    public void inject_(ObjectDeleter od, TransManager tm, ACLChecker acl)
     {
-        _lacl = lacl;
+        _acl = acl;
         _od = od;
         _tm = tm;
     }
@@ -36,7 +36,7 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
         }
 
         Path path = ev._path;
-        SOID soid = _lacl.checkNoFollowAnchorThrows_(ev.user(), path, Role.EDITOR);
+        SOID soid = _acl.checkNoFollowAnchorThrows_(ev.user(), path, Role.EDITOR);
 
         Trans t = _tm.begin_();
         try {

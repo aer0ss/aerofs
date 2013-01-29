@@ -5,7 +5,7 @@
 package com.aerofs.daemon.core.fs;
 
 import com.aerofs.daemon.core.VersionUpdater;
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.object.ObjectCreator;
@@ -49,19 +49,19 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
     private final TransManager _tm;
     private final DirectoryService _ds;
     private final VersionUpdater _vu;
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
     private final ObjectCreator _oc;
     private final IPhysicalStorage _ps;
 
     @Inject
-    public HdImportFile(TC tc, TransManager tm, DirectoryService ds, LocalACL lacl,
+    public HdImportFile(TC tc, TransManager tm, DirectoryService ds, ACLChecker acl,
             ObjectCreator oc, IPhysicalStorage ps, VersionUpdater vu)
     {
         _tc = tc;
         _tm = tm;
         _ds = ds;
         _vu = vu;
-        _lacl = lacl;
+        _acl = acl;
         _oc = oc;
         _ps = ps;
     }
@@ -74,7 +74,7 @@ public class HdImportFile  extends AbstractHdIMC<EIImportFile>
 
         SOID soid = _ds.resolveNullable_(ev._dest);
         Path pathParent = ev._dest.removeLast();
-        SOID soidParent = _lacl.checkThrows_(Cfg.user(), pathParent, Role.EDITOR);
+        SOID soidParent = _acl.checkThrows_(Cfg.user(), pathParent, Role.EDITOR);
 
         OA oaParent = _ds.getOA_(soidParent);
         if (oaParent.isExpelled() || !oaParent.isDir()) throw new ExBadArgs("Invalid destination");

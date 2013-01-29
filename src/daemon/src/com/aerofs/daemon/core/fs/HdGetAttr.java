@@ -1,6 +1,6 @@
 package com.aerofs.daemon.core.fs;
 
-import com.aerofs.daemon.core.acl.LocalACL;
+import com.aerofs.daemon.core.acl.ACLChecker;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetAttr;
@@ -14,12 +14,12 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
 {
 
     private final DirectoryService _ds;
-    private final LocalACL _lacl;
+    private final ACLChecker _acl;
 
     @Inject
-    public HdGetAttr(LocalACL lacl, DirectoryService ds)
+    public HdGetAttr(ACLChecker acl, DirectoryService ds)
     {
-        _lacl = lacl;
+        _acl = acl;
         _ds = ds;
     }
 
@@ -31,7 +31,7 @@ public class HdGetAttr extends AbstractHdIMC<EIGetAttr>
             ev.setResult_(null);
 
         } else {
-            _lacl.checkThrows_(ev.user(), soid.sidx(), Role.VIEWER);
+            _acl.checkThrows_(ev.user(), soid.sidx(), Role.VIEWER);
             OA oa = _ds.getOANullable_(soid);
             // oa may be null
             ev.setResult_(oa);
