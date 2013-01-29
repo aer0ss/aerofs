@@ -34,9 +34,8 @@ class UserLookupTest(unittest.TestCase):
         reply = ListUsersReply(users, 3, 3)
         return reply
 
-    @unittest.skip("Blame WW for not updating this test :)")
     def test_find_all_users_keys(self):
-        from modules.admin_panel.views import user_lookup_view
+        from modules.admin_panel.views import json_user_lookup
         request = testing.DummyRequest()
         request.params = {
             "searchTerm": "",
@@ -45,12 +44,11 @@ class UserLookupTest(unittest.TestCase):
             "offset": 0
         }
 
-        response = user_lookup_view(request)
+        response = json_user_lookup(request)
         self.assertTrue(response.has_key("users"))
 
-    @unittest.skip("Blame WW for not updating this test :)")
     def test_find_all_users_values(self):
-        from modules.admin_panel.views import user_lookup_view
+        from modules.admin_panel.views import json_user_lookup
         request = testing.DummyRequest()
         request.params = {
             "searchTerm": "",
@@ -59,56 +57,10 @@ class UserLookupTest(unittest.TestCase):
             "offset": 0
         }
 
-        response = user_lookup_view(request)
+        response = json_user_lookup(request)
         emails = response["users"]
 
         self.assertEquals(3, len(emails))
         self.assertEquals("test1@awesome.com", emails[0])
         self.assertEquals("test2@awesome.com", emails[1])
         self.assertEquals("test3@awesome.com", emails[2])
-
-    @unittest.skip("Blame WW for not updating this test :)")
-    def test_find_all_datatable_keys(self):
-        from modules.admin_panel.views import user_datatable_view
-        request = testing.DummyRequest()
-        request.GET = {
-            "sEcho": "1",
-            "iDisplayLength": "10",
-            "iDisplayStart": "0",
-            "searchTerm": "",
-            "authLevel": "USER"
-        }
-
-        response = user_datatable_view(request)
-        self.assertTrue(response.has_key("sEcho"))
-        self.assertTrue(response.has_key("iTotalRecords"))
-        self.assertTrue(response.has_key("iTotalDisplayRecords"))
-        self.assertTrue(response.has_key("aaData"))
-
-        for entry in response["aaData"]:
-            self.assertTrue(entry.has_key("email"))
-            self.assertTrue(entry.has_key("action"))
-
-    @unittest.skip("Blame WW for not updating this test :)")
-    def test_find_all_datatable_values(self):
-        from modules.admin_panel.views import user_datatable_view
-        request = testing.DummyRequest()
-        request.GET = {
-            "sEcho": "1",
-            "iDisplayLength": "10",
-            "iDisplayStart": "0",
-            "searchTerm": "",
-            "authLevel": "USER"
-        }
-
-        response = user_datatable_view(request)
-        echo = response["sEcho"]
-        total_records = response["iTotalRecords"]
-        display_records = response["iTotalDisplayRecords"]
-        table_entries = response["aaData"]
-
-        self.assertEquals("1", echo)
-        self.assertEquals(3, total_records)
-        self.assertEquals(3, display_records)
-
-        self.assertEquals("test1@awesome.com", table_entries[0]["email"])
