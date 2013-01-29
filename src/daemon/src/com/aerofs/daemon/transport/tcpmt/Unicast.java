@@ -266,7 +266,7 @@ public class Unicast implements IConnectionManager, IUnicast, IPipeDebug
             Type type = h.getType();
             PBTPHeader ret = null;
 
-            l.info("recv t:" + type.name() + " d:" + _did + " rem:" + _remaddr + " l:" + _remoteListeningPort);
+            l.debug("recv t:" + type.name() + " d:" + _did + " rem:" + _remaddr + " l:" + _remoteListeningPort);
 
             if (!connectionInitialized() && type != Type.TCP_UNICAST_PREAMBLE) {
                 l.warn("connection used before preamble rem:" + printaddr(_printaddr)+ " - discard");
