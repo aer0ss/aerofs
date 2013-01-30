@@ -23,6 +23,8 @@ import static com.google.common.base.Preconditions.checkState;
 public class SSLEngineFactory
 {
     private static final char[] KEYSTORE_PASSWORD = "".toCharArray();
+    private static final String ALGORITHM = "SunX509";
+    private static final String KEYSTORE_TYPE = "JKS"; // jks = java key store
     private static final String SECURITY_TYPE = "TLS";
 
     private final boolean _clientMode;
@@ -137,7 +139,7 @@ public class SSLEngineFactory
     {
         if (keyProvider == null) return null;
 
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
         keyStore.load(null, KEYSTORE_PASSWORD); // initialize the keystore
 
         // load our key in the keystore, and initialize the KeyManagerFactory with it
@@ -145,8 +147,7 @@ public class SSLEngineFactory
         keyStore.setKeyEntry("my_keys", keyProvider.getPrivateKey(), KEYSTORE_PASSWORD,
                 new Certificate[]{keyProvider.getCert()});
 
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(ALGORITHM);
         keyManagerFactory.init(keyStore, KEYSTORE_PASSWORD);
 
         return keyManagerFactory.getKeyManagers();
@@ -159,13 +160,12 @@ public class SSLEngineFactory
     {
         if (caCert == null) return null;
 
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
         keyStore.load(null, KEYSTORE_PASSWORD);  // initialize the keystore
 
         // load the CA cert in the keystore, and initialize the TrustManagerFactory with it
         keyStore.setCertificateEntry("ca_cert", caCert);
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-                TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(ALGORITHM);
         trustManagerFactory.init(keyStore);
 
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
