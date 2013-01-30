@@ -246,8 +246,10 @@ public class MobileService implements IMobileService
          */
         private static boolean isComcastUser(String user)
         {
-            String last11chars = user.substring(user.length() - 11);
-            return Util.crc32(last11chars).equals("062a664b"); // 062a664b = comcast.com
+            final int comcastDotComLength = 11;
+            if (user.length() <= comcastDotComLength) return false;
+            String lastChars = user.substring(user.length() - comcastDotComLength);
+            return Util.crc32(lastChars).equals("062a664b"); // 062a664b = comcast.com
         }
 
         private final IIMCExecutor _imce;
