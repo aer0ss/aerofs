@@ -405,7 +405,7 @@ public final class SVClient
         if (ignoreDefect) return;
 
         // Send the defect to RockLog
-        if (UserID.fromInternal(header.getUser()).isAeroFSUser()) {
+        if (UserID.fromInternal(header.getUser()).isAeroFSUser() || L.get().isMultiuser()) {
             RockLog.newDefect("svclient.test").setMsg(desc).setEx(cause).send();
         }
 
