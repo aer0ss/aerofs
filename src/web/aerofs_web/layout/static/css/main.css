@@ -65,6 +65,10 @@ div.input_container.submit {
 [class*=" icon-"] {
   vertical-align: -2px;
 }
+a.btn {
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+}
 a.delete_permission {
   color: #9d261d;
   text-decoration: none;
