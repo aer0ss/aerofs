@@ -32,14 +32,14 @@ message StartDownloadCall {
 message StartDownloadReply {
     required bytes cookie = 1;
     required uint64 length = 2;
-    optional uint32 max_packet_length = 3 [default = 4096];
+    optional uint32 max_packet_length = 3 [default = 102400]; // 100 K
 }
 
 message DownloadPacketCall {
     required PBPath source = 2;
     required bytes cookie = 3;
     required uint64 offset = 4;
-    optional uint32 length = 5 [default = 4096];
+    optional uint32 length = 5 [default = 102400];  // 100 K
 }
 
 message DownloadPacketReply {

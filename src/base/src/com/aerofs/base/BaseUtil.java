@@ -6,6 +6,7 @@ package com.aerofs.base;
 
 import com.aerofs.base.ex.ExFormatError;
 
+import java.io.File;
 import java.nio.charset.Charset;
 
 public class BaseUtil
@@ -71,5 +72,31 @@ public class BaseUtil
         System.arraycopy(b1, 0, ret, 0, b1.length);
         System.arraycopy(b2, 0, ret, b1.length, b2.length);
         return ret;
+    }
+
+    /**
+     * Recursively compute the total size in bytes of a directory.
+     *
+     * Note: this function will stack overflow if there are symlinks creating a circular directory
+     * structure. You should only use this on directories where this should not happen.
+     */
+    public static long getDirSize(File f)
+    {
+        if (!f.exists() || (!f.isDirectory() && !f.isFile())) return 0;
+        if (f.isFile()) return f.length();
+
+        File[] children = f.listFiles();
+        if (children == null || children.length == 0) return 0;
+
+        long dirSize = 0;
+        for (File child : children) {
+            if (child.isFile()) {
+                dirSize += child.length();
+            } else {
+                dirSize += getDirSize(child);
+            }
+        }
+
+        return dirSize;
     }
 }

@@ -23,7 +23,6 @@ import org.jboss.netty.channel.SimpleChannelHandler;
 import org.jboss.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 
-import javax.naming.InvalidNameException;
 import javax.net.ssl.SSLException;
 import javax.security.cert.X509Certificate;
 import java.net.SocketAddress;
@@ -162,14 +161,15 @@ public class CNameVerificationHandler extends SimpleChannelHandler
 
     private void failConnectFuture(ChannelHandlerContext ctx, Throwable reason)
     {
-        ((ChannelFuture)ctx.getAttachment()).setFailure(reason);
+        ChannelFuture originalFuture = (ChannelFuture)ctx.getAttachment();
+        if (originalFuture != null) originalFuture.setFailure(reason);
     }
 
     /**
      * @return the value of the CN field from the certificate associated with the given context
      */
     private String getPeerCName(ChannelHandlerContext ctx)
-            throws SSLException, InvalidNameException
+            throws SSLException
     {
         // Get the peer certificate
         SslHandler sslHandler = ctx.getPipeline().get(SslHandler.class);
@@ -187,6 +187,6 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             if (x.trim().startsWith(FIELD_NAME)) return x.trim().substring(FIELD_NAME.length());
         }
 
-        throw new InvalidNameException("CN field missing: " + subject);
+        throw new SSLException("CN field missing: " + subject);
     }
 }

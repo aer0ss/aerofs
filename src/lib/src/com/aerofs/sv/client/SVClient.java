@@ -1,5 +1,6 @@
 package com.aerofs.sv.client;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
 import com.aerofs.base.Base64;
@@ -675,33 +676,13 @@ public final class SVClient
             if (f.isDirectory() && f.getName().equalsIgnoreCase("AeroFS")) {
                 bd.append(f.getName()).append(": ").append("IGNORED");
             } else {
-                bd.append(f.getName()).append(": ").append(getSize(f));
+                bd.append(f.getName()).append(": ").append(BaseUtil.getDirSize(f));
             }
 
             bd.append('\n');
         }
 
         return bd.toString();
-    }
-
-    private static long getSize(File f)
-    {
-        if (!f.exists() || (!f.isDirectory() && !f.isFile())) return 0;
-        if (f.isFile()) return f.length();
-
-        File[] children = f.listFiles();
-        if (children == null || children.length == 0) return 0;
-
-        long dirSize = 0;
-        for (File child : children) {
-            if (child.isFile()) {
-                dirSize += child.length();
-            } else {
-                dirSize += getSize(child);
-            }
-        }
-
-        return dirSize;
     }
 
     /**
