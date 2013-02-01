@@ -61,6 +61,12 @@ class BlockFolderAdapter implements IPhysicalFolder
         }
     }
 
+    @Override
+    public void promoteToAnchor_(Trans t) throws IOException {}
+
+    @Override
+    public void demoteToRegularFolder_(Trans t) throws IOException {}
+
     private boolean exportWritethroughNeededForOp(PhysicalOp op)
     {
         return _exportedFolder != null && op == PhysicalOp.APPLY;

@@ -10,6 +10,7 @@ import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
@@ -138,7 +139,9 @@ public class MightCreate
     public Result mightCreate_(PathCombo pcPhysical, IDeletionBuffer delBuffer, Trans t)
             throws Exception
     {
-        if (_il.isIgnored_(pcPhysical._path.last())) return Result.IGNORED;
+        if (deleteIfInvalidTagFile(pcPhysical._path) || _il.isIgnored_(pcPhysical._path.last())) {
+            return Result.IGNORED;
+        }
 
         FIDAndType fnt = _dr.getFIDAndType(pcPhysical._absPath);
 
@@ -214,6 +217,20 @@ public class MightCreate
             return Result.FILE;
         }
     }
+
+    private boolean deleteIfInvalidTagFile(Path path) throws IOException, SQLException
+    {
+        if (!path.last().equals(Param.SHARED_FOLDER_TAG)) return false;
+
+        // Remove any invalid tag file (i.e tag file under non-anchor)
+        SOID parent = _ds.resolveNullable_(path.removeLast());
+        if (parent != null) {
+            OA oa = _ds.getOA_(parent);
+            if (!oa.isAnchor()) _sfti.deleteTagFileAndIcon(path);
+        }
+        return true;
+    }
+
 
     /**
      * @pre fnt is the FID from the file system for physicalPath, and soid is the logical object

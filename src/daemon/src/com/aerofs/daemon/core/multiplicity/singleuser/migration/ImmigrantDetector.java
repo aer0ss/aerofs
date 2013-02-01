@@ -65,9 +65,9 @@ public class ImmigrantDetector implements IImmigrantDetector
     public boolean detectAndPerformImmigration_(@Nonnull OA oaTo, PhysicalOp op, Trans t)
             throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir, ExStreamInvalid
     {
-        // assert for assumption 1) above
+        /** assert for assumption 1) in {@link IImmigrantDetector#detectAndPerformImmigration_} */
         assert !oaTo.isExpelled();
-        // assert for assumption 4) above
+        /** assert for assumption 4) in {@link IImmigrantDetector#detectAndPerformImmigration_} */
         assert !oaTo.isFile() || oaTo.cas().isEmpty();
 
         // directories can't be migrated

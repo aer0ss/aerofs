@@ -13,6 +13,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
 import java.io.IOException;
@@ -86,6 +87,8 @@ public class StoreCreator
 
         // create trash directory
         _mdb.insertOA_(sidx, OID.TRASH, OID.ROOT, Param.TRASH, OA.Type.DIR, OA.FLAG_EXPELLED_ORG, t);
+
+        _ps.newFolder_(new SOID(sidx, OID.ROOT), path).promoteToAnchor_(t);
 
         _nvc.restoreStore_(sidx, t);
         _ivc.restoreStore_(sidx, t);

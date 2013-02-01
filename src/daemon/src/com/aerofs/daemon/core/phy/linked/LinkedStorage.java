@@ -84,7 +84,7 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public IPhysicalFolder newFolder_(SOID soid, Path path)
     {
-        return new LinkedFolder(_cfgAbsRootAnchor, _factFile, _factFIDMan, _il, soid, path);
+        return new LinkedFolder(_cfgAbsRootAnchor, _factFile, _factFIDMan, _il, _sfti, soid, path);
     }
 
     @Override
@@ -102,18 +102,12 @@ public class LinkedStorage implements IPhysicalStorage
     @Override
     public void createStore_(SIndex sidx, Path path, Trans t) throws IOException, SQLException
     {
-        // root store doesn't need tag files and overlay icons.
-        if (!path.isEmpty()) _sfti.addTagFileAndIcon(sidx, path, t);
+
     }
 
     @Override
     public void deleteStore_(SIndex sidx, Path path, PhysicalOp op, Trans t) throws IOException
     {
-        // delete tag and icon only if actual physical operations are required for the deletion.
-        // the test is not needed for store creation because the tag and icon have to be created
-        // in all the cases.
-        if (op == PhysicalOp.APPLY) _sfti.deleteTagFileAndIcon(sidx, path, t);
-
         // delete aux files other than revision files. no need to register for deletion rollback
         // since these files are not important.
         String prefix = makeAuxFilePrefix(sidx);

@@ -77,7 +77,7 @@ public class SharedFolderTagFileAndIcon
             public void aborted_()
             {
                 try {
-                    deleteTagFileAndIconImp(path);
+                    deleteTagFileAndIcon(path);
                 } catch (IOException e) {
                     SystemUtil.fatal("unrecoverable: " + Util.e(e));
                 }
@@ -89,10 +89,10 @@ public class SharedFolderTagFileAndIcon
      * Delete the tag file and overlay icon for a shared folder, assuming path is the root of the
      * shared store identified by {@code sidx}.
      */
-    public void deleteTagFileAndIcon(final SIndex sidx, final Path path, Trans t)
+    public void removeTagFileAndIcon(final SIndex sidx, final Path path, Trans t)
             throws IOException
     {
-        deleteTagFileAndIconImp(path);
+        deleteTagFileAndIcon(path);
 
         t.addListener_(new AbstractTransListener() {
             @Override
@@ -137,12 +137,12 @@ public class SharedFolderTagFileAndIcon
         OSUtil.get().markHiddenSystemFile(absPathTagFile);
     }
 
-    private void deleteTagFileAndIconImp(Path path) throws IOException
+    public void deleteTagFileAndIcon(Path path) throws IOException
     {
-        deleteTagFileAndIconImp(path.toAbsoluteString(_cfgAbsRootAnchor.get()));
+        deleteTagFileAndIcon(path.toAbsoluteString(_cfgAbsRootAnchor.get()));
     }
 
-    private void deleteTagFileAndIconImp(String  absPath) throws IOException
+    private void deleteTagFileAndIcon(String  absPath) throws IOException
     {
         _dr.setFolderIcon(absPath, "");
 
@@ -166,7 +166,7 @@ public class SharedFolderTagFileAndIcon
             return SID.storeSID2anchorOID(sid);
         } else {
             l.info("first-launch: invalid tag " + sid + " " + pc._path);
-            deleteTagFileAndIconImp(pc._absPath);
+            deleteTagFileAndIcon(pc._absPath);
             return null;
         }
     }

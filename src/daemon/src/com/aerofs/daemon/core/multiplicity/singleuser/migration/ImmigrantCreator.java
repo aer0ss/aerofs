@@ -1,12 +1,16 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
+import com.aerofs.base.id.OID;
+import com.aerofs.base.id.UniqueID;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
+import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -33,20 +37,46 @@ import static com.aerofs.daemon.core.ds.OA.FLAG_EXPELLED_ORG_OR_INH;
 public class ImmigrantCreator implements IImmigrantCreator
 {
     private DirectoryService _ds;
+    private IPhysicalStorage _ps;
     private ObjectCreator _oc;
     private ObjectMover _om;
     private ObjectDeleter _od;
     private IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public void inject_(DirectoryService ds, IMapSIndex2SID sidx2sid, ObjectMover om,
-            ObjectDeleter od, ObjectCreator oc)
+    public void inject_(DirectoryService ds, IPhysicalStorage ps, IMapSIndex2SID sidx2sid,
+            ObjectMover om, ObjectDeleter od, ObjectCreator oc)
     {
         _ds = ds;
+        _ps = ps;
         _sidx2sid = sidx2sid;
         _om = om;
         _od = od;
         _oc = oc;
+    }
+
+    /**
+     * Important:
+     *
+     * To prevent the users from creating nested shares by moving anchors inside non-root stores
+     * we special-case the migration of anchors: they are converted back to regular folders
+     *
+     * NB: This is the same behavior as Dropbox so ww is super happy
+     */
+    private static Type migratedType(Type t)
+    {
+        return t == Type.ANCHOR ? Type.DIR : t;
+    }
+
+    /**
+     * When a shared folder is converted back to a regular folder we need to generate a new OID
+     * to break the link between the two objects. This is necessary to avoid all sorts of nasty
+     * coupling. For instance, reusing the original folder OID would prevent the new folder from
+     * being re-shared later.
+     */
+    private static OID migratedOID(OID oid)
+    {
+        return oid.isAnchor() ? new OID(UniqueID.generate()) : oid;
     }
 
     @Override
@@ -62,15 +92,27 @@ public class ImmigrantCreator implements IImmigrantCreator
                     throws SQLException, IOException, ExNotFound, ExAlreadyExist, ExNotDir,
                     ExStreamInvalid
             {
-                SOID soidTo = new SOID(soidToParent.sidx(), oaFrom.soid().oid());
+                // when walking across store boundary (i.e through an anchor), we do not need
+                // to re-create the root dir in the destination, however we need to make sure
+                // any physical trace of the former anchor disappears
+                if (oaFrom.soid().oid().isRoot()) {
+                    _ps.newFolder_(oaFrom.soid(), _ds.resolve_(soidToParent))
+                            .demoteToRegularFolder_(t);
+                    return soidToParent;
+                }
+                // do not walk trash
+                if (oaFrom.soid().oid().isTrash()) return null;
+
+                SOID soidTo = new SOID(soidToParent.sidx(), migratedOID(oaFrom.soid().oid()));
                 String name = soidFromRoot.equals(oaFrom.soid()) ? toRootName : oaFrom.name();
 
                 OA oaToExisting = _ds.getOANullable_(soidTo);
+                Type typeTo = migratedType(oaFrom.type());
 
                 if (oaToExisting == null) {
                     int flags = oaFrom.flags() & ~FLAG_EXPELLED_ORG_OR_INH;
-                    _oc.createMeta_(oaFrom.type(), soidTo, soidToParent.oid(), name, flags,
-                            op, true, true, t);
+                    _oc.createMeta_(typeTo, soidTo, soidToParent.oid(), name,
+                            flags, op, true, true, t);
                 } else {
                     // Comment (B)
                     //
@@ -78,12 +120,13 @@ public class ImmigrantCreator implements IImmigrantCreator
                     // objects sharing the same OID in the local system, at
                     // most one of them is admitted, this is guaranteed by the
                     // implementation. See the invariant in AdmittedObjectLocator.
-                    assert oaFrom.type() == oaToExisting.type();
-                    assert oaFrom.isExpelled() || oaToExisting.isExpelled();
+                    assert typeTo == oaToExisting.type();
+                    assert oaFrom.isExpelled() || oaToExisting.isExpelled() :
+                            oaFrom + " " + oaToExisting;
                     _om.moveInSameStore_(soidTo, soidToParent.oid(), name, op, false, true, t);
                 }
 
-                return oaFrom.isAnchor() ? null : soidTo;
+                return soidTo;
             }
 
             SID _sid;
@@ -93,10 +136,14 @@ public class ImmigrantCreator implements IImmigrantCreator
                     throws IOException, ExAlreadyExist, SQLException, ExNotDir, ExNotFound,
                     ExStreamInvalid
             {
-                if (oaFrom.isDir()) {
+                if (oaFrom.soid().oid().isRoot() || oaFrom.soid().oid().isTrash()) return;
+
+                if (oaFrom.isDirOrAnchor()) {
+                    // anchors are converted back to regular directories during migration and
                     // directories aren't migrated. so delete them manually
                     if (_sid == null) _sid = _sidx2sid.get_(soidToParent.sidx());
-                    _od.delete_(oaFrom.soid(), op, _sid, t);
+                    // NB: to properly leave the store we must not keep track of the emigration
+                    _od.delete_(oaFrom.soid(), op, oaFrom.isAnchor() ? null : _sid, t);
                 }
             }
         });

@@ -55,4 +55,10 @@ class BlockFolder implements IPhysicalFolder
         if (l.isDebugEnabled()) l.debug(this + ".move_(" + to + ", " + op + ")");
         // Noop: we do not need to maintain any explicit folder structure
     }
+
+    @Override
+    public void promoteToAnchor_(Trans t) throws IOException, SQLException {}
+
+    @Override
+    public void demoteToRegularFolder_(Trans t) throws IOException, SQLException {}
 }

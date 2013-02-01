@@ -511,7 +511,6 @@ public class MockDS
         {
             when(_oa.type()).thenReturn(Type.DIR);
             when(_oa.isDir()).thenReturn(true);
-            when(_oa.isDirOrAnchor()).thenReturn(true);
 
             IPhysicalFolder pf = mock(IPhysicalFolder.class);
             when(_oa.physicalFolder()).thenReturn(pf);

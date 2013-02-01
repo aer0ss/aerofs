@@ -22,16 +22,23 @@ public class LinkedFolder implements IPhysicalFolder
 {
     private static Logger l = Util.l(LinkedFolder.class);
 
+    private final SOID _soid;
+    private final Path _path;
     private final InjectableFile _f;
     private final IFIDMaintainer _fidm;
     private final IgnoreList _il;
+    private final SharedFolderTagFileAndIcon _sfti;
 
     public LinkedFolder(CfgAbsRootAnchor cfgAbsRootAnchor, InjectableFile.Factory factFile,
-            IFIDMaintainer.Factory factFIDMan, IgnoreList il, SOID soid, Path path)
+            IFIDMaintainer.Factory factFIDMan, IgnoreList il, SharedFolderTagFileAndIcon sfti,
+            SOID soid, Path path)
     {
+        _soid = soid;
+        _path = path;
         _f = factFile.create(Util.join(cfgAbsRootAnchor.get(), Util.join(path.elements())));
         _fidm = factFIDMan.create_(soid, _f);
         _il = il;
+        _sfti = sfti;
     }
 
     @SuppressWarnings("fallthrough")
@@ -144,6 +151,21 @@ public class LinkedFolder implements IPhysicalFolder
                 if (_il.isIgnored_(child.getName())) child.deleteOrThrowIfExistRecursively();
             }
         }
+    }
+
+    @Override
+    public void promoteToAnchor_(Trans t) throws IOException, SQLException
+    {
+        assert _soid.oid().isRoot() : _soid;
+        if (!_path.isEmpty()) _sfti.addTagFileAndIcon(_soid.sidx(), _path, t);
+    }
+
+    @Override
+    public void demoteToRegularFolder_(Trans t) throws IOException, SQLException
+    {
+        assert _soid.oid().isRoot() : _soid;
+        assert !_path.isEmpty();
+        _sfti.removeTagFileAndIcon(_soid.sidx(), _path, t);
     }
 
     @Override

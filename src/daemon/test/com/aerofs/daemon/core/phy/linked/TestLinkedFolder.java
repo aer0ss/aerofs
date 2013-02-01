@@ -11,6 +11,8 @@ import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile.Factory;
 
+import static org.mockito.Mockito.mock;
+
 public class TestLinkedFolder extends AbstractTestLinkedObject<IPhysicalFolder>
 {
     String pathAux = "baz";
@@ -21,6 +23,6 @@ public class TestLinkedFolder extends AbstractTestLinkedObject<IPhysicalFolder>
             SOKID sokid, Path path)
     {
         return new LinkedFolder(cfgAbsRootAnchor, factFile, new IFIDMaintainer.Factory(dr, ds),
-                il, sokid.soid(), path);
+                il, mock(SharedFolderTagFileAndIcon.class), sokid.soid(), path);
     }
 }
