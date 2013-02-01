@@ -58,9 +58,9 @@ public class PasswordResetEmailer
 
         Email email = new Email(subject, false, null);
 
-        String body = "\nCongrats! You've successfully created a new password " +
-                "for your " + L.PRODUCT + " account!\n" +
-                "You should now be able to continue syncing privately and securely.\n\n" +
+        String body = "\n" +
+                "You've successfully created a new password for your " + L.PRODUCT + " account.\n" +
+                "\n" +
                 "If you didn't request a password reset, " +
                 "please email " + SV.SUPPORT_EMAIL_ADDRESS + " right away.";
 
