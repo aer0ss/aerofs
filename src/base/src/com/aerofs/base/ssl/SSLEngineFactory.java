@@ -18,16 +18,20 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 public class SSLEngineFactory
 {
+    public enum Mode { Client, Server }
+    public enum Platform { Desktop, Android }
+
     private static final char[] KEYSTORE_PASSWORD = "".toCharArray();
-    private static final String ALGORITHM = "SunX509";
-    private static final String KEYSTORE_TYPE = "JKS"; // jks = java key store
     private static final String SECURITY_TYPE = "TLS";
 
     private final boolean _clientMode;
+    private final String _algorithm;
+    private final String _keystoreType;
     private final IPrivateKeyProvider _keyProvider;
     private final Certificate _trustedCA;
     private final CRL _crl;
@@ -39,7 +43,9 @@ public class SSLEngineFactory
      *
      * IMPORTANT: Please read the documentation below carefully
      *
-     * @param clientMode   true if you want to create a client-side SSLEngine, false for server-side
+     * @param mode         Either Mode.Client or Mode.Server
+     *
+     * @param platform     Either Platform.Desktop or Platform.Android.
      *
      * @param keyProvider  Who you are. Provides a certificate and a private key proving that
      *                     you are who you claim you are. If this parameter is null, this peer will
@@ -63,12 +69,23 @@ public class SSLEngineFactory
      *                     no sense to check if a certificate has been revoked if you're not
      *                     checking that it's a valid cert in the first place.
      */
-    public SSLEngineFactory(boolean clientMode, @Nullable IPrivateKeyProvider keyProvider,
+    public SSLEngineFactory(Mode mode, Platform platform, @Nullable IPrivateKeyProvider keyProvider,
             @Nullable Certificate trustedCA, @Nullable CRL crl)
     {
         checkArgument(trustedCA != null || crl == null, "crl must be null if trustedCA is null");
 
-        _clientMode = clientMode;
+        switch (checkNotNull(mode)) {
+        case Client: _clientMode = true;  break;
+        case Server: _clientMode = false; break;
+        default:throw new IllegalArgumentException("unknown mode: " + mode);
+        }
+
+        switch (checkNotNull(platform)) {
+        case Desktop: _keystoreType = "JKS"; _algorithm = "SunX509"; break;
+        case Android: _keystoreType = "BKS"; _algorithm = "X509";    break;
+        default: throw new IllegalArgumentException("unknown platform: " + platform);
+        }
+
         _keyProvider = keyProvider;
         _trustedCA = trustedCA;
         _crl = crl;
@@ -141,11 +158,11 @@ public class SSLEngineFactory
     /**
      * Creates the KeyManager, which hold _this peer_'s credentials
      */
-    private static KeyManager[] getKeyManagers(IPrivateKeyProvider keyProvider) throws Exception
+    private KeyManager[] getKeyManagers(IPrivateKeyProvider keyProvider) throws Exception
     {
         if (keyProvider == null) return null;
 
-        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+        KeyStore keyStore = KeyStore.getInstance(_keystoreType);
         keyStore.load(null, KEYSTORE_PASSWORD); // initialize the keystore
 
         // load our key in the keystore, and initialize the KeyManagerFactory with it
@@ -153,7 +170,7 @@ public class SSLEngineFactory
         keyStore.setKeyEntry("my_keys", keyProvider.getPrivateKey(), KEYSTORE_PASSWORD,
                 new Certificate[]{keyProvider.getCert()});
 
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(ALGORITHM);
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(_algorithm);
         keyManagerFactory.init(keyStore, KEYSTORE_PASSWORD);
 
         return keyManagerFactory.getKeyManagers();
@@ -162,16 +179,16 @@ public class SSLEngineFactory
     /**
      * Creates the TrustManager, which holds the certs of roots CAs you trust
      */
-    private static TrustManager[] getTrustManagers(Certificate caCert, CRL crl) throws Exception
+    private TrustManager[] getTrustManagers(Certificate caCert, CRL crl) throws Exception
     {
         if (caCert == null) return null;
 
-        KeyStore keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+        KeyStore keyStore = KeyStore.getInstance(_keystoreType);
         keyStore.load(null, KEYSTORE_PASSWORD);  // initialize the keystore
 
         // load the CA cert in the keystore, and initialize the TrustManagerFactory with it
         keyStore.setCertificateEntry("ca_cert", caCert);
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(ALGORITHM);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(_algorithm);
         trustManagerFactory.init(keyStore);
 
         TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();

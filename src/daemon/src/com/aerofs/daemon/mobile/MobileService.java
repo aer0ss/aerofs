@@ -8,6 +8,8 @@ import com.aerofs.base.net.AbstractRpcServerHandler;
 import com.aerofs.base.net.MagicHeader;
 import com.aerofs.base.ssl.CNameVerificationHandler;
 import com.aerofs.base.ssl.SSLEngineFactory;
+import com.aerofs.base.ssl.SSLEngineFactory.Mode;
+import com.aerofs.base.ssl.SSLEngineFactory.Platform;
 import com.aerofs.daemon.core.Core;
 import com.aerofs.daemon.core.CoreIMCExecutor;
 import com.aerofs.daemon.core.ds.CA;
@@ -259,7 +261,8 @@ public class MobileService implements IMobileService
             }
 
             // TODO (GS): Provide a CRL
-            _sslEngineFactory = new SSLEngineFactory(false, cfgKeyManagersProvider, caCert, null);
+            _sslEngineFactory = new SSLEngineFactory(Mode.Server, Platform.Desktop,
+                    cfgKeyManagersProvider, caCert, null);
         }
 
         @Override
