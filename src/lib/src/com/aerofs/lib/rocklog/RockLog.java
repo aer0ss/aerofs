@@ -20,7 +20,7 @@ public class RockLog
     private static final Logger l = Util.l(RockLog.class);
     private static final RockLog _instance = new RockLog();
     private final int SOCKET_TIMEOUT = (int) (10*C.SEC);
-    private final InetSocketAddress ROCKLOG_SERVER = new InetSocketAddress("rocklog.aerofs.com", 443);
+    private final InetSocketAddress ROCKLOG_SERVER = new InetSocketAddress("localhost", 8000);
     private RockLog() {} // prevent initialization
 
     /*
@@ -35,31 +35,36 @@ public class RockLog
         return new Defect(_instance, name);
     }
 
-    void sendAsync(final Defect defect)
+    public static Metric newMetric(String name)
+    {
+        return new Metric(_instance, name);
+    }
+
+    void sendAsync(final IRockLogMessage message)
     {
         new Thread(new Runnable()
         {
             @Override
             public void run()
             {
-                send(defect);
+                send(message);
             }
         },"rocklog-send").start();
     }
 
-    void send(Defect defect)
+    void send(IRockLogMessage message)
     {
         try {
-            l.info("Sending defect...");
-            rpc(defect.getJSON().getBytes());
+            l.info("Sending RockLog message...");
+            rpc(message.getJSON().getBytes(), message.getURLPath());
         } catch (Throwable e) {
-            l.warn("Could not send log to RockLog: " + Util.e(e, IOException.class));
+            l.warn("Could not send message to RockLog: " + Util.e(e, IOException.class));
         }
     }
 
-    private void rpc(byte[] data) throws Exception
+    private void rpc(byte[] data, String urlPath) throws Exception
     {
-        Socket s = send(data);
+        Socket s = send(data, urlPath);
         try {
             recv(s);
         } finally {
@@ -67,13 +72,13 @@ public class RockLog
         }
     }
 
-    private Socket send(byte[] data) throws IOException
+    private Socket send(byte[] data, String urlPath) throws IOException
     {
         final Socket s = new Socket();
         s.connect(ROCKLOG_SERVER, SOCKET_TIMEOUT);
         s.setSoTimeout(SOCKET_TIMEOUT);
 
-        final String header = "POST " + "/defects" + " HTTP/1.0\r\n"
+        final String header = "POST " + urlPath + " HTTP/1.0\r\n"
                 + "Connection: close\r\n"
                 + "Content-type: application/json\r\n"
                 + "Content-Length: " + data.length + "\r\n\r\n";
