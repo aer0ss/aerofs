@@ -10,6 +10,7 @@ import com.aerofs.gui.setup.CompLocalStorage;
 import com.aerofs.lib.S;
 import com.aerofs.ui.PasswordVerifier;
 import com.aerofs.ui.PasswordVerifier.PasswordVerifierResult;
+import com.google.common.base.Preconditions;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
@@ -115,6 +116,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
             {
                 _storageChoice = storageSelector.getSelectionIndex();
                 updateStorageArea();
+                updateOkButtonState();
             }
         });
 
@@ -123,7 +125,6 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
             @Override
             public void handleEvent(Event event)
             {
-                validatePassword();
                 if (_s3Config != null) {
                     _txtS3BucketId.setText(_s3Config.s3BucketId);
                     _txtS3AccessKey.setText(_s3Config.s3AccessKey);
@@ -134,9 +135,28 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
                 _compLocalStorage.setAbsRootAnchor(getAbsoluteRootAnchor());
                 storageSelector.select(_storageChoice);
                 updateStorageArea();
-                validatePassword();
+                updateOkButtonState();
             }
         });
+    }
+
+    private void updateOkButtonState()
+    {
+        switch (_storageChoice) {
+            case LOCAL_STORAGE_OPTION:
+                getButton(IDialogConstants.OK_ID).setEnabled(true);
+                return;
+            case S3_STORAGE_OPTION:
+                PasswordVerifierResult result = verifyPasswords();
+                getButton(IDialogConstants.OK_ID).setEnabled(result == PasswordVerifierResult.OK);
+                _lblS3Error.setText(result.getMsg());
+                _compS3Storage.layout();
+                return;
+            default:
+                Preconditions.checkState(_storageChoice == LOCAL_STORAGE_OPTION ||
+                        _storageChoice == S3_STORAGE_OPTION, "Unimplemented Storage Option");
+                break;
+        }
     }
 
     private void updateStorageArea()
@@ -230,7 +250,7 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
             @Override
             public void modifyText(ModifyEvent modifyEvent)
             {
-                validatePassword();
+                updateOkButtonState();
             }
         });
 
@@ -239,22 +259,19 @@ public class MultiuserDlgSetupAdvanced extends AbstractDlgSetupAdvanced
             @Override
             public void modifyText(ModifyEvent modifyEvent)
             {
-                validatePassword();
+                updateOkButtonState();
             }
         });
         return _compS3Storage;
     }
 
-    private void validatePassword()
+    private PasswordVerifierResult verifyPasswords()
     {
         PasswordVerifier verifier = new PasswordVerifier();
         PasswordVerifierResult result = verifier.verifyAndConfirmPasswords(
                 _txtS3Passphrase.getText().toCharArray(),
                 _txtS3Passphrase2.getText().toCharArray());
-
-        getButton(IDialogConstants.OK_ID).setEnabled(result == PasswordVerifierResult.OK);
-        _lblS3Error.setText(result.getMsg());
-        _compS3Storage.layout();
+        return result;
     }
 
     @Override
