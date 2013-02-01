@@ -15,10 +15,12 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.FileUtil;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
+import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
@@ -47,11 +49,12 @@ public class GetComponentReply
     private final MapAlias2Target _a2t;
     private final LocalACL _lacl;
     private final IEmigrantDetector _emd;
+    private final FrequentDefectSender _fds;
 
     @Inject
     public GetComponentReply(TransManager tm, DirectoryService ds, IncomingStreams iss,
             ReceiveAndApplyUpdate ru, MetaDiff mdiff, Aliasing al, MapAlias2Target a2t,
-            LocalACL lacl, IEmigrantDetector emd)
+            LocalACL lacl, IEmigrantDetector emd, FrequentDefectSender fds)
     {
         _tm = tm;
         _ds = ds;
@@ -62,6 +65,7 @@ public class GetComponentReply
         _a2t = a2t;
         _lacl = lacl;
         _emd = emd;
+        _fds = fds;
     }
 
     public static OA.Type fromPB(PBMeta.Type type)
@@ -133,8 +137,13 @@ public class GetComponentReply
             metaDiff = 0;
 
             // We should not receive content for an aliased object:
-            // specifically there was no reason to request content for a locally-aliased object
-            assert !_a2t.isAliased_(socid.soid()) : socid;
+            // GetComponentCall won't request content for an aliased object, so if socid is locally
+            // aliased, it was likely a race. Abort this download
+            if (_a2t.isAliased_(socid.soid())) {
+                ExAborted e = new ExAborted(socid + " aliased");
+                _fds.logSendAsync("aliased content", e);
+                throw e;
+            }
 
             if (_ds.hasOA_(socid.soid())) {
                 if (!_lacl.check_(msg.user(), socid.sidx(), Role.EDITOR)) {
