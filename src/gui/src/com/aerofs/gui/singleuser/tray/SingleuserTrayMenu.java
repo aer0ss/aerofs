@@ -96,7 +96,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                 break;
             case Type.SHARED_FOLDER_KICKOUT_VALUE:
                 UI.get().notify(MessageType.INFO,
-                        "You were kicked out from \"" + new Path(pb.getPath()) + "\"");
+                        "You have left \"" + new Path(pb.getPath()) + "\"");
                 break;
             default: break;
             }
