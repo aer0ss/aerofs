@@ -107,6 +107,8 @@ public class CfgDatabase
         // Configs only recognizable by multiuser installs
         MULTIUSER_CONTACT_EMAIL("multiuser_contact_email", ""),
 
+        // first start of the daemon
+        FIRST_START("first_start", true)
         ;
 
         private final String _str;

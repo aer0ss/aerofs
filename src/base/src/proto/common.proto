@@ -75,6 +75,7 @@ message PBException {
 
         NOT_SHARED = 200;
         EXCLUDED = 201;
+        INDEXING = 202;  // daemon is busy indexing root anchor on first launch
 
         ////////////////////////////////////////////////////
         // Controller exception types

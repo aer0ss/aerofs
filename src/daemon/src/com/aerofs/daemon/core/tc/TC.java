@@ -142,6 +142,7 @@ public class TC implements IDumpStatMisc
     private CoreScheduler _sched;
     private TokenManager _tokenManager;
 
+    private Condition _resumed;
     private final ThreadGroup _threadGroup = new ThreadGroup("core");
 
 
@@ -159,7 +160,34 @@ public class TC implements IDumpStatMisc
         _disp = disp;
         _q = q;
         _l = q.getLock();
+        _resumed = _l.newCondition();
         _tokenManager = tokenManager;
+    }
+
+    private volatile boolean _suspended = false;
+
+    /**
+     * Suspend event processing
+     * NB: This will not interrupt ongoing events, simply delay the processing of enqueued and
+     * future events until {@link #resume_} is called.
+     */
+    public void suspend_()
+    {
+        _suspended = true;
+    }
+
+    /**
+     * Resume event processing after a call to {@link #suspend_}
+     */
+    public void resume_()
+    {
+        _suspended = false;
+        _resumed.signalAll();
+    }
+
+    private void waitResumed() throws InterruptedException
+    {
+        while (_suspended) _resumed.await();
     }
 
     private void newThread_()
@@ -182,6 +210,8 @@ public class TC implements IDumpStatMisc
                 try {
                     while (true) {
                         try {
+                            waitResumed();
+
                             IEvent ev = _q.dequeue_(outPrio);
                             if (_shutdown) {
                                 continueShutdown_();
