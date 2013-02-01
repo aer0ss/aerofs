@@ -1,5 +1,6 @@
 import struct
 from binascii import unhexlify
+import hashlib
 
 def soid_from_pb(get_object_identifier_reply):
     oid = UniqueID(get_object_identifier_reply.oid)
@@ -8,6 +9,19 @@ def soid_from_pb(get_object_identifier_reply):
 
 def unique_id_from_hexstring(hexstring):
     return UniqueID(unhexlify(hexstring))
+
+def get_root_sid(user_id):
+    """Given a user id (email address), returns the root store id for that user."""
+    m = hashlib.md5()
+    m.update(user_id)
+    m.update("\x07\x24\xf1\x37") # ROOT_SID_SALT
+    d = [ord(b) for b in m.digest()] # strings are not mutable, so make a list
+    # set version nibble (high nibble, seventh byte (index 6)) to 3
+    VERSION_BYTE = 6
+    unchanged_nibble = d[VERSION_BYTE] & 0x0f
+    version_nibble = 0x30
+    d[VERSION_BYTE] = version_nibble | unchanged_nibble
+    return "".join([ "%02x" % i for i in d ])
 
 class SOID:
     def __init__(self, sidx, oid):
@@ -24,7 +38,6 @@ class SOID:
 
     def __gt__(self, other):
         return not self.__lt__(other) and not self.__eq__(other)
-
 
 class UniqueID:
     def __init__(self, barray):
