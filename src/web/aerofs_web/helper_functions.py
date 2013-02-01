@@ -22,6 +22,33 @@ def domain_sanity_check(domain):
     '''
     return len(domain) > 3 and domain.find(' ') < 0 and domain.find('.') >= 0
 
+def _is_ascii(string):
+    ''' Checks if a given string is ascii (used by valid_password_test)
+    '''
+    #http://stackoverflow.com/a/196391 (plus first comment) explains how to detect non-ascii strings
+    try:
+        string.encode("ascii")
+    except UnicodeEncodeError:
+        return False
+    else:
+        return True
+
+def valid_password_test(request, password):
+    ''' Returns a tuple of the format (password_is_valid, error_msg)
+        where password_is_valid is a boolean set True if the password
+        is valid or False otherwise and error_msg is a user-reportable
+        error message if the password is not valid (only set when
+        password_is_valid is false).
+    '''
+    _ = request.translate
+
+    if len(password) < 6:
+        return False, _("Passwords must be at least 6 characters.")
+    elif not _is_ascii(password):
+        return False, _("The password contains invalid characters.")
+    else:
+        return True, ""
+
 # Exception processing functions
 
 def get_error(exception): # parse RPC errors into something more user friendly
