@@ -351,7 +351,7 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
     @Nonnull public OA getOA_(SOID soid) throws SQLException
     {
         OA oa = getOANullable_(soid);
-        assert oa != null : soid;
+        assert oa != null : soid + " " + _alias2target.getNullable_(soid);
         return oa;
     }
 
