@@ -43,7 +43,7 @@ public class RequestToSignUpEmailer
         Email email = new Email(subject);
 
         String body = "\n" +
-                "Please click this link to go to proceed signing up " + L.PRODUCT + ":\n" +
+                "Please click this link to go to proceed signing up " + L.PRODUCT + " for Business:\n" +
                 "\n" +
                 getSignUpLinkWithBusinessPlan(signUpCode) + "\n" +
                 "\n" +

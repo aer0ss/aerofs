@@ -19,7 +19,7 @@ public class DeviceCertifiedEmailer
     public void sendTeamServerDeviceCertifiedEmail(String emailAddress, String firstName)
             throws IOException
     {
-        String subject = L.PRODUCT + " Device Installed";
+        String subject = L.PRODUCT + " Team Server Device Installed";
         Email email = new Email(subject);
 
         String body = "\n" +

@@ -151,7 +151,7 @@
             <li><a href="https://www.aerofs.com/download" target="_blank">
                 Desktop Client
             </a></li>
-            <li><a href="https://www.aerofs.com/tCOa0b5/download.html" target="_blank">
+            <li><a href="${request.route_path('install_team_server')}">
                 Team Server
             </a></li>
         </ul>
