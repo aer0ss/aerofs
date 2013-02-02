@@ -157,6 +157,9 @@ public class CNameVerificationHandler extends SimpleChannelHandler
 
         failConnectFuture(ctx, e.getCause());
         e.getChannel().close();
+
+        // Propagate the exception upstream
+        super.exceptionCaught(ctx, e);
     }
 
     private void failConnectFuture(ChannelHandlerContext ctx, Throwable reason)
