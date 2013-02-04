@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Fix permissions and user for ssh keys and aerofs home directory.
-sudo chown -R aerofs:aerofs /home/aerofs
-sudo chmod 700 /home/aerofs/.ssh/authorized_keys
-
 # Make scripts executable
 sudo chmod a+x /usr/local/aerofs/tools/*.sh
 
@@ -11,10 +7,8 @@ PYTHON_ROOT=/usr/local/aerofs/python
 for module in $(ls $PYTHON_ROOT 2>/dev/null)
 do
     cd $PYTHON_ROOT/$module
-
-    # Silently install the python modules.
-    sudo python setup.py install 1>/dev/null 2>/dev/null
+    sudo python setup.py install
 done
 
-# Silently install python and pyramid
-sudo easy_install python pyramid protobuf 1>/dev/null 2>/dev/null
+# Install python and pyramid
+sudo easy_install python pyramid protobuf

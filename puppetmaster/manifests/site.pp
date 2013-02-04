@@ -31,11 +31,13 @@ include common::logs
         default     => "production"
     }
 
+    $aptkey = hiera("aptkey","")
+
     apt::source { "aerofs":
         location    => "http://apt.aerofs.com/ubuntu/${repo}",
         repos       => "main",
         include_src => false,
-        key         => "64E72541",
+        key         => "${aptkey}",
         key_server  => "pgp.mit.edu",
     }
 
@@ -63,8 +65,8 @@ include common::logs
         ensure  => present
     }
 
-    # These defaults ensure that the persistence command (in common::firewall) is
-    # executed after every change to the firewall
+    # These defaults ensure that the persistence command (in common::firewall)
+    # is executed after every change to the firewall
     Firewall {
       notify  => Exec['persist-firewall'],
     }

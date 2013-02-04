@@ -27,15 +27,13 @@ Set up Master (will update if already set up):
 Set up Agent:
     ./deploy_vm_agent <master ip> <agent ip>
 
-Test puppet script (on the agent):
+Test puppet script (on the agent and the master):
     puppet agent -t --server=<master hostname>
 
 Notes:
 
 1.  You must use the actual hostname of the master when calling puppet agent.
     The vm should have an entry in hosts (created during deploy_vm_master)
-2.  If port knocking (or any other service) gets in your way, just comment it
-    out of <repo>/puppetmaster/manifests/site.pp
 
 --------------------------------------------------------------------------------
 Amazon Setup
