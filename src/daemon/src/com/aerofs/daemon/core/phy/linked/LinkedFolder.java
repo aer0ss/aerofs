@@ -94,14 +94,21 @@ public class LinkedFolder implements IPhysicalFolder
 
             // throw if the folder is not empty after ignored children has been deleted, so that we
             // don't accidentally delete non-ignored objects under the folder.
-            _f.delete();
+            // NB: if the folder was deleted under our feet we don't throw. This is necessary to
+            // avoid a nasty class of crash loops where a shared folder is left on one device and
+            // deleted on another *while the daemon is not running*. Because of the delay between
+            // detecting a deletion on the filesystem and acting upon it (see TimeoutDeletionBuffer)
+            // ACL updates are likely to be processed before the event leaves the buffer and thus to
+            // try, and fail, to delete an already deleted folder.
+            final boolean exists = _f.exists();
+            _f.deleteOrThrowIfExist();
 
             LinkedStorage.onRollback_(_f, t, new IRollbackHandler() {
                 @Override
                 public void rollback_() throws IOException
                 {
                     try {
-                        _f.mkdir();
+                        if (exists) _f.mkdir();
                     } catch (IOException e) {
                         // InjectableFile.mkdir throws IOException if File.mkdir returns false
                         // That can happen if the directory already exists, which is very much
