@@ -46,6 +46,8 @@ public class Defect implements IRockLogMessage
         // Add all the system metadata
         _json.putAll(new BaseMessage().getData());
 
+        // TODO (GS): add cfg DB
+
         // Defects have the highest priority by default
         setPriority(Priority.Fatal);
 

@@ -10,6 +10,7 @@ import com.aerofs.lib.os.OSUtil;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 public class BaseMessage
 {
@@ -19,15 +20,15 @@ public class BaseMessage
     {
         // Set the timestamp field as early as possible
         // Note: some of our json fields start with a '@' to follow the logstash format
-        //       see: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
-        //       Kibana expects to find those fields (especially @timestamp)
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        // see: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
+        // Kibana expects to find those fields (especially @timestamp)
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         _data.put("@timestamp", sdf.format(new Date()));
 
         _data.put("version", Cfg.ver());
 
         if (Cfg.inited()) {
-            // TODO (GS): add cfg DB
             _data.put("user", Cfg.user());
             _data.put("did", Cfg.did().toStringFormal());
         }

@@ -6,21 +6,26 @@ package com.aerofs.lib.rocklog;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.Util;
+import com.google.common.net.HttpHeaders;
 import org.apache.log4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import static java.net.HttpURLConnection.HTTP_OK;
 
 public class RockLog
 {
+    private static final int SOCKET_TIMEOUT = (int) (10*C.SEC);
+    private static final String ROCKLOG_URL = "http://rocklog.aerofs.com";
+
     private static final Logger l = Util.l(RockLog.class);
     private static final RockLog _instance = new RockLog();
-    private final int SOCKET_TIMEOUT = (int) (10*C.SEC);
-    private final InetSocketAddress ROCKLOG_SERVER = new InetSocketAddress("localhost", 8000);
+
     private RockLog() {} // prevent initialization
 
     /*
@@ -55,58 +60,72 @@ public class RockLog
     void send(IRockLogMessage message)
     {
         try {
-            l.info("Sending RockLog message...");
-            rpc(message.getJSON().getBytes(), message.getURLPath());
+            l.trace("send RockLog message...");
+            rpc(message.getJSON().getBytes(), ROCKLOG_URL + message.getURLPath());
         } catch (Throwable e) {
-            l.warn("Could not send message to RockLog: " + Util.e(e, IOException.class));
+            l.warn("fail send RockLog message: " + Util.e(e, IOException.class));
         }
     }
 
-    private void rpc(byte[] data, String urlPath) throws Exception
+    private void rpc(byte[] data, String url) throws Exception
     {
-        Socket s = send(data, urlPath);
+        HttpURLConnection rocklogConnection = getRockLogConnection(url, data.length);
+
         try {
-            recv(s);
+            send(rocklogConnection, data);
+            recv(rocklogConnection);
         } finally {
-            if (!s.isClosed()) s.close();
+            rocklogConnection.disconnect();
         }
     }
 
-    private Socket send(byte[] data, String urlPath) throws IOException
+    private HttpURLConnection getRockLogConnection(String url, int contentLength)
+            throws IOException
     {
-        final Socket s = new Socket();
-        s.connect(ROCKLOG_SERVER, SOCKET_TIMEOUT);
-        s.setSoTimeout(SOCKET_TIMEOUT);
+        URL rocklogURL = new URL(url);
 
-        final String header = "POST " + urlPath + " HTTP/1.0\r\n"
-                + "Connection: close\r\n"
-                + "Content-type: application/json\r\n"
-                + "Content-Length: " + data.length + "\r\n\r\n";
+        HttpURLConnection rocklogConnection = (HttpURLConnection) rocklogURL.openConnection();
+        rocklogConnection.setUseCaches(false);
+        rocklogConnection.setConnectTimeout(SOCKET_TIMEOUT);
+        rocklogConnection.setReadTimeout(SOCKET_TIMEOUT);
+        rocklogConnection.setRequestProperty(HttpHeaders.CONTENT_TYPE, "application/json");
+        rocklogConnection.setFixedLengthStreamingMode(contentLength);
+        rocklogConnection.setDoOutput(true);
+        rocklogConnection.connect();
 
-        OutputStream os = s.getOutputStream();
+        return rocklogConnection;
+    }
+
+    private void send(HttpURLConnection conn, byte[] requestBody) throws IOException
+    {
+        OutputStream os = null;
         try {
-            os.write(header.getBytes());
-            os.write(data);
-            return s;
-        } catch (IOException e) {
-            s.close();
-            throw e;
+            os = conn.getOutputStream();
+            os.write(requestBody);
+        } finally {
+            if (os != null) os.close();
         }
     }
 
-    private void recv(Socket s) throws IOException
+    private void recv(HttpURLConnection conn) throws IOException
     {
-        DataInputStream dis = new DataInputStream(new BufferedInputStream(s.getInputStream()));
+        int code = conn.getResponseCode();
+        if (code != HTTP_OK) {
+            throw new IOException("fail send RockLog message code: " + code);
+        }
+
+        DataInputStream is = null;
+        byte[] responseBuffer = new byte[1024];
         try {
-            final String expected = "HTTP/1.1 200";
-            byte[] buf = new byte[expected.length()];
-            dis.readFully(buf);
-            String status = new String(buf);
-            if (!status.equals(expected)) {
-                throw new IOException("RockLog returned: " + status);
+            is = new DataInputStream(new BufferedInputStream(conn.getInputStream()));
+            // doing it this way (i.e. not looking at content-length) handles gzipped input properly
+            // see: http://developer.android.com/reference/java/net/HttpURLConnection.html
+            while (is.read() != -1) {
+                // noinspection ResultOfMethodCallIgnored
+                is.read(responseBuffer); // read the full response, but ignore it
             }
         } finally {
-            s.close();
+            if (is != null) is.close();
         }
     }
 }
