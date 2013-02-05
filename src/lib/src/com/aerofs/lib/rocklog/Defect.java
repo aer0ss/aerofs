@@ -34,28 +34,23 @@ import java.util.HashMap;
  * }
 
  */
-public class Defect
+public class Defect implements IRockLogMessage
 {
     public enum Priority { Info, Warning, Fatal }
 
-    private final String _name;
     private final RockLog _rocklog;
     private HashMap<String, Object> _json = new HashMap<String, Object>();
 
     Defect(RockLog rocklog, String name)
     {
-        // Set the timestamp field as early as possible
-        // Note: some of our json fields start with a '@' to follow the logstash format
-        //       see: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
-        //       Kibana expects to find those fields (especially @timestamp)
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        _json.put("@timestamp", sdf.format(new Date()));
+        // Add all the system metadata
+        _json.putAll(new BaseMessage().getData());
 
         // Defects have the highest priority by default
         setPriority(Priority.Fatal);
 
         _rocklog = rocklog;
-        _name = name;
+        _json.put("defect_name", name);
     }
 
     public Defect setMsg(String message)
@@ -107,24 +102,16 @@ public class Defect
         _rocklog.sendAsync(this);
     }
 
-    String getJSON()
+    @Override
+    public String getJSON()
     {
-        _json.put("defect_name", _name);
-        _json.put("version", Cfg.ver());
-
-        if (Cfg.inited()) {
-            // TODO (GS): add cfg DB
-            _json.put("user", Cfg.user());
-            _json.put("did", Cfg.did().toStringFormal());
-        }
-
-        if (OSUtil.get() != null) {
-            _json.put("os_name", OSUtil.get().getFullOSName());
-            _json.put("os_family", OSUtil.get().getOSFamily().toString());
-            _json.put("aerofs_arch", OSUtil.getOSArch().toString());
-        }
-
         return new Gson().toJson(_json);
+    }
+
+    @Override
+    public String getURLPath()
+    {
+        return "/defects";
     }
 
     /**
