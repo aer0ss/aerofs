@@ -8,7 +8,7 @@ from pyelasticsearch import ElasticSearch
 from retrace_client import RetraceClient
 
 app = Flask("rocklog")
-app.debug = False
+app.debug = True
 
 es = ElasticSearch('http://localhost:9200/')
 
@@ -16,6 +16,7 @@ es = ElasticSearch('http://localhost:9200/')
 def home():
     return success_response()
 
+@app.route('/metrics', methods = ['POST'])
 @app.route('/defects', methods = ['POST'])
 def defects():
     if request.headers['Content-Type'] != 'application/json':

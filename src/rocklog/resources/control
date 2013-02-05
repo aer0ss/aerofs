@@ -1,0 +1,6 @@
+Package: aerofs-rocklog
+Section: admin
+Priority: optional
+Maintainer: AeroFS <team@aerofs.com>
+Description: AeroFS Rocklog Defect and Metric Server
+Architecture: all
