@@ -66,8 +66,8 @@ public class S
                 " download updates. Please make sure the computer is" +
                 " connected to the Internet and run " + L.PRODUCT + " again.",
             PRIVACY_URL = SP.WEB_BASE + "/privacy",
-            PASSWORD_RESET_REQUEST_URL = SP.WEB_BASE + "/request_password_reset",
-            PASSWORD_RESET_URL = SP.WEB_BASE + "/password_reset",
+            PASSWORD_RESET_REQUEST_URL = SP.DASH_BOARD_BASE + "/request_password_reset",
+            PASSWORD_RESET_URL = SP.DASH_BOARD_BASE + "/password_reset",
             // use trailing spaces to force right margins
             TYPE_EMAIL_ADDRESSES = "Enter email addresses here, separated by commas:   ",
             INVITATION_WAS_SENT = "Invited successfully.",

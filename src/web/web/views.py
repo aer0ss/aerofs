@@ -3,9 +3,8 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
-from aerofs_sp.gen.sp_pb2 import USER
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("web")
 
 # Global view configuration.
 

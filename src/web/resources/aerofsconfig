@@ -4,11 +4,11 @@ server {
 }
 
 server {
-	listen   443 default ssl; ## listen for ipv4; this line is default and implied
-	listen   [::]:443 ssl default ipv6only=on; ## listen for ipv6
-	error_log /var/log/aerofs/webadmin.log;
-	access_log off;
-
+	listen 443 default ssl;
+	listen [::]:443 ssl default ipv6only=on;
+	error_log /var/log/aerofs/webadmin.error.log;
+	access_log /var/log/aerofs/webadmin.access.log;
+	access_log on;
 	charset utf-8;
 
 	location / {
