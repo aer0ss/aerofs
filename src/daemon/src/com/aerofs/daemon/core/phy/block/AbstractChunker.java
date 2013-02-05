@@ -12,6 +12,7 @@ import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.LengthTrackingOutputStream;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.ResettableFileInputStream;
+import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
 
@@ -39,6 +40,7 @@ public abstract class AbstractChunker
     public AbstractChunker(InputSupplier<? extends InputStream> input, long length,
             IBlockStorageBackend bsb)
     {
+        Preconditions.checkArgument(length >= 0);
         _input = input;
         _length = length;
         _bsb = bsb;
@@ -53,14 +55,20 @@ public abstract class AbstractChunker
     {
         if (_length == 0 && _skipEmpty) return new ContentHash(new byte[0]);
 
-        int numBlocks = _length == 0 ? 1 : (int)((_length + Param.FILE_BLOCK_SIZE - 1) /
-                                                         Param.FILE_BLOCK_SIZE);
+        // To avoid integer overflows, make sure the hashBytes buffer can be 32bit-indexed
+        // With a block size of 4MB and a hash size of 16bytes that means a file size cutoff of
+        // 500TB so we should be safe...
+        Preconditions.checkArgument(_length <
+                (long)Integer.MAX_VALUE * Param.FILE_BLOCK_SIZE * ContentHash.UNIT_LENGTH);
+
+        int trailing = (int)(_length % Param.FILE_BLOCK_SIZE);
+        int numBlocks = (int)(_length / Param.FILE_BLOCK_SIZE) +
+                (trailing > 0 || _length == 0 ? 1 : 0);
+
         byte[] hashBytes = new byte[numBlocks * ContentHash.UNIT_LENGTH];
 
         for (int i = 0; i < numBlocks; ++i) {
-            int blockSize = i == numBlocks - 1
-                    ? (int)(numBlocks * Param.FILE_BLOCK_SIZE - _length)
-                    : Param.FILE_BLOCK_SIZE;
+            int blockSize = i == numBlocks - 1 ? trailing : Param.FILE_BLOCK_SIZE;
             ContentHash h = storeOneBlock_(i, blockSize);
             System.arraycopy(h.getBytes(), 0, hashBytes, i * ContentHash.UNIT_LENGTH,
                     ContentHash.UNIT_LENGTH);
@@ -104,7 +112,10 @@ public abstract class AbstractChunker
         }
 
         @Override
-        public void close() throws IOException {}
+        public void close() throws IOException
+        {
+            d.reset();
+        }
     }
 
     private static class FileEncodingBuffer implements IEncodingBuffer
@@ -147,35 +158,30 @@ public abstract class AbstractChunker
     protected abstract void prePutBlock_(Block block) throws SQLException;
     protected abstract void postPutBlock_(Block block) throws SQLException;
 
-    private ContentHash storeOneBlock_(int index, int blockSize) throws IOException, SQLException
+    private ContentHash storeOneBlock_(long index, int blockSize) throws IOException, SQLException
     {
         InputSupplier<? extends InputStream> input
                 = ByteStreams.slice(_input, index * Param.FILE_BLOCK_SIZE, Param.FILE_BLOCK_SIZE);
 
-        InputStream in = input.getInput();
+        // read a chunk of input into a buffer, perform any backend-specific encoding and
+        // compute any metadata (hash, length, ...) required for the actual write
+        Block block = new Block();
+        IEncodingBuffer buffer = makeEncodingBuffer(blockSize);
         try {
-            // read a chunk of input into a buffer, perform any backend-specific encoding and
-            // compute any metadata (hash, length, ...) required for the actual write
-            Block block = new Block();
-            IEncodingBuffer buffer = makeEncodingBuffer(blockSize);
+            OutputStream out = wrapOutputStream(block, buffer.encoderOutput());
             try {
-                OutputStream out = wrapOutputStream(block, buffer.encoderOutput());
-                try {
-                    ByteStreams.copy(in, out);
-                } finally {
-                    out.close();
-                }
-                // write chunk into persistent storage, keyed by content hash
-                prePutBlock_(block);
-                _bsb.putBlock(block._hash, buffer.encoded(), block._length, block._encoderData);
-                postPutBlock_(block);
+                ByteStreams.copy(input, out);
             } finally {
-                buffer.close();
+                out.close();
             }
-            return block._hash;
+            // write chunk into persistent storage, keyed by content hash
+            prePutBlock_(block);
+            _bsb.putBlock(block._hash, buffer.encoded(), block._length, block._encoderData);
+            postPutBlock_(block);
         } finally {
-            in.close();
+            buffer.close();
         }
+        return block._hash;
     }
 
     /**
