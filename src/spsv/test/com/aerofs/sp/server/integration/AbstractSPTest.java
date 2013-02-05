@@ -214,8 +214,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
             throws IOException, GeneralSecurityException
     {
         KeyPair kp = SecUtil.newRSAKeyPair();
-        return ByteString.copyFrom(SecUtil.newCSR(kp.getPublic(), kp.getPrivate(), userID, did)
-                .getEncoded());
+        return ByteString.copyFrom(SecUtil.serverOnlyNewCSR(kp.getPublic(), kp.getPrivate(), userID,
+                did).getEncoded());
     }
 
     protected Set<String> mockAndCaptureVerkehrPublish()

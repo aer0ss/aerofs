@@ -28,7 +28,22 @@ public class SecUtil extends BaseSecUtil
         return scryptImpl(passwd, user);
     }
 
-    public static PKCS10 newCSR(PublicKey pubKey, PrivateKey privKey, UserID userId, DID did)
+    // This method uses OpenSSL to generate a PKCS10-compatible certificate signing request.
+    // It is intended for use within client code, where we already ship aerofsd.
+    // TODO (DF): make available only to client code (daemon/gui)
+    public static OpenSslPkcs10 newCSR(PublicKey pubKey, PrivateKey privKey, UserID userId, DID did)
+            throws GeneralSecurityException
+    {
+        OSUtil.get().loadLibrary("aerofsd");
+        return OpenSslPkcs10.create(pubKey, privKey, userId, did);
+    }
+
+    // This method depends on a JRE implementation detail.  It's unsafe for us to use this method
+    // on systems where we don't control the JRE (ie, client code).  On the upside, it has no
+    // native library dependency, so it can be convenient for use within the servers.
+    // TODO (DF): make available only to server code by package
+    public static PKCS10 serverOnlyNewCSR(PublicKey pubKey, PrivateKey privKey, UserID userId,
+            DID did)
             throws GeneralSecurityException, IOException
     {
         PKCS10 request = new PKCS10(pubKey);
