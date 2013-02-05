@@ -8,7 +8,7 @@
       </pattern>
     </extension>
     <option name="MAIN_CLASS_NAME" value="com.aerofs.verkehr.example.VerkehrTestServer" />
-    <option name="VM_PARAMETERS" />
+    <option name="VM_PARAMETERS" value="" />
     <option name="PROGRAM_PARAMETERS" value="verkehr.properties" />
     <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../../src/verkehr/resources/staging" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />

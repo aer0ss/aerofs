@@ -4,13 +4,13 @@ set -e -u
 
 if [ $# -ne 1 ]; then
     echo "usage: $0 <puppetmaster_ip>"
-    exit 2
+    exit 1
 fi
 
 PUPPET_MASTER=${1:-}
 if [ x"$PUPPET_MASTER" == x ]; then
     echo "puppetmaster server address is required"
-    exit 3
+    exit 2
 fi
 
 USER=root
@@ -26,7 +26,7 @@ echo "Configuring puppet master vm: ${PUPPET_MASTER}"
 echo "Installing puppet"
 $SSH_COMMAND ${PUPPET_MASTER} -C "apt-get update"
 $SSH_COMMAND ${PUPPET_MASTER} -C "apt-get install --yes puppet puppetmaster rubygems"
-$SSH_COMMAND ${PUPPET_MASTER} -C "gem install hiera"
+$SSH_COMMAND ${PUPPET_MASTER} -C "gem install hiera hiera-puppet"
 echo "Copying over puppet files"
 # rsync - recursuve/follow symlinks - use ssh -
 rsync -rl -e "$SSH_COMMAND" ${PUPPET_ROOT} ${PUPPET_MASTER}:/etc/puppet
@@ -40,7 +40,5 @@ echo "configuring puppetmaster to autosign certs"
 $SSH_COMMAND ${PUPPET_MASTER} -C "echo '*' > /etc/puppet/autosign.conf"
 echo "restarting puppetmaster service"
 $SSH_COMMAND ${PUPPET_MASTER} -C "service puppetmaster restart"
-echo "populating plugins"
-$SSH_COMMAND ${PUPPET_MASTER} -C 'puppet agent -t --pluginsync --server `hostname` --noop > /dev/null'
 
 echo "Done!"
