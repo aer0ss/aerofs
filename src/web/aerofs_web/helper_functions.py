@@ -73,7 +73,7 @@ def parse_rpc_error_exception(request, e):
     _ = request.translate
     if type(e) == ExceptionReply: # RPC Error
         log.error("RPC Error: " + get_error(e))
-        return _("Error: ${error}", {'error': get_error(e)})
+        return _("${error}", {'error': get_error(e)})
     else: # Internal server error
         log.error("Internal server error: " + str(e))
         return _("Internal server error: ${error}", {'error': str(e)})

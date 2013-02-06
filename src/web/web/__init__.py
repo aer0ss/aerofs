@@ -36,7 +36,7 @@ def main(global_config, **settings):
         root_factory=RootFactory,
         session_factory=admin_session_factory,
         autocommit=True,
-        default_permission='admin' # By default, all views require the admin permission
+        default_permission='admin'
     )
 
     # Event subscribers
