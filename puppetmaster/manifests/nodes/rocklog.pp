@@ -4,4 +4,5 @@ node "rocklog.aerofs.com" inherits default {
         [ hiera('dev_users') ]:
     }
 
+    include rocklog
 }

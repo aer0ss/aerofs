@@ -14,6 +14,8 @@ PACKAGES= \
 	kvm \
 	middleman \
 	pagerduty \
+	rocklog \
+	servlet-tools \
 	sp \
 	sv \
 	syncstat \
@@ -22,7 +24,6 @@ PACKAGES= \
 	vmhost \
 	web \
 	zephyr \
-	servlet-tools \
 
 DEBS=$(addprefix debs/, ${PACKAGES:=.deb})
 
