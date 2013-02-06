@@ -31,7 +31,7 @@ include common::logs
         default     => "production"
     }
 
-    $aptkey = hiera("aptkey","")
+    $aptkey = hiera("aptkey")
 
     apt::source { "aerofs":
         location    => "http://apt.aerofs.com/ubuntu/${repo}",
