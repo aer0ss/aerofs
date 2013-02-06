@@ -87,6 +87,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import sun.security.pkcs.PKCS10;
@@ -494,27 +495,58 @@ public class SPService implements ISPService
     {
         _transaction.begin();
 
-        User user = _sessionUser.get();
-        Organization org = user.getOrganization();
+        final User user = _sessionUser.get();
+        final Organization org = user.getOrganization();
 
-        GetOrgPreferencesReply orgPreferences = GetOrgPreferencesReply.newBuilder()
-                .setOrganizationName(org.getName())
-                .build();
+        final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder();
+        replyBuilder.setOrganizationName(org.getName());
+        replyBuilder.setOrganizationContactPhone(org.getContactPhone());
+
+        if (user.isAdmin()) {
+            replyBuilder.setOrganizationSize(org.getSize());
+
+            final StripeCustomerID stripeCustomerId = org.getStripeCustomerID();
+            if (stripeCustomerId != null) {
+                replyBuilder.setStripeCustomerId(org.getStripeCustomerID().toString());
+            }
+        }
 
         _transaction.commit();
 
-        return createReply(orgPreferences);
+        return createReply(replyBuilder.build());
     }
 
     @Override
-    public ListenableFuture<Void> setOrgPreferences(@Nullable String orgName)
+    public ListenableFuture<Void> setOrgPreferences(@Nullable final String orgName,
+            @Nullable final Integer size,
+            @Nullable final String contactPhone,
+            @Nullable final String stripeCustomerID)
             throws Exception
     {
         _transaction.begin();
 
         User user = _sessionUser.get();
         user.throwIfNotAdmin();
-        user.getOrganization().setName(orgName);
+
+        final Organization organization = user.getOrganization();
+
+        // only update non null inputs
+
+        if (StringUtils.isNotBlank(orgName)) {
+            organization.setName(orgName);
+        }
+
+        if (size != null) {
+            organization.setSize(size);
+        }
+
+        if (StringUtils.isNotBlank(contactPhone)) {
+            organization.setContactPhone(contactPhone);
+        }
+
+        if (StringUtils.isNotBlank(stripeCustomerID)) {
+            organization.setStripeCustomerID(stripeCustomerID);
+        }
 
         _transaction.commit();
 
