@@ -59,6 +59,7 @@ SOURCES += \
     src/driver/AeroFS.cpp \
     src/driver/Main.cpp \
     src/driver/Driver.cpp \
+    src/pkcs10/PKCS10.c \
     src/scrypt/crypto_aesctr.c \
     src/scrypt/crypto_scrypt-nosse.c \
     src/scrypt/sha256.c \
@@ -92,6 +93,7 @@ HEADERS += \
     src/Util.h \
     src/driver/AeroFS.h \
     src/driver/Driver.h \
+    src/pkcs10/PKCS10.h \
     src/scrypt/crypto_aesctr.h \
     src/scrypt/crypto_scrypt.h \
     src/scrypt/sha256.h \
@@ -102,6 +104,7 @@ HEADERS += \
 
 SWIG_FILES += \
     src/driver/driver.swg \
+    src/pkcs10/pkcs10.swg \
     src/scrypt/scrypt.swg \
     src/dtls/dtls.swg
 

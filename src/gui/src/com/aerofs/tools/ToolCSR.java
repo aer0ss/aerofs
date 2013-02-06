@@ -1,6 +1,6 @@
 package com.aerofs.tools;
 
-import sun.security.pkcs.PKCS10;
+import com.aerofs.lib.OpenSslPkcs10;
 
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.cfg.Cfg;
@@ -12,7 +12,7 @@ public class ToolCSR implements ITool {
     {
         Cfg.init_(Cfg.absRTRoot(), true);
 
-        PKCS10 csr = SecUtil.newCSR(Cfg.cert().getPublicKey(), Cfg.privateKey(),
+        OpenSslPkcs10 csr = SecUtil.newCSR(Cfg.cert().getPublicKey(), Cfg.privateKey(),
                 Cfg.user(), Cfg.did());
         csr.print(System.out);
     }
