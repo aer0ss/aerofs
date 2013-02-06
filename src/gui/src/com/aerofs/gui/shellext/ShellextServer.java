@@ -35,10 +35,12 @@ class ShellextServer
 {
     private final static Logger l = Util.l(ShellextServer.class);
     private final int _port;
+    private final ShellextService _service;
 
-    protected ShellextServer(int port)
+    protected ShellextServer(ShellextService service, int port)
     {
         _port = port;
+        _service = service;
     }
 
     protected int getPort()
@@ -56,7 +58,7 @@ class ShellextServer
             return Channels.pipeline(
                     new LengthFieldBasedFrameDecoder(C.MB, 0, INT_SIZE, 0, INT_SIZE),
                     new LengthFieldPrepender(INT_SIZE),
-                    new ShellextServerHandler(_clients)
+                    new ShellextServerHandler()
             );
         }
     };
@@ -77,15 +79,8 @@ class ShellextServer
         _clients.write(ChannelBuffers.copiedBuffer(bytes));
     }
 
-    private static class ShellextServerHandler extends SimpleChannelUpstreamHandler
+    private class ShellextServerHandler extends SimpleChannelUpstreamHandler
     {
-        private final ChannelGroup _clients;
-
-        public ShellextServerHandler(ChannelGroup clients)
-        {
-            _clients = clients;
-        }
-
         @Override
         public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
         {
@@ -98,7 +93,7 @@ class ShellextServer
         {
             try {
                 byte[] message = ((ChannelBuffer) e.getMessage()).array();
-                ShellextService.get().react(message);
+                _service.react(message);
             } catch (Exception ex) {
                 l.warn("ShellextServerHandler: Exception " + Util.e(ex));
             }

@@ -277,18 +277,20 @@ class Launcher
             new LogArchiver(absRTRoot()).start();
         }
 
-        try {
-            // start shell extension first so it is available as early as possible
-            ShellextService.get().start_();
-        } catch (Exception e) {
-            SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
+        if (!L.get().isMultiuser()) {
+            try {
+                // start shell extension first so it is available as early as possible
+                ShellextService.get().start_();
+            } catch (Exception e) {
+                SVClient.logSendDefectAsync(true, "cant start shellext worker", e);
+            }
         }
 
         new CommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(), Param.CA_CERT)).start();
 
         new HeartInvitesPoller().start();
 
-        new BadCredentialNotificationManager();
+        new BadCredentialNotifier();
 
         try {
             if (Cfg.useAutoUpdate()) {

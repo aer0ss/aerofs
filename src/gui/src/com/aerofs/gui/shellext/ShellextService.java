@@ -49,7 +49,7 @@ public class ShellextService
     private ShellextService()
     {
         new PathStatusNotificationForwarder(this);
-        _server = new ShellextServer(Cfg.port(Cfg.PortType.UI));
+        _server = new ShellextServer(this, Cfg.port(Cfg.PortType.UI));
     }
 
     public void start_()
@@ -64,7 +64,7 @@ public class ShellextService
     }
 
     /**
-     * Tell the shell extension the path to root anchor
+     * Tell the shell extension the path to root anchor. Ignore any error.
      */
     public void notifyRootAnchor()
     {
