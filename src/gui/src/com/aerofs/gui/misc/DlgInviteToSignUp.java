@@ -1,10 +1,8 @@
 package com.aerofs.gui.misc;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-import com.aerofs.lib.ThreadUtil;
 import com.aerofs.base.id.UserID;
 import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
@@ -31,7 +29,6 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.sv.client.SVClient;
@@ -39,16 +36,17 @@ import com.aerofs.proto.Sv;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 
-public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeListener, ISWTWorker
+public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListener, ISWTWorker
 {
-    private static final Logger l = Util.l(DlgFolderlessInvite.class);
+    private static final Logger l = Util.l(DlgInviteToSignUp.class);
 
     private Button _btnOk;
     private CompEmailAddressTextBox _compAddresses;
     private Label _lblStatus;
     private List<UserID> _userIDs;
+    private CompSpin _compSpin;
 
-    public DlgFolderlessInvite(Shell parent)
+    public DlgInviteToSignUp(Shell parent)
     {
         super(parent, "Share the Love", false, false);
     }
@@ -68,7 +66,8 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
 
         Label lblMsg = new Label(shell, SWT.NONE);
         lblMsg.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-        lblMsg.setText(S.TYPE_EMAIL_ADDRESSES);
+        lblMsg.setText("Share the love and invite friends to use AeroFS.\n\n" +
+                S.TYPE_EMAIL_ADDRESSES);
 
         _compAddresses = new CompEmailAddressTextBox(shell, SWT.NONE);
         GridData gd_composite = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
@@ -117,13 +116,11 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
                 _compSpin.start();
                 setStatusText(S.INVITING, false);
 
-                GUI.get().safeWork(getShell(), DlgFolderlessInvite.this);
+                GUI.get().safeWork(getShell(), DlgInviteToSignUp.this);
             }
         });
 
         updateStatus();
-
-        refreshQuota();
     }
 
     private void setStatusText(String msg, boolean packShell)
@@ -134,58 +131,18 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         if (packShell) getShell().pack();
     }
 
-    private void refreshQuota()
-    {
-        ThreadUtil.startDaemonThread("refresh-quota", new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
-                    sp.signInRemote();
-                    Cfg.db().set(Key.FOLDERLESS_INVITES, sp.getHeartInvitesQuota().getCount());
-
-                    GUI.get().safeAsyncExec(getShell(), new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            updateStatus();
-                        }
-                    });
-                } catch (Exception e) {
-                    l.warn(Util.e(e));
-                }
-            }
-        });
-    }
-
     private void updateStatus()
     {
         assert GUI.get().isUIThread();
 
         Collection<UserID> userIDs = _compAddresses.getValidUserIDs();
         int invalid = _compAddresses.getInvalidUserIDCount();
-        int left = Cfg.db().getInt(Key.FOLDERLESS_INVITES) - userIDs.size() - invalid;
-
-        if (left < 0) {
-            setStatusText("Remove " + -left + " address" + (left != -1 ? "es" : ""), true);
-            _compSpin.error();
-        } else {
-            if (left > 0) {
-                setStatusText(left + " invite" + (left != 1 ? "s" : "") + " left", false);
-            } else {
-                setStatusText("No invites left", false);
-            }
-            _compSpin.stop();
-        }
 
         // do not change the size of the dialog otherwise it would grow as
         // the user types addresses
         //getShell().pack();
 
-        _btnOk.setEnabled(left >= 0 && userIDs.size() > 0 && invalid == 0);
+        _btnOk.setEnabled(userIDs.size() > 0 && invalid == 0);
     }
 
     @Override
@@ -193,8 +150,6 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
     {
         updateStatus();
     }
-
-    private CompSpin _compSpin;
 
     private void enableAll(boolean b)
     {
@@ -212,7 +167,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
         for (UserID userId : _userIDs) userIdStrings.add(userId.toString());
 
         sp.inviteToSignUp(userIdStrings);
-        SVClient.sendEventAsync(Sv.PBSVEvent.Type.FOLDERLESS_INVITE_SENT, Integer.toString(
+        SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGNUP_INVITE_SENT, Integer.toString(
                 _userIDs.size()));
     }
 
@@ -221,15 +176,7 @@ public class DlgFolderlessInvite extends AeroFSDialog implements IInputChangeLis
     {
         closeDialog();
         GUI.get().notify(MessageType.INFO, S.INVITATION_WAS_SENT
-                                 + " Thank you for sharing the love!");
-
-        int cur = Cfg.db().getInt(Key.FOLDERLESS_INVITES);
-
-        try {
-            Cfg.db().set(Key.FOLDERLESS_INVITES, (cur - _userIDs.size()));
-        } catch (SQLException e) {
-            l.warn("ignored: " + Util.e(e));
-        }
+                + " Thank you for sharing the love!");
     }
 
     @Override

@@ -668,13 +668,13 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<GetHeartInvitesQuotaReply> getHeartInvitesQuota()
+    public ListenableFuture<GetHeartInvitesQuotaReply> noop()
             throws Exception
     {
         _transaction.begin();
 
         GetHeartInvitesQuotaReply reply = GetHeartInvitesQuotaReply.newBuilder()
-                .setCount(_sessionUser.get().getSignUpInvitationsQuota())
+                .setCount(10)
                 .build();
 
         _transaction.commit();
@@ -1021,8 +1021,6 @@ public class SPService implements ISPService
         User inviter = _sessionUser.get();
         l.info("invite " + userIdStrings.size() + " users by " + inviter);
 
-        if (!inviter.isAdmin()) enforceSignUpInvitationQuota(userIdStrings, inviter);
-
         // The sending of invitation emails is deferred to the end of the transaction to ensure
         // that all business logic checks pass and the changes are sucessfully committed to the DB
         List<InvitationEmailer> emailers = Lists.newLinkedList();
@@ -1041,15 +1039,6 @@ public class SPService implements ISPService
         for (InvitationEmailer emailer : emailers) emailer.send();
 
         return createVoidReply();
-    }
-
-    private void enforceSignUpInvitationQuota(List<String> userIdStrings, User inviter)
-            throws ExNotFound, SQLException, ExNoPerm
-    {
-        int left = inviter.getSignUpInvitationsQuota() - userIdStrings.size();
-        if (left < 0) throw new ExNoPerm();
-
-        inviter.setSignUpInvitationQuota(left);
     }
 
     @Override

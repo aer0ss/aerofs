@@ -273,9 +273,7 @@ class Launcher
 
     private void startWorkerThreads()
     {
-        if (Cfg.useArchive()) {
-            new LogArchiver(absRTRoot()).start();
-        }
+        if (Cfg.useArchive()) new LogArchiver(absRTRoot()).start();
 
         if (!L.get().isMultiuser()) {
             try {
@@ -287,8 +285,6 @@ class Launcher
         }
 
         new CommandNotificationSubscriber(Cfg.user(), Util.join(AppRoot.abs(), Param.CA_CERT)).start();
-
-        new HeartInvitesPoller().start();
 
         new BadCredentialNotifier();
 

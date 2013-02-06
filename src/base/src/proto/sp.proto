@@ -234,12 +234,9 @@ service SPService {
     rpc EmailUser(EmailUserCall) returns (Void);
 
     /**
-     * Return the quota of AeroFS "heart menu" invites
-     * This is a legacy of the old system and should disappear once we allow anyone to sign-up.
-     *
-     * Required Auth Level: user
+     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove this method
      */
-    rpc GetHeartInvitesQuota(Void) returns (GetHeartInvitesQuotaReply);
+    rpc Noop(Void) returns (GetHeartInvitesQuotaReply);
 
     /**
      * Get the user's preferences (name, device name, etc)
@@ -648,6 +645,7 @@ message EmailUserCall {
     required string body = 2;
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: remove it
 message GetHeartInvitesQuotaReply {
     required uint32 count = 1;
 }

@@ -52,10 +52,6 @@ public class CfgDatabase
         // bind address for the Ritual socket. Use "*" to bind to all local addresses.
         RITUAL_BIND_ADDR("ritual_bind_addr", "127.0.0.1"),
 
-        // The default value must be consistent with the value set by
-        // sp_user.u_storeless_invites_quota in sp.sql
-        FOLDERLESS_INVITES("folderless_invites", 2),
-
         LAST_LOG_CLEANING("last_log_cleaning", 0),
         DAEMON_POST_UPDATES("daemon_post_updates", 0),
         UI_POST_UPDATES("ui_post_updates", 0),

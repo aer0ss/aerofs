@@ -52,7 +52,6 @@ import static com.aerofs.sp.server.lib.SPSchema.C_USER_FIRST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_LAST_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_USER_SIGNUP_INVITATIONS_QUOTA;
 import static com.aerofs.sp.server.lib.SPSchema.T_AC;
 import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
 import static com.aerofs.sp.server.lib.SPSchema.T_TI;
@@ -356,30 +355,6 @@ public class UserDatabase extends AbstractSQLDatabase
         ps.setTimestamp(3, new Timestamp(currentTime), UTC_CALANDER);
         ps.executeUpdate();
     }
-
-    // Return 0 if user not found.
-    public int getSignUpInvitationsQuota(UserID userId)
-            throws SQLException, ExNotFound
-    {
-        ResultSet rs = queryUser(userId, C_USER_SIGNUP_INVITATIONS_QUOTA);
-        try {
-            return rs.getInt(1);
-        } finally {
-            rs.close();
-        }
-    }
-
-    public void setSignUpInvitationsQuota(UserID userId, int quota)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareStatement(
-                updateWhere(T_USER, C_USER_ID + "=?", C_USER_SIGNUP_INVITATIONS_QUOTA));
-
-        ps.setInt(1, quota);
-        ps.setString(2, userId.toString());
-        ps.executeUpdate();
-    }
-
 
     /**
      * Check whether a user has already been invited (with a targeted signup code).

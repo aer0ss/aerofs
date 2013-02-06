@@ -41,9 +41,6 @@ CREATE TABLE `sp_user` (
   `u_id` VARCHAR(320) NOT NULL, -- 320 is the maximum email address length
   `u_hashed_passwd` CHAR(44) NOT NULL,
   `u_id_created_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `u_storeless_invites_quota` INTEGER NOT NULL DEFAULT 2, -- this should be consistent with the
-                                                          -- value set in CfgDatabase.
-                                                          -- TODO let Java code set the value.
   `u_first_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- important UTF8
   `u_last_name` VARCHAR(80) CHARSET utf8 NOT NULL,  -- important UTF8
   `u_auth_level` INT UNSIGNED NOT NULL,

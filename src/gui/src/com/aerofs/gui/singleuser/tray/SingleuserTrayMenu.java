@@ -1,6 +1,7 @@
 package com.aerofs.gui.singleuser.tray;
 
 import com.aerofs.gui.history.DlgHistory;
+import com.aerofs.gui.misc.DlgInviteToSignUp;
 import com.aerofs.gui.singleuser.preferences.SingleuserDlgPreferences;
 import com.aerofs.gui.tray.ITrayMenu;
 import com.aerofs.gui.tray.PauseOrResumeSyncing;
@@ -27,7 +28,6 @@ import com.aerofs.gui.GUIUtil.AbstractListener;
 import com.aerofs.gui.Images;
 import com.aerofs.gui.activitylog.DlgActivityLog;
 import com.aerofs.gui.diagnosis.DlgDiagnosis;
-import com.aerofs.gui.misc.DlgFolderlessInvite;
 import com.aerofs.gui.sharing.DlgManageSharedFolder;
 import com.aerofs.gui.sharing.folders.DlgFolders;
 import com.aerofs.base.C;
@@ -35,7 +35,6 @@ import com.aerofs.lib.Path;
 import com.aerofs.lib.S;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
@@ -170,7 +169,7 @@ public class SingleuserTrayMenu implements ITrayMenu
         }
 
         createHelpMenu();
-        addInviteFriendMenuItem();
+        addInviteToSignUpMenuItem();
 
         _trayMenuPopulator.addMenuSeparator();
 
@@ -438,25 +437,20 @@ public class SingleuserTrayMenu implements ITrayMenu
                 });
     }
 
-    private void addInviteFriendMenuItem()
+    private void addInviteToSignUpMenuItem()
     {
-        int quota = Cfg.db().getInt(Key.FOLDERLESS_INVITES);
-        if (quota > 0) {
-            String text = (OSUtil.isLinux() ? "\u2665 " : "") + "Invite " +
-                    (quota > 1 ? String.valueOf(quota) +
-                    " Friends" : "a Friend") + "...";
-            MenuItem mi = _trayMenuPopulator.addMenuItem(text,
-                    new AbstractListener(CLICKED_TASKBAR_INVITE_FOLDERLESS)
+        MenuItem mi = _trayMenuPopulator.addMenuItem(
+                (OSUtil.isLinux() ? "\u2665 " : "") + "Invite a Friend to AeroFS...",
+                new AbstractListener(CLICKED_TASKBAR_INVITE_TO_SIGNUP)
+                {
+                    @Override
+                    protected void handleEventImpl(Event event)
                     {
-                        @Override
-                        protected void handleEventImpl(Event event)
-                        {
-                            new DlgFolderlessInvite(GUI.get().sh()).openDialog();
-                        }
-                    });
+                        new DlgInviteToSignUp(GUI.get().sh()).openDialog();
+                    }
+                });
 
-            if (!OSUtil.isLinux()) mi.setImage(Images.get(Images.ICON_HEART));
-        }
+        if (!OSUtil.isLinux()) mi.setImage(Images.get(Images.ICON_HEART));
     }
 
 

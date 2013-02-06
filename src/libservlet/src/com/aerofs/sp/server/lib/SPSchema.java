@@ -14,7 +14,6 @@ public final class SPSchema
             C_USER_ORG_ID                   = "u_org_id",
             C_USER_AUTHORIZATION_LEVEL      = "u_auth_level",
             C_USER_CREDS                    = "u_hashed_passwd",
-            C_USER_SIGNUP_INVITATIONS_QUOTA = "u_storeless_invites_quota",
             C_USER_ACL_EPOCH                = "u_acl_epoch",
 
             // (eric) made the columns match the SQL names here, easier to autocomplete in IDE

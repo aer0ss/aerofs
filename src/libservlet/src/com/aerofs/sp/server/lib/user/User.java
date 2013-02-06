@@ -416,18 +416,6 @@ public class User
         return code;
     }
 
-    public int getSignUpInvitationsQuota()
-            throws ExNotFound, SQLException
-    {
-        return _f._udb.getSignUpInvitationsQuota(_id);
-    }
-
-    public void setSignUpInvitationQuota(int quota)
-            throws SQLException
-    {
-        _f._udb.setSignUpInvitationsQuota(_id, quota);
-    }
-
     public boolean isInvitedToSignUp()
             throws SQLException
     {
