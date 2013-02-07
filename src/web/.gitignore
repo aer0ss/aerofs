@@ -1,4 +1,5 @@
 *.pyc
 gen
 *.egg-info
+*.egg
 .idea
