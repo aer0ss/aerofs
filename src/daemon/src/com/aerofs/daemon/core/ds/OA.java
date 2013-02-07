@@ -186,7 +186,7 @@ public class OA
         return _type == Type.DIR;
     }
 
-    public boolean isDirOrAnchor()
+    public final boolean isDirOrAnchor()
     {
         return isDir() || isAnchor();
     }

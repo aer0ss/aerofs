@@ -123,9 +123,8 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
         while (true) {
             try {
-                // TODO: do we need to keep detectEmigration set to true?
                 _oc.createMeta_(Type.ANCHOR, anchor, OID.ROOT, folderName, 0, PhysicalOp.APPLY,
-                        true, updateVersion, t);
+                        false, updateVersion, t);
                 break;
             } catch (ExAlreadyExist e) {
                 folderName = Util.nextFileName(folderName);
