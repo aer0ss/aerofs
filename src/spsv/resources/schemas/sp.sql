@@ -97,29 +97,36 @@ CREATE TABLE `sp_organization_invite` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 CREATE TABLE `sp_email_subscriptions` (
-    `es_token_id` CHAR(12) PRIMARY KEY NOT NULL,
-    `es_email` VARCHAR(254) NOT NULL,   -- the actual max email length supported by RFC is 254 bytes
-                                        -- we use 254 bytes here because the maximum key length size
-                                        -- for mysql is 767 bytes, and 254*3 = 762 (for UTF8
-                                        -- strings)
-    `es_subscription` INT NOT NULL,
-    `es_last_emailed` TIMESTAMP NOT NULL,
-    UNIQUE KEY(`es_email`,`es_subscription`),
-    INDEX es_email_idx(`es_email`),
-    INDEX es_subscription_idx(`es_subscription`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `es_token_id` CHAR(12) PRIMARY KEY NOT NULL,
+  `es_email` VARCHAR(254) NOT NULL,   -- the actual max email length supported by RFC is 254 bytes
+                                      -- we use 254 bytes here because the maximum key length size
+                                      -- for mysql is 767 bytes, and 254*3 = 762 (for UTF8
+                                      -- strings)
+                                      -- TODO (WW) this length is not consistent with the length of
+                                      -- email fields in other tables.
+                                      -- TODO (WW) latin1 should be used instead as the charset.
+  `es_subscription` INT NOT NULL,
+  `es_last_emailed` TIMESTAMP NOT NULL,
+  UNIQUE KEY(`es_email`,`es_subscription`),
+  INDEX es_email_idx(`es_email`),
+  INDEX es_subscription_idx(`es_subscription`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-DELIMITER //
-CREATE PROCEDURE accountreset(userid varchar(320))
-DETERMINISTIC MODIFIES SQL DATA
- BEGIN
-    DECLARE EXIT HANDLER FOR SQLSTATE '42000'
-      SELECT 'Invalid account name.';
+CREATE TABLE `sp_signup` (
+  `s_idx` int(11) NOT NULL AUTO_INCREMENT,
+  `s_email` varchar(320) NOT NULL,
+  `s_ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`s_idx`),
+  UNIQUE KEY `s_email` (`s_email`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-    IF ((SELECT COUNT(*) FROM SP_USER where u_id=userid) != 1) THEN CALL raise_error;
-    end if;
-
-    DELETE FROM sp_user WHERE u_id = userid;
- END //
-
-DELIMITER ;
+CREATE TABLE `sp_enterprise_signup` (
+  `e_email` varchar(320) CHARACTER SET latin1 NOT NULL,
+  `e_full_name` varchar(320) NOT NULL,
+  `e_phone` varchar(50) NOT NULL,
+  `e_title` varchar(100) NOT NULL,
+  `e_org` varchar(320) NOT NULL,
+  `e_org_size` varchar(50) NOT NULL,
+  `e_comment` text NOT NULL,
+  `e_ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
