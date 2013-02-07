@@ -163,6 +163,8 @@ public class GetVersCall
         assert pb.getDeviceIdCount() == pb.getKnowledgeTickCount() &&
                 pb.getDeviceIdCount() == pb.getImmigrantKnowledgeTickCount();
 
+        l.debug("process from " + msg.ep() + " 4 " + msg.sidx());
+
         Version vKwlgRemote = new Version();
         Version vImmKwlgRemote = new Version();
         // Load vKwlgRemote and vImmKwlgRemote with the contents of msg
