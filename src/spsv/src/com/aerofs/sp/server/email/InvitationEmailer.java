@@ -61,7 +61,7 @@ public class InvitationEmailer
             // TODO Ideally static email contents should be separate from Java files.
             final String subject = (folderName != null)
                     ? "Join my " + L.PRODUCT + " folder"
-                    : "Invitation to " + L.PRODUCT + " (beta)";
+                    : "Invitation to " + L.PRODUCT;
 
             final Email email = new Email(subject, false, null);
 
@@ -103,9 +103,6 @@ public class InvitationEmailer
                 "Any data that you put inside your " + L.PRODUCT + " folder" +
                 " will be synced *only* with your personal\n" +
                 "devices, and anyone you invite to share files with you.\n" +
-                "\n" +
-                "Please keep in mind that " + L.PRODUCT + " is still in beta! We" +
-                " release updates regularly and appreciate any and all feedback.\n" +
                 "\n" +
                 "You can now download " + L.PRODUCT + " at:\n" +
                 "\n" +

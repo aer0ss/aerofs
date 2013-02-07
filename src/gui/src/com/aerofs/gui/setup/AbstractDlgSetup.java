@@ -145,7 +145,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
 
         // done with rows
 
-        setTitle("Setup " + L.PRODUCT + " (beta) " + (L.get().isStaging() ? "staging" : ""));
+        setTitle("Setup " + L.PRODUCT + (L.get().isStaging() ? " STAGING" : ""));
 
         _txtUserID.setFocus();
 
