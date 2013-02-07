@@ -498,16 +498,25 @@ public class SPService implements ISPService
         final User user = _sessionUser.get();
         final Organization org = user.getOrganization();
 
+        final String name = org.getName();
+        final String contactPhone = org.getContactPhone();
+        final Integer size = org.getSize();
+        final StripeCustomerID stripeCustomerID = org.getStripeCustomerID();
+
         final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder();
-        replyBuilder.setOrganizationName(org.getName());
-        replyBuilder.setOrganizationContactPhone(org.getContactPhone());
+        replyBuilder.setOrganizationName(name);
+
+        if (StringUtils.isNotBlank(contactPhone)) {
+            replyBuilder.setOrganizationContactPhone(contactPhone);
+        }
 
         if (user.isAdmin()) {
-            replyBuilder.setOrganizationSize(org.getSize());
+            if (size != null) {
+                replyBuilder.setOrganizationSize(size);
+            }
 
-            final StripeCustomerID stripeCustomerId = org.getStripeCustomerID();
-            if (stripeCustomerId != null) {
-                replyBuilder.setStripeCustomerId(org.getStripeCustomerID().toString());
+            if (stripeCustomerID != null) {
+                replyBuilder.setStripeCustomerId(stripeCustomerID.getID());
             }
         }
 
