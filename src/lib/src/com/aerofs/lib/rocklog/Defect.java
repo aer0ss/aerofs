@@ -30,7 +30,7 @@ import java.util.HashMap;
  * try {
  *     ...
  * } catch (Exception e) {
- *     RockLog.newDefect("mycomponent.foobar").setMsg("Something failed").setEx(e).sendAsync();
+ *     RockLog.newDefect("mycomponent.foobar").setMessage("Something failed").setException(e).sendAsync();
  * }
 
  */
@@ -53,13 +53,13 @@ public class Defect implements IRockLogMessage
         _json.put("defect_name", name);
     }
 
-    public Defect setMsg(String message)
+    public Defect setMessage(String message)
     {
         _json.put("@message", message);
         return this;
     }
 
-    public Defect setEx(Throwable ex)
+    public Defect setException(Throwable ex)
     {
         _json.put("exception", encodeException(ex));
         return this;
