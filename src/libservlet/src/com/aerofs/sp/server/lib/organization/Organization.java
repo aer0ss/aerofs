@@ -127,6 +127,24 @@ public class Organization
         _f._db.setName(_id, name);
     }
 
+    public void setSize(Integer size)
+            throws SQLException
+    {
+        _f._db.setSize(_id, size);
+    }
+
+    public void setContactPhone(String contactPhone)
+            throws SQLException
+    {
+        _f._db.setContactPhone(_id, contactPhone);
+    }
+
+    public void setStripeCustomerID(String stripeCustomerID)
+            throws SQLException
+    {
+        _f._db.setStripeCustomerID(_id, stripeCustomerID);
+    }
+
     @Override
     public int hashCode()
     {
@@ -249,5 +267,17 @@ public class Organization
     public StripeCustomerID getStripeCustomerID() throws SQLException, ExNotFound
     {
         return _f._db.getStripeCustomerID(_id);
+    }
+
+    @Nullable
+    public Integer getSize() throws SQLException, ExNotFound
+    {
+        return _f._db.getSize(_id);
+    }
+
+    @Nullable
+    public String getContactPhone() throws SQLException, ExNotFound
+    {
+        return _f._db.getContactPhone(_id);
     }
 }

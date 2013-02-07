@@ -17,6 +17,7 @@ import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -101,6 +102,17 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
+    public void setStripeCustomerID(final OrganizationID orgID, final String stripeCustomerID)
+            throws SQLException
+    {
+        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_STRIPE_CUSTOMER_ID));
+
+        ps.setString(1, stripeCustomerID);
+        ps.setInt(2, orgID.getInt());
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
     public @Nonnull String getName(OrganizationID orgID)
             throws SQLException, ExNotFound
     {
@@ -119,6 +131,58 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_NAME));
 
         ps.setString(1, name);
+        ps.setInt(2, orgID.getInt());
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    @Nullable
+    public String getContactPhone(final OrganizationID orgID) throws SQLException, ExNotFound
+    {
+        final ResultSet rs = queryOrg(orgID, C_O_CONTACT_PHONE);
+
+        try {
+            final String contactPhone = rs.getString(1);
+
+            return contactPhone;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setContactPhone(final OrganizationID orgID, final String contactPhone)
+            throws SQLException
+    {
+        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_CONTACT_PHONE));
+
+        ps.setString(1, contactPhone);
+        ps.setInt(2, orgID.getInt());
+
+        Util.verify(ps.executeUpdate() == 1);
+    }
+
+    @Nullable
+    public Integer getSize(final OrganizationID orgID) throws SQLException, ExNotFound
+    {
+        final ResultSet rs = queryOrg(orgID, C_O_SIZE);
+
+        try {
+            final Integer size = rs.getInt(1);
+
+            return size;
+        } finally {
+            rs.close();
+        }
+    }
+
+    public void setSize(final OrganizationID orgID, final Integer size)
+            throws SQLException
+    {
+        Preconditions.checkArgument( size >= 0, "Cannot set organization size to a negative value" );
+
+        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_SIZE));
+
+        ps.setInt(1, size);
         ps.setInt(2, orgID.getInt());
 
         Util.verify(ps.executeUpdate() == 1);
