@@ -26,6 +26,7 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.StoreCreator;
+import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
@@ -824,11 +825,16 @@ public class ReceiveAndApplyUpdate
                 try {
                     InputStream is = file.newInputStream_();
                     try {
-                        Util.copy(is, os);
+                        // release core lock to avoid blocking while copying a large prefix
+                        TCB tcb = tk.pseudoPause_("cp-prefix");
+                        try {
+                            Util.copy(is, os);
+                        } finally {
+                            tcb.pseudoResumed_();
+                        }
                     } finally {
                         is.close();
                     }
-
                 } catch (FileNotFoundException e) {
                     SOCKID conflict = new SOCKID(k.socid(), localBranchWithMatchingContent);
 
