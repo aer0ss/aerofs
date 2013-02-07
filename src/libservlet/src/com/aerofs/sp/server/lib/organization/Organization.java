@@ -91,7 +91,7 @@ public class Organization
             User tsUser = _factUser.create(org.id().toTeamServerUserID());
 
             // Use an invalid password hash to prevent attackers from logging in as Team Server
-            // using _any_ password. Also see C.TEAM_SERVER_LOCAL_PASSWORD.
+            // using _any_ password. Also see C.MULTIUSER_LOCAL_PASSWORD.
             tsUser.save(new byte[0], new FullName("Team", "Server"), org);
         }
     }

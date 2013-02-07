@@ -399,6 +399,11 @@ public final class SVClient
             return;
         }
 
+        // apend the business user tag string for multiuser systems.
+        if (L.get().isMultiuser()) {
+            desc = Param.BUSINESS_USER_EMAIL_TAG + " " + desc;
+        }
+
         // always send non-automatic defects and database requests
         boolean ignoreDefect = isAutoBug && isLastSentDefect(cause.getMessage(), stackTrace) && !sendDB;
         l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
@@ -406,7 +411,7 @@ public final class SVClient
 
         // Send the defect to RockLog
         if (UserID.fromInternal(header.getUser()).isAeroFSUser() || L.get().isMultiuser()) {
-            RockLog.newDefect("svclient.test").setMsg(desc).setEx(cause).send();
+            RockLog.newDefect("svclient.test").setMessage(desc).setException(cause).send();
         }
 
         StringBuilder sbDesc = createDefectDescription(desc, secret);

@@ -133,13 +133,16 @@ class Launcher
             throw new ExAborted(msg);
         }
 
-        // On OSX, check that AeroFS is launched from the Applications folder
-        if (OSUtil.isOSX()
-                && !L.get().isStaging()
-                && !new File(AppRoot.abs()).getAbsolutePath().startsWith("/Applications/")
-                && !new File(_rtRoot, Param.NO_OSX_APP_FOLDER_CHECK).exists()) {
-            throw new ExAborted("Please copy the " + L.PRODUCT +
-                    " program into /Applications and try again.");
+        // On OSX, check that AeroFS is not launched from the Installer, as it would cause AeroFS
+        // unable to self update.
+        //
+        // N.B. This assumes that the .dmg is mounted to a folder with string "Installer" in its
+        // name. This string is specified in the *.dmg.template file.
+        //
+        if (OSUtil.isOSX() && AppRoot.abs().startsWith("/Volumes/") &&
+                AppRoot.abs().contains("Installer")) {
+            throw new ExAborted("Please copy " + L.PRODUCT +
+                    " into your Applications folder and run it from there.");
         }
     }
 

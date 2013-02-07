@@ -111,6 +111,6 @@ public class TestSP_SignIn extends AbstractSPTest
 
     private ByteString getTeamServerLocalPassword(UserID tsUserID)
     {
-        return ByteString.copyFrom(SecUtil.scrypt(Param.TEAM_SERVER_LOCAL_PASSWORD, tsUserID));
+        return ByteString.copyFrom(SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, tsUserID));
     }
 }

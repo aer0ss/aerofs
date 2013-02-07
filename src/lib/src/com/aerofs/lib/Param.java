@@ -16,6 +16,11 @@ public class Param extends BaseParam
     public static final long EXP_RETRY_MIN_DEFAULT           = 2 * C.SEC;
     public static final long EXP_RETRY_MAX_DEFAULT           = 60 * C.SEC;
 
+    // AeroFS people can use this string in their email filters to signify emails related to
+    // business cases. There are non-Java code using this string as well. When chaning this string,
+    // make sure to search the entire repository for it.
+    public static final String BUSINESS_USER_EMAIL_TAG = "[BUSINESS_USER]";
+
     ////////
     // file and folder names
 
@@ -44,7 +49,6 @@ public class Param extends BaseParam
     public static final String SETTING_UP              = "su";
     public static final String PROFILER                = "profiler";
     public static final String NO_FS_TYPE_CHECK        = "nofstypecheck";
-    public static final String NO_OSX_APP_FOLDER_CHECK = "noappfoldercheck";
     public static final String SHARED_FOLDER_TAG       = ".aerofs";
     public static final String LAST_SENT_DEFECT        = "lsd";
 
@@ -57,6 +61,7 @@ public class Param extends BaseParam
      * conflicting AuxRoots in case of multiple installations
      */
     public static final String AUXROOT_PREFIX = ".aerofs.";
+
     public static enum AuxFolder
     {
         PREFIX("p"),
@@ -111,11 +116,11 @@ public class Param extends BaseParam
     // Command Server
     public static final String CMD_CHANNEL_TOPIC_PREFIX = "cmd/";
 
-    // Team Server password: Team Servers use certificates to login to servers. Therefore, they do
-    // not need a password for remote communication. However, a password is still needed to retrieve
-    // private keys locally. (SP  disables password login for team servers by storing invalid
-    // password values.)
-    public static final char[] TEAM_SERVER_LOCAL_PASSWORD = "password".toCharArray();
+    // Multiuser password: Multiuser installs use certificates to login to servers. Therefore,
+    // they do not need a password for remote communication. However, a password is still needed
+    // to retrieve private keys locally. (SP and SyncStat server disables password login for
+    // multiusers by storing invalid password values.)
+    public static final char[] MULTIUSER_LOCAL_PASSWORD = "password".toCharArray();
 
     public static class Daemon
     {

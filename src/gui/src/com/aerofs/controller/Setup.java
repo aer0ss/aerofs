@@ -187,7 +187,7 @@ class Setup
 
         // Retrieve the team server user ID
         UserID tsUserId = UserID.fromInternal(sp.getTeamServerUserID().getId());
-        byte[] tsScrypted = SecUtil.scrypt(Param.TEAM_SERVER_LOCAL_PASSWORD, tsUserId);
+        byte[] tsScrypted = SecUtil.scrypt(Param.MULTIUSER_LOCAL_PASSWORD, tsUserId);
 
         DID tsDID = CredentialUtil.certifyAndSaveTeamServerDeviceKeys(tsUserId, tsScrypted, sp);
 

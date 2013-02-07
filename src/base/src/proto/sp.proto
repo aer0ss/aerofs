@@ -859,6 +859,7 @@ message GetOrganizationInvitationsReply {
     repeated OrganizationInvitation organization_invitations = 2;
 }
 
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE. convert them to required fields
 message GetOrgPreferencesReply {
     // The users current organization.
     required string organization_name = 1;
