@@ -62,7 +62,7 @@ public class DlgAbout extends AeroFSDialog
 
         Label lblAerofs = new Label(shell, SWT.NONE);
         lblAerofs.setLayoutData(new GridData(SWT.LEFT, SWT.BOTTOM, true, false, 1, 1));
-        lblAerofs.setText(L.PRODUCT + " (beta)" + (L.get().isStaging() ? " staging" : ""));
+        lblAerofs.setText(L.PRODUCT + (L.get().isStaging() ? " STAGING" : ""));
 
         FontData fd = lblAerofs.getFont().getFontData()[0];
         lblAerofs.setFont(SWTResourceManager.getFont(fd.getName(), fd.getHeight() * 2, SWT.BOLD));

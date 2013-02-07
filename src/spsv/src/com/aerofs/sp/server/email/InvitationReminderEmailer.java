@@ -41,9 +41,6 @@ public class InvitationReminderEmailer
                     "Any data that you put inside your " + L.PRODUCT + " will be synced *only*" +
                     " with your personal devices, and anyone you invite to share with you.\n" +
                     "\n" +
-                    "Please keep in mind that " + L.PRODUCT + " is still in beta! We release" +
-                    " updates regularly and appreciate any and all feedback.\n" +
-                    "\n" +
                     "You can download " + L.PRODUCT + " at:\n" +
                     "\n" +
                     url;

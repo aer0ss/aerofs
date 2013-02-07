@@ -16,7 +16,7 @@ public class Progresses {
     private static final Logger l = Util.l(Progresses.class);
 
     private static final String TOOLTIP_PREFIX =
-            (L.get().isStaging() ? "STAGING " : "") + L.PRODUCT + " (beta)";
+            (L.get().isStaging() ? "STAGING " : "") + L.PRODUCT;
     private static final String DEFAULT_TOOLTIP =
             TOOLTIP_PREFIX + " " + Cfg.ver() +
             (OSUtil.isOSX() ? "" : "\nDouble click to open " + L.PRODUCT + " folder");
