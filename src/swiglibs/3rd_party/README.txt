@@ -12,11 +12,10 @@ Steps to using a new openssl:
     url and shasum, then:
 
     # brew install ./openssl_aerofs.rb
-    # cp $(brew --prefix)/Cellar/openssl_aerofs/1.0.1d/*.dylib ~/repos/aerofs/resource/client/osx/
+    # cp $(brew --prefix)/Cellar/openssl_aerofs/1.0.1c/*.dylib ~/repos/aerofs/resource/client/osx/
 
     Why use a brew script?  We have to patch upstream openssl, since it
     specifies an absolute RPATH at build time (but we need a relative path).
-    Also, we have to set the OSX minimum build version, so things work on 10.5.
     This seemed easiest.
 
     Alternatively, you can just build manually as described by the docs and use
@@ -34,9 +33,9 @@ Steps to using a new openssl:
     # mkdir scratch
     # cd scratch
     # # Obviously, you should pick the latest link.
-    # wget http://www.openssl.org/source/openssl-1.0.1d.tar.gz
-    # tar xzvf openssl-1.0.1d.tar.gz
-    # cd openssl-1.0.1d/
+    # wget http://www.openssl.org/source/openssl-1.0.1c.tar.gz
+    # tar xzvf openssl*.tar.gz
+    # cd openssl-1.0.1c/
 
     2) Configure:
 
@@ -62,16 +61,15 @@ Steps to using a new openssl:
 
     3) Open a Visual Studio Command Prompt (x86, not x64)
 
-      > cd path\to\openssl-1.0.1d
+      > cd path\to\openssl-1.0.1c
       > "C:\Program Files (x86)\nasm\nasmpath.bat"
       > perl Configure VC-WIN32
       > ms\do_nasm.bat
       > nmake -f ms\nt.mak
 
-    4) Copy the binaries from out32:
+    4) Copy the binaries from out32dll:
+       * libeay32.dll and ssleay32.dll should be copied to resource/client/win/
        * libeay32.lib and ssleay32.lib should be copied to src/swiglibs/3rd_party/lib/win32/
-
-    Note that we now statically link OpenSSL on Windows, so we do not need DLLs.
 
 ----------------------------------
 2) copy the headers into the folder containing this README:
@@ -85,7 +83,7 @@ Steps to using a new openssl:
     mkdir scratch
     cd scratch
         # Obviously, you should pick the latest link.
-    wget http://www.openssl.org/source/openssl-1.0.1d.tar.gz
+    wget http://www.openssl.org/source/openssl-1.0.1c.tar.gz
     tar xzvf openssl*.tar.gz
     cd openssl-*
     cd include
