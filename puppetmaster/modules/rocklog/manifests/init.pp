@@ -3,11 +3,10 @@ class rocklog {
         "g++",
         "ruby1.8",
         "rubygems",
-        "python-pip",
         "ant"
         ]:
         ensure => latest,
-        require => Exec["/usr/bin/apt-get update"]
+        require => Exec["apt-get update"]
     }
 
     package { [
