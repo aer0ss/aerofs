@@ -21,6 +21,8 @@ cd ~/repos/aerofs/src/python-lib && ~/env/bin/python setup.py develop
 cd ~/repos/aerofs/src/web && ~/env/bin/python setup.py develop
 
 # Finally, run AeroFS website!
+export STRIPE_PUBLISHABLE_KEY=pk_test_nlFBUMTVShdEAASKB0nZm6xf
+export STRIPE_SECRET_KEY=sk_test_lqV5voHmrJZLom3iybJFSVqK
 ~/env/bin/pserve development.ini
 
 # To run test cases:
