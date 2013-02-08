@@ -176,7 +176,12 @@ public abstract class AbstractChunker
             }
             // write chunk into persistent storage, keyed by content hash
             prePutBlock_(block);
-            _bsb.putBlock(block._hash, buffer.encoded(), block._length, block._encoderData);
+            InputStream encoded = buffer.encoded();
+            try {
+                _bsb.putBlock(block._hash, encoded, block._length, block._encoderData);
+            } finally {
+                encoded.close();
+            }
             postPutBlock_(block);
         } finally {
             buffer.close();
