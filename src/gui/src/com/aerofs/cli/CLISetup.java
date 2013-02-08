@@ -59,17 +59,17 @@ public class CLISetup
 
     CLISetup(CLI cli, String rtRoot) throws Exception
     {
-        if (!OSUtil.isLinux()) {
-            cli.confirm(MessageType.WARN, L.PRODUCT + " CLI is not officially supported" +
-                    " on non-Linux platforms. Specifically, GUI will be started" +
-                    " up on the next automatic update.");
-        }
-
         GetSetupSettingsReply defaults = UI.controller().getSetupSettings();
         _deviceName = defaults.getDeviceName();
         _anchorRoot = defaults.getRootAnchor();
 
         processSetupFile(rtRoot);
+
+        if (!OSUtil.isLinux() && !_isUnattendedSetup) {
+            cli.confirm(MessageType.WARN, L.PRODUCT + " CLI is not officially supported" +
+                    " on non-Linux platforms. Specifically, GUI will be started" +
+                    " up on the next automatic update.");
+        }
 
         cli.show(MessageType.INFO, "Welcome to " + L.PRODUCT + ".");
 
