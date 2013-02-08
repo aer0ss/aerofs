@@ -4,6 +4,8 @@
 
 package com.aerofs.daemon.core.net.link;
 
+import com.aerofs.daemon.core.tc.TC.TCB;
+import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.Util;
@@ -154,9 +156,28 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         return ifaceBuilder.build();
     }
 
-    private final void checkLinkState_() throws SocketException
+    private void checkLinkState_()
     {
-        final ImmutableSet<NetworkInterface> current = getActiveInterfaces_();
+        l.debug("check link state");
+        try {
+            // getActiveInterfaces_ can be slooooooooooooow so we execute it in the lss thread
+            // to prevent CoreProgressWatcher from killing the daemon because of it (and to avoid
+            // preventing the daemon from making progress during that time...)
+            final ImmutableSet<NetworkInterface> current = getActiveInterfaces_();
+            execute(new Runnable() {
+                @Override
+                public void run()
+                {
+                    notifyLinkStateChange_(current);
+                }
+            });
+        } catch (SocketException e) {
+            SVClient.logSendDefectAsync(true, "can't check link state", e);
+        }
+    }
+
+    private final void notifyLinkStateChange_(final ImmutableSet<NetworkInterface> current)
+    {
         final ImmutableSet<NetworkInterface> previous = _ifaces;
         if (current.equals(previous)) return;
 
@@ -191,19 +212,6 @@ public abstract class AbstractLinkStateService implements ILinkStateService
             @Override
             public void run()
             {
-                Runnable runCheckLinkState = new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        try {
-                            checkLinkState_();
-                        } catch (SocketException e) {
-                            SVClient.logSendDefectAsync(true, "can't check link state", e);
-                        }
-                    }
-                };
-
                 // Check link state, then wait for interface change, and then repeat on interface
                 // changes. If waiting failed or not supported, fall back to polling.
                 //
@@ -217,8 +225,7 @@ public abstract class AbstractLinkStateService implements ILinkStateService
                 // Otherwise, we should implement this method.
                 //
                 while (true) {
-                    l.debug("check link state");
-                    execute(runCheckLinkState);
+                    checkLinkState_();
                     // Only Windows has a proper implementation of waitForNetworkInterfaceChange.
                     if (Driver.waitForNetworkInterfaceChange() != DriverConstants.DRIVER_SUCCESS) {
                         ThreadUtil.sleepUninterruptable(DaemonParam.LINK_STATE_POLLING_INTERVAL);
@@ -243,22 +250,30 @@ public abstract class AbstractLinkStateService implements ILinkStateService
     /**
      * Mark all the links as if they are down. This method is used to pause syncing activities
      */
-    public void markLinksDown_()
-            throws Exception
+    public void markLinksDown_() throws Exception
     {
         l.warn("mark down");
         _markedDown = true;
-        checkLinkState_();
+        notifyLinkStateChange_(ImmutableSet.<NetworkInterface>of());
     }
 
     /**
      * Undo markLinksDown_().
      */
-    public void markLinksUp_()
-            throws Exception
+    public void markLinksUp_(Token tk) throws Exception
     {
         l.warn("mark up");
         _markedDown = false;
-        checkLinkState_();
+
+        ImmutableSet<NetworkInterface> current;
+
+        TCB tcb = tk.pseudoPause_("iface-scan");
+        try {
+            current = getActiveInterfaces_();
+        } finally {
+            tcb.pseudoResumed_();
+        }
+
+        notifyLinkStateChange_(current);
     }
 }
