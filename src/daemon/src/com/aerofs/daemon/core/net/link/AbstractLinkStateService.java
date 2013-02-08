@@ -85,17 +85,24 @@ public abstract class AbstractLinkStateService implements ILinkStateService
 
         ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
 
+        int n = 0;
+
         for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
                 e.hasMoreElements();) {
             NetworkInterface iface = e.nextElement();
+
+            l.info("iface " + n++);
 
             // cache interface information as local variables, since some queries on some Windows
             // computers are very slow. Experiments showed that getName and isUp can take 100ms
             // each on computers with VirtualBox installed :S
             final String name = iface.getName();
+            l.info("  " + name);
             final boolean isUp = iface.isUp();
             final boolean isLoopback = iface.isLoopback();
             final boolean isVirtual = iface.isVirtual();
+
+            l.info("  " + isUp + " " + isLoopback + " " + isVirtual);
 
             // If debug is enabled, generate the debug message
             StringBuilder sb = new StringBuilder();
