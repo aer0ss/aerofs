@@ -8,8 +8,8 @@ import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
+import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.admin.EIExportConflict;
-import com.aerofs.daemon.event.lib.imc.AbstractHdIMC;
 import com.aerofs.daemon.lib.Prio;
 import com.aerofs.lib.FileUtil;
 import com.aerofs.lib.FileUtil.FileName;
@@ -18,13 +18,14 @@ import com.aerofs.lib.id.SOID;
 import javax.inject.Inject;
 import java.io.File;
 
-// TODO: refactor to share code with other HdExport* classes
-public class HdExportConflict extends AbstractHdIMC<EIExportConflict>
+public class HdExportConflict extends AbstractHdExport<EIExportConflict>
 {
     private final DirectoryService _ds;
+
     @Inject
-    public HdExportConflict(DirectoryService ds)
+    public HdExportConflict(TC tc, DirectoryService ds)
     {
+        super(tc);
         _ds = ds;
     }
 
@@ -35,15 +36,10 @@ public class HdExportConflict extends AbstractHdIMC<EIExportConflict>
         OA oa = _ds.getOAThrows_(soid);
         CA ca = oa.caThrows(ev._kidx);
         IPhysicalFile pf = ca.physicalFile();
-        File src = new File(pf.getAbsPath_());
 
-        // Create a temp file that has the same extension has the original file
-        // This is important so that we can open the temp file using the appropriate program
-        FileName file = FileName.fromBaseName(oa.name());
-        File dst = FileUtil.createTempFile(file.base, file.extension, null, true);
+        File dst = createTempFileWithSameExtension(oa.name());
 
-        // copy conflict file to temporary file
-        FileUtil.copy(src, dst, false, false);
+        exportOrDeleteDest_(pf.newInputStream_(), dst);
 
         // Make sure users won't try to make changes to the temp file: their changes would be lost
         dst.setReadOnly();
