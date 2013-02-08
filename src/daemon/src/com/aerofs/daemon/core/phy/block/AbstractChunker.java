@@ -124,7 +124,7 @@ public abstract class AbstractChunker
 
         FileEncodingBuffer() throws IOException
         {
-            f = FileUtil.createTempFile(null, null, null, true);
+            f = FileUtil.createTempFile("encodebuffer", null, null, true);
         }
 
         @Override

@@ -341,7 +341,7 @@ public class CacheBackend implements IBlockStorageBackend
          * We use a temporary file for the download to make sure we don't end up with invalid blocks
          * in the cache folder in case of a crash
          */
-        File tempFile = FileUtil.createTempFile(null, null, null, false);
+        File tempFile = FileUtil.createTempFile("cache", null, null, false);
         OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
         try {
             InputStream in = _bsb.getBlock(key);
