@@ -55,7 +55,9 @@
     ## the renderer page is wrapped by a "span8" div. Otherwise, the content is
     ## wrapped by a top-level "row" div.
     ##
-    navigation_bars = False;
+    navigation_bars = False
+
+    from aerofs_web.helper_functions import is_admin
 %>
 
     <div class="navbar">
@@ -82,7 +84,7 @@
             %if 'username' in request.session and \
                     self.attr.navigation_bars is True:
                 <div class="span2 offset1">
-                    %if request.session['group'] == ADMIN:
+                    %if is_admin(request):
                         ${render_left_navigation_for_admin()}
                     %else:
                         ${render_left_navigation_for_nonadmin()}
@@ -103,16 +105,12 @@
     <div id="footer-push"></div>
 </div>
 
-<%!
-    from aerofs_sp.gen.sp_pb2 import ADMIN
-%>
-
 <%def name="render_top_right_navigation()">
 
     ## TODO (WW) CSS for navbar buttons is completely broken.
 
     <div class="pull-right" style="margin-top: 2em;">
-        % if request.session['group'] == ADMIN:
+        % if is_admin(request):
             ${render_download_link_for_admin()}
         % else:
             ${render_download_link_for_nonadmin()}

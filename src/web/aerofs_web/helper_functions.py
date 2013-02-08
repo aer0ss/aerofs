@@ -6,12 +6,13 @@ import re
 import logging
 from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ADMIN
 
 log = logging.getLogger("web")
 
 # Form validation functions
 
+# TODO (WW) remove this method since this is not really necessary
 def userid_sanity_check(userid):
     """
     Performs a very basic validation of the given userid. Returns true if the
@@ -25,6 +26,9 @@ def domain_sanity_check(domain):
     be valid. Returns true if the domain passes, false otherwise
     """
     return len(domain) > 3 and domain.find(' ') < 0 and domain.find('.') >= 0
+
+def is_admin(request):
+    return request.session['group'] == ADMIN
 
 def _is_ascii(string):
     """
@@ -120,3 +124,16 @@ def successes_in_flash_queue(request):
     and false if the queue is empty.
     """
     return len(request.session.peek_flash('success_queue')) > 0
+
+def reload_auth_level(request):
+    """
+    Invalidate the auth level cached in the session and refetch from the database.
+    """
+    # N.B. an attacker could forge the group field in the cookie, but that would
+    # only change the nav options displayed by the python. SP would still keep
+    # all sensitive info private. Therefore keeping the authlevel here is fine.
+    # We prefer to keep it here because we avoid an unnecessary call to SP
+    # whenever we need to check authlevel.
+    sp = get_rpc_stub(request)
+    authlevel = int(sp.get_authorization_level().level)
+    request.session['group'] = authlevel
