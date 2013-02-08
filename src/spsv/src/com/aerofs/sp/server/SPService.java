@@ -1012,7 +1012,7 @@ public class SPService implements ISPService
         l.info("tsc: " + tsc);
 
         _transaction.begin();
-        UserID result = _db.getSignUpInvitation(tsc);
+        UserID result = _db.getSignUpCode(tsc);
         _transaction.commit();
 
         return createReply(
@@ -1366,14 +1366,6 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> signOut()
-            throws Exception
-    {
-        _sessionUser.remove();
-        return createVoidReply();
-    }
-
-    @Override
     public ListenableFuture<Void> signIn(String userIdString, ByteString credentials)
             throws IOException, SQLException, ExBadCredential, ExNotFound
     {
@@ -1414,6 +1406,14 @@ public class SPService implements ISPService
     }
 
     @Override
+    public ListenableFuture<Void> signOut()
+            throws Exception
+    {
+        _sessionUser.remove();
+        return createVoidReply();
+    }
+
+    @Override
     public ListenableFuture<Void> sendPasswordResetEmail(String userIdString)
             throws Exception
     {
@@ -1430,7 +1430,7 @@ public class SPService implements ISPService
         throws Exception
     {
         _transaction.begin();
-        _passwordManagement.resetPassword(password_reset_token,new_credentials);
+        _passwordManagement.resetPassword(password_reset_token, new_credentials);
         _transaction.commit();
 
         return createVoidReply();
@@ -1452,7 +1452,8 @@ public class SPService implements ISPService
     @Override
     public ListenableFuture<Void> signUpWithCode(String signUpCode, ByteString credentials,
             String firstName, String lastName)
-            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException, ExNoPerm
+            throws SQLException, ExAlreadyExist, ExNotFound, ExBadArgs, IOException, ExNoPerm,
+            ExBadCredential
     {
         l.info("signUp with code " + signUpCode);
 
@@ -1468,14 +1469,28 @@ public class SPService implements ISPService
 
         _transaction.begin();
 
-        UserID userID  = _db.getSignUpInvitation(signUpCode);
+        UserID userID = _db.getSignUpCode(signUpCode);
         User user = _factUser.create(userID);
 
-        // All new users start in the default organization.
-        user.save(shaedSP, fullName, _factOrg.getDefault());
+        if (user.exists()) {
+            // If the user already exists and the password matches the existing password, we do an
+            // no-op. This is needed for the business users to retry signing up using the link in
+            // their email. That link points to the user signup page with business signup as the
+            // followup page.
+            if (!user.isCredentialCorrect(shaedSP)) {
+                throw new ExBadCredential("Password doesn't match the existing account");
+            }
+        } else {
+            // All new users start in the default organization.
+            user.save(shaedSP, fullName, _factOrg.getDefault());
 
-        // Unsubscribe user from the aerofs invitation reminder mailing list
-        _esdb.removeEmailSubscription(user.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+            // Unsubscribe user from the aerofs invitation reminder mailing list
+            _esdb.removeEmailSubscription(user.id(),
+                    SubscriptionCategory.AEROFS_INVITATION_REMINDER);
+
+            // N.B. do not remove the sign up code so we can support the case in the above
+            // "if user.exist()" branch.
+        }
 
         _transaction.commit();
 

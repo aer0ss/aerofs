@@ -148,13 +148,10 @@ public class User
         return _f._udb.getFullName(_id);
     }
 
-    /**
-     * @return sha256(scrypt(p|u)|passwdSalt)
-     */
-    public byte[] getShaedSP()
+    public boolean isCredentialCorrect(byte[] shaedSP)
             throws ExNotFound, SQLException
     {
-        return _f._udb.getShaedSP(_id);
+        return Arrays.equals(_f._udb.getShaedSP(_id), shaedSP);
     }
 
     public AuthorizationLevel getLevel()
@@ -242,6 +239,7 @@ public class User
 
     /**
      * Add the user to the database
+     * @param shaedSP sha256(scrypt(p|u)|passwdSalt)
      * @throws ExAlreadyExist if the user ID already exists.
      */
     public void save(byte[] shaedSP, FullName fullName, Organization org)
@@ -302,7 +300,7 @@ public class User
             throws SQLException, ExBadCredential
     {
         try {
-            if (!Arrays.equals(getShaedSP(), shaedSP)) {
+            if (!isCredentialCorrect(shaedSP)) {
                 l.warn(this + ": bad password.");
                 throw new ExBadCredential();
             }

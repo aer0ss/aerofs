@@ -30,11 +30,16 @@ service SPService {
     /**
      * Sign up a user using a signup code.
      *
+     * No-op if the user already exists and the password matches the existing user's password.
+     * This is needed for the business users to retry signing up using the link in their email.
+     * That link points to the user signup page with business signup as the followup page.
+     *
      * Required Auth Level: none
      *
      * Throws:
      *   ExAlreadyExist if the email address is unavailable
      *   ExNotFound if the targeted signup code was not found
+     *   ExBadCredential if the user exists and the password doesn't match the existing user
      */
     rpc SignUpWithCode(SignUpWithCodeCall) returns(Void);
 

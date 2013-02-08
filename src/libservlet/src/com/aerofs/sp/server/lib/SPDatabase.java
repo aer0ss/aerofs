@@ -291,7 +291,7 @@ public class SPDatabase extends AbstractSQLDatabase
     /**
      * @param tsc the invitation code
      */
-    public @Nonnull UserID getSignUpInvitation(String tsc)
+    public @Nonnull UserID getSignUpCode(String tsc)
         throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(DBUtil.selectWhere(T_TI, C_TI_TIC + "=?", C_TI_TO));

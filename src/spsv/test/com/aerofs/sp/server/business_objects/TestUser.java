@@ -46,7 +46,7 @@ public class TestUser extends AbstractBusinessObjectTest
     public void shouldThrowIfUserNotFoundOnGetShaedSP()
             throws ExNotFound, SQLException
     {
-        newUser().getShaedSP();
+        newUser().isCredentialCorrect(new byte[0]);
     }
 
     @Test(expected = ExNotFound.class)

@@ -96,7 +96,7 @@ public class TestEmailReminder extends AbstractBusinessObjectTest
             esdb.insertEmailSubscription(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER,
                     System.currentTimeMillis() - age);
 
-            assertNotNull(db.getSignUpInvitation(signupCode));
+            assertNotNull(db.getSignUpCode(signupCode));
         }
 
         return users;

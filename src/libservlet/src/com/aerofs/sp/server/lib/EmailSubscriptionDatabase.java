@@ -122,8 +122,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(
-                DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL,
-                        C_ES_SUBSCRIPTION));
+                DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL, C_ES_SUBSCRIPTION));
 
         ps.setString(1, userId.toString());
         ps.setInt(2, sc.getCategoryID());
