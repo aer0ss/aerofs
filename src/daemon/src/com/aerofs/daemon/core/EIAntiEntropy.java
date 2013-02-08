@@ -9,8 +9,10 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DaemonParam;
+import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
@@ -30,16 +32,19 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         private final To.Factory _factTo;
         private final MapSIndex2Store _sidx2s;
         private final TokenManager _tokenManager;
+        private final FrequentDefectSender _fds;
 
         @Inject
         public Factory(GetVersCall pgvc, MapSIndex2Store sidx2s,
-                CoreScheduler sched, To.Factory factTo, TokenManager tokenManager)
+                CoreScheduler sched, To.Factory factTo, TokenManager tokenManager,
+                FrequentDefectSender fds)
         {
             _pgvc = pgvc;
             _sched = sched;
             _factTo = factTo;
             _sidx2s = sidx2s;
             _tokenManager = tokenManager;
+            _fds = fds;
         }
 
         public EIAntiEntropy create_(SIndex sidx, int seq)
@@ -94,6 +99,8 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
                 } finally {
                     tk.reclaim_();
                 }
+            } catch (ExNoResource e) {
+                _f._fds.logSendAsync("ae hk full", e);
             } catch (Exception e) {
                 l.warn(s + ": " + Util.e(e));
             }
