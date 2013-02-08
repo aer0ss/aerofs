@@ -27,10 +27,6 @@ def homepage(request):
 def mako_exception(context, request):
     log.error("Exception caught:", exc_info=context)
     request.response_status = 500
-
-    # Log out when we encounter an exception so that if the session is broken
-    # recovery is still possible.
-    logout(request)
     return {}
 
 # Not found view.
