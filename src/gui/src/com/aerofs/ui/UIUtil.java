@@ -226,12 +226,6 @@ public class UIUtil
                 setup(rtRoot, preLaunch, postLaunch);
                 break;
 
-            case NEEDS_LOGIN:
-                UI.get().login_();
-                if (preLaunch != null) { UI.get().asyncExec(preLaunch); }
-                finishLaunch(postLaunch);
-                break;
-
             case READY_TO_LAUNCH:
                 launch(preLaunch, postLaunch);
                 break;
@@ -342,10 +336,9 @@ public class UIUtil
         // Start the service that displays Bad Password notifications
         // This should not be run before setup is completed, otherwise it will
         // trigger update password dialogs during setup.
-        new LoginDialogDisplayer();
-        if (postLaunch != null) {
-            UI.get().asyncExec(postLaunch);
-        }
+        new RetypePasswordDialogDisplayer();
+
+        if (postLaunch != null) UI.get().asyncExec(postLaunch);
     }
 
     /**

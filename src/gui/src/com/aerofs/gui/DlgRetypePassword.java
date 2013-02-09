@@ -1,12 +1,14 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.gui;
 
+import com.aerofs.labeling.L;
 import com.aerofs.lib.ThreadUtil;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
@@ -26,20 +28,18 @@ import com.aerofs.lib.Util;
 import com.aerofs.ui.UIParam;
 import com.aerofs.gui.GUI.ISWTWorker;
 
-public class DlgLogin extends AeroFSJFaceDialog {
-
-    private static final Logger l = Util.l(DlgLogin.class);
-
+/**
+ * Show this dialog after the user has changed the password on the web site causing the local
+ * device unable to login with the stored password.
+ */
+public class DlgRetypePassword extends AeroFSJFaceDialog
+{
     private Label _status;
-    private Label label;
-    private Label passwordLabel;
-    private Label emailAddressLabel;
     private Text _passwd;
-    private Label _email;
 
-    public DlgLogin(Shell parentShell)
+    public DlgRetypePassword(Shell parentShell)
     {
-        super("Login", parentShell, false, false, true, true);
+        super("Enter Password", parentShell, false, false, true, true);
     }
 
     @Override
@@ -49,51 +49,42 @@ public class DlgLogin extends AeroFSJFaceDialog {
 
         Composite container = (Composite) super.createDialogArea(parent);
         final GridLayout gridLayout = new GridLayout();
-        gridLayout.marginRight = 20;
-        gridLayout.numColumns = 2;
-        gridLayout.verticalSpacing = 15;
-        gridLayout.marginTop = 20;
-        gridLayout.marginLeft = 20;
+        gridLayout.marginWidth = gridLayout.marginTop = GUIParam.MARGIN;
+        gridLayout.marginHeight = 0;
+        gridLayout.marginBottom = 0;
+        gridLayout.verticalSpacing = GUIParam.MAJOR_SPACING;
+        gridLayout.numColumns = 1;
         container.setLayout(gridLayout);
 
-        emailAddressLabel = new Label(container, SWT.NONE);
-        emailAddressLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        emailAddressLabel.setText("User:");
+        // row 1
 
-        _email = new Label(container, SWT.READ_ONLY);
-        _email.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false));
-        _email.setText(Cfg.user().toString());
+        Label label = new Label(container, SWT.NONE);
+        label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false));
+        label.setText("Your " + L.PRODUCT + " password has changed.\nPlease enter the new password:");
 
-        passwordLabel = new Label(container, SWT.NONE);
-        passwordLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-        passwordLabel.setText("Password:");
+        // row 2
 
         _passwd = new Text(container, SWT.BORDER | SWT.PASSWORD);
         _passwd.addModifyListener(new ModifyListener() {
             @Override
-            public void modifyText(ModifyEvent arg0)
+            public void modifyText(ModifyEvent ev)
             {
-                getButton(IDialogConstants.OK_ID).setEnabled(
-                        !_passwd.getText().isEmpty());
+                getButton(IDialogConstants.OK_ID).setEnabled(!_passwd.getText().isEmpty());
             }
         });
-        final GridData gd__passwd = new GridData(SWT.LEFT, SWT.CENTER, false, false);
-        gd__passwd.widthHint = 129;
+        final GridData gd__passwd = new GridData(SWT.FILL, SWT.CENTER, true, false);
         _passwd.setLayoutData(gd__passwd);
-        label = new Label(container, SWT.NONE);
 
-        _status = new Label(container, SWT.WRAP);
-        final GridData gd__status = new GridData(SWT.FILL, SWT.CENTER, false, false);
-        gd__status.heightHint = 33;
-        _status.setLayoutData(gd__status);
-        container.setTabList(new Control[] {_passwd, emailAddressLabel, _email, passwordLabel, label, _status});
+        // row 3
+
+        _status = new Label(container, SWT.NONE);
+        _status.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         return container;
     }
 
     /**
      * Create contents of the button bar
-     * @param parent
      */
     @Override
     protected void createButtonsForButtonBar(Composite parent)
@@ -101,8 +92,13 @@ public class DlgLogin extends AeroFSJFaceDialog {
         final Button button = createButton(parent, IDialogConstants.OK_ID, "Sign In",
                 true);
         button.setEnabled(false);
-        createButton(parent, IDialogConstants.CANCEL_ID,
-                IDialogConstants.CANCEL_LABEL, false);
+        createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, false);
+    }
+
+    private void enableControls(boolean enabled)
+    {
+        _passwd.setEnabled(enabled);
+        getButton(IDialogConstants.OK_ID).setEnabled(enabled);
     }
 
     @Override
@@ -112,16 +108,15 @@ public class DlgLogin extends AeroFSJFaceDialog {
             super.buttonPressed(buttonId);
 
         } else {
-            getButton(IDialogConstants.OK_ID).setEnabled(false);
+            enableControls(false);
             _status.setText("Logging in...");
 
             final String passwd = _passwd.getText();
 
-            GUI.get().unsafeWork(new ISWTWorker()
+            GUI.get().safeWork(getShell(), new ISWTWorker()
             {
                 @Override
-                public void run()
-                        throws Exception
+                public void run() throws Exception
                 {
                     try {
                         UI.controller().updateStoredPassword(Cfg.user().toString(), passwd);
@@ -134,25 +129,25 @@ public class DlgLogin extends AeroFSJFaceDialog {
                 @Override
                 public void error(Exception e)
                 {
-                    l.warn("login: " + Util.e(e));
+                    enableControls(true);
+
                     if (e instanceof ExBadCredential) {
-                        _status.setText(S.BAD_CREDENTIAL_CAP);
+                        _status.setText("Password is incorrect.");
                         _passwd.setText("");
                         _passwd.setFocus();
                     } else {
+                        Util.l(this).warn("login: " + Util.e(e));
                         // If it's not a bad credential, show the error
-                        GUI.get()
-                                .show(getShell(), MessageType.ERROR,
-                                        S.PASSWORD_CHANGE_INTERNAL_ERROR + "\n" + UIUtil.e2msg(e));
-                        _status.setText("");
+                        _status.setText(S.PASSWORD_CHANGE_INTERNAL_ERROR);
                     }
-                    getButton(IDialogConstants.OK_ID).setEnabled(true);
+
+                    getShell().pack();
                 }
 
                 @Override
                 public void okay()
                 {
-                    DlgLogin.super.buttonPressed(IDialogConstants.OK_ID);
+                    DlgRetypePassword.super.buttonPressed(IDialogConstants.OK_ID);
                 }
             });
         }

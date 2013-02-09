@@ -673,10 +673,9 @@ public class GUI implements IUI
     }
 
     @Override
-    public void login_()
+    public void retypePassword()
     {
-        DlgLogin login = new DlgLogin(GUI.get().sh());
-        login.open();
+        new DlgRetypePassword(GUI.get().sh()).open();
     }
 
     private int _openShells;

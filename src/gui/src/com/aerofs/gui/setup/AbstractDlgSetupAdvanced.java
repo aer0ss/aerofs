@@ -20,8 +20,6 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.layout.GridData;
 
-import javax.annotation.Nullable;
-
 public abstract class AbstractDlgSetupAdvanced extends AeroFSJFaceDialog {
 
     abstract protected void createStorageArea(Composite parent);

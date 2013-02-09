@@ -17,6 +17,6 @@ public class ControllerBadCredentialListener implements IBadCredentialListener
     public void exceptionReceived()
     {
         l.warn("Bad Credential Exception received");
-        ControllerService.get().notifyUI(Type.SHOW_LOGIN_NOTIFICATION, null);
+        ControllerService.get().notifyUI(Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, null);
     }
 }

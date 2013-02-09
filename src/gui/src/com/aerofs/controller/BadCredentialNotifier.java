@@ -1,5 +1,5 @@
 /*
- * Copyright (c) Air Computing Inc., 2012.
+ * Copyright (c) Air Computing Inc., 2013.
  */
 
 package com.aerofs.controller;
@@ -20,8 +20,8 @@ public class BadCredentialNotifier
             public void onNotificationReceived(PBNotification pb)
             {
                 if (pb.getType().equals(Type.BAD_CREDENTIAL)) {
-                    ControllerService.get()
-                            .notifyUI(ControllerNotifications.Type.SHOW_LOGIN_NOTIFICATION, null);
+                    ControllerService.get().notifyUI(
+                            ControllerNotifications.Type.SHOW_RETYPE_PASSWORD_NOTIFICATION, null);
                 }
             }
         };

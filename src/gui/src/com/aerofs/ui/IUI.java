@@ -96,9 +96,8 @@ public interface IUI {
     void shutdown();
 
     /**
-     * Cfg.scryptedPasswd() returns null if the user canceled setup
      * @throws ExNoConsole if no console is found. the method show()s an error
      * message before throwing.
      */
-    void login_() throws ExNoConsole;
+    void retypePassword() throws ExNoConsole;
 }

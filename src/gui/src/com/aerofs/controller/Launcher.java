@@ -71,9 +71,6 @@ class Launcher
 
             if (!isSetupDone()) {
                 reply.setStatus(Status.NEEDS_SETUP);
-            } else if (needsLogin()) {
-                checkNoOtherInstanceRunning();
-                reply.setStatus(Status.NEEDS_LOGIN);
             } else {
                 checkNoOtherInstanceRunning();
                 reply.setStatus(Status.READY_TO_LAUNCH);
@@ -103,11 +100,6 @@ class Launcher
         if (!Cfg.inited()) return false;
 
         return !new File(Util.join(absRTRoot(), Param.SETTING_UP)).exists();
-    }
-
-    private boolean needsLogin()
-    {
-        return (Cfg.scrypted() == null);
     }
 
     /**

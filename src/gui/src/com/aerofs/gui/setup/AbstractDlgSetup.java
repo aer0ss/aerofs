@@ -334,7 +334,7 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
 
     private void setStatusImpl(String error, String status)
     {
-        if (!error.isEmpty()) GUI.get().show(null, MessageType.ERROR, error);
+        if (!error.isEmpty()) GUI.get().show(getShell(), MessageType.ERROR, error);
         // the following code is becuase the parent component has
         // horizontalSpace == 0 so the icon can be perfectly aligned
         if (!status.isEmpty()) status = status + " ";

@@ -444,7 +444,7 @@ public class CLI implements IUI {
     }
 
     @Override
-    public void login_() throws ExNoConsole
+    public void retypePassword() throws ExNoConsole
     {
         String msg = S.SETUP_PASSWD;
         while (true) {
@@ -456,8 +456,7 @@ public class CLI implements IUI {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                 show(MessageType.WARN, S.BAD_CREDENTIAL_CAP);
             } catch (Exception e) {
-                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " + UIUtil.e2msg
-                        (e));
+                show(MessageType.ERROR, S.PASSWORD_CHANGE_INTERNAL_ERROR + " " + UIUtil.e2msg(e));
             }
         }
     }

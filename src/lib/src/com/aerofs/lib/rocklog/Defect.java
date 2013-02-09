@@ -4,15 +4,11 @@
 
 package com.aerofs.lib.rocklog;
 
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.os.OSUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 
 /**

@@ -3,7 +3,7 @@ option optimize_for = LITE_RUNTIME;
 
 enum Type {
     UPDATE_NOTIFICATION = 1;
-    SHOW_LOGIN_NOTIFICATION = 2;
+    SHOW_RETYPE_PASSWORD_NOTIFICATION = 2;
 }
 
 message UpdateNotification {

@@ -75,10 +75,8 @@ public class S
             VERSION_HISTORY = "version history",
             CLI_NAME = L.get().productUnixName() + "-cli",
             TRY_AGAIN_LATER = "Please try again later.",
-            PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login. " +
-            TRY_AGAIN_LATER,
-            FAILED_FOR_ACCURACY = "Couldn't retrieve accurate results. " +
-            TRY_AGAIN_LATER,
+            PASSWORD_CHANGE_INTERNAL_ERROR = "Unable to Login. " + TRY_AGAIN_LATER,
+            FAILED_FOR_ACCURACY = "Couldn't retrieve accurate results. " + TRY_AGAIN_LATER,
             COULDNT_LIST_ACTIVITIES = "Couldn't list activities",
             MODIFIED = "updated",
 

@@ -93,8 +93,7 @@ message GetInitialStatusReply {
     enum Status {
         NOT_LAUNCHABLE = 1;
         NEEDS_SETUP = 2;
-        NEEDS_LOGIN = 3;
-        READY_TO_LAUNCH = 4;
+        READY_TO_LAUNCH = 3;
     }
     required Status status = 1;
     optional string error_message = 2;
