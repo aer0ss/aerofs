@@ -51,7 +51,7 @@ public class LocalTestDatabaseConfigurator
                 params.getMySQLPass(), params.getMySQLDatabaseName());
 
         String loadSchema = String.format(
-                "%s/mysql -u%s -h%s -p%s %s < %s/%s",
+                "%s/mysql -u%s -h%s -p%s %s < '%s/%s'",
                 params.getMySQLPath(), params.getMySQLUser(), params.getMySQLHost(),
                 params.getMySQLPass(), params.getMySQLDatabaseName(), params.getMySQLSchemaPath(),
                 params.getMySQLSchemaName());
