@@ -56,7 +56,7 @@ public class InvitationEmailer
                 @Nullable String note, final String signUpCode)
                 throws IOException
         {
-            String url = RequestToSignUpEmailer.getSignUpLinkWithFreePlan(signUpCode);
+            String url = RequestToSignUpEmailer.getSignUpLink(signUpCode);
 
             // TODO Ideally static email contents should be separate from Java files.
             final String subject = (folderName != null)

@@ -1040,9 +1040,11 @@ public class SPService implements ISPService
 
         _transaction.commit();
 
-        if (signUpCode != null) {
-            // Send the email out of the transaction
-            _requestToSignUpEmailer.sendRequestToSignUpWithBusinessPlanEmail(emailAddress,
+        // Send the email out of the transaction
+        if (signUpCode == null) {
+            _requestToSignUpEmailer.sendRequestToActivateBusinessPlan(emailAddress);
+        } else {
+            _requestToSignUpEmailer.sendRequestToSignUpAndActivateBusinessPlan(emailAddress,
                     signUpCode);
         }
 

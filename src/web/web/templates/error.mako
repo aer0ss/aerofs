@@ -4,7 +4,7 @@
 <p>
     Sorry! An internal server error has occurred.
 </p><p>
-    Please log in and try to repeat the action you just took.
+    Please try to repeat the action you just took.
     If this issue persists <a href='http://support.aerofs.com/'>
     contact support</a> for further assistance.
 </p>

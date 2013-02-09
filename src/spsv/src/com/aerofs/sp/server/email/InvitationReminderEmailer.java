@@ -22,7 +22,7 @@ public class InvitationReminderEmailer
                 final String to, String signUpCode, String unsubscribeId)
                         throws IOException
         {
-            String url = RequestToSignUpEmailer.getSignUpLinkWithFreePlan(signUpCode);
+            String url = RequestToSignUpEmailer.getSignUpLink(signUpCode);
 
             final String subject = "Reminder: You've recently been invited to try AeroFS!";
 

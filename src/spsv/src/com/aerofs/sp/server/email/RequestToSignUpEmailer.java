@@ -18,14 +18,15 @@ import java.io.IOException;
 
 public class RequestToSignUpEmailer
 {
-    static String getSignUpLinkWithFreePlan(String signUpCode)
+    static String getSignUpLink(String signUpCode)
     {
         // Redirect the user to the sign up page right after signing up.
         // N.B. the parameter key string must be identical to that in signup/views.py.
-        return getSignUpLinkWithBusinessPlan(signUpCode) + "&next=" + Util.urlEncode("/install");
+        // TODO (WW) use protobuf to share constants between Python and Java code?
+        return SP.DASH_BOARD_BASE + "/signup?c=" + signUpCode + "&next=" + Util.urlEncode("/install");
     }
 
-    static String getSignUpLinkWithBusinessPlan(String signUpCode)
+    static String getSignUpAndActivitateBusinessPlanLink(String signUpCode)
     {
         // The default page after the sign up page is billing. We set it as the default so users
         // wouldn't easily figure out by looking at the invitation URL that they can use AeroFS for
@@ -33,34 +34,52 @@ public class RequestToSignUpEmailer
         // invitation system for Personal uses. See src/web/moduels/signup/views.py.
         //
         // N.B. the parameter key string must be identical to that in signup/views.py.
+        // TODO (WW) use protobuf to share constants between Python and Java code?
         return SP.DASH_BOARD_BASE + "/signup?c=" + signUpCode;
     }
 
-    public void sendRequestToSignUpWithBusinessPlanEmail(String emailAddress, String signUpCode)
+    static String getActivateBusinessPlanLink()
+    {
+        // TODO (WW) use protobuf to share constants between Python and Java code?
+        return SP.DASH_BOARD_BASE + "/buisness/activate";
+    }
+
+    public void sendRequestToSignUpAndActivateBusinessPlan(String emailAddress, String signUpCode)
             throws IOException
     {
-        String subject = "Complete your " + L.PRODUCT + " sign up";
-        Email email = new Email(subject);
+        send(emailAddress, "Complete your " + L.PRODUCT + " sign up",
+                getSignUpAndActivitateBusinessPlanLink(signUpCode),
+                EmailCategory.REQUEST_TO_SIGN_UP_AND_ACTIVATE_BUSINESS_PLAN);
+    }
 
+    public void sendRequestToActivateBusinessPlan(String emailAddress)
+            throws IOException
+    {
+        send(emailAddress, "Start your " + L.PRODUCT + " for Business free trial",
+                getActivateBusinessPlanLink(),
+                EmailCategory.REQUEST_TO_ACTIVATE_BUSINESS_PLAN);
+    }
+
+    private void send(String emailAddress, String subject, String url, EmailCategory category)
+            throws IOException
+    {
+        Email email = new Email(subject);
         String body = "\n" +
-                "Please click this link to go to proceed signing up " + L.PRODUCT + " for Business:\n" +
+                "Please click this link to proceed signing up " + L.PRODUCT + " for Business:\n" +
                 "\n" +
-                getSignUpLinkWithBusinessPlan(signUpCode) + "\n" +
+                url + "\n" +
                 "\n" +
-                "Just ignore this email if you didn't request an account on " + L.PRODUCT + ".";
+                "Just ignore this email if you didn't request " + L.PRODUCT + " for Business.";
 
         email.addSection("You're almost ready to go!", HEADER_SIZE.H1, body);
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
-                    emailAddress, null, subject, email.getTextEmail(), email.getHTMLEmail(),
-                    true, EmailCategory.REQUEST_TO_SIGN_UP_WITH_BUSINESS_PLAN);
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, emailAddress, null,
+                    subject, email.getTextEmail(), email.getHTMLEmail(), true,
+                    category);
         } catch (AbstractExWirable e) {
             throw new IOException(e);
         }
-
-        EmailUtil.emailSPNotification(emailAddress +
-                " request_to_sign_up_with_business_plan email.", "");
     }
 }
