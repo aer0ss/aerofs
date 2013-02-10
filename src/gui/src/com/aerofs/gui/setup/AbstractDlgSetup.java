@@ -4,6 +4,7 @@
 
 package com.aerofs.gui.setup;
 
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.gui.AeroFSTitleAreaDialog;
 import com.aerofs.gui.CompSpin;
 import com.aerofs.gui.GUI;
@@ -400,6 +401,8 @@ public abstract class AbstractDlgSetup extends AeroFSTitleAreaDialog
                     msg = "Sorry, couldn't connect to the server. Please try again later.";
                 } else if (e instanceof ExUIMessage) {
                     msg = e.getMessage();
+                } else if (e instanceof ExBadCredential) {
+                    msg = S.BAD_CREDENTIAL_CAP + ".";
                 }
 
                 // TODO: Catch ExAlreadyExist and ExNoPerm here, and ask the user if he wants us to
