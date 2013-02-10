@@ -102,6 +102,16 @@ div.input_container.submit {
   vertical-align: -2px;
 }
 
+// This is to correct the horizontal spacing for inputs in controls-row. The
+// current version of Stripe doesn't have controls-row support. Remove this
+// correction when we upgrade Stripe.
+// Note 1. This is disabled as no form uses this feature yet.
+// Note 2. This is copied from bootstrap.less, and is therefore not responsive.
+//
+// .controls-row [class*="span"] + [class*="span"] {
+//    margin-left: 16px;
+//}
+
 // Make <a> buttons round cornered. Bootstrap only makes <input> buttons so.
 a.btn {
   -webkit-border-radius: @inputBorderRadius;
