@@ -51,8 +51,22 @@ public abstract class AbstractLinkStateService implements ILinkStateService
     {
         if (_markedDown) return ImmutableSet.of();
 
-        //
-        // [sigh] can't filter by MAC address either, since within a virtual machine
+        ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
+
+        int index = 0;
+        for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+                e.hasMoreElements();) {
+            NetworkInterface iface = e.nextElement();
+            if (isActive(iface, index++)) ifaceBuilder.add(iface);
+        }
+
+        return ifaceBuilder.build();
+    }
+
+    private boolean isActive(NetworkInterface iface, int index)
+            throws SocketException
+    {
+        // Can't filter by MAC address, since within a virtual machine
         // my eth0 has the vm company's virtual MAC prefix, and on a physical box
         // the vmnet1, vmnet2, etc. has the vm company's virtual MAC prefix.
         //
@@ -83,77 +97,66 @@ public abstract class AbstractLinkStateService implements ILinkStateService
         //
         // this means that if I simply filter out virtual adapters I won't be
         // able to run AeroFS on virtual machines. not good.
-        //
 
-        ImmutableSet.Builder<NetworkInterface> ifaceBuilder = ImmutableSet.builder();
+        // cache interface information as local variables, since some queries on some Windows
+        // computers are very slow. Experiments showed that getName and isUp can take 100ms
+        // each on computers with VirtualBox installed :S
 
-        int n = 0;
+        // This method takes a very long time on some computers. The following three info loggings
+        // are to figure out which system call takes most of the time.
+        l.info("iface " + index);
+        final String name = iface.getName();
+        l.info("  " + name);
+        final boolean isUp = iface.isUp();
+        final boolean isLoopback = iface.isLoopback();
+        final boolean isVirtual = iface.isVirtual();
+        l.info("  " + isUp + " " + isLoopback + " " + isVirtual);
 
-        for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-                e.hasMoreElements();) {
-            NetworkInterface iface = e.nextElement();
+        // If debug is enabled, generate the debug message
+        StringBuilder sb = new StringBuilder();
+        if (l.isDebugEnabled()) {
+            sb.append(' ').append(name);
 
-            l.info("iface " + n++);
-
-            // cache interface information as local variables, since some queries on some Windows
-            // computers are very slow. Experiments showed that getName and isUp can take 100ms
-            // each on computers with VirtualBox installed :S
-            final String name = iface.getName();
-            l.info("  " + name);
-            final boolean isUp = iface.isUp();
-            final boolean isLoopback = iface.isLoopback();
-            final boolean isVirtual = iface.isVirtual();
-
-            l.info("  " + isUp + " " + isLoopback + " " + isVirtual);
-
-            // If debug is enabled, generate the debug message
-            StringBuilder sb = new StringBuilder();
-            if (l.isDebugEnabled()) {
-                sb.append(' ').append(name);
-
-                // The displayName can be different than the name. If they are different,
-                // output something like "name[displayName]".
-                final String displayName = iface.getDisplayName();
-                if (displayName != null && !displayName.equals(name)) {
-                    sb.append('[').append(displayName).append(']');
-                }
-
-                // Output the link state. Inclusion of a symbol means the state it represents
-                // is true. i.e, if 'u' is present in the message, then u = true, meaning isUp
-                // is true.
-                sb.append('(');
-                if (isUp) sb.append('u');
-                if (isLoopback) sb.append('l');
-                if (isVirtual) sb.append('v');
-                if (iface.supportsMulticast()) sb.append('m');
-                sb.append(')');
+            // The displayName can be different than the name. If they are different,
+            // output something like "name[displayName]".
+            final String displayName = iface.getDisplayName();
+            if (displayName != null && !displayName.equals(name)) {
+                sb.append('[').append(displayName).append(']');
             }
 
-            // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
-            // simply removes the interface's IPV4 address. This caused a situation where
-            // we would remove IFprev(IPV4, IPV6) and then _readd_ IFnew(IPV6).
-            // This caused Multicast::send to attempt to send packets through this
-            // interface even though it wasn't 'active'.
-            if (isUp && !isLoopback && !isVirtual) {
-                Enumeration<InetAddress> ias = iface.getInetAddresses();
-                while (ias.hasMoreElements()) {
-                    InetAddress address = ias.nextElement();
-                    if (address instanceof Inet4Address) {
-                        // it is an IPv4 address
-                        ifaceBuilder.add(iface);
-
-                        if (l.isDebugEnabled()) {
-                            sb.append(':').append(address.getHostAddress());
-                        }
-                        break;
-                    }
-                }
-            }
-
-            l.debug("ls:ifs:\n" + sb);
+            // Output the link state. Inclusion of a symbol means the state it represents
+            // is true. i.e, if 'u' is present in the message, then u = true, meaning isUp
+            // is true.
+            sb.append('(');
+            if (isUp) sb.append('u');
+            if (isLoopback) sb.append('l');
+            if (isVirtual) sb.append('v');
+            if (iface.supportsMulticast()) sb.append('m');
+            sb.append(')');
         }
 
-        return ifaceBuilder.build();
+        // IMPORTANT: On Mac OS X, disabling an interface via Network Preferences
+        // simply removes the interface's IPV4 address. This caused a situation where
+        // we would remove IFprev(IPV4, IPV6) and then _readd_ IFnew(IPV6).
+        // This caused Multicast::send to attempt to send packets through this
+        // interface even though it wasn't 'active'.
+        boolean isActive = false;
+        if (isUp && !isLoopback && !isVirtual) {
+            Enumeration<InetAddress> ias = iface.getInetAddresses();
+            while (ias.hasMoreElements()) {
+                InetAddress address = ias.nextElement();
+                if (address instanceof Inet4Address) {
+                    // it is an IPv4 address
+                    isActive = true;
+                    if (l.isDebugEnabled()) sb.append(':').append(address.getHostAddress());
+                    break;
+                }
+            }
+        }
+
+        if (l.isDebugEnabled()) l.debug("ls:ifs:\n" + sb);
+
+        return isActive;
     }
 
     private void checkLinkState_()
