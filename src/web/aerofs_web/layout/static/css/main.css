@@ -50,8 +50,8 @@ div.input_container.submit {
 .full_name {
   font-weight: bold;
 }
-.dataTables_wrapper table thead {
-  display: none;
+.table th {
+  font-weight: inherit;
 }
 .datatable_body {
   margin-bottom: 15px;
