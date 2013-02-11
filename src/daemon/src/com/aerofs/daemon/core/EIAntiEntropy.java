@@ -9,17 +9,23 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DaemonParam;
-import com.aerofs.lib.FrequentDefectSender;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
+import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Counter;
+import com.yammer.metrics.core.MetricName;
 import org.apache.log4j.Logger;
+
+import static com.google.common.base.Preconditions.*;
 
 public class EIAntiEntropy extends AbstractEBSelfHandling
 {
     private static final Logger l = Util.l(EIAntiEntropy.class);
+    private static final Counter _hkFullCounter
+            = Metrics.newCounter(new MetricName("vers", "ae", "hkfull"));
 
     private final Factory _f;
     private final SIndex _sidx;
@@ -32,19 +38,16 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         private final To.Factory _factTo;
         private final MapSIndex2Store _sidx2s;
         private final TokenManager _tokenManager;
-        private final FrequentDefectSender _fds;
 
         @Inject
         public Factory(GetVersCall pgvc, MapSIndex2Store sidx2s,
-                CoreScheduler sched, To.Factory factTo, TokenManager tokenManager,
-                FrequentDefectSender fds)
+                CoreScheduler sched, To.Factory factTo, TokenManager tokenManager)
         {
             _pgvc = pgvc;
             _sched = sched;
             _factTo = factTo;
             _sidx2s = sidx2s;
             _tokenManager = tokenManager;
-            _fds = fds;
         }
 
         public EIAntiEntropy create_(SIndex sidx, int seq)
@@ -92,20 +95,30 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
                 // in the NSL layer. However, GetVersCall needs to know the
                 // DID from which it is pulling
                 DID didTo = to.pick_();
-                assert didTo != null;
-                Token tk = _f._tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "AE");
+                checkNotNull(didTo);
+
+                Token tk = acquireToken_();
                 try {
                     _f._pgvc.rpc_(_sidx, didTo, tk);
                 } finally {
                     tk.reclaim_();
                 }
-            } catch (ExNoResource e) {
-                _f._fds.logSendAsync("AEntropy hk full", e);
             } catch (Exception e) {
                 l.warn(s + ": " + Util.e(e));
             }
         }
 
         return true;
+    }
+
+    private Token acquireToken_()
+            throws ExNoResource
+    {
+        try {
+            return _f._tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "AE");
+        } catch (ExNoResource e) {
+            _hkFullCounter.inc();
+            throw e;
+        }
     }
 }
