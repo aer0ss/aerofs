@@ -4,7 +4,6 @@ CREATE TABLE `sp_organization` (
   `o_id` INTEGER NOT NULL, -- corresponding Java type: OrganizationID
   `o_name` VARCHAR(80) CHARSET utf8 NOT NULL, -- organization friendly name, displayed to the user.
                                               -- May include spaces and all.
-  `o_size` INTEGER, -- the organization user count specified when the user created the organization
   `o_contact_phone` VARCHAR(50), -- trying to leave enough room to handle international phone
                                  -- numbers we are not doing any very restrained validation
                                  -- on this input

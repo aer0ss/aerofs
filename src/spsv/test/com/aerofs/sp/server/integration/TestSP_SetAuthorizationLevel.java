@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
@@ -29,7 +29,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
             throws Exception
     {
         // switch user_1 to a different organization
-        service.addOrganization("test", null, null, StripeCustomerID.TEST.getID());
+        service.addOrganization("test", null, StripeCustomerID.TEST.getID());
         assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
 
         try {

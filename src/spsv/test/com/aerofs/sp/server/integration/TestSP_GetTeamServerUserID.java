@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
@@ -33,7 +33,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
     public void shouldThrowIfUserIsNonAdminInNonDefaultOrg()
             throws Exception
     {
-        service.addOrganization("test", null, null, StripeCustomerID.TEST.getID());
+        service.addOrganization("test", null, StripeCustomerID.TEST.getID());
 
         trans.begin();
         user.setLevel(AuthorizationLevel.USER);

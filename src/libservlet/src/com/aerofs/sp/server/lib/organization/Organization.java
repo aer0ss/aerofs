@@ -1,6 +1,6 @@
 package com.aerofs.sp.server.lib.organization;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBSearchUtil;
@@ -63,8 +63,8 @@ public class Organization
         /**
          * Add a new organization as well as its team server account to the DB
          */
-        public Organization save(@Nonnull String organizationName, Integer organizationSize,
-                String organizationPhone, StripeCustomerID stripeCustomer)
+        public Organization save(@Nonnull String organizationName, String organizationPhone,
+                StripeCustomerID stripeCustomer)
                 throws SQLException, ExNoPerm, IOException, ExNotFound
         {
             while (true) {
@@ -72,7 +72,7 @@ public class Organization
                 // orgs. It is NOT a security measure.
                 OrganizationID organizationID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _db.insert(organizationID, organizationName, organizationSize, organizationPhone, stripeCustomer);
+                    _db.insert(organizationID, organizationName, organizationPhone, stripeCustomer);
                     Organization org = create(organizationID);
                     saveTeamServerUser(org);
                     l.info(org + " created");
@@ -127,22 +127,10 @@ public class Organization
         _f._db.setName(_id, name);
     }
 
-    public void setSize(Integer size)
-            throws SQLException
-    {
-        _f._db.setSize(_id, size);
-    }
-
     public void setContactPhone(String contactPhone)
             throws SQLException
     {
         _f._db.setContactPhone(_id, contactPhone);
-    }
-
-    public void setStripeCustomerID(String stripeCustomerID)
-            throws SQLException
-    {
-        _f._db.setStripeCustomerID(_id, stripeCustomerID);
     }
 
     @Override
@@ -262,22 +250,23 @@ public class Organization
 
     /**
      * Gets the Stripe Customer ID used to make Stripe API calls
+     *
+     * @return null if the organization doesn't have a Stripe Customer ID
+     * @throws ExNotFound if the organization doesn't exist
      */
     @Nullable
-    public StripeCustomerID getStripeCustomerID() throws SQLException, ExNotFound
+    public StripeCustomerID getStripeCustomerIDNullable() throws SQLException, ExNotFound
     {
-        return _f._db.getStripeCustomerID(_id);
+        return _f._db.getStripeCustomerIDNullable(_id);
     }
 
+    /**
+     * @return null if the organization doesn't have a phone number
+     * @throws ExNotFound if the organization doesn't exist
+     */
     @Nullable
-    public Integer getSize() throws SQLException, ExNotFound
+    public String getContactPhoneNullable() throws SQLException, ExNotFound
     {
-        return _f._db.getSize(_id);
-    }
-
-    @Nullable
-    public String getContactPhone() throws SQLException, ExNotFound
-    {
-        return _f._db.getContactPhone(_id);
+        return _f._db.getContactPhoneNullable(_id);
     }
 }

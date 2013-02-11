@@ -10,6 +10,7 @@ import com.aerofs.proto.Sp.SPServiceReactor;
 import com.aerofs.servlets.AeroServlet;
 import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.sp.server.SPService.InviteToSignUpResult;
 import com.aerofs.sp.server.email.DeviceCertifiedEmailer;
 import com.aerofs.sp.server.email.RequestToSignUpEmailer;
 import com.aerofs.sp.server.lib.EmailSubscriptionDatabase;
@@ -243,8 +244,8 @@ public class SPServlet extends AeroServlet
         }
 
         try {
-            inviteFromScript(fromPerson, to);
-            rsp.getWriter().println("done: " + fromPerson + " -> " + to);
+            String signUpCode = inviteFromScript(fromPerson, to);
+            rsp.getWriter().println("done: " + fromPerson + " -> " + to + ", code: " + signUpCode);
         } catch (ExAlreadyExist e) {
             rsp.getWriter().println("skip " + to);
         } catch (Exception e) {
@@ -259,8 +260,9 @@ public class SPServlet extends AeroServlet
      * TODO it should be removed when the tools/invite script is removed
      * Perhaps it can be dumped into an Invite.java if it is ever created.
      * @param inviterName inviter's name
+     * @return the signup code
      */
-    private void inviteFromScript(@Nonnull String inviterName, @Nonnull String inviteeIdString)
+    private String inviteFromScript(@Nonnull String inviterName, @Nonnull String inviteeIdString)
             throws ExAlreadyExist, SQLException, IOException, ExEmailSendingFailed
     {
         User invitee = _factUser.createFromExternalID(inviteeIdString);
@@ -272,8 +274,9 @@ public class SPServlet extends AeroServlet
         if (invitee.isInvitedToSignUp()) throw new ExAlreadyExist("user already invited");
 
         User inviter = _factUser.create(UserID.fromInternal(SV.SUPPORT_EMAIL_ADDRESS));
-        InvitationEmailer emailer = _service.inviteToSignUp(invitee, inviter, inviterName, null,
+        InviteToSignUpResult res = _service.inviteToSignUp(invitee, inviter, inviterName, null,
                 null);
-        emailer.send();
+        res._emailer.send();
+        return res._signUpCode;
     }
 }

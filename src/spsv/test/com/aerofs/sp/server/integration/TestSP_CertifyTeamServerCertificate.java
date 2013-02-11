@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
@@ -109,7 +109,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
     private UserID setupTeamServer()
             throws Exception
     {
-        service.addOrganization("An Awesome Team", null, null, StripeCustomerID.TEST.getID());
+        service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getID());
         return UserID.fromInternal(service.getTeamServerUserID().get().getId());
     }
 }

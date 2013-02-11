@@ -1,7 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.acl.Role;
@@ -499,25 +499,13 @@ public class SPService implements ISPService
         final Organization org = user.getOrganization();
 
         final String name = org.getName();
-        final String contactPhone = org.getContactPhone();
-        final Integer size = org.getSize();
-        final StripeCustomerID stripeCustomerID = org.getStripeCustomerID();
+        final String contactPhone = org.getContactPhoneNullable();
 
         final GetOrgPreferencesReply.Builder replyBuilder = GetOrgPreferencesReply.newBuilder();
         replyBuilder.setOrganizationName(name);
 
         if (StringUtils.isNotBlank(contactPhone)) {
             replyBuilder.setOrganizationContactPhone(contactPhone);
-        }
-
-        if (user.isAdmin()) {
-            if (size != null) {
-                replyBuilder.setOrganizationSize(size);
-            }
-
-            if (stripeCustomerID != null) {
-                replyBuilder.setStripeCustomerId(stripeCustomerID.getID());
-            }
         }
 
         _transaction.commit();
@@ -527,9 +515,7 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<Void> setOrgPreferences(@Nullable final String orgName,
-            @Nullable final Integer size,
-            @Nullable final String contactPhone,
-            @Nullable final String stripeCustomerID)
+            @Nullable final String contactPhone)
             throws Exception
     {
         _transaction.begin();
@@ -545,16 +531,8 @@ public class SPService implements ISPService
             organization.setName(orgName);
         }
 
-        if (size != null) {
-            organization.setSize(size);
-        }
-
         if (StringUtils.isNotBlank(contactPhone)) {
             organization.setContactPhone(contactPhone);
-        }
-
-        if (StringUtils.isNotBlank(stripeCustomerID)) {
-            organization.setStripeCustomerID(stripeCustomerID);
         }
 
         _transaction.commit();
@@ -599,19 +577,9 @@ public class SPService implements ISPService
 
         User user = _sessionUser.get();
 
-        Set<UserID> users;
-
-        // TODO (eric) this first condition needs to be removed when we decide to enforce billing
-        // using StripeCustomerID.TEST here to pass preconditions associated with creating an
-        // organization and to make identifying these users trivial (anyone registered with this ID
-        // needs to be messaged/upgraded to a paying account).
-        if (user.getOrganization().isDefault()) {
-            users = user.addAndMoveToOrganization("An Awesome Team", null, null, StripeCustomerID.TEST);
-        } else if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
+        if (!user.getLevel().covers(AuthorizationLevel.ADMIN)) {
             // users in default organization should always get this
             throw new ExNoPerm();
-        } else {
-            users = Collections.emptySet();
         }
 
         UserID tsUserID = user.getOrganization().id().toTeamServerUserID();
@@ -619,9 +587,6 @@ public class SPService implements ISPService
         GetTeamServerUserIDReply reply = GetTeamServerUserIDReply.newBuilder()
                 .setId(tsUserID.toString())
                 .build();
-
-        // send verkehr notification as the last step of the transaction
-        publish_(incrementACLEpochs_(users));
 
         _transaction.commit();
 
@@ -856,13 +821,26 @@ public class SPService implements ISPService
             @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException, ExNotFound
     {
-        return inviteToSignUp(invitee, inviter, inviter.getFullName()._first, folderName, note);
+        return inviteToSignUp(invitee, inviter, inviter.getFullName()._first, folderName, note).
+                _emailer;
+    }
+
+    static class InviteToSignUpResult
+    {
+        final InvitationEmailer _emailer;
+        final String _signUpCode;
+
+        InviteToSignUpResult(InvitationEmailer emailer, String signUpCode)
+        {
+            _emailer = emailer;
+            _signUpCode = signUpCode;
+        }
     }
 
     /**
      * Call this method to use an inviter name different from inviter.getFullName()._first
      */
-    InvitationEmailer inviteToSignUp(User invitee, User inviter, String inviterName,
+    InviteToSignUpResult inviteToSignUp(User invitee, User inviter, String inviterName,
             @Nullable String folderName, @Nullable String note)
             throws SQLException, IOException
     {
@@ -872,8 +850,10 @@ public class SPService implements ISPService
 
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
-        return _factEmailer.createSignUpInvitationEmailer(inviter.id().toString(),
-                invitee.id().toString(), inviterName, folderName, note, code);
+        InvitationEmailer emailer = _factEmailer.createSignUpInvitationEmailer(
+                inviter.id().getID(), invitee.id().getID(), inviterName, folderName, note, code);
+
+        return new InviteToSignUpResult(emailer, code);
     }
 
     @Override
@@ -1174,64 +1154,36 @@ public class SPService implements ISPService
 
     @Override
     public ListenableFuture<GetStripeCustomerIDReply> getStripeCustomerID()
-            throws Exception {
-        final User currentUser = _sessionUser.get();
+            throws Exception
+    {
+        _transaction.begin();
 
-        try {
-            _transaction.begin();
+        User user = _sessionUser.get();
+        user.throwIfNotAdmin();
 
-            if (!currentUser.isAdmin()) {
-                // we should only be requesting the billing information / stripe customer ID for
-                // organization administrators
-                final String msg = "Non-admin requesting Stripe Customer ID, user: " +
-                        currentUser.id() + " organization: " + currentUser.getOrganization();
-                l.info(msg);
-                throw new ExNoPerm(msg);
-            }
+        StripeCustomerID stripeCustomerID = user.getOrganization().getStripeCustomerIDNullable();
 
-            final Organization organization = currentUser.getOrganization();
-            if (organization == null) {
-                // this should never happen, being defensive
-                return createReply(GetStripeCustomerIDReply.getDefaultInstance());
-            }
+        GetStripeCustomerIDReply.Builder builder = GetStripeCustomerIDReply.newBuilder();
+        if (stripeCustomerID != null) builder.setStripeCustomerId(stripeCustomerID.getID());
 
-            final StripeCustomerID stripeCustomerID = organization.getStripeCustomerID();
-            if (stripeCustomerID == null) {
-                return createReply(GetStripeCustomerIDReply.getDefaultInstance());
-            }
+        _transaction.commit();
 
-            return createReply(GetStripeCustomerIDReply.newBuilder()
-                    .setStripeCustomerId(stripeCustomerID.getID())
-                    .build());
-        } finally {
-            _transaction.commit();
-        }
+        return createReply(builder.build());
     }
 
     @Override
     public ListenableFuture<Void> addOrganization(final String organizationName,
-            final Integer organizationSize, final String organizationPhone,
-            final String stripeCustomerID)
+            final String organizationPhone, final String stripeCustomerID)
             throws Exception
     {
-        final User currentUser = _sessionUser.get();
+        final User user = _sessionUser.get();
 
         _transaction.begin();
 
-        try {
-            final StripeCustomerID stripeCustomer = StripeCustomerID.newInstance(stripeCustomerID);
-            currentUser.addAndMoveToOrganization(organizationName, organizationSize,
-                    organizationPhone, stripeCustomer);
-        } catch (final IllegalArgumentException e) {
-            l.error("Failed to set create organization, organizationName: " + organizationName +
-                    " organizationSize: " + organizationSize + " organizationPhone: " +
-                    organizationPhone + " stripeCustomerID: " + stripeCustomerID, e);
+        final StripeCustomerID stripeCustomer = StripeCustomerID.create(stripeCustomerID);
+        user.addAndMoveToOrganization(organizationName, organizationPhone, stripeCustomer);
 
-            // contract does not allow specifying cause!?
-            throw new ExBadArgs(e.getMessage());
-        } finally {
-            _transaction.commit();
-        }
+        _transaction.commit();
 
         return createVoidReply();
     }

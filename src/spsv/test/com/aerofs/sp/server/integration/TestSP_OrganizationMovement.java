@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExAlreadyInvited;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -39,7 +39,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     {
         // Create a new organization (name doesn't matter). The session user will now be an admin
         // of this new organization.
-        service.addOrganization(_organizationName, null, null, StripeCustomerID.TEST.getID());
+        service.addOrganization(_organizationName, null, StripeCustomerID.TEST.getID());
     }
 
     private void sendInvitation(UserID userID)

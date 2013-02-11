@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.lib;
 
-import com.aerofs.base.id.StripeCustomerID;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -15,9 +14,8 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -41,7 +39,6 @@ import static com.aerofs.sp.server.lib.SPSchema.C_O_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_CONTACT_PHONE;
 import static com.aerofs.sp.server.lib.SPSchema.C_O_STRIPE_CUSTOMER_ID;
-import static com.aerofs.sp.server.lib.SPSchema.C_O_SIZE;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_AUTHORIZATION_LEVEL;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_USER_ORG_ID;
@@ -63,21 +60,21 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @throws ExAlreadyExist if the organization ID already exists
      */
     public void insert(OrganizationID organizationId, String organizationName,
-            Integer organizationSize, String organizationPhone, StripeCustomerID stripeCustomer)
+            String organizationPhone, StripeCustomerID stripeCustomerId)
             throws SQLException, ExAlreadyExist
     {
-        checkNotNull(organizationId, "'organizationId' cannot be null");
-        checkNotNull(stripeCustomer, "'stripeCustomer' cannot be null");
+        checkNotNull(organizationId, "organizationId cannot be null");
+        checkNotNull(stripeCustomerId, "stripeCustomerId cannot be null");
 
         try {
-            PreparedStatement ps = prepareStatement(DBUtil.insert(T_ORGANIZATION, C_O_ID, C_O_NAME,
-                    C_O_SIZE, C_O_CONTACT_PHONE, C_O_STRIPE_CUSTOMER_ID));
+            PreparedStatement ps = prepareStatement(
+                    DBUtil.insert(T_ORGANIZATION, C_O_ID, C_O_NAME, C_O_CONTACT_PHONE,
+                            C_O_STRIPE_CUSTOMER_ID));
 
             ps.setInt(1, organizationId.getInt());
             ps.setString(2, organizationName);
-            ps.setInt(3, Objects.firstNonNull(organizationSize, -1));
-            ps.setString(4, organizationPhone);
-            ps.setString(5, stripeCustomer.getID());
+            ps.setString(3, organizationPhone);
+            ps.setString(4, stripeCustomerId.getID());
             ps.executeUpdate();
         } catch (SQLException e) {
             throwOnConstraintViolation(e, "organization ID already exists");
@@ -85,32 +82,21 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         }
     }
 
-    @Nullable
-    public StripeCustomerID getStripeCustomerID(final OrganizationID orgID) throws SQLException, ExNotFound
+    /**
+     * @return null if the organization doesn't have a Stripe Customer ID. Even though insert()
+     *      does enforce non-null Customer IDs we have legacy organizations that don't have the ID.
+     * @throws ExNotFound if the organization doesn't exist
+     */
+    public @Nullable StripeCustomerID getStripeCustomerIDNullable(final OrganizationID orgID)
+            throws SQLException, ExNotFound
     {
-        final ResultSet rs = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID);
-
-        // For clarity, the SQL query that I'm trying to build/execute:
-        //   select o_stripe_customer_id from sp_organization where o_id=?
-
+        ResultSet rs = queryOrg(orgID, C_O_STRIPE_CUSTOMER_ID);
         try {
-            final String stripeCustomerId = rs.getString(1);
-
-            return StripeCustomerID.newInstance(stripeCustomerId);
+            String id = rs.getString(1);
+            return id == null ? null : StripeCustomerID.create(id);
         } finally {
             rs.close();
         }
-    }
-
-    public void setStripeCustomerID(final OrganizationID orgID, final String stripeCustomerID)
-            throws SQLException
-    {
-        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_STRIPE_CUSTOMER_ID));
-
-        ps.setString(1, stripeCustomerID);
-        ps.setInt(2, orgID.getInt());
-
-        Util.verify(ps.executeUpdate() == 1);
     }
 
     public @Nonnull String getName(OrganizationID orgID)
@@ -128,7 +114,8 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setName(OrganizationID orgID, String name)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_NAME));
+        PreparedStatement ps = prepareStatement(
+                updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_NAME));
 
         ps.setString(1, name);
         ps.setInt(2, orgID.getInt());
@@ -136,15 +123,18 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         Util.verify(ps.executeUpdate() == 1);
     }
 
+    /**
+     * @return null if the organization doesn't have a phone number. Even though insert()
+     *      does enforce non-null numbers we have legacy organizations that don't have the number.
+     * @throws ExNotFound if the organization doesn't exist
+     */
     @Nullable
-    public String getContactPhone(final OrganizationID orgID) throws SQLException, ExNotFound
+    public String getContactPhoneNullable(final OrganizationID orgID) throws SQLException, ExNotFound
     {
         final ResultSet rs = queryOrg(orgID, C_O_CONTACT_PHONE);
 
         try {
-            final String contactPhone = rs.getString(1);
-
-            return contactPhone;
+            return rs.getString(1);
         } finally {
             rs.close();
         }
@@ -153,36 +143,10 @@ public class OrganizationDatabase extends AbstractSQLDatabase
     public void setContactPhone(final OrganizationID orgID, final String contactPhone)
             throws SQLException
     {
-        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_CONTACT_PHONE));
+        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?",
+                C_O_CONTACT_PHONE));
 
         ps.setString(1, contactPhone);
-        ps.setInt(2, orgID.getInt());
-
-        Util.verify(ps.executeUpdate() == 1);
-    }
-
-    @Nullable
-    public Integer getSize(final OrganizationID orgID) throws SQLException, ExNotFound
-    {
-        final ResultSet rs = queryOrg(orgID, C_O_SIZE);
-
-        try {
-            final Integer size = rs.getInt(1);
-
-            return size;
-        } finally {
-            rs.close();
-        }
-    }
-
-    public void setSize(final OrganizationID orgID, final Integer size)
-            throws SQLException
-    {
-        Preconditions.checkArgument( size >= 0, "Cannot set organization size to a negative value" );
-
-        final PreparedStatement ps = prepareStatement(updateWhere(T_ORGANIZATION, C_O_ID + "=?", C_O_SIZE));
-
-        ps.setInt(1, size);
         ps.setInt(2, orgID.getInt());
 
         Util.verify(ps.executeUpdate() == 1);

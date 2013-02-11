@@ -5,7 +5,7 @@
 package com.aerofs.sp.server.lib.user;
 
 import com.aerofs.base.id.DID;
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
@@ -317,23 +317,22 @@ public class User
      *
      * @throws ExNoPerm if the user is a non-admin in a non-default organization
      */
-    public Set<UserID> addAndMoveToOrganization(final String organizationName, final Integer organizationSize,
+    public Set<UserID> addAndMoveToOrganization(final String organizationName,
             final String organizationPhone, final StripeCustomerID stripeCustomer)
             throws ExNoPerm, SQLException, ExNotFound, ExAlreadyExist, IOException
     {
-        if (isPermittedToAddOrUpdateOrganization()) {
+        if (!canAddOrganization()) {
             throw new ExNoPerm("you have no permission to create new teams");
         }
 
-        Organization org = _f._factOrg.save(organizationName, organizationSize, organizationPhone,
-                stripeCustomer);
+        Organization org = _f._factOrg.save(organizationName, organizationPhone, stripeCustomer);
         setLevel(AuthorizationLevel.ADMIN);
         return setOrganization(org);
     }
 
-    private boolean isPermittedToAddOrUpdateOrganization() throws ExNotFound, SQLException
+    private boolean canAddOrganization() throws ExNotFound, SQLException
     {
-        return !getOrganization().isDefault() && getLevel() != AuthorizationLevel.ADMIN;
+        return getOrganization().isDefault() || getLevel() == AuthorizationLevel.ADMIN;
     }
 
     /**

@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
@@ -133,7 +133,7 @@ public class TestUser extends AbstractBusinessObjectTest
         Organization org = saveOrganization();
         User user = newUser();
         saveUser(user, org);
-        user.addAndMoveToOrganization("test", null, null, StripeCustomerID.TEST);
+        user.addAndMoveToOrganization("test", null, StripeCustomerID.TEST);
     }
 
     @Test
@@ -142,7 +142,7 @@ public class TestUser extends AbstractBusinessObjectTest
     {
         User user = newUser();
         saveUser(user, factOrg.getDefault());
-        user.addAndMoveToOrganization("test", null, null, StripeCustomerID.TEST);
+        user.addAndMoveToOrganization("test", null, StripeCustomerID.TEST);
 
         assertFalse(user.getOrganization().isDefault());
         assertEquals(user.getLevel(), AuthorizationLevel.ADMIN);

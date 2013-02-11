@@ -4,7 +4,7 @@
 
 package com.aerofs.sp.server.business_objects;
 
-import com.aerofs.base.id.StripeCustomerID;
+import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.id.UserID;
 import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
@@ -37,8 +37,8 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     public void setup()
         throws Exception
     {
-        odb.insert(orgId, "test", null, null, StripeCustomerID.TEST);
-        odb.insert(nonQueriedOrgId, "dummy", null, null, StripeCustomerID.TEST);
+        odb.insert(orgId, "test", null, StripeCustomerID.TEST);
+        odb.insert(nonQueriedOrgId, "dummy", null, StripeCustomerID.TEST);
 
         setupUsers();
     }
