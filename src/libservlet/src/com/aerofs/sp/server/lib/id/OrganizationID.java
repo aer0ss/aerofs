@@ -2,7 +2,7 @@
  * Copyright (c) Air Computing Inc., 2012.
  */
 
-package com.aerofs.sp.server.lib.organization;
+package com.aerofs.sp.server.lib.id;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.IntegerID;

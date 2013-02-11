@@ -9,7 +9,7 @@ import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;

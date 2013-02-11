@@ -12,7 +12,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
 import com.aerofs.proto.Sp.GetAuthorizationLevelReply;
 import com.aerofs.proto.Sp.GetOrganizationInvitationsReply;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import org.junit.Before;
 import org.junit.Test;
 

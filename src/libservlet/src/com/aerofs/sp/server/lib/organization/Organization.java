@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;

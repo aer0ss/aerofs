@@ -13,7 +13,7 @@ import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.ByteString;
 import org.junit.Before;

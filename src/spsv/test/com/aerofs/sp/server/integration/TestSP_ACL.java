@@ -12,7 +12,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.GetACLReply;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;

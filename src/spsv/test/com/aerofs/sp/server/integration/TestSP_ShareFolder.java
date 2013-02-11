@@ -11,7 +11,7 @@ import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import org.junit.Before;
 import org.junit.Test;

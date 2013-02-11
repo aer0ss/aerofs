@@ -42,7 +42,7 @@ import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
 import com.aerofs.sp.server.lib.device.Device;
 import com.aerofs.sp.server.lib.SPDatabase.DeviceInfo;
 import com.aerofs.sp.server.lib.organization.Organization.UsersAndQueryCount;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;
 import com.aerofs.sp.server.lib.user.User.DevicesAndQueryCount;

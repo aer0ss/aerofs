@@ -26,7 +26,7 @@ import com.aerofs.sp.server.lib.*;
 import com.aerofs.sp.server.email.InvitationEmailer;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.email.PasswordResetEmailer;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.organization.Organization;
 import com.aerofs.sp.server.lib.organization.OrganizationInvitation;
 import com.aerofs.sp.server.lib.session.CertificateAuthenticator;

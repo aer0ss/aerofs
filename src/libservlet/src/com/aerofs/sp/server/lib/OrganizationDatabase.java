@@ -13,7 +13,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
-import com.aerofs.sp.server.lib.organization.OrganizationID;
+import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.google.common.collect.Lists;
