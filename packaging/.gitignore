@@ -1,11 +1,13 @@
 debs
 *.ver
+
 zephyr
 verkehr
 web
 sp
 sv
 syncstat
+rocklog
 
 # Python stuff:
 *.pyc

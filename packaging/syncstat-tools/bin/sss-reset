@@ -10,7 +10,7 @@ then
     exit 1
 fi
 
-echo ">>> Stopping web services to avoid inconsistency..."
+echo ">>> Stopping web services..."
 service nginx stop || true
 service tomcat6 stop || true
 

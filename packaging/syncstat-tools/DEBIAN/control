@@ -4,4 +4,4 @@ Priority: required
 Maintainer: AeroFS <team@aerofs.com>
 Description: AeroFS syncstat server tools package.
 Architecture: all
-Depends: aerofs-syncstat
+Depends: aerofs-syncstat, python-pip

@@ -23,6 +23,18 @@ class servlet::syncstat(
         ]
     }
 
+    # For cron job emails.
+    package { "mailutils":
+        ensure => latest,
+    }
+
+    cron{"sss generate histograms":
+        command => "sss-generate-histograms | mail -s 'Sync Status Histograms' matt@aerofs.com",
+        user => root,
+        hour => "*",
+        minute => "1"
+    }
+
     class{"servlet::config::syncstat":
         mysql_sp_password       => $mysql_sp_password,
         mysql_endpoint          => $mysql_endpoint,

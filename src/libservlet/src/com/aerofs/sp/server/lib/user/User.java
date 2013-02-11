@@ -56,9 +56,9 @@ public class User
         private final SharedFolder.Factory _factSharedFolder;
 
         @Inject
-        public Factory(UserDatabase udb, OrganizationInvitationDatabase odb, Device.Factory factDevice,
-                Organization.Factory factOrg, OrganizationInvitation.Factory factOrgInvite,
-                SharedFolder.Factory factSharedFolder)
+        public Factory(UserDatabase udb, OrganizationInvitationDatabase odb,
+                Device.Factory factDevice, Organization.Factory factOrg,
+                OrganizationInvitation.Factory factOrgInvite, SharedFolder.Factory factSharedFolder)
         {
             _udb = udb;
             _odb = odb;
