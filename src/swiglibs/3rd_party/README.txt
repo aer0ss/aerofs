@@ -12,7 +12,7 @@ Steps to using a new openssl:
     url and shasum, then:
 
     # brew install ./openssl_aerofs.rb
-    # cp $(brew --prefix)/Cellar/openssl_aerofs/1.0.1c/*.dylib ~/repos/aerofs/resource/client/osx/
+    # cp $(brew --prefix)/Cellar/openssl_aerofs/1.0.1e/*.dylib ~/repos/aerofs/resource/client/osx/
 
     Why use a brew script?  We have to patch upstream openssl, since it
     specifies an absolute RPATH at build time (but we need a relative path).
@@ -33,9 +33,9 @@ Steps to using a new openssl:
     # mkdir scratch
     # cd scratch
     # # Obviously, you should pick the latest link.
-    # wget http://www.openssl.org/source/openssl-1.0.1c.tar.gz
+    # wget http://www.openssl.org/source/openssl-1.0.1e.tar.gz
     # tar xzvf openssl*.tar.gz
-    # cd openssl-1.0.1c/
+    # cd openssl-1.0.1e/
 
     2) Configure:
 
@@ -61,14 +61,13 @@ Steps to using a new openssl:
 
     3) Open a Visual Studio Command Prompt (x86, not x64)
 
-      > cd path\to\openssl-1.0.1c
+      > cd path\to\openssl-1.0.1e
       > "C:\Program Files (x86)\nasm\nasmpath.bat"
       > perl Configure VC-WIN32
       > ms\do_nasm.bat
       > nmake -f ms\nt.mak
 
-    4) Copy the binaries from out32dll:
-       * libeay32.dll and ssleay32.dll should be copied to resource/client/win/
+    4) Copy the binaries from out32:
        * libeay32.lib and ssleay32.lib should be copied to src/swiglibs/3rd_party/lib/win32/
 
 ----------------------------------
@@ -83,7 +82,7 @@ Steps to using a new openssl:
     mkdir scratch
     cd scratch
         # Obviously, you should pick the latest link.
-    wget http://www.openssl.org/source/openssl-1.0.1c.tar.gz
+    wget http://www.openssl.org/source/openssl-1.0.1e.tar.gz
     tar xzvf openssl*.tar.gz
     cd openssl-*
     cd include
