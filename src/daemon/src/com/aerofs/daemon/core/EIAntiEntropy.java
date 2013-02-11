@@ -100,7 +100,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
                     tk.reclaim_();
                 }
             } catch (ExNoResource e) {
-                _f._fds.logSendAsync("ae hk full", e);
+                _f._fds.logSendAsync("AEntropy hk full", e);
             } catch (Exception e) {
                 l.warn(s + ": " + Util.e(e));
             }
