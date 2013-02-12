@@ -41,7 +41,7 @@ public class RequestToSignUpEmailer
     static String getActivateBusinessPlanLink()
     {
         // TODO (WW) use protobuf to share constants between Python and Java code?
-        return SP.DASH_BOARD_BASE + "/buisness/activate";
+        return SP.DASH_BOARD_BASE + "/business/activate";
     }
 
     public void sendRequestToSignUpAndActivateBusinessPlan(String emailAddress, String signUpCode)
