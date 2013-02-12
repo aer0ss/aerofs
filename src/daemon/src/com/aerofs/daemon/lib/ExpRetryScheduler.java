@@ -45,27 +45,30 @@ public class ExpRetryScheduler
         if (_ongoing) return;
 
         _sched.schedule(new AbstractEBSelfHandling() {
-            private long _delay = Param.EXP_RETRY_MIN_DEFAULT / 2;
+            private long _delay = Param.EXP_RETRY_MIN_DEFAULT;
             @Override
             public void handle_()
             {
                 _scheduled = false;
                 _ongoing = true;
+                long rescheduleDelay = 0;
                 try {
                     _activity.call();
-                    _delay = 0;
+                    // reset exp-retry delay on successful call
+                    _delay = Param.EXP_RETRY_MIN_DEFAULT;
                 } catch (RuntimeException e) {
                     throw e;
                 } catch (Exception e) {
-                    _delay = _scheduled ? 0 : Math.min(_delay * 2, Param.EXP_RETRY_MAX_DEFAULT);
+                    rescheduleDelay = _scheduled ? Param.EXP_RETRY_MIN_DEFAULT : _delay;
+                    _delay = Math.min(_delay * 2, Param.EXP_RETRY_MAX_DEFAULT);
                     _scheduled = true;
-                    l.warn(_name + " failed. exp-retry in " + _delay + ": " +
+                    l.warn(_name + " failed. exp-retry in " + rescheduleDelay + ": " +
                             Util.e(e, _excludes));
                 } finally {
                     _ongoing = false;
                 }
 
-                if (_scheduled) _sched.schedule(this, _delay);
+                if (_scheduled) _sched.schedule(this, rescheduleDelay);
             }
         }, 0);
     }
