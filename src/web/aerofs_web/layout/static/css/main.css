@@ -65,7 +65,8 @@ div.input_container.submit {
 [class*=" icon-"] {
   vertical-align: -2px;
 }
-a.btn {
+a.btn,
+button.btn {
   -webkit-border-radius: 3px;
   border-radius: 3px;
 }

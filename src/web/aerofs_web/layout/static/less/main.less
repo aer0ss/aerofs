@@ -103,8 +103,10 @@ div.input_container.submit {
 }
 
 // This is to correct the horizontal spacing for inputs in controls-row. The
-// current version of Stripe doesn't have controls-row support. Remove this
-// correction when we upgrade Stripe.
+// current version of Stripe doesn't have controls-row support.
+//
+// TODO: remove this correction when upgrading Stripe.
+//
 // Note 1. This is disabled as no form uses this feature yet.
 // Note 2. This is copied from bootstrap.less, and is therefore not responsive.
 //
@@ -112,8 +114,13 @@ div.input_container.submit {
 //    margin-left: 16px;
 //}
 
-// Make <a> buttons round cornered. Bootstrap only makes <input> buttons so.
-a.btn {
+// Make <a> and <button> buttons round cornered. The current version of
+// Bootstrap only makes <input> buttons so.
+//
+// TODO: remove this correction when upgrading Stripe.
+//
+a.btn,
+button.btn {
   -webkit-border-radius: @inputBorderRadius;
   border-radius: @inputBorderRadius;
 }
