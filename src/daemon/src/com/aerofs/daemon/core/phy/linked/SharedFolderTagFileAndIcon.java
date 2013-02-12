@@ -139,6 +139,7 @@ public class SharedFolderTagFileAndIcon
 
     public void deleteTagFileAndIcon(Path path) throws IOException
     {
+        l.info("del sf icon " + path);
         deleteTagFileAndIcon(path.toAbsoluteString(_cfgAbsRootAnchor.get()));
     }
 

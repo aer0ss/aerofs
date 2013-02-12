@@ -122,7 +122,7 @@ public class Linker implements ILinker
             public void handle_()
             {
                 Set<String> root = Collections.singleton(Cfg.absRootAnchor());
-                _ssq.scanImmediately_(root, true, callback);
+                _ssq.recursiveScanImmediately_(root, callback);
             }
         }, 0);
     }

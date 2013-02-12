@@ -133,10 +133,10 @@ public class ScanSessionQueue implements IDumpStatMisc
         _sys = sys;
     }
 
-    public void scanImmediately_(Set<String> absPaths, boolean recursive,
+    public void recursiveScanImmediately_(Set<String> absPaths,
             @Nonnull ScanCompletionCallback callback)
     {
-        scanImpl_(new PathKey(absPaths, recursive), 0, callback);
+        scanImpl_(new PathKey(absPaths, true), 0, callback);
     }
 
     public void scanImmediately_(Set<String> absPaths, boolean recursive)
