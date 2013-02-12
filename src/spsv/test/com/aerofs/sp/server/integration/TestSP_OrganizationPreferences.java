@@ -29,7 +29,7 @@ public class TestSP_OrganizationPreferences extends AbstractSPTest
 
         assertEquals(service.getOrgPreferences().get().getOrganizationName(), oldName);
 
-        service.setOrgPreferences(newName, null, null);
+        service.setOrgPreferences(newName, null);
 
         assertEquals(service.getOrgPreferences().get().getOrganizationName(), newName);
     }
