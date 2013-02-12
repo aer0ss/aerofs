@@ -157,6 +157,15 @@ class rocklog {
         ensure               => present,
     }
 
+    file {"/etc/security/limits.d/nginx-max-files.conf":
+        ensure => present,
+        owner  => "root",
+        group  => "root",
+        mode   => "0644",
+        source => "puppet:///modules/rocklog/nginx-max-files.conf",
+        notify => Service["nginx"],
+    }
+
     exec{"get retrace server":
         command => "/usr/bin/wget -qO- https://github.com/aerofs/RetraceServer/archive/v0.2.tar.gz | tar xz",
         cwd => "/opt/",
