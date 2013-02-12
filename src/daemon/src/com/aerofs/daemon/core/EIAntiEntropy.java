@@ -15,17 +15,20 @@ import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import com.yammer.metrics.Metrics;
-import com.yammer.metrics.core.Counter;
+import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;
 import org.apache.log4j.Logger;
+
+import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.*;
 
 public class EIAntiEntropy extends AbstractEBSelfHandling
 {
     private static final Logger l = Util.l(EIAntiEntropy.class);
-    private static final Counter _hkFullCounter
-            = Metrics.newCounter(new MetricName("vers", "ae", "hkfull"));
+    private static final Meter _hkFullMeter = Metrics.newMeter(
+            new MetricName("vers", "ae", "hkfull"), "ae requests", TimeUnit.MINUTES);
+
 
     private final Factory _f;
     private final SIndex _sidx;
@@ -117,7 +120,7 @@ public class EIAntiEntropy extends AbstractEBSelfHandling
         try {
             return _f._tokenManager.acquireThrows_(Cat.HOUSEKEEPING, "AE");
         } catch (ExNoResource e) {
-            _hkFullCounter.inc();
+            _hkFullMeter.mark();
             throw e;
         }
     }
