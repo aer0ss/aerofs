@@ -52,6 +52,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.sql.SQLException;
 import java.util.List;
@@ -209,7 +210,7 @@ public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
                 pullSyncStatus_();
                 return null;
             }
-        }, ExNoPerm.class, ExBadArgs.class);
+        }, ExNoPerm.class, ExBadArgs.class, IOException.class);
 
         nvc.addListener_(this);
 
