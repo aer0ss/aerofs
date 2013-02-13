@@ -18,6 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.Cfg.PortType;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
+import com.aerofs.lib.ex.ExIndexing;
 import com.aerofs.lib.ex.ExTimeout;
 import com.aerofs.lib.ex.ExUIMessage;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -133,6 +134,13 @@ class DefaultDaemonMonitor implements IDaemonMonitor
                 ritual.heartbeat();
                 l.info("daemon started");
                 break;
+            } catch (ExIndexing e) {
+                // On the first launch, the daemon needs to do a first full scan to make sure all
+                // shared folders already present in the root anchor can be properly re-joined
+                // This first scan might take a while and Ritual will throw ExIndexing on all calls
+                // until it is completed so we ignore these exceptions and do not touch the retry
+                // counter
+                l.info("daemon indexing...");
             } catch (Exception e) {
                 l.info("pinging daemon failed: " + e);
                 if (--retries == 0) {
