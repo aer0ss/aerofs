@@ -67,7 +67,7 @@ public class SharedFolderTagFileAndIcon
      * Add the tag file and overlay icon for a shared folder, assuming path is the root of the
      * shared store identified by {@code sidx}.
      */
-    public void addTagFileAndIcon(SIndex sidx, final Path path, Trans t)
+    public void addTagFileAndIconIn(SIndex sidx, final Path path, Trans t)
             throws IOException, SQLException
     {
         addTagFileAndIconImpl(sidx, path);
@@ -77,7 +77,7 @@ public class SharedFolderTagFileAndIcon
             public void aborted_()
             {
                 try {
-                    deleteTagFileAndIcon(path);
+                    deleteTagFileAndIconIn(path);
                 } catch (IOException e) {
                     SystemUtil.fatal("unrecoverable: " + Util.e(e));
                 }
@@ -89,10 +89,10 @@ public class SharedFolderTagFileAndIcon
      * Delete the tag file and overlay icon for a shared folder, assuming path is the root of the
      * shared store identified by {@code sidx}.
      */
-    public void removeTagFileAndIcon(final SIndex sidx, final Path path, Trans t)
+    public void removeTagFileAndIconIn(final SIndex sidx, final Path path, Trans t)
             throws IOException
     {
-        deleteTagFileAndIcon(path);
+        deleteTagFileAndIconIn(path);
 
         t.addListener_(new AbstractTransListener() {
             @Override
@@ -137,13 +137,16 @@ public class SharedFolderTagFileAndIcon
         OSUtil.get().markHiddenSystemFile(absPathTagFile);
     }
 
-    public void deleteTagFileAndIcon(Path path) throws IOException
+    /**
+     * @param path to the directory containing the Param#SHARED_FOLDER_TAG
+     */
+    public void deleteTagFileAndIconIn(Path path) throws IOException
     {
-        l.info("del sf icon " + path);
+        l.info("del sf tag in " + path);
         deleteTagFileAndIcon(path.toAbsoluteString(_cfgAbsRootAnchor.get()));
     }
 
-    private void deleteTagFileAndIcon(String  absPath) throws IOException
+    private void deleteTagFileAndIcon(String absPath) throws IOException
     {
         _dr.setFolderIcon(absPath, "");
 

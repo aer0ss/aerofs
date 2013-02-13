@@ -226,7 +226,7 @@ public class MightCreate
         SOID parent = _ds.resolveNullable_(path.removeLast());
         if (parent != null) {
             OA oa = _ds.getOA_(parent);
-            if (!oa.isAnchor()) _sfti.deleteTagFileAndIcon(path);
+            if (!oa.isAnchor()) _sfti.deleteTagFileAndIconIn(path.removeLast());
         }
         return true;
     }

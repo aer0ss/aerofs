@@ -157,7 +157,7 @@ public class LinkedFolder implements IPhysicalFolder
     public void promoteToAnchor_(Trans t) throws IOException, SQLException
     {
         assert _soid.oid().isRoot() : _soid;
-        if (!_path.isEmpty()) _sfti.addTagFileAndIcon(_soid.sidx(), _path, t);
+        if (!_path.isEmpty()) _sfti.addTagFileAndIconIn(_soid.sidx(), _path, t);
     }
 
     @Override
@@ -165,7 +165,7 @@ public class LinkedFolder implements IPhysicalFolder
     {
         assert _soid.oid().isRoot() : _soid;
         assert !_path.isEmpty();
-        _sfti.removeTagFileAndIcon(_soid.sidx(), _path, t);
+        _sfti.removeTagFileAndIconIn(_soid.sidx(), _path, t);
     }
 
     @Override
