@@ -17,6 +17,14 @@ if [ $PROG == gui ]; then
     fi
 fi
 
+# Surprising, but true: file is an optional package on some distros.
+which file > /dev/null
+if [ $? != 0 ]; then
+    echo Please install the file package first by typing:
+    echo sudo apt-get install file
+    exit 1
+fi
+
 if [ x"$(file -L /bin/ls | grep 64 )" != x ]; then
     ARCH=64
     PACKAGE_FILENAME=[AEROFS_PRODUCT_UNIX]-x86_64.tgz
