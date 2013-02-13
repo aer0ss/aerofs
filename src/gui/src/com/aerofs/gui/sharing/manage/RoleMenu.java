@@ -65,14 +65,19 @@ public class RoleMenu
             });
         }
 
-        MenuItem miNone = new MenuItem(_menu, SWT.PUSH);
-        miNone.setText("Kickout");
-        miNone.addSelectionListener(new SelectionAdapter() {
+        MenuItem miKickout = new MenuItem(_menu, SWT.PUSH);
+        miKickout.setText("Kickout");
+        miKickout.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 if (GUI.get().ask(_compUserList.getShell(), MessageType.QUESTION,
-                        "Are you sure you want to remove " + _subject + "?")) {
+                                // The text should be consistent with the text in shared_folders.mako
+                                "Are you sure you want to kickout " + _subject + "?\n" +
+                                "\n" +
+                                "This will delete the folder from the user's computers." +
+                                " However, old content may be still accessible from the" +
+                                " user's version history.")) {
                     select(null);
                 }
             }

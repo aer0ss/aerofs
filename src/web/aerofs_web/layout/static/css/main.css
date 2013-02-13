@@ -70,14 +70,6 @@ button.btn {
   -webkit-border-radius: 3px;
   border-radius: 3px;
 }
-a.delete_permission {
-  color: #9d261d;
-  text-decoration: none;
-  padding-left: 8px;
-}
-p.sid_container {
-  display: none;
-}
 #empty_message_bar {
   position: fixed;
   top: 0;
@@ -109,10 +101,6 @@ div.success_message {
   background-color: #adf1ad;
   margin: 0 auto;
 }
-div#not_authorized {
-  color: #9d261d;
-  margin-bottom: 10px;
-}
 div.jumbo_banner {
   margin-top: 8em;
   text-align: center;
@@ -123,6 +111,10 @@ div.jumbo_banner > h2 {
 .invitation_title {
   color: #156290;
   font-size: 120%;
+}
+.footnote {
+  color: #777777;
+  font-size: 80%;
 }
 html,
 body {
