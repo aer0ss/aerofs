@@ -242,21 +242,21 @@ public class TestEmigrantDetector extends AbstractTest
     }
 
     @Test
-    public void shouldNoEmigrateIfNewParentIsNotTrash() throws Exception
+    public void shouldNotEmigrateIfNewParentIsNotTrash() throws Exception
     {
         oidParentTo = new OID(UniqueID.generate());
         shouldNotEmigrate();
     }
 
     @Test
-    public void shouldNoEmigrateIfNewNameIsNotEmigrantName() throws Exception
+    public void shouldNotEmigrateIfNewNameIsNotEmigrantName() throws Exception
     {
-        nameTo = EmigrantUtil.getDeletedObjectName_(soidSource, null);
+        nameTo = "not an emigrant name";
         shouldNotEmigrate();
     }
 
     @Test
-    public void shouldNoEmigrateIfNoTargetAncestorSpecified() throws Exception
+    public void shouldNotEmigrateIfNoTargetAncestorSpecified() throws Exception
     {
         sidsTargetAncestor = Collections.emptyList();
         shouldNotEmigrate();
@@ -288,8 +288,8 @@ public class TestEmigrantDetector extends AbstractTest
 
     private void shouldNotEmigrate() throws Exception
     {
-        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo,
-                sidsTargetAncestor, did, tk);
+        emd.detectAndPerformEmigration_(soidSource, oidParentTo, nameTo, sidsTargetAncestor, did,
+                tk);
         verifyNotDownload(socidTarget);
     }
 

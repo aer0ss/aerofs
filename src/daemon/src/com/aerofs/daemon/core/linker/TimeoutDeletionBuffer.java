@@ -286,7 +286,7 @@ public class TimeoutDeletionBuffer implements IDeletionBuffer
                     } else {
                         l.info("delete " + soid + " " + ObfuscatingFormatters.obfuscatePath(
                                 _ds.getOA_(soid).name()));
-                        _od.delete_(soid, PhysicalOp.MAP, null, t);
+                        _od.delete_(soid, PhysicalOp.MAP, t);
                         deletedSOIDs.add(soid);
                     }
                 } else {

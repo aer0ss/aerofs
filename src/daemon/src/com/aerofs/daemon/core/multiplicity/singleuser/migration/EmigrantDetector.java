@@ -96,7 +96,7 @@ public class EmigrantDetector implements IEmigrantDetector
             l.debug("dl immigrant " + socidTo.soid());
             _dls.downloadSync_(socidTo, _factTo.create_(did), tk, socidFrom);
         } else {
-            // Comment (A), referred to by ObjectDeletion.delete_().
+            // Comment (A), referred to by ObjectDeletion.deleteAndEmigrate_().
             //
             // if it's a folder, try to move out children before deleting it (by this method's
             // caller). There are two cases where a non-empty folder can receive an emigrating

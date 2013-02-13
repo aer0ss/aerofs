@@ -26,6 +26,7 @@ import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
 import com.aerofs.testlib.AbstractTest;
 
+import com.google.common.collect.ImmutableSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -224,16 +225,20 @@ public class TestImmigrantDetector extends AbstractTest
     private void shouldNotMigrate() throws Exception
     {
         assertFalse(imd.detectAndPerformImmigration_(oaTo, op, t));
-        verify(od, never()).delete_((SOID) any(), any(PhysicalOp.class), (SID) any(), (Trans) any());
+        verify(od, never()).deleteAndEmigrate_((SOID)any(), any(PhysicalOp.class), (SID)any(),
+                (Trans)any());
+        verify(od, never()).delete_(any(SOID.class), any(PhysicalOp.class), any(Trans.class));
     }
 
     private void shouldMigrate() throws Exception
     {
         assertTrue(imd.detectAndPerformImmigration_(oaTo, op, t));
-        verify(od).delete_(eq(soidFrom), any(PhysicalOp.class), (SID) any(), (Trans) any());
-        verify(od, never()).delete_(eq(soidFromExpelled1), any(PhysicalOp.class),
-                (SID) any(), (Trans) any());
-        verify(od, never()).delete_(eq(soidFromExpelled2), any(PhysicalOp.class),
-                (SID) any(), (Trans) any());
+        verify(od).deleteAndEmigrate_(eq(soidFrom), any(PhysicalOp.class), (SID)any(), (Trans)any());
+
+        for (SOID s : ImmutableSet.of(soidFromExpelled1, soidFromExpelled2)) {
+            verify(od, never()).deleteAndEmigrate_(eq(s), any(PhysicalOp.class), (SID)any(),
+                    (Trans)any());
+            verify(od, never()).delete_(eq(s), any(PhysicalOp.class), (Trans)any());
+        }
     }
 }

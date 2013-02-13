@@ -40,7 +40,7 @@ public class HdDeleteObject extends AbstractHdIMC<EIDeleteObject>
 
         Trans t = _tm.begin_();
         try {
-            _od.delete_(soid, PhysicalOp.APPLY, null, t);
+            _od.delete_(soid, PhysicalOp.APPLY, t);
             t.commit_();
         } finally {
             t.end_();

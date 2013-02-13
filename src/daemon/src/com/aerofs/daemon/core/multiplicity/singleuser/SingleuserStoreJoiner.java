@@ -159,7 +159,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         Path path = _ds.resolve_(oa);
 
         l.info("leaving share: " + sidx + " " + sid);
-        _od.delete_(anchor, PhysicalOp.APPLY, null, t);
+        _od.delete_(anchor, PhysicalOp.APPLY, t);
 
         _rns.sendEvent_(PBNotification.newBuilder()
                 .setType(PBNotification.Type.SHARED_FOLDER_KICKOUT)

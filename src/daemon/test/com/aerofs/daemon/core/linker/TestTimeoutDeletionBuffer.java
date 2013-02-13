@@ -1,6 +1,7 @@
 package com.aerofs.daemon.core.linker;
 
 import java.sql.SQLException;
+import java.util.Set;
 
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -17,6 +18,8 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 import com.aerofs.testlib.AbstractTest;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -93,20 +96,20 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
     @Test
     public void shouldDeleteOnlyUnheldObjectsWhoseTimeoutHasPassed() throws Exception
     {
-        SOID [] expectedDeletableSOIDs = new SOID[] {
+        Set<SOID> expectedDeletableSOIDs = ImmutableSet.of(
                 new SOID(new SIndex(2), new OID(UniqueID.generate())),
                 new SOID(new SIndex(3), new OID(UniqueID.generate()))
-        };
+        );
 
-        SOID [] expectedHeldSOIDs = new SOID[] {
+        Set<SOID> expectedHeldSOIDs = ImmutableSet.of(
                 new SOID(new SIndex(4), new OID(UniqueID.generate())),
                 new SOID(new SIndex(5), new OID(UniqueID.generate()))
-        };
+        );
 
-        SOID [] expectedTooRecentSOIDs = new SOID[] {
+        Set<SOID> expectedTooRecentSOIDs = ImmutableSet.of(
                 new SOID(new SIndex(6), new OID(UniqueID.generate())),
                 new SOID(new SIndex(7), new OID(UniqueID.generate()))
-        };
+        );
 
 
         for (SOID s : expectedDeletableSOIDs) delBuffer.add_(s);
@@ -129,15 +132,14 @@ public class TestTimeoutDeletionBuffer extends AbstractTest
 
         // We should see the expected SOIDs were deleted
         for (SOID s : expectedDeletableSOIDs) {
-            verify(od).delete_(eq(s), any(PhysicalOp.class), any(SID.class), eq(t));
+            verify(od).delete_(eq(s), any(PhysicalOp.class), eq(t));
         }
 
         // The other SOIDs should *not* be deleted due to being held or not enough time passed
-        for (SOID s : expectedHeldSOIDs) {
-            verify(od, never()).delete_(eq(s), any(PhysicalOp.class), any(SID.class), eq(t));
-        }
-        for (SOID s : expectedTooRecentSOIDs) {
-            verify(od, never()).delete_(eq(s), any(PhysicalOp.class), any(SID.class), eq(t));
+        for (SOID s : Sets.union(expectedHeldSOIDs, expectedTooRecentSOIDs)) {
+            verify(od, never()).deleteAndEmigrate_(eq(s), any(PhysicalOp.class), any(SID.class),
+                    any(Trans.class));
+            verify(od, never()).delete_(eq(s), any(PhysicalOp.class), any(Trans.class));
         }
     }
 
