@@ -11,6 +11,9 @@ import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.OID;
+import com.aerofs.lib.id.CID;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import org.junit.Before;
@@ -78,8 +81,8 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         when(ds.resolveNullable_(fSOID)).thenReturn(new Path(fName1));
 
         assertEquals(Result.IGNORED, mightCreate(fName2, null));
-        verify(oc, never()).create_(any(Type.class), any(SOID.class),
-                eq(fName2), any(PhysicalOp.class), any(Trans.class));
+        verify(oc, never()).create_(any(Type.class), any(SOID.class), eq(fName2),
+                any(PhysicalOp.class), any(Trans.class));
     }
 
     @Test
@@ -98,9 +101,10 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         reset(delBuffer);
         when(dr.getFIDAndType(Util.join(pRoot, fName1))).thenReturn(null);
 
-        assertEquals(Result.FILE, mightCreate(fName2, fName1));
-        verify(hdmo).move_(eq(fSOID), any(SOID.class), eq(fName2),
-                eq(PhysicalOp.MAP), eq(t));
+        assertEquals(Result.FILE, mightCreate(fName2, fName2));
+        verifyZeroInteractions(oc, om, hdmo);
+        SOID fSOID2 = ds.resolveNullable_(new Path(fName2));
+        verify(vu).update_(eq(new SOCKID(fSOID2, CID.CONTENT, KIndex.MASTER)), eq(t));
     }
 
     @Test
@@ -128,8 +132,8 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         when(ds.resolveNullable_(dirSOID)).thenReturn(new Path(nonExistingDirName));
 
         assertEquals(Result.IGNORED, mightCreate(existingDirName, null));
-        verify(oc, never()).create_(any(Type.class), any(SOID.class),
-                eq(existingDirName), any(PhysicalOp.class), any(Trans.class));
+        verify(oc, never()).create_(any(Type.class), any(SOID.class), eq(existingDirName),
+                any(PhysicalOp.class), any(Trans.class));
     }
 
     @Test
@@ -148,7 +152,7 @@ public class TestMightCreate_HardLinks extends AbstractTestMightCreate
         when(dr.getFIDAndType(Util.join(pRoot, existingDirName))).thenReturn(null);
 
         assertEquals(Result.EXISTING_FOLDER, mightCreate(nonExistingDirName, existingDirName));
-        verify(hdmo).move_(eq(dirSOID), any(SOID.class), eq(nonExistingDirName),
-                eq(PhysicalOp.MAP), eq(t));
+        verify(hdmo).move_(eq(dirSOID), any(SOID.class), eq(nonExistingDirName), eq(PhysicalOp.MAP),
+                eq(t));
     }
 }

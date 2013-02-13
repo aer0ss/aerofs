@@ -8,6 +8,7 @@ import java.sql.SQLException;
 
 import static com.aerofs.lib.obfuscate.ObfuscatingFormatters.*;
 
+import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.aerofs.lib.Param;
@@ -15,6 +16,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExExpelled;
 import com.aerofs.lib.ex.ExNotDir;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
+import com.aerofs.lib.id.SOKID;
 import org.apache.log4j.Logger;
 
 import com.aerofs.daemon.core.VersionUpdater;
@@ -187,8 +189,7 @@ public class MightCreate
             break;
         case SAME_PATH_SAME_TYPE_ADMITTED:
             // Link the physical object to the logical object by replacing the FID.
-            replaceFID_(condAndOA._oaSamePath.soid(), pcPhysical, fnt._dir, fnt._fid, t);
-            delBuffer.remove_(condAndOA._oaSamePath.soid());
+            replaceObject_(pcPhysical, fnt, delBuffer, soid, condAndOA._oaSamePath.soid(), t);
             createdOrReplaced = true;
             break;
         case SAME_PATH_DIFF_TYPE_OR_EXPELLED:
@@ -238,8 +239,9 @@ public class MightCreate
      */
     private ConditionAndOA determineCondition_(@Nullable SOID soid, FIDAndType fnt,
             Path physicalPath, IDeletionBuffer delBuffer, Trans t)
-            throws SQLException, ExHardLinkDetected
+            throws Exception
     {
+        SOID soidSamePath = _ds.resolveNullable_(physicalPath);
         if (soid == null) {
             // Logical object of the same FID is not found.
         } else {
@@ -250,6 +252,20 @@ public class MightCreate
             if (logicalPath != null) throwIfHardLinkDetected_(logicalPath, physicalPath, fnt._fid);
 
             if (fnt._dir == _ds.getOA_(soid).isDirOrAnchor()) {
+                // When an existing object is moved over another existing (admitted) object we want
+                // this to be treated as an update to the target object and a deletion of the source
+                // object instead of causing a rename of the target and a move of the source. This
+                // is important to prevent the creation of duplicate files when a user tries to seed
+                // a shared folder *after* some metadata was retrieved but before content could be
+                // downloaded. It also helps avoiding unnecessary transfers in such a scenario and
+                // can reduce the amount of aliasing performed.
+                // NB: we detect collisions at OID-level instead of path-level because the logical
+                // pathes are case-insensitive
+                if (soidSamePath != null && !soidSamePath.equals(soid)) {
+                    ConditionAndOA cond = determineLogicalCondition_(fnt, soidSamePath, delBuffer);
+                    if (cond._cond == Condition.SAME_PATH_SAME_TYPE_ADMITTED) return cond;
+                }
+
                 return new ConditionAndOA(Condition.SAME_FID_SAME_TYPE);
             } else {
                 // The logical object has the same FID but different type than the physical object.
@@ -263,7 +279,12 @@ public class MightCreate
             }
         }
 
-        SOID soidSamePath = _ds.resolveNullable_(physicalPath);
+        return determineLogicalCondition_(fnt, soidSamePath, delBuffer);
+    }
+
+    private ConditionAndOA determineLogicalCondition_(FIDAndType fnt, SOID soidSamePath,
+            IDeletionBuffer delBuffer) throws SQLException
+    {
         if (soidSamePath == null) {
             return new ConditionAndOA(Condition.NO_MATCHING);
         } else {
@@ -383,19 +404,7 @@ public class MightCreate
         }
 
         // update content if needed
-        if (!dir) detectAndApplyModification_(soid, pcPhysical._absPath, t);
-    }
-
-    private void replaceFID_(SOID soid, PathCombo pc, boolean dir, @Nonnull FID fid, Trans t)
-            throws Exception
-    {
-        l.info("replace " + soid + ":" + pc);
-
-        // update the FID of that object
-        _ds.setFID_(soid, fid, t);
-
-        // update content if needed
-        if (!dir) detectAndApplyModification_(soid, pc._absPath, t);
+        if (!dir) detectAndApplyModification_(soid, pcPhysical._absPath, false, t);
     }
 
     /**
@@ -474,29 +483,86 @@ public class MightCreate
         }
     }
 
-    private void detectAndApplyModification_(SOID soid, String absPath, Trans t)
+    /**
+     * Update the target object to reflect the current state of the physical object at the target
+     * path. Any source object will be removed
+     *
+     * @param pc target path
+     * @param fnt FID and type of the physical object at the target path
+     * @param sourceSOID object that was previously mapped to the physical object (via FID), if any
+     * @param targetSOID object that was previosuly mapped to the target path
+     */
+    private void replaceObject_(PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer,
+            @Nullable SOID sourceSOID, @Nonnull SOID targetSOID, Trans t) throws Exception
+    {
+        if (sourceSOID != null) cleanup_(sourceSOID, targetSOID, t);
+
+        // Link the physical object to the logical object by replacing the FID.
+        l.info("replace " + targetSOID + ":" + pc);
+
+        // update the FID of that object
+        _ds.setFID_(targetSOID, fnt._fid, t);
+
+        // ideally we would always update content on FID change, unfortunately some filesystems have
+        // ephemeral FIDs (FAT on Linux for instance) so we have to be careful to avoid generating
+        // false updates on every reboot...
+        boolean forceUpdate = sourceSOID != null;
+        if (!fnt._dir) detectAndApplyModification_(targetSOID, pc._absPath, forceUpdate, t);
+
+        delBuffer.remove_(targetSOID);
+    }
+
+    void cleanup_(SOID sourceSOID, SOID targetSOID, Trans t) throws SQLException
+    {
+        // When an existing object is moved over another existing (admitted) object we want
+        // this to be treated as an update to the target object and a deletion of the source
+        // object instead of causing a rename of the target and a move of the source. This
+        // is important to prevent the creation of duplicate files when a user tries to seed
+        // a shared folder *after* some metadata was retrieved but before content could be
+        // downloaded. It also helps avoiding unnecessary transfers in such a scenario and
+        // can reduce the amount of aliasing performed.
+        l.info("move over " + sourceSOID + " " + targetSOID);
+
+        // We have to change the FID associated with the source object before we assign it to
+        // the target.
+        // Ideally we'd just reset the FID of the target but that would require cleaning up all
+        // CAs to avoid violating OA consistency invariants. This is not acceptable because even
+        // though the source object will most likely be deleted when it clears out the deletion
+        // buffer, there is a slim but non-zero chance that new content is present for that
+        // object so we cannot simply delete it immediately because that would create a new
+        // OID and lose any existing conflict branch.
+        // The solution is to assign a random FID
+        assignRandomFID_(sourceSOID, t);
+        // This approach has the problem that a sequence of overlapping moves (B->C; A->B) or a
+        // swap (A<->B) may miss some content updates if the files involved have the same size
+        // and timestamp. We work around that by assigning a negative size to the MASTER branch
+        // of the source to make sure detectAndApplyModification_ will consider any content that
+        // appear at the path of the source object to be a modification
+        _ds.setCA_(new SOKID(sourceSOID, KIndex.MASTER), -1L, 0L, null, t);
+    }
+
+    private void detectAndApplyModification_(SOID soid, String absPath, boolean force, Trans t)
             throws IOException, SQLException
     {
         OA oa = _ds.getOA_(soid);
-        assert oa.isFile();
-        CA caMaster = oa.caMasterNullable();
+        assert oa.isFile() : oa;
+        CA ca = oa.caMasterNullable();
+        InjectableFile f = _factFile.create(absPath);
 
-        boolean modified;
-        if (caMaster == null) {
+        if (!(force || ca == null || f.wasModifiedSince(ca.mtime(), ca.length()))) {
+            l.info("ignored " + ca.mtime() + " " + ca.length() + " " + f.getLengthOrZeroIfNotFile());
+            return;
+        }
+
+        if (ca == null) {
             // The master CA is absent. This may happen when a file's metadata has been downloaded
             // but the content hasn't been so. Create the master CA in this case.
             l.warn("absent master CA on " + soid + ". create it");
             _ds.createCA_(soid, KIndex.MASTER, t);
-            modified = true;
-        } else {
-            InjectableFile f = _factFile.create(absPath);
-            modified = f.wasModifiedSince(caMaster.mtime(), caMaster.length());
         }
 
-        if (modified) {
-            l.info("modify " + soid);
-            _vu.update_(new SOCKID(soid, CID.CONTENT), t);
-            _a.incSaveCount();
-        }
+        l.info("modify " + soid);
+        _vu.update_(new SOCKID(soid, CID.CONTENT), t);
+        _a.incSaveCount();
     }
 }

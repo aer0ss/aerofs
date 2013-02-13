@@ -7,8 +7,6 @@ import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.admin.EIExportRevision;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.FileUtil.FileName;
 import com.google.inject.Inject;
 
 public class HdExportRevision extends AbstractHdExport<EIExportRevision>

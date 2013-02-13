@@ -11,8 +11,6 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.lib.FileUtil;
-import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.id.SOID;
 
 import javax.inject.Inject;
