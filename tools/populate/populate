@@ -38,10 +38,17 @@ cp -R "$ASIS"/$OS/* "$APPROOT"/
 if [ "$MODE" == "CI" ]; then
     # Set-up a CI environment
     rm "$APPROOT"/cacert-staging.pem
+    rm "$APPROOT"/cacert-prod.pem
     mv "$APPROOT"/cacert-ci.pem "$APPROOT"/cacert.pem
+elif [ "$MODE" == "PROD" ]; then
+    # Set-up a prod environment
+    rm "$APPROOT"/cacert-ci.pem
+    rm "$APPROOT"/cacert-staging.pem
+    mv "$APPROOT"/cacert-prod.pem "$APPROOT"/cacert.pem
 else
     # Set-up a staging environment
     rm "$APPROOT"/cacert-ci.pem
+    rm "$APPROOT"/cacert-prod.pem
     mv "$APPROOT"/cacert-staging.pem "$APPROOT"/cacert.pem
 fi
 
@@ -54,7 +61,6 @@ fi
 # Create the version file. 100.0.0 is our special development environment version
 # This version number must be kept in sync with src/launcher/launcher.lib/liblauncher.cpp
 echo "100.0.0" > "$APPROOT"/$VERSION_FILE
-rm "$APPROOT"/cacert-prod.pem
 
 # Add the run script.
 cp "$PPWD/os" "$PPWD/run" "$APPROOT"/
