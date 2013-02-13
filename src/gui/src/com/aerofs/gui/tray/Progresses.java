@@ -37,7 +37,7 @@ public class Progresses {
     public void removeProgress(Object obj)
     {
         Progress prog = (Progress) obj;
-        l.info("remove progress: " + prog.getTooltip());
+        l.debug("remove progress: " + prog.getTooltip());
 
         if (_ti.isDisposed()) return;
 

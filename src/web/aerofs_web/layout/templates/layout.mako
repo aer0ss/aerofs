@@ -87,21 +87,21 @@
     from aerofs_web.helper_functions import is_admin
 %>
 
-    <div class="navbar">
-        <div class="navbar-inner">
-            <div class="container">
-                <div class="row">
-                    <div class="span10 offset1">
-                        <a class="brand" href="/">
-                            <img src="${request.static_url('aerofs_web.layout:static/img/aerofs-logo-navbar.png')}" width="151" height="44" alt="AeroFS" />
-                        </a>
+    <div class="container" style="margin: 20px auto;">
+        <div class="row">
+            <div class="span10 offset1">
+                <a href="/">
+                    <img src="${request.static_url('aerofs_web.layout:static/img/aerofs-logo-navbar.png')}" width="151" height="44" alt="AeroFS" />
+                </a>
 
-                        %if 'username' in request.session and \
-                                self.attr.navigation_bars is True:
+                %if 'username' in request.session and \
+                                        self.attr.navigation_bars is True:
+                    <div class="pull-right">
+                        <ul class="nav nav-pills">
                             ${render_top_right_navigation()}
-                        %endif
+                        </ul>
                     </div>
-                </div>
+                %endif
             </div>
         </div>
     </div>
@@ -133,44 +133,30 @@
 </div>
 
 <%def name="render_top_right_navigation()">
+    % if is_admin(request):
+        ${render_download_link_for_admin()}
+    % else:
+        ${render_download_link_for_nonadmin()}
+    % endif
 
-    ## TODO (WW) CSS for navbar buttons is completely broken.
+    <li class="disabled"><a href="#">${request.session['username']}</a></li>
 
-    <div class="pull-right" style="margin-top: 2em;">
-        % if is_admin(request):
-            ${render_download_link_for_admin()}
-        % else:
-            ${render_download_link_for_nonadmin()}
-        % endif
-
-        <span class="btn-group" style="margin-left: 3em; padding-bottom: 8px;">
-            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                ${request.session['username']} &#9662;
-                ## The result of the following line is ugly. The CSS for navgar
-                ## buttons has been messed up.
-                ## <span class="caret"></span>
-            </a>
-            <ul class="dropdown-menu">
-                <!-- <li><a href="#">Profile</a></li>
-                <li class="divider"></li> -->
-                <li><a href="${request.route_path('logout')}">Sign Out</a></li>
-            </ul>
-        </span>
-    </div>
-
+    <li>
+        <a href="${request.route_path('logout')}">Sign out</a>
+    </li>
 </%def>
 
 <%def name="render_download_link_for_nonadmin()">
-    <a href="https://www.aerofs.com/download" target="_blank">
+    <li><a href="https://www.aerofs.com/download" target="_blank">
         ${render_download_text()}
-    </a>
+    </a></li>
 </%def>
 
 <%def name="render_download_link_for_admin()">
-    <span class="btn-group" style="margin-left: 3em; padding-bottom: 8px;">
+
+    <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-            ## see the previous occurrance of the UNICODE char for comments
-            ${render_download_text()} &#9662;
+            ${render_download_text()} <b class="caret"></b>
         </a>
         <ul class="dropdown-menu">
             <li><a href="https://www.aerofs.com/download" target="_blank">
@@ -180,7 +166,7 @@
                 Team Server
             </a></li>
         </ul>
-    </span>
+    </li>
 </%def>
 
 <%def name="render_download_text()">

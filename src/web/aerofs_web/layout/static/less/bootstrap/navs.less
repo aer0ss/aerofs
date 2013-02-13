@@ -360,3 +360,18 @@
   border-color: #ddd #ddd #ddd transparent;
   *border-left-color: @white;
 }
+
+// DISABLED STATES
+// ---------------
+
+// Gray out text
+.nav > .disabled > a {
+  color: @grayLight;
+}
+// Nuke hover/focus effects
+.nav > .disabled > a:hover,
+.nav > .disabled > a:focus {
+  text-decoration: none;
+  background-color: transparent;
+  cursor: default;
+}

@@ -2737,6 +2737,15 @@ input[type="submit"].btn.btn-mini {
   border-color: #ddd #ddd #ddd transparent;
   *border-left-color: #ffffff;
 }
+.nav > .disabled > a {
+  color: #999999;
+}
+.nav > .disabled > a:hover,
+.nav > .disabled > a:focus {
+  text-decoration: none;
+  background-color: transparent;
+  cursor: default;
+}
 .navbar {
   *position: relative;
   *z-index: 2;
