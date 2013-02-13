@@ -18,7 +18,7 @@ print "Current commit: {0}".format(current_sha)
 sys.stdout.flush()
 
 # get a list of last 20 successful builds
-url = BASE_CI_URL + "/httpAuth/app/rest/buildTypes/id:bt4/builds"
+url = BASE_CI_URL + "/httpAuth/app/rest/buildTypes/id:bt17/builds"
 params = {
     "status":"SUCCESS",
     "count":"20"
