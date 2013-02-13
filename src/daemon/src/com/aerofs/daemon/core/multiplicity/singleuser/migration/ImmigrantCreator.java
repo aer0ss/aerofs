@@ -22,6 +22,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
 
@@ -129,7 +130,7 @@ public class ImmigrantCreator implements IImmigrantCreator
                 return soidTo;
             }
 
-            SID _sid;
+            @Nullable SID _sid;
 
             @Override
             public void postfixWalk_(SOID soidToParent, OA oaFrom)
@@ -142,8 +143,13 @@ public class ImmigrantCreator implements IImmigrantCreator
                     // anchors are converted back to regular directories during migration and
                     // directories aren't migrated. so delete them manually
                     if (_sid == null) _sid = _sidx2sid.get_(soidToParent.sidx());
-                    // NB: to properly leave the store we must not keep track of the emigration
-                    _od.delete_(oaFrom.soid(), op, oaFrom.isAnchor() ? null : _sid, t);
+                    if (oaFrom.isAnchor()) {
+                        // NB: to properly leave the store we must not keep track of the emigration
+                        _od.delete_(oaFrom.soid(), op, t);
+                    } else {
+                        _od.deleteAndEmigrate_(oaFrom.soid(), op, _sid, t);
+                    }
+
                 }
             }
         });

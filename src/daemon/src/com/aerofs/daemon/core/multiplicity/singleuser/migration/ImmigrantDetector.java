@@ -87,7 +87,7 @@ public class ImmigrantDetector implements IImmigrantDetector
         }
 
         SID sid = _sidx2sid.get_(oaTo.soid().sidx());
-        _od.delete_(oaFrom.soid(), op, sid, t);
+        _od.deleteAndEmigrate_(oaFrom.soid(), op, sid, t);
 
         // TODO notify with a MOVE or DELETE+CREATE event?
 

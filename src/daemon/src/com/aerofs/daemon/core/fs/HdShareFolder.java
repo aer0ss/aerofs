@@ -232,7 +232,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
 
         Trans t = _tm.begin_();
         try {
-            _od.delete_(anchor, APPLY, null, t);
+            _od.delete_(anchor, APPLY, t);
             t.commit_();
         } finally {
             t.end_();
@@ -266,7 +266,7 @@ public class HdShareFolder extends AbstractHdIMC<EIShareFolder>
         }
 
         // Step 4: delete the root folder
-        _od.delete_(soid, NOP, sid, t);
+        _od.deleteAndEmigrate_(soid, NOP, sid, t);
     }
 
     private void createNewStore(SOID soid, OID oidParent, SID sid, Path path, final Trans t)

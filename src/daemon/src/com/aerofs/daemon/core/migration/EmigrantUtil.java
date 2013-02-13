@@ -10,6 +10,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.base.id.UniqueID;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class EmigrantUtil
@@ -26,13 +27,10 @@ public class EmigrantUtil
      * sidEmigrateTarget is not null
      *
      */
-    public static String getDeletedObjectName_(SOID soid, @Nullable SID sidEmigrateTarget)
+    public static String getDeletedObjectName_(SOID soid, @Nonnull SID sidEmigrateTarget)
     {
-        String name = soid.oid().toStringFormal();
-        if (sidEmigrateTarget != null) {
-            name += "." + sidEmigrateTarget.toStringFormal();
-            assert isEmigrantName(name);
-        }
+        String name = soid.oid().toStringFormal() + "." + sidEmigrateTarget.toStringFormal();
+        assert isEmigrantName(name);
         return name;
     }
 
