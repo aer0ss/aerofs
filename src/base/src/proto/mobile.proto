@@ -32,6 +32,7 @@ message StartDownloadCall {
 message StartDownloadReply {
     required bytes cookie = 1;
     required uint64 length = 2;
+    required uint64 mtime = 4;
     optional uint32 max_packet_length = 3 [default = 102400]; // 100 K
 }
 

@@ -107,6 +107,7 @@ public class MobileService implements IMobileService
 
         StartDownloadReply.Builder b = StartDownloadReply.newBuilder()
                 .setLength(ev._fileLength)
+                .setMtime(ev._fileModTime)
                 .setCookie(makeCookie(ev).toByteString());
 
         return createReply(b.build());
