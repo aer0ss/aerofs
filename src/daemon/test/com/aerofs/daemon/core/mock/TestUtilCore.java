@@ -87,6 +87,7 @@ public class TestUtilCore
         if (ds != null) {
             // ds can be a spy object hence using doReturn() clause instead of when().
             when(ds.getOANullable_(soid)).thenReturn(oa);
+            when(ds.getOA_(soid)).thenReturn(oa);
             when(ds.getAliasedOANullable_(soid)).thenReturn(oa);
         }
     }

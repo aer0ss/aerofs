@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Air Computing Inc., 2013.
+ */
+
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import java.sql.SQLException;
