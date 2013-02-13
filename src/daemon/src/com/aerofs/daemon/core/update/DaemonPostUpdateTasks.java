@@ -9,6 +9,7 @@ import com.aerofs.daemon.lib.db.IStoreDatabase;
 import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.Param.PostUpdate;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.cfg.CfgDatabase;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
@@ -26,7 +27,7 @@ public class DaemonPostUpdateTasks
     @Inject
     public DaemonPostUpdateTasks(CfgDatabase cfgDB, CoreDBCW dbcw, TransManager tm,
             IStoreDatabase sdb, IMetaDatabase mdb, MapSIndex2DeviceBitMap sidx2dbm,
-            CfgAbsAuxRoot absAuxRoot, CfgLocalUser cfgUser)
+            CfgAbsAuxRoot absAuxRoot, CfgLocalUser cfgUser, CfgAbsAutoExportFolder autoExportFolder)
     {
         _cfgDB = cfgDB;
 
@@ -52,7 +53,8 @@ public class DaemonPostUpdateTasks
             null,  // used to be DPUTMigrateDeadAnchorsAndEmigratedNames
             new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
             new DPUTMarkAuxRootAsHidden(absAuxRoot),
-            new DPUTCreateLeaveQueueTable(dbcw)
+            new DPUTCreateLeaveQueueTable(dbcw),
+            new DPUTRenameTeamServerAutoExportFolders(autoExportFolder)
             // new tasks go here
         };
 

@@ -358,6 +358,10 @@ class BlockStorage implements IPhysicalStorage
                 // about a store for which we have no ACL.
                 SystemUtil.fatal("lacl get " + sidx + " " + sid + " " + e);
             }
+        } else {
+            // Shared folders look like:
+            // shared-folder-c12d379fed050c36bfd3496675a4fe47
+            storeTitle = "shared-folder-" + storeTitle;
         }
         return storeTitle;
     }
