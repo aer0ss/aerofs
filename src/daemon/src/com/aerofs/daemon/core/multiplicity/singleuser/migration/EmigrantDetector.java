@@ -23,6 +23,7 @@ import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
@@ -55,24 +56,11 @@ public class EmigrantDetector implements IEmigrantDetector
             List<ByteString> sidsEmigrantTargetAncestor, DID did, Token tk)
             throws Exception
     {
-        // do nothing if the remote peer doesn't have the target store
-        if (sidsEmigrantTargetAncestor.isEmpty()) return;
-
-        // do nothing if it's not an emigrant
-        // TODO: check isDeleted_ ? (if so, in which store?)
-        if (!EmigrantUtil.isEmigrantName(nameTo) || !oidParentTo.isTrash()) return;
-
-        // do nothing if the object doesn't exist (no emigration is needed)
-        OA oa = _ds.getOANullable_(soid);
-        if (oa == null) return;
-
-        // do nothing if the object has been migrated before
-        // TODO: check isDeleted_ ?
-        if (EmigrantUtil.isEmigrantName(oa.name()) && oa.parent().isTrash()) return;
+        if (!shouldMigrate_(soid, oidParentTo, nameTo, sidsEmigrantTargetAncestor))  return;
 
         SID sidTo = EmigrantUtil.getEmigrantTargetSID(nameTo);
         assert sidTo != null : nameTo;
-        l.debug("emigration detected " + oa.type() + " " + soid + "->" + sidTo);
+        l.debug("emigration detected " + soid + "->" + sidTo);
 
         // download the store (i.e. their anchors) and its ancestors as necessary
         Queue<SID> sids = new ArrayDeque<SID>(sidsEmigrantTargetAncestor.size() + 1);
@@ -83,10 +71,12 @@ public class EmigrantDetector implements IEmigrantDetector
             if (!sidTo.equals(sidAncestor)) sids.add(sidAncestor);
         }
 
-        SOCID socidFrom = new SOCID(soid, CID.META);
         SIndex sidxTo = downloadEmigrantAncestorStores_(sids, did, tk, soid);
         if (sidxTo == null) return;
         assert sidxTo.equals(_sid2sidx.get_(sidTo));
+
+        SOCID socidFrom = new SOCID(soid, CID.META);
+        OA oa = _ds.getOA_(soid);
 
         // Now the target store is in place. Emigrate the object.
         // If the object is an anchor, moving the object causes the entire store under the anchor
@@ -126,6 +116,28 @@ public class EmigrantDetector implements IEmigrantDetector
         }
     }
 
+    private boolean shouldMigrate_(SOID soid, OID oidParentTo, String nameTo,
+            List<ByteString> sidsEmigrantTargetAncestor)
+            throws SQLException
+    {
+        // do not not migrate if the remote peer doesn't have the target store
+        if (sidsEmigrantTargetAncestor.isEmpty()) return false;
+
+        // do not migrate if it's not an emigrant
+        // TODO: check isDeleted_ ? (if so, in which store?)
+        if (!EmigrantUtil.isEmigrantName(nameTo) || !oidParentTo.isTrash()) return false;
+
+        // do not migrate if the object doesn't exist (no emigration is needed)
+        OA oa = _ds.getOANullable_(soid);
+        if (oa == null) return false;
+
+        // do not migrate if the object has been migrated before
+        // TODO: check isDeleted_ ?
+        if (EmigrantUtil.isEmigrantName(oa.name()) && oa.parent().isTrash()) return false;
+
+        return true;
+    }
+
     /**
      * recursively walk up from the direct parent store until reaching a common
      * store shared by both the local and remote peer, and then walk down to
@@ -138,20 +150,22 @@ public class EmigrantDetector implements IEmigrantDetector
             SOID soid)
             throws Exception
     {
-        SID sid = sids.poll();
-        if (sid == null) return null;  // end of the queue
+        if (sids.isEmpty()) return null;
+
+        SID sid = sids.remove();
 
         // If there already exists an SIndex for sid, the store exists locally
         SIndex sidx = _sid2sidx.getNullable_(sid);
         if (sidx != null) return sidx;
 
-        SOCID socid = new SOCID(soid, CID.META);
         SIndex sidxAnchor = downloadEmigrantAncestorStores_(sids, did, tk, soid);
         if (sidxAnchor == null) return null;
 
         SOID soidAnchor = new SOID(sidxAnchor, SID.storeSID2anchorOID(sid));
         l.debug("download ancestor anchor " + soidAnchor);
-        ParentDependencyEdge dependency = new ParentDependencyEdge(socid, new SOCID(soidAnchor, CID.META));
+
+        ParentDependencyEdge dependency = new ParentDependencyEdge(new SOCID(soid, CID.META),
+                new SOCID(soidAnchor, CID.META));
         _dls.downloadSync_(dependency, _factTo.create_(did), tk);
 
         // may return null even after downloading of the anchor succeeds.
