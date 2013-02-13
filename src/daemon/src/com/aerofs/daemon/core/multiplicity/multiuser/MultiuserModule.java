@@ -8,14 +8,14 @@ import com.aerofs.daemon.core.ICoreEventHandlerRegistrar;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.MultiuserCrossFSRelocator;
 import com.aerofs.daemon.core.ds.IPathResolver;
-import com.aerofs.daemon.core.migration.IEmigrantCreator;
+import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
 import com.aerofs.daemon.core.store.Stores;
-import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantCreator;
+import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullEmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDetector;
@@ -41,7 +41,7 @@ public class MultiuserModule extends AbstractModule
         multibind(binder(), ICoreEventHandlerRegistrar.class,
                 MultiuserCoreEventHandlerRegistrar.class);
 
-        bind(IEmigrantCreator.class).to(NullEmigrantCreator.class);
+        bind(IEmigrantTargetSIDLister.class).to(NullEmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(NullEmigrantDetector.class);
         bind(IImmigrantCreator.class).to(NullImmigrantCreator.class);
         bind(IImmigrantDetector.class).to(NullImmigrantDetector.class);

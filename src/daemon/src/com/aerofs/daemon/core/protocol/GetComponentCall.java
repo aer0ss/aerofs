@@ -7,7 +7,7 @@ import com.aerofs.daemon.core.*;
 import com.aerofs.daemon.core.acl.LocalACL;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.migration.IEmigrantCreator;
+import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.net.RPC;
 import com.aerofs.daemon.core.net.NSL;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
@@ -49,7 +49,7 @@ public class GetComponentCall
 {
     private static final Logger l = Util.l(GetComponentCall.class);
 
-    private IEmigrantCreator _emc;
+    private IEmigrantTargetSIDLister _emc;
     private PrefixVersionControl _pvc;
     private NativeVersionControl _nvc;
     private MapAlias2Target _a2t;
@@ -63,7 +63,7 @@ public class GetComponentCall
     @Inject
     public void inject_(NSL nsl, LocalACL lacl, IPhysicalStorage ps,
             DirectoryService ds, RPC rpc, PrefixVersionControl pvc, NativeVersionControl nvc,
-            IEmigrantCreator emc, GCCSendContent sendContent, MapAlias2Target a2t)
+            IEmigrantTargetSIDLister emc, GCCSendContent sendContent, MapAlias2Target a2t)
     {
         _nsl = nsl;
         _lacl = lacl;
