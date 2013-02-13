@@ -1,14 +1,16 @@
 package com.aerofs.daemon.core.linker;
 
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.Util;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
+import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
+
+import java.util.EnumSet;
+
 import static junit.framework.Assert.assertNull;
 
 
@@ -39,10 +41,12 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
         String namef2 = "f2";
         shouldRenameFromf1(namef2);
 
-        // This rename should exercise the "move away conflict" path
-        SOID soidF2 = ds.resolveNullable_(new Path(namef2));
-        verify(om).moveInSameStore_(eq(soidF2), eq(soidRoot.oid()), anyString(),
-                any(PhysicalOp.class), anyBoolean(), anyBoolean(), eq(t));
+        // NB: this test is fucked up: it's supposed to exercise a file move-over
+        // but the target path is also in a state of type mismatch...
+        // TODO: clean up the test battery...
+        verifyOperationExecuted(
+                EnumSet.of(Operation.Update, Operation.RenameTarget, Operation.RandomizeFID),
+                namef2);
     }
 
     /**
@@ -53,8 +57,7 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
     {
         shouldRenameFromf1(namef1.toUpperCase());
 
-        verify(om, never()).moveInSameStore_(eq(soidf1), eq(soidRoot.oid()), anyString(),
-                any(PhysicalOp.class), anyBoolean(), anyBoolean(), eq(t));
+        verifyOperationExecuted(Operation.Update, namef1.toUpperCase());
     }
 
     /**
@@ -70,18 +73,13 @@ public class TestMightCreate_SameFIDDiffPathSameType extends AbstractTestMightCr
         assertNull(ds.resolveNullable_(new Path(nameNew)));
         shouldRenameFromf1(nameNew);
 
-        verify(om, never()).moveInSameStore_(any(SOID.class), any(OID.class), anyString(),
-                any(PhysicalOp.class), anyBoolean(), anyBoolean(), eq(t));
+        verifyOperationExecuted(Operation.Update, nameNew);
     }
 
-    private void shouldRenameFromf1(final String physicalName) throws Exception
+    private void shouldRenameFromf1(String physicalName) throws Exception
     {
         assign(soidf1, dr.getFID(Util.join(pRoot, physicalName)));
 
-        mightCreate(physicalName, namef1);
-
-        verifyZeroInteractions(vu, oc);
-
-        verify(hdmo).move_(soidf1, soidRoot, physicalName, PhysicalOp.MAP, t);
+        mightCreate(physicalName);
     }
 }

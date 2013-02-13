@@ -1,18 +1,16 @@
 package com.aerofs.daemon.core.linker;
 
 import java.io.IOException;
+import java.util.EnumSet;
 
-import com.aerofs.daemon.core.ds.OA.Type;
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.lib.id.FID;
-import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 import com.aerofs.base.id.UniqueID;
 
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
+import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 
 /**
  * Case: Logical _folder_ f2 has same path as a physical file. At the same time, "f2 (2)" and
@@ -34,24 +32,12 @@ public class TestMightCreate_DiffFIDSamePathDiffType extends AbstractTestMightCr
     }
 
     @Test
-    public void shouldRenameExistingObjectAndAvoidNameConflictWithBothLogicalAndPhysicalObjects()
+    public void shouldCreateNewObjectAndRenameExistingObject()
         throws Exception, IOException
     {
-        mightCreate("f2", null);
+        mightCreate("f2");
 
-        verifyZeroInteractions(vu);
-
-        verify(om).moveInSameStore_(soidF2, OID.ROOT, "f2 (4)", PhysicalOp.MAP, false, true, t);
-    }
-
-    @Test
-    public void shouldCreateNewObject() throws Exception, IOException
-    {
-        mightCreate("f2", null);
-
-        verifyZeroInteractions(vu);
-
-        verify(oc).create_(eq(Type.FILE), any(OID.class), any(SOID.class), eq("f2"),
-                eq(PhysicalOp.MAP), eq(t));
+        verifyOperationExecuted(
+                EnumSet.of(Operation.Create, Operation.RenameTarget, Operation.RandomizeFID), "f2");
     }
 }

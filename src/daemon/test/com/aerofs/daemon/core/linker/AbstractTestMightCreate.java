@@ -1,43 +1,40 @@
 package com.aerofs.daemon.core.linker;
 
-import com.aerofs.base.id.OID;
-import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
-import com.aerofs.daemon.core.first.OIDGenerator;
-import com.aerofs.daemon.core.fs.HdMoveObject;
 import com.aerofs.daemon.core.linker.MightCreate.Result;
 import com.aerofs.daemon.core.mock.logical.MockDir;
 import com.aerofs.daemon.core.mock.logical.MockFile;
 import com.aerofs.daemon.core.mock.logical.MockRoot;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalDir;
 import com.aerofs.daemon.core.mock.physical.MockPhysicalFile;
-import com.aerofs.daemon.core.object.ObjectCreator;
-import com.aerofs.daemon.core.object.ObjectMover;
-import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.linked.SharedFolderTagFileAndIcon;
+import com.aerofs.daemon.core.store.SIDMap;
 import com.aerofs.daemon.lib.db.trans.Trans;
+import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.analytics.Analytics;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.injectable.InjectableDriver;
+import com.aerofs.lib.injectable.InjectableDriver.FIDAndType;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.testlib.AbstractTest;
 
-import javax.annotation.Nullable;
+import com.google.common.collect.Sets;
 import org.junit.Before;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.EnumSet;
+import java.util.Set;
 
+import static com.aerofs.daemon.core.linker.MightCreateOperations.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -51,75 +48,68 @@ import static org.mockito.Mockito.*;
 public abstract class AbstractTestMightCreate extends AbstractTest
 {
     @Mock IgnoreList il;
-    @Mock DirectoryService ds;
-    @Mock HdMoveObject hdmo;
-    @Mock ObjectMover om;
-    @Mock ObjectCreator oc;
-    @Mock CfgLocalUser cfgUser;
-    @Mock VersionUpdater vu;
+    @Mock Trans t;
+    @Mock TransManager tm;
+    @Mock SIDMap sm;
     @Mock InjectableFile.Factory factFile;
     @Mock InjectableDriver dr;
+    @Mock CfgLocalUser cfgUser;
     @Mock CfgAbsRootAnchor cfgAbsRootAnchor;
     @Mock IDeletionBuffer delBuffer;
     @Mock SharedFolderTagFileAndIcon sfti;
-    @Mock Trans t;
-    @Mock Analytics a;
-    @Mock OIDGenerator og;
+    @Mock MightCreateOperations mcop;
+    @Mock DirectoryService ds;
 
-    @InjectMocks MightCreate mc;
+    MightCreate mc;
 
     MockPhysicalDir osRoot =
-        new MockPhysicalDir("root",
-            new MockPhysicalFile("f1"),
-            new MockPhysicalFile("F1"),
-            new MockPhysicalFile("f2"),
-            new MockPhysicalFile("f2 (3)"),
-            new MockPhysicalDir("d3"),
-            new MockPhysicalDir("d4"),
-            new MockPhysicalFile("ignored"),
-            new MockPhysicalFile("f5")
-        );
+            new MockPhysicalDir("root",
+                    new MockPhysicalFile("f1"),
+                    new MockPhysicalFile("F1"),
+                    new MockPhysicalFile("f2"),
+                    new MockPhysicalFile("f2 (3)"),
+                    new MockPhysicalDir("d3"),
+                    new MockPhysicalDir("d4"),
+                    new MockPhysicalFile("ignored"),
+                    new MockPhysicalFile("f5")
+            );
 
     MockRoot logicRoot =
-        new MockRoot(
-            new MockFile("f1", 2),
-            new MockDir("f2"),
-            new MockDir("f2 (2)"),
-            new MockDir("d4"),
-            new MockFile("f5", 0)   // a file with no master branch
-        );
+            new MockRoot(
+                    new MockFile("f1", 2),
+                    new MockDir("f2"),
+                    new MockDir("f2 (2)"),
+                    new MockDir("d4"),
+                    new MockFile("f5", 0)   // a file with no master branch
+            );
 
     static String pRoot = Util.join("root");
 
+    @SuppressWarnings("unchecked")
     @Before
     public void setupAbstractClass() throws Exception
     {
-        osRoot.mock(factFile, dr);
-        logicRoot.mock(ds, null, null);
+        when(tm.begin_()).thenReturn(t);
 
         when(cfgAbsRootAnchor.get()).thenReturn(pRoot);
 
         when(il.isIgnored_("ignored")).thenReturn(true);
 
-        when(og.generate_(anyBoolean(), any(Path.class))).thenAnswer(new Answer<OID>() {
-            @Override
-            public OID answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return OID.generate();
-            }
-        });
+        when(mcop.executeOperation_(anySetOf(Operation.class), any(SOID.class), any(SOID.class),
+                any(PathCombo.class), any(FIDAndType.class), any(IDeletionBuffer.class), eq(t)))
+                .thenAnswer(new Answer<Boolean>() {
+                    @Override
+                    public Boolean answer(InvocationOnMock invocation) throws Throwable
+                    {
+                        return !Sets.intersection((Set<Operation>)invocation.getArguments()[0],
+                                EnumSet.of(Operation.Create, Operation.Replace)).isEmpty();
+                    }
+                });
 
-        when(hdmo.move_(any(SOID.class), any(SOID.class), any(String.class), any(PhysicalOp.class),
-                any(Trans.class))).then(new Answer<SOID>()
-        {
-            @Override
-            public SOID answer(InvocationOnMock invocation)
-                    throws Throwable
-            {
-                return (SOID)invocation.getArguments()[0];
-            }
-        });
+        mc = new MightCreate(il, ds, dr, sfti, cfgAbsRootAnchor, mcop);
+
+        osRoot.mock(factFile, dr);
+        logicRoot.mock(ds, null, null);
     }
 
     /**
@@ -132,23 +122,47 @@ public abstract class AbstractTestMightCreate extends AbstractTest
         when(oa.fid()).thenReturn(fid);
     }
 
-    /**
-     * @param logicalObjRemovedFromDelBuf the name of the logical object which should be removed
-     * from the deletion buffer after the mightCreate call. Set to null to verify that no object
-     * has been removed from the deletion buffer.
-     */
-    protected Result mightCreate(String physicalObj, @Nullable String logicalObjRemovedFromDelBuf)
+    protected Result mightCreate(String physicalObj)
             throws Exception
     {
-        Result res = mc.mightCreate_(new PathCombo(cfgAbsRootAnchor, Util.join(pRoot, physicalObj)),
+        return mc.mightCreate_(new PathCombo(cfgAbsRootAnchor, Util.join(pRoot, physicalObj)),
                 delBuffer, t);
+    }
 
-        if (logicalObjRemovedFromDelBuf != null) {
-            verify(delBuffer).remove_(ds.resolveNullable_(new Path(logicalObjRemovedFromDelBuf)));
-        } else {
-            verify(delBuffer, never()).remove_(any(SOID.class));
-        }
 
-        return res;
+    protected void verifyOperationExecuted(Set<Operation> ops) throws Exception
+    {
+        verify(mcop).executeOperation_(eq(ops), any(SOID.class), any(SOID.class),
+                any(PathCombo.class), any(FIDAndType.class), eq(delBuffer), eq(t));
+    }
+
+    protected void verifyOperationExecuted(Operation op, String path) throws Exception
+    {
+        verifyOperationExecuted(EnumSet.of(op), path);
+    }
+
+    protected void verifyOperationExecuted(Set<Operation> ops, String path) throws Exception
+    {
+        PathCombo pc = new PathCombo(cfgAbsRootAnchor, Path.fromString(path));
+        FIDAndType fnt = dr.getFIDAndType(pc._absPath);
+
+        verify(mcop).executeOperation_(eq(ops), any(SOID.class), any(SOID.class),
+                eq(pc), eq(fnt), eq(delBuffer), eq(t));
+    }
+
+    protected void verifyOperationExecuted(Operation op, SOID source, SOID target, String path)
+            throws Exception
+    {
+        verifyOperationExecuted(EnumSet.of(op), source, target, path);
+    }
+
+    protected void verifyOperationExecuted(Set<Operation> ops, SOID source, SOID target,
+            String path) throws Exception
+    {
+        PathCombo pc = new PathCombo(cfgAbsRootAnchor, Path.fromString(path));
+        FIDAndType fnt = dr.getFIDAndType(pc._absPath);
+
+        verify(mcop).executeOperation_(eq(ops), eq(source), eq(target), eq(pc), eq(fnt),
+                eq(delBuffer), eq(t));
     }
 }
