@@ -247,6 +247,15 @@ class _RitualServiceWrapper(object):
     def delete_conflict(self, path, kidx):
         self._service.delete_conflict(convert.absolute_to_pbpath(path), int(kidx))
 
+    def get_activities(self, max_results, **kwargs):
+        reply = self._service.get_activities(kwargs.get("brief", False),
+                                             max_results,
+                                             kwargs.get("token", None))
+        return reply.activity
+
+    def get_last_activity_index(self):
+        return self._service.get_activities(True, 1, None).page_token
+
     def shutdown(self):
         try:
             self._service.shutdown()
