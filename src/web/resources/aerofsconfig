@@ -11,12 +11,21 @@ server {
 	access_log on;
 	charset utf-8;
 
+	error_page 503 /maintenance;
+
 	location / {
+		if (-f /opt/web/maintenance) {
+			return 503;
+		}
 		uwsgi_pass 127.0.0.1:8080;
 		include uwsgi_params;
 		proxy_set_header Host $host;
 		uwsgi_param UWSGI_SCHEME https;
 		uwsgi_param SCRIPT_NAME "";
+	}
+
+	location /maintenance {
+		proxy_pass https://www.aerofs.com/maintenance;
 	}
 
 	ssl on;
