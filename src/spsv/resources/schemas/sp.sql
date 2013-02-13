@@ -121,7 +121,8 @@ CREATE TABLE `sp_signup` (
 
 CREATE TABLE `sp_enterprise_signup` (
   `e_email` varchar(320) CHARACTER SET latin1 NOT NULL,
-  `e_full_name` varchar(320) NOT NULL,
+  `e_first_name` varchar(320) NOT NULL,
+  `e_last_name` varchar(320) NOT NULL,
   `e_phone` varchar(50) NOT NULL,
   `e_title` varchar(100) NOT NULL,
   `e_org` varchar(320) NOT NULL,
