@@ -412,6 +412,18 @@ public abstract class Util
         return formatSize(l) + "/s";
     }
 
+    /**
+     * Formats a timestamp to be displayed to the user.
+     *
+     * Note: consider using:
+     *
+     *   private static final PrettyTime PRETTY_TIME = new PrettyTime();
+     *   ...
+     *   PRETTY_TIME.format(new Date(time))
+     *
+     * The code above results in a more user-friendly time, at the cost of precision (the user will
+     * see "2 weeks ago", for example, rather than "Sep 19, 2012, 11:32 AM"
+     */
     public static String formatAbsoluteTime(long l)
     {
         long now = System.currentTimeMillis();
@@ -449,6 +461,11 @@ public abstract class Util
 
     /**
      * @return the infinite sign if it's longer than a year
+     *
+     * Note: consider using the PrettyTime library instead:
+     *   private static final PrettyTime PRETTY_TIME = new PrettyTime();
+     *   ...
+     *   PRETTY_TIME.format(new Date(time))
      */
     public static String formatRelativeTime(long l)
     {
