@@ -102,7 +102,7 @@ readonly RELEASE_NSIS_DIR="${RELEASE_FILES_DIR}/win_installer"
 #
 ###############################################################################
 readonly MAP_SERVER="sv.aerofs.com"
-readonly MAP_SERVER_LOGIN="maps@${MAP_SERVER}"
+readonly MAP_SERVER_LOGIN=${MAP_SERVER}
 readonly ROCKLOG_SERVER="rocklog.aerofs.com"
 readonly MAP_FILES_DIR="/maps"
 
