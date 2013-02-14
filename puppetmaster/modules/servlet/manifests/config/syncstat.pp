@@ -8,7 +8,7 @@ class servlet::config::syncstat(
         {
             param_name => "sp_database_resource_reference",
             name => "SPDatabase",
-            user => "aerofs_spsv",
+            user => "aerofs_sp_ro",
             password => $mysql_sp_password,
             endpoint => $mysql_endpoint,
             schema => "aerofs_sp",
