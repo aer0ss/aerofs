@@ -94,6 +94,6 @@ public class BaseParam
     public static class MobileService
     {
         public static final byte[] MAGIC_BYTES = "MOBL".getBytes();
-        public static final int VERSION_NUMBER = 2;
+        public static final int VERSION_NUMBER = 3;
     }
 }
