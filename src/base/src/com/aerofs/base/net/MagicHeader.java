@@ -4,6 +4,7 @@
 
 package com.aerofs.base.net;
 
+import com.aerofs.base.BaseUtil;
 import com.aerofs.base.Loggers;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -22,13 +23,12 @@ import java.net.SocketAddress;
 
 public class MagicHeader
 {
-    static final Logger l = Loggers.getLogger(MagicHeader.class);
-
     public static class ExBadMagicHeader extends IOException
     {
-        public static final long serialVersionUID = 1;
+        private static final long serialVersionUID = 1;
     }
 
+    private static final Logger l = Loggers.getLogger(MagicHeader.class);
     private final byte[] _magic;
     private final int _version;
     private final int _size;
@@ -37,7 +37,7 @@ public class MagicHeader
     {
         _magic = magic;
         _version = version;
-        _size = _magic.length + 4;
+        _size = _magic.length + Integer.SIZE / Byte.SIZE; // add 4 bytes for the version number
     }
 
     public class WriteMagicHeaderHandler extends SimpleChannelHandler
@@ -88,7 +88,8 @@ public class MagicHeader
             buffer.writeInt(_version);
             Channels.write(ctx, Channels.future(ctx.getChannel()), buffer);
             ctx.getPipeline().remove(this);
-//            l.debug("wrote magic header {} v{}", StringUtils.encodeHex(_magic), _version);
+
+            l.debug("wrote magic header {} v{}", BaseUtil.hexEncode(_magic), _version);
         }
     }
 
@@ -101,25 +102,21 @@ public class MagicHeader
             if (buffer.readableBytes() < _size) return null;
             final int readerIndex = buffer.readerIndex();
             ctx.getPipeline().remove(this);
+
             if (!isMatchingHeader(buffer)) {
                 buffer.readerIndex(readerIndex);
                 throw new ExBadMagicHeader();
             }
-//            l.debug("read magic header {} v{}", StringUtils.encodeHex(_magic), _version);
 
-            if (buffer.readable()) {
-                return buffer;
-            } else {
-                return null;
-            }
+            l.debug("read magic header {} v{}", BaseUtil.hexEncode(_magic), _version);
+
+            return (buffer.readable()) ? buffer : null;
         }
 
         private boolean isMatchingHeader(ChannelBuffer buffer)
         {
-            for (int i = 0, len = _magic.length; i < len; ++i) {
-                if (buffer.readByte() != _magic[i]) {
-                    return false;
-                }
+            for (byte b : _magic) {
+                if (buffer.readByte() != b) return false;
             }
             int version = buffer.readInt();
             return (version == _version);
