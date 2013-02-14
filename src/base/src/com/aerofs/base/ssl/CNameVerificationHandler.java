@@ -55,6 +55,9 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     private final UserID _user;
     private final DID _did;
 
+    private enum State { Handshaking, Handshaken, Failed }
+    private State _state = State.Handshaking; // access must be synchronized on this
+
     public CNameVerificationHandler(UserID user, DID did)
     {
         _user = user;
@@ -62,7 +65,8 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void connectRequested(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+    public void connectRequested(final ChannelHandlerContext ctx, ChannelStateEvent e)
+            throws Exception
     {
         // Save the original connect future and pass a new one downstream.
         // This will allow us to keep the channel unconnected for upstream handlers until we verify
@@ -78,7 +82,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
             public void operationComplete(ChannelFuture future) throws Exception
             {
                 if (!future.isSuccess()) {
-                    originalFuture.setFailure(future.getCause());
+                    failConnectFuture(ctx, future.getCause());
                 }
             }
         });
@@ -107,47 +111,59 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+    public synchronized void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+            throws Exception
     {
-        l.debug("received handshake");
+        switch (_state) {
+        default:          throw new IllegalStateException();
+        case Failed:      return;
+        case Handshaken:  throw new IllegalStateException("msg received after cname verif done");
+        case Handshaking:
+            l.debug("received handshake");
 
-        // De-serialize the handshake message
-        byte[] message = ((ChannelBuffer) e.getMessage()).array();
-        CNameVerificationInfo verificationInfo = CNameVerificationInfo.parseFrom(message);
+            // De-serialize the handshake message
+            byte[] message = ((ChannelBuffer) e.getMessage()).array();
+            CNameVerificationInfo verificationInfo = CNameVerificationInfo.parseFrom(message);
 
-        // Compute the expected cname
-        UserID user = UserID.fromInternalThrowIfNotNormalized(verificationInfo.getUser());
-        DID did = new DID(verificationInfo.getDid());
-        String expected = BaseSecUtil.getCertificateCName(user, did);
+            // Compute the expected cname
+            UserID user = UserID.fromInternalThrowIfNotNormalized(verificationInfo.getUser());
+            DID did = new DID(verificationInfo.getDid());
+            String expected = BaseSecUtil.getCertificateCName(user, did);
 
-        // Compare against the actual cname from the certificate
-        String actual = getPeerCName(ctx);
-        if (!expected.equals(actual)) {
-            l.warn("cname verification failed. got:" + actual + " for:" + user + " - " + did.toStringFormal());
-            throw new SecurityException("cname verification failed");
+            // Compare against the actual cname from the certificate
+            String actual = getPeerCName(ctx);
+            if (!expected.equals(actual)) {
+                l.warn("cname verification failed. got:" + actual + " for:" + user + " - " + did.toStringFormal());
+                throw new SecurityException("cname verification failed");
+            }
+
+            _state = State.Handshaken;
+
+            // Notify upstream that the connection has been established
+            ctx.getPipeline().remove(this);
+            ((ChannelFuture)ctx.getAttachment()).setSuccess();
+            fireChannelConnected(ctx, ctx.getChannel().getRemoteAddress());
+
+            l.debug("cname verified");
+            break;
         }
-
-        // Notify upstream that the connection has been established
-        ctx.getPipeline().remove(this);
-        ((ChannelFuture)ctx.getAttachment()).setSuccess();
-        fireChannelConnected(ctx, ctx.getChannel().getRemoteAddress());
-
-        l.debug("cname verified");
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+    public synchronized void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
     {
-        // Channel closed while we where waiting for the handshake to complete.
-        // Fail the connect future that upstream may be waiting on and forward the event upstream
-        failConnectFuture(ctx, new ClosedChannelException());
+        // If the channel was closed while we where waiting for the handshake to complete, fail
+        // the connect future that upstream may be waiting on
+        if (_state == State.Handshaking) failConnectFuture(ctx, new ClosedChannelException());
+
+        // forward the event upstream
         super.channelClosed(ctx, e);
     }
 
     @Override
-    public void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+    public synchronized void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
-        throw new IllegalStateException("cname verification in progress");
+        throw new IllegalStateException("cname verification in progress. State: " + _state);
     }
 
     @Override
@@ -162,8 +178,9 @@ public class CNameVerificationHandler extends SimpleChannelHandler
         super.exceptionCaught(ctx, e);
     }
 
-    private void failConnectFuture(ChannelHandlerContext ctx, Throwable reason)
+    private synchronized void failConnectFuture(ChannelHandlerContext ctx, Throwable reason)
     {
+        _state = State.Failed;
         ChannelFuture originalFuture = (ChannelFuture)ctx.getAttachment();
         if (originalFuture != null) originalFuture.setFailure(reason);
     }
