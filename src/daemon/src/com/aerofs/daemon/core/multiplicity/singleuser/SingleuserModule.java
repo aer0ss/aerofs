@@ -7,13 +7,13 @@ package com.aerofs.daemon.core.multiplicity.singleuser;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.ICrossFSRelocator;
 import com.aerofs.daemon.core.admin.HdRelocateRootAnchor.SingleuserCrossFSRelocator;
 import com.aerofs.daemon.core.ds.IPathResolver;
-import com.aerofs.daemon.core.migration.IEmigrantCreator;
+import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.migration.IEmigrantDetector;
 import com.aerofs.daemon.core.migration.IImmigrantCreator;
 import com.aerofs.daemon.core.migration.IImmigrantDetector;
+import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantTargetSIDLister;
 import com.aerofs.daemon.core.store.IStoreJoiner;
 import com.aerofs.daemon.core.store.IStores;
-import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.EmigrantDetector;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantCreator;
 import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantDetector;
@@ -35,7 +35,7 @@ public class SingleuserModule extends AbstractModule
         bind(IStores.class).to(SingleuserStores.class);
         bind(IPathResolver.class).to(SingleuserPathResolver.class);
 
-        bind(IEmigrantCreator.class).to(EmigrantCreator.class);
+        bind(IEmigrantTargetSIDLister.class).to(EmigrantTargetSIDLister.class);
         bind(IEmigrantDetector.class).to(EmigrantDetector.class);
         bind(IImmigrantCreator.class).to(ImmigrantCreator.class);
         bind(IImmigrantDetector.class).to(ImmigrantDetector.class);

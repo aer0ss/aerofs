@@ -10,7 +10,7 @@ import com.aerofs.base.id.SID;
 import java.sql.SQLException;
 import java.util.List;
 
-public interface IEmigrantCreator
+public interface IEmigrantTargetSIDLister
 {
     /**
      * @param oidParent the parent OID of the object

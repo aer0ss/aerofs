@@ -24,13 +24,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class TestEmigrantCreator extends AbstractTest
+public class TestEmigrantTargetSIDLister extends AbstractTest
 {
     @Mock IMapSID2SIndex sid2sidx;
     @Mock IMapSIndex2SID sidx2sid;
     @Mock SingleuserStores sss;
 
-    @InjectMocks EmigrantCreator emc;
+    @InjectMocks EmigrantTargetSIDLister emc;
 
     SID sidTarget = SID.generate();
     SID sidParent = SID.generate();

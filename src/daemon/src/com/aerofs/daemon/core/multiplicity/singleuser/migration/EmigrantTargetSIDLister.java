@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.aerofs.daemon.core.migration.EmigrantUtil;
-import com.aerofs.daemon.core.migration.IEmigrantCreator;
+import com.aerofs.daemon.core.migration.IEmigrantTargetSIDLister;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserStores;
@@ -20,21 +20,17 @@ import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
-/**
- * Unlike the ImmigrantDetector class, this class doesn't perform actual cross-store
- * movement. Instead, it detects object emigration initiated by other peers,
- * and trigers the immigration process which does the actual movement. The
- * detection is done by examine the name of an deleted object. The trigerring
- * is done indireclty by downloading the target object.
- */
-public class EmigrantCreator implements IEmigrantCreator
+import static com.google.common.base.Preconditions.checkState;
+
+public class EmigrantTargetSIDLister implements IEmigrantTargetSIDLister
 {
     private final SingleuserStores _sss;
     private final IMapSID2SIndex _sid2sidx;
     private final IMapSIndex2SID _sidx2sid;
 
     @Inject
-    public EmigrantCreator(SingleuserStores sss, IMapSID2SIndex sid2sidx, IMapSIndex2SID sidx2sid)
+    public EmigrantTargetSIDLister(SingleuserStores sss, IMapSID2SIndex sid2sidx,
+            IMapSIndex2SID sidx2sid)
     {
         _sss = sss;
         _sid2sidx = sid2sidx;
