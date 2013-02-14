@@ -31,6 +31,8 @@ node "sv.aerofs.com" inherits default {
         minute  => "0"
     }
 
+    include proguard
+
     file { "/maps":
         ensure => directory,
         mode   => 2770,
