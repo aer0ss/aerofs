@@ -8,6 +8,9 @@ from aerofs_sp.connection import SyncConnectionService
 from aerofs_common.exception import ExceptionReply
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ADMIN
 
+import smtplib
+from email.mime.text import MIMEText
+
 log = logging.getLogger("web")
 
 # Form validation functions
@@ -137,3 +140,25 @@ def reload_auth_level(request):
     sp = get_rpc_stub(request)
     authlevel = int(sp.get_authorization_level().level)
     request.session['group'] = authlevel
+
+def send_internal_email(subject, content):
+    """
+    Send an email to team@aerofs.com. Errors are ignored.
+    """
+    fromEmail = 'Pyramid Server <support@aerofs.com>'
+    toEmail = 'team@aerofs.com'
+
+    msg = MIMEText(content)
+    msg['Subject'] = subject
+    msg['From'] = fromEmail
+    msg['To'] = toEmail
+
+    # Send the message via our own SMTP server, but don't include the
+    # envelope header.
+    try:
+        s = smtplib.SMTP('localhost')
+        s.sendmail(fromEmail, [toEmail], msg.as_string())
+        s.quit()
+    except Exception, e:
+        log.error("send_internal_email failed and ignored: {}\n"
+                  "subject: {} content: {}".format(subject, content, e))

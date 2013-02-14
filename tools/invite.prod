@@ -20,4 +20,9 @@ if [ x"$FROM" == x ]; then
 fi
 FROM=`echo "$FROM" | sed -e 's/ /+/g'`
 
-wget -q $ARG -O- "https://sp.aerofs.com/sp?aerofs=love&fromPerson=$FROM&to=$ENCODED"
+url="https://sp.aerofs.com/sp?aerofs=love&fromPerson=$FROM&to=$ENCODED"
+wget -q $ARG -O- "$url"
+if [ $? != 0 ]; then
+    echo request failed. try the following URL manually to debug the problem:
+    echo "    $url"
+fi
