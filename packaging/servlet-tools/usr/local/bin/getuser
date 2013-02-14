@@ -1,0 +1,53 @@
+#!/usr/bin/python
+# vim: set expandtab ts=2 sw=2:
+
+import logging
+import MySQLdb
+import sys
+from config import config
+
+logger = logging.getLogger("get_owner")
+
+def get_user_info_from_email(email, spconn):
+  user_info = {}
+  spcursor = spconn.cursor(MySQLdb.cursors.DictCursor)
+  try:
+    # Yes, I know I'm doing substitution via Python rather than via SQL.  The wildcard search requires it.
+    spcursor.execute("""SELECT * FROM sp_user WHERE u_id LIKE "%s" """ % (email + "%"))
+    row = spcursor.fetchone()
+    return row
+  except Exception as err:
+    logger.warning('fail get user info err:%s' %err)
+    raise err
+  finally:
+    spcursor.close()
+
+def make_connection(user, host, password, dbname):
+  logger.debug('make db connection %s@%s/%s' %(user, host, dbname))
+  conn = MySQLdb.connect(user=user, host=host, passwd=password, db=dbname)
+  return conn
+
+def setup_logger():
+  logging.basicConfig(level=logging.INFO)
+
+if __name__ == '__main__':
+  if len(sys.argv) != 2:
+    print("usage: %s [user email]" %(sys.argv[0]))
+    sys.exit(1)
+
+  setup_logger()
+
+  try:
+    # TODO get a config file to pull the database information
+    spconn = make_connection('aerofs_sp_ro', config["sp_database"], config["aerofs_sp_ro_password"], 'aerofs_sp')
+
+    email = sys.argv[1]
+
+    logger.debug('find user information for: %s' % email)
+    user_info = get_user_info_from_email(email, spconn)
+    print "First Name : {0}".format(user_info["u_first_name"])
+    print "Last Name  : {0}".format(user_info["u_last_name"])
+
+  except Exception as err:
+    print err
+    logger.error('cannot connect to db')
