@@ -1,5 +1,6 @@
 package com.aerofs.base.net;
 
+import com.aerofs.base.Loggers;
 import com.aerofs.base.async.UncancellableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -17,6 +18,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 import org.jboss.netty.util.Timeout;
 import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -36,6 +38,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class AbstractRpcClientHandler extends SimpleChannelHandler
 {
+    private static final Logger l = Loggers.getLogger(AbstractRpcClientHandler.class);
+
     // We use this queue to match queries with replies.
     // Every time we send a query to the server, we create a future and enqueue it here.
     // When we receive a reply, we dequeue the future and set it with the reply.
@@ -47,6 +51,10 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
     private final Queue<byte[]> _pendingWrites = newArrayDeque();
     private final Timer _timer = new HashedWheelTimer();
     private final long _timeoutDuration;
+
+    // Holds the exception that triggered a disconnection
+    // Access to this field must be synchronized on this
+    private Throwable _lastException;
 
     private Channel _channel;
 
@@ -134,6 +142,7 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
 
     private void disconnect(Throwable reason)
     {
+        l.debug("Disconnecting with reason: " + reason);
         drainPendingRequests(reason);
         disconnect();
     }
@@ -205,13 +214,18 @@ public class AbstractRpcClientHandler extends SimpleChannelHandler
             }
             _pendingReads.clear();
             _pendingWrites.clear();
+            _lastException = reason;
         }
     }
 
-    private static Throwable getCloseReason(Channel channel)
+    private Throwable getCloseReason(Channel channel)
     {
         assert channel.getCloseFuture().isDone();
+
+        synchronized (this) {
+            if (_lastException != null) return _lastException;
+        }
         Throwable reason = channel.getCloseFuture().getCause();
-        return reason != null ? reason :new ClosedChannelException();
+        return (reason != null) ? reason : new ClosedChannelException();
     }
 }
