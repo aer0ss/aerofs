@@ -180,7 +180,7 @@ public class Transports implements IDumpStatMisc, IDumpStat, IStartable
 
                 // [sigh] hack because the enums assume that all transports take the same params
                 // FIXME (AG): revert to the old style of construction without enums
-                if (i == TransportImplementation.ZEPHYR && MobileService.Factory.isEnabled()) {
+                if (i == TransportImplementation.ZEPHYR) {
                     ((Zephyr) tp).setMobileServiceFactory(mobileServiceFactory);
                 }
 

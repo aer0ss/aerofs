@@ -17,9 +17,7 @@ import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.event.fs.EIGetChildrenAttr;
 import com.aerofs.daemon.event.lib.imc.IIMCExecutor;
 import com.aerofs.daemon.lib.Prio;
-import com.aerofs.labeling.L;
 import com.aerofs.lib.Path;
-import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgCACertFilename;
@@ -218,25 +216,6 @@ public class MobileService implements IMobileService
     {
         private static final int MAX_FRAME_LENGTH = 1 * C.MB;
         private static final int LENGTH_FIELD_SIZE = 4;
-
-        public static boolean isEnabled()
-        {
-            return L.get().isStaging()
-                    || Cfg.user().isAeroFSUser()
-                    || isComcastUser(Cfg.user().toString());
-        }
-
-        /**
-         * Test whether the user email address belongs to the comcast.com domain or any of its
-         * sub-domains.
-         */
-        private static boolean isComcastUser(String user)
-        {
-            final int comcastDotComLength = 11;
-            if (user.length() <= comcastDotComLength) return false;
-            String lastChars = user.substring(user.length() - comcastDotComLength);
-            return Util.crc32(lastChars).equals("062a664b"); // 062a664b = comcast.com
-        }
 
         private final IIMCExecutor _imce;
         private final SSLEngineFactory _sslEngineFactory;
