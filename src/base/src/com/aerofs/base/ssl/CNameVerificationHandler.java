@@ -163,6 +163,8 @@ public class CNameVerificationHandler extends SimpleChannelHandler
     @Override
     public synchronized void writeRequested(ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
+        if (_state == State.Failed) return;
+
         throw new IllegalStateException("cname verification in progress. State: " + _state);
     }
 
