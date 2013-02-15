@@ -15,9 +15,6 @@ class servlet::sv(
             Apt::Source["aerofs"]
         ]
     }
-    package{"proguard":
-        ensure => latest,
-    }
 
     file {"/var/svlogs_prod":
         ensure => directory,
@@ -27,11 +24,6 @@ class servlet::sv(
     file {"/var/svlogs_prod/defect":
         ensure  => directory,
         require => File["/var/svlogs_prod"],
-        mode    => "0777"
-    }
-
-    file {"/maps":
-        ensure  => directory,
         mode    => "0777"
     }
 }
