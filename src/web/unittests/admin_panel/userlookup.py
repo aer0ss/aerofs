@@ -2,37 +2,41 @@ import unittest
 from pyramid import testing
 from mock import Mock
 from aerofs_web import helper_functions
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub
-
-class PBUser(object):
-    def __init__(self, email, firstname, lastname):
-        self.user_email = email
-        self.first_name = firstname
-        self.last_name = lastname
-
-class ListUsersReply(object):
-    def __init__(self, users=[], total_count=0, filtered_count=0):
-        self.users = users
-        self.total_count = total_count
-        self.filtered_count = filtered_count
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ListUsersReply
 
 class UserLookupTest(unittest.TestCase):
     def setUp(self):
+        # TODO (WW) move these stub setup steps to a common super class
         self.config = testing.setUp()
-        reply = self._list_users_auth()
         self.stub = SPServiceRpcStub(None)
-        self.stub.list_users_auth = Mock(return_value=reply)
         helper_functions.get_rpc_stub = Mock(return_value=self.stub)
+
+        self._mock_list_users_auth()
 
     def tearDown(self):
         testing.tearDown()
 
-    def _list_users_auth(self):
-        users = [ PBUser("test1@awesome.com", "test1", "awesome"),
-                  PBUser("test2@awesome.com", "test2", "awesome"),
-                  PBUser("test3@awesome.com", "test3", "awesome") ]
-        reply = ListUsersReply(users, 3, 3)
-        return reply
+    def _mock_list_users_auth(self):
+        reply = ListUsersReply()
+        reply.total_count = 3
+        reply.filtered_count = 3
+
+        user = reply.users.add()
+        user.user_email = "test1@awesome.com"
+        user.first_name = "test1"
+        user.last_name = "awesome"
+
+        user = reply.users.add()
+        user.user_email = "test2@awesome.com"
+        user.first_name = "test2"
+        user.last_name = "awesome"
+
+        user = reply.users.add()
+        user.user_email = "test3@awesome.com"
+        user.first_name = "test3"
+        user.last_name = "awesome"
+
+        self.stub.list_users_auth = Mock(return_value=reply)
 
     def test_find_all_users_keys(self):
         from modules.admin_panel.views import json_user_lookup

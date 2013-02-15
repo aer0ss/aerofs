@@ -563,6 +563,7 @@ message GetStripeCustomerIDReply {
 message SignUpWithCodeCall {
     required string signup_code = 1;
     required bytes credentials = 3; // hashed credentials (some combo of password, etc.)
+    // TOOD (WW) use PBFullName
     required string first_name = 4;
     required string last_name = 5;
 }
@@ -660,12 +661,14 @@ message GetPreferencesCall {
 }
 
 message GetPreferencesReply {
+    // TOOD (WW) use PBFullName
     required string first_name = 1;
     required string last_name = 2;
     required string device_name = 3;
 }
 
 message SetPreferencesCall {
+    // TOOD (WW) use PBFullName
     optional string first_name = 2;
     optional string last_name = 4;
 
@@ -719,10 +722,10 @@ message ListUsersCall {
 
     // Maximum number of users returned on one page.
     // The SP server should enforce a reasonable upper bound for this parameter (like 1000).
-    required int32 max_results = 2;
+    required uint32 max_results = 2;
 
     // Offset to start retrieving the results.
-    required int32 offset = 3;
+    required uint32 offset = 3;
 }
 
 message ListUsersReply {
@@ -730,13 +733,14 @@ message ListUsersReply {
     repeated PBUser users = 1;
 
     // Total number of users in the database.
-    required int32 total_count = 2;
+    required uint32 total_count = 2;
 
     // Total number of users in the database that match the 'search' parameter.
-    required int32 filtered_count = 3;
+    required uint32 filtered_count = 3;
 }
 
 message ListUsersAuthCall {
+    // TODO (WW) remove search, auth_level, max_result, and offset
     // Return only admins whose name match this string. Empty string matches all admins.
     optional string search = 1;
 
@@ -744,10 +748,10 @@ message ListUsersAuthCall {
     required PBAuthorizationLevel auth_level = 2;
 
     // Maximum number of admins returned on one page.
-    required int32 max_results = 3;
+    required uint32 max_results = 3;
 
     // Offet to start retrieving the results.
-    required int32 offset = 4;
+    required uint32 offset = 4;
 }
 
 message GetAuthorizationLevelReply {
@@ -757,6 +761,7 @@ message GetAuthorizationLevelReply {
 message PBUser {
     // N.B. the user_email is assumed to be the user's unique ID on the SP Database
     required string user_email = 1;
+    // TOOD (WW) use PBFullName
     required string first_name = 2;
     required string last_name = 3;
 }
@@ -832,20 +837,27 @@ message GetDeviceInfoReply {
 
 message ListSharedFoldersCall {
     // Maximum number of folders returned.
-    optional int32 max_results = 1 [default = 100];
+    required uint32 max_results = 1;
 
     // Offset into results
-    optional int32 offset = 2;
+    required uint32 offset = 2;
 }
 
 message ListSharedFoldersReply {
     message PBSharedFolder {
-        required bytes store_id = 1;                   // store id (unique identifier)
-        required string name = 2;                      // folder name (user facing)
-        repeated PBSubjectRolePair subject_role = 3;   // list of users
+
+        message PBUserAndRole {
+            // Since only the Web UI uses this method, we include the full name for pretty display.
+            required PBUser user = 1;
+            required PBRole role = 2;
+        }
+
+        required bytes store_id = 1;
+        required string name = 2;
+        repeated PBUserAndRole user_and_role = 3;
     }
 
-    repeated PBSharedFolder shared_folders = 1;
+    repeated PBSharedFolder shared_folder = 1;
 
     // Total number of shared folders in the database for this organization
     required int32 total_count = 2;
@@ -890,13 +902,14 @@ message GetSharedFolderNamesReply {
     repeated string folder_name = 1;
 }
 
-// TODO (downtime) move this under AcceptOrganizationInvitationCall.
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under AcceptOrganizationInvitationCall.
 message IgnoreOrganizationInvitationCall {
     required int32 organization_id = 1;
 }
 
-// TODO (downtime) move this under the GetDeviceInfo messages.
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.
 message ListUserDevicesCall {
+    // TODO (WW) remove search, offset, and max results
     // Return only users whose name match this string. Empty string matches all users.
     required string search = 1;
 
@@ -907,7 +920,7 @@ message ListUserDevicesCall {
     required int32 offset = 3;
 }
 
-// TODO (downtime) move this under the GetDeviceInfo messages.
+// WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.
 message ListUserDevicesReply {
     message PBDeviceInfo {
         required string device_name = 1;
@@ -919,8 +932,13 @@ message ListUserDevicesReply {
     repeated PBDeviceInfo device_info = 1;
 
     // Total number of users in the database.
-    required int32 total_count = 2;
+    required uint32 total_count = 2;
 
     // Total number of users in the database that match the 'search' parameter.
-    required int32 filtered_count = 3;
+    required uint32 filtered_count = 3;
+}
+
+message PBFullName {
+    required string first_name = 1;
+    required string last_name = 2;
 }

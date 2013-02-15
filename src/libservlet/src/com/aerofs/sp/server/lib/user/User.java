@@ -9,7 +9,6 @@ import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.db.DBSearchUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.ex.ExFormatError;
@@ -194,9 +193,6 @@ public class User
     public DevicesAndQueryCount listDevices(String search, int maxResults, int offset)
             throws ExBadArgs, SQLException, ExFormatError
     {
-        DBSearchUtil.throwOnInvalidOffset(offset);
-        DBSearchUtil.throwOnInvalidMaxResults(maxResults);
-
         List<DID> devices;
         int count;
 

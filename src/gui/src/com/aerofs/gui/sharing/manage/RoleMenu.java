@@ -66,14 +66,14 @@ public class RoleMenu
         }
 
         MenuItem miKickout = new MenuItem(_menu, SWT.PUSH);
-        miKickout.setText("Kickout");
+        miKickout.setText("Kick Out");
         miKickout.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e)
             {
                 if (GUI.get().ask(_compUserList.getShell(), MessageType.QUESTION,
                                 // The text should be consistent with the text in shared_folders.mako
-                                "Are you sure you want to kickout " + _subject + "?\n" +
+                                "Are you sure you want to kick out " + _subject + "?\n" +
                                 "\n" +
                                 "This will delete the folder from the user's computers." +
                                 " However, old content may be still accessible from the" +

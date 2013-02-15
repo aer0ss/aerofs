@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -290,6 +291,9 @@ public class SPService implements ISPService
             Integer offset)
             throws Exception
     {
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
+
         _transaction.begin();
 
         User user = _sessionUser.get();
@@ -314,6 +318,9 @@ public class SPService implements ISPService
             PBAuthorizationLevel authLevel, Integer maxResults, Integer offset)
         throws Exception
     {
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
+
         _transaction.begin();
 
         User user = _sessionUser.get();
@@ -355,6 +362,9 @@ public class SPService implements ISPService
             Integer offset)
             throws Exception
     {
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
+
         _transaction.begin();
 
         User user = _sessionUser.get();
@@ -362,61 +372,45 @@ public class SPService implements ISPService
         Organization org = user.getOrganization();
 
         int sharedFolderCount = org.countSharedFolders();
-        Collection<SharedFolder> sfs = org.listSharedFolders(sanitizeMaxResults(maxResults),
-                sanitizeOffset(offset));
+        Collection<SharedFolder> sfs = org.listSharedFolders(maxResults, offset);
+
+        // A cache to avoid excessive database queries. This should be obsolete with memcached.
+        Map<UserID, FullName> user2name = Maps.newHashMap();
 
         List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfs.size());
         for (SharedFolder sf : sfs) {
-            pbs.add(PBSharedFolder.newBuilder()
+            PBSharedFolder.Builder builder = PBSharedFolder.newBuilder()
                     .setStoreId(sf.id().toPB())
-                    .setName(sf.getName())
-                    .addAllSubjectRole(getACL(sf))
-                    .build());
+                    .setName(sf.getName());
+
+            for (SubjectRolePair srp : sf.getMemberACL()) {
+                UserID subject = srp._subject;
+                if (subject.isTeamServerID()) continue;
+
+                // retrieve the full name
+                FullName fn = user2name.get(subject);
+                if (fn == null) {
+                    fn = _factUser.create(subject).getFullName();
+                    user2name.put(subject, fn);
+                }
+
+                builder.addUserAndRole(PBUserAndRole.newBuilder()
+                        .setRole(srp._role.toPB())
+                        .setUser(PBUser.newBuilder()
+                            .setUserEmail(subject.getID())
+                            .setFirstName(fn._first)
+                            .setLastName(fn._last)));
+            }
+
+            pbs.add(builder.build());
         }
 
         _transaction.commit();
 
         return createReply(ListSharedFoldersReply.newBuilder()
-                .addAllSharedFolders(pbs)
+                .addAllSharedFolder(pbs)
                 .setTotalCount(sharedFolderCount)
                 .build());
-    }
-
-    private List<PBSubjectRolePair> getACL(SharedFolder sf)
-            throws SQLException
-    {
-        Collection<User> sfusers = sf.getMembers();
-        List<PBSubjectRolePair> pbsrps = Lists.newArrayListWithCapacity(sfusers.size());
-        for (User sfuser : sfusers) {
-            // skip team server ids.
-            // TODO (WW) should we move it to SharedFolderDatabase.getUsers()?
-            if (sfuser.id().isTeamServerID()) continue;
-            Role role = sf.getMemberRoleNullable(sfuser);
-            assert role != null;
-            pbsrps.add(PBSubjectRolePair.newBuilder()
-                    .setSubject(sfuser.id().toString())
-                    .setRole(role.toPB())
-                    .build());
-        }
-        return pbsrps;
-    }
-
-    private int sanitizeOffset(Integer offset)
-    {
-        return offset == null || offset < 0 ? 0 : offset;
-    }
-
-    private static int sanitizeMaxResults(Integer maxResults)
-    {
-        // TODO (WW) force the client to always provide a max result. after all determine the max
-        // result is UI's responsibility.
-        final int DEFAULT_MAX_RESULTS = 100;
-        // To avoid DoS attacks forbid listSharedFolders queries exceeding 1000 returned results
-        final int ABSOLUTE_MAX_RESULTS = 1000;
-
-        if (maxResults == null || maxResults < 0) return DEFAULT_MAX_RESULTS;
-        else if (maxResults > ABSOLUTE_MAX_RESULTS) return ABSOLUTE_MAX_RESULTS;
-        else return maxResults;
     }
 
     @Override
@@ -1602,6 +1596,8 @@ public class SPService implements ISPService
             throws ExNoPerm, SQLException, ExFormatError, ExNotFound, ExBadArgs
     {
         l.info("LUD: search=" + search + " max=" + maxResults + " offset=" + offset);
+        throwOnInvalidOffset(offset);
+        throwOnInvalidMaxResults(maxResults);
 
         _transaction.begin();
         ListUserDevicesReply.Builder builder = ListUserDevicesReply.newBuilder();
@@ -1634,5 +1630,19 @@ public class SPService implements ISPService
     private static <T> ListenableFuture<T> createReply(T reply)
     {
         return UncancellableFuture.createSucceeded(reply);
+    }
+
+    static private void throwOnInvalidOffset(int offset) throws ExBadArgs
+    {
+        if (offset < 0) throw new ExBadArgs("offset is negative");
+    }
+
+    // To avoid DoS attacks, do not permit listUsers queries to exceed 1000 returned results
+    private static final int ABSOLUTE_MAX_RESULTS = 1000;
+
+    static private void throwOnInvalidMaxResults(int maxResults) throws ExBadArgs
+    {
+        if (maxResults > ABSOLUTE_MAX_RESULTS) throw new ExBadArgs("maxResults is too big");
+        else if (maxResults < 0) throw new ExBadArgs("maxResults is a negative number");
     }
 }

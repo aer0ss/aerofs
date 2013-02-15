@@ -4,12 +4,12 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Common.PBSubjectRolePair;
 import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,8 +52,8 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
             throws Exception
     {
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
-            for (PBSubjectRolePair srp : sf.getSubjectRoleList()) {
-                assertFalse(UserID.fromInternal(srp.getSubject()).isTeamServerID());
+            for (PBUserAndRole ur : sf.getUserAndRoleList()) {
+                assertFalse(UserID.fromInternal(ur.getUser().getUserEmail()).isTeamServerID());
             }
         }
     }
@@ -64,9 +64,9 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
     {
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
             boolean hasOwner = false;
-            for (PBSubjectRolePair srp : sf.getSubjectRoleList()) {
-                if (UserID.fromInternal(srp.getSubject()).equals(USER_1)) {
-                    assertEquals(Role.fromPB(srp.getRole()), Role.OWNER);
+            for (PBUserAndRole ur : sf.getUserAndRoleList()) {
+                if (UserID.fromInternal(ur.getUser().getUserEmail()).equals(USER_1)) {
+                    assertEquals(Role.fromPB(ur.getRole()), Role.OWNER);
                     assertFalse(hasOwner);
                     hasOwner = true;
                 }
@@ -81,9 +81,9 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
     {
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
             boolean hasSharee = false;
-            for (PBSubjectRolePair srp : sf.getSubjectRoleList()) {
-                if (!UserID.fromInternal(srp.getSubject()).equals(USER_1)) {
-                    assertEquals(Role.fromPB(srp.getRole()), Role.EDITOR);
+            for (PBUserAndRole ur : sf.getUserAndRoleList()) {
+                if (!UserID.fromInternal(ur.getUser().getUserEmail()).equals(USER_1)) {
+                    assertEquals(Role.fromPB(ur.getRole()), Role.EDITOR);
                     assertFalse(hasSharee);
                     hasSharee = true;
                 }
@@ -104,7 +104,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
         // add a new org so user 1 can haz permissions to list folders
         service.addOrganization("test org", null, StripeCustomerID.TEST.getID());
 
-        return service.listSharedFolders(100, 0).get().getSharedFoldersList();
+        return service.listSharedFolders(100, 0).get().getSharedFolderList();
     }
 
 }

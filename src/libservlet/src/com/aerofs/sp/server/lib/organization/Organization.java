@@ -4,7 +4,6 @@ import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Util;
-import com.aerofs.lib.db.DBSearchUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -184,8 +183,6 @@ public class Organization
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-        DBSearchUtil.throwOnInvalidOffset(offset);
-        DBSearchUtil.throwOnInvalidMaxResults(maxResults);
 
         assert offset >= 0;
 
@@ -218,8 +215,6 @@ public class Organization
             throws SQLException, ExBadArgs
     {
         if (search == null) search = "";
-        DBSearchUtil.throwOnInvalidOffset(offset);
-        DBSearchUtil.throwOnInvalidMaxResults(maxResults);
 
         List<UserID> userIDs;
         int count;
