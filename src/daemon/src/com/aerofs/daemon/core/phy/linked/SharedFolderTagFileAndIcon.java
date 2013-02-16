@@ -197,7 +197,7 @@ public class SharedFolderTagFileAndIcon
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
             try {
                 String line = reader.readLine();
-                return new SID(line, 0, line.length());
+                return line != null ? new SID(line, 0, line.length()) : null;
             } finally {
                 reader.close();
             }
