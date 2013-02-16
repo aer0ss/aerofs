@@ -54,7 +54,8 @@ public class DaemonPostUpdateTasks
             new DPUTMigrateDeadAnchorsAndEmigratedNames(dbcw),
             new DPUTMarkAuxRootAsHidden(absAuxRoot),
             new DPUTCreateLeaveQueueTable(dbcw),
-            new DPUTRenameTeamServerAutoExportFolders(autoExportFolder)
+            new DPUTRenameTeamServerAutoExportFolders(autoExportFolder),
+            new DPUTSkipFirstLaunch()
             // new tasks go here
         };
 

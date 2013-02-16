@@ -13,7 +13,7 @@ import javax.inject.Inject;
 import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.OID;
 import com.aerofs.base.id.UniqueID.ExInvalidID;
-import com.aerofs.daemon.core.FirstLaunch;
+import com.aerofs.daemon.core.FirstLaunch.AccessibleStores;
 import com.aerofs.daemon.core.linker.PathCombo;
 import com.aerofs.daemon.core.store.IMapSID2SIndex;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
@@ -43,24 +43,24 @@ public class SharedFolderTagFileAndIcon
 {
     private static final Logger l = Util.l(SharedFolderTagFileAndIcon.class);
 
-    private final FirstLaunch _fl;
     private final InjectableDriver _dr;
     private final CfgAbsRootAnchor _cfgAbsRootAnchor;
     private final IMapSIndex2SID _sidx2sid;
     private final IMapSID2SIndex _sid2sidx;
     private final InjectableFile.Factory _factFile;
+    private final AccessibleStores _accessibleStoresOnFirstLaunch;
 
     @Inject
     public SharedFolderTagFileAndIcon(InjectableDriver dr, CfgAbsRootAnchor cfgAbsRootAnchor,
             IMapSIndex2SID sidx2sid, IMapSID2SIndex sid2sidx, InjectableFile.Factory factFile,
-            FirstLaunch fl)
+            AccessibleStores accessibleStoresOnFirstLaunch)
     {
         _dr = dr;
-        _fl = fl;
         _cfgAbsRootAnchor = cfgAbsRootAnchor;
         _sidx2sid = sidx2sid;
         _sid2sidx = sid2sidx;
         _factFile = factFile;
+        _accessibleStoresOnFirstLaunch = accessibleStoresOnFirstLaunch;
     }
 
     /**
@@ -183,7 +183,7 @@ public class SharedFolderTagFileAndIcon
         if (_sid2sidx.getLocalOrAbsentNullable_(sid) != null) return false;
 
         // the set of accessible stores will be empty outside of the first launch
-        return _fl.getAccessibleStores_().contains(sid);
+        return _accessibleStoresOnFirstLaunch.contains(sid);
     }
 
     /**
@@ -195,8 +195,12 @@ public class SharedFolderTagFileAndIcon
         try {
             FileInputStream in = new FileInputStream(absPathTagFile);
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            String line = reader.readLine();
-            return new SID(line, 0, line.length());
+            try {
+                String line = reader.readLine();
+                return new SID(line, 0, line.length());
+            } finally {
+                reader.close();
+            }
         } catch (IOException e) {
             return null;
         } catch (ExFormatError e) {
