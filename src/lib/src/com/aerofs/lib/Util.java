@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
 import com.aerofs.base.C;
+import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.labeling.L;
 import com.aerofs.lib.FileUtil.FileName;
 import org.apache.log4j.Appender;
@@ -223,6 +224,7 @@ public abstract class Util
         s_suppressStackTrace.add(ExTimeout.class);
         s_suppressStackTrace.add(ExAborted.class);
         s_suppressStackTrace.add(ExNoAvailDevice.class);
+        s_suppressStackTrace.add(ExBadCredential.class);
     }
 
     private static Class<?>[] s_suppressStackTraceBaseClasses = new Class<?>[] {
