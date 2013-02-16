@@ -6,7 +6,9 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.id.SID;
+import com.aerofs.daemon.core.linker.Linker;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
@@ -14,11 +16,11 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.proto.Sp.GetACLReply.PBStoreACL;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
+import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
 import java.sql.SQLException;
-import java.util.Set;
 
 /**
  * This class is in charge of all logic that needs to be run only once: on the first launch of the
@@ -32,48 +34,73 @@ public class FirstLaunch
 {
     private static final Logger l = Util.l(FirstLaunch.class);
 
-    private final Set<SID> _accessibleStores = Sets.newHashSet();
+    private final AccessibleStores _as;
+    private final Linker _linker;
+    private final CoreScheduler _sched;
+
+    /**
+     * We have to use an intermediate class to avoid introducing a circular dep:
+     * FirstLaunch -> Linker -> MightCreate -> SharedFolderTagFileIcon -> FirstLaunch
+     */
+    public static class AccessibleStores
+    {
+        private ImmutableSet<SID> _accessibleStores;
+
+        public boolean contains(SID sid)
+        {
+            return _accessibleStores.contains(sid);
+        }
+    }
+
+    @Inject
+    public FirstLaunch(Linker linker, CoreScheduler sched, AccessibleStores as)
+    {
+        _as = as;
+        _linker = linker;
+        _sched = sched;
+    }
 
     public boolean isFirstLaunch_()
     {
         return Cfg.db().getBoolean(Key.FIRST_START);
     }
 
-    public Set<SID> getAccessibleStores_()
-    {
-        return _accessibleStores;
-    }
-
     /**
      * Perform any first-launch-specific task
      * @param callback a scan completion callback that finalizes Core startup
-     * @return a scan completion callback wrapping the given callback
-     *
-     * NB: ideally we'd just do the scan directly from here but injection makes it impossible
-     * because it introduces circular dependencies...
      */
-    ScanCompletionCallback onFirstLaunch_(final ScanCompletionCallback callback)
+    void onFirstLaunch_(final ScanCompletionCallback callback)
     {
-        fetchAccessibleStores_();
-
-        l.info("first-launch: accessible stores " + _accessibleStores);
-
-        return new ScanCompletionCallback() {
+        // NB: fetcAccessibleStore needs to be performed from a Core thread in case the SP sign-in
+        // fails as it causes a Ritual notification to be sent
+        _sched.schedule(new AbstractEBSelfHandling()
+        {
             @Override
-            public void done_()
+            public void handle_()
             {
-                _accessibleStores.clear();
+                fetchAccessibleStores_();
 
-                callback.done_();
+                l.info("start indexing");
+                _linker.scan(new ScanCompletionCallback()
+                {
+                    @Override
+                    public void done_()
+                    {
+                        l.info("done indexing");
+                        _as._accessibleStores = ImmutableSet.of();
 
-                try {
-                    // reset FIRST_START flag last, as it is used to reject Ritual calls
-                    Cfg.db().set(Key.FIRST_START, false);
-                } catch (SQLException e) {
-                    SystemUtil.fatal(e);
-                }
+                        callback.done_();
+
+                        try {
+                            // reset FIRST_START flag last, as it is used to reject Ritual calls
+                            Cfg.db().set(Key.FIRST_START, false);
+                        } catch (SQLException e) {
+                            SystemUtil.fatal(e);
+                        }
+                    }
+                });
             }
-        };
+        }, 0);
     }
 
     private void fetchAccessibleStores_()
@@ -81,11 +108,13 @@ public class FirstLaunch
         try {
             SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
             sp.signInRemote();
+            ImmutableSet.Builder<SID> stores = ImmutableSet.builder();
             for (PBStoreACL sacl : sp.getACL(0L).getStoreAclList()) {
-                _accessibleStores.add(new SID(sacl.getStoreId()));
+                stores.add(new SID(sacl.getStoreId()));
             }
+            _as._accessibleStores = stores.build();
         } catch (Exception e) {
-            SystemUtil.fatal(e);
+            SystemUtil.fatal("Unable to fetch accessible stores: " + Util.e(e));
         }
     }
 }

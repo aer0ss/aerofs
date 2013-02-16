@@ -143,8 +143,7 @@ public class Core implements IModule
         if (_fl.isFirstLaunch_()) {
             _tc.start_();
 
-            // start a scan
-            _linker.scan(_fl.onFirstLaunch_(new CoreScanCompletionCallback()));
+            _fl.onFirstLaunch_(new CoreScanCompletionCallback());
         } else {
             startAll_();
 
