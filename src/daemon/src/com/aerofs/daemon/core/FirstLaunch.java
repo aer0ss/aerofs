@@ -44,7 +44,7 @@ public class FirstLaunch
      */
     public static class AccessibleStores
     {
-        private ImmutableSet<SID> _accessibleStores;
+        private ImmutableSet<SID> _accessibleStores = ImmutableSet.of();
 
         public boolean contains(SID sid)
         {
