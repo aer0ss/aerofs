@@ -2,6 +2,8 @@ package com.aerofs.daemon.core.linker.notifier.linux;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -9,6 +11,7 @@ import java.util.Set;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
 import com.aerofs.swig.driver.Driver;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
@@ -24,6 +27,8 @@ import com.aerofs.lib.injectable.InjectableJNotify;
 
 import net.contentobjects.jnotify.JNotifyException;
 import net.contentobjects.jnotify.linux.INotifyListener;
+
+import javax.annotation.Nullable;
 
 import static net.contentobjects.jnotify.linux.JNotify_linux.*;
 
@@ -74,7 +79,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
        // Watch the root anchor, and (recursively) all directories within
         _jn.linux_setNotifyListener(this);
         File anchor = new File(_cfgAbsRootAnchor.get());
-        addWatchRecursively(anchor.getAbsolutePath(), WATCH_ID_ROOT);
+        addWatchRecursively(anchor.getAbsolutePath(), WATCH_ID_ROOT, null);
     }
 
     /**
@@ -105,9 +110,11 @@ public class LinuxNotifier implements INotifier, INotifyListener
      * @param name the name of the folder to add a watch on (this should have no path separators)
      * @param parent the watch id of the watch on the directory under which this watch is
      *               placed, or WATCH_ID_ROOT if this is the root anchor
+     * @param pathList a list of path for which watch were added (output arg, if not null)
      * @throws JNotifyException
      */
-    private void addWatchRecursively(String name, int parent) throws JNotifyException
+    private void addWatchRecursively(String name, int parent, @Nullable List<String> pathList)
+            throws JNotifyException
     {
         File dir;
         if (parent == WATCH_ID_ROOT) {
@@ -125,6 +132,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 if (l.isDebugEnabled()) {
                     l.debug("watch id " + watch_id + ": " + dir.getAbsolutePath());
                 }
+                if (pathList != null) pathList.add(dir.getAbsolutePath());
                 LinuxINotifyWatch newWatch = new LinuxINotifyWatch(watch_id, name, parent);
                 // We may already have a watch set up on this folder.  If the path of the
                 // existing watch and the path of the new watch are identical,
@@ -191,7 +199,7 @@ public class LinuxNotifier implements INotifier, INotifyListener
             // actually care about the FID, we just pass null (which is correctly handled by Driver)
             if (Driver.getFid(null, child.getPath(), null) == Driver.GETFID_DIR) {
                 try {
-                    addWatchRecursively(childname, watch_id);
+                    addWatchRecursively(childname, watch_id, pathList);
                 } catch (JNotifyException e) {
                     // See above.
                     if (e.getErrorCode() != JNotifyException.ERROR_NO_SUCH_FILE_OR_DIRECTORY) {
@@ -369,12 +377,46 @@ public class LinuxNotifier implements INotifier, INotifyListener
                 // itself, rather than children of the root anchor.
                 File affectedFile = new File(getWatchPath(id), name);
 
+                List<String> addedWatches = Lists.newLinkedList();
                 // If the event is for a created or moved folder, we should register a new
                 // recursive watch - it might have children we haven't seen yet.
                 if (Util.test(mask, IN_ISDIR) && Util.test(mask, (IN_CREATE | IN_MOVED_TO))) {
-                    addWatchRecursively(name, id);
+                    addWatchRecursively(name, id, addedWatches);
                 }
-                mightCreate(affectedFile.getAbsolutePath());
+
+                // Here's the terrible, horrible, no good, very bad truth about the Linux notifier:
+                // Because we have to manually re-implement recursive watching on top of the severly
+                // limited inotify interface we cannot simply post a MCN event for a folder if we
+                // added watches under it.
+                //
+                // If we did, we may would notifications and end up never picking up whole subfolder
+                // hierarchies in cases like:
+                //
+                // Core    : start scan
+                // FS      : create dir foo
+                // FS      : create dir foo/bar
+                // FS      : create stuff under foo/bar...
+                // Core    : scan foo -> children={d0}
+                // Core    : scan children of foo/d0...
+                // FS      : create dir foo/baz
+                // Notifier: detect creation of foo, add watches recursively, send MCN for foo
+                // Core    : handle MCN for foo -> unchanged since scan -> does not trigger rescan
+                //
+                // The whole foo/d1 hierarchy is forever out of sync until foo/d1 is renamed or some
+                // other event causes a rescan.
+                // NB: Such cases are reliably reproduced by syncdet stress tests creating large
+                // folder hierarchies.
+                //
+                // One solution would be to indicate in the MCN that it new watches were added and
+                // that even if the scanner already picked up some of the object, chances are it
+                // missed some of them and a rescan is needed.
+                //
+                // Another approach, which happens to be the one we've taken, is to emit a MCN for
+                // every watch added to ensure the folders are picked up. This was chosen because
+                // it more closely mirrors the behavior of the Windows notifiers and avoids leaking
+                // more platform-specific behaviors into the Scanner.
+                mightCreate(!addedWatches.isEmpty() ? addedWatches
+                        : Collections.singleton(affectedFile.getAbsolutePath()));
             } else if (Util.test(mask, (IN_DELETE | IN_MOVED_FROM ))) {
                 // These two cases constitute all instances in which a file or folder disappeared.
                 File vanishedFile = new File(getWatchPath(id), name);
@@ -450,6 +492,15 @@ public class LinuxNotifier implements INotifier, INotifyListener
         _prevCookie = cookie;
         _prevActionMask = mask;
         _prevName = name;
+    }
+
+    private void mightCreate(Collection<String> paths)
+    {
+        // TODO: reduce core lock contention by enqueuing the events in a batch.
+        // Alternatively create a new batch-create notification with smarter logic
+        // to reduce the load on core queue and automatically discard events for
+        // children of a path that causes a rescan.
+        for (String path : paths) mightCreate(path);
     }
 
     private void mightCreate(String path)
