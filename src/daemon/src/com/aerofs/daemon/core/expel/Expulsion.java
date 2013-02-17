@@ -157,6 +157,23 @@ public class Expulsion
     }
 
     /**
+     * @pre the aliased object is present locally
+     */
+    public void objectAliased_(SOID alias, SOID target, Trans t) throws SQLException
+    {
+        // if the alias was explicitly expelled we need to make sure the target takes over:
+        // 1) leaving an alias in the expulsion table would lead to assertion failures when
+        // the UI tires to list expelled objects
+        // 2) not expelling the target would cause the expelled files/folders to reappear, to
+        // the extreme confusion/dismay of the user
+        if (Util.test(_ds.getOA_(alias).flags(), OA.FLAG_EXPELLED_ORG)) {
+            _exdb.deleteExpelledObject_(alias, t);
+            _exdb.insertExpelledObject_(target, t);
+            _ds.setOAFlags_(target, set(_ds.getOA_(target).flags(), FLAG_EXPELLED_ORG), t);
+        }
+    }
+
+    /**
      * N.B. the returned list doesn't contain trash folders, since StoreCreator.java create
      * these folders specially, without calling setExpelled_().
      */

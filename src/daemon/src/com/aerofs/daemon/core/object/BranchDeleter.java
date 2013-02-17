@@ -37,7 +37,7 @@ public class BranchDeleter
 
     public void deleteBranch_(SOCKID k, Version v, boolean deletePhyFile,
             boolean deleteVersionPermanently, Trans t)
-        throws SQLException, IOException, ExNotFound
+        throws SQLException, IOException
     {
         l.debug("delete branch " + k);
 

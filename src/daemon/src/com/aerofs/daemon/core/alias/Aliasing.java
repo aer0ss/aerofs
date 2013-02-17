@@ -6,8 +6,11 @@ import com.aerofs.daemon.core.VersionUpdater;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.db.trans.TransManager;
+import com.aerofs.lib.Path;
+import com.aerofs.proto.Core.PBMeta.Type;
 import com.google.inject.Inject;
 
 
@@ -16,7 +19,6 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.proto.Core.PBMeta;
-import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.id.*;
@@ -60,11 +62,12 @@ public class Aliasing
     private AliasingMover _almv;
     private MapAlias2Target _a2t;
     private TransManager _tm;
+    private Expulsion _expulsion;
 
     @Inject
     public void inject_(DirectoryService ds, NativeVersionControl nvc,
             VersionUpdater vu, ObjectCreator oc, ObjectMover om, ReceiveAndApplyUpdate ru,
-            AliasingMover almv, MapAlias2Target a2t, TransManager tm)
+            AliasingMover almv, MapAlias2Target a2t, TransManager tm, Expulsion expulsion)
     {
         _ds = ds;
         _nvc = nvc;
@@ -75,12 +78,14 @@ public class Aliasing
         _almv = almv;
         _a2t = a2t;
         _tm = tm;
+        _expulsion = expulsion;
     }
 
     public static final class AliasAndTarget
     {
         final SOID _alias;
         final SOID _target;
+
         AliasAndTarget(SOID alias, SOID target)
         {
             _alias = alias;
@@ -95,46 +100,38 @@ public class Aliasing
      */
     public static AliasAndTarget determineAliasAndTarget_(SOID soid1, SOID soid2)
     {
-        SOID alias, target;
-
         int comp = soid1.compareTo(soid2);
         assert comp != 0;
         if (comp > 0) {
             // soid1 wins.
-            target = soid1;
-            alias = soid2;
+            return new AliasAndTarget(soid2, soid1);
         } else {
             // soid2 wins.
-            target = soid2;
-            alias = soid1;
+            return new AliasAndTarget(soid1, soid2);
         }
-
-        return new AliasAndTarget(alias, target);
     }
 
     /**
      * The core method of aliasing algorithm that performs all the necessary state modifications
      * to merge the alias object into target.
      *
-     * This method assumes that meta-data information of both alias and target objects are present
-     * locally.
+     * This method assumes that meta-data information of the target object is present locally.
      *
      * Caller is responsible for assigning new version to the alias object.
      *
      * On completion of this method only alias to target mapping information will be retained about
      * the alias object.
      */
-    private void performAliasingOnLocallyAvailableObjects_(SOID alias, Version vAliasMeta,
-            SOID target, Version vTargetMeta, boolean isAliasADir, Trans t) throws Exception
+    private void performAliasing_(SOID alias, Version vAliasMeta, SOID target, Version vTargetMeta,
+            boolean isDir, PhysicalOp op, Trans t) throws Exception
     {
         l.debug("Aliasing soids, alias:" + alias + " target: " + target);
 
         assert !alias.equals(target);
-        SIndex sidx = alias.sidx();
-        assert sidx.equals(target.sidx());
+        assert alias.sidx().equals(target.sidx());
 
-        assert _ds.hasOA_(alias);
         assert _ds.hasOA_(target);
+        OA aliasOA = _ds.getOANullable_(alias);
 
         SOCID aliasMeta = new SOCID(alias, CID.META);
         SOCID aliasContent = new SOCID(alias, CID.CONTENT);
@@ -145,6 +142,7 @@ public class Aliasing
 
         // Only non-aliased ticks from meta-data component of alias object should be moved
         // to target.
+        // TODO:FIXME this may lose ticks...
         vAliasMeta = vAliasMeta.withoutAliasTicks_();
 
         // KML version should be updated before merging local version to avoid assertion failures in
@@ -154,13 +152,13 @@ public class Aliasing
         // Move the meta-data versions.
         _almv.moveMetadataLocalVersion_(aliasMeta, targetMeta, vAliasMeta, vTargetMeta, t);
 
-        if (isAliasADir) {
-            _almv.moveChildrenFromAliasToTargetDir_(sidx, alias, target, t);
-            OA aliasOA = _ds.getOA_(alias);
-            assert aliasOA.isDir();
-            if (!aliasOA.isExpelled()) aliasOA.physicalFolder().delete_(PhysicalOp.APPLY, t);
+        if (isDir) {
+            _almv.moveChildrenFromAliasToTargetDir_(alias, target, op, t);
+            if (aliasOA != null && !aliasOA.isExpelled()) {
+                aliasOA.physicalFolder().delete_(op, t);
+            }
         } else {
-            _almv.moveContent_(aliasContent, targetContent, t);
+            _almv.moveContent_(alias, target, t);
         }
 
         _a2t.add_(alias, target, t);
@@ -172,10 +170,22 @@ public class Aliasing
         assert _nvc.getKMLVersion_(aliasMeta).withoutAliasTicks_().isZero_();
 
         // Alias is now moved to target. So remove the meta-data entry for alias.
-        // Content was moved in moveContentOnAliasing_() method.
-        _ds.deleteOA_(alias, t);
+        // Content was moved in moveContent_() method.
+        if (aliasOA != null) _ds.deleteOA_(alias, t);
 
         dumpVersions_(targetMeta, targetContent, aliasMeta, aliasContent);
+    }
+
+    /**
+     * This method assumes that meta-data information of both alias and target objects are present
+     * locally.
+     */
+    private void performAliasingOnLocallyAvailableObjects_(SOID alias, Version vAliasMeta,
+            SOID target, Version vTargetMeta, boolean isAliasADir, Trans t) throws Exception
+    {
+        assert _ds.hasOA_(alias);
+
+        performAliasing_(alias, vAliasMeta, target, vTargetMeta, isAliasADir, PhysicalOp.APPLY, t);
     }
 
     /**
@@ -201,6 +211,7 @@ public class Aliasing
         try {
             SOCID target = new SOCID(alias.sidx(), targetOIDLocal, CID.META);
 
+            // TODO:FIXME this may lose ticks...
             Version vKMLAlias = _nvc.getKMLVersion_(alias).withoutAliasTicks_();
 
             _nvc.deleteKMLVersionPermanently_(alias, vKMLAlias, t);
@@ -329,6 +340,7 @@ public class Aliasing
                 }
 
                 // Move non-alias meta KML version from alias to target.
+                // TODO:FIXME this may lose ticks...
                 Version vKMLAliasMeta = _nvc.getKMLVersion_(aliasMeta).withoutAliasTicks_();
                 _nvc.deleteKMLVersionPermanently_(aliasMeta, vKMLAliasMeta, t);
 
@@ -373,11 +385,6 @@ public class Aliasing
      * This method should be used when a name conflict is detected on processing a new object
      * from a remote peer.
      *
-     * The core performAliasingOnLocallyAvailableObjects_() method assumes meta-data entries of both
-     * alias and target objects are present locally. This method selects the alias and target
-     * among the local and remote objects and creates a meta-data entry for the remote object
-     * before invoking performAliasingOnLocallyAvailableObjects_() method.
-     *
      * @param meta Meta-data information received from remote peer
      * @param soidNoNewVersion No new version should be created if the resulting
      *        alias matches soidNoNewVersion
@@ -390,40 +397,58 @@ public class Aliasing
         assert soidRemote.sidx().equals(soidLocal.sidx()) : soidRemote + " " + soidLocal;
 
         Version vLocal = getMasterVersion_(new SOCID(soidLocal, CID.META));
+
         AliasAndTarget ar = determineAliasAndTarget_(soidLocal, soidRemote);
 
-        Path pParent = _ds.resolve_(new SOID(soidRemote.sidx(), parent));
-        String newName = _ds.generateConflictFreeFileName_(pParent, meta.getName());
-        assert !newName.equals(meta.getName()) : newName + " " + meta.getName();
+        boolean targetIsRemote = ar._target.equals(soidRemote);
 
-        String createName;
-        Version vAliasMeta, vTargetMeta;
-        if (soidRemote.equals(ar._target)) {
-            vTargetMeta = vRemote;
-            vAliasMeta = vLocal;
-            l.debug("name: " + meta.getName() + " newName: " + newName);
-            // Since local object is selected as alias object, move it to a new name
-            // which will be deleted on completion of aliasing operation.
-            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.APPLY, false, false, t);
-            createName = meta.getName();
+        l.info("alias:" + ar._alias + " target:" + ar._target + " " + targetIsRemote);
+
+        Version vAlias, vTarget;
+        if (targetIsRemote) {
+            vAlias = vLocal;
+            vTarget = vRemote;
+
+            // We need a valid target OA to move content/children and we need it to have the
+            // correct path (i.e conflicting path) so we need to temporarily rename the alias
+            // to a non-conflicting name
+            Path pParent = _ds.resolve_(new SOID(soidRemote.sidx(), parent));
+            String newName = _ds.generateConflictFreeFileName_(pParent, meta.getName());
+            assert !newName.equals(meta.getName()) : newName + " " + meta.getName();
+            _om.moveInSameStore_(soidLocal, parent, newName, PhysicalOp.NOP, false, false, t);
+
+            // NB: we can't MAP here as we have no way to UNMAP the alias first
+            // TODO: we really need to revisit the PhysicalOp concept to avoid leaking concepts
+            // that are only relevant to LinkedStorage...
+            _oc.createMeta_(fromPB(meta.getType()), soidRemote, parent, meta.getName(),
+                    meta.getFlags(), PhysicalOp.NOP, false, false, t);
+
+            _expulsion.objectAliased_(soidLocal, soidRemote, t);
         } else {
-            vAliasMeta = vRemote;
-            vTargetMeta = vLocal;
-            createName = newName;
+            vAlias = vRemote;
+            vTarget = vLocal;
         }
 
-        // Meta-data entry is created for the remote object.
-        // After aliasing operation is complete, meta-data for alias object will be removed.
-        // See _ds.deleteOA_() in performAliasingOnLocallyAvailableObjects_().
-        _oc.createMeta_(fromPB(meta.getType()), soidRemote, parent, createName, meta.getFlags(),
-                PhysicalOp.APPLY, false, false, t);
+        performAliasing_(ar._alias, vAlias, ar._target, vTarget, meta.getType() == Type.DIR,
+                PhysicalOp.MAP, t);
 
-        OA oaLocal = _ds.getOA_(soidLocal);
-        performAliasingOnLocallyAvailableObjects_(ar._alias, vAliasMeta, ar._target, vTargetMeta,
-            oaLocal.isDir(), t);
+        OA oaTarget = _ds.getOA_(ar._target);
+        if (targetIsRemote) {
+            // ensure the FID is up to date for LinkedStorage...
+            // NB: moveContent_ takes care of it for files
+            if (meta.getType() == Type.DIR && !oaTarget.isExpelled()) {
+                oaTarget.physicalFolder().create_(PhysicalOp.MAP, t);
+                // refresh OA for rest of the function
+                oaTarget = _ds.getOA_(ar._target);
+            }
+        }
+
+        l.info("target: " + oaTarget);
+        assert oaTarget.fidIsConsistentWithCAsOrExpulsion();
 
         // Increment local version of the alias object, if required.
         if (!ar._alias.equals(soidNoNewVersion)) {
+            l.info("update alias " + ar._alias);
             _vu.updateAliased_(new SOCKID(ar._alias, CID.META), t);
         }
     }
