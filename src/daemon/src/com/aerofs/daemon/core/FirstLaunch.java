@@ -6,7 +6,7 @@ package com.aerofs.daemon.core;
 
 import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.id.SID;
-import com.aerofs.daemon.core.linker.Linker;
+import com.aerofs.daemon.core.linker.ILinker;
 import com.aerofs.daemon.core.linker.scanner.ScanCompletionCallback;
 import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.lib.SystemUtil;
@@ -35,7 +35,7 @@ public class FirstLaunch
     private static final Logger l = Util.l(FirstLaunch.class);
 
     private final AccessibleStores _as;
-    private final Linker _linker;
+    private final ILinker _linker;
     private final CoreScheduler _sched;
 
     /**
@@ -53,7 +53,7 @@ public class FirstLaunch
     }
 
     @Inject
-    public FirstLaunch(Linker linker, CoreScheduler sched, AccessibleStores as)
+    public FirstLaunch(ILinker linker, CoreScheduler sched, AccessibleStores as)
     {
         _as = as;
         _linker = linker;
