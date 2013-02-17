@@ -1977,7 +1977,7 @@ public class SPService implements ISPService
                 .setEpoch(epoch.get())
                 .setType(type)
                 .build();
-        _verkehrAdmin.deliverPayload(did.toStringFormal(), command.toByteArray()).get();
+        _verkehrAdmin.deliverPayload_(did.toStringFormal(), command.toByteArray()).get();
     }
 
     private void updateVerkehrCRL(ImmutableList<Long> serials)

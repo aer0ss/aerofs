@@ -22,4 +22,5 @@ mkdir -p $INIT
 cp $RESOURCES/verkehr.conf $INIT
 cp $RESOURCES/verkehr $OPT
 cp $RESOURCES/verkehr.properties $OPT
+cp $RESOURCES/verkehr-admin.yml $OPT
 cp $RESOURCES/logback.xml $OPT

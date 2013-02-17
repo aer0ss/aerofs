@@ -247,7 +247,7 @@ public class AbstractSPTest extends AbstractTestWithDatabase
     {
         final List<Command> payloads = Lists.newLinkedList();
 
-        when(verkehrAdmin.deliverPayload(any(String.class), any(byte[].class)))
+        when(verkehrAdmin.deliverPayload_(any(String.class), any(byte[].class)))
                 .then(new Answer<Object>()
                 {
                     @Override
