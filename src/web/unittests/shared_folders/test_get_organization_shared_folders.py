@@ -2,28 +2,29 @@ import unittest
 from pyramid import testing
 from mock import Mock
 from aerofs_web import helper_functions
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ListSharedFoldersReply
+from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, \
+    ListOrganizationSharedFoldersReply
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
 
-class GetSharedFolderTest(unittest.TestCase):
+class TestGetOrganizationSharedFolders(unittest.TestCase):
     def setUp(self):
         # TODO (WW) move these stub setup steps to a common super class
         self.config = testing.setUp()
         self.stub = SPServiceRpcStub(None)
         helper_functions.get_rpc_stub = Mock(return_value=self.stub)
 
-        self._mock_list_shared_folders()
+        self._mock_list_organization_shared_folders()
 
     def tearDown(self):
         testing.tearDown()
 
-    def _mock_list_shared_folders(self):
-        reply = ListSharedFoldersReply()
+    def _mock_list_organization_shared_folders(self):
+        reply = ListOrganizationSharedFoldersReply()
         reply.total_count = 2
         self._add_shared_folder(reply)
         self._add_shared_folder(reply)
 
-        self.stub.list_shared_folders = Mock(return_value=reply)
+        self.stub.list_organization_shared_folders = Mock(return_value=reply)
 
     def _add_shared_folder(self, reply):
         folder = reply.shared_folder.add()
@@ -43,8 +44,9 @@ class GetSharedFolderTest(unittest.TestCase):
         ur.user.first_name = 'first'
         ur.user.last_name = 'last'
 
-    def test_list_shared_folders(self):
-        from modules.shared_folders.views import json_get_shared_folders
+    def test_get_organization_shared_folders(self):
+        from modules.shared_folders.views import \
+            json_get_organization_shared_folders
 
         request = testing.DummyRequest()
         request.params = {
@@ -52,6 +54,7 @@ class GetSharedFolderTest(unittest.TestCase):
             'iDisplayLength': 10,
             'iDisplayStart': 0
         }
+        request.session['username'] = 'test@email'
 
-        response = json_get_shared_folders(request)
+        response = json_get_organization_shared_folders(request)
         self.assertEquals(len(response['aaData']), 2)

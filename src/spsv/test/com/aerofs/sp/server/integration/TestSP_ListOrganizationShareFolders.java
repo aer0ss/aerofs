@@ -4,13 +4,13 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder.PBUserAndRole;
+import com.aerofs.proto.Sp.PBSharedFolder;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExNoPerm;
 import com.aerofs.base.id.SID;
 import com.aerofs.base.id.UserID;
-import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,12 +18,12 @@ import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 
 /**
- * Test basic functionality and permission enforcement of SP's shareFolder call, but don't test its
- * ability to set ACL entries (that testing is done by TestSP_ACL)
+ * This class doesn't test the ability to set ACL entries (which is is done by TestSP_ACL)
  */
-public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
+public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderPermissionTest
 {
     @Before
     public void setup()
@@ -35,7 +35,9 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
     public void shouldThrowExNoPermForNonAdmin()
             throws Exception
     {
-        service.listSharedFolders(1000, 0);
+        setSessionUser(USER_1);
+
+        service.listOrganizationSharedFolders(1000, 0);
     }
 
     @Test
@@ -48,7 +50,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
     }
 
     @Test
-    public void shouldNotListTeamServerACLs()
+    public void shouldNotListTeamServers()
             throws Exception
     {
         for (PBSharedFolder sf : createAndListTwoSharedFolders()) {
@@ -71,7 +73,7 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
                     hasOwner = true;
                 }
             }
-            assert hasOwner;
+            assertTrue(hasOwner);
         }
     }
 
@@ -88,23 +90,23 @@ public class TestSP_ListShareFolders extends AbstractSPFolderPermissionTest
                     hasSharee = true;
                 }
             }
-            assert hasSharee;
+            assertTrue(hasSharee);
         }
     }
 
     private List<PBSharedFolder> createAndListTwoSharedFolders()
             throws Exception
     {
-        // for backward compat with existing tests, accept invite immediately to update ACLs
         shareAndJoinFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
-        // for backward compat with existing tests, accept invite immediately to update ACLs
         shareAndJoinFolder(USER_1, TEST_SID_2, USER_3, Role.EDITOR);
+
+        setSessionUser(USER_1);
 
         // add a new org so user 1 can haz permissions to list folders
         service.addOrganization("test org", null, StripeCustomerID.TEST.getID());
 
-        return service.listSharedFolders(100, 0).get().getSharedFolderList();
+        return service.listOrganizationSharedFolders(100, 0).get().getSharedFolderList();
     }
 
 }

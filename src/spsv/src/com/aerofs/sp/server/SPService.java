@@ -1,7 +1,10 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExFormatError;
-import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder.PBUserAndRole;
+import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
+import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
+import com.aerofs.proto.Sp.PBSharedFolder;
+import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SystemUtil;
@@ -68,8 +71,6 @@ import com.aerofs.proto.Sp.GetUnsubscribeEmailReply;
 import com.aerofs.proto.Sp.GetUserCRLReply;
 import com.aerofs.proto.Sp.ISPService;
 import com.aerofs.proto.Sp.ListPendingFolderInvitationsReply;
-import com.aerofs.proto.Sp.ListSharedFoldersReply;
-import com.aerofs.proto.Sp.ListSharedFoldersReply.PBSharedFolder;
 import com.aerofs.proto.Sp.ListUsersReply;
 import com.aerofs.proto.SpNotifications.PBACLNotification;
 import com.aerofs.proto.Sp.PBAuthorizationLevel;
@@ -303,7 +304,7 @@ public class SPService implements ISPService
         UsersAndQueryCount listAndCount = org.listUsers(search, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(users2PBUserLists(listAndCount .users()))
+                .addAllUsers(users2pb(listAndCount.users()))
                 .setFilteredCount(listAndCount.count())
                 .setTotalCount(org.totalUserCount())
                 .build();
@@ -332,7 +333,7 @@ public class SPService implements ISPService
         UsersAndQueryCount listAndCount = org.listUsersAuth(search, level, maxResults, offset);
 
         ListUsersReply reply = ListUsersReply.newBuilder()
-                .addAllUsers(users2PBUserLists(listAndCount.users()))
+                .addAllUsers(users2pb(listAndCount.users()))
                 .setFilteredCount(listAndCount.count())
                 .setTotalCount(org.totalUserCount(level))
                 .build();
@@ -342,7 +343,7 @@ public class SPService implements ISPService
         return createReply(reply);
     }
 
-    private static List<PBUser> users2PBUserLists(Collection<User> users)
+    private static List<PBUser> users2pb(Collection<User> users)
             throws SQLException, ExNotFound
     {
         List<PBUser> pbusers = Lists.newArrayListWithCapacity(users.size());
@@ -358,8 +359,8 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<ListSharedFoldersReply> listSharedFolders(Integer maxResults,
-            Integer offset)
+    public ListenableFuture<ListOrganizationSharedFoldersReply> listOrganizationSharedFolders(
+            Integer maxResults, Integer offset)
             throws Exception
     {
         throwOnInvalidOffset(offset);
@@ -372,13 +373,63 @@ public class SPService implements ISPService
         Organization org = user.getOrganization();
 
         int sharedFolderCount = org.countSharedFolders();
-        Collection<SharedFolder> sfs = org.listSharedFolders(maxResults, offset);
 
+        List<PBSharedFolder> pbs = sharedFolders2pb(org.listSharedFolders(maxResults, offset));
+
+        _transaction.commit();
+
+        return createReply(ListOrganizationSharedFoldersReply.newBuilder()
+                .addAllSharedFolder(pbs)
+                .setTotalCount(sharedFolderCount)
+                .build());
+    }
+
+    @Override
+    public ListenableFuture<ListUserSharedFoldersReply> listUserSharedFolders(
+            String userID)
+            throws Exception
+    {
+        _transaction.begin();
+
+        User currentUser = _sessionUser.get();
+        User specifiedUser = _factUser.createFromExternalID(userID);
+
+        if (!specifiedUser.equals(currentUser)) {
+            // if the current user is different from the specified user, the current user must be
+            // an admin of the organization the specified user belongs to.
+            currentUser.throwIfNotAdmin();
+
+            String noPermMsg = "you don't have permissions to list " + userID + "'s shared folders";
+
+            // Throw early if the specified user doesn't exist rather than relying on the following
+            // below. This is to prevent user existance testing from attackers.
+            if (!specifiedUser.exists()) throw new ExNoPerm(noPermMsg);
+
+            if (!specifiedUser.getOrganization().equals(currentUser.getOrganization())) {
+                throw new ExNoPerm(noPermMsg);
+            }
+        }
+
+        List<PBSharedFolder> pbs = sharedFolders2pb(specifiedUser.getSharedFolders());
+
+        _transaction.commit();
+
+        return createReply(ListUserSharedFoldersReply.newBuilder()
+                .addAllSharedFolder(pbs)
+                .build());
+    }
+
+    private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs)
+            throws ExNoPerm, ExNotFound, SQLException
+    {
         // A cache to avoid excessive database queries. This should be obsolete with memcached.
         Map<UserID, FullName> user2name = Maps.newHashMap();
 
         List<PBSharedFolder> pbs = Lists.newArrayListWithCapacity(sfs.size());
         for (SharedFolder sf : sfs) {
+            // skip root stores. N.B. Organization.listSharedFolders never return root stores
+            if (sf.id().isRoot()) continue;
+
             PBSharedFolder.Builder builder = PBSharedFolder.newBuilder()
                     .setStoreId(sf.id().toPB())
                     .setName(sf.getName());
@@ -404,13 +455,7 @@ public class SPService implements ISPService
 
             pbs.add(builder.build());
         }
-
-        _transaction.commit();
-
-        return createReply(ListSharedFoldersReply.newBuilder()
-                .addAllSharedFolder(pbs)
-                .setTotalCount(sharedFolderCount)
-                .build());
+        return pbs;
     }
 
     @Override

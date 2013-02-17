@@ -33,6 +33,9 @@ def domain_sanity_check(domain):
 def is_admin(request):
     return request.session['group'] == ADMIN
 
+def get_session_user(request):
+    return request.session['username']
+
 def _is_ascii(string):
     """
     Checks if a given string is ascii (used by valid_password_test)

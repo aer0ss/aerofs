@@ -429,12 +429,12 @@ service SPService {
     rpc GetDeviceInfo(GetDeviceInfoCall) returns(GetDeviceInfoReply);
 
     /**
-     * Get list of folders being shared by users in organization
+     * Get list of folders being shared by users in organization. See also: ListUserSharedFolders
      *
-     * Throws:
-     *   ExNoPerm       if the user calling this does not have admin privileges
+     * Required Auth Level: admin
      */
-    rpc ListSharedFolders(ListSharedFoldersCall) returns(ListSharedFoldersReply);
+    rpc ListOrganizationSharedFolders(ListOrganizationSharedFoldersCall)
+            returns(ListOrganizationSharedFoldersReply);
 
     /**
      * Gets a list of organizations the user has been invited to, excluding their current
@@ -535,7 +535,7 @@ service SPService {
     rpc ExtendSession(Void) returns(Void);
 
     /**
-     * TODO (downtime) move this under GetDeviceInfo.
+     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under GetDeviceInfo.
      *
      * List all user devices (used in the admin panel device management page).
      *
@@ -553,6 +553,22 @@ service SPService {
      * Required Auth Level: admin
      */
     rpc GetStripeCustomerID(Void) returns(GetStripeCustomerIDReply);
+
+    /**
+     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under ListOrganizationSharedFolders
+     *
+     * Get list of folders being shared by a specified user. If the specified user is not the
+     * current user, the current user must be the admin of the organization the specified user
+     * belongs to.
+     *
+     * See also: ListOrganizationSharedFolders
+     *
+     * Required Auth Level: user or admin (see above)
+     *
+     * Throws:
+     *   ExNoPerm       if the user calling this does not have enough privileges (see above)
+     */
+    rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListUserSharedFoldersReply);
 }
 
 message GetStripeCustomerIDReply {
@@ -835,7 +851,7 @@ message GetDeviceInfoReply {
     repeated PBDeviceInfo device_info = 1;
 }
 
-message ListSharedFoldersCall {
+message ListOrganizationSharedFoldersCall {
     // Maximum number of folders returned.
     required uint32 max_results = 1;
 
@@ -843,24 +859,32 @@ message ListSharedFoldersCall {
     required uint32 offset = 2;
 }
 
-message ListSharedFoldersReply {
-    message PBSharedFolder {
-
-        message PBUserAndRole {
-            // Since only the Web UI uses this method, we include the full name for pretty display.
-            required PBUser user = 1;
-            required PBRole role = 2;
-        }
-
-        required bytes store_id = 1;
-        required string name = 2;
-        repeated PBUserAndRole user_and_role = 3;
-    }
-
+message ListOrganizationSharedFoldersReply {
     repeated PBSharedFolder shared_folder = 1;
 
-    // Total number of shared folders in the database for this organization
-    required int32 total_count = 2;
+    // Total number of shared folders in the database
+    required uint32 total_count = 2;
+}
+
+message ListUserSharedFoldersCall {
+    required string user_id = 1;
+}
+
+message ListUserSharedFoldersReply {
+    repeated PBSharedFolder shared_folder = 1;
+}
+
+message PBSharedFolder {
+
+    message PBUserAndRole {
+        // Since only the Web UI uses this method, we include the full name for pretty display.
+        required PBUser user = 1;
+        required PBRole role = 2;
+    }
+
+    required bytes store_id = 1;
+    required string name = 2;
+    repeated PBUserAndRole user_and_role = 3;
 }
 
 message GetOrganizationInvitationsReply {

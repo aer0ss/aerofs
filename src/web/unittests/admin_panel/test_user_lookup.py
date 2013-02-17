@@ -4,7 +4,7 @@ from mock import Mock
 from aerofs_web import helper_functions
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ListUsersReply
 
-class UserLookupTest(unittest.TestCase):
+class TestUserLookupTest(unittest.TestCase):
     def setUp(self):
         # TODO (WW) move these stub setup steps to a common super class
         self.config = testing.setUp()

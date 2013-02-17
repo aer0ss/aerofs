@@ -206,7 +206,7 @@
     <%
         links = [
             ('admin_users', _("Members")),
-            ('admin_shared_folders', _("Shared Folders")),
+            ('organization_shared_folders', _("Shared Folders")),
             ('admin_settings', _("Settings"))
         ]
     %>
