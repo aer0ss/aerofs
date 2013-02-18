@@ -193,8 +193,8 @@
 <%def name="render_nonadmin_links()">
     <%
         links = [
+            ('shared_folders', _("Shared Folders")),
             ('accept', _("Invitations")),
-            # ('devices', _("Devices"))
         ]
     %>
     % for link in links:
@@ -207,7 +207,7 @@
         links = [
             ('admin_users', _("Members")),
             ('organization_shared_folders', _("Shared Folders")),
-            ('admin_settings', _("Settings"))
+            ('admin_settings', _("Settings")),
         ]
     %>
     % for link in links:

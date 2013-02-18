@@ -14,7 +14,7 @@ log = logging.getLogger("web")
 )
 def homepage(request):
     # Redirects to the accept page.
-    return HTTPFound(request.route_url('accept'))
+    return HTTPFound(request.route_url('shared_folders'))
 
 # Exception handlers.
 
