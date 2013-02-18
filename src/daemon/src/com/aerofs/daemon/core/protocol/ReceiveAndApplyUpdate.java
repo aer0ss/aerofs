@@ -383,7 +383,7 @@ public class ReceiveAndApplyUpdate
             }
 
             if (isRemoteDominating || isContentSame_(kBranch, hRemote, tk)) {
-                l.debug("content is the same!");
+                l.debug("content is the same! " + isRemoteDominating + " " + hRemote);
                 if (kidxApply == null) {
                     // @@ see comments above
                     kidxApply = kidx;
@@ -944,10 +944,24 @@ public class ReceiveAndApplyUpdate
 
         // TODO reserve space first
 
-        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
-
         KIndex localBranchWithMatchingContent = res._hash == null ? null :
                 findBranchWithMatchingContent_(k.soid(), res._hash);
+
+        if (localBranchWithMatchingContent != null &&
+                localBranchWithMatchingContent.equals(k.kidx())) {
+            l.info("content already there, avoid I/O altogether");
+            // no point doing any file I/O...
+
+            // close the stream, we're not going to read from it
+            if (msg.streamKey() != null) {
+                _iss.end_(msg.streamKey());
+            }
+
+            // TODO:FIXME ugh that's retarded, this code needs some serious refactoring
+            return _tm.begin_();
+        }
+
+        final IPhysicalPrefix pfPrefix = _ps.newPrefix_(k);
 
         // Write the new content to the prefix file
         writeContentToPrefixFile_(pfPrefix, msg, reply.getFileTotalLength(),
