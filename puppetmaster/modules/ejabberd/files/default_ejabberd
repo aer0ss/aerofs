@@ -23,7 +23,7 @@ POLL=true
 #
 # Default: disable
 #
-SMP=auto
+SMP=disable
 
 # ERL_MAX_PORTS: Maximum number of simultaneously open Erlang ports
 #
