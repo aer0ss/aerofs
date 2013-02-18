@@ -35,7 +35,7 @@ node "sv.aerofs.com" inherits default {
 
     file { "/maps":
         ensure => directory,
-        mode   => 2770,
+        mode   => 2775,
         group  => "admin",
         owner  => "root",
     }
