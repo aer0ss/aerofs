@@ -17,16 +17,4 @@ node "sss.aerofs.com" inherits default {
         verkehr_host            => "verkehr.aerofs.com",
         cacert_location         => "/etc/ssl/certs/AeroFS_CA.pem"
     }
-
-    # For cron job emails.
-    package { "mailutils":
-        ensure => latest,
-    }
-
-    cron{"sss generate histograms":
-        command => "sss-generate-histograms | mail -s 'Sync Status Histograms' matt@aerofs.com",
-        user => root,
-        hour => "*",
-        minute => "1"
-    }
 }
