@@ -193,7 +193,7 @@
 <%def name="render_nonadmin_links()">
     <%
         links = [
-            ('shared_folders', _("Shared Folders")),
+            ('my_shared_folders', _("Shared Folders")),
             ('accept', _("Invitations")),
         ]
     %>

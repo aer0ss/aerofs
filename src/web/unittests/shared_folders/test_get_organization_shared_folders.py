@@ -3,17 +3,20 @@ from pyramid import testing
 from mock import Mock
 from aerofs_web import helper_functions
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, \
-    ListOrganizationSharedFoldersReply
+    ListOrganizationSharedFoldersReply, ListUserSharedFoldersReply
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
+from aerofs_sp.gen.sp_pb2 import ADMIN
 
 class TestGetOrganizationSharedFolders(unittest.TestCase):
     def setUp(self):
         # TODO (WW) move these stub setup steps to a common super class
         self.config = testing.setUp()
         self.stub = SPServiceRpcStub(None)
+
         helper_functions.get_rpc_stub = Mock(return_value=self.stub)
 
         self._mock_list_organization_shared_folders()
+        self._mock_list_user_shared_folders()
 
     def tearDown(self):
         testing.tearDown()
@@ -25,6 +28,13 @@ class TestGetOrganizationSharedFolders(unittest.TestCase):
         self._add_shared_folder(reply)
 
         self.stub.list_organization_shared_folders = Mock(return_value=reply)
+
+    def _mock_list_user_shared_folders(self):
+        reply = ListUserSharedFoldersReply()
+        self._add_shared_folder(reply)
+        self._add_shared_folder(reply)
+
+        self.stub.list_user_shared_folders = Mock(return_value=reply)
 
     def _add_shared_folder(self, reply):
         folder = reply.shared_folder.add()
@@ -55,6 +65,22 @@ class TestGetOrganizationSharedFolders(unittest.TestCase):
             'iDisplayStart': 0
         }
         request.session['username'] = 'test@email'
+        request.session['group'] = ADMIN
 
         response = json_get_organization_shared_folders(request)
+        self.assertEquals(len(response['aaData']), 2)
+
+    def test_get_user_shared_folders(self):
+        from modules.shared_folders.views import\
+            json_get_user_shared_folders, URL_PARAM_USER
+
+        request = testing.DummyRequest()
+        request.params = {
+            'sEcho': 'hoho',
+            URL_PARAM_USER: 'some@email'
+        }
+        request.session['username'] = 'test@email'
+        request.session['group'] = ADMIN
+
+        response = json_get_user_shared_folders(request)
         self.assertEquals(len(response['aaData']), 2)

@@ -3,7 +3,6 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.exceptions import NotFound
 from pyramid.security import NO_PERMISSION_REQUIRED
 from pyramid.view import view_config
-from modules.login.views import logout
 
 log = logging.getLogger("web")
 
@@ -14,7 +13,7 @@ log = logging.getLogger("web")
 )
 def homepage(request):
     # Redirects to the accept page.
-    return HTTPFound(request.route_url('shared_folders'))
+    return HTTPFound(request.route_url('my_shared_folders'))
 
 # Exception handlers.
 
