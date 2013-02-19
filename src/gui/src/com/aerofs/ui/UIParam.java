@@ -4,7 +4,7 @@ import com.aerofs.base.C;
 
 public class UIParam
 {
-    public static final long UPDATE_CHECKER_INITIAL_DELAY = 5 * C.MIN;
+    public static final long UPDATE_CHECKER_INITIAL_DELAY = 10 * C.SEC;
     public static final long UPDATE_CHECKER_INTERVAL = 1 * C.HOUR;
     public static final long ROOT_ANCHOR_POLL_INTERVAL= 30 * C.SEC;
     public static final long TRANSPORT_PING_SAMPLE_TIME_WINDOW = 30 * C.MIN;
