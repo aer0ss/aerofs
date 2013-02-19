@@ -78,7 +78,7 @@ public class GUI implements IUI
              *         at org.eclipse.swt.widgets.Display.getDefault(Unknown Source)
              */
             throw new IOException("Graphical interface is not available. Please use the command" +
-                    " line interface (" + S.CLI_NAME + ")");
+                    " line interface (" + S.CLI_NAME + ")", e);
         }
 
         // the grand grand parent shell for all other shells
