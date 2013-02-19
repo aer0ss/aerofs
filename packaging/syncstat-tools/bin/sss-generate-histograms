@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 echo "Generating histogram data. This might take a while..."
-files=$(java -jar $(dirname $0)/../opt/syncstat-tools/syncstat-tools.jar)
+files=$(java -jar $(dirname $0)/../opt/syncstat-tools/syncstat-generate-histograms.jar)
 
 ofile=$(echo $files | awk -F' ' '{print $1}')
 qfile=$(echo $files | awk -F' ' '{print $2}')
