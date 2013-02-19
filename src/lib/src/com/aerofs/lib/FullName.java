@@ -15,12 +15,6 @@ public class FullName
     final public String _last;
     private PBFullName _pb;
 
-    public FullName(PBFullName pb)
-    {
-        this(pb.getFirstName(), pb.getLastName());
-        _pb = pb;
-    }
-
     public FullName(String first, String last)
     {
         assert first != null;
@@ -39,6 +33,13 @@ public class FullName
         }
 
         return _pb;
+    }
+
+    public FullName fromPB(PBFullName pb)
+    {
+        FullName fn = new FullName(pb.getFirstName(), pb.getLastName());
+        fn._pb = pb;
+        return fn;
     }
 
     /**
