@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.lib.SystemUtil;
@@ -16,6 +17,7 @@ abstract class AbstractDBCW implements IDBCW
 
     private final String _url;
     private final boolean _autoCommit;
+    private final Properties _properties;
     private Connection _c;
 
     abstract void initImpl_(Statement stmt) throws SQLException;
@@ -24,8 +26,14 @@ abstract class AbstractDBCW implements IDBCW
 
     protected AbstractDBCW(String url, boolean autoCommit)
     {
+        this(url, autoCommit, new Properties());
+    }
+
+    protected AbstractDBCW(String url, boolean autoCommit, Properties properties)
+    {
         _url = url;
         _autoCommit = autoCommit;
+        _properties = properties;
     }
 
     @Override
@@ -36,7 +44,7 @@ abstract class AbstractDBCW implements IDBCW
 
         if (_c != null) return;
 
-        Connection c = DriverManager.getConnection(_url);
+        Connection c = DriverManager.getConnection(_url, _properties);
 
         Statement stmt = c.createStatement();
         try {

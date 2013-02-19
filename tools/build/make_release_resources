@@ -233,8 +233,8 @@ function create_java_jar() {
         echo " lib/$(basename "$i") " >> "$local_TEMP_MANIFEST"
     done
 
-    # Package a jar with the contents of bin and org subdirectories of the local release directory (all the class files)
-    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com -C "${LOCAL_RELEASE_DIR}/bin" org
+    # Package a jar with the contents of com subdirectory of the local release directory (all the class files)
+    jar cfm "${AEROFS_RELEASE_DIR}/aerofs.unobf.jar" "$local_TEMP_MANIFEST" -C "${LOCAL_RELEASE_DIR}/bin" com
 }
 
 ######################################################################
