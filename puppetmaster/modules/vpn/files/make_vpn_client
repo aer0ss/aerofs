@@ -1,0 +1,69 @@
+#!/bin/bash -e
+
+if [[ $# -lt 2 ]]; then
+	cat >&2 <<END
+Usage: ./make_vpn_client {output prefix} {client CN} [client-config]*
+This script creates a file {prefix}.tgz containing the configuration,
+certificates, and private key necessary for connection to OpenVPN.
+
+If [client-config] is not specified on the command line, then the
+routed-udp configuration is included in the tarball.  If one or more
+client-configs are specified, then each of those are included.
+END
+	exit 1
+fi
+
+SYS_KEY_DIR=/etc/ssl
+KEY_DIR=`mktemp -t -d key.XXXXXXXX`
+NAME=$1
+CN=$2
+
+TBLK_DIR=$KEY_DIR/AeroFSVPN.tblk
+
+shift; shift
+if [[ $# -gt 0 ]]; then
+	CLIENT_CONFIG=
+	for conf in "$@"; do
+		CLIENT_CONFIG+=/etc/openvpn/client_configs/$conf.conf" "
+	done
+else
+	CLIENT_CONFIG=/etc/openvpn/client_configs/aerofs-vpn.conf
+fi
+
+CA_CRT=$SYS_KEY_DIR/certs/ca.crt
+CA_APP_DIR=/etc/openvpn/ca
+CA_CONFIG=$CA_APP_DIR/openssl.cnf
+
+mkdir $TBLK_DIR
+
+KEY=$TBLK_DIR/client.key
+CSR=$TBLK_DIR/client.csr
+CRT=$TBLK_DIR/client.crt
+
+# Generate new client key and cert-signing request
+openssl req -newkey rsa:2048 -keyout $KEY -out $CSR -nodes -subj "/O=aerofs.com/OU=OpenVPN/CN=$CN"
+
+# Sign a cert with the CA
+openssl ca -config $CA_CONFIG -days 1000 -in $CSR -out $CRT
+rm $CSR
+
+# Set reasonable permissions on the new key and cert in the config folder
+chmod 400 $KEY
+chmod 444 $CRT
+# Add the CA cert and client config(s) to the config folder
+cp $CA_CRT $TBLK_DIR/
+cp $CLIENT_CONFIG $TBLK_DIR/
+
+# Tar up the config folder
+tar czf $NAME.tgz -C $KEY_DIR .
+
+# Save the cert we signed in the CA's client_certs folder
+cp $CRT /etc/openvpn/ca/client_certs/$CN.crt
+
+rm -Rf $KEY_DIR
+
+# Enable the client by creating an empty (inheirit) config for that client.
+# OpenVPN oddity.
+touch /etc/openvpn/routed-clients/${CN// /_}
+
+echo Config package ready at $(pwd)/$NAME.tgz
