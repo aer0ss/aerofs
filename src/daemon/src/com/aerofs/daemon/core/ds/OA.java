@@ -65,8 +65,10 @@ public class OA
     // Useful for iterating over KIndices in sorted order.
     @Nullable private final ImmutableSortedMap<KIndex, CA> _cas;
 
-    // use "R" instead of an empty string as Path mandates non-empty path elements
-    public static final String ROOT_DIR_NAME = "R";
+    // use an empty string to avoid conflicts with existing files
+    // NB: Path does not allow empty components but this is not an issue because root dirs are just
+    // an artifact of the store hierarchy and should never ever appear in a Path...
+    public static final String ROOT_DIR_NAME = "";
 
     @Nonnull public static OA createFile(SOID soid, OID parent, String name,
             SortedMap<KIndex, CA> cas, int flags, @Nullable FID fid)
