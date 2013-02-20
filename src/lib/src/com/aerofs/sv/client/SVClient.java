@@ -26,6 +26,7 @@ import com.aerofs.proto.Sv.PBSVEvent;
 import com.aerofs.proto.Sv.PBSVGzippedLog;
 import com.aerofs.proto.Sv.PBSVHeader;
 import com.aerofs.sv.common.EmailCategory;
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nonnull;
@@ -409,9 +410,9 @@ public final class SVClient
         l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
         if (ignoreDefect) return;
 
-        // Send the defect to RockLog
-        if (UserID.fromInternal(header.getUser()).isAeroFSUser() || L.get().isMultiuser()) {
-            RockLog.newDefect("svclient.test").setMessage(desc).setException(cause).send();
+        // Send the defect to RockLog only for certain users. TODO (PH) enable for everyone
+        if (shouldSendToRocklog(header.getUser(), header.getDeviceId())) {
+            RockLog.newDefect("SV: " + desc).setMessage(desc).setException(cause).send();
         }
 
         StringBuilder sbDesc = createDefectDescription(desc, secret);
@@ -450,6 +451,15 @@ public final class SVClient
 
         // FIXME (AG): really? I'm pretty sure we won't be able to do any of this no?
         if (cause instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
+    }
+
+    private static boolean shouldSendToRocklog(String user, ByteString did)
+    {
+        // This is a little gross, but this is just to throttle usage while load testing (PH)
+        if (did != null && did.byteAt(0) < 0x40 ) return true;
+        if (L.get().isMultiuser()) return true;
+        if (UserID.fromInternal(user).isAeroFSUser()) return true;
+        return false;
     }
 
     private static StringBuilder createDefectDescription(String desc, String secret)
