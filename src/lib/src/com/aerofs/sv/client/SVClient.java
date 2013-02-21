@@ -410,10 +410,7 @@ public final class SVClient
         l.error((ignoreDefect ? "repeating last" : "sending") + " defect: " + desc + ": " + Util.e(cause));
         if (ignoreDefect) return;
 
-        // Send the defect to RockLog only for certain users. TODO (PH) enable for everyone
-        if (shouldSendToRocklog(header.getUser(), header.getDeviceId())) {
-            RockLog.newDefect("SV: " + desc).setMessage(desc).setException(cause).send();
-        }
+        RockLog.newDefect("SV: " + desc).setMessage(desc).setException(cause).send();
 
         StringBuilder sbDesc = createDefectDescription(desc, secret);
 
@@ -451,15 +448,6 @@ public final class SVClient
 
         // FIXME (AG): really? I'm pretty sure we won't be able to do any of this no?
         if (cause instanceof OutOfMemoryError) ExitCode.OUT_OF_MEMORY.exit();
-    }
-
-    private static boolean shouldSendToRocklog(String user, ByteString did)
-    {
-        // This is a little gross, but this is just to throttle usage while load testing (PH)
-        if (did != null && did.byteAt(0) < 0x80 ) return true;
-        if (L.get().isMultiuser()) return true;
-        if (UserID.fromInternal(user).isAeroFSUser()) return true;
-        return false;
     }
 
     private static StringBuilder createDefectDescription(String desc, String secret)
