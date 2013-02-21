@@ -12,6 +12,7 @@ import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.base.ex.ExBadCredential;
 import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.MockSessionUser;
+import com.aerofs.servlets.SecUtilHelper;
 import com.aerofs.sp.server.AbstractTestWithSPDatabase;
 import com.aerofs.sp.server.PasswordManagement;
 import com.aerofs.sp.server.SPService;
@@ -214,8 +215,8 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
             throws IOException, GeneralSecurityException
     {
         KeyPair kp = SecUtil.newRSAKeyPair();
-        return ByteString.copyFrom(SecUtil.serverOnlyNewCSR(kp.getPublic(), kp.getPrivate(), userID,
-                did).getEncoded());
+        return ByteString.copyFrom( SecUtilHelper.serverOnlyNewCSR(kp.getPublic(), kp.getPrivate(),
+                userID, did).getEncoded() );
     }
 
     protected Set<String> mockAndCaptureVerkehrPublish()
