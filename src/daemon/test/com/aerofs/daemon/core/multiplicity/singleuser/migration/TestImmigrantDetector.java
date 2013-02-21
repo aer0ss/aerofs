@@ -1,7 +1,6 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
 import java.sql.SQLException;
-import java.util.Map;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.base.id.OID;
@@ -76,14 +75,16 @@ public class TestImmigrantDetector extends AbstractTest
     SID sidAnchored = SID.anchorOID2storeSID(oid);
     Path pFrom = new Path("fooFrom", "barFrom", "bazFrom");
     Path pTo = new Path("fooTo", "barTo", "bazTo");
-    Version vKMLFrom = new Version().set_(new DID(UniqueID.generate()), new Tick(100));
-    Version vKMLTo = new Version().set_(new DID(UniqueID.generate()), new Tick(100));
+    Version vKMLFrom = Version.of(DID.generate(), new Tick(100));
+    Version vKMLTo = Version.of(DID.generate(), new Tick(100));
     PhysicalOp op = PhysicalOp.APPLY;
 
     @Before
     public void setUp() throws SQLException, ExNotFound
     {
         // set up basic wiring
+
+        when(nvc.getAllLocalVersions_(any(SOCID.class))).thenReturn(Version.empty());
         mockOA(oaFrom, soidFrom, Type.FILE, false, null, null, ds);
         mockOA(oaFromExpelled1, soidFromExpelled1, Type.FILE, true, null, null, ds);
         mockOA(oaFromExpelled2, soidFromExpelled2, Type.FILE, true, null, null, ds);
@@ -96,8 +97,12 @@ public class TestImmigrantDetector extends AbstractTest
 
         when(ds.resolveNullable_(soidFrom)).thenReturn(pFrom);
         when(ds.resolveNullable_(soidTo)).thenReturn(pTo);
-        when(nvc.getKMLVersion_(new SOCID(soidFrom, CID.CONTENT))).thenReturn(vKMLFrom);
-        when(nvc.getKMLVersion_(new SOCID(soidTo, CID.CONTENT))).thenReturn(vKMLTo);
+
+        SOCID socidFrom = new SOCID(soidFrom, CID.CONTENT);
+        SOCID socidTo = new SOCID(soidTo, CID.CONTENT);
+        when(nvc.getKMLVersion_(any(SOCID.class))).thenReturn(Version.empty());
+        when(nvc.getKMLVersion_(socidFrom)).thenReturn(vKMLFrom);
+        when(nvc.getKMLVersion_(socidTo)).thenReturn(vKMLTo);
         when(oaAnchoredRoot.parent()).thenReturn(new OID(UniqueID.generate()));
 
         when(aol.locate_(eq(oid), eq(sidxTo), any(OA.Type.class))).thenReturn(oaFrom);
@@ -187,11 +192,7 @@ public class TestImmigrantDetector extends AbstractTest
             verify(nvc).addLocalVersion_(kTo, vLocalFrom, t);
         }
 
-        for (Map.Entry<DID, Tick> en : vLocalSum.getAll_().entrySet()) {
-            DID did = en.getKey();
-            Tick tick = en.getValue();
-            verify(ivc).updateMyImmigrantVersion_(socidTo, did, tick, t);
-        }
+        verify(ivc).createLocalImmigrantVersions_(socidTo, vLocalSum, t);
     }
 
     @Test
@@ -214,12 +215,8 @@ public class TestImmigrantDetector extends AbstractTest
         shouldMigrate();
 
         SOCID socidTo = new SOCID(soidTo, CID.CONTENT);
-        for (Map.Entry<DID, Tick> en : vKMLFrom.getAll_().entrySet()) {
-            DID did = en.getKey();
-            Tick tick = en.getValue();
-            verify(ivc, never()).updateMyImmigrantVersion_(eq(socidTo), eq(did), eq(tick),
-                    any(Trans.class));
-        }
+        verify(ivc, never()).createLocalImmigrantVersions_(eq(socidTo), eq(vKMLFrom),
+                any(Trans.class));
     }
 
     private void shouldNotMigrate() throws Exception

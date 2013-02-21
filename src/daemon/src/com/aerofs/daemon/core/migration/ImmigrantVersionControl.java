@@ -8,6 +8,7 @@ import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
 import com.aerofs.daemon.lib.db.ver.TransLocalVersionAssistant;
 import com.aerofs.lib.Tick;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.Version;
 import com.aerofs.lib.cfg.CfgLocalDID;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.id.SOCID;
@@ -15,6 +16,7 @@ import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
 
 import java.sql.SQLException;
+import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 
@@ -39,7 +41,18 @@ public class ImmigrantVersionControl extends AbstractVersionControl<ImmigrantTic
         _ivdb = ivdb;
     }
 
-    public void updateMyImmigrantVersion_(SOCID socid, DID did, Tick tick, Trans t)
+    public void createLocalImmigrantVersions_(SOCID socid, Version v, Trans t)
+            throws SQLException
+    {
+        for (Entry<DID, Tick> en: v.getAll_().entrySet()) {
+            Tick tick = en.getValue();
+            if (!tick.equals(Tick.ZERO)) {
+                updateMyImmigrantVersion_(socid, en.getKey(), tick, t);
+            }
+        }
+    }
+
+    private void updateMyImmigrantVersion_(SOCID socid, DID did, Tick tick, Trans t)
             throws SQLException
     {
         Tick immTick = _maxTick.incNonAlias();

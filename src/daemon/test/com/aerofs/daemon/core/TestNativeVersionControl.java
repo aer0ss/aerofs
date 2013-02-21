@@ -52,7 +52,7 @@ public class TestNativeVersionControl extends AbstractTestVersionControl<NativeT
     {
         verify(nvdb).addKMLVersion_(
                 new SOCID(sidx, tr._oid, tr._cid),
-                new Version().set_(cfgLocalDID.get(), tr._tick), t);
+                Version.of(cfgLocalDID.get(), tr._tick), t);
     }
 
     private static class MockDBIteratorNativeTickRow

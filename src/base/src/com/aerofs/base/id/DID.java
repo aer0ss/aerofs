@@ -32,4 +32,9 @@ public class DID extends UniqueID
     {
         super(str);
     }
+
+    public static DID generate()
+    {
+        return new DID(UniqueID.generate());
+    }
 }

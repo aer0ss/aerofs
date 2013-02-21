@@ -23,6 +23,7 @@ import com.aerofs.lib.Tick;
 import com.aerofs.lib.Version;
 import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.*;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import javax.annotation.Nullable;
@@ -117,9 +118,10 @@ public class TestUtilCore
         long len, long mtime, @Nullable NativeVersionControl nvc)
             throws SQLException, ExNotFound
     {
-        SortedMap<KIndex, CA> cas = new TreeMap<KIndex, CA>();
+        SortedMap<KIndex, CA> cas = Maps.newTreeMap();
 
         int kMaster = KIndex.MASTER.getInt();
+        Version vAllLocal = new Version();
         for (int i = kMaster; i < kMaster + branches; i++) {
             KIndex kidx = new KIndex(i);
             SOCKID k = new SOCKID(oa.soid(), CID.CONTENT, kidx);
@@ -130,11 +132,15 @@ public class TestUtilCore
 
             if (nvc != null) {
                 // mock local version
-                Version vLocal = new Version();
-                vLocal.set_(new DID(UniqueID.generate()), new Tick(i + 1));
+                Version vLocal = Version.of(new DID(UniqueID.generate()), new Tick(i + 1));
+                vAllLocal = vAllLocal.add_(vLocal);
                 when(nvc.getLocalVersion_(k)).thenReturn(vLocal);
             }
         }
+        if (nvc != null) {
+            when(nvc.getAllLocalVersions_(new SOCID(oa.soid(), CID.CONTENT))).thenReturn(vAllLocal);
+        }
+
         when(oa.cas()).thenReturn(cas);
     }
 
