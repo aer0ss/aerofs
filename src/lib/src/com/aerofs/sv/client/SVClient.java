@@ -456,7 +456,7 @@ public final class SVClient
     private static boolean shouldSendToRocklog(String user, ByteString did)
     {
         // This is a little gross, but this is just to throttle usage while load testing (PH)
-        if (did != null && did.byteAt(0) < 0x40 ) return true;
+        if (did != null && did.byteAt(0) < 0x80 ) return true;
         if (L.get().isMultiuser()) return true;
         if (UserID.fromInternal(user).isAeroFSUser()) return true;
         return false;
