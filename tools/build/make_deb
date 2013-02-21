@@ -98,11 +98,7 @@ mkdir -p $HICOLOR_DIR/64x64/apps
 cp -R $SERVER_RELEASE_DIR/aerofs.linux.inst/[AEROFS_PRODUCT_UNIX]* debian/usr/bin/
 chmod a+x debian/usr/bin/[AEROFS_PRODUCT_UNIX]
 
-cp $SERVER_RELEASE_DIR/aerofs.linux/aerofs.desktop debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
-
-# This is getting a little ridiculous and hard to follow. Improve this (PH).
-sed -i"" -e 's/\[AEROFS_PRODUCT_UNIX\]/[AEROFS_PRODUCT_UNIX]/' debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
-sed -i"" -e 's/\[AEROFS_PRODUCT\]/[AEROFS_PRODUCT]/' debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
+cp $SERVER_RELEASE_DIR/aerofs.linux/[AEROFS_PRODUCT_UNIX].desktop debian/usr/share/applications/[AEROFS_PRODUCT_UNIX].desktop
 
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo16.png $HICOLOR_DIR/16x16/apps/[AEROFS_PRODUCT_UNIX].png
 cp $SERVER_RELEASE_DIR/aerofs/icons/logo32.png $HICOLOR_DIR/32x32/apps/[AEROFS_PRODUCT_UNIX].png

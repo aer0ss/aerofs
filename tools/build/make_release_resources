@@ -28,6 +28,17 @@ fi
 
 readonly RELEASE_VERSION="$2"
 
+function render_template_in_place_on() {
+    # Applies template substitution to any number of files.
+    while [[ $# -gt 0 ]]; do
+        # render the next file
+        sed -i "" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" $1
+        sed -i "" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" $1
+        sed -i "" -e "s/\[AEROFS_PRODUCT\]/${AEROFS_PRODUCT}/g" $1
+        shift 1
+    done
+}
+
 ######################################################################
 #
 # Copies and creates the necessary resources in a local resource folder
@@ -61,6 +72,7 @@ function copy_resources_to_local_release_directories() {
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/INSTALL "${AEROFS_RELEASE_INST_DIR}/"
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}"
     cp "${CLIENT_RESOURCES_DIR}"/linux.inst/aerofs "${AEROFS_RELEASE_INST_DIR}/${AEROFS_PRODUCT_UNIX}"
+    mv "${AEROFS_RELEASE_LINUX_DIR}/aerofs.desktop" "${AEROFS_RELEASE_LINUX_DIR}/${AEROFS_PRODUCT_UNIX}.desktop"
 
     # Copy S3 libs if necessary
     cp -R "${CLIENT_RESOURCES_DIR}/s3/lib"/* "${AEROFS_RELEASE_LINUX_DIR}/lib/"
@@ -87,15 +99,14 @@ function copy_resources_to_local_release_directories() {
     # **********!!!!           !!!!*********
 
     # Required product sed commands for osx and linux respectively.
-    sed -i "" -e "s/\[AEROFS_PRODUCT_SPACEFREE\]/${AEROFS_PRODUCT_SPACEFREE}/g" \
-        ${AEROFS_RELEASE_OSX_DIR}/updater.sh
-    sed -i "" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" \
-        ${AEROFS_RELEASE_LINUX_DIR}/updater.sh
+    render_template_in_place_on ${AEROFS_RELEASE_OSX_DIR}/updater.sh
+    render_template_in_place_on ${AEROFS_RELEASE_LINUX_DIR}/updater.sh
 
     # Required product sed commands for linux.
-    sed -i "" -e "s/\[AEROFS_PRODUCT_UNIX\]/${AEROFS_PRODUCT_UNIX}/g" \
+    render_template_in_place_on \
         "${AEROFS_RELEASE_INST_DIR}"/{${AEROFS_PRODUCT_UNIX},INSTALL} \
-        "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}
+        "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}          \
+        "${AEROFS_RELEASE_LINUX_DIR}"/${AEROFS_PRODUCT_UNIX}.desktop
 
     # Update URL in installers for correct MODE
     if [ "$MODE" == "PROD" ]; then
