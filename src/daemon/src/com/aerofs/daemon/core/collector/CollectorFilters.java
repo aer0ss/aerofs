@@ -350,14 +350,35 @@ public class CollectorFilters
         int[] indics = BFOID.HASH.hash(ocid.oid());
         Set<DID> ret = Sets.newTreeSet();
 
-        // TODO: this function can become a huge bottleneck if _cs2didbf becomes large:
-        // either prevent that from happening by merging BF regularly or refactor this code
-        for (Map<DID, BFOID> d2f : _cs2did2bf.values()) {
-            for (Entry<DID, BFOID> en : d2f.entrySet()) {
-                DID did = en.getKey();
-                if (ret.contains(did)) continue;
-                if (!en.getValue().contains_(indics)) continue;
-                ret.add(did);
+        // iterating over _did2dev instead of _cs2didbf has a few advantages:
+        // 1) we can leverage the db filter, if available to do a first rough elimination
+        // 2) we can use early termination of the _cs2didbf iteration
+        // 3) for all devices that are hits on the db filter we only need to iterate over a
+        // subset of _cs2didbf
+        // 4) we don't need to repeatedly test for membership in the result set
+        //
+        // the only disadvantage is that if all devices have BF attached to the exact same set
+        // of CS the iteration overhead will be slightly larger. Fortunately:
+        // 1) the most likely case for this to happen is when filters are set from db and in this
+        // case there's only one CS involved
+        // 2) the number of loaded devices is unlikely to grow faster than the number of updates
+        // received from all devices
+        for (Entry<DID, DeviceEntry> d : _did2dev.entrySet()) {
+            DeviceEntry dev = d.getValue();
+            // if this device has many filters scattered at different CS it's worth doing a first
+            // rough check via the db filter, if available
+            // on the other hand if the device has few filters the cost of the extra test might
+            // not be worth the probability of avoiding the other tests...
+            if (dev._css.size() > 1) {
+                BFOID bf = dev._dbFilter;
+                if (bf != null && !bf.contains_(indics)) continue;
+            }
+            DID did = d.getKey();
+            for (CollectorSeq cs : dev._css) {
+                if (_cs2did2bf.get(cs).get(did).contains_(indics)) {
+                    ret.add(did);
+                    break;
+                }
             }
         }
 
