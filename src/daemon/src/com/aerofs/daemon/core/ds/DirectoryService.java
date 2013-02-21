@@ -355,6 +355,11 @@ public class DirectoryService implements IDumpStatMisc, IStoreDeletionOperator
         return oa;
     }
 
+    public int getSyncableChildCount_(SOID soid) throws SQLException
+    {
+        return _mdb.getSyncableChildCount_(soid);
+    }
+
     /**
      * @return object attribute including aliased ones.
      */

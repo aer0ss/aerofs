@@ -617,14 +617,6 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
         }
 
         Path ppath = path.removeLast();
-
-        // always send notification for creation to avoid caching problems
-        // i.e if a file with sync status is deleted and a new file is created with the same name,
-        // Ritual clients (shellext and co) may still show the sync status of the deleted file until
-        // the status of the new file changes for the first time (which may take a long time if no
-        // peers are online).
-        _tlStatusModified.get(t).add(path);
-
         if (!status.isEmpty()) {
             // the object being added has some sync status, full update required
             // this happens when objects are moved from one parent to another
@@ -668,22 +660,7 @@ public class AggregateSyncStatus implements IDirectoryServiceListener
      */
     private int getSyncableChildCount_(SOID soid) throws SQLException
     {
-        // TODO(huguesb): cache that number?
-        // TODO(huguesb): use a single SQL query to avoid wasting memory and CPU
-        int total = 0;
-        try {
-            for (OID oid : _ds.getChildren_(soid)) {
-                OA coa = _ds.getOA_(new SOID(soid.sidx(), oid));
-                if (!coa.isExpelled()) {
-                    ++total;
-                }
-            }
-        } catch (ExNotDir e) {
-            assert false : soid;
-        } catch (ExNotFound e) {
-            assert false : soid;
-        }
-        return total;
+        return _ds.getSyncableChildCount_(soid);
     }
 
     /**

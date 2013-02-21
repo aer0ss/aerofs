@@ -515,6 +515,18 @@ public class MockDS
             IPhysicalFolder pf = mock(IPhysicalFolder.class);
             when(_oa.physicalFolder()).thenReturn(pf);
 
+            when(_ds.getSyncableChildCount_(eq(_soid))).thenAnswer(new Answer<Integer>() {
+                @Override
+                public Integer answer(InvocationOnMock invocation) throws Throwable
+                {
+                    int n = 0;
+                    for (MockDSObject o : _children.values()) {
+                        if (!o._oa.isExpelled()) ++n;
+                    }
+                    return n;
+                }
+            });
+
             when(_ds.getAggregateSyncStatus_(eq(_soid))).thenReturn(new CounterVector());
 
             final MockDSDir _this = this;

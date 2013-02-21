@@ -115,4 +115,5 @@ public interface IMetaDatabase
     void setAggregateSyncStatus_(SOID soid, CounterVector aggregateStatus, Trans t)
             throws SQLException;
 
+    int getSyncableChildCount_(SOID soid) throws SQLException;
 }
