@@ -229,6 +229,8 @@ public class CollectorFilters
 
         Map<DID, BFOID> d2f = _cs2did2bf.get(cs);
         if (d2f == null) {
+            // TODO: prevent explosive growth of _cs2didbf by merging sparse BFs
+            // see getDevicesHavingComponent_ for a rationale
             d2f = Maps.newTreeMap();
             _cs2did2bf.put(cs, d2f);
         }
@@ -261,15 +263,19 @@ public class CollectorFilters
     }
 
     /**
-     * the caller must guarantee that 1) the device has been loaded,
-     * 2) the method hasn't been called since the last loading of the device, 3)
-     * the db filter is not null
+     * the caller must guarantee that
+     * 1) the given CS is the bottom of the collector queue
+     * 2) the device has been loaded
+     * 3) the db filter is not null
+     * 4) no BF for this device has been attached to any CS since the device was loaded
      */
     void setCSFilterFromDB_(DID did, CollectorSeq cs)
     {
         DeviceEntry dev = _did2dev.get(did);
         BFOID db = dev.getDBFilter_();
         assert db != null : did + " " + cs;
+        // make sure no BF attached to any CS for this device as they would be redundant
+        assert dev._css.isEmpty() : did + " " + dev._css;
         Util.verify(setCSFilter_(dev, cs, db) == null);
     }
 
@@ -283,14 +289,6 @@ public class CollectorFilters
         for (DeviceEntry dev : _did2dev.values()) {
             BFOID db = dev.getDBFilter_();
             if (db != null) Util.verify(setCSFilter_(dev, cs, db) == null);
-        }
-    }
-
-    void addAllCSFiltersFromDB_(CollectorSeq cs)
-    {
-        for (DeviceEntry dev : _did2dev.values()) {
-            BFOID db = dev.getDBFilter_();
-            if (db != null) addCSFilter_(dev, cs, db);
         }
     }
 
@@ -351,6 +349,9 @@ public class CollectorFilters
     {
         int[] indics = BFOID.HASH.hash(ocid.oid());
         Set<DID> ret = Sets.newTreeSet();
+
+        // TODO: this function can become a huge bottleneck if _cs2didbf becomes large:
+        // either prevent that from happening by merging BF regularly or refactor this code
         for (Map<DID, BFOID> d2f : _cs2did2bf.values()) {
             for (Entry<DID, BFOID> en : d2f.entrySet()) {
                 DID did = en.getKey();
@@ -359,6 +360,7 @@ public class CollectorFilters
                 ret.add(did);
             }
         }
+
         return ret;
     }
 

@@ -203,10 +203,16 @@ public class Collector implements IDumpStatMisc
 
     public void restart_()
     {
-        // add all db filters to cs to force the current iteration to
-        // run a full cycle
-        if (started_()) _cfs.addAllCSFiltersFromDB_(_occs._cs);
-        else start_(null);
+        // add all db filters to cs to force the current iteration to run a full cycle
+        // NB: we can safely fully reset the CS filter queue because the DB always contains the
+        // canonical copy of the latest BF for each device and it is the union of all BF received
+        // since the last cleanup (i.e. the last time collection was finalized)
+        if (started_()) {
+            _cfs.deleteAllCSFilters_();
+            _cfs.setAllCSFiltersFromDB_(_occs._cs);
+        } else {
+            start_(null);
+        }
     }
 
     private void resetBackoffInterval_()
@@ -321,7 +327,6 @@ public class Collector implements IDumpStatMisc
                     } else {
                         _occs = occs;
                     }
-
                 } else {
                     l.debug("empty list. stop");
                     _cfs.deleteAllCSFilters_();
