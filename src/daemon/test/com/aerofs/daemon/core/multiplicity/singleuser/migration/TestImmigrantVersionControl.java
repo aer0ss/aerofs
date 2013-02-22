@@ -11,6 +11,7 @@ import com.aerofs.daemon.lib.db.ver.IImmigrantVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.IVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.ImmigrantTickRow;
 import com.aerofs.lib.Tick;
+import com.aerofs.lib.Version;
 import com.aerofs.lib.db.MockDBIterator;
 import com.aerofs.lib.id.*;
 
@@ -93,12 +94,12 @@ public class TestImmigrantVersionControl extends AbstractTestVersionControl<Immi
     {
         Tick curGreatestTick = initialGreatestTick.incNonAlias();
         when(ivdb.isTickKnown_(socid, did, tick)).thenReturn(false);
-        ivc.updateMyImmigrantVersion_(socid, did, tick, t);
+        ivc.createLocalImmigrantVersions_(socid, Version.of(did, tick), t);
         verify(ivdb).addImmigrantVersion_(socid, cfgLocalDID.get(), curGreatestTick, did, tick, t);
 
         Tick newTick = tick.incAlias();
         curGreatestTick = curGreatestTick.incNonAlias();
-        ivc.updateMyImmigrantVersion_(socid, did, newTick, t);
+        ivc.createLocalImmigrantVersions_(socid, Version.of(did, newTick), t);
         verify(ivdb).addImmigrantVersion_(socid, cfgLocalDID.get(), curGreatestTick, did, newTick,
                 t);
     }

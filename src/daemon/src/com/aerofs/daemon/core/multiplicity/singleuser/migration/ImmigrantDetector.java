@@ -157,16 +157,11 @@ public class ImmigrantDetector implements IImmigrantDetector
             // process
         }
 
-        if (!vLocalSum.isZero_()) {
-            // update kml version
-            Version vKMLToDel = vKMLToOld.sub_(vKMLToOld.sub_(vLocalSum));
-            _nvc.deleteKMLVersion_(socidTo, vKMLToDel, t);
+        // update kml version
+        Version vKMLToDel = vKMLToOld.shadowedBy_(vLocalSum);
+        _nvc.deleteKMLVersion_(socidTo, vKMLToDel, t);
 
-            // add immigrant version
-            for (Entry<DID, Tick> en : vLocalSum.getAll_().entrySet()) {
-                _ivc.updateMyImmigrantVersion_(socidTo, en.getKey(), en.getValue(), t);
-            }
-        }
+        _ivc.createLocalImmigrantVersions_(socidTo, vLocalSum, t);
     }
 
     private void immigrateAnchor_(OA oaFrom, OA oaTo, PhysicalOp op, Trans t)

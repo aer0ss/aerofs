@@ -84,10 +84,10 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         Tick myKMLTick = getKMLVersion_(k.socid()).get_(myDid);
         assert !myKMLTick.isAlias() && myKMLTick.getLong() < newTick.getLong();
         if (!myKMLTick.equals(Tick.ZERO)) {
-            deleteKMLVersion_(k.socid(), new Version().set_(myDid, myKMLTick), t);
+            deleteKMLVersion_(k.socid(), Version.of(myDid, myKMLTick), t);
         }
 
-        Version v = new Version().set_(myDid, newTick);
+        Version v = Version.of(myDid, newTick);
         addLocalVersion_(k, v, t);
 
         _nvdb.setGreatestTick_(newTick, t);
@@ -136,7 +136,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         // devices involved in a name conflict. However, if any of those devices go offline
         // permanently, the duplicates will never be merged/removed
         if (!_nvdb.isTickKnown_(socid, did, tick)) {
-            addKMLVersionAndCollectorSequenceNoAssert_(socid, new Version().set_(did, tick), t);
+            addKMLVersionAndCollectorSequenceNoAssert_(socid, Version.of(did, tick), t);
             return true;
         } else {
             return false;
@@ -304,7 +304,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
     protected void restoreTickRow_(SOCID socid, NativeTickRow tr, Trans t)
             throws SQLException
     {
-        addKMLVersionAndCollectorSequenceNoAssert_(socid, new Version().set_(_cfgLocalDID.get(),
-                tr._tick), t);
+        addKMLVersionAndCollectorSequenceNoAssert_(socid,
+                Version.of(_cfgLocalDID.get(), tr._tick), t);
     }
 }

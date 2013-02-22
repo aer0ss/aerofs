@@ -526,8 +526,7 @@ public class GetVersCall
         // The alias object socid should have no oa
         assert !_ds.hasOA_(socidToDelete.soid()) : socidToDelete + " " + loggedData;
 
-        Version vToDelete = new Version();
-        vToDelete.set_(did, tick);
+        Version vToDelete = Version.of(did, tick);
 
         // Assume that vToDelete is entirely duplicated in the target object's versions.
         // (so it is safe to simply delete it from the alias object (either KML or local))

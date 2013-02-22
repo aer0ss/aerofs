@@ -13,6 +13,8 @@ import javax.annotation.Nullable;
 
 public class Version
 {
+    private static final Version ZERO = empty();
+
     private final Map<DID, Tick> _map;
 
     public Version()
@@ -37,7 +39,23 @@ public class Version
         }
     }
 
-    public Version set_(DID did, Tick tk)
+    /**
+     * Should replace all instances of new Version() eventually
+     */
+    public static Version empty()
+    {
+        return new Version();
+    }
+
+    /**
+     * A Guava-like static factory method
+     */
+    public static Version of(DID did, Tick tk)
+    {
+        return empty().set_(did, tk);
+    }
+
+    private Version set_(DID did, Tick tk)
     {
         assert !tk.equals(Tick.ZERO);
         _map.put(did, tk);
@@ -95,8 +113,7 @@ public class Version
 
     public boolean isZero_()
     {
-        for (Tick tk : _map.values()) if (tk.getLong() != 0) return false;
-        return true;
+        return this.equals(Version.ZERO);
     }
 
     @Override
@@ -155,6 +172,7 @@ public class Version
      */
     public Version shadowedBy_(Version v)
     {
+        if (v.isZero_()) return new Version();
         return sub_(sub_(v));
     }
 
