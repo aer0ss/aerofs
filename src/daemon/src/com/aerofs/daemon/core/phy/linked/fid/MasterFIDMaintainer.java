@@ -3,6 +3,7 @@ package com.aerofs.daemon.core.phy.linked.fid;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.ex.ExFileNotFound;
 import com.aerofs.lib.id.FID;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.injectable.InjectableDriver;
@@ -77,7 +78,22 @@ public class MasterFIDMaintainer implements IFIDMaintainer
 
             if (_soid.equals(mfmTo._soid)) return;
 
-            FID fid = getFIDFromFilesystem_(mfmTo._f);
+            FID fid;
+            try {
+                fid = getFIDFromFilesystem_(mfmTo._f);
+            } catch (ExFileNotFound e) {
+                if (_soid.oid().equals(mfmTo._soid.oid())) {
+                    // we cannot afford to cause a migration to fail simply because of a missing
+                    // file (lest we end up with a crash loop in the scanner causing a no-launch)
+                    // so we simply transfer the fid from the source to the target
+                    fid = _ds.getOA_(_soid).fid();
+                    // should not try to move a file for which no master CA exists...
+                    assert fid != null;
+                } else {
+                    throw e;
+                }
+            }
+
             // Fallible assertion (see above). It asserts that the FID is unchanged from the source
             // logical object to the target physical object.
             falliblyAssert(fid.equals(_ds.getOA_(_soid).fid()));
