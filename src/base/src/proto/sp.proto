@@ -569,6 +569,17 @@ service SPService {
      *   ExNoPerm       if the user calling this does not have enough privileges (see above)
      */
     rpc ListUserSharedFolders(ListUserSharedFoldersCall) returns(ListUserSharedFoldersReply);
+
+    /**
+     * List all the users who have been invited to the current user's organization.
+     *
+     * Required Auth Level: admin
+     */
+     rpc ListOrganizationInvitedUsers(Void) returns(ListOrganizationInvitedUsersReply);
+}
+
+message ListOrganizationInvitedUsersReply {
+    repeated string user_id = 1;
 }
 
 message GetStripeCustomerIDReply {

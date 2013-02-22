@@ -1,6 +1,7 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
 import com.aerofs.proto.Sp.PBSharedFolder;
@@ -385,8 +386,27 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<ListUserSharedFoldersReply> listUserSharedFolders(
-            String userID)
+    public ListenableFuture<ListOrganizationInvitedUsersReply> listOrganizationInvitedUsers()
+            throws Exception
+    {
+        _transaction.begin();
+
+        User user = _sessionUser.get();
+        user.throwIfNotAdmin();
+
+        ListOrganizationInvitedUsersReply.Builder builder =
+                ListOrganizationInvitedUsersReply.newBuilder();
+        for (OrganizationInvitation oi : user.getOrganization().getOrganizationInvitations()) {
+            builder.addUserId(oi.getInvitee().id().getID());
+        }
+
+        _transaction.commit();
+
+        return createReply(builder.build());
+    }
+
+    @Override
+    public ListenableFuture<ListUserSharedFoldersReply> listUserSharedFolders(String userID)
             throws Exception
     {
         _transaction.begin();

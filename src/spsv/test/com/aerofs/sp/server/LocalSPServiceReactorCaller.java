@@ -96,7 +96,7 @@ public class LocalSPServiceReactorCaller implements SPServiceStubCallbacks
                 factSharedFolder);
         {
             factDevice.inject(ddb, certdb, certgen, factUser, factCert);
-            factOrg.inject(odb, factUser, factSharedFolder);
+            factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
             factOrgInvite.inject(oidb, factUser, factOrg);
             factSharedFolder.inject(sfdb, factUser);
         }

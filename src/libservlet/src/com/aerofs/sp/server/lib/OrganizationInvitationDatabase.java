@@ -11,6 +11,9 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.AbstractSQLDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableCollection.Builder;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -80,9 +83,9 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
     }
 
     /**
-     * Get a list of all the organizations that a user has been invited to join.
+     * List all the organizations that a user has been invited to join.
      */
-    public List<OrganizationID> getAllInvitedOrganizations(UserID invitee)
+    public List<OrganizationID> getInvitedOrganizations(UserID invitee)
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_OI, C_OI_INVITEE + "=?",
@@ -101,6 +104,30 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         }
 
         return result;
+    }
+
+    /**
+     * List all the user that have been invited to an organization.
+     */
+    public ImmutableCollection<UserID> getInvitedUsers(OrganizationID orgID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_OI, C_OI_ORG_ID + "=?",
+                C_OI_INVITEE));
+
+        ps.setInt(1, orgID.getInt());
+        ResultSet rs = ps.executeQuery();
+
+        Builder<UserID> builder = ImmutableList.builder();
+        try {
+            while (rs.next()) {
+                builder.add(UserID.fromInternal(rs.getString(1)));
+            }
+        } finally {
+            rs.close();
+        }
+
+        return builder.build();
     }
 
     public boolean hasInvite(UserID invitee, OrganizationID orgID)
@@ -123,5 +150,4 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
             rs.close();
         }
     }
-
 }

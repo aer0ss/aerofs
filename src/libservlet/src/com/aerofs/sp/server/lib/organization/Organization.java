@@ -1,5 +1,6 @@
 package com.aerofs.sp.server.lib.organization;
 
+import com.aerofs.sp.server.lib.OrganizationInvitationDatabase;
 import com.aerofs.sp.server.lib.id.OrganizationID;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
@@ -14,6 +15,7 @@ import com.aerofs.sp.server.lib.OrganizationDatabase;
 import com.aerofs.sp.server.lib.SharedFolder;
 import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import org.apache.log4j.Logger;
@@ -34,17 +36,22 @@ public class Organization
     {
         private final Organization _default = create(OrganizationID.DEFAULT);
 
-        private OrganizationDatabase _db;
+        private OrganizationDatabase _odb;
+        private OrganizationInvitationDatabase _oidb;
         private User.Factory _factUser;
         private SharedFolder.Factory _factSharedFolder;
+        private OrganizationInvitation.Factory _factOrgInvite;
 
         @Inject
-        public void inject(OrganizationDatabase db, User.Factory factUser,
-                SharedFolder.Factory factSharedFolder)
+        public void inject(OrganizationDatabase odb, OrganizationInvitationDatabase oidb,
+                User.Factory factUser, SharedFolder.Factory factSharedFolder,
+                OrganizationInvitation.Factory factOrgInvite)
         {
-            _db = db;
+            _odb = odb;
+            _oidb = oidb;
             _factUser = factUser;
             _factSharedFolder = factSharedFolder;
+            _factOrgInvite = factOrgInvite;
         }
 
         public Organization create(@Nonnull OrganizationID id)
@@ -72,7 +79,7 @@ public class Organization
                 // orgs. It is NOT a security measure.
                 OrganizationID organizationID = new OrganizationID(Util.rand().nextInt());
                 try {
-                    _db.insert(organizationID, organizationName, organizationPhone, stripeCustomer);
+                    _odb.insert(organizationID, organizationName, organizationPhone, stripeCustomer);
                     Organization org = create(organizationID);
                     saveTeamServerUser(org);
                     l.info(org + " created");
@@ -118,19 +125,19 @@ public class Organization
     public String getName()
             throws ExNotFound, SQLException
     {
-        return _f._db.getName(_id);
+        return _f._odb.getName(_id);
     }
 
     public void setName(String name)
             throws SQLException
     {
-        _f._db.setName(_id, name);
+        _f._odb.setName(_id, name);
     }
 
     public void setContactPhone(String contactPhone)
             throws SQLException
     {
-        _f._db.setContactPhone(_id, contactPhone);
+        _f._odb.setContactPhone(_id, contactPhone);
     }
 
     @Override
@@ -189,12 +196,12 @@ public class Organization
         List<UserID> userIDs;
         int count;
         if (search.isEmpty()) {
-            userIDs = _f._db.listUsersWithAuthorization(_id, offset, maxResults, authLevel);
-            count = _f._db.listUsersWithAuthorizationCount(authLevel, _id);
+            userIDs = _f._odb.listUsersWithAuthorization(_id, offset, maxResults, authLevel);
+            count = _f._odb.listUsersWithAuthorizationCount(authLevel, _id);
         } else {
             assert !search.isEmpty();
-            userIDs = _f._db.searchUsersWithAuthorization(_id, offset, maxResults, authLevel, search);
-            count = _f._db.searchUsersWithAuthorizationCount(authLevel, _id, search);
+            userIDs = _f._odb.searchUsersWithAuthorization(_id, offset, maxResults, authLevel, search);
+            count = _f._odb.searchUsersWithAuthorizationCount(authLevel, _id, search);
         }
 
         return new UsersAndQueryCount(userIDs, count);
@@ -202,13 +209,13 @@ public class Organization
 
     public int totalUserCount() throws SQLException
     {
-        return _f._db.listUsersCount(_id);
+        return _f._odb.listUsersCount(_id);
     }
 
     public int totalUserCount(AuthorizationLevel authLevel)
             throws SQLException
     {
-        return _f._db.listUsersWithAuthorizationCount(authLevel, _id);
+        return _f._odb.listUsersWithAuthorizationCount(authLevel, _id);
     }
 
     public UsersAndQueryCount listUsers(@Nullable String search, int maxResults, int offset)
@@ -219,26 +226,40 @@ public class Organization
         List<UserID> userIDs;
         int count;
         if (search.isEmpty()) {
-            userIDs = _f._db.listUsers(_id, offset, maxResults);
+            userIDs = _f._odb.listUsers(_id, offset, maxResults);
             count = totalUserCount();
         } else {
-            userIDs = _f._db.searchUsers(_id, offset, maxResults, search);
-            count = _f._db.searchUsersCount(_id, search);
+            userIDs = _f._odb.searchUsers(_id, offset, maxResults, search);
+            count = _f._odb.searchUsersCount(_id, search);
         }
         return new UsersAndQueryCount(userIDs, count);
+    }
+
+    /**
+     * @return the list of users who have been invited to the organization but haven't accepted the
+     * invite.
+     */
+    public ImmutableCollection<OrganizationInvitation> getOrganizationInvitations()
+            throws SQLException
+    {
+        ImmutableCollection.Builder<OrganizationInvitation> builder = ImmutableList.builder();
+        for (UserID userID : _f._oidb.getInvitedUsers(_id)) {
+            builder.add(_f._factOrgInvite.create(userID, _id));
+        }
+        return builder.build();
     }
 
     public int countSharedFolders()
             throws SQLException, ExBadArgs
     {
-        return _f._db.countSharedFolders(_id);
+        return _f._odb.countSharedFolders(_id);
     }
 
     public Collection<SharedFolder> listSharedFolders(int maxResults, int offset)
             throws SQLException, ExBadArgs
     {
         Builder<SharedFolder> builder = ImmutableList.builder();
-        for (SID sid : _f._db.listSharedFolders(_id, maxResults, offset)) {
+        for (SID sid : _f._odb.listSharedFolders(_id, maxResults, offset)) {
             builder.add(_f._factSharedFolder.create(sid));
         }
         return builder.build();
@@ -253,7 +274,7 @@ public class Organization
     @Nullable
     public StripeCustomerID getStripeCustomerIDNullable() throws SQLException, ExNotFound
     {
-        return _f._db.getStripeCustomerIDNullable(_id);
+        return _f._odb.getStripeCustomerIDNullable(_id);
     }
 
     /**
@@ -263,6 +284,6 @@ public class Organization
     @Nullable
     public String getContactPhoneNullable() throws SQLException, ExNotFound
     {
-        return _f._db.getContactPhoneNullable(_id);
+        return _f._odb.getContactPhoneNullable(_id);
     }
 }

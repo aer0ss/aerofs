@@ -92,6 +92,7 @@ CREATE TABLE `sp_organization_invite` (
   `m_ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`m_to`, `m_org_id`),
   INDEX `m_ts_idx` (`m_ts`),
+  INDEX `m_org_id_idx` (`m_org_id`), -- for OrganizationInvitationDatabase.getInvitedUsers()
   CONSTRAINT `m_org_foreign` FOREIGN KEY (`m_org_id`) REFERENCES `sp_organization` (`o_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 

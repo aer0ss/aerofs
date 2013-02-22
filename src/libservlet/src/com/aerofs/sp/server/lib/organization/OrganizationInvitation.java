@@ -18,10 +18,9 @@ public class OrganizationInvitation
 {
     private final OrganizationInvitationDatabase _db;
     private final User.Factory _factUser;
-    private final Organization.Factory _factOrg;
 
-    private final UserID _invitee;
-    private final OrganizationID _org;
+    private final User _invitee;
+    private final Organization _org;
 
     public static class Factory
     {
@@ -38,41 +37,51 @@ public class OrganizationInvitation
             _factOrg = factOrg;
         }
 
-        public OrganizationInvitation create(@Nonnull UserID invitee, @Nonnull OrganizationID org)
+        /**
+         * TODO (WW) use User and Organization objects rather than ID objects
+         */
+        public OrganizationInvitation create(@Nonnull UserID invitee, @Nonnull OrganizationID orgID)
         {
-            return new OrganizationInvitation(_db, _factUser, _factOrg, invitee, org);
+            return new OrganizationInvitation(_db, _factUser, invitee, _factOrg.create(orgID));
         }
 
+        /**
+         * TODO (WW) use User and Organization objects rather than ID objects
+         */
         public OrganizationInvitation save(@Nonnull UserID inviter, @Nonnull UserID invitee,
-                @Nonnull OrganizationID org)
+                @Nonnull OrganizationID orgID)
                 throws SQLException
         {
-            _db.insert(inviter, invitee, org);
-            return new OrganizationInvitation(_db, _factUser, _factOrg, invitee, org);
+            _db.insert(inviter, invitee, orgID);
+            return create(invitee, orgID);
         }
     }
 
     private OrganizationInvitation(OrganizationInvitationDatabase db, User.Factory factUser,
-            Organization.Factory factOrg, UserID invitee, OrganizationID org)
+            UserID invitee, Organization org)
     {
         _db = db;
         _factUser = factUser;
-        _factOrg = factOrg;
 
-        _invitee = invitee;
+        _invitee = _factUser.create(invitee);
         _org = org;
     }
 
     public User getInviter()
             throws SQLException, ExNotFound
     {
-        return _factUser.create(_db.getInviter(_invitee, _org));
+        return _factUser.create(_db.getInviter(_invitee.id(), _org.id()));
+    }
+
+    public User getInvitee()
+    {
+        return _invitee;
     }
 
     public Organization getOrganization()
             throws SQLException
     {
-        return _factOrg.create(_org);
+        return _org;
     }
 
     /**
@@ -81,7 +90,7 @@ public class OrganizationInvitation
     public boolean exists()
         throws SQLException
     {
-        return _db.hasInvite(_invitee, _org);
+        return _db.hasInvite(_invitee.id(), _org.id());
     }
 
     /**
@@ -95,6 +104,6 @@ public class OrganizationInvitation
             throw new ExNotFound();
         }
 
-        _db.delete(_invitee, _org);
+        _db.delete(_invitee.id(), _org.id());
     }
 }

@@ -218,10 +218,8 @@ public class User
     {
         Organization organization = getOrganization();
 
-        List<OrganizationID> allInvitedOrganizations = _f._odb.getAllInvitedOrganizations(id());
         List<OrganizationInvitation> result = Lists.newLinkedList();
-
-        for (OrganizationID orgID : allInvitedOrganizations) {
+        for (OrganizationID orgID : _f._odb.getInvitedOrganizations(id())) {
             if (organization.id().equals(orgID)) {
                 continue;
             }

@@ -107,7 +107,7 @@ public class AbstractSPTest extends AbstractTestWithSPDatabase
     {
         factDevice.inject(ddb, certdb, certgen, factUser, factCert);
         factSharedFolder.inject(sfdb, factUser);
-        factOrg.inject(odb, factUser, factSharedFolder);
+        factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factOrgInvite.inject(oidb, factUser, factOrg);
     }
 

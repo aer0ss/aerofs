@@ -48,7 +48,7 @@ abstract class AbstractBusinessObjectTest extends AbstractAutoTransactionedTestW
     @Spy protected final User.Factory factUser = new User.Factory(udb, oidb, factDevice, factOrg,
             factOrgInvite, factSharedFolder);
     {
-        factOrg.inject(odb, factUser, factSharedFolder);
+        factOrg.inject(odb, oidb, factUser, factSharedFolder, factOrgInvite);
         factSharedFolder.inject(sfdb, factUser);
     }
 
