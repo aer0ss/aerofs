@@ -606,6 +606,7 @@ public class ReceiveAndApplyUpdate
         // 1) the remote object is not present locally,
         // 2) the remote object is not an anchor,
         // and 3) if the local and remote types of the object are equivalent
+        // TODO: 4) if the local object has ticks for the local device?
         if (!wasPresent && meta.getType() != PBMeta.Type.ANCHOR && typeRemote == oaLocal.type()) {
             // Resolving name conflict by aliasing the oids.
             _al.resolveNameConflictOnNewRemoteObjectByAliasing_(soidRemote, soidLocal, parent,

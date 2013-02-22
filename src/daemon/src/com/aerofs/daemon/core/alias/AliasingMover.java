@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.security.DigestException;
 import java.sql.SQLException;
 import java.util.Set;
+import java.util.SortedMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -73,6 +74,7 @@ public class AliasingMover
     {
         assert !alias.equals(target) : alias;
 
+        // TODO:FIXME this may lose ticks...
         Version vKMLAlias =  _nvc.getKMLVersion_(alias).withoutAliasTicks_();
         Version vKMLTarget = _nvc.getKMLVersion_(target);
         Version vKMLAlias_AllLocalTarget = vKMLAlias.sub_(vAllLocalTarget);
@@ -105,39 +107,41 @@ public class AliasingMover
 
     /**
      * Move the content component of the alias as well as its versions to the target object.
+     *
+     * @pre the target must have an OA (the alias may not)
      */
-    public void moveContent_(SOCID alias, SOCID target, Trans t)
+    public void moveContent_(SOID aliasObject, SOID targetObject, Trans t)
         throws SQLException, ExNotFound, ExAborted, DigestException, IOException
     {
-        assert alias.cid() == CID.CONTENT && target.cid() == CID.CONTENT;
-        assert alias.sidx().equals(target.sidx());
+        assert aliasObject.sidx().equals(targetObject.sidx());
 
-        // Ordered set of KIndices useful for comparison of branches below.
-        // TODO because SortedMap is a Map, its keyset is simply a Set, but we know it's
-        // actually sorted. See Comment A at the end of this method for a more robust solution.
-        Set<KIndex> kidxsTarget = _ds.getOA_(target.soid()).cas().keySet();
-        Set<KIndex> kidxsAlias = _ds.getOA_(alias.soid()).cas().keySet();
+        OA oaAlias = _ds.getOANullable_(aliasObject);
+        OA oaTarget = _ds.getOA_(targetObject);
 
-        Version vAllLocalTarget = _nvc.getAllLocalVersions_(target);
+        SOCID alias = new SOCID(aliasObject, CID.CONTENT);
+        SOCID target = new SOCID(targetObject, CID.CONTENT);
+
         Version vAllLocalAlias = _nvc.getAllLocalVersions_(alias);
+        Version vAllLocalTarget = _nvc.getAllLocalVersions_(target);
 
         // KML version needs to be moved before local version.
         moveKMLVersion_(alias, target, vAllLocalAlias, vAllLocalTarget, t);
 
-        // Move local version of the content.
-        //
-        // A branch of alias object should first be compared with MASTER branch of target object
-        // so that corresponding branch of alias object is moved to MASTER branch of target object
-        // when hashes match. Hence iterate over ordered set of KIndices.
+        // nothing to do, move along
+        if (oaAlias == null) {
+            l.info("remote alias: no content " + aliasObject);
+            return;
+        }
 
-        if (!_ds.getOA_(target.soid()).isExpelled()) {
+        Set<KIndex> kidxsAlias = oaAlias.cas().keySet();
+        Set<KIndex> kidxsTarget = oaTarget.cas().keySet();
+
+        if (!oaTarget.isExpelled()) {
+            // move content from alias to target
             moveBranches_(alias, target, kidxsAlias, kidxsTarget, t);
-
         } else {
             // The target object is expelled.
-
-            // TODO change it to info log
-            l.warn("target expelled on " + alias + "->" + target);
+            l.info("target expelled on " + aliasObject + "->" + targetObject);
 
             // Add all the local versions from the alias object as KML version.
             Version vKMLTarget = _nvc.getKMLVersion_(target);
@@ -167,81 +171,103 @@ public class AliasingMover
             throws SQLException, ExNotFound, ExAborted, DigestException, IOException
     {
         assert alias.cid() == CID.CONTENT && target.cid() == CID.CONTENT;
-
-        // TODO FIXME
-        // It seems that the only reason to force the type of kIndicesTarget to be a
-        // SortedMap is so that when iterating over branches (kindices) you deal
-        // with MASTER first, then the other conflict branches after. You don't
-        // actually care what order you address the conflict branches. This smells
-        // bad, as we have conveniently chosen MASTER to be the lowest branch value,
-        // but that doesn't have to be the case. So using a SortedMap only works
-        // because MASTER is the minimum. If it is necessary that MASTER is handled
-        // first, then should that branch get its own special handling, followed by
-        // the conflict branches (in arbitrary order)? Or alternatively construct a
-        // list, putting MASTER at the front, then the rest of the branches after?
-
-        int kidxMax = KIndex.MASTER.getInt() - 1;
-        for (KIndex kidxAlias : kidxsAlias) {
-            SOCKID kAlias = new SOCKID(alias, kidxAlias);
-            Version vAlias = _nvc.getLocalVersion_(kAlias);
-            boolean match = false;
-
-            // avoid calls to computeHashBlocking as much as possible as it is expensive and blocks
-            // the entire core.
-            ContentHash hAlias = _ds.getCAHash_(kAlias.sokid());
-
-            // Content is moved from alias to target object within nested loop which may change
-            // KIndices on the target object. Therefore, it's necessary to query the KIndices of
-            // target object _before_ starting the outer loop.
-            for (KIndex kidxTarget : kidxsTarget) {
-                kidxMax = Math.max(kidxTarget.getInt(), kidxMax);
-                SOCKID kTarget = new SOCKID(target, kidxTarget);
-                ContentHash hTarget = _hasher.computeHashBlocking_(kTarget.sokid());
-
-                if (hAlias == null) hAlias = _hasher.computeHashBlocking_(kAlias.sokid());
-
-                if (hAlias.equals(hTarget)) {
-                    match = true;
-                    // Merge alias branch with existing target branch.
-                    Version vTarget = _nvc.getLocalVersion_(kTarget);
-                    Version vMove = vAlias.sub_(vTarget);
-                    _nvc.addLocalVersion_(kTarget, vMove, t);
-                    break;
-                }
-            }
-
-            // Create a new branch on target when no match is found.
-            if (!match) {
-                KIndex kidxTarget = new KIndex(++kidxMax);
-
-                l.warn("almov " + new SOCKID(alias, kidxAlias) + "->" +
-                        new SOCKID(target, kidxTarget));
-
-                // Compute hash only if the branch is a non-master branch on the target, since
-                // DS.setCA_() requires non-null hashes on these branches. See Hasher for detail.
-                // The computation on the alias must be done _before_ moving the physical file to
-                // the target.
-                if (hAlias == null && !kidxTarget.equals(KIndex.MASTER)) {
-                    hAlias = _hasher.computeHashBlocking_(kAlias.sokid());
-                }
-
-                // Create CA for the new branch on the target.
-                _ds.createCA_(target.soid(), kidxTarget, t);
-
-                CA caFrom = _ds.getOA_(alias.soid()).ca(kidxAlias);
-                CA caTo = _ds.getOA_(target.soid()).ca(kidxTarget);
-                caFrom.physicalFile().move_(caTo.physicalFile(), PhysicalOp.APPLY, t);
-
-                SOCKID kTarget = new SOCKID(target, kidxTarget);
-                _ds.setCA_(kTarget.sokid(), caFrom.length(), caFrom.mtime(), hAlias, t);
-                _nvc.addLocalVersion_(kTarget, vAlias, t);
-            }
-
-            // Alias content branch should be deleted since it's either merged with existing target
-            // branch or a new branch was created on the target. Also delete physical file if
-            // matching file was found
-            deleteBranchAndPrefix_(kAlias, vAlias, match, t);
+        if (kidxsAlias.isEmpty()) {
+            l.info("local alias: no content " + alias.soid());
+            return;
         }
+        // The alias MASTER branch is handled first to make sure it is moved into the target MASTER
+        // branch if the target is empty and that regardless of the branch numbering
+        assert kidxsAlias.contains(KIndex.MASTER) : kidxsAlias;
+
+        moveBranch_(new SOCKID(alias, KIndex.MASTER), target, kidxsTarget, t);
+
+        for (KIndex kidx : kidxsAlias) {
+            if (kidx.equals(KIndex.MASTER)) continue;
+            moveBranch_(new SOCKID(alias, kidx), target, kidxsTarget, t);
+        }
+    }
+
+    private void moveBranch_(SOCKID alias, SOCID target, Set<KIndex> kidxsTarget, Trans t)
+            throws SQLException, ExNotFound, ExAborted, DigestException, IOException
+    {
+        KIndex kidxAlias = alias.kidx();
+        Version vAlias = _nvc.getLocalVersion_(alias);
+
+        // avoid calls to computeHashBlocking as much as possible as it is expensive and blocks
+        // the entire core.
+        // TODO: only the MASTER hash may need to be computed, ideally that should be done in RAAU
+        // in a way that allows us to release the core lock around the hashing...
+        ContentHash hAlias = _ds.getCAHash_(alias.sokid());
+        if (hAlias == null && !kidxsTarget.isEmpty()) {
+            hAlias = _hasher.computeHashBlocking_(alias.sokid());
+        }
+
+        KIndex kidxMatch = findMatchingBranch_(target, kidxsTarget, hAlias);
+        boolean match = kidxMatch != null;
+        if (match) {
+            // Merge alias branch with existing target branch.
+            SOCKID kTarget = new SOCKID(target, kidxMatch);
+            Version vTarget = _nvc.getLocalVersion_(kTarget);
+            Version vMove = vAlias.sub_(vTarget);
+            _nvc.addLocalVersion_(kTarget, vMove, t);
+        } else {
+            // Create a new branch on target when no match is found.
+            SortedMap<KIndex, CA> targetCAs = _ds.getOA_(target.soid()).cas();
+            KIndex kidxTarget = targetCAs.isEmpty() ? KIndex.MASTER
+                    : targetCAs.lastKey().increment();
+
+            l.warn("almov " + alias + "->" + new SOCKID(target, kidxTarget));
+
+            // Compute hash only if the branch is a non-master branch on the target, since
+            // DS.setCA_() requires non-null hashes on these branches. See Hasher for detail.
+            // The computation on the alias must be done _before_ moving the physical file to
+            // the target.
+            if (hAlias == null && !kidxTarget.equals(KIndex.MASTER)) {
+                hAlias = _hasher.computeHashBlocking_(alias.sokid());
+            }
+
+            // Create CA for the new branch on the target.
+            _ds.createCA_(target.soid(), kidxTarget, t);
+
+            CA caFrom = _ds.getOA_(alias.soid()).ca(kidxAlias);
+            CA caTo = _ds.getOA_(target.soid()).ca(kidxTarget);
+
+            // Here's the terrible, horrible, on good, very bad: the IPhysicalStorage abstraction
+            // was designed long long ago before the apparition of BlockStorage and leaks behaviors
+            // specific to LinkedStorage. Most importantly the MAP/APPLY distinction is irrelevant
+            // in non-linked storage as they don't use FIDs
+            // In case of a MASTER->MASTER transfer we don't want to touch the filesystem at all
+            // so we need to use the MAP operation but anything else should be an apply
+            // TODO: maybe we should introduce an ALIAS op instead?
+            PhysicalOp op = kidxAlias.equals(KIndex.MASTER) && kidxTarget.equals(KIndex.MASTER)
+                    ? PhysicalOp.MAP : PhysicalOp.APPLY;
+            caFrom.physicalFile().move_(caTo.physicalFile(), op, t);
+
+            SOCKID kTarget = new SOCKID(target, kidxTarget);
+            _ds.setCA_(kTarget.sokid(), caFrom.length(), caFrom.mtime(), hAlias, t);
+            _nvc.addLocalVersion_(kTarget, vAlias, t);
+        }
+
+        // Alias content branch should be deleted since it's either merged with existing target
+        // branch or a new branch was created on the target. Also delete physical file if
+        // matching file was found
+        deleteBranchAndPrefix_(alias, vAlias, match, t);
+    }
+
+    private KIndex findMatchingBranch_(SOCID target, Set<KIndex> kidxsTarget, ContentHash hAlias)
+            throws ExNotFound, SQLException, ExAborted, IOException, DigestException
+    {
+        // TODO: reorg branches in Map<ContentHash, KIndex> for nicer and faster code
+        // NB: this would require enforcing the presence of a MASTER hash beforehand...
+
+        // Content is moved from alias to target object within nested loop which may change
+        // KIndices on the target object. Therefore, it's necessary to query the KIndices of
+        // target object _before_ starting the outer loop.
+        for (KIndex kidx : kidxsTarget) {
+            ContentHash hTarget = _hasher.computeHashBlocking_(new SOKID(target.soid(), kidx));
+            if (hAlias.equals(hTarget)) return kidx;
+        }
+        return null;
     }
 
     /**
@@ -249,7 +275,7 @@ public class AliasingMover
      * branch.
      */
     private void deleteBranchAndPrefix_(SOCKID k, Version v, boolean delPhysicalFile, Trans t)
-            throws SQLException, ExNotFound, IOException
+            throws SQLException, IOException
     {
         _pvc.deletePrefixVersion_(k.soid(), k.kidx(), t);
         _bd.deleteBranch_(k, v, delPhysicalFile, true, t);
@@ -258,11 +284,27 @@ public class AliasingMover
     /**
      * Move children from alias directory to the target directory.
      * If a name conflict is encountered while moving then the file/sub-directory is renamed.
+     *
+     * this can handle op==MAP because either:
+     * 1) the target was remote, so we moved the alias object out of the way, so now the target took
+     * over representing the physical object and we merely map the movement of the alias's children
+     * because the physical objects are already in place
+     * OR
+     * 2) the target was local, so there are no alias children to physically move, (and consequently
+     * there should be no OA for the alias object
      */
-    public void moveChildrenFromAliasToTargetDir_(SIndex sidx, SOID alias, SOID target, Trans t)
+    public void moveChildrenFromAliasToTargetDir_(SOID alias, SOID target, PhysicalOp op, Trans t)
         throws Exception
     {
-        OA oaAlias = _ds.getOA_(alias);
+        SIndex sidx = alias.sidx();
+        assert sidx.equals(target.sidx()) : sidx + " " + target.sidx();
+
+        OA oaAlias = _ds.getOANullable_(alias);
+        if (oaAlias == null) {
+            l.info("remote alias: no children " + alias);
+            return;
+        }
+
         checkArgument(oaAlias.isDir());
         checkArgument(_ds.getOA_(target).isDir());
 
@@ -291,8 +333,7 @@ public class AliasingMover
             String newChildName = _ds.generateConflictFreeFileName_(targetPath, childName);
             boolean updateVersion = !newChildName.equals(childName);
 
-            _om.moveInSameStore_(child, target.oid(), childName, PhysicalOp.APPLY, false,
-                    updateVersion, t);
+            _om.moveInSameStore_(child, target.oid(), childName, op, false, updateVersion, t);
         }
     }
 
@@ -315,25 +356,12 @@ public class AliasingMover
         _nvc.addLocalVersion_(new SOCKID(target), vMerged_TargetLocal, t);
 
         // Since version of alias has been moved to target, remove version of alias object.
-        deleteAliasVersion_(alias, vAlias, t);
-
-        assert vMerged.equals(_nvc.getLocalVersion_(new SOCKID(target)));
-    }
-
-    /**
-     * Delete local version of the alias object.
-     *
-     * @param vAliasDel Local version to be deleted from the alias object.
-     */
-    private void deleteAliasVersion_(SOCID alias, Version vAliasDel, Trans t)
-        throws SQLException
-    {
-        // vAliasDel isn't necessarily version present locally, hence it's necessary to query
+        // vAlias isn't necessarily version present locally, hence it's necessary to query
         // local alias version before deleting.
         Version vAliasLocal = _nvc.getLocalVersion_(new SOCKID(alias));
-        Version vAliasLocal_AliasDel = vAliasLocal.sub_(vAliasDel);
-        Version vDel = vAliasLocal.sub_(vAliasLocal_AliasDel);
-
+        Version vDel = vAliasLocal.shadowedBy_(vAlias);
         _nvc.deleteLocalVersionPermanently_(new SOCKID(alias), vDel, t);
+
+        assert vMerged.equals(_nvc.getLocalVersion_(new SOCKID(target)));
     }
 }
