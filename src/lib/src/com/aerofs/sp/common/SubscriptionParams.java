@@ -18,7 +18,7 @@ public class SubscriptionParams
     static {
         URL url;
         try {
-            url = new URL(SP.WEB_BASE + "/unsubscribe?" + UNSUB_TOKEN + "=");
+            url = new URL(SP.DASH_BOARD_BASE + "/unsubscribe?" + UNSUB_TOKEN + "=");
         } catch (MalformedURLException e) {
             SystemUtil.fatal(e);
             url = null;
