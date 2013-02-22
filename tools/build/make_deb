@@ -47,7 +47,7 @@ readonly PRIORITY='optional'
 #sharutils is used by uudecode
 readonly DEPENDS='default-jre(>= 1.6), sharutils, procps, file, coreutils'
 readonly MAINTAINER='AeroFS Team <support@aerofs.com>'
-readonly DESCRIPTION='AeroFS: File syncing without servers.'
+readonly DESCRIPTION='AeroFS: Private file sync and share.'
 
 #################################
 # create a working directory for package building
