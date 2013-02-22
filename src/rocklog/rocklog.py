@@ -1,14 +1,19 @@
 import datetime
 import socket
 import time
+import base64
+import simplejson
+import requests
 from flask import Flask
 from flask import request
 from flask import jsonify
 from pyelasticsearch import ElasticSearch
 from retrace_client import RetraceClient
 
+
 ELASTIC_SEARCH_URL = 'http://localhost:9200'
 CARBON_ADDRESS = ('metrics.aerofs.com', 2003)
+MIXPANEL_URL = "http://api.mixpanel.com/track/"
 
 EXPECTED_CONTENT_TYPE = 'application/json'
 MESSAGE_KEY = '@message'
@@ -18,7 +23,8 @@ EXCEPTION_KEY = 'exception'
 VERSION_KEY = 'version'
 
 app = Flask("rocklog")
-app.debug = False
+app.config.from_pyfile("rocklog.cfg")
+app.debug = True
 
 es = ElasticSearch('http://localhost:9200/')
 
@@ -82,6 +88,23 @@ def metrics():
         app.logger.error("fail request err:%s" % e)
         raise
 
+@app.route('/events', methods=['POST'])
+def events():
+    try:
+        check_valid_request(request)
+    except InvalidContentType as e:
+        return error_response(415, 'not JSON')
+
+    try:
+        event = request.json
+
+        save_to_elasticsearch('event', event)
+        save_to_mixpanel(event)
+
+        return success_response()
+    except Exception as e:
+        app.logger.error("fail request err:%s" % e)
+        raise
 
 def check_valid_request(request):
     content_type = request.headers['Content-Type']
@@ -121,7 +144,6 @@ def save_to_graphite(request_body):
     app.logger.debug(graphite_data)
     carbon.sendall(graphite_data)
 
-
 def error_response(code, msg):
     resp = jsonify({'ok': False, 'status': code, 'message': msg})
     resp.status_code = code
@@ -153,6 +175,24 @@ def decode_exception(exception, rc):
 def stackframe_to_string(frame, rc):
     r = rc.retrace(frame['class'], frame['method'], frame['line'])
     return r['classname'] + '.' + r['methodname'] + ':' + str(frame['line'])
+
+def save_to_mixpanel(event):
+    # We don't want event_name in the properties and as the event (it's redundant)
+    name = event["event_name"]
+    del event["event_name"]
+    # We don't want @timestamp in the properties (too unique to be meaningful and mixpanel does its own timestamp)
+    if TIMESTAMP_KEY in event: del event[TIMESTAMP_KEY]
+
+    params = {
+        "event": name,
+        "properties": event
+    }
+
+    params["properties"]["token"] = app.config["MIXPANEL_TOKEN"]
+
+    data = base64.b64encode(simplejson.dumps(params))
+
+    requests.get(MIXPANEL_URL, params={"data":data})
 
 if __name__ == "__main__":
     app.run()

@@ -45,6 +45,11 @@ public class RockLog
         return new Metric(_instance, name);
     }
 
+    public static Event newEvent(String name)
+    {
+        return new Event(_instance, name);
+    }
+
     void sendAsync(final IRockLogMessage message)
     {
         new Thread(new Runnable()

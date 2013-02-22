@@ -14,6 +14,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.ui.IUI.MessageType;
@@ -190,6 +191,7 @@ public class SingleuserCompPreferences extends Composite
                 if (GUI.get().ask(getShell(), MessageType.WARN, S.UNLINK_THIS_COMPUTER_CONFIRM)) {
                     try {
                         SVClient.sendEventAsync(Type.UNLINK);
+                        RockLog.newEvent("Unlink Device").sendAsync();
                         UIUtil.unlinkAndExit(_factFile);
                     } catch (Exception e) {
                         GUI.get()
