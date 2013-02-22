@@ -39,4 +39,8 @@ node "sv.aerofs.com" inherits default {
         group  => "admin",
         owner  => "root",
     }
+
+    package { "gnuplot":
+        ensure => installed
+    }
 }
