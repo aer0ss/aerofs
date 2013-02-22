@@ -495,7 +495,7 @@ public class MightCreate
     private void replaceObject_(PathCombo pc, FIDAndType fnt, IDeletionBuffer delBuffer,
             @Nullable SOID sourceSOID, @Nonnull SOID targetSOID, Trans t) throws Exception
     {
-        if (sourceSOID != null) cleanup_(sourceSOID, targetSOID, fnt._dir, t);
+        if (sourceSOID != null) cleanup_(sourceSOID, targetSOID, t);
 
         // Link the physical object to the logical object by replacing the FID.
         l.info("replace " + targetSOID + ":" + pc);
@@ -512,7 +512,7 @@ public class MightCreate
         delBuffer.remove_(targetSOID);
     }
 
-    void cleanup_(SOID sourceSOID, SOID targetSOID, boolean isDir, Trans t) throws SQLException
+    void cleanup_(SOID sourceSOID, SOID targetSOID, Trans t) throws SQLException
     {
         // When an existing object is moved over another existing (admitted) object we want
         // this to be treated as an update to the target object and a deletion of the source
@@ -538,7 +538,9 @@ public class MightCreate
         // and timestamp. We work around that by assigning a negative size to the MASTER branch
         // of the source to make sure detectAndApplyModification_ will consider any content that
         // appear at the path of the source object to be a modification
-        if (!isDir) _ds.setCA_(new SOKID(sourceSOID, KIndex.MASTER), -1L, 0L, null, t);
+        if (_ds.getOA_(sourceSOID).isFile()) {
+            _ds.setCA_(new SOKID(sourceSOID, KIndex.MASTER), -1L, 0L, null, t);
+        }
     }
 
     private void detectAndApplyModification_(SOID soid, String absPath, boolean force, Trans t)
