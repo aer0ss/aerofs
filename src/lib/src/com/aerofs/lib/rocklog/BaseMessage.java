@@ -29,7 +29,7 @@ public class BaseMessage
         _data.put("version", Cfg.ver());
 
         if (Cfg.inited()) {
-            _data.put("user", Cfg.user());
+            _data.put("user_id", Cfg.user().getID());
             _data.put("did", Cfg.did().toStringFormal());
         }
 

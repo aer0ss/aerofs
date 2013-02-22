@@ -9,15 +9,18 @@ class rocklog {
         require => Exec["apt-get update"]
     }
 
+    # requirements for the rocklog python app
     package { [
         "gunicorn",
         "flask",
         "pyelasticsearch",
+        "requests",
         ]:
         provider => "pip",
         require => Package["python-pip"]
     }
 
+    # requirements for Kibana
     package{ [
         "unicorn",
         "bundler"
@@ -95,6 +98,12 @@ class rocklog {
     package{"aerofs-rocklog":
         ensure => latest,
         require => Apt::Source["aerofs"]
+    }
+
+    file{ "/opt/rocklog/rocklog.cfg":
+        content => template("rocklog/rocklog.cfg.erb"),
+        require => Package["aerofs-rocklog"],
+        notify  => Service["gunicorn"]
     }
 
     file{ "/etc/init/gunicorn.conf":
