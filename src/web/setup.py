@@ -7,7 +7,6 @@ README = open(os.path.join(here, 'README.txt')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 # TODO: Add aerofs.python-lib here
-# TODO: Figure out how to add stripe here
 requires = [
     'protobuf',
     'pyramid',
@@ -17,6 +16,7 @@ requires = [
     'pyramid_beaker',
     'Babel',
     'mock',
+    'stripe'
     ]
 
 msg_extractors = {}

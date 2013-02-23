@@ -11,8 +11,6 @@ sudo pip install virtualenv
 # NOTE: requests is pinned because version 1.0.0 is not backwards compatible
 # TODO: (PH) fix code to use requests >=1.0.0
 virtualenv ~/env
-~/env/bin/pip install protobuf pycrypto requests==0.14.2
-~/env/bin/pip install --index-url https://code.stripe.com --upgrade stripe
 
 # Then, install AeroFS python library:
 cd ~/repos/aerofs/src/python-lib && ~/env/bin/python setup.py develop

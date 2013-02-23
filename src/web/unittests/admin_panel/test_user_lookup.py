@@ -3,10 +3,14 @@ from pyramid import testing
 from mock import Mock
 from aerofs_web import helper_functions
 from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ListUsersReply
+import os
 
 class TestUserLookupTest(unittest.TestCase):
     def setUp(self):
         # TODO (WW) move these stub setup steps to a common super class
+        os.environ['STRIPE_PUBLISHABLE_KEY'] = ''
+        os.environ['STRIPE_SECRET_KEY'] = ''
+
         self.config = testing.setUp()
         self.stub = SPServiceRpcStub(None)
         helper_functions.get_rpc_stub = Mock(return_value=self.stub)
@@ -38,34 +42,33 @@ class TestUserLookupTest(unittest.TestCase):
 
         self.stub.list_users_auth = Mock(return_value=reply)
 
-# Having trouble importing stripe library. Will fix soon.
-#    def test_find_all_users_keys(self):
-#        from modules.admin_panel.views import json_user_lookup
-#        request = testing.DummyRequest()
-#        request.params = {
-#            "searchTerm": "",
-#            "authLevel": "USER",
-#            "count": 10,
-#            "offset": 0
-#        }
-#
-#        response = json_user_lookup(request)
-#        self.assertTrue(response.has_key("users"))
-#
-#    def test_find_all_users_values(self):
-#        from modules.admin_panel.views import json_user_lookup
-#        request = testing.DummyRequest()
-#        request.params = {
-#            "searchTerm": "",
-#            "authLevel": "USER",
-#            "count": 10,
-#            "offset": 0
-#        }
-#
-#        response = json_user_lookup(request)
-#        emails = response["users"]
-#
-#        self.assertEquals(3, len(emails))
-#        self.assertEquals("test1@awesome.com", emails[0])
-#        self.assertEquals("test2@awesome.com", emails[1])
-#        self.assertEquals("test3@awesome.com", emails[2])
+    def test_find_all_users_keys(self):
+        from modules.admin_panel.views import json_user_lookup
+        request = testing.DummyRequest()
+        request.params = {
+            "searchTerm": "",
+            "authLevel": "USER",
+            "count": 10,
+            "offset": 0
+        }
+
+        response = json_user_lookup(request)
+        self.assertTrue(response.has_key("users"))
+
+    def test_find_all_users_values(self):
+        from modules.admin_panel.views import json_user_lookup
+        request = testing.DummyRequest()
+        request.params = {
+            "searchTerm": "",
+            "authLevel": "USER",
+            "count": 10,
+            "offset": 0
+        }
+
+        response = json_user_lookup(request)
+        emails = response["users"]
+
+        self.assertEquals(3, len(emails))
+        self.assertEquals("test1@awesome.com", emails[0])
+        self.assertEquals("test2@awesome.com", emails[1])
+        self.assertEquals("test3@awesome.com", emails[2])
