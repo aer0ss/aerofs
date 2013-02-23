@@ -1,20 +1,14 @@
-import unittest
 from pyramid import testing
 from mock import Mock
-from aerofs_web import helper_functions
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, \
+from aerofs_sp.gen.sp_pb2 import \
     ListOrganizationSharedFoldersReply, ListUserSharedFoldersReply
 from aerofs_common._gen.common_pb2 import EDITOR, OWNER
 from aerofs_sp.gen.sp_pb2 import ADMIN
+from ..test_base import TestBase
 
-class TestGetOrganizationSharedFolders(unittest.TestCase):
+class TestGetOrganizationSharedFolders(TestBase):
     def setUp(self):
-        # TODO (WW) move these stub setup steps to a common super class
-        self.config = testing.setUp()
-        self.stub = SPServiceRpcStub(None)
-
-        helper_functions.get_rpc_stub = Mock(return_value=self.stub)
-
+        self.setup_common()
         self._mock_list_organization_shared_folders()
         self._mock_list_user_shared_folders()
 
@@ -27,14 +21,14 @@ class TestGetOrganizationSharedFolders(unittest.TestCase):
         self._add_shared_folder(reply)
         self._add_shared_folder(reply)
 
-        self.stub.list_organization_shared_folders = Mock(return_value=reply)
+        self.sp_rpc_stub.list_organization_shared_folders = Mock(return_value=reply)
 
     def _mock_list_user_shared_folders(self):
         reply = ListUserSharedFoldersReply()
         self._add_shared_folder(reply)
         self._add_shared_folder(reply)
 
-        self.stub.list_user_shared_folders = Mock(return_value=reply)
+        self.sp_rpc_stub.list_user_shared_folders = Mock(return_value=reply)
 
     def _add_shared_folder(self, reply):
         folder = reply.shared_folder.add()

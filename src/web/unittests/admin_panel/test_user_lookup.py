@@ -1,20 +1,11 @@
-import unittest
 from pyramid import testing
 from mock import Mock
-from aerofs_web import helper_functions
-from aerofs_sp.gen.sp_pb2 import SPServiceRpcStub, ListUsersReply
-import os
+from aerofs_sp.gen.sp_pb2 import ListUsersReply
+from ..test_base import TestBase
 
-class TestUserLookupTest(unittest.TestCase):
+class TestUserLookupTest(TestBase):
     def setUp(self):
-        # TODO (WW) move these stub setup steps to a common super class
-        os.environ['STRIPE_PUBLISHABLE_KEY'] = ''
-        os.environ['STRIPE_SECRET_KEY'] = ''
-
-        self.config = testing.setUp()
-        self.stub = SPServiceRpcStub(None)
-        helper_functions.get_rpc_stub = Mock(return_value=self.stub)
-
+        self.setup_common()
         self._mock_list_users_auth()
 
     def tearDown(self):
@@ -40,7 +31,7 @@ class TestUserLookupTest(unittest.TestCase):
         user.first_name = "test3"
         user.last_name = "awesome"
 
-        self.stub.list_users_auth = Mock(return_value=reply)
+        self.sp_rpc_stub.list_users_auth = Mock(return_value=reply)
 
     def test_find_all_users_keys(self):
         from modules.admin_panel.views import json_user_lookup
