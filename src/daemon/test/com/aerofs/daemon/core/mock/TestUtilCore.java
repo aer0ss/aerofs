@@ -33,7 +33,6 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TreeMap;
 
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.*;

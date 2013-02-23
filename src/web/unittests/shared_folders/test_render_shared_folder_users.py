@@ -14,7 +14,7 @@ class TestRenderSharedFolderUsers(unittest.TestCase):
         from modules.shared_folders.views import _render_shared_folder_users
 
         return _render_shared_folder_users(self._compose_user_list(first_names),
-            session_user, False)
+            session_user)
 
     def _compose_user_list(self, first_names):
         user_and_role_list = []

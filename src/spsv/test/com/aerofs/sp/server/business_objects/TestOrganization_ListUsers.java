@@ -4,6 +4,8 @@
 
 package com.aerofs.sp.server.business_objects;
 
+import com.aerofs.lib.ex.ExAlreadyExist;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.base.id.UserID;
@@ -14,6 +16,8 @@ import com.aerofs.sp.server.lib.user.AuthorizationLevel;
 import com.aerofs.sp.server.lib.user.User;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,6 +71,18 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
     // ================================
     // = listUser block               =
     // ================================
+
+    @Test
+    public void shouldNotListTeamServerUsers()
+            throws SQLException, ExAlreadyExist, ExBadArgs
+    {
+        udb.insertUser(orgId.toTeamServerUserID(), new FullName("", ""), "".getBytes(),
+                orgId, AuthorizationLevel.USER);
+
+        for (User u : org.listUsers(null, TOTAL_USERS, 0).users()) {
+            assertFalse(u.id().isTeamServerID());
+        }
+    }
 
     @Test
     public void shouldListAllUsersForListUsers()
