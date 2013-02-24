@@ -55,4 +55,9 @@ public interface INativeVersionDatabase extends IVersionDatabase<NativeTickRow>
      */
     void updateMaxTicks_(SOCID socid, Trans t) throws SQLException;
     void deleteMaxTicks_(SOCID socid, Trans t) throws SQLException;
+
+    /**
+     * @pre target may not have any local versions (it may have KMLs)
+     */
+    void moveAllLocalVersions_(SOCID alias, SOCID target, Trans t) throws SQLException;
 }

@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.store.DescendantStores;
 import com.aerofs.daemon.core.store.DeviceBitMap;
@@ -88,7 +89,7 @@ public class TestLocalSyncStatus extends AbstractTest
 
         when(tm.begin_()).thenReturn(t);
 
-        DirectoryService ds = new DirectoryService();
+        DirectoryServiceImpl ds = new DirectoryServiceImpl();
         SingleuserPathResolver pathResolver = new SingleuserPathResolver(sss, ds, sidx2sid);
         ds.inject_(ps, mdb, alias2target, tm, sm, fds, sdo, pathResolver);
         lsync = new LocalSyncStatus(ds, ssdb, sidx2dbm, assc, sdo, dss);

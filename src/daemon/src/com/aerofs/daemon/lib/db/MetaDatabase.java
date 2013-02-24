@@ -224,6 +224,51 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         }
     }
 
+    private final PreparedStatementWrapper _pswRPIC = new PreparedStatementWrapper();
+    @Override
+    public void replaceParentInChildren_(SIndex sidx, OID oldParent, OID newParent, Trans t)
+            throws SQLException, ExAlreadyExist
+    {
+        try {
+            PreparedStatement ps = _pswRPIC.get();
+            if (ps == null) {
+                _pswRPIC.set(ps = c().prepareStatement(DBUtil.updateWhere(T_OA,
+                        C_OA_SIDX + "=? and " + C_OA_PARENT +"=?",
+                        C_OA_PARENT)));
+            }
+            ps.setBytes(1, newParent.getBytes());
+            ps.setInt(2, sidx.getInt());
+            ps.setBytes(3, oldParent.getBytes());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswRPIC.close();
+            _dbcw.throwOnConstraintViolation(e);
+            throw e;
+        }
+    }
+
+    private final PreparedStatementWrapper _pswRCA = new PreparedStatementWrapper();
+    @Override
+    public void replaceCA_(SIndex sidx, OID oldParent, OID newParent, Trans t)
+            throws SQLException
+    {
+        try {
+            PreparedStatement ps = _pswRCA.get();
+            if (ps == null) {
+                _pswRCA.set(ps = c().prepareStatement(DBUtil.updateWhere(T_CA,
+                        C_CA_SIDX + "=? and " + C_CA_OID +"=?",
+                        C_CA_OID)));
+            }
+            ps.setBytes(1, newParent.getBytes());
+            ps.setInt(2, sidx.getInt());
+            ps.setBytes(3, oldParent.getBytes());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            _pswRCA.close();
+            throw e;
+        }
+    }
+
     private final PreparedStatementWrapper _pswSOAF = new PreparedStatementWrapper();
     @Override
     public void setOAFlags_(SOID soid, int flags, Trans t) throws SQLException

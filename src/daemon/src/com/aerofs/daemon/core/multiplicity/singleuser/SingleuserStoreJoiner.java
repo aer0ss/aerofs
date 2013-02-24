@@ -9,6 +9,7 @@ import com.aerofs.daemon.core.acl.SharedFolderAutoLeaver;
 import com.aerofs.daemon.core.ds.DirectoryService;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
+import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.notification.RitualNotificationServer;
 import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
@@ -36,6 +37,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final SingleuserStores _stores;
     private final ObjectCreator _oc;
     private final ObjectDeleter _od;
+    private final ObjectSurgeon _os;
     private final DirectoryService _ds;
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
@@ -44,12 +46,13 @@ public class SingleuserStoreJoiner implements IStoreJoiner
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
-            ObjectDeleter od, CfgRootSID cfgRootSID, RitualNotificationServer rns,
+            ObjectDeleter od, ObjectSurgeon os, CfgRootSID cfgRootSID, RitualNotificationServer rns,
             SharedFolderAutoLeaver lod, IMetaDatabase mdb)
     {
         _ds = ds;
         _oc = oc;
         _od = od;
+        _os = os;
         _stores = stores;
         _cfgRootSID = cfgRootSID;
         _rns = rns;
@@ -110,7 +113,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
                  * trash. Moving the anchor out of the trash would be too cumbersome so we simply
                  * delete the existing OA and proceed to re-create it as if it had never existed
                  */
-                _ds.deleteOA_(anchor, t);
+                _os.deleteOA_(anchor, t);
 
                 /**
                  * when restoring a deleted anchor we are forced to update the version

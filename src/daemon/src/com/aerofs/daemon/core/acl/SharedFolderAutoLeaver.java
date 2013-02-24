@@ -8,7 +8,7 @@ import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.Loggers;
 import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
 import com.aerofs.daemon.core.persistency.IPersistentQueue;
 import com.aerofs.daemon.core.persistency.PersistentQueueDriver;
 import com.aerofs.daemon.core.tc.TC.TCB;
@@ -34,7 +34,7 @@ import java.util.Set;
  * When an anchor is deleted, the local user should automatically leave the corresponding shared
  * folder (mostly to avoid automatically re-joining it when a new device is installed).
  */
-public class SharedFolderAutoLeaver extends AbstractDirectoryServiceListener
+public class SharedFolderAutoLeaver extends DirectoryServiceAdapter
 {
     private final Logger l = Loggers.getLogger(SharedFolderAutoLeaver.class);
 

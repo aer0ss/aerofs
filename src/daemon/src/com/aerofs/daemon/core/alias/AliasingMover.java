@@ -6,7 +6,9 @@ import com.aerofs.daemon.core.Hasher;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.core.ds.OA;
+import com.aerofs.daemon.core.expel.Expulsion;
 import com.aerofs.daemon.core.protocol.PrefixVersionControl;
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.object.ObjectMover;
@@ -39,22 +41,27 @@ public class AliasingMover
     private static final Logger l = Loggers.getLogger(AliasingMover.class);
 
     private final DirectoryService _ds;
+    private final ObjectSurgeon _os;
     private final PrefixVersionControl _pvc;
     private final NativeVersionControl _nvc;
     private final Hasher _hasher;
     private final ObjectMover _om;
     private final BranchDeleter _bd;
+    private final Expulsion _expulsion;
 
     @Inject
-    public AliasingMover(DirectoryService ds, Hasher hasher, ObjectMover om,
-            PrefixVersionControl pvc, NativeVersionControl nvc, BranchDeleter bd)
+    public AliasingMover(DirectoryService ds, ObjectSurgeon os, Hasher hasher, ObjectMover om,
+            Expulsion expulsion, PrefixVersionControl pvc, NativeVersionControl nvc,
+            BranchDeleter bd)
     {
         _ds = ds;
+        _os = os;
         _hasher = hasher;
         _om = om;
         _pvc = pvc;
         _nvc = nvc;
         _bd = bd;
+        _expulsion = expulsion;
     }
 
     /**
@@ -165,6 +172,8 @@ public class AliasingMover
      * Move all the branches and their versions from the alias object to the target.
      * A branch of alias object will deleted if there is a branch with same content hash on the
      * target. Otherwise it's moved to a new branch on the target.
+     *
+     * @pre both alias and target need to be locally present
      */
     private void moveBranches_(SOCID alias, SOCID target, Set<KIndex> kidxsAlias,
             Set<KIndex> kidxsTarget, Trans t)
@@ -232,16 +241,7 @@ public class AliasingMover
             CA caFrom = _ds.getOA_(alias.soid()).ca(kidxAlias);
             CA caTo = _ds.getOA_(target.soid()).ca(kidxTarget);
 
-            // Here's the terrible, horrible, on good, very bad: the IPhysicalStorage abstraction
-            // was designed long long ago before the apparition of BlockStorage and leaks behaviors
-            // specific to LinkedStorage. Most importantly the MAP/APPLY distinction is irrelevant
-            // in non-linked storage as they don't use FIDs
-            // In case of a MASTER->MASTER transfer we don't want to touch the filesystem at all
-            // so we need to use the MAP operation but anything else should be an apply
-            // TODO: maybe we should introduce an ALIAS op instead?
-            PhysicalOp op = kidxAlias.equals(KIndex.MASTER) && kidxTarget.equals(KIndex.MASTER)
-                    ? PhysicalOp.MAP : PhysicalOp.APPLY;
-            caFrom.physicalFile().move_(caTo.physicalFile(), op, t);
+            caFrom.physicalFile().move_(caTo.physicalFile(), PhysicalOp.APPLY, t);
 
             SOCKID kTarget = new SOCKID(target, kidxTarget);
             _ds.setCA_(kTarget.sokid(), caFrom.length(), caFrom.mtime(), hAlias, t);
@@ -285,15 +285,9 @@ public class AliasingMover
      * Move children from alias directory to the target directory.
      * If a name conflict is encountered while moving then the file/sub-directory is renamed.
      *
-     * this can handle op==MAP because either:
-     * 1) the target was remote, so we moved the alias object out of the way, so now the target took
-     * over representing the physical object and we merely map the movement of the alias's children
-     * because the physical objects are already in place
-     * OR
-     * 2) the target was local, so there are no alias children to physically move, (and consequently
-     * there should be no OA for the alias object
+     * @pre both alias and target need to be locally present
      */
-    public void moveChildrenFromAliasToTargetDir_(SOID alias, SOID target, PhysicalOp op, Trans t)
+    public void moveChildrenFromAliasToTargetDir_(SOID alias, SOID target, Trans t)
         throws Exception
     {
         SIndex sidx = alias.sidx();
@@ -315,7 +309,7 @@ public class AliasingMover
             // into the descendent target, lest horrible cycles result. Instead, swap the positions
             // of the target and alias OIDs in the logical directory tree, then move children of
             // the alias into the target folder
-            _ds.swapOIDsInSameStoreForAliasing_(sidx, alias.oid(), target.oid(), t);
+            _os.swapOIDsInSameStore_(sidx, alias.oid(), target.oid(), t);
             checkState(_ds.getOA_(target).fid().equals(oaAlias.fid()));
         }
 
@@ -333,7 +327,8 @@ public class AliasingMover
             String newChildName = _ds.generateConflictFreeFileName_(targetPath, childName);
             boolean updateVersion = !newChildName.equals(childName);
 
-            _om.moveInSameStore_(child, target.oid(), childName, op, false, updateVersion, t);
+            _om.moveInSameStore_(child, target.oid(), childName, PhysicalOp.APPLY, false,
+                    updateVersion, t);
         }
     }
 
@@ -363,5 +358,54 @@ public class AliasingMover
         _nvc.deleteLocalVersionPermanently_(new SOCKID(alias), vDel, t);
 
         assert vMerged.equals(_nvc.getLocalVersion_(new SOCKID(target)));
+    }
+
+    public void moveContentOrChildren_(SOID alias, SOID target, Trans t)
+            throws Exception
+    {
+        assert alias.sidx().equals(target.sidx());
+
+        OA oaAlias = _ds.getOANullable_(alias);
+        OA oaTarget = _ds.getOANullable_(target);
+
+        if (oaTarget == null) {
+            assert oaAlias != null : alias + " " + target;
+            l.info("remote target: fast path");
+            _os.replaceOID_(alias, target, t);
+
+            if (oaAlias.isFile()) {
+                SOCID cAlias = new SOCID(alias, CID.CONTENT);
+                SOCID cTarget = new SOCID(target, CID.CONTENT);
+
+                Version vAllLocalAlias = _nvc.getAllLocalVersions_(cAlias);
+                Version vAllLocalTarget = _nvc.getAllLocalVersions_(cTarget);
+
+                // KML version needs to be moved before local version.
+                moveKMLVersion_(cAlias, cTarget, vAllLocalAlias, vAllLocalTarget, t);
+
+                _pvc.deleteAllPrefixVersions_(alias, t);
+                _nvc.moveAllLocalVersions_(cAlias, cTarget, t);
+            }
+
+            // if the alias was explicitly expelled and the target is remote, we need to:
+            // 1. remove  alias from the expelled objects list to avoid AE in HdListExpelledObjects
+            // 2. add target to the expelled objects list to avoid inconsistency between OA flags
+            // and the expelled objects list
+            // NB: MUST be called *after* replaceOID_
+            _expulsion.objectAliased_(alias, target, t);
+        } else {
+            if (oaTarget.isDir()) {
+                moveChildrenFromAliasToTargetDir_(alias, target, t);
+                if (oaAlias != null && !oaAlias.isExpelled()) {
+                    oaAlias.physicalFolder().delete_(PhysicalOp.APPLY, t);
+                }
+            } else {
+                moveContent_(alias, target, t);
+            }
+
+            // Alias is now moved to target. So remove the meta-data entry for alias.
+            // Content was moved in moveContent_() method.
+            if (oaAlias != null) _os.deleteOA_(alias, t);
+        }
     }
 }

@@ -65,13 +65,13 @@ public class VersionAssistant extends AbstractTransListener
         _ivdb = ivdb;
     }
 
-    public void kmlVersionAdded_(SOCID socid, Version v)
+    public void kmlVersionAdded_(SOCID socid)
     {
         assert !_committed;
         _changed.add(socid);
     }
 
-    public void localVersionAdded_(SOCID socid, Version v)
+    public void localVersionAdded_(SOCID socid)
     {
         assert !_committed;
         // There's a safe ordering and an unsafe ordering here.
@@ -87,7 +87,7 @@ public class VersionAssistant extends AbstractTransListener
      * call this method when deleting a version to add it back to another branch
      * or as KML later
      */
-    public void versionDeleted_(SOCID socid, Version v)
+    public void versionDeleted_(SOCID socid)
     {
         assert !_committed;
         _changed.add(socid);
@@ -107,7 +107,7 @@ public class VersionAssistant extends AbstractTransListener
      * call this method when deleting a version permanently from the component
      * without adding back to the same component, e.g. during aliasing
      */
-    public void versionDeletedPermanently_(SOCID socid, Version v)
+    public void versionDeletedPermanently_(SOCID socid)
     {
         assert !_committed;
         _deletedPermanently.add(socid);

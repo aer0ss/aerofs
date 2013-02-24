@@ -158,7 +158,7 @@ public class Expulsion
     }
 
     /**
-     * @pre the aliased object is present locally
+     * @pre the alias object was just replaced by the target using DirectoryService.replaceOID
      */
     public void objectAliased_(SOID alias, SOID target, Trans t) throws SQLException
     {
@@ -167,10 +167,9 @@ public class Expulsion
         // the UI tires to list expelled objects
         // 2) not expelling the target would cause the expelled files/folders to reappear, to
         // the extreme confusion/dismay of the user
-        if (Util.test(_ds.getOA_(alias).flags(), OA.FLAG_EXPELLED_ORG)) {
+        if (Util.test(_ds.getOA_(target).flags(), OA.FLAG_EXPELLED_ORG)) {
             _exdb.deleteExpelledObject_(alias, t);
             _exdb.insertExpelledObject_(target, t);
-            _ds.setOAFlags_(target, set(_ds.getOA_(target).flags(), FLAG_EXPELLED_ORG), t);
         }
     }
 

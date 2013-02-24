@@ -7,7 +7,7 @@ package com.aerofs.daemon.core.mock.logical;
 import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.phy.IPhysicalFile;
@@ -137,8 +137,6 @@ public class MockDS
         // mock path resolution for root
         when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(new Path()))))
                 .thenReturn(_root.soid());
-        when(_ds.resolveThrows_(argThat(new IsEqualPathIgnoringCase(new Path()))))
-                .thenReturn(_root.soid());
 
         /*
          * update mocks reactively
@@ -260,16 +258,10 @@ public class MockDS
             ////////
             // wire services
 
-            when(_ds.hasOA_(eq(_soid))).thenReturn(true);
             when(_ds.getOA_(eq(_soid))).thenReturn(_oa);
             when(_ds.getOANullable_(eq(_soid))).thenReturn(_oa);
-            when(_ds.getOAThrows_(eq(_soid))).thenReturn(_oa);
-            when(_ds.hasAliasedOA_(eq(_soid))).thenReturn(true);
             when(_ds.getAliasedOANullable_(eq(_soid))).thenReturn(_oa);
             when(_ds.resolve_(_oa)).thenReturn(path);
-            when(_ds.resolve_(eq(_soid))).thenReturn(path);
-            when(_ds.resolveNullable_(eq(_soid))).thenReturn(path);
-            when(_ds.resolveThrows_(eq(_soid))).thenReturn(path);
 
             when(_ds.getSyncStatus_(eq(_soid))).thenReturn(new BitVector());
             when(_ds.getRawSyncStatus_(eq(_soid))).thenReturn(new BitVector());
@@ -313,12 +305,8 @@ public class MockDS
             if (soid == null) {
                 when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
                         .thenReturn(null);
-                when(_ds.resolveThrows_(argThat(new IsEqualPathIgnoringCase(path))))
-                        .thenThrow(new ExNotFound(new ExFileNotFound(path)));
             } else {
                 when(_ds.resolveNullable_(argThat(new IsEqualPathIgnoringCase(path))))
-                        .thenReturn(soid);
-                when(_ds.resolveThrows_(argThat(new IsEqualPathIgnoringCase(path))))
                         .thenReturn(soid);
             }
         }
@@ -346,9 +334,6 @@ public class MockDS
 
             Path newPath = getPath();
             when(_ds.resolve_(_oa)).thenReturn(newPath);
-            when(_ds.resolve_(eq(_soid))).thenReturn(newPath);
-            when(_ds.resolveNullable_(eq(_soid))).thenReturn(newPath);
-            when(_ds.resolveThrows_(eq(_soid))).thenReturn(newPath);
             updatePathResolution(oldPath, newPath);
 
 
@@ -713,10 +698,8 @@ public class MockDS
 
             if (!expelled) {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(_root.soid());
-                when(_ds.followAnchorThrows_(_oa)).thenReturn(_root.soid());
             } else {
                 when(_ds.followAnchorNullable_(_oa)).thenReturn(null);
-                when(_ds.followAnchorThrows_(_oa)).thenReturn(null);
             }
 
             if (_sidx2dbm != null) {
@@ -734,7 +717,6 @@ public class MockDS
             }
 
             when(_ds.followAnchorNullable_(_oa)).thenReturn(null);
-            when(_ds.followAnchorThrows_(_oa)).thenReturn(null);
 
             // undo DS mocking
             super.delete(t,  listeners);

@@ -56,11 +56,22 @@ public class TestDownloadDeadlockResolver extends AbstractTest
 
     @Mock Trans _t;
 
+    OA mockObject(SOID soid) throws Exception
+    {
+        OA oa = mock(OA.class);
+        when(_ds.getOA_(soid)).thenReturn(oa);
+        when(_ds.getOANullable_(soid)).thenReturn(oa);
+        when(_ds.resolve_(oa)).thenReturn(new Path("dummy/" + soid));
+        return oa;
+    }
+
+
     @Before
     public void setup() throws Exception
     {
-        OA oaChild = mock(OA.class);
-        when(_ds.getOA_(_socidLocalChild.soid())).thenReturn(oaChild);
+        OA oaChild = mockObject(_socidLocalChild.soid());
+        mockObject(_socidRemAncestor.soid());
+        mockObject(new SOID(_sidx, _oidCommonParent));
         when(oaChild.parent()).thenReturn(_oidCommonParent);
 
         when(_tm.begin_()).thenReturn(_t);

@@ -1,5 +1,8 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.daemon.core.ds.DirectoryService;
+import com.aerofs.daemon.core.ds.DirectoryServiceImpl;
+import com.aerofs.daemon.core.ds.ObjectSurgeon;
 import com.aerofs.daemon.lib.db.CoreSchema;
 import com.aerofs.daemon.lib.db.ISchema;
 import com.aerofs.daemon.core.linker.IDeletionBuffer;
@@ -59,6 +62,9 @@ public class CoreModule extends AbstractModule
 
         GuiceUtil.multibind(binder(), ICoreEventHandlerRegistrar.class,
                 CoreEventHandlerRegistrar.class);
+
+        bind(DirectoryService.class).to(DirectoryServiceImpl.class);
+        bind(ObjectSurgeon.class).to(DirectoryServiceImpl.class);
 
         bind(IMapSIndex2SID.class).to(SIDMap.class);
         bind(IMapSID2SIndex.class).to(SIDMap.class);

@@ -38,7 +38,7 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
     private final IMetaDatabase mdb = new MetaDatabase(dbcw.getCoreDBCW());
 
     // System under test
-    private final DirectoryService ds = new DirectoryService();
+    private final DirectoryServiceImpl ds = new DirectoryServiceImpl();
 
     SIndex sidx = new SIndex(1);
     @Mock Trans t;
@@ -93,7 +93,7 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
     @Test
     public void whenSwappingOIDs_shouldHaveChildrenAndParentOfOldObject() throws Exception
     {
-        ds.swapOIDsInSameStoreForAliasing_(sidx, o1, o3, t);
+        ds.swapOIDsInSameStore_(sidx, o1, o3, t);
         verifySwappedObjectHasChildrenAndParentOfOldObject();
     }
 
@@ -107,7 +107,7 @@ public class TestDirectoryService_SwapOIDs extends AbstractTest
         assertTrue(oa3.parent().equals(oa1_1.soid().oid()));
         ds.setOAParentAndName_(oa3, oa1_1, ds.getOA_(new SOID(sidx, o1)).name(), t);
 
-        ds.swapOIDsInSameStoreForAliasing_(sidx, o1, o3, t);
+        ds.swapOIDsInSameStore_(sidx, o1, o3, t);
         verifySwappedObjectHasChildrenAndParentOfOldObject();
     }
 

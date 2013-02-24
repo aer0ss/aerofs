@@ -14,5 +14,7 @@ public interface IPrefixVersionDatabase
     void insertPrefixVersion_(SOID soid, KIndex kidx, Version v, Trans t) throws SQLException;
 
     void deletePrefixVersion_(SOID soid, KIndex kidx, Trans t) throws SQLException;
+
+    void deleteAllPrefixVersions_(SOID soid, Trans t) throws SQLException;
 }
 

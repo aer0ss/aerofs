@@ -95,8 +95,8 @@ public class TestImmigrantDetector extends AbstractTest
         mockStore(null, sidTo, sidxTo, sidxParent, sss, null, sid2sidx, sidx2sid);
         mockStore(null, sidAnchored, sidxAnchored, sidxFrom, sss, null, sid2sidx, sidx2sid);
 
-        when(ds.resolveNullable_(soidFrom)).thenReturn(pFrom);
-        when(ds.resolveNullable_(soidTo)).thenReturn(pTo);
+        when(ds.resolve_(oaFrom)).thenReturn(pFrom);
+        when(ds.resolve_(oaTo)).thenReturn(pTo);
 
         SOCID socidFrom = new SOCID(soidFrom, CID.CONTENT);
         SOCID socidTo = new SOCID(soidTo, CID.CONTENT);

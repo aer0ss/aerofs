@@ -9,7 +9,7 @@ import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.persistency.PersistentQueueDriver;
 import com.aerofs.daemon.core.persistency.IPersistentQueue;
@@ -94,7 +94,7 @@ import java.util.concurrent.Callable;
  *  some rare cases it is possible that the epoch cannot be rolled back far enough and a full
  *  bootstrap is necessary to ensure all lost version hashes are re-sent
  */
-public class SyncStatusSynchronizer extends AbstractDirectoryServiceListener
+public class SyncStatusSynchronizer extends DirectoryServiceAdapter
         implements IVersionControlListener
 {
     private static final Logger l = Loggers.getLogger(SyncStatusSynchronizer.class);

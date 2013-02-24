@@ -63,8 +63,17 @@ public interface IMetaDatabase
     void setOAParent_(SIndex sidx, OID oid, OID parent, Trans t)
             throws SQLException, ExAlreadyExist;
 
+    // WARNING: use with care lest you shoot yourself in the foot
     void replaceOAOID_(SIndex sidx, OID oidOld, OID oidNew, Trans t)
             throws SQLException, ExAlreadyExist;
+
+    // WARNING: use with care lest you shoot yourself in the foot
+    void replaceParentInChildren_(SIndex sidx, OID oidOld, OID oidNew, Trans t)
+            throws SQLException, ExAlreadyExist;
+
+    // WARNING: use with care lest you shoot yourself in the foot
+    void replaceCA_(SIndex sidx, OID oidOld, OID oidNew, Trans t)
+            throws SQLException;
 
     void setOAFlags_(SOID soid, int flags, Trans t) throws SQLException;
 

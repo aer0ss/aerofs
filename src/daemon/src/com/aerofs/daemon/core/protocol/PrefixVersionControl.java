@@ -37,5 +37,10 @@ public class PrefixVersionControl
     {
         _pvdb.deletePrefixVersion_(soid, kidx, t);
     }
+
+    public void deleteAllPrefixVersions_(SOID soid, Trans t) throws SQLException
+    {
+        _pvdb.deleteAllPrefixVersions_(soid, t);
+    }
 }
 

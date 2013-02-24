@@ -1,6 +1,5 @@
 package com.aerofs.daemon.core.multiplicity.singleuser.migration;
 
-import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -21,14 +20,11 @@ import com.aerofs.daemon.core.object.ObjectMover;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.testlib.AbstractTest;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.sql.SQLException;
 
 import static com.aerofs.daemon.core.mock.TestUtilCore.*;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -53,25 +49,10 @@ public class TestImmigrantCreator extends AbstractTest
     String toRootName = "Foo";
     PhysicalOp op = PhysicalOp.APPLY;
 
-    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception
     {
         mockOA(oaFromRoot, soidFromRoot, Type.FILE, false, null, null, ds);
-
-        doAnswer(new Answer<Void>()
-        {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock)
-                    throws Throwable
-            {
-                IObjectWalker<SOID> w = (IObjectWalker<SOID>) invocationOnMock.getArguments()[2];
-                w.prefixWalk_(soidToRootParent, oaFromRoot);
-                w.postfixWalk_(soidToRootParent, oaFromRoot);
-                return null;
-            }
-        }).when(ds).walk_(eq(soidFromRoot), eq(soidToRootParent),
-                any(IObjectWalker.class));
     }
 
     ////////

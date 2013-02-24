@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.syncstatus;
 
 import com.aerofs.base.Loggers;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.IDirectoryServiceListener;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.store.MapSIndex2DeviceBitMap;
 import com.aerofs.daemon.lib.db.AbstractTransListener;

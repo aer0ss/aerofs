@@ -51,7 +51,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldDeleteMaxTicksAndImmOnCommitWhenVersDeletedPermanently()
         throws Exception
     {
-        va.versionDeletedPermanently_(socid, v);
+        va.versionDeletedPermanently_(socid);
         va.committing_(t);
 
         verify(nvdb).deleteMaxTicks_(socid, t);
@@ -62,7 +62,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndVersDeletedPermanently()
         throws Exception
     {
-        va.versionDeletedPermanently_(socid, v);
+        va.versionDeletedPermanently_(socid);
         deleteArbitrarySIndexAndCommit();
     }
 
@@ -70,7 +70,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldAssertOnCommitWhenSameStoreDeletedAndVersionDeletedPermanently()
         throws Exception
     {
-        va.versionDeletedPermanently_(socid, v);
+        va.versionDeletedPermanently_(socid);
         deleteSIndexAndCommit(socid.sidx());
     }
 
@@ -78,7 +78,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldAssertOnCommitWhenSameStoreDeletedAndKMLAdded()
             throws Exception
     {
-        va.kmlVersionAdded_(socid, v);
+        va.kmlVersionAdded_(socid);
         deleteSIndexAndCommit(socid.sidx());
     }
 
@@ -86,7 +86,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndKMLAdded()
         throws Exception
     {
-        va.kmlVersionAdded_(socid, v);
+        va.kmlVersionAdded_(socid);
         deleteArbitrarySIndexAndCommit();
     }
 
@@ -95,7 +95,7 @@ public class TestVersionAssistant extends AbstractTest
         throws Exception
     {
         va.storeDeleted_(socid.sidx());
-        va.localVersionAdded_(socid, v);
+        va.localVersionAdded_(socid);
         va.committing_(t);
     }
 
@@ -105,7 +105,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndLocalVersionAdded()
         throws Exception
     {
-        va.localVersionAdded_(socid, v);
+        va.localVersionAdded_(socid);
         deleteArbitrarySIndexAndCommit();
     }
 
@@ -114,7 +114,7 @@ public class TestVersionAssistant extends AbstractTest
         throws Exception
     {
         va.storeDeleted_(socid.sidx());
-        va.versionDeleted_(socid, v);
+        va.versionDeleted_(socid);
         va.committing_(t);
     }
 
@@ -122,7 +122,7 @@ public class TestVersionAssistant extends AbstractTest
     public void shouldNotAssertOnCommitWhenDifferentStoreDeletedAndVersionDeleted()
         throws Exception
     {
-        va.versionDeleted_(socid, v);
+        va.versionDeleted_(socid);
         deleteArbitrarySIndexAndCommit();
     }
 

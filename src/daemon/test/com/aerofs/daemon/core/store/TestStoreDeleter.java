@@ -3,8 +3,6 @@ package com.aerofs.daemon.core.store;
 import static com.aerofs.daemon.core.mock.TestUtilCore.mockBranches;
 import static com.aerofs.daemon.core.mock.TestUtilCore.mockOA;
 import static com.aerofs.daemon.core.mock.TestUtilCore.mockStore;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.RETURNS_MOCKS;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -17,11 +15,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.IObjectWalker;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.core.ds.OA.Type;
 import com.aerofs.daemon.core.mock.TestUtilCore.ExArbitrary;
@@ -96,7 +91,6 @@ public class TestStoreDeleter extends AbstractTest
     SOID soidFolderExpelled = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
     SOID soidAnchorExpelled = new SOID(sidxGrandChild, new OID(UniqueID.generate()));
 
-    @SuppressWarnings("unchecked")
     @Before
     public void setup() throws Exception
     {
@@ -115,16 +109,16 @@ public class TestStoreDeleter extends AbstractTest
         when(ps.newFile_(any(SOKID.class), any(Path.class))).then(RETURNS_MOCKS);
         when(ps.newFolder_(any(SOID.class), any(Path.class))).then(RETURNS_MOCKS);
 
-        when(ds.hasOA_(soidAnchorChild)).thenReturn(true);
-        when(ds.hasOA_(soidAnchorGrandChild)).thenReturn(true);
+        OA dummy = mock(OA.class);
+        when(ds.getOANullable_(soidAnchorChild)).thenReturn(dummy);
+        when(ds.getOANullable_(soidAnchorGrandChild)).thenReturn(dummy);
 
-        when(ds.resolve_(new SOID(sidxRoot, OID.ROOT))).thenReturn(pNewRoot);
-        when(ds.resolve_(new SOID(sidxChild, OID.ROOT))).thenReturn(pNewChild);
-        when(ds.resolve_(new SOID(sidxGrandChild, OID.ROOT))).thenReturn(pNewGrandChild);
-        when(ds.resolve_(new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild))))
-                .thenReturn(pNewChild);
-        when(ds.resolve_(new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild))))
-                .thenReturn(pNewGrandChild);
+        mockPathResolution(new SOID(sidxRoot, OID.ROOT), pNewRoot);
+        mockPathResolution(new SOID(sidxChild, OID.ROOT), pNewChild);
+        mockPathResolution(new SOID(sidxGrandChild, OID.ROOT), pNewGrandChild);
+        mockPathResolution(new SOID(sidxRoot, SID.storeSID2anchorOID(sidChild)), pNewChild);
+        mockPathResolution(new SOID(sidxChild, SID.storeSID2anchorOID(sidGrandChild)),
+                pNewGrandChild);
 
         HashSet<OID> children = new HashSet<OID>();
         children.add(soidFile.oid());
@@ -133,32 +127,13 @@ public class TestStoreDeleter extends AbstractTest
         children.add(soidFolderExpelled.oid());
         children.add(soidAnchorExpelled.oid());
         when(ds.getChildren_(new SOID(sidxGrandChild, OID.ROOT))).thenReturn(children);
+    }
 
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock)
-                    throws Throwable
-            {
-                SOID soid = (SOID) invocationOnMock.getArguments()[0];
-                Path cookie = (Path) invocationOnMock.getArguments()[1];
-                IObjectWalker<Path> w = (IObjectWalker<Path>) invocationOnMock.getArguments()[2];
-
-                if (soid.equals(soidFile)) walk(w, cookie, oaFile);
-                else if (soid.equals(soidFolder)) walk(w, cookie, oaFolder);
-                else if (soid.equals(soidAnchor)) walk(w, cookie, oaAnchor);
-                else if (soid.equals(soidFolderExpelled)) walk(w, cookie, oaFolderExpelled);
-                else if (soid.equals(soidAnchorExpelled)) walk(w, cookie, oaAnchorExpelled);
-                else assert false;
-
-                return null;
-            }
-            void walk(IObjectWalker<Path> w, Path cookie, OA oa) throws Exception
-            {
-                w.prefixWalk_(cookie, oa);
-                w.postfixWalk_(cookie, oa);
-            }
-
-        }).when(ds).walk_(any(SOID.class), any(Object.class), any(IObjectWalker.class));
+    private void mockPathResolution(SOID soid, Path path) throws SQLException
+    {
+        OA dummy = mock(OA.class);
+        when(ds.getOANullable_(soid)).thenReturn(dummy);
+        when(ds.resolve_(dummy)).thenReturn(path);
     }
 
     @Test

@@ -155,7 +155,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         if (l.isDebugEnabled()) l.debug("add local ver " + k + " " + v);
         _nvdb.addLocalVersion_(k, v, t);
-        _tlva.get(t).localVersionAdded_(k.socid(), v);
+        _tlva.get(t).localVersionAdded_(k.socid());
 
         for (IVersionControlListener listener : _listeners) listener.localVersionAdded_(k, v, t);
     }
@@ -167,7 +167,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         if (l.isDebugEnabled()) l.debug("del local ver " + k + " " + v);
         _nvdb.deleteLocalVersion_(k, v, t);
-        _tlva.get(t).versionDeleted_(k.socid(), v);
+        _tlva.get(t).versionDeleted_(k.socid());
     }
 
     /**
@@ -181,7 +181,17 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         if (l.isDebugEnabled()) l.debug("del local ver perm " + k + " " + v);
         _nvdb.deleteLocalVersion_(k, v, t);
-        _tlva.get(t).versionDeletedPermanently_(k.socid(), v);
+        _tlva.get(t).versionDeletedPermanently_(k.socid());
+    }
+
+    public void moveAllLocalVersions_(SOCID alias, SOCID target, Trans t) throws SQLException
+    {
+        _nvdb.moveAllLocalVersions_(alias, target, t);
+
+        _tlva.get(t).localVersionAdded_(target);
+        _tlva.get(t).versionDeletedPermanently_(alias);
+
+        // TODO: listeners (syncstat and activity log)?
     }
 
     public @Nonnull Version getKMLVersion_(SOCID socid) throws SQLException
@@ -259,7 +269,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
         }
 
         _nvdb.addKMLVersion_(socid, v, t);
-        _tlva.get(t).kmlVersionAdded_(socid, v);
+        _tlva.get(t).kmlVersionAdded_(socid);
         return true;
     }
 
@@ -270,7 +280,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         if (l.isDebugEnabled()) l.debug("del kml ver " + socid + " " + v);
         _nvdb.deleteKMLVersion_(socid, v, t);
-        _tlva.get(t).versionDeleted_(socid, v);
+        _tlva.get(t).versionDeleted_(socid);
     }
 
     /**
@@ -284,7 +294,7 @@ public class NativeVersionControl extends AbstractVersionControl<NativeTickRow>
 
         if (l.isDebugEnabled()) l.debug("del kml ver perm " + socid + " " + v);
         _nvdb.deleteKMLVersion_(socid, v, t);
-        _tlva.get(t).versionDeletedPermanently_(socid, v);
+        _tlva.get(t).versionDeletedPermanently_(socid);
     }
 
     public Version getAllLocalVersions_(SOCID socid) throws SQLException

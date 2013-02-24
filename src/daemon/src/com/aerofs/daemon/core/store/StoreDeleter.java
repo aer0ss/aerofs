@@ -126,6 +126,7 @@ public class StoreDeleter
             @Override
             public Path prefixWalk_(Path pathOldParent, OA oa)
             {
+                l.info("del {} {}", pathOldParent, oa);
                 if (oa.type() != Type.DIR) {
                     return null;
                 } else if (oa.isExpelled()) {
@@ -140,6 +141,7 @@ public class StoreDeleter
                     throws IOException, SQLException
             {
                 Path path = pathOldParent.append(oa.name());
+                l.info("del {}", path);
                 switch (oa.type()) {
                 case DIR:
                 case ANCHOR:

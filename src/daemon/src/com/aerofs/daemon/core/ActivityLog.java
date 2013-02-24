@@ -15,7 +15,7 @@ import javax.inject.Inject;
 
 import com.aerofs.daemon.core.NativeVersionControl.IVersionControlListener;
 import com.aerofs.daemon.core.ds.DirectoryService;
-import com.aerofs.daemon.core.ds.DirectoryService.AbstractDirectoryServiceListener;
+import com.aerofs.daemon.core.ds.DirectoryServiceAdapter;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.IActivityLogDatabase;
@@ -55,7 +55,7 @@ import com.google.common.collect.Sets;
  * Fortunately, most transactions only deal with a small number of objects at a time. Transactions
  * by the scanner may be big, but its size is limited by ScanSession.CONTINUATION_UPDATES_THRESHOLD.
  */
-public class ActivityLog extends AbstractDirectoryServiceListener implements IVersionControlListener
+public class ActivityLog extends DirectoryServiceAdapter implements IVersionControlListener
 {
     // the per-object entry for the trans-local map
     private static class ActivityEntry

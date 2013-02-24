@@ -116,5 +116,26 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
             throw e;
         }
     }
+
+    private PreparedStatement _psDelAPV;
+    @Override
+    public void deleteAllPrefixVersions_(SOID soid, Trans t) throws SQLException
+    {
+        try {
+            if (_psDelAPV == null) _psDelAPV = c()
+                    .prepareStatement(DBUtil.deleteWhere(T_PRE,
+                            C_PRE_SIDX + "=? and " + C_PRE_OID + "=?"));
+
+            _psDelAPV.setInt(1, soid.sidx().getInt());
+            _psDelAPV.setBytes(2, soid.oid().getBytes());
+
+            _psDelAPV.executeUpdate();
+
+        } catch (SQLException e) {
+            DBUtil.close(_psDelAPV);
+            _psDelAPV = null;
+            throw e;
+        }
+    }
 }
 

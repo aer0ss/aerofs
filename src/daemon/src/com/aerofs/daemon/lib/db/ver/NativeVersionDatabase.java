@@ -173,18 +173,16 @@ public class NativeVersionDatabase
                     .prepareStatement("delete from " + T_VER + " where "
                             + C_VER_SIDX + "=? and " + C_VER_OID + "=? and "
                             + C_VER_CID + "=? and " + C_VER_DID + "=? and "
-                            + C_VER_TICK + "=? and " + C_VER_KIDX + "=?");
+                            + C_VER_KIDX + "=?");
 
             _psDelVer.setInt(1, socid.sidx().getInt());
             _psDelVer.setBytes(2, socid.oid().getBytes());
             _psDelVer.setInt(3, socid.cid().getInt());
-            _psDelVer.setInt(6, kidx.getInt());
+            _psDelVer.setInt(5, kidx.getInt());
 
             for (Entry<DID, Tick> en : v.getAll_().entrySet()) {
                 _psDelVer.setBytes(4, en.getKey().getBytes());
 
-                // TODO remove "where C_VER_TICK=?" in production version
-                _psDelVer.setLong(5, en.getValue().getLong());
                 _psDelVer.addBatch();
             }
 
@@ -199,6 +197,28 @@ public class NativeVersionDatabase
         } catch (SQLException e) {
             DBUtil.close(_psDelVer);
             _psDelVer = null;
+            throw e;
+        }
+    }
+
+    private PreparedStatement _psMoveVer;
+    @Override
+    public void moveAllLocalVersions_(SOCID alias, SOCID target, Trans t) throws SQLException
+    {
+        try {
+            if (_psMoveVer == null) _psMoveVer = c().prepareStatement(DBUtil.updateWhere(T_VER,
+                    C_VER_SIDX + "=? and " + C_VER_OID + "=? and " + C_VER_CID + "=? and "
+                            + C_VER_KIDX + "<>" + KIndex.KML.getInt(),
+                    C_VER_OID));
+            _psMoveVer.setBytes(1, target.oid().getBytes());
+            _psMoveVer.setInt(2, alias.sidx().getInt());
+            _psMoveVer.setBytes(3, alias.oid().getBytes());
+            _psMoveVer.setInt(4, alias.cid().getInt());
+
+            _psMoveVer.executeUpdate();
+        } catch (SQLException e) {
+            DBUtil.close(_psMoveVer);
+            _psMoveVer = null;
             throw e;
         }
     }
@@ -289,22 +309,23 @@ public class NativeVersionDatabase
     {
         try {
             if (_psGetALV == null) {
-                _psGetALV = c().prepareStatement("select " + C_VER_DID + ","
-                        + C_VER_TICK + " from " + T_VER + " where "
-                        + C_VER_SIDX + "=? and " + C_VER_OID + "=? and "
-                        + C_VER_CID + "=? and " + C_VER_KIDX + "<>?");
+                _psGetALV = c().prepareStatement(DBUtil.selectWhere(T_VER,
+                        C_VER_SIDX + "=? and " + C_VER_OID + "=? and "
+                                + C_VER_CID + "=? and " + C_VER_KIDX + "<>" + KIndex.KML.getInt(),
+                        C_VER_DID, "max(" + C_VER_TICK + ")")
+                        + " group by " + C_VER_DID);
             }
 
             _psGetALV.setInt(1, socid.sidx().getInt());
             _psGetALV.setBytes(2, socid.oid().getBytes());
             _psGetALV.setInt(3, socid.cid().getInt());
-            _psGetALV.setInt(4, KIndex.KML.getInt());
             ResultSet rs = _psGetALV.executeQuery();
             try {
                 Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
-                    v.set_(did, Math.max(v.get_(did).getLong(), rs.getLong(2)));
+                    assert v.get_(did).equals(Tick.ZERO);
+                    v.set_(did, rs.getLong(2));
                 }
                 return v;
             } finally {
