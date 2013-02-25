@@ -165,8 +165,8 @@ public class GetVersCall
 
         l.debug("process from " + msg.ep() + " 4 " + msg.sidx());
 
-        Version vKwlgRemote = new Version();
-        Version vImmKwlgRemote = new Version();
+        Version vKwlgRemote = Version.empty();
+        Version vImmKwlgRemote = Version.empty();
         // Load vKwlgRemote and vImmKwlgRemote with the contents of msg
         for (int i = 0; i < pb.getDeviceIdCount(); i++) {
             DID did = new DID(pb.getDeviceId(i));

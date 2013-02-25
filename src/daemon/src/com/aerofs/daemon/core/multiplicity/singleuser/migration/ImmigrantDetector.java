@@ -124,7 +124,7 @@ public class ImmigrantDetector implements IImmigrantDetector
         // failure in getKMLVersion_()
         Version vKMLToOld = _nvc.getKMLVersion_(socidTo);
 
-        Version vLocalSum = new Version();
+        Version vLocalSum = Version.empty();
         for (Entry<KIndex, CA> en : oaFrom.cas().entrySet()) {
             KIndex kidx = en.getKey();
             CA caFrom = en.getValue();

@@ -3,6 +3,7 @@ package com.aerofs.daemon.lib.db.ver;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.base.id.DID;
+import com.aerofs.lib.Tick;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -41,9 +42,7 @@ public class TestVersionAssistant extends AbstractTest
         OID oid = new OID(UniqueID.generate());
         CID cid = new CID(1);
         socid = new SOCID(sidx, oid, cid);
-        DID did = new DID(UniqueID.generate());
-        Version versionNonZero = new Version();
-        versionNonZero.set_(did, 3);
+        Version versionNonZero = Version.of(DID.generate(), new Tick(3));
         // We pretend that some change left nonzero versions lying around even after store deletion
         when(nvdb.getAllVersions_(any(SOCID.class))).thenReturn(versionNonZero);
     }

@@ -86,7 +86,7 @@ public class ComputeHashCall
 
         SOID soid = new SOID(msg.sidx(), new OID(pb.getObjectId()));
 
-        Version vRemote = new Version(pb.getRemoteVersion());
+        Version vRemote = Version.fromPB(pb.getRemoteVersion());
 
         for (KIndex kIdx: _ds.getOAThrows_(soid).cas().keySet()) {
             SOCKID k = new SOCKID(soid, CID.CONTENT, kIdx);

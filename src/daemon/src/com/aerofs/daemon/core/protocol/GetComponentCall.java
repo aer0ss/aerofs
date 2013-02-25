@@ -186,7 +186,7 @@ public class GetComponentCall
             throw new ExNoPerm();
         }
 
-        Version vRemote = new Version(pb.getLocalVersion());
+        Version vRemote = Version.fromPB(pb.getLocalVersion());
         Version vLocal = _nvc.getLocalVersion_(k);
 
         if (!vLocal.sub_(vRemote).isZero_()) {
@@ -227,7 +227,7 @@ public class GetComponentCall
         } else if (k.cid().equals(CID.CONTENT)) {
             _sendContent.send_(msg.ep(), k, bdCore, bdReply, vLocal,
                     msg.pb().getGetComCall().getPrefixLength(),
-                    new Version(msg.pb().getGetComCall().getPrefixVersion()));
+                    Version.fromPB(msg.pb().getGetComCall().getPrefixVersion()));
         } else {
             SystemUtil.fatal("unsupported CID: " + k.cid());
         }

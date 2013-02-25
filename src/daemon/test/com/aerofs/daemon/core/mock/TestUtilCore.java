@@ -120,7 +120,7 @@ public class TestUtilCore
         SortedMap<KIndex, CA> cas = Maps.newTreeMap();
 
         int kMaster = KIndex.MASTER.getInt();
-        Version vAllLocal = new Version();
+        Version vAllLocal = Version.empty();
         for (int i = kMaster; i < kMaster + branches; i++) {
             KIndex kidx = new KIndex(i);
             SOCKID k = new SOCKID(oa.soid(), CID.CONTENT, kidx);

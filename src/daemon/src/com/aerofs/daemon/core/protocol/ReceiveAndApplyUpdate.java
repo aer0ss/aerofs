@@ -327,7 +327,7 @@ public class ReceiveAndApplyUpdate
             hRemote = null;
         }
 
-        Version vAddLocal = new Version(vRemote);
+        Version vAddLocal = Version.copyOf(vRemote);
         KIndex kidxApply = null;
         @Nullable Version vApply = null;
         List<KIndex> kidcsDel = Lists.newArrayList();

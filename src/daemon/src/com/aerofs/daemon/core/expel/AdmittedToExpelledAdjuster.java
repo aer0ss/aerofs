@@ -76,7 +76,7 @@ public class AdmittedToExpelledAdjuster implements IExpulsionAdjuster
                     assert !oldExpelled;
 
                     SOCID socid = new SOCID(oa.soid(), CID.CONTENT);
-                    Version vKMLAdd = new Version();
+                    Version vKMLAdd = Version.empty();
                     for (KIndex kidx : oa.cas(false).keySet()) {
                         SOCKID k = new SOCKID(socid, kidx);
                         if (!emigrate) _ps.newFile_(k.sokid(), pathOld).delete_(op, t);
