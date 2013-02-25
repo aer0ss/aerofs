@@ -603,8 +603,10 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
             _psGSCC.setInt(1, soid.sidx().getInt());
             _psGSCC.setBytes(2, soid.oid().getBytes());
             ResultSet rs = _psGSCC.executeQuery();
+            // store ROOTs are always their own parent so we have to adjust the result of query
+            int off = soid.oid().isRoot() ? -1 : 0;
             try {
-                return DBUtil.count(rs);
+                return DBUtil.count(rs) + off;
             } finally {
                 rs.close();
             }
