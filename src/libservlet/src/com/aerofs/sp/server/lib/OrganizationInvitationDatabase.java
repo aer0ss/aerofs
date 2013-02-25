@@ -22,6 +22,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static com.aerofs.lib.db.DBUtil.binaryCount;
+import static com.aerofs.lib.db.DBUtil.count;
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITEE;
 import static com.aerofs.sp.server.lib.SPSchema.C_OI_INVITER;
@@ -130,6 +132,21 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         return builder.build();
     }
 
+    public int countInvitations(OrganizationID orgID)
+            throws SQLException
+    {
+        PreparedStatement ps = prepareStatement(selectWhere(T_OI, C_OI_ORG_ID + "=?", "count(*)"));
+
+        ps.setInt(1, orgID.getInt());
+
+        ResultSet rs = ps.executeQuery();
+        try {
+            return count(rs);
+        } finally {
+            rs.close();
+        }
+    }
+
     public boolean hasInvite(UserID invitee, OrganizationID orgID)
             throws SQLException
     {
@@ -141,11 +158,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
 
         ResultSet rs = ps.executeQuery();
         try {
-            Util.verify(rs.next());
-            int count = rs.getInt(1);
-            assert count == 0 || count == 1;
-            assert !rs.next();
-            return count != 0;
+            return binaryCount(rs);
         } finally {
             rs.close();
         }

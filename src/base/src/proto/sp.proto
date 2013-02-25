@@ -143,7 +143,7 @@ service SPService {
      *   ExNoPerm if the caller is not an organization admin.
      *   ExEmailSendingFailed if we were unable to send the email.
      */
-     rpc InviteToOrganization(InviteToOrganizationCall) returns(Void);
+     rpc InviteToOrganization(InviteToOrganizationCall) returns(InviteToOrganizationReply);
 
     /**
      * Accept an organization invitation and move the caller into that organization. Makes
@@ -501,11 +501,18 @@ service SPService {
      * organization invitation table so that when the user views the pending organization invites
      * page in the admin panel, that organization will no longer appear in the list.
      *
+     * This method returns the user counts as well as Stripe customer id of the specific
+     * organization, so the Python Web server may update Stripe subscription plan for that org.
+     * TODO (WW) This design smells badly. Alternatively we can use a separate method to retrieve
+     * the number but it would bring up several security issues. The fundamental problem is that the
+     * Web server shouldn't have handled Stripe calls. Either SP or a service that SP depends on
+     * should do the job.
      *
      * Throws:
      *   ExNotFound if the user does not have a pending invitation for the specified organization.
      */
-    rpc IgnoreOrganizationInvitation(IgnoreOrganizationInvitationCall) returns(Void);
+    rpc DeleteOrganizationInvitation(DeleteOrganizationInvitationCall) returns(
+            DeleteOrganizationInvitationReply);
 
     /**
      * Extend the tomcat session. Does not throw, since we are guaranteed by tomcat that the session
@@ -582,6 +589,34 @@ service SPService {
      *   ExNotFound: if the specified device does not exist or does not belong to you.
      */
     rpc AckCommandQueueHead(AckCommandQueueHeadCall) returns(AckCommandQueueHeadReply);
+
+     /**
+      * Delete organization invitation for a given user.
+      *
+      * Required Auth Level: admin
+      */
+     rpc DeleteOrganizationInvitationForUser(DeleteOrganizationInvitationForUserCall) returns(
+            DeleteOrganizationInvitationForUserReply);
+}
+
+message DeleteOrganizationInvitationForUserCall {
+    required string user_id = 1;
+}
+
+message DeleteOrganizationInvitationForUserReply {
+    // See InviteToOrganizationReply
+    required PBStripeSubscriptionData stripe_subscription_data = 1;
+}
+
+// The data structure holds all the information that describes Stripe subscription of an
+// organization. The Web server uses it to perform Stripe transactions. Ideally, all Stripe
+// transactions should be done inside SP and this data structure should not be needed.
+message PBStripeSubscriptionData {
+    // Stripe customer ID of the organization. Absent if the organization doesn't have the ID.
+    optional string stripe_customer_id = 1;
+    // Total user count (members + remaining invited users) of the organization. It dictates the
+    // organization's subscription plan.
+    required uint32 user_count = 2;
 }
 
 message ListOrganizationInvitedUsersReply {
@@ -640,6 +675,13 @@ message RequestToSignUpWithBusinessPlanCall {
 
 message InviteToOrganizationCall {
     required string email_address = 1;
+}
+
+message InviteToOrganizationReply {
+    // Return subscription data so the Web server doesn't have to make another three SP calls
+    // (get customer id, get current member count, and get invited users count) to update the
+    // subscription. See PBStripeSubscriptionData for more info.
+    required PBStripeSubscriptionData stripe_subscription_data = 1;
 }
 
 message AcceptOrganizationInvitationCall {
@@ -946,8 +988,20 @@ message GetSharedFolderNamesReply {
 }
 
 // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under AcceptOrganizationInvitationCall.
-message IgnoreOrganizationInvitationCall {
+message DeleteOrganizationInvitationCall {
     required int32 organization_id = 1;
+}
+
+message DeleteOrganizationInvitationReply {
+    // As the deletion causes the organization to lose one user, the Web server needs to adjust
+    // the organization's subscription plan. However, because the current user doesn't belong to the
+    // organization, the Web server doesn't have the permission to retrieve the organization's
+    // subscription data which is necessary for the adjustment. Therefore, we return the
+    // data in this reply.
+    //
+    // This design is not great. Ideally, SP should perform all Stripe transactions internally
+    // without the Web server's involvement. See PBStripeSubscriptionData for more information.
+    required PBStripeSubscriptionData stripe_subscription_data = 1;
 }
 
 // WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE: move this under the GetDeviceInfo messages.

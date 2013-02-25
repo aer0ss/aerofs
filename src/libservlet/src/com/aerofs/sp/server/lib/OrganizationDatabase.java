@@ -312,11 +312,11 @@ public class OrganizationDatabase extends AbstractSQLDatabase
      * @param orgId ID of the organization.
      * @return Number of users in the organization {@code orgId}.
      */
-    public int listUsersCount(OrganizationID orgId)
+    public int countUsers(OrganizationID orgId)
             throws SQLException
     {
-        PreparedStatement ps = prepareStatement("select count(*) from " +
-                T_USER + " where " + C_USER_ORG_ID + "=?" + andNotTeamServer());
+        PreparedStatement ps = prepareStatement(selectWhere(T_USER,
+                C_USER_ORG_ID + "=?" + andNotTeamServer(), "count(*)"));
 
         ps.setInt(1, orgId.getInt());
         ResultSet rs = ps.executeQuery();
@@ -458,7 +458,6 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         } finally {
             rs.close();
         }
-
     }
 
     private void throwIfListingSharedFoldersNotSupported(OrganizationID orgId)

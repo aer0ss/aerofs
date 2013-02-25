@@ -207,12 +207,12 @@ public class Organization
         return new UsersAndQueryCount(userIDs, count);
     }
 
-    public int totalUserCount() throws SQLException
+    public int countUsers() throws SQLException
     {
-        return _f._odb.listUsersCount(_id);
+        return _f._odb.countUsers(_id);
     }
 
-    public int totalUserCount(AuthorizationLevel authLevel)
+    public int countUsers(AuthorizationLevel authLevel)
             throws SQLException
     {
         return _f._odb.listUsersWithAuthorizationCount(authLevel, _id);
@@ -227,7 +227,7 @@ public class Organization
         int count;
         if (search.isEmpty()) {
             userIDs = _f._odb.listUsers(_id, offset, maxResults);
-            count = totalUserCount();
+            count = countUsers();
         } else {
             userIDs = _f._odb.searchUsers(_id, offset, maxResults, search);
             count = _f._odb.searchUsersCount(_id, search);
@@ -247,6 +247,12 @@ public class Organization
             builder.add(_f._factOrgInvite.create(userID, _id));
         }
         return builder.build();
+    }
+
+    public int countOrganizationInvitations()
+            throws SQLException
+    {
+        return _f._oidb.countInvitations(_id);
     }
 
     public int countSharedFolders()

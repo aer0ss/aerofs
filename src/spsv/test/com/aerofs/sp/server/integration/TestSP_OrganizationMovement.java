@@ -83,7 +83,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
      * @return the ID of the organization that we hvae joined.
      * @throws Exception
      */
-    private int ignoreFirstInvitation()
+    private int deleteFirstInvitation()
             throws Exception
     {
         // Switch to the invited user.
@@ -91,7 +91,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
 
         // Ignore the invite.
         int orgID = pending.getOrganizationInvitationsList().get(0).getOrganizationId();
-        service.ignoreOrganizationInvitation(orgID);
+        service.deleteOrganizationInvitation(orgID);
 
         return orgID;
     }
@@ -210,7 +210,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             addOrganization();
             sendInvitation(USER_2);
             setSessionUser(USER_2);
-            orgID = ignoreFirstInvitation();
+            orgID = deleteFirstInvitation();
         } catch (Exception e) {
             fail();
         }

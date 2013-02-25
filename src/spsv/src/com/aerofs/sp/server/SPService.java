@@ -1,6 +1,9 @@
 package com.aerofs.sp.server;
 
 import com.aerofs.base.ex.ExFormatError;
+import com.aerofs.proto.Sp.DeleteOrganizationInvitationForUserReply;
+import com.aerofs.proto.Sp.DeleteOrganizationInvitationReply;
+import com.aerofs.proto.Sp.InviteToOrganizationReply;
 import com.aerofs.proto.Sp.ListOrganizationInvitedUsersReply;
 import com.aerofs.proto.Sp.ListOrganizationSharedFoldersReply;
 import com.aerofs.proto.Sp.ListUserSharedFoldersReply;
@@ -15,6 +18,7 @@ import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueSize;
 import com.aerofs.servlets.lib.db.jedis.JedisThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
+import com.aerofs.proto.Sp.PBStripeSubscriptionData;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.Param;
@@ -356,7 +360,7 @@ public class SPService implements ISPService
         ListUsersReply reply = ListUsersReply.newBuilder()
                 .addAllUsers(users2pb(listAndCount.users()))
                 .setFilteredCount(listAndCount.count())
-                .setTotalCount(org.totalUserCount())
+                .setTotalCount(org.countUsers())
                 .build();
 
         _sqlTrans.commit();
@@ -385,7 +389,7 @@ public class SPService implements ISPService
         ListUsersReply reply = ListUsersReply.newBuilder()
                 .addAllUsers(users2pb(listAndCount.users()))
                 .setFilteredCount(listAndCount.count())
-                .setTotalCount(org.totalUserCount(level))
+                .setTotalCount(org.countUsers(level))
                 .build();
 
         _sqlTrans.commit();
@@ -1173,7 +1177,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> inviteToOrganization(String userIdString)
+    public ListenableFuture<InviteToOrganizationReply> inviteToOrganization(String userIdString)
             throws SQLException, ExNoPerm, ExNotFound, IOException, ExEmailSendingFailed,
             ExAlreadyExist, ExAlreadyInvited
     {
@@ -1202,9 +1206,13 @@ public class SPService implements ISPService
         _factOrgInvite.save(inviter.id(), invitee.id(), org.id());
         _factEmailer.createOrganizationInvitationEmailer(inviter, invitee, org).send();
 
+        PBStripeSubscriptionData sd = getStripeSubscriptionData(org);
+
         _sqlTrans.commit();
 
-        return createVoidReply();
+        return createReply(InviteToOrganizationReply.newBuilder()
+                .setStripeSubscriptionData(sd)
+                .build());
     }
 
     @Override
@@ -1243,21 +1251,59 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> ignoreOrganizationInvitation(Integer organizationID)
+    public ListenableFuture<DeleteOrganizationInvitationReply> deleteOrganizationInvitation(
+            Integer organizationID)
             throws SQLException, ExNoPerm, ExNotFound
     {
         _sqlTrans.begin();
 
-        User ignorer = _sessionUser.get();
+        User user = _sessionUser.get();
         Organization organization = _factOrg.create(new OrganizationID(organizationID));
-        l.info("Ignore org invite by " + ignorer);
+        l.info("Delete org invite by " + user);
 
-        OrganizationInvitation invite = _factOrgInvite.create(ignorer.id(), organization.id());
+        _factOrgInvite.create(user.id(), organization.id()).delete();
 
-        invite.delete();
+        PBStripeSubscriptionData sd = getStripeSubscriptionData(organization);
+
         _sqlTrans.commit();
 
-        return createVoidReply();
+        return createReply(DeleteOrganizationInvitationReply.newBuilder()
+                .setStripeSubscriptionData(sd)
+                .build());
+    }
+
+    @Override
+    public ListenableFuture<DeleteOrganizationInvitationForUserReply> deleteOrganizationInvitationForUser(
+            String userID)
+            throws SQLException, ExNoPerm, ExNotFound
+    {
+        _sqlTrans.begin();
+
+        User user = _sessionUser.get();
+        user.throwIfNotAdmin();
+
+        Organization org = user.getOrganization();
+
+        _factOrgInvite.create(UserID.fromExternal(userID), org.id()).delete();
+
+        PBStripeSubscriptionData sd = getStripeSubscriptionData(org);
+
+        _sqlTrans.commit();
+
+        return createReply(DeleteOrganizationInvitationForUserReply.newBuilder()
+                .setStripeSubscriptionData(sd)
+                .build());
+    }
+
+    private PBStripeSubscriptionData getStripeSubscriptionData(Organization org)
+            throws SQLException, ExNotFound
+    {
+        PBStripeSubscriptionData.Builder builder = PBStripeSubscriptionData.newBuilder();
+        StripeCustomerID scid = org.getStripeCustomerIDNullable();
+        if (scid != null) builder.setStripeCustomerId(scid.getID());
+
+        builder.setUserCount(org.countOrganizationInvitations() + org.countUsers());
+        return builder.build();
     }
 
     @Override
