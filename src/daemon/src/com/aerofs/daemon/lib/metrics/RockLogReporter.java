@@ -171,10 +171,17 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
 
     private void addFloat_(String metricName, String component, double value)
     {
+        String fullMetricName = metricName + "." + component;
+
+        if (Double.isNaN(value)) {
+            l.warn("nan m:" + fullMetricName + " v:" + value);
+            RockLog.newDefect("client.fail-metric.nan").addData("metric", fullMetricName).sendAsync();
+            return;
+        }
+
         checkNotNull(_rocklogMetric);
 
-        String key = metricName + "." + component;
-        _rocklogMetric.addMetric(key, value);
+        _rocklogMetric.addMetric(fullMetricName, value);
     }
 
     private void addObject_(String key, Gauge<?> gauge)
@@ -213,7 +220,10 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
         addLong_("jvm", "daemon_thread_count", _vm.daemonThreadCount());
         addLong_("jvm", "thread_count", _vm.threadCount());
         addLong_("jvm", "uptime", _vm.uptime());
-        addFloat_("jvm", "fd_usage", _vm.fileDescriptorUsage());
+
+        if (!isWindows()) {
+            addFloat_("jvm", "fd_usage", _vm.fileDescriptorUsage());
+        }
 
         for (Map.Entry<Thread.State, Double> entry : _vm.threadStatePercentages().entrySet()) {
             addFloat_("jvm.thread-states", entry.getKey().toString().toLowerCase(), entry.getValue());
@@ -224,5 +234,10 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
             addLong_(name, "time", entry.getValue().getTime(TimeUnit.MILLISECONDS));
             addLong_(name, "runs", entry.getValue().getRuns());
         }
+    }
+
+    private static boolean isWindows()
+    {
+        return System.getProperty("os.name").toLowerCase().contains("win");
     }
 }
