@@ -450,7 +450,7 @@ public class SPService implements ISPService
         ListOrganizationInvitedUsersReply.Builder builder =
                 ListOrganizationInvitedUsersReply.newBuilder();
         for (OrganizationInvitation oi : user.getOrganization().getOrganizationInvitations()) {
-            builder.addUserId(oi.getInvitee().id().getID());
+            builder.addUserId(oi.getInvitee().id().getString());
         }
 
         _sqlTrans.commit();
@@ -521,7 +521,7 @@ public class SPService implements ISPService
                 builder.addUserAndRole(PBUserAndRole.newBuilder()
                         .setRole(srp._role.toPB())
                         .setUser(PBUser.newBuilder()
-                            .setUserEmail(subject.getID())
+                            .setUserEmail(subject.getString())
                             .setFirstName(fn._first)
                             .setLastName(fn._last)));
             }
@@ -738,7 +738,7 @@ public class SPService implements ISPService
         CertifyDeviceReply reply = addCertificate(device, cert);
 
         // Grab these information before releasing the transaction.
-        String emailAddress = user.id().getID();
+        String emailAddress = user.id().getString();
         String firstName = user.getFullName()._first;
 
         _sqlTrans.commit();
@@ -820,7 +820,7 @@ public class SPService implements ISPService
         CertifyDeviceReply reply = addCertificate(device, cert);
 
         // Grab these information before releasing the transaction.
-        String emailAddress = user.id().getID();
+        String emailAddress = user.id().getString();
         String firstName = user.getFullName()._first;
 
         _sqlTrans.commit();
@@ -963,7 +963,7 @@ public class SPService implements ISPService
         _esdb.insertEmailSubscription(invitee.id(), SubscriptionCategory.AEROFS_INVITATION_REMINDER);
 
         InvitationEmailer emailer = _factEmailer.createSignUpInvitationEmailer(
-                inviter.id().getID(), invitee.id().getID(), inviterName, folderName, note, code);
+                inviter.id().getString(), invitee.id().getString(), inviterName, folderName, note, code);
 
         return new InviteToSignUpResult(emailer, code);
     }
@@ -1127,7 +1127,7 @@ public class SPService implements ISPService
             signUpCode = user.addSignUpCode();
             // Retrieve the email address from the user id in case the original address is not
             // normalized.
-            emailAddress = user.id().getID();
+            emailAddress = user.id().getString();
         }
 
         _sqlTrans.commit();
@@ -1300,7 +1300,7 @@ public class SPService implements ISPService
     {
         PBStripeSubscriptionData.Builder builder = PBStripeSubscriptionData.newBuilder();
         StripeCustomerID scid = org.getStripeCustomerIDNullable();
-        if (scid != null) builder.setStripeCustomerId(scid.getID());
+        if (scid != null) builder.setStripeCustomerId(scid.getString());
 
         builder.setUserCount(org.countOrganizationInvitations() + org.countUsers());
         return builder.build();
@@ -1318,7 +1318,7 @@ public class SPService implements ISPService
         StripeCustomerID stripeCustomerID = user.getOrganization().getStripeCustomerIDNullable();
 
         GetStripeCustomerIDReply.Builder builder = GetStripeCustomerIDReply.newBuilder();
-        if (stripeCustomerID != null) builder.setStripeCustomerId(stripeCustomerID.getID());
+        if (stripeCustomerID != null) builder.setStripeCustomerId(stripeCustomerID.getString());
 
         _sqlTrans.commit();
 

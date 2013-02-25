@@ -25,7 +25,7 @@ public class TestSP_OrganizationPreferences extends AbstractSPTest
         String oldName = "hahaha";
         String newName = "hohoho";
 
-        service.addOrganization(oldName, null, StripeCustomerID.TEST.getID());
+        service.addOrganization(oldName, null, StripeCustomerID.TEST.getString());
 
         assertEquals(service.getOrgPreferences().get().getOrganizationName(), oldName);
 

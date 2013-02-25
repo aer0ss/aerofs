@@ -109,7 +109,7 @@ public class TestSP_CertifyTeamServerCertificate extends AbstractSPTest
     private UserID setupTeamServer()
             throws Exception
     {
-        service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getID());
+        service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getString());
         return UserID.fromInternal(service.getTeamServerUserID().get().getId());
     }
 }

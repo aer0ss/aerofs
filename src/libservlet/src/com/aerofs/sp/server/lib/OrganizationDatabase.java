@@ -74,7 +74,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
             ps.setInt(1, organizationId.getInt());
             ps.setString(2, organizationName);
             ps.setString(3, organizationPhone);
-            ps.setString(4, stripeCustomerId.getID());
+            ps.setString(4, stripeCustomerId.getString());
             ps.executeUpdate();
         } catch (SQLException e) {
             throwOnConstraintViolation(e, "organization ID already exists");

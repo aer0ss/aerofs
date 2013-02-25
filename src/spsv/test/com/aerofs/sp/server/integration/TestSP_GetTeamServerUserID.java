@@ -33,7 +33,7 @@ public class TestSP_GetTeamServerUserID extends AbstractSPTest
     public void shouldThrowIfUserIsNonAdminInNonDefaultOrg()
             throws Exception
     {
-        service.addOrganization("test", null, StripeCustomerID.TEST.getID());
+        service.addOrganization("test", null, StripeCustomerID.TEST.getString());
 
         sqlTrans.begin();
         user.setLevel(AuthorizationLevel.USER);

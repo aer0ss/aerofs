@@ -22,6 +22,6 @@ public class TestStripeCustomerID
     public void shouldHoldActualStripeCustomerID()
     {
         StripeCustomerID result = StripeCustomerID.create(ACTUAL_STRIPE_CUSTOMER_ID);
-        assertEquals(ACTUAL_STRIPE_CUSTOMER_ID, result.getID());
+        assertEquals(ACTUAL_STRIPE_CUSTOMER_ID, result.getString());
     }
 }

@@ -38,7 +38,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        service.listUserSharedFolders(USER_2.getID());
+        service.listUserSharedFolders(USER_2.getString());
     }
 
     @Test(expected = ExNoPerm.class)
@@ -69,7 +69,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
 
         addOrganization();
 
-        service.listUserSharedFolders(USER_2.getID());
+        service.listUserSharedFolders(USER_2.getString());
     }
 
     @Test
@@ -144,7 +144,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        return service.listUserSharedFolders(USER_2.getID()).get().getSharedFolderList();
+        return service.listUserSharedFolders(USER_2.getString()).get().getSharedFolderList();
     }
 
     private List<PBSharedFolder> queryCurrentUser()
@@ -152,7 +152,7 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
     {
         setSessionUser(USER_1);
 
-        return service.listUserSharedFolders(USER_1.getID()).get().getSharedFolderList();
+        return service.listUserSharedFolders(USER_1.getString()).get().getSharedFolderList();
     }
 
     private List<PBSharedFolder> queryCurrentAndOtherUsers()
@@ -166,6 +166,6 @@ public class TestSP_ListUserShareFolders extends AbstractSPFolderPermissionTest
 
     private void addOrganization() throws Exception
     {
-        service.addOrganization("test org", null, StripeCustomerID.TEST.getID());
+        service.addOrganization("test org", null, StripeCustomerID.TEST.getString());
     }
 }

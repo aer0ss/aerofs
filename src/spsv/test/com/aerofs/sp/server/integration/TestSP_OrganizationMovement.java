@@ -40,7 +40,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     {
         // Create a new organization (name doesn't matter). The session user will now be an admin
         // of this new organization.
-        service.addOrganization(_organizationName, null, StripeCustomerID.TEST.getID());
+        service.addOrganization(_organizationName, null, StripeCustomerID.TEST.getString());
     }
 
     private void sendInvitation(UserID userID)
@@ -56,9 +56,9 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         service.acceptOrganizationInvitation(orgID);
         // when the user changes the org, the ACL of its root store must be updated to inlucde
         // the team server user id.
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + userID.getID()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + userID.getString()));
         assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX +
-                (new OrganizationID(orgID).toTeamServerUserID().getID())));
+                (new OrganizationID(orgID).toTeamServerUserID().getString())));
     }
 
     /**

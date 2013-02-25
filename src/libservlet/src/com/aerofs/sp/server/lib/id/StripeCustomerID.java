@@ -27,13 +27,14 @@ public class StripeCustomerID extends StringID
     @Override
     public boolean equals(final Object other)
     {
-        return other == this || (other != null && ((StripeCustomerID) other).getID().equals(getID()));
+        return other == this || (other != null && ((StripeCustomerID) other).getString().equals(
+                getString()));
     }
 
     @Override
     public int hashCode()
     {
-        return getID().hashCode();
+        return getString().hashCode();
     }
 
     /**

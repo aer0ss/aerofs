@@ -13,7 +13,8 @@ public class StringID implements Comparable<StringID>
         _i = i;
     }
 
-    public String getID() {
+    public String getString()
+    {
         return _i;
     }
 
@@ -23,6 +24,10 @@ public class StringID implements Comparable<StringID>
         return _i.compareTo(arg0._i);
     }
 
+    /**
+     * N.B. This method returns human friendly strings and has no guarantee on their content.
+     * Use getString() instead for strings to be processed by the program.
+     */
     @Override
     public String toString()
     {

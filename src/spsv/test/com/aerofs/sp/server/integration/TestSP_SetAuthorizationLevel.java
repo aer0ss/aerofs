@@ -29,7 +29,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
             throws Exception
     {
         // switch user_1 to a different organization
-        service.addOrganization("test", null, StripeCustomerID.TEST.getID());
+        service.addOrganization("test", null, StripeCustomerID.TEST.getString());
         assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
 
         try {

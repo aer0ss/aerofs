@@ -349,7 +349,7 @@ class BlockStorage implements IPhysicalStorage
                 for (UserID uid : _lacl.get_(sidx).keySet()) {
                     if (!uid.isTeamServerID()) {
                         assert SID.rootSID(uid).equals(sid);
-                        storeTitle = purifyEmail(uid.getID());
+                        storeTitle = purifyEmail(uid.getString());
                         break;
                     }
                 }

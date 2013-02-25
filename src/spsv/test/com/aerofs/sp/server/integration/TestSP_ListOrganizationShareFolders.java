@@ -104,7 +104,7 @@ public class TestSP_ListOrganizationShareFolders extends AbstractSPFolderPermiss
         setSessionUser(USER_1);
 
         // add a new org so user 1 can haz permissions to list folders
-        service.addOrganization("test org", null, StripeCustomerID.TEST.getID());
+        service.addOrganization("test org", null, StripeCustomerID.TEST.getString());
 
         return service.listOrganizationSharedFolders(100, 0).get().getSharedFolderList();
     }

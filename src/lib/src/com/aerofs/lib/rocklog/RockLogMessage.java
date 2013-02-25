@@ -55,7 +55,7 @@ abstract class RockLogMessage
     private void addDeviceInfo()
     {
         if (Cfg.inited()) {
-            _data.put("user_id", Cfg.user().getID());
+            _data.put("user_id", Cfg.user().getString());
             _data.put("did", Cfg.did().toStringFormal());
         }
     }

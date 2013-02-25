@@ -4,7 +4,6 @@
 
 package com.aerofs.sp.server.integration;
 
-import com.aerofs.base.ex.ExFormatError;
 import com.aerofs.base.id.DID;
 import com.aerofs.lib.FullName;
 import com.aerofs.lib.SecUtil;

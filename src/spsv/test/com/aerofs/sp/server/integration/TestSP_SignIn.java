@@ -103,7 +103,7 @@ public class TestSP_SignIn extends AbstractSPTest
     {
         mockCertificateAuthenticatorSetAuthenticatedState();
 
-        service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getID());
+        service.addOrganization("An Awesome Team", null, StripeCustomerID.TEST.getString());
 
         _tsUserID = UserID.fromInternal(service.getTeamServerUserID().get().getId());
         _tsDID = new DID(UniqueID.generate());
