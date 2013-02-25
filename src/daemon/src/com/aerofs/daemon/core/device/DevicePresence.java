@@ -1,39 +1,41 @@
 package com.aerofs.daemon.core.device;
 
-import java.util.concurrent.Callable;
-import java.io.PrintStream;
-import java.util.*;
-import java.util.Map.Entry;
-
 import com.aerofs.base.id.DID;
+import com.aerofs.base.id.SID;
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;
 import com.aerofs.daemon.core.net.Transports;
 import com.aerofs.daemon.core.store.IMapSIndex2SID;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
 import com.aerofs.daemon.core.store.Store;
-import com.aerofs.daemon.core.tc.TC;
-import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
-import com.aerofs.lib.*;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-import org.apache.log4j.Logger;
-
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
+import com.aerofs.daemon.core.tc.TC;
+import com.aerofs.daemon.event.lib.AbstractEBSelfHandling;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
 import com.aerofs.daemon.event.net.EOStartPulse;
 import com.aerofs.daemon.event.net.EOUpdateStores;
 import com.aerofs.daemon.lib.ExponentialRetry;
 import com.aerofs.daemon.lib.IDumpStatMisc;
+import com.aerofs.daemon.transport.ITransport;
+import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
-import com.aerofs.daemon.transport.ITransport;
-import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
+import com.aerofs.lib.rocklog.RockLog;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Callable;
 
 public class DevicePresence implements IDumpStatMisc
 {
@@ -116,6 +118,8 @@ public class DevicePresence implements IDumpStatMisc
         if (dev.isBeingPulsed_(tp)) return;
 
         l.info("start pulse " + did + " " + tp);
+
+        RockLog.newEvent("client.net.pulse." + tp).sendAsync(); // use rocklog instead of ym
 
         offlineImpl_(did, dev.pulseStarted_(tp));
 
