@@ -3,7 +3,7 @@ from mock import Mock
 from aerofs_sp.gen.sp_pb2 import ListUsersReply
 from ..test_base import TestBase
 
-class TestUserLookupTest(TestBase):
+class UserLookupTest(TestBase):
     def setUp(self):
         self.setup_common()
         self._mock_list_users_auth()

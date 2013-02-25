@@ -4,7 +4,7 @@ from aerofs_common._gen.common_pb2 import OWNER
 
 BASE_USER_ID = 'hahaha@ahaha'
 
-class TestRenderSharedFolderUsers(unittest.TestCase):
+class RenderSharedFolderUsersTest(unittest.TestCase):
 
     def _render_shared_folder_users(self, first_names):
         return self._render_shared_folder_users_with_session_user(first_names,

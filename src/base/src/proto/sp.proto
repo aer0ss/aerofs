@@ -495,7 +495,7 @@ service SPService {
      rpc GetSharedFolderNames(GetSharedFolderNamesCall) returns(GetSharedFolderNamesReply);
 
     /**
-     * TODO (downtime) move this under AcceptOrganizationInvite
+     * WAIT_FOR_SP_PROTOCOL_VERSION_CHANGE move this under AcceptOrganizationInvite
      *
      * Ignore an invitation to a specific organization. This call deletes the entry in the
      * organization invitation table so that when the user views the pending organization invites
