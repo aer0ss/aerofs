@@ -162,7 +162,7 @@ public abstract class AbstractVersionDatabase<E extends AbstractTickRow> extends
 
             ResultSet rs = _psGK.executeQuery();
             try {
-                Version v = new Version();
+                Version v = Version.empty();
                 while (rs.next()) {
                     v.set_(new DID(rs.getBytes(1)), rs.getLong(2));
                 }

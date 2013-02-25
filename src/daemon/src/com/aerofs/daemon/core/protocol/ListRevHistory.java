@@ -64,7 +64,7 @@ extends AbstractListRevChildrenHistory<IListRevHistoryListener>
         Path path = new Path(req.getObjectPathElementList());
         for (Revision en : _ps.getRevProvider().listRevHistory_(path)) {
             bd.addIndex(ByteString.copyFrom(en._index))
-                .addVersion((new Version()).toPB_())
+                .addVersion(Version.empty().toPB_())
                 .addMtime(en._mtime)
                 .addLength(en._length);
         }

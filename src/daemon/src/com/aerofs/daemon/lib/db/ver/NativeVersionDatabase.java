@@ -265,7 +265,7 @@ public class NativeVersionDatabase
             _psGetV.setInt(4, kidx.getInt());
             ResultSet rs = _psGetV.executeQuery();
             try {
-                Version v = new Version();
+                Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
                     assert v.get_(did).equals(Tick.ZERO);
@@ -301,7 +301,7 @@ public class NativeVersionDatabase
             _psGetALV.setInt(4, KIndex.KML.getInt());
             ResultSet rs = _psGetALV.executeQuery();
             try {
-                Version v = new Version();
+                Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
                     v.set_(did, Math.max(v.get_(did).getLong(), rs.getLong(2)));
@@ -333,7 +333,7 @@ public class NativeVersionDatabase
 
             ResultSet rs = _psGetMaxTick.executeQuery();
             try {
-                Version v = new Version();
+                Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
                     assert v.get_(did).equals(Tick.ZERO);

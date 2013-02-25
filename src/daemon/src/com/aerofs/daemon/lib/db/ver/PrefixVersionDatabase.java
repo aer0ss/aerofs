@@ -45,7 +45,7 @@ public class PrefixVersionDatabase extends AbstractDatabase implements IPrefixVe
             _psGetPV.setInt(3, kidx.getInt());
             ResultSet rs = _psGetPV.executeQuery();
             try {
-                Version v = new Version();
+                Version v = Version.empty();
                 while (rs.next()) {
                     DID did = new DID(rs.getBytes(1));
                     assert v.get_(did).equals(Tick.ZERO);

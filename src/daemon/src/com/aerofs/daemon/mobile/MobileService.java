@@ -120,7 +120,7 @@ public class MobileService implements IMobileService
         EIDownloadPacket ev = new EIDownloadPacket(Cfg.user(), _imce, new Path(source), offset, length);
         ev._inFileLength = inCookie.getLength();
         ev._inFileModTime = inCookie.getModTime();
-        ev._inVersion = new Version(inCookie.getVersion());
+        ev._inVersion = Version.fromPB(inCookie.getVersion());
         ev.execute(PRIO);
 
         DownloadPacketReply.Builder b = DownloadPacketReply.newBuilder();

@@ -196,9 +196,9 @@ public class GetComponentReply
                 _al.processAliasMsg_(
                     msg.did(),
                     socid.soid(),                                        // alias
-                    new Version(pbReply.getVersion()),                   // vRemoteAlias
+                    Version.fromPB(pbReply.getVersion()),                // vRemoteAlias
                     new SOID(socid.sidx(), new OID(meta.getTargetOid())),// target
-                    new Version(meta.getTargetVersion()),                // vRemoteTarget
+                    Version.fromPB(meta.getTargetVersion()),             // vRemoteTarget
                     oidParent,
                     metaDiff, meta, requested);
 
@@ -227,7 +227,7 @@ public class GetComponentReply
         /////////////////////////////////////////
         // determine causal relation
 
-        Version vRemote = new Version(pbReply.getVersion());
+        Version vRemote = Version.fromPB(pbReply.getVersion());
         ReceiveAndApplyUpdate.CausalityResult cr;
         switch (type) {
         case META:

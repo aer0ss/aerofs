@@ -102,8 +102,8 @@ public class TestGetVersCall extends AbstractTest
      */
     private void mockEmptyKnowledge() throws Exception
     {
-        when(nvc.getKnowledgeExcludeSelf_(sidx)).thenReturn(new Version());
-        when(ivc.getKnowledgeExcludeSelf_(sidx)).thenReturn(new Version());
+        when(nvc.getKnowledgeExcludeSelf_(sidx)).thenReturn(Version.empty());
+        when(ivc.getKnowledgeExcludeSelf_(sidx)).thenReturn(Version.empty());
     }
 
     /**

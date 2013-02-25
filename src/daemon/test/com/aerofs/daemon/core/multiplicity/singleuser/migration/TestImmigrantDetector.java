@@ -182,7 +182,7 @@ public class TestImmigrantDetector extends AbstractTest
 
         shouldMigrate();
 
-        Version vLocalSum = new Version();
+        Version vLocalSum = Version.empty();
         SOCID socidTo = new SOCID(soidTo, CID.CONTENT);
         for (KIndex kidx : oaFrom.cas().keySet()) {
             SOCKID kFrom = new SOCKID(soidFrom, CID.CONTENT, kidx);
@@ -206,7 +206,7 @@ public class TestImmigrantDetector extends AbstractTest
         // intersect of localFrom and kmlTo is empty, so we verify that
         // empty kml is deleted
         SOCID socidTo = new SOCID(soidTo, CID.CONTENT);
-        verify(nvc).deleteKMLVersion_(socidTo, new Version(), t);
+        verify(nvc).deleteKMLVersion_(socidTo, Version.empty(), t);
     }
 
     @Test

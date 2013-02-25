@@ -17,34 +17,36 @@ public class Version
 
     private final Map<DID, Tick> _map;
 
-    public Version()
+    private Version()
     {
         _map = Maps.newHashMap();
     }
 
-    public Version(Version v)
+    private Version(Map<DID, Tick> map)
     {
-        _map = Maps.newHashMap(v._map);
+        _map = map;
     }
 
-    public Version(PBVer pb)
+    public static Version empty()
     {
-        this();
+        return new Version();
+    }
 
+    public static Version copyOf(Version v)
+    {
+        return new Version(Maps.newHashMap(v._map));
+    }
+
+    public static Version fromPB(PBVer pb)
+    {
+        Version v = empty();
         assert pb.getDeviceIdCount() == pb.getTickCount();
 
         for (int i = 0; i < pb.getDeviceIdCount(); i++) {
             DID did = new DID(pb.getDeviceId(i));
-            set_(did, pb.getTick(i));
+            v.set_(did, pb.getTick(i));
         }
-    }
-
-    /**
-     * Should replace all instances of new Version() eventually
-     */
-    public static Version empty()
-    {
-        return new Version();
+        return v;
     }
 
     /**
@@ -135,7 +137,7 @@ public class Version
      */
     public Version add_(Version v)
     {
-        Version ret = new Version(this);
+        Version ret = copyOf(this);
 
         for (Entry<DID, Tick> en : v._map.entrySet()) {
             Tick his = en.getValue();
@@ -154,9 +156,9 @@ public class Version
      */
     public Version sub_(@Nonnull Version v)
     {
-        if (v.isZero_()) return new Version(this);
+        if (v.isZero_()) return copyOf(this);
 
-        Version ret = new Version();
+        Version ret = empty();
         for (Entry<DID, Tick> en : this._map.entrySet()) {
             Tick mine = en.getValue();
             Tick his = v._map.get(en.getKey());
@@ -172,7 +174,7 @@ public class Version
      */
     public Version shadowedBy_(Version v)
     {
-        if (v.isZero_()) return new Version();
+        if (v.isZero_()) return empty();
         return sub_(sub_(v));
     }
 
@@ -189,7 +191,7 @@ public class Version
      */
     public Version withoutAliasTicks_()
     {
-        Version ret = new Version();
+        Version ret = empty();
 
         for (Entry<DID, Tick> en : _map.entrySet()) {
             Tick t = en.getValue();

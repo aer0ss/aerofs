@@ -85,13 +85,13 @@ public class Hasher
         assert h.equals(_ds.getCAHash_(sokid));
         SOID soid = sokid.soid();
 
-        Map<KIndex, Version> delList = new HashMap<KIndex, Version>();
+        Map<KIndex, Version> delList = Maps.newHashMap();
 
         // vAddLocal may contain version already present in branch
         // to be applied (kidxApply). So it's necessary to subtract
         // version of the kidxApply branch before branches are merged
         // in the db. See "@@" for subtraction done below.
-        Version vAddLocal = new Version();
+        Version vAddLocal = Version.empty();
         KIndex kidxApply = sokid.kidx();
         for (KIndex kidx: _ds.getOAThrows_(soid).cas().keySet()) {
             // Skip the branch whose hash was set in DB.
