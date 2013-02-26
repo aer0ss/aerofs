@@ -81,6 +81,9 @@ enum CommandType {
     // devices they share with have been unlinked.
     CLEAN_SSS_DATABASE = 4;
 
+    // The device should unlink and wipe itself deleting all user data.
+    UNLINK_AND_WIPE_SELF = 5;
+
     // TODO (MP) ACLs should be moved to the new command server infrastructure.
 
     // Add more commands here...

@@ -845,10 +845,12 @@ message GetCRLReply {
 
 message UnlinkUserDeviceCall {
     required bytes device_id = 1;
+    required bool do_remote_wipe = 2;
 }
 
 message UnlinkTeamServerDeviceCall {
     required bytes device_id = 1;
+    required bool do_remote_wipe = 2;
 }
 
 message GetDeviceInfoCall {

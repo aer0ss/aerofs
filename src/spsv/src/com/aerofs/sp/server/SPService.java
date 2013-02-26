@@ -1588,7 +1588,7 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> unlinkUserDevice(final ByteString deviceId)
+    public ListenableFuture<Void> unlinkUserDevice(final ByteString deviceId, Boolean doRemoteWipe)
         throws Exception
     {
         _sqlTrans.begin();
@@ -1603,7 +1603,7 @@ public class SPService implements ISPService
         }
 
         // Perform the actual certificate revocation and update the persistent command queue.
-        unlinkDeviceHelper(device);
+        unlinkDeviceImplementation(device, doRemoteWipe);
 
         _sqlTrans.commit();
 
@@ -1619,7 +1619,8 @@ public class SPService implements ISPService
     }
 
     @Override
-    public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId)
+    public ListenableFuture<Void> unlinkTeamServerDevice(final ByteString deviceId,
+            Boolean doRemoteWipe)
             throws Exception
     {
         _sqlTrans.begin();
@@ -1642,7 +1643,7 @@ public class SPService implements ISPService
         }
 
         // Perform the actual certificate revocation and update the persistent command queue.
-        unlinkDeviceHelper(device);
+        unlinkDeviceImplementation(device, doRemoteWipe);
 
         _sqlTrans.commit();
 
@@ -1661,7 +1662,7 @@ public class SPService implements ISPService
      * Helper for the two above unlink device calls. Should be called with a SQL transaction.
      * @param device the device to unlink.
      */
-    private void unlinkDeviceHelper(Device device)
+    private void unlinkDeviceImplementation(Device device, boolean remoteWipe)
             throws Exception
     {
         Certificate cert = device.getCertificate();
@@ -1681,6 +1682,13 @@ public class SPService implements ISPService
         for (Device peer : peerDevices) {
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.REFRESH_CRL);
             addToCommandQueueAndSendVerkehrMessage(peer.id(), CommandType.CLEAN_SSS_DATABASE);
+        }
+
+        // Tell the actual device to perform the required local actions.
+        if (remoteWipe) {
+            addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_SELF);
+        } else {
+            addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_AND_WIPE_SELF);
         }
     }
 
