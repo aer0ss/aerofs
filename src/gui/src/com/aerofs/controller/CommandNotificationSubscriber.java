@@ -16,14 +16,19 @@ import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ex.ExNoPerm;
+import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
+import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.lib.sched.ExponentialRetry;
 import com.aerofs.proto.Cmd.Command;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
+import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
+import com.aerofs.sv.client.SVClient;
+import com.aerofs.ui.UI;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
@@ -34,6 +39,7 @@ import org.jboss.netty.util.HashedWheelTimer;
 
 import java.io.IOException;
 import javax.annotation.Nullable;
+import java.sql.SQLException;
 import java.util.concurrent.Callable;
 
 import static com.aerofs.lib.Param.Verkehr.VERKEHR_HOST;
@@ -75,6 +81,8 @@ public final class CommandNotificationSubscriber
     private final ExponentialRetry _er;
     private final String _topic;
     private final VerkehrSubscriber _subscriber;
+
+    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     public CommandNotificationSubscriber(GuiScheduler scheduler, DID localDevice,
             String caCertFilename)
@@ -280,6 +288,18 @@ public final class CommandNotificationSubscriber
                 case INVALIDATE_USER_NAME_CACHE:
                     invalidateUserNameCache();
                     break;
+                case UNLINK_SELF:
+                    unlinkSelf();
+                    break;
+                case UNLINK_AND_WIPE_SELF:
+                    unlinkAndWipeSelf();
+                    break;
+                case REFRESH_CRL:
+                    // TODO (MP) finish this - for now ignore.
+                    break;
+                case CLEAN_SSS_DATABASE:
+                    // TODO (MP) finish this - for now ignore.
+                    break;
                 default:
                     throw new Exception("cmd type unknown");
             }
@@ -320,5 +340,53 @@ public final class CommandNotificationSubscriber
         } finally {
             ritual.close();
         }
+    }
+
+    private void unlinkImplementation()
+            throws SQLException, IOException
+    {
+        // Metrics.
+        SVClient.sendEventAsync(Type.UNLINK);
+        RockLog.newEvent("Unlink Device").sendAsync();
+
+        // Delete the password.
+        Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
+        // Create the setup file.
+        _factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
+    }
+
+    private void scheduleShutdownImplementation()
+    {
+        // Schedule a system exit. Schedule this as opposed to doing this now so that we can ack the
+        // command on the command server.
+        _scheduler.schedule(new AbstractEBSelfHandling()
+        {
+            @Override
+            public void handle_()
+            {
+                UI.get().shutdown();
+                System.exit(0);
+            }
+        }, 0);
+    }
+
+    private void unlinkSelf()
+            throws SQLException, IOException
+    {
+        unlinkImplementation();
+        scheduleShutdownImplementation();
+    }
+
+    private void wipeImplementation()
+    {
+        // TODO (MP) finish this...
+    }
+
+    private void unlinkAndWipeSelf()
+            throws SQLException, IOException
+    {
+        unlinkImplementation();
+        wipeImplementation();
+        scheduleShutdownImplementation();
     }
 }

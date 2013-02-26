@@ -1661,7 +1661,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> unlinkAllUserDevices()
         throws Exception
     {
-        throw new ExBadArgs();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -1701,7 +1701,7 @@ public class SPService implements ISPService
     public ListenableFuture<Void> unlinkAllTeamServerDevices()
             throws Exception
     {
-        throw new ExBadArgs();
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -1732,9 +1732,9 @@ public class SPService implements ISPService
 
         // Tell the actual device to perform the required local actions.
         if (remoteWipe) {
-            addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_SELF);
-        } else {
             addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_AND_WIPE_SELF);
+        } else {
+            addToCommandQueueAndSendVerkehrMessage(device.id(), CommandType.UNLINK_SELF);
         }
     }
 

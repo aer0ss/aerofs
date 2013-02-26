@@ -42,9 +42,6 @@ public class AeroFSMessageBox extends AeroFSJFaceDialog {
     private Button _okayBtn, _cancelBtn;
     private final String _okayLabel, _cancelLabel;
 
-    /**
-     * @wbp.parser.constructor
-     */
     public AeroFSMessageBox(Shell parentShell, boolean sheet, String msg, IconType it)
     {
         this(parentShell, sheet, msg, it, ButtonType.OKAY);

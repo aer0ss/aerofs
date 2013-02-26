@@ -46,9 +46,6 @@ public class DlgThrottling extends AeroFSDialog {
     private Button _btnCancel;
     private Composite composite_2;
 
-    /**
-     * @param okay called in a non-UI thread when the joining succeeded
-     */
     public DlgThrottling(Shell parent, boolean sheet)
     {
         super(parent, "Bandwidth Options", sheet, false);

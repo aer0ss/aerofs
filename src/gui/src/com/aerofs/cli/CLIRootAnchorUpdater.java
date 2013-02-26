@@ -136,7 +136,7 @@ public class CLIRootAnchorUpdater
         } else {
             try {
                 // Unlink this account from the computer and shut down the application
-                UIUtil.unlinkAndExit(_factFile);
+                UIUtil.scheduleUnlinkAndExit(_factFile);
             } catch (Exception e) {
                 _cli.show(MessageType.ERROR, "Couldn't unlink the computer " + UIUtil.e2msg(e));
             }

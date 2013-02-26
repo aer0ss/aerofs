@@ -74,17 +74,17 @@ enum CommandType {
     // The device should unlink itself.
     UNLINK_SELF = 2;
 
+    // The device should unlink and wipe itself deleting all user data.
+    UNLINK_AND_WIPE_SELF = 3;
+
     // The device should refresh its certificate revocation list.
-    REFRESH_CRL = 3;
+    REFRESH_CRL = 4;
 
     // The device should clean up its local sync status database because it is possible that some
     // devices they share with have been unlinked.
-    CLEAN_SSS_DATABASE = 4;
+    CLEAN_SSS_DATABASE = 5;
 
-    // The device should unlink and wipe itself deleting all user data.
-    UNLINK_AND_WIPE_SELF = 5;
-
-    // TODO (MP) ACLs should be moved to the new command server infrastructure.
+    // TODO (MP) ACLs and transient cmds should be moved to the new command server infrastructure.
 
     // Add more commands here...
 }

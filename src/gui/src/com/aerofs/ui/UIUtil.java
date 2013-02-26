@@ -1,5 +1,6 @@
 package com.aerofs.ui;
 
+import com.aerofs.base.BaseParam.SP;
 import com.aerofs.base.ex.AbstractExWirable;
 import com.aerofs.gui.GUI;
 import com.aerofs.gui.GUIUtil;
@@ -10,7 +11,6 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.JsonFormat.ParseException;
 import com.aerofs.base.BaseParam.SV;
 import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.*;
 import com.aerofs.lib.id.CID;
 import com.aerofs.base.id.UserID;
@@ -21,6 +21,8 @@ import com.aerofs.proto.Common;
 import com.aerofs.proto.Common.PBPath;
 import com.aerofs.proto.ControllerProto.GetInitialStatusReply;
 import com.aerofs.proto.RitualNotifications.PBSOCID;
+import com.aerofs.sp.client.SPBlockingClient;
+import com.aerofs.sp.client.SPClientFactory;
 import com.aerofs.ui.IUI.MessageType;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -31,7 +33,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 
 public class UIUtil
 {
@@ -134,20 +135,24 @@ public class UIUtil
     }
 
     /**
-     * Unlink and exit AeroFS.
+     * Schedule unlink and exit (via the command server).
      *
-     * TODO (MP) delete this.
-     * Once we have unlinking implemented on the web admin panel it should be removed from the
-     * client, just like we did with signup. Until the server side is completely implemented,
-     * leave this here for now.
+     * This is called locally when the user requests that we unlink the device. This must be done
+     * via the command server so the device is properly cleaned up on the server and on other peer
+     * devices.
      */
-    public static void unlinkAndExit(InjectableFile.Factory factFile) throws SQLException, IOException
+    public static void scheduleUnlinkAndExit(InjectableFile.Factory factFile)
+            throws Exception
     {
-        // Delete the password.
-        Cfg.db().set(Key.CRED, Key.CRED.defaultValue());
-        factFile.create(Util.join(Cfg.absRTRoot(), Param.SETTING_UP)).createNewFile();
-        UI.get().shutdown();
-        System.exit(0);
+        if (!L.get().isMultiuser()) {
+            SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
+            sp.signInRemote();
+            sp.unlinkUserDevice(Cfg.did().toPB(), false);
+        } else {
+            // Currently only the single user unlink is supported.
+            // TODO support multi user unlink.
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static String getUserFriendlyID(PBSOCID pbsocid)

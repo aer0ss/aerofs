@@ -9,14 +9,11 @@ import com.aerofs.gui.exclusion.DlgExclusion;
 import com.aerofs.gui.preferences.PreferencesHelper;
 import com.aerofs.gui.transfers.DlgThrottling;
 import com.aerofs.gui.transfers.DlgTransfers;
+import com.aerofs.gui.unlink.DlgUnlinkDevice;
 import com.aerofs.lib.S;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgDatabase.Key;
-import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
-import com.aerofs.lib.rocklog.RockLog;
-import com.aerofs.sv.client.SVClient;
-import com.aerofs.proto.Sv.PBSVEvent.Type;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UIUtil;
 import org.eclipse.swt.SWT;
@@ -37,7 +34,6 @@ public class SingleuserCompPreferences extends Composite
     private final Label _lblId2;
     private final Label _lblId;
     private boolean _deviceIDShown;
-    private final InjectableFile.Factory _factFile = new InjectableFile.Factory();
 
     public SingleuserCompPreferences(Composite parent, boolean showTransfers)
     {
@@ -188,17 +184,7 @@ public class SingleuserCompPreferences extends Composite
             @Override
             public void widgetSelected(SelectionEvent ev)
             {
-                if (GUI.get().ask(getShell(), MessageType.WARN, S.UNLINK_THIS_COMPUTER_CONFIRM)) {
-                    try {
-                        SVClient.sendEventAsync(Type.UNLINK);
-                        RockLog.newEvent("Unlink Device").sendAsync();
-                        UIUtil.unlinkAndExit(_factFile);
-                    } catch (Exception e) {
-                        GUI.get()
-                                .show(MessageType.ERROR,
-                                        "Couldn't unlink the computer " + UIUtil.e2msg(e));
-                    }
-                }
+                new DlgUnlinkDevice(getShell(), true).openDialog();
             }
         });
     }

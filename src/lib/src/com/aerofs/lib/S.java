@@ -56,6 +56,7 @@ public class S
             COPYRIGHT = "2010-2013 " + VENDOR + " All Rights Reserved.",
             BTN_ADVANCED = "Advanced...",
             BTN_CHANGE = "Change...",
+            COULDNT_UNLINK_DEVICE = "Sorry, we could not unlink your computer.",
             UNLINK_THIS_COMPUTER = "Unlink This Computer...",
             UNLINK_THIS_COMPUTER_CONFIRM = "Unlink this computer from the " +
                 L.PRODUCT + " account and quit the program?" +

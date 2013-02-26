@@ -184,7 +184,6 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
         return "I'd like to share \"" + folderName + "\" with you.\r\n\r\n-- " + fromPerson;
     }
 
-
     private void setAsyncFields()
     {
         if (_fromPerson == null) return;

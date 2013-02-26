@@ -155,6 +155,7 @@ public class CompRootAnchorUpdater extends Composite
             return false;
         }
     }
+
     /**
      * Unlink this computer and then shuts down AeroFS
      */
@@ -162,7 +163,7 @@ public class CompRootAnchorUpdater extends Composite
     {
         if (GUI.get().ask(getShell(), MessageType.WARN, S.UNLINK_THIS_COMPUTER_CONFIRM)) {
             try {
-                UIUtil.unlinkAndExit(_factFile);
+                UIUtil.scheduleUnlinkAndExit(_factFile);
             } catch (Exception e) {
                 GUI.get().show(MessageType.ERROR, "Couldn't unlink the computer " + UIUtil.e2msg(e));
             }
