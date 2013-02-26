@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.base.id.SID;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExNoPerm;
@@ -39,14 +40,14 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
         published.clear();
 
         joinSharedFolder(USER_2, TEST_SID_1);
 
         assertEquals(2, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_2.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.toString()));
     }
 
     @Test

@@ -113,7 +113,7 @@ public class TestSP_CRL extends AbstractSPCertificateBasedTest
         reply = service.getCRL().get();
         assertTrue(reply.getSerialList().size() == 0);
 
-        service.unlinkAllUserDevices();
+        service.unlinkUserDevice(_did.toPB());
 
         // And after one revocation, the list will be of length 1.
         reply = service.getCRL().get();

@@ -4,6 +4,7 @@
 
 package com.aerofs.sp.server.integration;
 
+import com.aerofs.lib.Param;
 import com.aerofs.sp.server.lib.id.StripeCustomerID;
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.ex.ExAlreadyInvited;
@@ -55,8 +56,9 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
         service.acceptOrganizationInvitation(orgID);
         // when the user changes the org, the ACL of its root store must be updated to inlucde
         // the team server user id.
-        assertTrue(published.contains(userID.getID()));
-        assertTrue(published.contains(new OrganizationID(orgID).toTeamServerUserID().getID()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + userID.getID()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX +
+                (new OrganizationID(orgID).toTeamServerUserID().getID())));
     }
 
     /**

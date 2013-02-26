@@ -5,6 +5,7 @@
 package com.aerofs.sp.server.integration;
 
 import com.aerofs.lib.FullName;
+import com.aerofs.lib.Param;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.lib.ex.ExAlreadyExist;
 import com.aerofs.lib.ex.ExBadArgs;
@@ -81,7 +82,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
         verifyFolderInvitation(USER_1, USER_2, TEST_SID_1, true);
         verifyNewUserAccountInvitation(USER_1, USER_2, TEST_SID_1, false);
     }
@@ -94,7 +95,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
         verifyFolderInvitation(USER_1, TEST_USER_4, TEST_SID_1, false);
         verifyNewUserAccountInvitation(USER_1, TEST_USER_4, TEST_SID_1, true);
     }

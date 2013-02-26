@@ -93,7 +93,8 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
                 UserID.fromInternal(getAcl.getStoreAcl(0).getSubjectRole(0).getSubject()));
         assertEquals(Role.OWNER, Role.fromPB(getAcl.getStoreAcl(0).getSubjectRole(0).getRole()));
 
-        verify(verkehrPublisher).publish_(eq(USER_1.toString()), any(byte[].class));
+        verify(verkehrPublisher).publish_(eq(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()),
+                any(byte[].class));
     }
 
     @Test
@@ -103,22 +104,22 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         // create shared folder and invite a first user
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.OWNER);
         assertEquals(1, published.size());
-        assertTrue(published.contains(USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
         published.clear();
 
         // inviteee joins
         joinSharedFolder(USER_2, TEST_SID_1);
         assertEquals(2, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_2.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.toString()));
         published.clear();
 
         // now lets see if the other person can add a third person
         shareAndJoinFolder(USER_2, TEST_SID_1, TEST_USER_4, Role.EDITOR);
         assertEquals(3, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_2.toString()));
-        assertTrue(published.contains(TEST_USER_4.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + TEST_USER_4.toString()));
         published.clear();
 
         // now let's see what the acls are like
@@ -168,9 +169,9 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
         // expect first, second and third guy all to be notified
 
         assertEquals(3, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_2.toString()));
-        assertTrue(published.contains(USER_3.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_3.toString()));
 
         // have the first guy get his acl
 
@@ -350,8 +351,8 @@ public class TestSP_ACL extends AbstractSPFolderPermissionTest
 
         // check that notifications were published on update
         assertEquals(2, published.size());
-        assertTrue(published.contains(USER_1.toString()));
-        assertTrue(published.contains(USER_3.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_3.toString()));
 
         // verify user 3 has updated ACL in place
         setSessionUser(USER_3);
