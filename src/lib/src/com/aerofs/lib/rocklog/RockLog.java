@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.net.HttpURLConnection.HTTP_OK;
 
 public class RockLog
@@ -101,12 +102,12 @@ public class RockLog
 
     static RockLog getInstance()
     {
-        return _instance;
+        return checkNotNull(_instance);
     }
 
     private RockLog(String prefix)  // prevent explicit initialization
     {
-        this._prefix = prefix;
+        _prefix = prefix;
     }
 
     void sendAsync(final RockLogMessage message)

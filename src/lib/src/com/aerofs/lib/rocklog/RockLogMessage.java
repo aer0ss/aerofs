@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.TimeZone;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Maps.newHashMap;
 
 abstract class RockLogMessage
@@ -24,7 +25,7 @@ abstract class RockLogMessage
 
     RockLogMessage(RockLog rockLog, InjectableCfg cfg)
     {
-        this._rockLog = rockLog;
+        _rockLog = checkNotNull(rockLog);
 
         addTimestamp();
         addVersion(cfg);
