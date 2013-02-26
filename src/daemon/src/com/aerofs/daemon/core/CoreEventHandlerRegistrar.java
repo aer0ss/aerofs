@@ -5,6 +5,7 @@
 package com.aerofs.daemon.core;
 
 import com.aerofs.daemon.core.admin.HdDeleteACL;
+import com.aerofs.daemon.core.admin.HdDeleteRevision;
 import com.aerofs.daemon.core.admin.HdDumpStat;
 import com.aerofs.daemon.core.admin.HdExportConflict;
 import com.aerofs.daemon.core.admin.HdExportFile;
@@ -51,6 +52,7 @@ import com.aerofs.daemon.core.net.HdUnicastMessage;
 import com.aerofs.daemon.core.status.HdGetStatusOverview;
 import com.aerofs.daemon.core.syncstatus.HdGetSyncStatus;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
+import com.aerofs.daemon.event.admin.EIDeleteRevision;
 import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
@@ -143,6 +145,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
     private final HdListRevChildren _hdListRevChildren;
     private final HdListRevHistory _hdListRevHistory;
     private final HdExportRevision _hdExportRevision;
+    private final HdDeleteRevision _hdDeleteRevision;
     private final HdGetSyncStatus _hdGetSyncStatus;
     private final HdGetStatusOverview _hdGetStatusOverview;
     private final HdHeartbeat _hdHeartbeat;
@@ -170,6 +173,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
             HdImportFile hdImportFile, HdExportFile hdExportFile,
             HdRelocateRootAnchor hdRelocateRootAnchor, HdListRevChildren hdListRevChildren,
             HdListRevHistory hdListRevHistory, HdExportRevision hdExportRevision,
+            HdDeleteRevision hdDeleteRevision,
             HdGetSyncStatus hdGetSyncStatus, HdGetStatusOverview hdGetStatusOverview,
             HdHeartbeat hdHeartbeat, HdGetActivities hdGetActivities,
             HdDownloadPacket hdDownloadPacket, HdLeaveSharedFolder hdLeaveSharedFolder,
@@ -216,6 +220,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
         _hdListRevChildren = hdListRevChildren;
         _hdListRevHistory = hdListRevHistory;
         _hdExportRevision = hdExportRevision;
+        _hdDeleteRevision = hdDeleteRevision;
         _hdGetSyncStatus = hdGetSyncStatus;
         _hdGetStatusOverview = hdGetStatusOverview;
         _hdHeartbeat = hdHeartbeat;
@@ -265,6 +270,7 @@ public class CoreEventHandlerRegistrar implements ICoreEventHandlerRegistrar
                 .setHandler_(EIListRevChildren.class, _hdListRevChildren)
                 .setHandler_(EIListRevHistory.class, _hdListRevHistory)
                 .setHandler_(EIExportRevision.class, _hdExportRevision)
+                .setHandler_(EIDeleteRevision.class, _hdDeleteRevision)
                 .setHandler_(EIHeartbeat.class, _hdHeartbeat)
                 .setHandler_(EIGetActivities.class, _hdGetActivities)
                 .setHandler_(EIInvalidateUserNameCache.class, _hdInvalidateUserNameCache)

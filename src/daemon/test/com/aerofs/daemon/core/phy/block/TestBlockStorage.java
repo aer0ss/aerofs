@@ -232,6 +232,17 @@ public class TestBlockStorage extends AbstractBlockTest
                 }
             };
         }
+
+        static RevisionMatcher withMtime(final long t)
+        {
+            return new RevisionMatcher() {
+                @Override
+                boolean matches(Revision r)
+                {
+                    return r._mtime == t;
+                }
+            };
+        }
     }
 
     private boolean revHistoryEquals(String path, RevisionMatcher... revisions) throws Exception
@@ -239,7 +250,7 @@ public class TestBlockStorage extends AbstractBlockTest
         Collection<Revision> result = bs.getRevProvider().listRevHistory_(Path.fromString(path));
         int i = 0;
         for (Revision r : result) {
-            if (!revisions[i].matches(r)) return false;
+            Assert.assertTrue("r" + i + ":" + r, revisions[i].matches(r));
             ++i;
         }
         return true;
@@ -251,10 +262,25 @@ public class TestBlockStorage extends AbstractBlockTest
                 bs.getRevProvider().getRevInputStream_(Path.fromString(path), index)._is);
     }
 
-    private byte[] fetchRev(String path, int idx) throws Exception
+    private byte[] revIndex(String path, int idx) throws Exception
     {
         Object[] r = bs.getRevProvider().listRevHistory_(Path.fromString(path)).toArray();
-        return fetchRev(path, ((Revision)r[idx < 0 ? r.length + idx : idx])._index);
+        return ((Revision)r[idx < 0 ? r.length + idx : idx])._index;
+    }
+
+    private byte[] fetchRev(String path, int idx) throws Exception
+    {
+        return fetchRev(path, revIndex(path, idx));
+    }
+
+    private void delRev(String path, int idx) throws Exception
+    {
+        bs.getRevProvider().deleteRevision_(Path.fromString(path), revIndex(path, idx));
+    }
+
+    private void delAllRevUnder(String path) throws Exception
+    {
+        bs.getRevProvider().deleteAllRevisionsUnder_(Path.fromString(path));
     }
 
     @Test
@@ -573,6 +599,96 @@ public class TestBlockStorage extends AbstractBlockTest
 
         verify(bsb).getBlock(forKey(content0));
         verify(bsb, never()).getBlock(forKey(content1));
+    }
+
+    @Test
+    public void shouldDeleteRevision() throws Exception
+    {
+        Assert.assertTrue(revChildrenEquals(""));
+
+        SOKID sokid = newSOKID();
+        createFile("foo/bar", sokid);
+        store("foo/bar", sokid, new byte[0], true, 0L);
+        store("foo/bar", sokid, new byte[0], true, 1L);
+        store("foo/bar", sokid, new byte[0], true, 2L);
+
+        Assert.assertTrue(revChildrenEquals("", new Child("foo", true)));
+        Assert.assertTrue(revChildrenEquals("foo", new Child("bar", false)));
+        Assert.assertTrue(revHistoryEquals("foo/bar",
+                RevisionMatcher.any(),
+                RevisionMatcher.withMtime(0L),
+                RevisionMatcher.withMtime(1L)));
+
+        delRev("foo/bar", 1);
+
+        Assert.assertTrue(revHistoryEquals("foo/bar",
+                RevisionMatcher.any(),
+                RevisionMatcher.withMtime(1L)));
+    }
+
+    @Test
+    public void shouldDeleteAllRevisionsUnder() throws Exception
+    {
+        Assert.assertTrue(revChildrenEquals(""));
+
+        SOKID sokid1 = newSOKID();
+        createFile("foo/bar", sokid1);
+        store("foo/bar", sokid1, new byte[0], true, 0L);
+        store("foo/bar", sokid1, new byte[0], true, 1L);
+        store("foo/bar", sokid1, new byte[0], true, 2L);
+        SOKID sokid2 = newSOKID();
+        createFile("foo/baz", sokid2);
+        store("foo/baz", sokid2, new byte[0], true, 0L);
+
+        Assert.assertTrue(revChildrenEquals("", new Child("foo", true)));
+        Assert.assertTrue(revChildrenEquals("foo",
+                new Child("bar", false),
+                new Child("baz", false)));
+        Assert.assertTrue(revHistoryEquals("foo/bar",
+                RevisionMatcher.any(),
+                RevisionMatcher.withMtime(0L),
+                RevisionMatcher.withMtime(1L)));
+        Assert.assertTrue(revHistoryEquals("foo/baz",
+                RevisionMatcher.any()));
+
+        delAllRevUnder("foo");
+
+        Assert.assertTrue(revChildrenEquals(""));
+        Assert.assertTrue(revChildrenEquals("foo"));
+        Assert.assertTrue(revHistoryEquals("foo/bar"));
+        Assert.assertTrue(revHistoryEquals("foo/baz"));
+    }
+
+    @Test
+    public void shouldNotDeleteFileRevWhenDeletingRevUnder() throws Exception
+    {
+        Assert.assertTrue(revChildrenEquals(""));
+
+        SOKID sokid1 = newSOKID();
+        createFile("foo/bar", sokid1);
+        store("foo/bar", sokid1, new byte[0], true, 0L);
+        SOKID sokid2 = newSOKID();
+        createFile("foo", sokid2);
+        store("foo", sokid2, new byte[0], true, 0L);
+
+        Assert.assertTrue(revChildrenEquals("",
+                new Child("foo", true),
+                new Child("foo", false)));
+        Assert.assertTrue(revChildrenEquals("foo",
+                new Child("bar", false)));
+        Assert.assertTrue(revHistoryEquals("foo/bar",
+                RevisionMatcher.any()));
+        Assert.assertTrue(revHistoryEquals("foo",
+                RevisionMatcher.any()));
+
+        delAllRevUnder("foo");
+
+        Assert.assertTrue(revChildrenEquals("",
+                new Child("foo", false)));
+        Assert.assertTrue(revChildrenEquals("foo"));
+        Assert.assertTrue(revHistoryEquals("foo/bar"));
+        Assert.assertTrue(revHistoryEquals("foo",
+                RevisionMatcher.any()));
     }
 
     private static class DevZero extends InputStream

@@ -14,7 +14,7 @@ import com.aerofs.daemon.core.linker.event.EITestPauseOrResumeLinker;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.event.admin.EIDeleteACL;
-import com.aerofs.daemon.event.admin.EIDumpStat;
+import com.aerofs.daemon.event.admin.EIDeleteRevision;import com.aerofs.daemon.event.admin.EIDumpStat;
 import com.aerofs.daemon.event.admin.EIExportConflict;
 import com.aerofs.daemon.event.admin.EIExportFile;
 import com.aerofs.daemon.event.admin.EIExportRevision;
@@ -452,6 +452,15 @@ public class RitualService implements IRitualService
         ev.execute(PRIO);
         return createReply(ExportRevisionReply.newBuilder()
                 .setDest(ev._dst.getAbsolutePath()).build());
+    }
+
+    @Override
+    public ListenableFuture<Void> deleteRevision(PBPath path, @Nullable ByteString index)
+            throws Exception
+    {
+        new EIDeleteRevision(Core.imce(), new Path(path),
+                index == null ? null : index.toByteArray()).execute(PRIO);
+        return createVoidReply();
     }
 
     @Override

@@ -15,6 +15,8 @@ import com.aerofs.daemon.core.phy.IPhysicalFile;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;
 import com.aerofs.daemon.core.phy.IPhysicalPrefix;
 import com.aerofs.daemon.core.phy.IPhysicalRevProvider;
+import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Child;
+import com.aerofs.daemon.core.phy.IPhysicalRevProvider.Revision;
 import com.aerofs.daemon.core.phy.IPhysicalStorage;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.phy.block.BlockStorageDatabase.FileInfo;
@@ -24,6 +26,7 @@ import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.daemon.core.tc.TC.TCB;
 import com.aerofs.daemon.core.tc.Token;
+import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.db.AbstractTransListener;
 import com.aerofs.daemon.lib.db.trans.Trans;
@@ -38,6 +41,7 @@ import com.aerofs.lib.cfg.CfgAbsAutoExportFolder;
 import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.db.IDBIterator;
 import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExNotFound;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOCKID;
 import com.aerofs.lib.id.SOID;
@@ -84,6 +88,8 @@ class BlockStorage implements IPhysicalStorage
     private final FrequentDefectSender _fds;
     private final LocalACL _lacl;
     private final IMapSIndex2SID _sidx2sid;
+
+    private final ProgressIndicators _pi = ProgressIndicators.get();
 
     public class FileAlreadyExistsException extends IOException
     {
@@ -276,49 +282,6 @@ class BlockStorage implements IPhysicalStorage
                 }, 0);
             }
         });
-    }
-
-    /**
-     * Fully remove a file from the DB:
-     *   * deref all blocks used by the file
-     *   * remove current file info entry
-     */
-    private void removeFile_(long id, Trans t) throws SQLException
-    {
-        FileInfo info = _bsdb.getFileInfo_(id);
-        for (ContentHash b : BlockUtil.splitBlocks(info._chunks)) _bsdb.decBlockCount_(b, t);
-        _bsdb.deleteFileInfo_(id, t);
-        // NB: for consistency with LinkedStorage we don't delete history when deleting stores
-        //_bsdb.deleteHistFileInfo_(id, t);
-    }
-
-    /**
-     * Remove dead blocks
-     *
-     * NB: must be called *outside* of any transaction:
-     *   1. we should not remove dead blocks before the transaction that deref them is committed
-     *   2. some backends may create a transaction on their own (e.g. CacheBackend)
-     *   3. some backends may release the core lock around file/io operation
-     */
-    private void removeDeadBlocks_() throws SQLException, IOException
-    {
-        Token tk = _tc.acquire_(Cat.UNLIMITED, "bs-rmd");
-        IDBIterator<ContentHash> it = _bsdb.getDeadBlocks_();
-        try {
-            while (it.next_()) {
-                ContentHash h = it.get_();
-                Trans t = _tm.begin_();
-                try {
-                    _bsdb.deleteBlock_(h, t);
-                    t.commit_();
-                } finally {
-                    t.end_();
-                }
-                _bsb.deleteBlock(h, tk);
-            }
-        } finally {
-            it.close_();
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -591,7 +554,8 @@ class BlockStorage implements IPhysicalStorage
                 if (dirId == DIR_ID_NOT_FOUND) return Collections.emptyList();
                 return _bsdb.getHistDirChildren_(dirId);
             } catch (SQLException e) {
-                return Collections.emptyList();
+                l.warn("list rev children fail: " + Util.e(e));
+                throw e;
             }
         }
 
@@ -603,7 +567,8 @@ class BlockStorage implements IPhysicalStorage
                 if (dirId == DIR_ID_NOT_FOUND) return Collections.emptyList();
                 return _bsdb.getHistFileRevisions_(dirId, path.last());
             } catch (SQLException e) {
-                return Collections.emptyList();
+                l.warn("list rev hist fail: " + Util.e(e));
+                throw e;
             }
         }
 
@@ -615,8 +580,143 @@ class BlockStorage implements IPhysicalStorage
                 if (info == null) throw new InvalidRevisionIndexException();
                 return new RevInputStream(readChunks(info._chunks), info._length, info._mtime);
             } catch (SQLException e) {
-                return null;
+                l.warn("get rev stream fail: " + Util.e(e));
+                throw e;
             }
+        }
+
+        @Override
+        public void deleteRevision_(Path path, byte[] index) throws Exception
+        {
+            try {
+                FileInfo info = _bsdb.getHistFileInfo_(index);
+                if (info == null) throw new InvalidRevisionIndexException();
+
+                Trans t = _tm.begin_();
+                try {
+                    removeHistFile_(info, t);
+                    t.commit_();
+                } finally {
+                    t.end_();
+                }
+
+                // TODO: schedule instead?
+                removeDeadBlocks_();
+            } catch (SQLException e) {
+                l.warn("del rev fail: " + Util.e(e));
+                throw e;
+            }
+        }
+
+        @Override
+        public void deleteAllRevisionsUnder_(Path path) throws Exception
+        {
+            try {
+                long dirId = _bsdb.getHistDirByPath_(path);
+                if (dirId == DIR_ID_NOT_FOUND) throw new ExNotFound();
+
+                Trans t = _tm.begin_();
+                try {
+                    removeHistDirRecursively_(dirId, t);
+                    t.commit_();
+                } finally {
+                    t.end_();
+                }
+
+                // TODO: schedule instead?
+                removeDeadBlocks_();
+            } catch (SQLException e) {
+                l.warn("del all rev fail: " + Util.e(e));
+                throw e;
+            }
+        }
+    }
+
+
+    /**
+     * Fully remove a file from the DB:
+     *   * deref all blocks used by the file
+     *   * remove current file info entry
+     */
+    private void removeFile_(long id, Trans t) throws SQLException
+    {
+        FileInfo info = _bsdb.getFileInfo_(id);
+        derefBlocks_(info._chunks, t);
+        _bsdb.deleteFileInfo_(id, t);
+    }
+
+    /**
+     * Remove an old version of a file from the db:
+     *   * deref all blocks used
+     *   * remove hist file info entry
+     */
+    private void removeHistFile_(FileInfo info, Trans t) throws SQLException
+    {
+        derefBlocks_(info._chunks, t);
+        _bsdb.deleteHistFileInfo_(info._id, info._ver, t);
+    }
+
+    private void derefBlocks_(ContentHash h, Trans t) throws SQLException
+    {
+        for (ContentHash b : BlockUtil.splitBlocks(h)) _bsdb.decBlockCount_(b, t);
+    }
+
+    /**
+     * Recursively remove all old file versions under a given directory and deletes
+     * the directory entry when done
+     */
+    private void removeHistDirRecursively_(long dirId, Trans t) throws SQLException
+    {
+        for (Child c : _bsdb.getHistDirChildren_(dirId)) {
+            if (c._dir) {
+                removeHistDirRecursively_(_bsdb.getChildHistDir_(dirId, c._name), t);
+            } else {
+                removeAllHistFiles_(dirId, c._name, t);
+            }
+        }
+
+        _bsdb.deleteHistDir_(dirId, t);
+        _pi.incrementMonotonicProgress();
+    }
+
+    /**
+     * Remove all old versions of a given file
+     */
+    private void removeAllHistFiles_(long dirId, String name, Trans t) throws SQLException
+    {
+        for (Revision r : _bsdb.getHistFileRevisions_(dirId, name)) {
+            removeHistFile_(_bsdb.getHistFileInfo_(r._index), t);
+            _pi.incrementMonotonicProgress();
+        }
+    }
+
+    /**
+     * Remove dead blocks
+     *
+     * NB: must be called *outside* of any transaction:
+     *   1. we should not remove dead blocks before the transaction that deref them is committed
+     *   2. some backends may create a transaction on their own (e.g. CacheBackend)
+     *   3. some backends may release the core lock around file/io operation
+     */
+    private void removeDeadBlocks_() throws SQLException, IOException
+    {
+        Token tk = _tc.acquire_(Cat.UNLIMITED, "bs-rmd");
+        IDBIterator<ContentHash> it = _bsdb.getDeadBlocks_();
+        try {
+            while (it.next_()) {
+                ContentHash h = it.get_();
+                Trans t = _tm.begin_();
+                try {
+                    _bsdb.deleteBlock_(h, t);
+                    t.commit_();
+                } finally {
+                    t.end_();
+                }
+                _bsb.deleteBlock(h, tk);
+                _pi.incrementMonotonicProgress();
+            }
+        } finally {
+            it.close_();
         }
     }
 }

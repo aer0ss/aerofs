@@ -125,6 +125,8 @@ service RitualService {
 
     rpc ExportRevision(ExportRevisionCall) returns(ExportRevisionReply);
 
+    rpc DeleteRevision(DeleteRevisionCall) returns(Void);
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Conflict Resolution
@@ -418,6 +420,14 @@ message ExportRevisionReply {
     // specifies the path to the temporary file.
     // This is necessary to avoid privilege escalation through the daemon.
     required string dest = 1;
+}
+
+message DeleteRevisionCall {
+    required PBPath path = 1;
+
+    // if an index is supplied, delete a specific revision of the given file
+    // if no index is supplied, delete all revisions under the given directory
+    optional bytes index = 2;
 }
 
 message GetSyncStatusCall {

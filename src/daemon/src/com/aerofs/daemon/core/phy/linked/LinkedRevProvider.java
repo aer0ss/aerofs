@@ -258,17 +258,43 @@ public class LinkedRevProvider implements IPhysicalRevProvider
         return revisions.values();
     }
 
+    private InjectableFile getRevFile_(Path path, byte[] index)
+    {
+        String auxPath = Util.join(path.elements())
+                + RevisionSuffix.SEPARATOR + BaseUtil.utf2string(index);
+        return _factFile.create(_pathBase, auxPath);
+    }
+
+    private InjectableFile getExistingRevFile_(Path path, byte[] index)
+            throws InvalidRevisionIndexException
+    {
+        InjectableFile file = getRevFile_(path, index);
+        if (!file.exists() || file.isDirectory()) throw new InvalidRevisionIndexException();
+        return file;
+    }
+
     @Override
     public RevInputStream getRevInputStream_(Path path, byte[] index)
             throws Exception
     {
-        String strIndex = BaseUtil.utf2string(index);
-        String auxPath = Util.join(_pathBase, Util.join(path.elements()))
-                + RevisionSuffix.SEPARATOR + strIndex;
-        InjectableFile file = _factFile.create(auxPath);
-        if (!file.exists() || file.isDirectory()) throw new InvalidRevisionIndexException();
-        return new RevInputStream(file.newInputStream(), file.getLength(),
-                RevisionSuffix.fromEncodedNullable(strIndex)._mtime);
+        RevisionSuffix suffix = RevisionSuffix.fromEncodedNullable(BaseUtil.utf2string(index));
+        if (suffix == null) throw new InvalidRevisionIndexException();
+        InjectableFile file = getExistingRevFile_(path, index);
+        return new RevInputStream(file.newInputStream(), file.getLength(), suffix._mtime);
+    }
+
+    @Override
+    public void deleteRevision_(Path path, byte[] index) throws Exception
+    {
+        InjectableFile file = getExistingRevFile_(path, index);
+        file.deleteOrThrowIfExist();
+    }
+
+    @Override
+    public void deleteAllRevisionsUnder_(Path path) throws Exception
+    {
+        InjectableFile dir = _factFile.create(_pathBase, Util.join(path.elements()));
+        dir.deleteOrThrowIfExistRecursively();
     }
 
     private synchronized void changeSpace(long delta)
