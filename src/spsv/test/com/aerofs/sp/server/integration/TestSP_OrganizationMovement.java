@@ -46,7 +46,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
     private void sendInvitation(UserID userID)
             throws Exception
     {
-       service.inviteToOrganization(userID.toString());
+       service.inviteToOrganization(userID.getString());
     }
 
     private void acceptOrganizationInvitation(int orgID, UserID userID)
@@ -120,7 +120,7 @@ public class TestSP_OrganizationMovement extends AbstractSPTest
             throws Exception
     {
         setSessionUser(USER_1);
-        service.inviteToOrganization(USER_2.toString());
+        service.inviteToOrganization(USER_2.getString());
     }
 
     @Test (expected = ExAlreadyInvited.class)

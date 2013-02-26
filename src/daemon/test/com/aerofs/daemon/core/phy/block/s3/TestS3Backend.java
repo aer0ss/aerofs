@@ -10,7 +10,6 @@ import com.aerofs.daemon.core.tc.Token;
 import com.aerofs.lib.ContentHash;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
-import com.sun.source.tree.AssertTree;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

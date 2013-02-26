@@ -66,7 +66,7 @@ public class CredentialUtil
         SPBlockingClient sp = SPClientFactory.newBlockingClient(SP.URL, Cfg.user());
         byte[] scrypted = SecUtil.scrypt(password, userId);
         // use signIn instead of sign_in remote ( we haven't updated Cfg yet )
-        sp.signIn(Cfg.user().toString(), ByteString.copyFrom(scrypted));
+        sp.signIn(Cfg.user().getString(), ByteString.copyFrom(scrypted));
 
         CfgDatabase db = Cfg.db();
         writePrivateKey(scrypted, Cfg.privateKey());

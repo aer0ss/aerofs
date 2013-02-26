@@ -90,9 +90,9 @@ public class TestSP_GetDeviceInfo extends AbstractSPFolderPermissionTest
         assertTrue(deviceInfo.hasOwner());
 
         // The parent sets the first name and the last name to just be the test user name.
-        assertEquals(deviceInfo.getOwner().getUserEmail(), USER_2.toString());
-        assertEquals(deviceInfo.getOwner().getFirstName(), USER_2.toString());
-        assertEquals(deviceInfo.getOwner().getLastName(), USER_2.toString());
+        assertEquals(deviceInfo.getOwner().getUserEmail(), USER_2.getString());
+        assertEquals(deviceInfo.getOwner().getFirstName(), USER_2.getString());
+        assertEquals(deviceInfo.getOwner().getLastName(), USER_2.getString());
     }
 
     /**

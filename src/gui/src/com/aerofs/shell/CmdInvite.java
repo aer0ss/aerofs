@@ -63,7 +63,7 @@ public class CmdInvite implements IShellCommand<ShProgram>
 
         String name = path.getElemCount() == 0 ? "unkown folder" :
                 path.getElem(path.getElemCount() - 1);
-        String note = CompInviteUsers.getDefaultInvitationNote(name, Cfg.user().toString());
+        String note = CompInviteUsers.getDefaultInvitationNote(name, Cfg.user().getString());
 
         RitualBlockingClient ritual = s.d().getRitualClient_();
         ritual.shareFolder(path, Collections.singletonList(srp.toPB()), note);

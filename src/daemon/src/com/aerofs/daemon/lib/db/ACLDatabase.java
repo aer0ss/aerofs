@@ -80,7 +80,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
 
             _psSet.setInt(1, sidx.getInt());
             for (Entry<UserID, Role> en : subject2role.entrySet()) {
-                _psSet.setString(2, en.getKey().toString());
+                _psSet.setString(2, en.getKey().getString());
                 _psSet.setInt(3, en.getValue().ordinal());
                 _psSet.addBatch();
             }
@@ -106,7 +106,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
 
             _psDel.setInt(1, sidx.getInt());
             for (UserID subject : subjects) {
-                _psDel.setString(2, subject.toString());
+                _psDel.setString(2, subject.getString());
                 _psDel.addBatch();
             }
             _psDel.executeBatch();
@@ -209,7 +209,7 @@ public class ACLDatabase extends AbstractDatabase implements IACLDatabase
                 _psGetAccessibleStores = c().prepareStatement(DBUtil.selectWhere(T_ACL,
                         C_ACL_SUBJECT + "=?", C_ACL_SIDX));
             }
-            _psGetAccessibleStores.setString(1, subject.toString());
+            _psGetAccessibleStores.setString(1, subject.getString());
 
             return new StoreIterator(_psGetAccessibleStores.executeQuery());
         } catch (SQLException e) {

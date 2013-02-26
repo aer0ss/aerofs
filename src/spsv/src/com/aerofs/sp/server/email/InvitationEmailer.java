@@ -204,10 +204,10 @@ public class InvitationEmailer
             FullName inviterFullName = inviter.getFullName();
             final String inviterName, inviterLongName;
             if (inviterFullName.isFirstOrLastNameEmpty()) {
-                inviterName = inviterLongName = inviter.id().toString();
+                inviterName = inviterLongName = inviter.id().getString();
             } else {
                 inviterName = inviterFullName.toString();
-                inviterLongName = inviterName + " (" + inviter.id().toString() + ")";
+                inviterLongName = inviterName + " (" + inviter.id().getString() + ")";
             }
 
             String body = "\n" +
@@ -231,7 +231,7 @@ public class InvitationEmailer
                     SVClient.sendEmail(
                             SV.SUPPORT_EMAIL_ADDRESS,
                             inviterName,
-                            invitee.id().toString(),
+                            invitee.id().getString(),
                             null,
                             subject,
                             email.getTextEmail(),

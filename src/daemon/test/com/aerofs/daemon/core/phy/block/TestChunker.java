@@ -5,7 +5,6 @@
 package com.aerofs.daemon.core.phy.block;
 
 import com.aerofs.daemon.core.phy.block.IBlockStorageBackend.EncoderWrapping;
-import com.aerofs.lib.Util;
 import com.google.common.io.InputSupplier;
 import org.junit.Before;
 import org.junit.Test;

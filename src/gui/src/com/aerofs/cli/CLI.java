@@ -450,7 +450,7 @@ public class CLI implements IUI {
         while (true) {
             String passwd = new String(askPasswd(msg));
             try {
-                UI.controller().updateStoredPassword(Cfg.user().toString(), passwd);
+                UI.controller().updateStoredPassword(Cfg.user().getString(), passwd);
                 break;
             } catch (ExBadCredential ebc) {
                 ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);

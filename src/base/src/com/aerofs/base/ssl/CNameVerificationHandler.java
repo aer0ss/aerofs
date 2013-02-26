@@ -97,7 +97,7 @@ public class CNameVerificationHandler extends SimpleChannelHandler
         l.debug("sending handshake");
 
         CNameVerificationInfo verificationInfo = CNameVerificationInfo.newBuilder()
-                .setUser(_user.toString())
+                .setUser(_user.getString())
                 .setDid(_did.toPB())
                 .build();
 

@@ -40,7 +40,7 @@ public class DID2UserDatabase extends AbstractDatabase implements IDID2UserDatab
                     C_D2U_DID + "," + C_D2U_USER + ") values (?,?)");
 
             _psInsert.setBytes(1, did.getBytes());
-            _psInsert.setString(2, user.toString());
+            _psInsert.setString(2, user.getString());
 
             _psInsert.executeUpdate();
         } catch (SQLException e) {

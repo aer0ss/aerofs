@@ -51,12 +51,12 @@ public class TestEmailSusbscriptionDatabase extends AbstractAutoTransactionedTes
         esdb.insertEmailSubscription(TEST_USER2, sc1);
         esdb.insertEmailSubscription(TEST_USER2, sc2);
 
-        Set<SubscriptionCategory> subscriptions = esdb.getEmailSubscriptions(TEST_USER2.toString());
+        Set<SubscriptionCategory> subscriptions = esdb.getEmailSubscriptions(TEST_USER2.getString());
 
         //sanity check token management
         String subscriptionToken = esdb.getTokenId(TEST_USER2, sc1);
         String emailFromToken = esdb.getEmail(subscriptionToken);
-        assertEquals(emailFromToken, TEST_USER2.toString());
+        assertEquals(emailFromToken, TEST_USER2.getString());
 
         assertEquals(EnumSet.of(sc1,sc2), subscriptions);
 

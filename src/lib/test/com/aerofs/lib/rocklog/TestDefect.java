@@ -69,7 +69,7 @@ public class TestDefect extends AbstractTest
         assertEquals(Priority.Fatal, result.priority); // defects should have Fatal priority by default
         assertEquals(version, result.version);
         assertEquals(did.toStringFormal(), result.did);
-        assertEquals(user.toString(), result.user_id);
+        assertEquals(user.getString(), result.user_id);
         assertEquals(OSUtil.get().getFullOSName(), result.os_name);
         assertEquals(OSUtil.get().getOSFamily().toString(), result.os_family);
         assertEquals(OSUtil.getOSArch().toString(), result.aerofs_arch);

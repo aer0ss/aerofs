@@ -33,7 +33,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
         assertEquals(service.getAuthorizationLevel().get().getLevel(), PBAuthorizationLevel.ADMIN);
 
         try {
-            service.setAuthorizationLevel(USER_2.toString(), PBAuthorizationLevel.USER);
+            service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.USER);
             assertFalse(true);
         } catch (ExNoPerm e) {}
     }
@@ -42,7 +42,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
     public void shouldThrowIfRequesterIsNotAdmin()
             throws Exception
     {
-        service.setAuthorizationLevel(USER_2.toString(), PBAuthorizationLevel.ADMIN);
+        service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.ADMIN);
     }
 
     @Test
@@ -52,7 +52,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
         setUserOneAsAdmin();
 
         try {
-            service.setAuthorizationLevel(USER_1.toString(), PBAuthorizationLevel.ADMIN);
+            service.setAuthorizationLevel(USER_1.getString(), PBAuthorizationLevel.ADMIN);
             assertFalse(true);
         } catch (ExNoPerm e) {}
     }
@@ -67,7 +67,7 @@ public class TestSP_SetAuthorizationLevel extends AbstractSPTest
         assertEquals(udb.getLevel(USER_2), AuthorizationLevel.USER);
         sqlTrans.commit();
 
-        service.setAuthorizationLevel(USER_2.toString(), PBAuthorizationLevel.ADMIN);
+        service.setAuthorizationLevel(USER_2.getString(), PBAuthorizationLevel.ADMIN);
 
         sqlTrans.begin();
         assertEquals(udb.getLevel(USER_2), AuthorizationLevel.ADMIN);

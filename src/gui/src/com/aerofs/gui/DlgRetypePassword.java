@@ -119,7 +119,7 @@ public class DlgRetypePassword extends AeroFSJFaceDialog
                 public void run() throws Exception
                 {
                     try {
-                        UI.controller().updateStoredPassword(Cfg.user().toString(), passwd);
+                        UI.controller().updateStoredPassword(Cfg.user().getString(), passwd);
                     } catch (Exception e) {
                         ThreadUtil.sleepUninterruptable(UIParam.LOGIN_PASSWD_RETRY_DELAY);
                         throw e;

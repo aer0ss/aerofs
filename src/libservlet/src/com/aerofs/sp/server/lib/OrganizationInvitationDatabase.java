@@ -42,8 +42,8 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.insert(T_OI, C_OI_INVITER, C_OI_INVITEE, C_OI_ORG_ID));
 
-        ps.setString(1, inviter.toString());
-        ps.setString(2, invitee.toString());
+        ps.setString(1, inviter.getString());
+        ps.setString(2, invitee.getString());
         ps.setInt(3, org.getInt());
 
         ps.executeUpdate();
@@ -55,7 +55,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.deleteWhere(T_OI, C_OI_INVITEE + " =? and " + C_OI_ORG_ID + " =?"));
 
-        ps.setString(1, invitee.toString());
+        ps.setString(1, invitee.getString());
         ps.setInt(2, org.getInt());
 
         ps.executeUpdate();
@@ -67,7 +67,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(selectWhere(T_OI,
                 C_OI_INVITEE + "=? and " + C_OI_ORG_ID + "=?", C_OI_INVITER));
 
-        ps.setString(1, invitee.toString());
+        ps.setString(1, invitee.getString());
         ps.setInt(2, org.getInt());
 
         ResultSet rs = ps.executeQuery();
@@ -92,7 +92,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(selectWhere(T_OI, C_OI_INVITEE + "=?",
                 C_OI_ORG_ID));
 
-        ps.setString(1, invitee.toString());
+        ps.setString(1, invitee.getString());
         ResultSet rs = ps.executeQuery();
 
         List<OrganizationID> result = Lists.newLinkedList();
@@ -152,7 +152,7 @@ public class OrganizationInvitationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(selectWhere(T_OI,
                 C_OI_INVITEE + "=? and " + C_OI_ORG_ID + "=?", "count(*)"));
 
-        ps.setString(1, invitee.toString());
+        ps.setString(1, invitee.getString());
         ps.setInt(2, orgID.getInt());
 
         ResultSet rs = ps.executeQuery();

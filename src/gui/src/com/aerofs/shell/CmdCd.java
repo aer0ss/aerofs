@@ -23,7 +23,7 @@ public class CmdCd implements IShellCommand<ShProgram>
 
         if (!path.isEmpty()) {
             PBObjectAttributes attr = s.d().getRitualClient_()
-                    .getObjectAttributes(Cfg.user().toString(), path.toPB()).getObjectAttributes();
+                    .getObjectAttributes(Cfg.user().getString(), path.toPB()).getObjectAttributes();
             if (attr.getType() != Type.FOLDER && attr.getType() != Type.SHARED_FOLDER) {
                 throw new ExUIMessage("not a directory");
             }

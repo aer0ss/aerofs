@@ -165,7 +165,7 @@ public class CompInviteUsers extends Composite implements IInputChangeListener
                     _fromPerson = sp.getPreferences(Cfg.did().toPB()).getFirstName();
                 } catch (Exception e) {
                     l.warn("cannot load user name: " + e);
-                    _fromPerson = Cfg.user().toString();
+                    _fromPerson = Cfg.user().getString();
                 }
 
                 GUI.get().safeAsyncExec(shell, new Runnable() {

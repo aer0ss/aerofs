@@ -415,7 +415,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 selectWhere(T_AC, C_AC_USER_ID + "=? limit ? offset ?", C_AC_STORE_ID));
 
-        ps.setString(1, orgId.toTeamServerUserID().toString());
+        ps.setString(1, orgId.toTeamServerUserID().getString());
         ps.setInt(2, maxResults);
         ps.setInt(3, offset);
 
@@ -444,7 +444,7 @@ public class OrganizationDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 selectWhere(T_AC, C_AC_USER_ID + "=?", C_AC_STORE_ID));
 
-        ps.setString(1, orgId.toTeamServerUserID().toString());
+        ps.setString(1, orgId.toTeamServerUserID().getString());
 
         ResultSet rs = ps.executeQuery();
         try {

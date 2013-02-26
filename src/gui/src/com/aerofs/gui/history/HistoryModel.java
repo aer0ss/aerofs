@@ -195,7 +195,7 @@ public class HistoryModel
 
             if (parent == null || !parent.isDeleted) {
                 // TODO(huguesb): do we really need to pass user ids through Ritual?
-                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(_userId.toString(),
+                GetChildrenAttributesReply ca = _ritual.getChildrenAttributes(_userId.getString(),
                         path.toPB());
                 assert ca != null;
                 for (int i = 0; i < ca.getChildrenNameCount(); i++) {

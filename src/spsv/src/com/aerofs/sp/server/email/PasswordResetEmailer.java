@@ -30,7 +30,7 @@ public class PasswordResetEmailer
         Email email = new Email(subject, false ,null);
 
         String url = S.PASSWORD_RESET_URL + "?" +
-                "user_id=" + Util.urlEncode(userId.toString()) +
+                "user_id=" + Util.urlEncode(userId.getString()) +
                 "&token=" + reset_token;
         String body = "\nForgot your password? It happens to the best of us.\n\nFollow this link " +
                "to reset your password:\n\n" + url + "\n\n" +
@@ -40,7 +40,7 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.toString(),
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {
@@ -68,7 +68,7 @@ public class PasswordResetEmailer
         email.addDefaultSignature();
 
         try {
-            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.toString(),
+            SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME, userId.getString(),
                     null, subject, email.getTextEmail(), email.getHTMLEmail(), true,
                     EmailCategory.PASSWORD_RESET);
         } catch (AbstractExWirable e) {

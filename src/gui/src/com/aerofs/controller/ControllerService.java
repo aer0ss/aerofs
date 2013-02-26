@@ -187,8 +187,8 @@ public class ControllerService implements IControllerService
     {
         PBConfig config = PBConfig.newBuilder()
                 .setVersion(Cfg.ver())
-                .setUserName(Cfg.user().toString())
-                .setDeviceId(Cfg.did().toString())
+                .setUserName(Cfg.user().getString())
+                .setDeviceId(Cfg.did().toStringFormal())
                 .setRootAnchor(Cfg.absRootAnchor())
                 .build();
 

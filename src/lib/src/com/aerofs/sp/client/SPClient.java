@@ -28,7 +28,7 @@ public class SPClient extends SPServiceStub
      */
     public ListenableFuture<Void> signInRemote()
     {
-        ListenableFuture<Void> future = super.signIn(_user.toString(),
+        ListenableFuture<Void> future = super.signIn(_user.getString(),
                 ByteString.copyFrom(Cfg.scrypted()));
 
         Futures.addCallback(future, new FutureCallback<Void>()

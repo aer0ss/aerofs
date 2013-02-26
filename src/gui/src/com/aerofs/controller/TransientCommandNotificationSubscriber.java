@@ -54,7 +54,7 @@ public final class TransientCommandNotificationSubscriber
                 VERKEHR_RETRY_INTERVAL, Cfg.db().getLong(Key.TIMEOUT), new HashedWheelTimer(),
                 listener, listener, sameThreadExecutor());
 
-        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + userId.toString();
+        this._topic = Param.CMD_CHANNEL_TOPIC_PREFIX + userId.getString();
         this._subscriber = factory.create();
     }
 
@@ -88,7 +88,7 @@ public final class TransientCommandNotificationSubscriber
                 cmds = TransientCommands.parseFrom(payload);
             }
             catch (InvalidProtocolBufferException e) {
-                l.error("tcmd: invalid protobuf: " + e.toString());
+                l.error("tcmd: invalid protobuf: " + e);
                 return;
             }
 

@@ -110,7 +110,7 @@ public class User
     @Override
     public String toString()
     {
-        return "user " + _id.toString();
+        return "user " + _id.getString();
     }
 
     /**

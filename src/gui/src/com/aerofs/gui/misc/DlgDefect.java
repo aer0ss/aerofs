@@ -156,7 +156,7 @@ public class DlgDefect extends AeroFSJFaceDialog
             };
 
         } else {
-            final String emailAddress =  Cfg.user().toString();
+            final String emailAddress =  Cfg.user().getString();
             Label lblEmailAddress = new Label(composite, SWT.NONE);
             lblEmailAddress.setLayoutData(gridData);
             lblEmailAddress.setText(emailAddress);

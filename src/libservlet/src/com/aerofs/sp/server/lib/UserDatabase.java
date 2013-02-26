@@ -85,7 +85,7 @@ public class UserDatabase extends AbstractSQLDatabase
                         C_USER_LAST_NAME, C_USER_ORG_ID, C_USER_AUTHORIZATION_LEVEL,
                         C_USER_ACL_EPOCH));
 
-        ps.setString(1, id.toString());
+        ps.setString(1, id.getString());
         ps.setString(2, Base64.encodeBytes(shaedSP));
         ps.setString(3, fullName._first);
         ps.setString(4, fullName._last);
@@ -97,7 +97,7 @@ public class UserDatabase extends AbstractSQLDatabase
         try {
             ps.executeUpdate();
         } catch (SQLException e) {
-            throwOnConstraintViolation(e, "user " + id.toString() + " already exists");
+            throwOnConstraintViolation(e, "user " + id.getString() + " already exists");
             throw e;
         }
     }
@@ -106,7 +106,7 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", "count(*)"));
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         try {
             Util.verify(rs.next());
@@ -137,7 +137,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 updateWhere(T_USER, C_USER_ID + "=?", C_USER_ORG_ID));
 
         ps.setInt(1, orgId.getInt());
-        ps.setString(2, userId.toString());
+        ps.setString(2, userId.getString());
         Util.verify(ps.executeUpdate() == 1);
     }
 
@@ -195,7 +195,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 C_AC_STORE_ID + " in (select " + C_AC_STORE_ID + " from " + T_AC + " where " +
                 C_AC_USER_ID + " = ?))");
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -218,7 +218,7 @@ public class UserDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 selectWhere(T_DEVICE, C_DEVICE_OWNER_ID + "=?", C_DEVICE_ID));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
 
         ImmutableList.Builder<DID> builder = ImmutableList.builder();
         ResultSet rs = ps.executeQuery();
@@ -246,7 +246,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 " where " + C_DEVICE_OWNER_ID + " =? order by " + C_DEVICE_NAME +
                 " limit ? offset ?");
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setInt(2, maxResults);
         ps.setInt(3, offset);
 
@@ -278,7 +278,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 " where " + C_DEVICE_OWNER_ID + " =? and " + C_DEVICE_NAME + " like ? order by " +
                 C_DEVICE_NAME + " limit ? offset ?");
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setString(2, "%" + search + "%");
         ps.setInt(3, maxResults);
         ps.setInt(4, offset);
@@ -303,7 +303,7 @@ public class UserDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement("select count(*) from " + T_DEVICE + " where " +
                 C_DEVICE_OWNER_ID + "=?");
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         try {
             return count(rs);
@@ -318,7 +318,7 @@ public class UserDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement("select count(*) from " + T_DEVICE + " where " +
                 C_DEVICE_OWNER_ID + "=? and " + C_DEVICE_NAME + " like ?");
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setString(2, "%" + search + "%");
 
         ResultSet rs = ps.executeQuery();
@@ -333,7 +333,7 @@ public class UserDatabase extends AbstractSQLDatabase
             throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_USER, C_USER_ID + "=?", fields));
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         if (!rs.next()) {
             rs.close();
@@ -350,7 +350,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 updateWhere(T_USER, C_USER_ID + "=?", C_USER_AUTHORIZATION_LEVEL));
 
         ps.setInt(1, authLevel.ordinal());
-        ps.setString(2, userId.toString());
+        ps.setString(2, userId.getString());
         Util.verify(ps.executeUpdate() == 1);
     }
 
@@ -364,7 +364,7 @@ public class UserDatabase extends AbstractSQLDatabase
         // See UserID.fromInternal/fromExternal
         ps.setString(1, fullName._first.trim());
         ps.setString(2, fullName._last.trim());
-        ps.setString(3, userId.toString());
+        ps.setString(3, userId.getString());
         Util.verify(ps.executeUpdate() == 1);
     }
 
@@ -384,7 +384,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 DBUtil.insert(T_TI, C_TI_TIC, C_TI_TO, C_TI_TS));
 
         ps.setString(1, code);
-        ps.setString(2, to.toString());
+        ps.setString(2, to.getString());
         ps.setTimestamp(3, new Timestamp(currentTime), UTC_CALANDER);
         ps.executeUpdate();
     }
@@ -399,7 +399,7 @@ public class UserDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.selectWhere(T_TI, C_TI_TO + "=?", "count(*)"));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ResultSet rs = ps.executeQuery();
         try {
             return count(rs) != 0;
@@ -414,7 +414,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
                 C_AC_STORE_ID));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setBoolean(2, false);
 
         ResultSet rs = ps.executeQuery();
@@ -446,7 +446,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 C_AC_USER_ID + "=? and " + C_AC_PENDING + "=?",
                 C_AC_STORE_ID, C_AC_SHARER));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setBoolean(2, true);
 
         ResultSet rs = ps.executeQuery();
@@ -468,7 +468,7 @@ public class UserDatabase extends AbstractSQLDatabase
                 " set " + C_USER_ACL_EPOCH + "=" + C_USER_ACL_EPOCH + "+1" +
                 " where " + C_USER_ID + "=?");
 
-        ps.setString(1, user.toString());
+        ps.setString(1, user.getString());
         int rows = ps.executeUpdate();
 
         assert rows == 1 : user + " " + rows;
@@ -486,7 +486,7 @@ public class UserDatabase extends AbstractSQLDatabase
     private long queryGetACLEpoch(PreparedStatement ps, UserID user)
             throws SQLException
     {
-        ps.setString(1, user.toString());
+        ps.setString(1, user.getString());
         ResultSet rs = ps.executeQuery();
         try {
             Util.verify(rs.next());

@@ -159,7 +159,7 @@ public class SID extends UniqueID
     public static SID rootSID(UserID userId)
     {
         MessageDigest md = BaseSecUtil.newMessageDigestMD5();
-        md.update(BaseUtil.string2utf(userId.toString()));
+        md.update(BaseUtil.string2utf(userId.getString()));
         byte[] bs = md.digest(ROOT_SID_SALT);
         setVersionNibble(bs, 3);
         SID sid = new SID(bs);
