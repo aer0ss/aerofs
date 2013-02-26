@@ -28,6 +28,7 @@ public class StringID implements Comparable<StringID>
      * N.B. This method returns human friendly strings and has no guarantee on their content.
      * Use getString() instead for strings to be processed by the program.
      */
+    @Deprecated
     @Override
     public String toString()
     {
