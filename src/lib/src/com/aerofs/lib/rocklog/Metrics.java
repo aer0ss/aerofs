@@ -4,6 +4,8 @@
 
 package com.aerofs.lib.rocklog;
 
+import com.aerofs.lib.cfg.InjectableCfg;
+
 import java.util.Map;
 
 import static com.google.common.collect.Maps.newHashMap;
@@ -14,9 +16,9 @@ public class Metrics extends RockLogMessage
 
     private final Map<String, Object> _metricsMap = newHashMap();
 
-    Metrics(RockLog rockLog)
+    Metrics(RockLog rockLog, InjectableCfg cfg)
     {
-        super(rockLog);
+        super(rockLog, cfg);
 
         //
         // add the containing "metrics-only" map to the underlying data map

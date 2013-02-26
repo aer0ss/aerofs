@@ -4,10 +4,13 @@
 
 package com.aerofs.lib.rocklog;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.aerofs.lib.cfg.InjectableCfg;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * Represents a defect that will be sent to the RockLog server.
@@ -38,9 +41,9 @@ public class Defect extends RockLogMessage
 
     public enum Priority { Info, Warning, Fatal }
 
-    Defect(RockLog rockLog, String name)
+    Defect(RockLog rockLog, InjectableCfg cfg, String name)
     {
-        super(rockLog);
+        super(rockLog, cfg);
 
         // TODO (GS): add cfg DB
 
@@ -115,26 +118,26 @@ public class Defect extends RockLogMessage
      *   }
      * }
      */
-    private JsonObject encodeException(Throwable e)
+    private HashMap<String, Object> encodeException(Throwable e)
     {
-        JsonObject result = new JsonObject();
-        if (e == null) return result;
+        if (e == null) return null;
 
-        JsonArray stacktrace = new JsonArray();
-        StackTraceElement[] javaStack = e.getStackTrace();
-        for (StackTraceElement javaFrame : javaStack) {
-            JsonObject frame = new JsonObject();
-            frame.addProperty("class", javaFrame.getClassName());
-            frame.addProperty("method", javaFrame.getMethodName());
-            frame.addProperty("file", javaFrame.getFileName());
-            frame.addProperty("line", javaFrame.getLineNumber());
-            stacktrace.add(frame);
+        List<Object> frames = Lists.newArrayList();
+        for (StackTraceElement f : e.getStackTrace()) {
+            HashMap<String, Object> frame = Maps.newHashMap();
+            frame.put("class", f.getClassName());
+            frame.put("method", f.getMethodName());
+            frame.put("file", f.getFileName());
+            frame.put("line", f.getLineNumber());
+            frames.add(frame);
         }
 
-        result.addProperty("type", e.getClass().getName());
-        result.addProperty("message", e.getMessage());
-        result.add("stacktrace", stacktrace);
-        result.add("cause", encodeException(e.getCause()));
+        HashMap<String, Object> result = Maps.newHashMap();
+        result.put("type", e.getClass().getName());
+        result.put("message", e.getMessage());
+        result.put("stacktrace", frames);
+        result.put("cause", encodeException(e.getCause()));
+
         return result;
     }
 }

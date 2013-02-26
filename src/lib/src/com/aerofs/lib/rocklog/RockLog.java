@@ -6,6 +6,7 @@ package com.aerofs.lib.rocklog;
 
 import com.aerofs.base.C;
 import com.aerofs.lib.Util;
+import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
 import org.apache.log4j.Logger;
 
@@ -50,6 +51,7 @@ public class RockLog
 
     private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
     private static final String ROCKLOG_URL = "http://rocklog.aerofs.com";
+    private static final InjectableCfg _cfg = new InjectableCfg();
 
     //
     // singleton instance
@@ -66,24 +68,25 @@ public class RockLog
     private final String _prefix;
 
     /*
-     * TODO (GS)
-     *  - do not resend automatic defects
-     *  - zip and send logs
-     *  - send Cfg DB in the defect
+    TODO (GS)
+        - do not resend automatic defects
+        - zip and send logs
+        - send Cfg DB in the defect
      */
+
     public static Defect newDefect(String name)
     {
-        return new Defect(getInstance(), name);
+        return new Defect(getInstance(), _cfg, name);
     }
 
     public static Event newEvent(String name)
     {
-        return new Event(getInstance(), name);
+        return new Event(getInstance(), _cfg, name);
     }
 
     public static Metrics newMetrics()
     {
-        return new Metrics(getInstance());
+        return new Metrics(getInstance(), _cfg);
     }
 
     /**

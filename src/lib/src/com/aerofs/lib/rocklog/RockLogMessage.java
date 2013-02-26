@@ -4,7 +4,7 @@
 
 package com.aerofs.lib.rocklog;
 
-import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.cfg.InjectableCfg;
 import com.aerofs.lib.os.OSUtil;
 import com.google.gson.Gson;
 
@@ -22,13 +22,13 @@ abstract class RockLogMessage
     private final HashMap<String, Object> _data = newHashMap();
     private final RockLog _rockLog;
 
-    RockLogMessage(RockLog rockLog)
+    RockLogMessage(RockLog rockLog, InjectableCfg cfg)
     {
         this._rockLog = rockLog;
 
         addTimestamp();
-        addVersion();
-        addDeviceInfo();
+        addVersion(cfg);
+        addDeviceInfo(cfg);
         addOSInfo();
     }
 
@@ -47,16 +47,16 @@ abstract class RockLogMessage
         _data.put("@timestamp", sdf.format(new Date()));
     }
 
-    private void addVersion()
+    private void addVersion(InjectableCfg cfg)
     {
-        _data.put("version", Cfg.ver());
+        _data.put("version", cfg.ver());
     }
 
-    private void addDeviceInfo()
+    private void addDeviceInfo(InjectableCfg cfg)
     {
-        if (Cfg.inited()) {
-            _data.put("user_id", Cfg.user().getString());
-            _data.put("did", Cfg.did().toStringFormal());
+        if (cfg.inited()) {
+            _data.put("user_id", cfg.user().getString());
+            _data.put("did", cfg.did().toStringFormal());
         }
     }
 
