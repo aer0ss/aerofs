@@ -64,7 +64,7 @@ public class TestDefect extends AbstractTest
 
         // Check the basic properties of the defect
         // TODO (GS): Check timestamp
-        assertEquals("test-defect", result.defect_name);
+        assertEquals("test-defect", result.name);
         assertEquals("hello", result.message);
         assertEquals(Priority.Fatal, result.priority); // defects should have Fatal priority by default
         assertEquals(version, result.version);
@@ -95,7 +95,7 @@ public class TestDefect extends AbstractTest
      */
     public static class JsonDefect
     {
-        public String defect_name;
+        public String name;
         @SerializedName("@message") public String message;
         @SerializedName("@timestamp") public String timestamp;
         public enum Priority { Info, Warning, Fatal }
