@@ -13,6 +13,7 @@ import com.aerofs.daemon.core.object.ObjectCreator;
 import com.aerofs.daemon.core.object.ObjectDeleter;
 import com.aerofs.daemon.core.phy.PhysicalOp;
 import com.aerofs.daemon.core.store.IStoreJoiner;
+import com.aerofs.daemon.lib.db.IMetaDatabase;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;
@@ -25,6 +26,11 @@ import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.google.inject.Inject;
 import org.apache.log4j.Logger;
 
+import javax.annotation.Nullable;
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 public class SingleuserStoreJoiner implements IStoreJoiner
 {
     private final static Logger l = Util.l(SingleuserStoreJoiner.class);
@@ -36,11 +42,12 @@ public class SingleuserStoreJoiner implements IStoreJoiner
     private final CfgRootSID _cfgRootSID;
     private final RitualNotificationServer _rns;
     private final SharedFolderAutoLeaver _lod;
+    private final IMetaDatabase _mdb;
 
     @Inject
     public SingleuserStoreJoiner(DirectoryService ds, SingleuserStores stores, ObjectCreator oc,
             ObjectDeleter od, CfgRootSID cfgRootSID, RitualNotificationServer rns,
-            SharedFolderAutoLeaver lod)
+            SharedFolderAutoLeaver lod, IMetaDatabase mdb)
     {
         _ds = ds;
         _oc = oc;
@@ -49,6 +56,7 @@ public class SingleuserStoreJoiner implements IStoreJoiner
         _cfgRootSID = cfgRootSID;
         _rns = rns;
         _lod = lod;
+        _mdb = mdb;
     }
 
     @Override
@@ -149,17 +157,33 @@ public class SingleuserStoreJoiner implements IStoreJoiner
          */
         if (sid.equals(_cfgRootSID.get())) return;
 
-        SOID anchor = new SOID(_stores.getParent_(sidx), SID.storeSID2anchorOID(sid));
-        OA oa = _ds.getOA_(anchor);
+        l.info("leaving share: " + sidx + " " + sid);
 
+        OID oid = SID.storeSID2anchorOID(sid);
+
+        // we abuse the db query designed for AdmittedObjectLocator
+        // NB: we cannot rely on parent relationships for the sidx as the anchor might be expelled
+        // NB: we cannot use AdmittedObjectLocator as any explicitly expelled (but non-deleted)
+        // anchor needs to be deleted and AOL would simply ignore them...
+        Collection<SIndex> sidxs = _mdb.getSIndexes_(oid, new SIndex(-1));
+
+        for (SIndex sidxWithanchor : sidxs) {
+            SOID soid = new SOID(sidxWithanchor, oid);
+            OA oa = _ds.getOA_(soid);
+            assert oa.soid().oid().equals(oid);
+            assert oa.type() == Type.ANCHOR;
+            deleteAnchorIfNeeded_(oa, t);
+        }
+    }
+
+    private void deleteAnchorIfNeeded_(OA oa, Trans t) throws Exception
+    {
         // nothing to do if the anchor is already deleted...
         // NB: isDeleted may be expensive and !expelled => !deleted
         if (oa.isExpelled() && _ds.isDeleted_(oa)) return;
 
         Path path = _ds.resolve_(oa);
-
-        l.info("leaving share: " + sidx + " " + sid);
-        _od.delete_(anchor, PhysicalOp.APPLY, t);
+        _od.delete_(oa.soid(), PhysicalOp.APPLY, t);
 
         _rns.sendEvent_(PBNotification.newBuilder()
                 .setType(PBNotification.Type.SHARED_FOLDER_KICKOUT)
