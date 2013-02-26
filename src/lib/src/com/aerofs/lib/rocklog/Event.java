@@ -4,42 +4,20 @@
 
 package com.aerofs.lib.rocklog;
 
-import com.google.gson.Gson;
-
-import java.util.HashMap;
-
-public class Event implements IRockLogMessage
+public class Event extends RockLogMessage
 {
-    private HashMap<String, Object> _json = new HashMap<String, Object>();
-    private final RockLog _rocklog;
+    private static final String EVENT_NAME_KEY = "event_name";
 
-    Event(RockLog rocklog, String name)
+    Event(RockLog rockLog, String eventName)
     {
-        _json.putAll(new BaseMessage().getData());
+        super(rockLog);
 
-        _rocklog = rocklog;
-        _json.put("event_name", name);
+        addData(EVENT_NAME_KEY, eventName);
     }
 
     @Override
-    public String getJSON()
-    {
-        return new Gson().toJson(_json);
-    }
-
-    @Override
-    public String getURLPath()
+    String getURLPath()
     {
         return "/events";
-    }
-
-    public void send()
-    {
-        _rocklog.send(this);
-    }
-
-    public void sendAsync()
-    {
-        _rocklog.sendAsync(this);
     }
 }

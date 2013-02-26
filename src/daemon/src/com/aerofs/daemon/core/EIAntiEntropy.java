@@ -1,5 +1,6 @@
 package com.aerofs.daemon.core;
 
+import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.net.To;
 import com.aerofs.daemon.core.protocol.GetVersCall;
 import com.aerofs.daemon.core.store.MapSIndex2Store;
@@ -10,25 +11,23 @@ import com.aerofs.daemon.core.tc.TokenManager;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.daemon.lib.DaemonParam;
 import com.aerofs.lib.Util;
-import com.aerofs.base.id.DID;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
-import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;
 import org.apache.log4j.Logger;
 
-import java.util.concurrent.TimeUnit;
-
-import static com.google.common.base.Preconditions.*;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.yammer.metrics.Metrics.newMeter;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class EIAntiEntropy extends AbstractEBSelfHandling
 {
     private static final Logger l = Util.l(EIAntiEntropy.class);
-    private static final Meter _hkFullMeter = Metrics.newMeter(
-            new MetricName("vers", "ae", "hkfull"), "ae requests", TimeUnit.MINUTES);
 
+    private static final Meter _hkFullMeter =
+            newMeter(new MetricName("core", "version", "ae", "hkfull"), "ae requests", MINUTES);
 
     private final Factory _f;
     private final SIndex _sidx;

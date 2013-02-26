@@ -36,7 +36,7 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     private static final Logger l = Util.l(RockLogReporter.class);
 
     private final VirtualMachineMetrics _vm;
-    private @Nullable volatile com.aerofs.lib.rocklog.Metric _rocklogMetric; // current metric being populated
+    private @Nullable volatile com.aerofs.lib.rocklog.Metrics _rocklogMetrics; // current metric being populated
 
     public static void enable(long period, TimeUnit unit)
     {
@@ -57,23 +57,23 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
     public void run()
     {
         try {
-            _rocklogMetric = RockLog.newMetric("client-metrics");
+            _rocklogMetrics = RockLog.newMetrics();
 
             addApplicationMetrics_();
             addVirtualMachineMetrics_();
 
-            checkNotNull(_rocklogMetric);  // won't be null, but here to silence IDE warning
+            checkNotNull(_rocklogMetrics);  // won't be null, but here to silence IDE warning
 
-            _rocklogMetric.send();
+            _rocklogMetrics.send();
         } catch (Exception e) {
             l.error("fail send metrics err:" + e);
         } finally {
-            _rocklogMetric = null;
+            _rocklogMetrics = null;
         }
     }
 
     //
-    // the process* methods are called by the Metric implementations (Meter, Counter, Gauge, etc.)
+    // the process* methods are called by the Metrics implementations (Meter, Counter, Gauge, etc.)
     // essentially, they pass in the data that they have and the reporter's responsibility is to
     // format it in a way that's understood by the backend
     //
@@ -163,10 +163,10 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
 
     private void addLong_(String metricName, String component, long value)
     {
-        checkNotNull(_rocklogMetric);
+        checkNotNull(_rocklogMetrics);
 
         String key = metricName + "." + component;
-        _rocklogMetric.addMetric(key, value);
+        _rocklogMetrics.addMetric(key, value);
     }
 
     private void addFloat_(String metricName, String component, double value)
@@ -175,20 +175,20 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
 
         if (Double.isNaN(value)) {
             l.warn("nan m:" + fullMetricName + " v:" + value);
-            RockLog.newDefect("client.rocklog.conversion.nan").addData("metric", fullMetricName).sendAsync();
+            RockLog.newDefect("rocklog.conversion.nan").addData("metric", fullMetricName).sendAsync();
             return;
         }
 
-        checkNotNull(_rocklogMetric);
+        checkNotNull(_rocklogMetrics);
 
-        _rocklogMetric.addMetric(fullMetricName, value);
+        _rocklogMetrics.addMetric(fullMetricName, value);
     }
 
     private void addObject_(String key, Gauge<?> gauge)
     {
-        checkNotNull(_rocklogMetric);
+        checkNotNull(_rocklogMetrics);
 
-        _rocklogMetric.addMetric(key, String.format("%s", gauge));
+        _rocklogMetrics.addMetric(key, String.format("%s", gauge));
     }
 
     private void addApplicationMetrics_()
@@ -211,26 +211,26 @@ public class RockLogReporter extends AbstractPollingReporter implements MetricPr
 
     private void addVirtualMachineMetrics_()
     {
-        addFloat_("client.jvm.memory", "heap_usage", _vm.heapUsage());
-        addFloat_("client.jvm.memory", "non_heap_usage", _vm.nonHeapUsage());
+        addFloat_("jvm.memory", "heap_usage", _vm.heapUsage());
+        addFloat_("jvm.memory", "non_heap_usage", _vm.nonHeapUsage());
         for (Map.Entry<String, Double> pool : _vm.memoryPoolUsage().entrySet()) {
-            addFloat_("client.jvm.memory.memory_pool_usages", pool.getKey(), pool.getValue());
+            addFloat_("jvm.memory.memory_pool_usages", pool.getKey(), pool.getValue());
         }
 
-        addLong_("client.jvm", "daemon_thread_count", _vm.daemonThreadCount());
-        addLong_("client.jvm", "thread_count", _vm.threadCount());
-        addLong_("client.jvm", "uptime", _vm.uptime());
+        addLong_("jvm", "daemon_thread_count", _vm.daemonThreadCount());
+        addLong_("jvm", "thread_count", _vm.threadCount());
+        addLong_("jvm", "uptime", _vm.uptime());
 
         if (!isWindows()) {
-            addFloat_("client.jvm", "fd_usage", _vm.fileDescriptorUsage());
+            addFloat_("jvm", "fd_usage", _vm.fileDescriptorUsage());
         }
 
         for (Map.Entry<Thread.State, Double> entry : _vm.threadStatePercentages().entrySet()) {
-            addFloat_("client.jvm.thread-states", entry.getKey().toString().toLowerCase(), entry.getValue());
+            addFloat_("jvm.thread-states", entry.getKey().toString().toLowerCase(), entry.getValue());
         }
 
         for (Map.Entry<String, VirtualMachineMetrics.GarbageCollectorStats> entry : _vm.garbageCollectors().entrySet()) {
-            final String name = "client.jvm.gc." + entry.getKey();
+            final String name = "jvm.gc." + entry.getKey();
             addLong_(name, "time", entry.getValue().getTime(TimeUnit.MILLISECONDS));
             addLong_(name, "runs", entry.getValue().getRuns());
         }

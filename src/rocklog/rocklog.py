@@ -78,15 +78,35 @@ def metrics():
         return error_response(415, 'not JSON')
 
     try:
+
+        #
+        # take the original data and save it to graphite
+        #
+
         metric = request.json
 
-        save_to_elasticsearch('metric', metric)
         save_to_graphite(metric)
+
+        #
+        # move all the contents of the contained "metrics" json object
+        # into the top-level json object
+        #
+
+        metrics = metric.pop(METRICS_KEY, [])
+        for metric_key, metric_value in metrics.items():
+            metric[metric_key] = metric_value
+
+        #
+        # now save this flattened object to elasticsearch
+        #
+
+        save_to_elasticsearch('metric', metric)
 
         return success_response()
     except Exception as e:
         app.logger.error("fail request err:%s" % e)
         raise
+
 
 @app.route('/events', methods=['POST'])
 def events():
@@ -105,6 +125,7 @@ def events():
     except Exception as e:
         app.logger.error("fail request err:%s" % e)
         raise
+
 
 def check_valid_request(request):
     content_type = request.headers['Content-Type']

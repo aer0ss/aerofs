@@ -1,14 +1,14 @@
 package com.aerofs.daemon;
 
 import com.aerofs.daemon.core.CoreModule;
+import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
+import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
 import com.aerofs.daemon.core.phy.block.BlockStorageModules;
 import com.aerofs.daemon.core.phy.block.cache.CacheBackendModule;
 import com.aerofs.daemon.core.phy.block.gzip.GZipBackendModule;
 import com.aerofs.daemon.core.phy.block.local.LocalBackendModule;
 import com.aerofs.daemon.core.phy.block.s3.S3BackendModule;
 import com.aerofs.daemon.core.phy.linked.LinkedStorageModule;
-import com.aerofs.daemon.core.multiplicity.multiuser.MultiuserModule;
-import com.aerofs.daemon.core.multiplicity.singleuser.SingleuserModule;
 import com.aerofs.daemon.lib.metrics.RockLogReporter;
 import com.aerofs.daemon.ritual.RitualServer;
 import com.aerofs.labeling.L;
@@ -20,22 +20,28 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.cfg.CfgModule;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.OSFamily;
+import com.aerofs.lib.rocklog.RockLog;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
 
-import java.util.concurrent.TimeUnit;
+import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DaemonProgram implements IProgram
 {
+    static
+    {
+        RockLog.init_(CLIENT);
+        RockLogReporter.enable(30, SECONDS);
+    }
+
     private final RitualServer _ritual = new RitualServer();
 
     @Override
     public void launch_(String rtRoot, String prog, String[] args) throws Exception
     {
-        RockLogReporter.enable(30, TimeUnit.SECONDS); // report metrics to RockLog
-
         Util.initDriver("dc"); // "dc" stands for daemon native library in C
 
         Daemon daemon = inject_();

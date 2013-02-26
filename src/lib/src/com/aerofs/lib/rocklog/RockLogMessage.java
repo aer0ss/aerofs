@@ -6,33 +6,62 @@ package com.aerofs.lib.rocklog;
 
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.os.OSUtil;
+import com.google.gson.Gson;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.TimeZone;
 
-public class BaseMessage
-{
-    private HashMap<String, Object> _data = new HashMap<String, Object>();
+import static com.google.common.collect.Maps.newHashMap;
 
-    BaseMessage()
+abstract class RockLogMessage
+{
+    private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+
+    private final HashMap<String, Object> _data = newHashMap();
+    private final RockLog _rockLog;
+
+    RockLogMessage(RockLog rockLog)
     {
+        this._rockLog = rockLog;
+
+        addTimestamp();
+        addVersion();
+        addDeviceInfo();
+        addOSInfo();
+    }
+
+    private void addTimestamp()
+    {
+        //
         // Set the timestamp field as early as possible
         // Note: some of our json fields start with a '@' to follow the logstash format
         // see: https://github.com/logstash/logstash/wiki/logstash%27s-internal-message-format
         // Kibana expects to find those fields (especially @timestamp)
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        //
+
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
         _data.put("@timestamp", sdf.format(new Date()));
+    }
 
+    private void addVersion()
+    {
         _data.put("version", Cfg.ver());
+    }
 
+    private void addDeviceInfo()
+    {
         if (Cfg.inited()) {
             _data.put("user_id", Cfg.user().getID());
             _data.put("did", Cfg.did().toStringFormal());
         }
+    }
 
+    private void addOSInfo()
+    {
         if (OSUtil.get() != null) {
             _data.put("os_name", OSUtil.get().getFullOSName());
             _data.put("os_family", OSUtil.get().getOSFamily().toString());
@@ -40,8 +69,32 @@ public class BaseMessage
         }
     }
 
-    public HashMap<String, Object> getData()
+    public void send()
     {
-        return _data;
+        _rockLog.send(this);
     }
+
+    public void sendAsync()
+    {
+        _rockLog.sendAsync(this);
+    }
+
+    RockLogMessage addData(String key, Object value)
+    {
+        _data.put(key, value);
+
+        return this;
+    }
+
+    String getJSON()
+    {
+        return new Gson().toJson(_data);
+    }
+
+    protected RockLog getRockLog()
+    {
+        return _rockLog;
+    }
+
+    abstract String getURLPath();
 }

@@ -20,37 +20,93 @@ import static java.net.HttpURLConnection.HTTP_OK;
 
 public class RockLog
 {
-    private static final int SOCKET_TIMEOUT = (int) (10*C.SEC);
-    private static final String ROCKLOG_URL = "http://rocklog.aerofs.com";
-
-    private static final Logger l = Util.l(RockLog.class);
-    private static final RockLog _instance = new RockLog();
-
-    private RockLog() {} // prevent initialization
-
-    /*
-    TODO (GS)
-        - do not resend automatic defects
-        - zip and send logs
-        - send Cfg DB in the defect
+    /**
+     * Describes what high-level grouping (desktop-client, server, mobile) RockLog
+     * is being instantiated in. This allows us to properly collate metrics on the server.
      */
-
-    public static Defect newDefect(String name)
+    public static enum BaseComponent
     {
-        return new Defect(_instance, name);
+        CLIENT
+        {
+            @Override
+            public String toString()
+            {
+                return "client";
+            }
+        },
+        SERVER
+        {
+            @Override
+            public String toString()
+            {
+                return "server";
+            }
+        }
     }
 
-    public static Metric newMetric(String name)
+    //
+    // constants
+    //
+
+    private static final int SOCKET_TIMEOUT = (int) (10 * C.SEC);
+    private static final String ROCKLOG_URL = "http://rocklog.aerofs.com";
+
+    //
+    // singleton instance
+    //
+
+    private static RockLog _instance;
+
+    //
+    // per-instance values (technically l is shared, but, whatever)
+    //
+
+    private static final Logger l = Util.l(RockLog.class);
+
+    private final String _prefix;
+
+    /*
+     * TODO (GS)
+     *  - do not resend automatic defects
+     *  - zip and send logs
+     *  - send Cfg DB in the defect
+     */
+    public static Defect newDefect(String name)
     {
-        return new Metric(_instance, name);
+        return new Defect(getInstance(), name);
     }
 
     public static Event newEvent(String name)
     {
-        return new Event(_instance, name);
+        return new Event(getInstance(), name);
     }
 
-    void sendAsync(final IRockLogMessage message)
+    public static Metrics newMetrics()
+    {
+        return new Metrics(getInstance());
+    }
+
+    /**
+     * call in single-threaded mode only
+     */
+    public static void init_(BaseComponent component)
+    {
+        if (_instance == null) {
+            _instance = new RockLog(component.toString());
+        }
+    }
+
+    static RockLog getInstance()
+    {
+        return _instance;
+    }
+
+    private RockLog(String prefix)  // prevent explicit initialization
+    {
+        this._prefix = prefix;
+    }
+
+    void sendAsync(final RockLogMessage message)
     {
         new Thread(new Runnable()
         {
@@ -62,7 +118,7 @@ public class RockLog
         },"rocklog-send").start();
     }
 
-    void send(IRockLogMessage message)
+    void send(RockLogMessage message)
     {
         try {
             l.trace("send RockLog message...");
@@ -132,5 +188,10 @@ public class RockLog
         } finally {
             if (is != null) is.close();
         }
+    }
+
+    String getPrefix()
+    {
+        return _prefix;
     }
 }

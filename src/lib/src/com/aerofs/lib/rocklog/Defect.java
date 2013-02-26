@@ -4,12 +4,10 @@
 
 package com.aerofs.lib.rocklog;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.Arrays;
-import java.util.HashMap;
 
 /**
  * Represents a defect that will be sent to the RockLog server.
@@ -30,48 +28,48 @@ import java.util.HashMap;
  * }
 
  */
-public class Defect implements IRockLogMessage
+public class Defect extends RockLogMessage
 {
+    private static final String NAME_KEY = "name";
+    private static final String MESSAGE_KEY = "@message";
+    private static final String EXCEPTION_KEY = "exception";
+    private static final String PRIORITY_KEY = "priority";
+    private static final String TAGS_KEY = "@tags";
+
     public enum Priority { Info, Warning, Fatal }
 
-    private final RockLog _rocklog;
-    private HashMap<String, Object> _json = new HashMap<String, Object>();
-
-    Defect(RockLog rocklog, String name)
+    Defect(RockLog rockLog, String name)
     {
-        // Add all the system metadata
-        _json.putAll(new BaseMessage().getData());
+        super(rockLog);
 
         // TODO (GS): add cfg DB
 
-        // Defects have the highest priority by default
-        setPriority(Priority.Fatal);
+        setPriority(Priority.Fatal); // Defects have the highest priority by default
 
-        _rocklog = rocklog;
-        _json.put("defect_name", name);
+        addData(NAME_KEY, name);
     }
 
     public Defect setMessage(String message)
     {
-        _json.put("@message", message);
+        addData(MESSAGE_KEY, message);
         return this;
     }
 
     public Defect setException(Throwable ex)
     {
-        _json.put("exception", encodeException(ex));
+        addData(EXCEPTION_KEY, encodeException(ex));
         return this;
     }
 
     public Defect setPriority(Priority priority)
     {
-        _json.put("priority", priority.toString());
+        addData(PRIORITY_KEY, priority.toString());
         return this;
     }
 
     public Defect tag(String... tags)
     {
-        _json.put("@tags", Arrays.asList(tags));
+        addData(TAGS_KEY, Arrays.asList(tags));
         return this;
     }
 
@@ -84,30 +82,16 @@ public class Defect implements IRockLogMessage
      * @param value anything that can be parsed as JSON by json-simple. (String, Number, Boolean,
      * List, Map, or null).
      */
+    @Override
     public Defect addData(String key, Object value)
     {
-        _json.put(key, value);
+        super.addData(key, value);
+
         return this;
     }
 
-    public void send()
-    {
-        _rocklog.send(this);
-    }
-
-    public void sendAsync()
-    {
-        _rocklog.sendAsync(this);
-    }
-
     @Override
-    public String getJSON()
-    {
-        return new Gson().toJson(_json);
-    }
-
-    @Override
-    public String getURLPath()
+    String getURLPath()
     {
         return "/defects";
     }
