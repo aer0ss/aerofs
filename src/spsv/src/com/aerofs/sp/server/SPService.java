@@ -13,6 +13,7 @@ import com.aerofs.proto.Sp.PBSharedFolder.PBUserAndRole;
 import com.aerofs.proto.Cmd.CommandType;
 import com.aerofs.proto.Sp.AckCommandQueueHeadReply;
 import com.aerofs.proto.Sp.GetCommandQueueHeadReply;
+import com.aerofs.proto.Sv;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.Epoch;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.QueueElement;
 import com.aerofs.servlets.lib.db.jedis.JedisEpochCommandQueue.SuccessError;
@@ -488,9 +489,7 @@ public class SPService implements ISPService
 
         _sqlTrans.commit();
 
-        return createReply(ListUserSharedFoldersReply.newBuilder()
-                .addAllSharedFolder(pbs)
-                .build());
+        return createReply(ListUserSharedFoldersReply.newBuilder().addAllSharedFolder(pbs).build());
     }
 
     private List<PBSharedFolder> sharedFolders2pb(Collection<SharedFolder> sfs)
@@ -1599,6 +1598,8 @@ public class SPService implements ISPService
         }
 
         _sqlTrans.commit();
+
+        SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGN_UP, "id: " + user.id().getString());
 
         return createVoidReply();
     }
