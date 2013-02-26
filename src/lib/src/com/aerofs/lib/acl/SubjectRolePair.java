@@ -29,7 +29,7 @@ public final class SubjectRolePair
     {
         if (_pb == null) {
             _pb = PBSubjectRolePair.newBuilder()
-                    .setSubject(_subject.toString())
+                    .setSubject(_subject.getString())
                     .setRole(_role.toPB())
                     .build();
         }

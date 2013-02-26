@@ -56,7 +56,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
                     DBUtil.insert(T_DEVICE, C_DEVICE_ID, C_DEVICE_OWNER_ID, C_DEVICE_NAME));
 
             ps.setString(1, did.toStringFormal());
-            ps.setString(2, ownerID.toString());
+            ps.setString(2, ownerID.getString());
             ps.setString(3, name);
             ps.executeUpdate();
         } catch (SQLException e) {

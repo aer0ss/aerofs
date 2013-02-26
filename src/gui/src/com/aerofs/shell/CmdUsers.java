@@ -45,7 +45,7 @@ public class CmdUsers implements IShellCommand<ShProgram>
 
         List<String> path = s.d().buildPathElemList_(cl.getArgs()[0]);
 
-        GetACLReply reply = s.d().getRitualClient_().getACL(Cfg.user().toString(),
+        GetACLReply reply = s.d().getRitualClient_().getACL(Cfg.user().getString(),
                 new Path(path).toPB());
 
         for (int i = 0; i < reply.getSubjectRoleCount(); i++) {

@@ -108,11 +108,11 @@ public class RoleMenu
             RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
             try {
                 if (role == null) {
-                    ritual.deleteACL(Cfg.user().toString(), _path.toPB(),
-                            Collections.singletonList(_subject.toString()));
+                    ritual.deleteACL(Cfg.user().getString(), _path.toPB(),
+                            Collections.singletonList(_subject.getString()));
                 } else {
                     SubjectRolePair srp = new SubjectRolePair(_subject, role);
-                    ritual.updateACL(Cfg.user().toString(), _path.toPB(),
+                    ritual.updateACL(Cfg.user().getString(), _path.toPB(),
                             Collections.singletonList(srp.toPB()));
                 }
                 _compUserList.load(ritual);

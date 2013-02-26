@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

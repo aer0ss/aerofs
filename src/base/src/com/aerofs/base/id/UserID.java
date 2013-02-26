@@ -60,12 +60,12 @@ public class UserID extends StringID
 
     public boolean isTeamServerID()
     {
-        return toString().charAt(0) == TEAM_SERVER_PREFIX;
+        return getString().charAt(0) == TEAM_SERVER_PREFIX;
     }
 
     public boolean isAeroFSUser()
     {
-        return toString().endsWith(AEROFS_EMAIL_DOMAIN);
+        return getString().endsWith(AEROFS_EMAIL_DOMAIN);
     }
 
     /**
@@ -74,7 +74,7 @@ public class UserID extends StringID
     public static List<String> toStrings(Iterable<UserID> userIDs)
     {
         List<String> strs = Lists.newArrayListWithExpectedSize(8);
-        for (UserID userId : userIDs) strs.add(userId.toString());
+        for (UserID userId : userIDs) strs.add(userId.getString());
         return strs;
     }
 

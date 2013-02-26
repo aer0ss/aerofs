@@ -160,19 +160,6 @@ public class MetaDatabase extends AbstractDatabase implements IMetaDatabase
         }
     }
 
-    private int getOAInt_(SOID soid, String column, PreparedStatementWrapper psw)
-            throws SQLException
-    {
-        PreparedStatement ps = prepareOASelect(psw, column, soid);
-        ResultSet rs = ps.executeQuery();
-        try {
-            Util.verify(rs.next());
-            return rs.getInt(1);
-        } finally {
-            rs.close();
-        }
-    }
-
     private void setOAInt_(SOID soid, String column, int v, PreparedStatementWrapper psw, Trans t)
             throws SQLException
     {

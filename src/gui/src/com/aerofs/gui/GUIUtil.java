@@ -277,7 +277,7 @@ public class GUIUtil
 
         RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();
         try {
-            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user().toString(),
+            PBObjectAttributes.Type type = ritual.getObjectAttributes(Cfg.user().getString(),
                     path.toPB())
                     .getObjectAttributes()
                     .getType();

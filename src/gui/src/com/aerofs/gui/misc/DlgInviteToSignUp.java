@@ -164,7 +164,7 @@ public class DlgInviteToSignUp extends AeroFSDialog implements IInputChangeListe
         sp.signInRemote();
 
         List<String> userIdStrings = Lists.newArrayListWithCapacity(_userIDs.size());
-        for (UserID userId : _userIDs) userIdStrings.add(userId.toString());
+        for (UserID userId : _userIDs) userIdStrings.add(userId.getString());
 
         sp.inviteToSignUp(userIdStrings);
         SVClient.sendEventAsync(Sv.PBSVEvent.Type.SIGNUP_INVITE_SENT, Integer.toString(

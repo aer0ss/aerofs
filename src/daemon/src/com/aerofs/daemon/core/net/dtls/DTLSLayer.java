@@ -188,7 +188,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
     public void beginOutgoingStream_(StreamID streamId, byte[] bs, PeerContext pc, Token tk)
             throws Exception
     {
-        if (l.isTraceEnabled()) l.trace("beginOutgoingStream " + streamId.toString() + " " + pc);
+        if (l.isTraceEnabled()) l.trace("beginOutgoingStream " + streamId + " " + pc);
 
         DTLSMessage<byte[]> msg = _f._factMsgBA.create_(Type.BEGIN_STREAM, bs, streamId, 0, tk);
 
@@ -508,7 +508,7 @@ public class DTLSLayer implements IDuplexLayer, IDumpStatMisc
 
     static final byte[] USERID_MAGIC_BYTES = {0x23, 0x45, 0x67};
     static final byte[] USERID_BYTES =
-            BaseUtil.concatenate(USERID_MAGIC_BYTES, BaseUtil.string2utf(Cfg.user().toString()));
+            BaseUtil.concatenate(USERID_MAGIC_BYTES, BaseUtil.string2utf(Cfg.user().getString()));
 
     private final DTLSMessage<byte[]> USERID_MSG;
 

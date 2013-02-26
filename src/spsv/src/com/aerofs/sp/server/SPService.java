@@ -234,7 +234,7 @@ public class SPService implements ISPService
     {
         String user;
         try {
-            user = _sessionUser.exists() ? _sessionUser.get().id().toString() : "user unknown";
+            user = _sessionUser.exists() ? _sessionUser.get().id().getString() : "user unknown";
         } catch (ExNoPerm enp) {
             throw SystemUtil.fatalWithReturn(enp);
         }
@@ -404,7 +404,7 @@ public class SPService implements ISPService
         for (User user : users) {
             FullName fn = user.getFullName();
             pbusers.add(PBUser.newBuilder()
-                    .setUserEmail(user.id().toString())
+                    .setUserEmail(user.id().getString())
                     .setFirstName(fn._first)
                     .setLastName(fn._last)
                     .build());
@@ -585,7 +585,7 @@ public class SPService implements ISPService
             GetOrganizationInvitationsReply.OrganizationInvitation.Builder builder =
                     GetOrganizationInvitationsReply.OrganizationInvitation.newBuilder();
 
-            builder.setInviter(invite.getInviter().id().toString());
+            builder.setInviter(invite.getInviter().id().getString());
             builder.setOrganizationName(invite.getOrganization().getName());
             builder.setOrganizationId(invite.getOrganization().id().getInt());
 
@@ -697,7 +697,7 @@ public class SPService implements ISPService
         UserID tsUserID = user.getOrganization().id().toTeamServerUserID();
 
         GetTeamServerUserIDReply reply = GetTeamServerUserIDReply.newBuilder()
-                .setId(tsUserID.toString())
+                .setId(tsUserID.getString())
                 .build();
 
         _sqlTrans.commit();
@@ -777,7 +777,7 @@ public class SPService implements ISPService
         _sqlTrans.begin();
 
         SVClient.sendEmail(SV.SUPPORT_EMAIL_ADDRESS, SPParam.SP_EMAIL_NAME,
-                _sessionUser.get().id().toString(), null, UserID.fromExternal(userId).toString(),
+                _sessionUser.get().id().getString(), null, UserID.fromExternal(userId).getString(),
                 body, null, true, null);
 
         _sqlTrans.commit();
@@ -921,8 +921,8 @@ public class SPService implements ISPService
         InvitationEmailer emailer;
         if (sharee.exists()) {
             // send folder invitation email
-            emailer = _factEmailer.createFolderInvitationEmailer(sharer.id().toString(),
-                    sharee.id().toString(), sharer.getFullName()._first, folderName, note, sf.id());
+            emailer = _factEmailer.createFolderInvitationEmailer(sharer.id().getString(),
+                    sharee.id().getString(), sharer.getFullName()._first, folderName, note, sf.id());
         } else {
             emailer = inviteToSignUp(sharee, sharer, folderName, note);
         }
@@ -1077,7 +1077,7 @@ public class SPService implements ISPService
             builder.addInvitation(PBFolderInvitation.newBuilder()
                     .setShareId(psf._sf.id().toPB())
                     .setFolderName(psf._sf.getName())
-                    .setSharer(psf._sharer.toString()));
+                    .setSharer(psf._sharer.getString()));
         }
 
         _sqlTrans.commit();
@@ -1108,7 +1108,7 @@ public class SPService implements ISPService
         _sqlTrans.commit();
 
         return createReply(
-                ResolveSignUpCodeReply.newBuilder().setEmailAddress(result.toString()).build());
+                ResolveSignUpCodeReply.newBuilder().setEmailAddress(result.getString()).build());
     }
 
     @Override
@@ -1462,7 +1462,7 @@ public class SPService implements ISPService
                     .build();
 
             // Must match what is done on the client side.
-            String aclTopic = Param.ACL_CHANNEL_TOPIC_PREFIX + entry.getKey().toString();
+            String aclTopic = Param.ACL_CHANNEL_TOPIC_PREFIX + entry.getKey().getString();
             ListenableFuture<Void> published =
                     _verkehrPublisher.publish_(aclTopic, notification.toByteArray());
 
@@ -1862,7 +1862,7 @@ public class SPService implements ISPService
                 builder.addDeviceInfo(GetDeviceInfoReply.PBDeviceInfo.newBuilder()
                     .setDeviceName(info._deviceName)
                     .setOwner(PBUser.newBuilder()
-                        .setUserEmail(info._ownerID.toString())
+                        .setUserEmail(info._ownerID.getString())
                         .setFirstName(info._ownerFirstName)
                         .setLastName(info._ownerLastName)));
             } else {

@@ -109,7 +109,6 @@ import javax.annotation.Nullable;
  */
 public class RitualService implements IRitualService
 {
-    private static final Logger l = Util.l(RitualService.class);
     private static final Prio PRIO = Prio.HI;
 
     @Override
@@ -388,7 +387,7 @@ public class RitualService implements IRitualService
         GetACLReply.Builder replyBuilder = GetACLReply.newBuilder();
         for (Entry<UserID, Role> en : ev._subject2role.entrySet()) {
             replyBuilder.addSubjectRole(PBSubjectRolePair.newBuilder()
-                    .setSubject(en.getKey().toString())
+                    .setSubject(en.getKey().getString())
                     .setRole(en.getValue().toPB()));
         }
 

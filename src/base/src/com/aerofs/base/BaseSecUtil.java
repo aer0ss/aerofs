@@ -131,7 +131,7 @@ public abstract class BaseSecUtil
 
     public static String getCertificateCName(UserID userId, DID did)
     {
-        return alphabetEncode(hash(BaseUtil.string2utf(userId.toString()), did.getBytes()));
+        return alphabetEncode(hash(BaseUtil.string2utf(userId.getString()), did.getBytes()));
     }
 
     public static KeyPair newRSAKeyPair()
@@ -649,7 +649,7 @@ public abstract class BaseSecUtil
     protected static byte[] scryptImpl(char[] passwd, UserID user)
     {
         byte[] bsPass = getPasswordBytes(passwd);
-        byte[] bsUser = BaseUtil.string2utf(user.toString());
+        byte[] bsUser = BaseUtil.string2utf(user.getString());
 
         byte[] scrypted = new byte[64];
         int rc = Scrypt.crypto_scrypt(bsPass, bsPass.length, bsUser, bsUser.length, N, r, p,

@@ -64,7 +64,7 @@ public class UserAndDeviceNameDatabase
                     C_UN_USER + "," + C_UN_FIRST_NAME + "," + C_UN_LAST_NAME + "," + C_UN_TIME +
                     ") values (?,?,?,?)");
 
-            _psSUN.setString(1, user.toString());
+            _psSUN.setString(1, user.getString());
             _psSUN.setString(2, fullName._first);
             _psSUN.setString(3, fullName._last);
             _psSUN.setLong(4, System.currentTimeMillis());
@@ -115,7 +115,7 @@ public class UserAndDeviceNameDatabase
         try {
             if (_psGUN == null) _psGUN = c().prepareStatement("select " + C_UN_FIRST_NAME +
                     "," + C_UN_LAST_NAME + " from " + T_UN + " where " + C_UN_USER + "=?");
-            _psGUN.setString(1, user.toString());
+            _psGUN.setString(1, user.getString());
             ResultSet rs = _psGUN.executeQuery();
             try {
                 if (rs.next()) {

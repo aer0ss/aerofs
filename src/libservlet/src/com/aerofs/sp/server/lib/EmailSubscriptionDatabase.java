@@ -67,7 +67,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
 
         String token = Base62CodeGenerator.generate();
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setString(2, token);
         ps.setInt(3, sc.getCategoryID());
         ps.setTimestamp(4, ts, UTC_CALANDER);
@@ -124,7 +124,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
         PreparedStatement ps = prepareStatement(
                 DBUtil.deleteWhereEquals(T_ES, C_ES_EMAIL, C_ES_SUBSCRIPTION));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setInt(2, sc.getCategoryID());
 
         Util.verify(ps.executeUpdate() == 1);
@@ -154,7 +154,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
                         C_ES_EMAIL + "=? and " + C_ES_SUBSCRIPTION + "=?",
                         C_ES_TOKEN_ID));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setInt(2, sc.getCategoryID());
 
         ResultSet rs = ps.executeQuery();
@@ -200,7 +200,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
                         C_ES_EMAIL)
         );
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setInt(2, sc.getCategoryID());
 
         ResultSet rs = ps.executeQuery();
@@ -221,7 +221,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
                         C_ES_LAST_EMAILED));
 
         ps.setTimestamp(1, new Timestamp(lastEmailTime), UTC_CALANDER);
-        ps.setString(2, userId.toString());
+        ps.setString(2, userId.getString());
         ps.setInt(3, category.getCategoryID());
         Util.verify(ps.executeUpdate() == 1);
     }
@@ -266,7 +266,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
                         "HOUR(TIMEDIFF(CURRENT_TIMESTAMP()," + C_ES_LAST_EMAILED +
                                 "))"));
 
-        ps.setString(1, userId.toString());
+        ps.setString(1, userId.getString());
         ps.setInt(2, category.getCategoryID());
 
         ResultSet rs = ps.executeQuery();
@@ -287,7 +287,7 @@ public class EmailSubscriptionDatabase extends AbstractSQLDatabase
     {
         PreparedStatement ps = prepareStatement(selectWhere(T_TI, C_TI_TO + "=?", C_TI_TIC));
 
-        ps.setString(1, to.toString());
+        ps.setString(1, to.getString());
         ResultSet rs = ps.executeQuery();
         try {
             if (rs.next()) return rs.getString(1);

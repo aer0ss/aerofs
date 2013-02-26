@@ -54,7 +54,7 @@ public class SingleuserCompPreferences extends Composite
 
         _lblId2 = new Label(this, SWT.NONE);
         _lblId2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-        _lblId2.setText(Cfg.user().toString());
+        _lblId2.setText(Cfg.user().getString());
         _lblId2.addMouseListener(new MouseAdapter()
         {
             @Override
@@ -62,7 +62,7 @@ public class SingleuserCompPreferences extends Composite
             {
                 if (_deviceIDShown) {
                     _lblId.setText("User ID:");
-                    _lblId2.setText(Cfg.user().toString());
+                    _lblId2.setText(Cfg.user().getString());
                 } else {
                     _lblId.setText("Computer ID:");
                     _lblId2.setText(Cfg.did().toStringFormal());

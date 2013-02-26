@@ -47,8 +47,8 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         verify(factEmailer, shouldBeSent ? times(1) : never())
-                .createFolderInvitationEmailer(eq(sharer.toString()), eq(sharee.toString()),
-                        eq(sharer.toString()), eq(sid.toStringFormal()), eq(""), any(SID.class));
+                .createFolderInvitationEmailer(eq(sharer.getString()), eq(sharee.getString()),
+                        eq(sharer.getString()), eq(sid.toStringFormal()), eq(""), any(SID.class));
     }
 
     private void verifyNewUserAccountInvitation(UserID sharer, UserID sharee, SID sid,
@@ -56,8 +56,8 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
             throws Exception
     {
         verify(factEmailer, shouldBeInvited ? times(1) : never())
-                .createSignUpInvitationEmailer(eq(sharer.toString()), eq(sharee.toString()),
-                        eq(sharer.toString()), eq(sid.toStringFormal()), eq(""), anyString());
+                .createSignUpInvitationEmailer(eq(sharer.getString()), eq(sharee.getString()),
+                        eq(sharer.getString()), eq(sid.toStringFormal()), eq(""), anyString());
     }
 
     Set<String> published;
@@ -82,7 +82,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
         verifyFolderInvitation(USER_1, USER_2, TEST_SID_1, true);
         verifyNewUserAccountInvitation(USER_1, USER_2, TEST_SID_1, false);
     }
@@ -95,7 +95,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
         shareFolder(USER_1, TEST_SID_1, TEST_USER_4, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
         verifyFolderInvitation(USER_1, TEST_USER_4, TEST_SID_1, false);
         verifyNewUserAccountInvitation(USER_1, TEST_USER_4, TEST_SID_1, true);
     }
@@ -123,7 +123,7 @@ public class TestSP_ShareFolder extends AbstractSPFolderPermissionTest
     {
         // add user 4 to db but don't verify their account
         sqlTrans.begin();
-        udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.toString(), TEST_USER_4.toString()),
+        udb.insertUser(TEST_USER_4, new FullName(TEST_USER_4.getString(), TEST_USER_4.getString()),
                 TEST_USER_4_CRED, OrganizationID.DEFAULT, AuthorizationLevel.USER);
         sqlTrans.commit();
 

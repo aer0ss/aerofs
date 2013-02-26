@@ -208,7 +208,7 @@ class Setup
 
         setupCommon(tsDID, deviceName, rootAnchorPath, tsSP);
 
-        Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, userID.toString());
+        Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, userID.getString());
     }
 
     private void setupCommon(DID did, String deviceName, String rootAnchorPath, SPBlockingClient sp)
@@ -228,7 +228,7 @@ class Setup
     private static void signIn(UserID userId, byte[] scrypted, SPBlockingClient sp)
             throws Exception
     {
-        sp.signIn(userId.toString(), ByteString.copyFrom(scrypted));
+        sp.signIn(userId.getString(), ByteString.copyFrom(scrypted));
     }
 
     private void handleSetupException(UserID userId, Exception e)
@@ -300,7 +300,7 @@ class Setup
             throws SQLException, IOException, ExFormatError, ExBadCredential, ExNotSetup
     {
         TreeMap<Key, String> map = Maps.newTreeMap();
-        map.put(Key.USER_ID, userId.toString());
+        map.put(Key.USER_ID, userId.getString());
         map.put(Key.DEVICE_ID, did.toStringFormal());
         map.put(Key.CRED, SecUtil.scrypted2encryptedBase64(scrypted));
         map.put(Key.ROOT, rootAnchorPath);

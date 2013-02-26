@@ -781,7 +781,7 @@ public final class SVClient
         return PBSVHeader
                 .newBuilder()
                 .setTime(System.currentTimeMillis())
-                .setUser(user.toString())
+                .setUser(user.getString())
                 .setDeviceId(did.toPB())
                 .setVersion(Cfg.ver())
                 .setAppRoot(AppRoot.abs())

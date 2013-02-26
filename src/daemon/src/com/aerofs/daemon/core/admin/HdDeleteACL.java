@@ -34,7 +34,7 @@ public class HdDeleteACL extends AbstractHdIMC<EIDeleteACL>
 
         // log kickouts
         for (UserID subject : ev._subjects) {
-            SVClient.sendEventAsync(Type.KICKOUT, subject.toString());
+            SVClient.sendEventAsync(Type.KICKOUT, subject.getString());
         }
 
         _aclsync.delete_(soid.sidx(), ev._subjects);

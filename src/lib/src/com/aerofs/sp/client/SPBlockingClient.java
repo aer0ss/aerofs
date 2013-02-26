@@ -56,7 +56,7 @@ public class SPBlockingClient extends SPServiceBlockingStub
     public void signInRemote() throws Exception
     {
         try {
-            super.signIn(_user.toString(), ByteString.copyFrom(Cfg.scrypted()));
+            super.signIn(_user.getString(), ByteString.copyFrom(Cfg.scrypted()));
         } catch (ExBadCredential e) {
             if (_bcl != null) {
                l.debug("ExBadCredential Caught, informing UI.");

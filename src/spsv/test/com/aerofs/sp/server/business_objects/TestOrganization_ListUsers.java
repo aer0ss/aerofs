@@ -131,8 +131,8 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
         UsersAndQueryCount pair = org.listUsers("user", TOTAL_USERS, 0);
         assertEquals(NUMBER_OF_USERS, pair.users().size());
         for (User user : pair.users()) {
-            assertTrue(user.id().toString().contains("user"));
-            assertFalse(user.id().toString().contains("admin"));
+            assertTrue(user.id().getString().contains("user"));
+            assertFalse(user.id().getString().contains("admin"));
         }
 
         assertEquals(NUMBER_OF_USERS, pair.count());
@@ -151,8 +151,8 @@ public class TestOrganization_ListUsers extends AbstractBusinessObjectTest
                 TOTAL_USERS, 0);
         assertEquals(NUMBER_OF_USERS, pair.users().size());
         for (User user : pair.users()) {
-            assertTrue(user.id().toString().contains("user"));
-            assertFalse(user.id().toString().contains("admin"));
+            assertTrue(user.id().getString().contains("user"));
+            assertFalse(user.id().getString().contains("admin"));
         }
         assertEquals(NUMBER_OF_USERS, pair.count());
     }

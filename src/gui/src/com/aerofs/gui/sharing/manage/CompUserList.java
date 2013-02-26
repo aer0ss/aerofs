@@ -199,7 +199,7 @@ public class CompUserList extends Composite
         Object[] elems;
         try {
             ArrayList<SubjectRolePair> srps = Lists.newArrayList();
-            GetACLReply reply = ritual.getACL(Cfg.user().toString(), _path.toPB());
+            GetACLReply reply = ritual.getACL(Cfg.user().getString(), _path.toPB());
             _users = reply.getSubjectRoleCount();
             for (int i = 0; i < _users; i++) {
                 PBSubjectRolePair srp = reply.getSubjectRole(i);

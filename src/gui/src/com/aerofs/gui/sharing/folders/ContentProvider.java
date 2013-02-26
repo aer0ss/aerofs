@@ -50,7 +50,7 @@ public class ContentProvider implements ITreeContentProvider
         List<Path> ret = _cache.get(parent);
         if (ret == null) {
             ret = Lists.newArrayList();
-            GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(Cfg.user().toString(),
+            GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(Cfg.user().getString(),
                     parent.toPB());
             for (int i = 0; i < reply.getChildrenNameCount(); i++) {
                 PBObjectAttributes oa = reply.getChildrenAttributes(i);

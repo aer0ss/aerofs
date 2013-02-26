@@ -71,7 +71,7 @@ public class CmdConflicts implements IShellCommand<ShProgram>
 
         for (PBPath p : pathList) {
             if (printPath) s.out().println(new Path(p).toString());
-            PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().toString(), p)
+            PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().getString(), p)
                     .getObjectAttributes();
             for (PBBranch b : attr.getBranchList()) {
                 if (b.getKidx() == KIndex.MASTER.getInt()) continue;

@@ -148,7 +148,7 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
-        UI.controller().setupMultiuser(_userID.toString(), new String(_passwd), _anchorRoot,
+        UI.controller().setupMultiuser(_userID.getString(), new String(_passwd), _anchorRoot,
                 _deviceName, _s3config);
     }
 
@@ -163,7 +163,7 @@ public class CLISetup
 
         cli.progress("Performing magic");
 
-        UI.controller().setupSingleuser(_userID.toString(), new String(_passwd), _anchorRoot,
+        UI.controller().setupSingleuser(_userID.getString(), new String(_passwd), _anchorRoot,
                 _deviceName, null);
     }
 

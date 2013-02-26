@@ -40,14 +40,14 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
         shareFolder(USER_1, TEST_SID_1, USER_2, Role.EDITOR);
 
         assertEquals(1, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
         published.clear();
 
         joinSharedFolder(USER_2, TEST_SID_1);
 
         assertEquals(2, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.getString()));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class TestSP_JoinSharedFolder extends AbstractSPFolderPermissionTest
 
         setSessionUser(USER_2);
         PBFolderInvitation inv = service.listPendingFolderInvitations().get().getInvitation(0);
-        assertEquals(USER_1.toString(), inv.getSharer());
+        assertEquals(USER_1.getString(), inv.getSharer());
         assertEquals(TEST_SID_1, new SID(inv.getShareId()));
 
         service.ignoreSharedFolderInvitation(inv.getShareId());

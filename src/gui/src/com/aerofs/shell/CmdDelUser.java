@@ -43,6 +43,6 @@ public class CmdDelUser implements IShellCommand<ShProgram>
 
         PBPath path = s.d().buildPath_(cl.getArgs()[0]);
         List<String> subjects = Collections.singletonList(cl.getArgs()[1]);
-        s.d().getRitualClient_().deleteACL(Cfg.user().toString(), path, subjects);
+        s.d().getRitualClient_().deleteACL(Cfg.user().getString(), path, subjects);
     }
 }

@@ -40,8 +40,8 @@ public class TestSP_LeaveSharedFolder extends AbstractSPFolderPermissionTest
 
         leaveSharedFolder(USER_2, TEST_SID_1);
         assertEquals(2, published.size());
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.toString()));
-        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.toString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_1.getString()));
+        assertTrue(published.contains(Param.ACL_CHANNEL_TOPIC_PREFIX + USER_2.getString()));
     }
 
     @Test

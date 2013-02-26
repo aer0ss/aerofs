@@ -59,7 +59,7 @@ public class CmdResolve implements IShellCommand<ShProgram>
         }
 
         // remove all conflict branches
-        PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().toString(), path)
+        PBObjectAttributes attr = r.getObjectAttributes(Cfg.user().getString(), path)
                 .getObjectAttributes();
         for (PBBranch b : attr.getBranchList()) {
             if (b.getKidx() == KIndex.MASTER.getInt()) continue;

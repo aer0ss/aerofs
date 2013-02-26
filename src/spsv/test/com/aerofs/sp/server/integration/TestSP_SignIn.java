@@ -44,7 +44,7 @@ public class TestSP_SignIn extends AbstractSPTest
             throws Exception
     {
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(USER_1.toString(), ByteString.copyFrom(USER_1_CRED));
+        service.signIn(USER_1.getString(), ByteString.copyFrom(USER_1_CRED));
     }
 
     @Test(expected = ExBadCredential.class)
@@ -55,7 +55,7 @@ public class TestSP_SignIn extends AbstractSPTest
         ByteString tsUserPass = getTeamServerLocalPassword(_tsUserID);
 
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(_tsUserID.toString(), tsUserPass);
+        service.signIn(_tsUserID.getString(), tsUserPass);
     }
 
     @Test(expected = ExBadCredential.class)
@@ -66,7 +66,7 @@ public class TestSP_SignIn extends AbstractSPTest
         setupTeamServer();
 
         mockCertificateAuthenticatorSetUnauthorizedState();
-        service.signIn(_tsUserID.toString(), getTeamServerLocalPassword(_tsUserID));
+        service.signIn(_tsUserID.getString(), getTeamServerLocalPassword(_tsUserID));
     }
 
     @Test
@@ -78,7 +78,7 @@ public class TestSP_SignIn extends AbstractSPTest
 
         // Credentials do not need to be supplied here.
         mockCertificateAuthenticatorSetAuthenticatedState();
-        service.signIn(_tsUserID.toString(), ByteString.copyFrom(new byte[0]));
+        service.signIn(_tsUserID.getString(), ByteString.copyFrom(new byte[0]));
     }
 
     @Test(expected = ExBadCredential.class)
@@ -95,7 +95,7 @@ public class TestSP_SignIn extends AbstractSPTest
 
         // Expect the sign in to fail even when the cert has been verified with nginx.
         mockCertificateAuthenticatorSetAuthenticatedState();
-        service.signIn(_tsUserID.toString(), getTeamServerLocalPassword(_tsUserID));
+        service.signIn(_tsUserID.getString(), getTeamServerLocalPassword(_tsUserID));
     }
 
     private void setupTeamServer()

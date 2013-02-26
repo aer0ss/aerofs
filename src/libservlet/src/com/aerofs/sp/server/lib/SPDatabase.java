@@ -48,7 +48,7 @@ public class SPDatabase extends AbstractSQLDatabase
                 T_PASSWORD_RESET + "(" + C_PASS_TOKEN + "," + C_PASS_USER + ") values (?,?)");
 
         ps.setString(1, token);
-        ps.setString(2, userId.toString());
+        ps.setString(2, userId.getString());
         Util.verify(ps.executeUpdate() == 1);
     }
 
@@ -96,7 +96,7 @@ public class SPDatabase extends AbstractSQLDatabase
                 C_USER_CREDS + "=? where " + C_USER_ID + "=?");
 
         psUUC.setString(1, Base64.encodeBytes(credentials));
-        psUUC.setString(2, userId.toString());
+        psUUC.setString(2, userId.getString());
         Util.verify(psUUC.executeUpdate() == 1);
     }
 
@@ -109,7 +109,7 @@ public class SPDatabase extends AbstractSQLDatabase
                         "=? where " + C_USER_ID + "=? AND " + C_USER_CREDS + "=?");
 
         psTASUC.setString(1, Base64.encodeBytes(newCredentials));
-        psTASUC.setString(2, userID.toString());
+        psTASUC.setString(2, userID.getString());
         psTASUC.setString(3, Base64.encodeBytes(oldCredentials));
         int updated = psTASUC.executeUpdate();
         if (updated == 0) {
@@ -190,7 +190,7 @@ public class SPDatabase extends AbstractSQLDatabase
                         " where t2." +
                         C_AC_USER_ID + " = ?");
 
-        psGSUS.setString(1, userId.toString());
+        psGSUS.setString(1, userId.getString());
 
         ResultSet rs = psGSUS.executeQuery();
         try {
@@ -285,7 +285,7 @@ public class SPDatabase extends AbstractSQLDatabase
         PreparedStatement psGIDSDevice = prepareStatement(
                 "select " + C_DEVICE_ID + " from " + T_DEVICE + " where " + C_DEVICE_OWNER_ID +
                         " = ?");
-        psGIDSDevice.setString(1, ownerId.toString());
+        psGIDSDevice.setString(1, ownerId.getString());
         rs = psGIDSDevice.executeQuery();
         try {
             while (rs.next()) {

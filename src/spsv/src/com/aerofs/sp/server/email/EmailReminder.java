@@ -149,7 +149,7 @@ public class EmailReminder
                 String unsubscribeTokenId =
                         _db.getTokenId(user, SubscriptionCategory.AEROFS_INVITATION_REMINDER);
                 _emailFactory.createReminderEmail(SV.SUPPORT_EMAIL_ADDRESS,
-                        SPParam.SP_EMAIL_NAME, user.toString(), signupCode, unsubscribeTokenId)
+                        SPParam.SP_EMAIL_NAME, user.getString(), signupCode, unsubscribeTokenId)
                         .send();
             }
 

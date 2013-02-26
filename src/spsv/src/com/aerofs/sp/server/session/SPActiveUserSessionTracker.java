@@ -27,13 +27,13 @@ public class SPActiveUserSessionTracker
     {
         l.debug("Sign in: " + userID + " " + sessionID);
 
-        if (_userMap.containsKey(userID.toString())) {
-            Set<String> sessionSet = _userMap.get(userID.toString());
+        if (_userMap.containsKey(userID.getString())) {
+            Set<String> sessionSet = _userMap.get(userID.getString());
             sessionSet.add(sessionID);
         } else {
             Set<String> sessionSet = Sets.newHashSet();
             sessionSet.add(sessionID);
-            _userMap.put(userID.toString(), sessionSet);
+            _userMap.put(userID.getString(), sessionSet);
         }
     }
 
@@ -44,7 +44,7 @@ public class SPActiveUserSessionTracker
     {
         l.debug("Sign out: " + userID + " " + sessionID);
 
-        Set<String> sessionSet = _userMap.get(userID.toString());
+        Set<String> sessionSet = _userMap.get(userID.getString());
 
         if (sessionSet != null) {
             sessionSet.remove(sessionID);
@@ -58,8 +58,8 @@ public class SPActiveUserSessionTracker
     {
         l.info("Sign out all: " + userID);
 
-        Set<String> sessionSet = _userMap.get(userID.toString());
-        _userMap.remove(userID.toString());
+        Set<String> sessionSet = _userMap.get(userID.getString());
+        _userMap.remove(userID.getString());
         return sessionSet;
     }
 }

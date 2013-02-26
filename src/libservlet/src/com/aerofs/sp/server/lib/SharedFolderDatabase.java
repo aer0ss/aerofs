@@ -106,10 +106,10 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         int pairCount = 0;
         for (SubjectRolePair pair : pairs) {
             ps.setBytes(1, sid.getBytes());
-            ps.setString(2, pair._subject.toString());
+            ps.setString(2, pair._subject.getString());
             ps.setInt(3, pair._role.ordinal());
             ps.setBoolean(4, pending);
-            ps.setString(5, sharer.toString());
+            ps.setString(5, sharer.getString());
             ps.addBatch();
             ++pairCount;
         }
@@ -137,7 +137,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         ps.setBoolean(1, pending);
         ps.setBytes(2, sid.getBytes());
-        ps.setString(3, userId.toString());
+        ps.setString(3, userId.getString());
 
         int rows = ps.executeUpdate();
 
@@ -171,7 +171,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
                 C_AC_ROLE));
 
         ps.setBytes(1, sid.getBytes());
-        ps.setString(2, userId.toString());
+        ps.setString(2, userId.getString());
 
         ResultSet rs = ps.executeQuery();
         try {
@@ -241,7 +241,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
 
         for (UserID subject : subjects) {
             ps.setBytes(1, sid.getBytes());
-            ps.setString(2, subject.toString());
+            ps.setString(2, subject.getString());
             ps.addBatch();
         }
 
@@ -281,7 +281,7 @@ public class SharedFolderDatabase extends AbstractSQLDatabase
         for (SubjectRolePair pair : pairs) {
             ps.setInt(1, pair._role.ordinal());
             ps.setBytes(2, sid.getBytes());
-            ps.setString(3, pair._subject.toString());
+            ps.setString(3, pair._subject.getString());
             ps.setBoolean(4, false);        // ignore pending entries
             ps.addBatch();
             ++pairCount;

@@ -67,7 +67,7 @@ public class CmdExport implements IShellCommand<ShProgram>
         void download(Path source, File dest) throws Exception
         {
             GetObjectAttributesReply objectAttributesReply =
-                    _ritual.getObjectAttributes(_userId.toString(), source.toPB());
+                    _ritual.getObjectAttributes(_userId.getString(), source.toPB());
             PBObjectAttributes oa = objectAttributesReply.getObjectAttributes();
             download(source, oa, dest);
         }
@@ -87,7 +87,7 @@ public class CmdExport implements IShellCommand<ShProgram>
                 case SHARED_FOLDER: {
                     FileUtil.mkdir(dest);
                     GetChildrenAttributesReply reply = _ritual.getChildrenAttributes(
-                            _userId.toString(), source.toPB());
+                            _userId.getString(), source.toPB());
                     int count = reply.getChildrenNameCount();
                     assert count == reply.getChildrenAttributesCount();
                     for (int i = 0; i < count; ++i) {

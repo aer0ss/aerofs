@@ -56,7 +56,7 @@ public class UserAndDeviceNames
 
         public String getName()
         {
-            return _userName != null ? _userName.toString() : _userId.toString();
+            return _userName != null ? _userName.toString() : _userId.getString();
         }
     }
 

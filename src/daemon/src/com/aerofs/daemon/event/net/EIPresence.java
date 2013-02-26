@@ -1,7 +1,6 @@
 package com.aerofs.daemon.event.net;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import com.aerofs.lib.event.IEvent;
 import com.aerofs.base.id.DID;

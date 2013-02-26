@@ -27,9 +27,6 @@ import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.rocklog.RockLog;
-import com.google.common.collect.Maps;
-import com.google.inject.Inject;
-import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;

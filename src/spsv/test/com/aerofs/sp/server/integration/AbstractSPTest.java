@@ -160,11 +160,11 @@ public class AbstractSPTest extends AbstractTestWithDatabase
         // Add all the users to the db.
         sqlTrans.begin();
         factUser.create(USER_1).save(USER_1_CRED,
-                new FullName(USER_1.toString(), USER_1.toString()), factOrg.getDefault());
+                new FullName(USER_1.getString(), USER_1.getString()), factOrg.getDefault());
         factUser.create(USER_2).save(USER_2_CRED,
-                new FullName(USER_2.toString(), USER_2.toString()), factOrg.getDefault());
+                new FullName(USER_2.getString(), USER_2.getString()), factOrg.getDefault());
         factUser.create(USER_3).save(USER_3_CRED,
-                new FullName(USER_3.toString(), USER_3.toString()), factOrg.getDefault());
+                new FullName(USER_3.getString(), USER_3.getString()), factOrg.getDefault());
         sqlTrans.commit();
     }
 
