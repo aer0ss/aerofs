@@ -235,13 +235,15 @@ public class ACLSynchronizer
         }
 
         // leave stores to which we no longer have access
-        for (SIndex sidx : stores) {
-            // ignore already deleted/expelled stores
-            SID sid = _sidx2sid.getNullable_(sidx);
-            if (sid != null) _storeJoiner.leaveStore_(sidx, sid, t);
-        }
+        for (SIndex sidx : stores) _storeJoiner.leaveStore_(sidx, getSID_(sidx), t);
 
         _adb.setEpoch_(serverACLReturn._serverEpoch, t);
+    }
+
+    private SID getSID_(SIndex sidx) throws SQLException
+    {
+        SID sid = _sidx2sid.getNullable_(sidx);
+        return sid != null ? sid : _sidx2sid.getAbsent_(sidx);
     }
 
     private SIndex getOrCreateSIndex_(SID sid, Trans t) throws Exception

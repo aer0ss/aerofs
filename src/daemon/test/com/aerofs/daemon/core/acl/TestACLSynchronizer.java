@@ -308,4 +308,22 @@ public class TestACLSynchronizer extends AbstractTest
         verify(spClient).getACL(anyLong());
         verifyNoMoreInteractions(storeJoiner);
     }
+
+    @Test
+    public void shouldLeaveExpelledFolderWhenAccessLost() throws Exception
+    {
+        SIndex sidx = new SIndex(2);
+        when(sidx2sid.getAbsent_(eq(sidx))).thenReturn(sid1);
+        when(sidx2sid.getNullable_(eq(sidx))).thenReturn(null);
+        when(sid2sidx.getNullable_(sid1)).thenReturn(null);
+        when(sid2sidx.getLocalOrAbsentNullable_(sid1)).thenReturn(sidx);
+
+        lacl.set_(sidx, ImmutableMap.of(user1, Role.EDITOR), t);
+        mockGetACL(42L);
+
+        aclsync.syncToLocal_();
+
+        verify(spClient).getACL(anyLong());
+        verify(storeJoiner).leaveStore_(sidx, sid1, t);
+    }
 }
