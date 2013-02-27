@@ -13,6 +13,7 @@ import com.aerofs.lib.FileUtil.FileName;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.cfg.CfgLocalUser;
 import com.aerofs.base.id.UserID;
+import com.aerofs.lib.ex.ExBadArgs;
 import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.proto.Ritual.ExportRevisionReply;
 import com.aerofs.proto.Objects.GetChildrenAttributesReply;
@@ -253,6 +254,20 @@ public class HistoryModel
         if (version.tmpFile != null) return;
         ExportRevisionReply reply = _ritual.exportRevision(version.path.toPB(), version.index);
         version.tmpFile = reply.getDest();
+        // Make sure users won't try to make changes to the temp file: their changes would be lost
+        new File(version.tmpFile).setReadOnly();
+    }
+
+    public void delete(Version version) throws Exception
+    {
+        if (version.index == null) throw new ExBadArgs();
+        _ritual.deleteRevision(version.path.toPB(), version.index);
+    }
+
+    public void delete(ModelIndex index) throws Exception
+    {
+        _ritual.deleteRevision(getPath(index).toPB(), null);
+        // TODO: avoid complete model refresh...
     }
 
     public static interface IDecisionMaker
@@ -261,7 +276,7 @@ public class HistoryModel
             Abort,
             Retry,
             Ignore
-        };
+        }
         Answer retry(ModelIndex a);
     }
 

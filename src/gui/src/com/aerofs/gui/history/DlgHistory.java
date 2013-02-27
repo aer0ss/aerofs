@@ -75,6 +75,7 @@ public class DlgHistory extends AeroFSDialog
     private Button _restoreBtn;
     private Button _openBtn;
     private Button _saveBtn;
+    private Button _deleteBtn;
 
     private final Path _basePath;
     private final HistoryModel _model;
@@ -133,7 +134,7 @@ public class DlgHistory extends AeroFSDialog
         createVersionTable(group);
 
         _actionButtons = newButtonContainer(group);
-        _actionButtons.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false));
+        _actionButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
         _restoreBtn = new Button(_actionButtons, SWT.NONE);
         _restoreBtn.setText("Restore Deleted Files...");
@@ -185,6 +186,29 @@ public class DlgHistory extends AeroFSDialog
 
                 HistoryModel.Version version = (HistoryModel.Version) items[0].getData();
                 saveVersionAs(version);
+            }
+        });
+
+        _deleteBtn = new Button(_actionButtons, SWT.NONE);
+        _deleteBtn.setText("Delete");
+        _deleteBtn.setToolTipText("Delete the selected version");
+        _deleteBtn.setLayoutData(new RowData());
+        _deleteBtn.addSelectionListener(new SelectionAdapter()
+        {
+            @Override
+            public void widgetSelected(SelectionEvent selectionEvent)
+            {
+                ModelIndex index = index(_revTree.getSelection()[0]);
+
+                if (index.isDir) {
+                    deleteAllVersionsUnder(index);
+                } else {
+                    TableItem[] items = _revTable.getSelection();
+                    assert items.length == 1;
+
+                    HistoryModel.Version version = (HistoryModel.Version) items[0].getData();
+                    deleteVersion(version);
+                }
             }
         });
 
@@ -263,6 +287,9 @@ public class DlgHistory extends AeroFSDialog
             }
             _revTree.select(item);
             refreshVersionTable(item);
+        } else {
+            _revTree.select(parent);
+            refreshVersionTable(parent);
         }
     }
 
@@ -401,36 +428,46 @@ public class DlgHistory extends AeroFSDialog
         ModelIndex index = index(item);
         if (index != null && !index.isDir) {
             boolean ok = fillVersionTable(_revTable, index, _statusLabel);
+            if (!ok) {
+                refreshVersionTree();
+                return;
+            }
             _actionButtons.setVisible(ok);
             _restoreBtn.setText("Restore...");
+            _deleteBtn.setText("Delete");
             setButtonVisible(_restoreBtn, index.isDeleted);
             setButtonVisible(_openBtn, ok);
             setButtonVisible(_saveBtn, ok);
+            setButtonVisible(_deleteBtn, ok);
             ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.RIGHT;
             _actionButtons.layout();
             setCompositeVisible(_revTableWrap, true);
             _statusLabel.getParent().layout();
         } else {
             _restoreBtn.setText("Restore Deleted Files...");
+            _deleteBtn.setText("Deleted Old Versions");
+            _deleteBtn.setEnabled(true);
             if (index == null) {
                 _statusLabel.setText(
                         L.PRODUCT + " keeps previous versions of a file when receiving new" +
-                        " updates from remote devices. When disk space runs low, old versions may" +
-                        " be deleted to save space.\n\n" +
-                        "Select a file in the left column to view all the versions stored on this" +
-                        " computer.");
+                                " updates from remote devices. When disk space runs low, old versions may" +
+                                " be deleted to save space.\n\n" +
+                                "Select a file in the left column to view all the versions stored on this" +
+                                " computer.");
                 _actionButtons.setVisible(false);
             } else {
                 _statusLabel.setText(
                         "You can restore files and folders that have been deleted under the" +
                         " selected folder. Only their latest versions will be restored." +
+                        " Restoring a large folder may take a few moments.\n \n" +
+                        "You can also delete all old versions under the selected folder. This" +
                         // have an extra space so Windows will not ignore the trailing line breaks.
-                        " Restoring a large folder may take a few moments.\n ");
+                        " will save disk space but cannot be undone, so proceed with caution.\n ");
                 _actionButtons.setVisible(true);
-                _restoreBtn.setVisible(true);
                 setButtonVisible(_restoreBtn, true);
                 setButtonVisible(_openBtn, false);
                 setButtonVisible(_saveBtn, false);
+                setButtonVisible(_deleteBtn, true);
                 ((GridData)_actionButtons.getLayoutData()).horizontalAlignment = SWT.LEFT;
                 _actionButtons.layout();
             }
@@ -447,7 +484,7 @@ public class DlgHistory extends AeroFSDialog
     {
         _revTableWrap = new Composite(parent, SWT.NONE);
         _revTableWrap.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
-        _revTable = new Table(_revTableWrap, SWT.BORDER);
+        _revTable = new Table(_revTableWrap, SWT.SINGLE | SWT.BORDER);
         _revTable.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, true, true, 1, 1));
         _revTable.setLinesVisible(true);
         _revTable.setHeaderVisible(true);
@@ -498,6 +535,15 @@ public class DlgHistory extends AeroFSDialog
                     }
                 });
 
+                addMenuItem(menu, "Delete", new Listener()
+                {
+                    @Override
+                    public void handleEvent(Event ev)
+                    {
+                        deleteVersion(version);
+                    }
+                });
+
                 menu.setLocation(event.x, event.y);
                 menu.setVisible(true);
                 while (!menu.isDisposed() && menu.isVisible()) {
@@ -510,8 +556,17 @@ public class DlgHistory extends AeroFSDialog
         });
 
         // Open the revision on double click
-        _revTable.addSelectionListener(new SelectionAdapter()
-        {
+        _revTable.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent event)
+            {
+                final TableItem item = (TableItem)event.item;
+                if (item == null) return;
+                final HistoryModel.Version version = (HistoryModel.Version) item.getData();
+                if (version == null) return;
+                _deleteBtn.setEnabled(version.index != null);
+            }
+
             @Override
             public void widgetDefaultSelected(SelectionEvent event)
             {
@@ -531,7 +586,7 @@ public class DlgHistory extends AeroFSDialog
 
         List<HistoryModel.Version> versions = _model.versions(index);
         revTable.removeAll();
-        if (versions == null) return false;
+        if (versions == null || versions.isEmpty()) return false;
         revTable.setItemCount(versions.size());
 
         for (int i = 0; i < versions.size(); ++i) {
@@ -545,7 +600,9 @@ public class DlgHistory extends AeroFSDialog
             item.setData(version);
         }
 
-        revTable.select(0);
+        // sigh, swt does not call selection listener when changing the selection programmatically
+        _deleteBtn.setEnabled(index.isDeleted);
+        revTable.setSelection(0);
         return true;
     }
 
@@ -554,8 +611,6 @@ public class DlgHistory extends AeroFSDialog
         fetchTempFile(version);
         if (version.tmpFile == null) return;
 
-        // Make sure users won't try to make changes to the temp file: their changes would be lost
-        new File(version.tmpFile).setReadOnly();
         GUIUtil.launch(version.tmpFile);
     }
 
@@ -596,6 +651,99 @@ public class DlgHistory extends AeroFSDialog
         }
     }
 
+    private void deleteVersion(HistoryModel.Version version)
+    {
+        try {
+            _model.delete(version);
+        } catch (Exception e) {
+            l.warn("Deleting revision failed: " + Util.e(e));
+            new AeroFSMessageBox(this.getShell(), false, e.getLocalizedMessage(),
+                    AeroFSMessageBox.IconType.ERROR)
+                    .open();
+        }
+
+        TreeItem[] items = _revTree.getSelection();
+        if (items != null && items.length == 1) {
+            refreshVersionTable(items[0]);
+        }
+    }
+
+    private void deleteAllVersionsUnder(final ModelIndex index)
+    {
+        new FeedbackDialog(getShell(), "Deleting...",
+                "Deleting old versions under " + _model.getPath(index)) {
+            @Override
+            public void run() throws Exception {
+                _model.delete(index);
+            }
+        }.openDialog();
+    }
+
+    private void recursivelyRestore(final ModelIndex index)
+    {
+        DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
+        dDlg.setMessage("Select destination folder in which deleted files from the source folder " +
+                "will be restored.");
+        dDlg.setFilterPath(Util.join(Cfg.absRootAnchor(),
+                Util.join(_model.getPath(index).removeLast().elements())));
+        final String path = dDlg.open();
+        if (path == null) return;
+
+        File root = new File(path);
+        if (!root.isDirectory()) {
+            // NOTE: DirectoryDialog allows you to pick a file from a directory dialog if the filter
+            // path points to a file...
+            new AeroFSMessageBox(getShell(), true, "Please select a folder, not a file.",
+                    IconType.ERROR).open();
+        } else {
+            // the actual restore operation is started in a separate thread by the feedback dialog
+            final boolean inPlace = Util.join(path, index.name).equals(
+                    _model.getPath(index).toAbsoluteString(Cfg.absRootAnchor()));
+            String label = "Restoring " + Util.quote(_model.getPath(index).last()) +
+                    (inPlace ? "" : "\nto " + Util.quote(path));
+            new FeedbackDialog(getShell(), "Restoring...", label) {
+                @Override
+                public void run() throws Exception
+                {
+                    _model.restore(index, path, new IDecisionMaker()
+                    {
+                        @Override
+                        public Answer retry(ModelIndex a)
+                        {
+                            final ModelIndex idx = a;
+                            final OutArg<Answer> reply = new OutArg<Answer>();
+                            GUI.get().exec(new Runnable()
+                            {
+                                @Override
+                                public void run()
+                                {
+                                    _compSpin.stop(Images.get(Images.ICON_ERROR));
+                                    MessageBox mb = new MessageBox(getShell(),
+                                            SWT.ICON_ERROR | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
+                                    mb.setText("Failed to restore");
+                                    mb.setMessage("Failed to restore " + _model.getPath(idx));
+                                    int ret = mb.open();
+                                    switch (ret) {
+                                    case SWT.ABORT:  reply.set(Answer.Abort); break;
+                                    case SWT.RETRY:  reply.set(Answer.Retry); break;
+                                    case SWT.IGNORE: reply.set(Answer.Retry); break;
+                                    default: break;
+                                    }
+                                    _compSpin.start();
+                                }
+                            });
+                            if (reply.get() == null) throw new IllegalArgumentException();
+                            return reply.get();
+                        }
+                    });
+
+                    // TODO: wait for daemon to pick up restored files before closing dialog?
+                    // -> this would aovid having to manually refresh...
+                }
+            }.openDialog();
+        }
+    }
+
     /**
      * Uses ritual to retrieve a revision and save it locally as a temp file
      * No-op if the revision has already been retrieved
@@ -620,24 +768,45 @@ public class DlgHistory extends AeroFSDialog
         return mi;
     }
 
-    /**
-     * Simple sheet dialog controlling a restore operation
-     */
-    private class RestoreFeedbackDialog extends AeroFSDialog implements ISWTWorker
+    private Composite newButtonContainer(Composite parent)
     {
-        private final ModelIndex _base;
-        private final String _dest;
-        private final boolean _inPlace;
+        Composite buttons = new Composite(parent, SWT.NONE);
+        buttons.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false, 2, 1));
+        RowLayout buttonLayout = new RowLayout();
+        buttonLayout.pack = true;
+        buttonLayout.wrap = false;
+        buttonLayout.fill = true;
+        buttonLayout.center = true;
+        buttonLayout.marginBottom = 0;
+        buttonLayout.marginTop = 0;
+        buttonLayout.marginHeight = 0;
+        buttonLayout.marginLeft = 0;
+        buttonLayout.marginRight = 0;
+        buttonLayout.marginWidth = 0;
+        buttonLayout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
+        if (OSUtil.isOSX()) {
+            // workaround broken margins on OSX
+            buttonLayout.marginLeft = -4;
+            buttonLayout.marginRight = -4;
+            buttonLayout.marginTop = 4;
+            buttonLayout.marginBottom = -6;
+        }
+        buttons.setLayout(buttonLayout);
+        return buttons;
+    }
 
-        private CompSpin _compSpin;
+    /**
+     * Simple sheet dialog controlling a long running operation
+     */
+    private abstract class FeedbackDialog extends AeroFSDialog implements ISWTWorker
+    {
+        protected CompSpin _compSpin;
+        private final String _label;
 
-        RestoreFeedbackDialog(Shell parent, ModelIndex index, String path)
+        FeedbackDialog(Shell parent, String title, String label)
         {
-            super(parent, "Restoring...", true, false);
-            _base = index;
-            _dest = path;
-            _inPlace = Util.join(path, index.name).equals(
-                    _model.getPath(index).toAbsoluteString(Cfg.absRootAnchor()));
+            super(parent, title, true, false);
+            _label = label;
         }
 
         @Override
@@ -656,8 +825,7 @@ public class DlgHistory extends AeroFSDialog
 
             Label label = new Label(shell, SWT.WRAP);
             label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-            label.setText("Restoring " + Util.quote(_model.getPath(_base).last()) +
-                    (_inPlace ? "" : "\nto " + Util.quote(_dest)));
+            label.setText(_label);
 
             shell.addListener(SWT.Show, new Listener()
             {
@@ -666,7 +834,7 @@ public class DlgHistory extends AeroFSDialog
                 {
                     _compSpin.start();
 
-                    GUI.get().safeWork(getShell(), RestoreFeedbackDialog.this);
+                    GUI.get().safeWork(getShell(), FeedbackDialog.this);
                 }
             });
 
@@ -676,42 +844,6 @@ public class DlgHistory extends AeroFSDialog
                     if (e.detail == SWT.TRAVERSE_ESCAPE) {
                         e.doit = false;
                     }
-                }
-            });
-        }
-
-        @Override
-        public void run() throws Exception
-        {
-            _model.restore(_base, _dest, new IDecisionMaker()
-            {
-                @Override
-                public Answer retry(ModelIndex a)
-                {
-                    final ModelIndex idx = a;
-                    final OutArg<Answer> reply = new OutArg<Answer>();
-                    GUI.get().exec(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            _compSpin.stop(Images.get(Images.ICON_ERROR));
-                            MessageBox mb = new MessageBox(getShell(),
-                                    SWT.ICON_ERROR | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
-                            mb.setText("Failed to restore");
-                            mb.setMessage("Failed to restore " + _model.getPath(idx));
-                            int ret = mb.open();
-                            switch (ret) {
-                            case SWT.ABORT:  reply.set(Answer.Abort); break;
-                            case SWT.RETRY:  reply.set(Answer.Retry); break;
-                            case SWT.IGNORE: reply.set(Answer.Retry); break;
-                            default: break;
-                            }
-                            _compSpin.start();
-                        }
-                    });
-                    if (reply.get() == null) throw new IllegalArgumentException();
-                    return reply.get();
                 }
             });
         }
@@ -739,54 +871,5 @@ public class DlgHistory extends AeroFSDialog
 
             closeDialog(false);
         }
-    }
-
-    private void recursivelyRestore(ModelIndex index)
-    {
-        DirectoryDialog dDlg = new DirectoryDialog(getShell(), SWT.SHEET);
-        dDlg.setMessage("Select destination folder in which deleted files from the source folder " +
-                "will be restored.");
-        dDlg.setFilterPath(Util.join(Cfg.absRootAnchor(),
-                Util.join(_model.getPath(index).removeLast().elements())));
-        String path = dDlg.open();
-        if (path == null) return;
-
-        File root = new File(path);
-        if (!root.isDirectory()) {
-            // NOTE: DirectoryDialog allows you to pick a file from a directory dialog if the filter
-            // path points to a file...
-            new AeroFSMessageBox(getShell(), true, "Please select a folder, not a file.",
-                    IconType.ERROR).open();
-        } else {
-            // the actual restore operation is started in a separate thread by the feedback dialog
-            new RestoreFeedbackDialog(getShell(), index, path).openDialog();
-        }
-    }
-
-    private Composite newButtonContainer(Composite parent)
-    {
-        Composite buttons = new Composite(parent, SWT.NONE);
-        buttons.setLayoutData(new GridData(SWT.END, SWT.BOTTOM, true, false, 2, 1));
-        RowLayout buttonLayout = new RowLayout();
-        buttonLayout.pack = false;
-        buttonLayout.wrap = false;
-        buttonLayout.fill = true;
-        buttonLayout.center = true;
-        buttonLayout.marginBottom = 0;
-        buttonLayout.marginTop = 0;
-        buttonLayout.marginHeight = 0;
-        buttonLayout.marginLeft = 0;
-        buttonLayout.marginRight = 0;
-        buttonLayout.marginWidth = 0;
-        buttonLayout.spacing = GUIParam.BUTTON_HORIZONTAL_SPACING;
-        if (OSUtil.isOSX()) {
-            // workaround broken margins on OSX
-            buttonLayout.marginLeft = -4;
-            buttonLayout.marginRight = -4;
-            buttonLayout.marginTop = 4;
-            buttonLayout.marginBottom = -6;
-        }
-        buttons.setLayout(buttonLayout);
-        return buttons;
     }
 }
