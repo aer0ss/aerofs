@@ -24,7 +24,7 @@ import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.lib.id.OCID;
 import com.aerofs.lib.id.SOCID;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.daemon.core.ds.OA;
 import com.aerofs.lib.ex.Exceptions;
 import com.aerofs.lib.id.CID;

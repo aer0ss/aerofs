@@ -12,7 +12,7 @@ import com.aerofs.lib.ex.collector.AbstractExPermanentError;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreExponentialRetry;
 import com.aerofs.daemon.core.CoreScheduler;

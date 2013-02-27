@@ -7,7 +7,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.cfg.CfgAbsRootAnchor;
 import com.aerofs.lib.Util;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 

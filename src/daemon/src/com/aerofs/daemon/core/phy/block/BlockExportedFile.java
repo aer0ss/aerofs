@@ -11,7 +11,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SOKID;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.injectable.InjectableFile.Factory;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Arrays;
 

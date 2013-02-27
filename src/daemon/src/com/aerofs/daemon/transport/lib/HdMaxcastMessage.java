@@ -5,11 +5,14 @@ import com.aerofs.daemon.event.net.tx.EOMaxcastMessage;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import org.jivesoftware.smack.XMPPException;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 
 public class HdMaxcastMessage implements IEventHandler<EOMaxcastMessage>
 {
+    private static final Logger l = Util.l(HdMaxcastMessage.class);
+
     private final IMaxcast _mcast;
 
     public HdMaxcastMessage(ITransportImpl tp)
@@ -23,12 +26,9 @@ public class HdMaxcastMessage implements IEventHandler<EOMaxcastMessage>
         try {
             _mcast.sendPayload(ev._sid, ev._mcastid, ev.byteArray());
         } catch (XMPPException e) {
-            Util.l(this).warn(
-                  "mc " + ev._sid + " " + ev._mcastid + ": " + e.getMessage());
+            l.warn("mc " + ev._sid + " " + ev._mcastid + ": " + e.getMessage());
         } catch (Exception e) {
-            Util.l(this).warn(
-                  "mc " + ev._sid + " " + ev._mcastid + ": " + Util.e(e,
-                    IOException.class));
+            l.warn("mc " + ev._sid + " " + ev._mcastid + ": " + Util.e(e, IOException.class));
         }
     }
 }

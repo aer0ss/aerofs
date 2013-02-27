@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.TreeMap;
 
 import com.aerofs.labeling.L;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;

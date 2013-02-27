@@ -28,8 +28,11 @@ import org.eclipse.swt.widgets.Scale;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import com.swtdesigner.SWTResourceManager;
+import org.slf4j.Logger;
 
-public class CompPing extends Composite {
+public class CompPing extends Composite
+{
+    private static final Logger l = Util.l(CompPing.class);
 
     private static final Long[] TIMEOUTS =
         { 1 * C.SEC, 5 * C.SEC, 10 * C.SEC, 30 * C.SEC,
@@ -237,8 +240,8 @@ public class CompPing extends Composite {
 
     void logStat()
     {
-        Util.l(this).warn("ping " + _did.toStringFormal() + ":" +
-                        " elapsed " + Util.format(System.currentTimeMillis() - _startTime) +
+        l.warn("ping " + _did.toStringFormal() + ":" +
+                " elapsed " + Util.format(System.currentTimeMillis() - _startTime) +
                 " samples " + _samples + " loss " + _loss +
                 " max " + Util.format(_max) +
                 " min " + Util.format(_min) +

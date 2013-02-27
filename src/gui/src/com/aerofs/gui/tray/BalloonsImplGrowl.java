@@ -7,7 +7,7 @@ import javax.imageio.ImageIO;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.Param;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.gui.Images;
 import com.aerofs.base.C;
 import com.aerofs.lib.AppRoot;

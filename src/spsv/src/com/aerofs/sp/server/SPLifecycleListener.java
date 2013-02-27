@@ -12,7 +12,7 @@ import com.aerofs.sp.server.session.SPSessionInvalidator;
 import com.aerofs.verkehr.client.lib.IConnectionListener;
 import com.aerofs.verkehr.client.lib.admin.VerkehrAdmin;
 import com.aerofs.verkehr.client.lib.publisher.VerkehrPublisher;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.servlet.ServletContext;

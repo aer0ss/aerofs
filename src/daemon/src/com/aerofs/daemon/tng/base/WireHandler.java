@@ -7,7 +7,7 @@ package com.aerofs.daemon.tng.base;
 import com.aerofs.daemon.tng.base.pipeline.IPipelineContext;
 import com.aerofs.lib.Util;
 import com.aerofs.proto.Transport.PBTPHeader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

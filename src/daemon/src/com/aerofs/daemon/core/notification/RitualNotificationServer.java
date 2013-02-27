@@ -37,7 +37,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class RitualNotificationServer implements IConnectionManager
 {
@@ -267,7 +267,7 @@ public class RitualNotificationServer implements IConnectionManager
                 _proactor.send(to, bss, PRIO);
             }
         } catch (Exception e) {
-            Util.l(this).warn(Util.e(e));
+            l.warn(Util.e(e));
             _proactor.disconnect(to);
         }
     }

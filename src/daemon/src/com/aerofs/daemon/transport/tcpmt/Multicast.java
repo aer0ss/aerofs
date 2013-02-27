@@ -18,7 +18,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -153,7 +153,7 @@ class Multicast implements IMaxcast
             if (s == null) continue;
 
             l.info("linkStateChanged->mc:rem:");
-            l.info(iface);
+            l.info("-> {}", iface);
 
             close(s);
         }
@@ -163,8 +163,7 @@ class Multicast implements IMaxcast
         int i = 0;
         for (Map.Entry<NetworkInterface, MulticastSocket> e : entries) {
             int sval = (e.getValue() == null ? 0 : 1);
-            l.debug("if" + i + ": " + e.getKey().getDisplayName() + "s:" + sval);
-            l.debug(e.getKey());
+            l.debug("if{}: {} s:{} {}", i, e.getKey().getDisplayName(), sval, e.getKey());
             i++;
         }
     }

@@ -14,7 +14,7 @@ import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Files;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;

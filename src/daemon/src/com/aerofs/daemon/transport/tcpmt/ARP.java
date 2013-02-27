@@ -6,7 +6,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.net.InetSocketAddress;

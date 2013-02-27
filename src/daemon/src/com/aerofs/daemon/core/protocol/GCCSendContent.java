@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import com.google.common.base.Joiner;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.CoreUtil;
 import com.aerofs.daemon.core.NativeVersionControl;

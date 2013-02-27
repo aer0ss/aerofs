@@ -94,7 +94,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 
@@ -109,6 +109,8 @@ import javax.annotation.Nullable;
  */
 public class RitualService implements IRitualService
 {
+    private static final Logger l = Util.l(RitualService.class);
+
     private static final Prio PRIO = Prio.HI;
 
     @Override
@@ -304,7 +306,7 @@ public class RitualService implements IRitualService
     @Override
     public ListenableFuture<Void> shutdown() throws Exception
     {
-        Util.l(this).warn("shutdown requested");
+        l.warn("shutdown requested");
         ExitCode.SHUTDOWN_REQUESTED.exit();
 
         return createVoidReply();

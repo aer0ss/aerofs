@@ -14,7 +14,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.daemon.transport.xmpp.IPipe;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.*;

@@ -25,7 +25,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.sp.client.SPBlockingClient;
 import com.aerofs.sp.client.SPClientFactory;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class HdLeaveSharedFolder extends AbstractHdIMC<EILeaveSharedFolder>
 {

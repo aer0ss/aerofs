@@ -8,7 +8,7 @@ import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.concurrent.Callable;
 

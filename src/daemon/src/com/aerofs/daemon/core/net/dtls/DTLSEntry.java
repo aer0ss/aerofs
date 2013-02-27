@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
 import com.aerofs.base.id.UserID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.net.PeerContext;
 import com.aerofs.daemon.core.net.dtls.DTLSLayer.Footer;

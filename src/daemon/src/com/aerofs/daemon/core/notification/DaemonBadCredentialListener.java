@@ -8,7 +8,7 @@ import com.aerofs.lib.Util;
 import com.aerofs.sp.client.IBadCredentialListener;
 import com.aerofs.proto.RitualNotifications.PBNotification;
 import com.aerofs.proto.RitualNotifications.PBNotification.Type;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class DaemonBadCredentialListener implements IBadCredentialListener
 {

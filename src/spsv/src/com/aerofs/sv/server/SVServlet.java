@@ -7,7 +7,7 @@ import com.aerofs.servlets.lib.db.sql.PooledSQLConnectionProvider;
 import com.aerofs.servlets.lib.db.sql.SQLThreadLocalTransaction;
 import com.aerofs.servlets.AeroServlet;
 import com.yammer.metrics.reporting.GraphiteReporter;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

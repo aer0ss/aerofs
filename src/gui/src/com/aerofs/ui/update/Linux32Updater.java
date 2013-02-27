@@ -13,7 +13,7 @@ class Linux32Updater extends AbstractLinuxUpdater
     @Override
     public void update(String installerFilename, String newVersion, boolean hasPermissions)
     {
-        Util.l(this).info("update to version " + newVersion);
+        l.info("update to version " + newVersion);
         execUpdateCommon(installerFilename, newVersion, hasPermissions);
     }
 }

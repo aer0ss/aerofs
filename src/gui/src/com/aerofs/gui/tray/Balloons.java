@@ -4,10 +4,13 @@ import com.aerofs.lib.Util;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
+import org.slf4j.Logger;
 
 // this class queues balloons added by add() and display them one after another
 
-public class Balloons {
+public class Balloons
+{
+    private static final Logger l = Util.l(Balloons.class);
 
     private final IBalloonsImpl _impl;
 
@@ -18,7 +21,7 @@ public class Balloons {
             impl = OSUtil.isOSX() ? new BalloonsImplGrowl() :
                 new BalloonsImplSWT(icon);
         } catch (Exception e) {
-            Util.l(this).error("cannot create balloons: " + Util.e(e));
+            l.error("cannot create balloons: " + Util.e(e));
         }
 
         _impl = impl;

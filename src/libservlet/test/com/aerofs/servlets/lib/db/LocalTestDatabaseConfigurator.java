@@ -5,7 +5,7 @@
 package com.aerofs.servlets.lib.db;
 
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;

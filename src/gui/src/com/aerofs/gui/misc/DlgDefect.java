@@ -30,6 +30,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Link;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;
@@ -38,6 +39,8 @@ import static com.aerofs.gui.GUIUtil.getNewText;
 
 public class DlgDefect extends AeroFSJFaceDialog
 {
+    private static final Logger l = Util.l(DlgDefect.class);
+
     private static interface IContactEmailGetter
     {
         // must be called from the GUI thread
@@ -193,7 +196,7 @@ public class DlgDefect extends AeroFSJFaceDialog
                     try {
                         Cfg.db().set(Key.MULTIUSER_CONTACT_EMAIL, contactEmail);
                     } catch (SQLException e) {
-                        Util.l(this).warn("set contact email, ignored: " + Util.e(e));
+                        l.warn("set contact email, ignored: " + Util.e(e));
                     }
 
                     RitualBlockingClient ritual = RitualClientFactory.newBlockingClient();

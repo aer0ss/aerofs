@@ -19,7 +19,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Transport.PBZephyrCandidateInfo;
 import com.aerofs.zephyr.core.ExAlreadyBound;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;

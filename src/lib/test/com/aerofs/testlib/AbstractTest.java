@@ -1,44 +1,47 @@
 package com.aerofs.testlib;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-
+import com.aerofs.lib.LogUtil;
+import com.aerofs.lib.Util;
 import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.varia.NullAppender;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.mockito.MockitoAnnotations;
-
-import com.aerofs.lib.Util;
 import org.powermock.modules.testng.PowerMockTestCase;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 
 public abstract class AbstractTest extends PowerMockTestCase
 {
-    private static boolean _log4JInited;
+    private static boolean _loggingInited;
 
     @BeforeClass
     public static void initLog4J()
     {
-        if (!_log4JInited) {
-            String logging = System.getProperty("com.aerofs.test.logging");
-            if ("no".equals(logging) || "false".equals(logging) ||
-                    "off".equals(logging) || "0".equals(logging)) {
-                Logger.getRootLogger().addAppender(new NullAppender());
-            } else {
+        if (!_loggingInited) {
+            String enableLoggingProperty = System.getProperty("com.aerofs.test.logging");
+            if (isLoggingEnabled(enableLoggingProperty)) {
                 BasicConfigurator.configure();
-                Logger.getLogger("httpclient.wire").setLevel(Level.INFO);
-                Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.INFO);
-                Logger.getLogger("com.amazonaws").setLevel(Level.INFO);
+                LogUtil.setLevel("httpclient.wire", LogUtil.Level.INFO);
+                LogUtil.setLevel("org.apache.commons.httpclient", LogUtil.Level.INFO);
+                LogUtil.setLevel("com.amazonaws", LogUtil.Level.INFO);
+            } else {
+                LogUtil.disableLog4J();
             }
-            _log4JInited = true;
+
+            _loggingInited = true;
         }
+    }
+
+    private static boolean isLoggingEnabled(String logging)
+    {
+        return !("no".equals(logging) || "false".equals(logging) || "off".equals(logging) || "0".equals(logging));
     }
 
     protected static final Logger l = Util.l(AbstractTest.class);

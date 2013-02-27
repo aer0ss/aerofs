@@ -17,7 +17,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.proto.Tap.ITapService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Stage;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;

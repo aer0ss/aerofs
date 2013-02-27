@@ -20,7 +20,7 @@ import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class CmdDefect implements IShellCommand<ShProgram>
 {

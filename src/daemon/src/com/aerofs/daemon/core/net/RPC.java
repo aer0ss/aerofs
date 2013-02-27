@@ -23,7 +23,7 @@ import com.aerofs.proto.Core.PBCore;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.net.NetworkInterface;

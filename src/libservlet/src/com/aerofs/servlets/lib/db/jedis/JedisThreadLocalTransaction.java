@@ -9,7 +9,7 @@ import com.aerofs.servlets.lib.db.AbstractThreadLocalTransaction;
 import com.aerofs.servlets.lib.db.ExDbInternal;
 import com.aerofs.servlets.lib.db.IDatabaseConnectionProvider;
 import com.aerofs.servlets.lib.db.IThreadLocalTransaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import redis.clients.jedis.JedisPooledConnection;
 import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisException;

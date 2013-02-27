@@ -7,11 +7,12 @@ import java.lang.reflect.Field;
 
 import com.aerofs.labeling.L;
 import com.aerofs.lib.AppRoot;
+import com.aerofs.lib.LogUtil;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.SystemUtil.ExitCode;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.base.id.UserID;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.google.inject.CreationException;
 import com.google.inject.spi.Message;
@@ -65,7 +66,7 @@ public class Main {
 
         // init log4j
         try {
-            Util.initLog4J(rtRoot, prog);
+            LogUtil.initLog4J(rtRoot, prog);
         } catch (IOException e) {
             String msg = "error init log4j: " + Util.e(e);
             // I don't know how to output to system.log on mac/linux. so use

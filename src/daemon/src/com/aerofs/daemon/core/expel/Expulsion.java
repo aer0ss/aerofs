@@ -32,7 +32,7 @@ import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.Path;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class is the access point of the subsystem that maintains objects' expulsion state.

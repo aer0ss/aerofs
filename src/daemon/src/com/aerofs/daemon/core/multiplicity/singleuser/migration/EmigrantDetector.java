@@ -20,7 +20,7 @@ import com.aerofs.lib.id.SOCID;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.sql.SQLException;

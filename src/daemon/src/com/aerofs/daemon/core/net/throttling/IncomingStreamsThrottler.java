@@ -15,7 +15,7 @@ import com.aerofs.lib.cfg.CfgDatabase.Key;
 import com.aerofs.lib.ex.ExNotFound;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
@@ -142,7 +142,7 @@ public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
                 try {
                     _limitMonitor.pauseDevice_(did);
                 } catch (ExNotFound e) {
-                    l.error(e);
+                    l.error(Util.e(e));
                 }
             }
         }
@@ -186,7 +186,7 @@ public class IncomingStreamsThrottler implements IIncomingStreamChunkListener
                 try {
                     _limitMonitor.resumeDevice_(did);
                 } catch (ExNotFound e) {
-                    l.error(e);
+                    l.error(Util.e(e));
                 }
             }
         }

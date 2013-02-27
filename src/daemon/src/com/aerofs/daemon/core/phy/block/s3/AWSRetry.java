@@ -5,7 +5,7 @@ import java.util.concurrent.Callable;
 
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ThreadUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -50,16 +50,16 @@ public class AWSRetry
                     l.warn("retry in " + delay + ": " + e);
                     ThreadUtil.sleepUninterruptable(delay);
                 } catch (AmazonServiceException e2) {
-                    l.warn(e2);
+                    l.warn(Util.e(e2));
                     throw new IOException(e2);
                 }
             } catch (AmazonClientException e) {
                 SystemUtil.fatal(e);
             } catch (IOException e) {
-                l.warn(e);
+                l.warn(Util.e(e));
                 throw e;
             } catch (Exception e) {
-                l.warn(e);
+                l.warn(Util.e(e));
                 throw new IOException(e);
             }
 

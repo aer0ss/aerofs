@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.linker.notifier.windows;
 import javax.annotation.Nullable;
 
 import com.aerofs.lib.obfuscate.ObfuscatingFormatters;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.linker.Linker;
 import com.aerofs.daemon.core.linker.event.EIMightCreateNotification;

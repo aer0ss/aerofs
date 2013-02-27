@@ -27,9 +27,12 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.aerofs.lib.id.SOKID;
+import org.slf4j.Logger;
 
 public class StoreDeleter
 {
+    private static final Logger l = Util.l(StoreDeleter.class);
+
     private final IPhysicalStorage _ps;
     private final IStores _ss;
     private final DirectoryService _ds;
@@ -168,7 +171,7 @@ public class StoreDeleter
     private void delete_(final SIndex sidx, Path path, PhysicalOp op, Trans t)
             throws SQLException, IOException, ExStreamInvalid
     {
-        Util.l(this).debug("delete store " + sidx);
+        l.debug("delete store " + sidx);
 
         // MJ thinks (but is unsure whether) we have to do physical store deletion first, before
         // runing other deletion operators

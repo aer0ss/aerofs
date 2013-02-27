@@ -5,7 +5,7 @@
 package com.aerofs.zephyr.core;
 
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -39,7 +39,7 @@ public class Dispatcher implements Runnable
             _sel = Selector.open();
             _inited = true;
         } catch (IOException e) {
-            l.fatal("zd: sel: e on open:" + e);
+            l.error("zd: sel: e on open:" + e);
             closeSelector();
             throw e;
         }
@@ -62,7 +62,7 @@ public class Dispatcher implements Runnable
                 try {
                     ready = _sel.select();
                 } catch (IOException e) {
-                    l.fatal("zd: sel: e on select:" + e);
+                    l.error("zd: sel: e on select:" + e);
                     throw e;
                 }
 
@@ -84,9 +84,9 @@ public class Dispatcher implements Runnable
                 processNonNioEvents();
             }
         } catch (FatalIOEventHandlerException e) {
-            l.fatal("zd: terminating: fioehex");
+            l.error("zd: terminating: fioehex");
         } catch (IOException e) {
-            l.fatal("zd: terminating: ioex");
+            l.error("zd: terminating: ioex");
         } finally {
             l.info("zd: terminating");
             closeSelector();
@@ -164,7 +164,7 @@ public class Dispatcher implements Runnable
                 ioe.handleKeyCancelled_(k);
             }
         } catch (FatalIOEventHandlerException e) {
-            l.fatal("zd: k:" + k + ": fataled during handle");
+            l.error("zd: k:" + k + ": fataled during handle");
             throw e;
         } catch (Exception e) {
             l.error("zd: k:" + k + ": unexpected err during handle:" + e);

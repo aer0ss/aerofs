@@ -7,9 +7,11 @@ import com.aerofs.daemon.transport.lib.TPUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.base.ex.ExFormatError;
+import org.slf4j.Logger;
 
-class HdTransportReconfigRemoteDevice
-implements IEventHandler<EOTransportReconfigRemoteDevice> {
+class HdTransportReconfigRemoteDevice implements IEventHandler<EOTransportReconfigRemoteDevice>
+{
+    private static final Logger l = Util.l(HdTransportReconfigRemoteDevice.class);
 
     private final TCP t;
 
@@ -28,7 +30,7 @@ implements IEventHandler<EOTransportReconfigRemoteDevice> {
             hnp = new TPUtil.HostAndPort(ev._tcpEndpoint);
             t.hm().put(ev._did, hnp._host, hnp._port);
         } catch (ExFormatError e) {
-            Util.l(this).warn(Util.e(e));
+            l.warn(Util.e(e));
         }
     }
 }

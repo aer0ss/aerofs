@@ -9,8 +9,11 @@ import com.aerofs.daemon.event.net.tx.EOUnicastMessage;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExDeviceOffline;
+import org.slf4j.Logger;
 
-public class HdUnicastMessage implements IEventHandler<EOUnicastMessage> {
+public class HdUnicastMessage implements IEventHandler<EOUnicastMessage>
+{
+    private static final Logger l = Util.l(HdUnicastMessage.class);
 
     private final IUnicast _ucast;
 
@@ -26,8 +29,7 @@ public class HdUnicastMessage implements IEventHandler<EOUnicastMessage> {
             byte[][] payload = TPUtil.newPayload(null, 0, ev._sid, ev.byteArray());
             _ucast.send_(ev._to, new ProfiledWaiter(), prio, payload, null);
         } catch (Exception e) {
-            Util.l(this).warn("uc " + ev._to +  ": " + Util.e(e,
-                    ExDeviceOffline.class, XMPPException.class));
+            l.warn("uc " + ev._to + ": " + Util.e(e, ExDeviceOffline.class, XMPPException.class));
         }
     }
 

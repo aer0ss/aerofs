@@ -20,10 +20,13 @@ import com.aerofs.proto.Core.PBCore.Type;
 import com.aerofs.proto.Core.PBListRevChildrenRequest;
 import com.aerofs.proto.Core.PBListRevChildrenResponse;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 public class ListRevChildren
 extends AbstractListRevChildrenHistory<IListRevChildrenListener>
 {
+    private static final Logger l = Util.l(ListRevChildren.class);
+
     private final IPhysicalStorage _ps;
 
     @Inject
@@ -36,7 +39,7 @@ extends AbstractListRevChildrenHistory<IListRevChildrenListener>
     @Override
     protected PBCore.Builder newRequest_(Path path)
     {
-        Util.l(this).warn(">>> convert into relative path");
+        l.warn(">>> convert into relative path");
         return CoreUtil.newCore(Type.LIST_REV_CHILDREN_REQUEST)
             .setListRevChildrenRequest(PBListRevChildrenRequest.newBuilder()
                 .setSeq(getSeq_(path))
@@ -107,7 +110,7 @@ extends AbstractListRevChildrenHistory<IListRevChildrenListener>
     protected void fetchFromLocal_(RCHListeners ls, Path spath)
             throws Exception
     {
-        Util.l(this).warn(">>> convert into relative path");
+        l.warn(">>> convert into relative path");
         received_(ls, Cfg.did(), _ps.getRevProvider().listRevChildren_(spath));
     }
 }

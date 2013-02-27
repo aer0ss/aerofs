@@ -7,7 +7,7 @@ import java.sql.Statement;
 
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.ex.ExAlreadyExist;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Util;
 

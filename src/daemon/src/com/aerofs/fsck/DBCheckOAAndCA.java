@@ -19,9 +19,12 @@ import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import org.slf4j.Logger;
 
 public class DBCheckOAAndCA
 {
+    private static final Logger l = Util.l(DBCheckOAAndCA.class);
+
     // TODO close these statements after use
     private PreparedStatement _psListChildren;
     private PreparedStatement _psListCAttrs;
@@ -115,7 +118,7 @@ public class DBCheckOAAndCA
 
                         // currently don't support anchors
                         if (a._type == OA.Type.ANCHOR) {
-                            Util.l().warn("anchors are not supported yet");
+                            l.warn("anchors are not supported yet");
                         }
 
                         for (Args child : getChildren(a._soid)) {

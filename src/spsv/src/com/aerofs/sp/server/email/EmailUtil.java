@@ -6,7 +6,7 @@ package com.aerofs.sp.server.email;
 
 import com.aerofs.lib.Util;
 import com.aerofs.sv.client.SVClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.sp.server.lib.SPParam.*;
 

@@ -25,6 +25,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.Stage;
+import org.slf4j.Logger;
 
 import static com.aerofs.lib.rocklog.RockLog.BaseComponent.CLIENT;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -36,6 +37,8 @@ public class DaemonProgram implements IProgram
         RockLog.init_(CLIENT);
         RockLogReporter.enable(30, SECONDS);
     }
+
+    private static final Logger l = Util.l(DaemonProgram.class);
 
     private final RitualServer _ritual = new RitualServer();
 
@@ -52,7 +55,7 @@ public class DaemonProgram implements IProgram
 
         _ritual.start_();
 
-        Util.l().error("daemon main thread halted");
+        l.error("daemon main thread halted");
 
         // I don't understand why mac needs this
         if (OSUtil.get().getOSFamily() == OSFamily.OSX) SystemUtil.halt();

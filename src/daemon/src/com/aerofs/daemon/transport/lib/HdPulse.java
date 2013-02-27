@@ -11,7 +11,7 @@ import com.aerofs.daemon.event.net.IPulseEvent;
 import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.MakePulseResult;
 import static com.aerofs.daemon.transport.lib.PulseHandlerUtil.makepulse_;

@@ -13,7 +13,7 @@ import com.aerofs.lib.event.Prio;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.IntegerID;
 import com.aerofs.proto.Transport;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.HashSet;

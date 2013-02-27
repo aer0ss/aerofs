@@ -14,7 +14,7 @@ import java.sql.SQLException;
 
 import javax.annotation.Nonnull;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class maintains the FID values for master branches of a file.

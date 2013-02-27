@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 import java.sql.SQLException;
 import java.util.Map.Entry;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class is very similar to NativeVersionControl in syntax, although

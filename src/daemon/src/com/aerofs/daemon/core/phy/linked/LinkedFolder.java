@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.linker.IgnoreList;
 import com.aerofs.daemon.core.phy.IPhysicalFolder;

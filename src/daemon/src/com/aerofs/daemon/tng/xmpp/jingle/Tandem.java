@@ -7,11 +7,13 @@ package com.aerofs.daemon.tng.xmpp.jingle;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.base.id.DID;
+import org.slf4j.Logger;
 
 // see Engine.java for documentation
 
 final class Tandem
 {
+    private static final Logger l = Util.l(Tandem.class);
 
     private final Channel[] _cs = new Channel[2];
     private boolean _notified = false;
@@ -76,7 +78,7 @@ final class Tandem
             // close the existing incoming stream if any
             for (int i = 0; i < 2; i++) {
                 if (_cs[i] != null && _cs[i].isIncoming()) {
-                    Util.l(this).info("discard old incoming tunnel " + _cs[i]);
+                    l.info("discard old incoming tunnel " + _cs[i]);
                     _cs[i].close_(new ExJingle("stream overwritten"));
                     _cs[i].delete_();
                     _cs[i] = null;
@@ -110,7 +112,7 @@ final class Tandem
      */
     void close_(Exception e)
     {
-        Util.l(this).info("close tandem " + this + ": " + Util.e(e, ExJingle.class));
+        l.info("close tandem " + this + ": " + Util.e(e, ExJingle.class));
 
         for (int i = 0; i < 2; i++) {
             if (_cs[i] != null) {

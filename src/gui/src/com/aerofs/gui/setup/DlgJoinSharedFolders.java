@@ -16,7 +16,7 @@ import com.aerofs.ui.UIUtil;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -232,7 +232,7 @@ public class DlgJoinSharedFolders extends AeroFSDialog
                 try {
                     ritual.joinSharedFolder(inv.getShareId());
                 } catch (Exception e) {
-                    Util.l(this).warn("join folder " + inv.getFolderName() + Util.e(e));
+                    l.warn("join folder " + inv.getFolderName() + Util.e(e));
                     UI.get().notify(MessageType.ERROR, "Couldn't join the folder "
                             + inv.getFolderName(), UIUtil.e2msgSentenceNoBracket(e), null);
                 }

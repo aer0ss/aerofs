@@ -26,7 +26,7 @@ import com.aerofs.lib.id.SOKID;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.sql.SQLException;
 import java.util.List;

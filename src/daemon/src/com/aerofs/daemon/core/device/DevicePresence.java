@@ -12,7 +12,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.event.AbstractEBSelfHandling;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;
 import com.aerofs.daemon.event.lib.imc.AbstractEBIMC;
@@ -27,6 +27,9 @@ import com.aerofs.lib.ex.ExDeviceOffline;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.rocklog.RockLog;
+import com.google.common.collect.Maps;
+import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;

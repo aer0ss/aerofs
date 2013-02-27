@@ -9,7 +9,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.LinkedList;
 import java.util.List;

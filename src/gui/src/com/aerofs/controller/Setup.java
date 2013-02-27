@@ -24,7 +24,7 @@ import com.aerofs.base.id.UserID;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.lib.rocklog.RockLog;
 import com.aerofs.proto.Sv.PBSVEvent.Type;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Param.PostUpdate;

@@ -23,7 +23,7 @@ import com.aerofs.proto.Files;
 import com.aerofs.proto.Transport.PBTCPUnicastPreamble;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.aerofs.proto.Transport.PBTPHeader.Type;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

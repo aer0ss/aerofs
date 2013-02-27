@@ -14,7 +14,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.proto.Transport.PBStream.InvalidationReason.STORE_NOT_FOUND;
 

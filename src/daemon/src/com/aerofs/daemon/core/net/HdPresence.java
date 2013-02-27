@@ -16,7 +16,7 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class HdPresence implements IEventHandler<EIPresence>
 {

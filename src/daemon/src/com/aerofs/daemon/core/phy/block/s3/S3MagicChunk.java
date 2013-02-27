@@ -13,7 +13,7 @@ import com.aerofs.lib.Util;
 import com.amazonaws.AmazonServiceException;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.InputSupplier;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

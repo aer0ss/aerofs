@@ -27,7 +27,7 @@ import com.aerofs.proto.Transport.PBStream;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.aerofs.proto.Transport.PBTPHeader;
 import com.google.common.util.concurrent.FutureCallback;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.aerofs.daemon.tng.base.Handlers.sendOutgoingMessage_;
 import static com.aerofs.base.async.FutureUtil.addCallback;

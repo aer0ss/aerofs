@@ -17,7 +17,7 @@ import com.aerofs.lib.ex.ExNoAvailDevice;
 import com.aerofs.lib.id.SOCID;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.TC;
@@ -245,7 +245,7 @@ public class Downloads
                 return null;
             }
 
-            l.debug(socid);
+            l.debug("socid:{}", socid);
 
             final Download dl = _factDownload.create_(socid, to, listener, tk2);
 

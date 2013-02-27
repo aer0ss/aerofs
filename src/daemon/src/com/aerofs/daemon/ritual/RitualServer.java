@@ -13,7 +13,7 @@ import com.aerofs.proto.Ritual.RitualServiceReactor.ServiceRpcTypes;
 import com.aerofs.proto.RpcService;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;

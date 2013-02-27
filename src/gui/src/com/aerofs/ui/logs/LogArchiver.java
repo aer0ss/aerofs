@@ -7,7 +7,7 @@ package com.aerofs.ui.logs;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
 import com.aerofs.sv.client.SVClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;

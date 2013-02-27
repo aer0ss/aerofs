@@ -7,7 +7,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.IStoreDeletionOperator;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.db.ver.IVersionDatabase;
 import com.aerofs.daemon.lib.db.ver.AbstractTickRow;

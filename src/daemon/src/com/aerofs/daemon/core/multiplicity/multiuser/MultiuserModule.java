@@ -22,15 +22,18 @@ import com.aerofs.daemon.core.multiplicity.multiuser.migration.NullImmigrantDete
 import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
+import org.slf4j.Logger;
 
 import static com.aerofs.lib.guice.GuiceUtil.multibind;
 
 public class MultiuserModule extends AbstractModule
 {
+    private static final Logger l = Util.l(MultiuserModule.class);
+
     @Override
     protected void configure()
     {
-        Util.l(this).info("multi user mode");
+        l.info("multi user mode");
 
         bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
 

@@ -30,7 +30,7 @@ import com.aerofs.zephyr.core.BufferPool;
 import com.aerofs.zephyr.core.FatalIOEventHandlerException;
 import com.aerofs.zephyr.core.IIOEventHandler;
 import com.aerofs.zephyr.core.ZUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;

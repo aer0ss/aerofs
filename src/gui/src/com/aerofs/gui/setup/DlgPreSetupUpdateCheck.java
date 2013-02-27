@@ -30,9 +30,12 @@ import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.custom.StackLayout;
+import org.slf4j.Logger;
 
 public class DlgPreSetupUpdateCheck extends Shell
 {
+    private static final Logger l = Util.l(DlgPreSetupUpdateCheck.class);
+
     private final ProgressBar _prog;
     private final Composite _composite;
     private final Label _lblDownloading;
@@ -100,7 +103,7 @@ public class DlgPreSetupUpdateCheck extends Shell
 
     private void cancel()
     {
-        Util.l(DlgPreSetupUpdateCheck.this).warn("user canceled");
+        l.warn("user canceled");
         System.exit(1);
     }
 

@@ -8,7 +8,7 @@ import com.aerofs.base.C;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.InjectableCfg;
 import com.google.common.net.HttpHeaders;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;

@@ -10,7 +10,7 @@ import com.aerofs.proto.Shellext.PathStatusNotification;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Path;
 import com.aerofs.lib.Util;

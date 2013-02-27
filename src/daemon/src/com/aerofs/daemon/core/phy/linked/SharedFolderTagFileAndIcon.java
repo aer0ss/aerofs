@@ -30,7 +30,7 @@ import com.aerofs.lib.injectable.InjectableDriver;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.lib.os.OSUtil.Icon;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * This class adds and removes tag files and overlay icons for shared folders

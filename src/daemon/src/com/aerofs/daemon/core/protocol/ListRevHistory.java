@@ -22,10 +22,13 @@ import com.aerofs.proto.Core.PBListRevHistoryRequest;
 import com.aerofs.proto.Core.PBListRevHistoryResponse;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
+import org.slf4j.Logger;
 
 public class ListRevHistory
 extends AbstractListRevChildrenHistory<IListRevHistoryListener>
 {
+    private static final Logger l = Util.l(ListRevHistory.class);
+
     private final IPhysicalStorage _ps;
     private final CfgLocalDID _cfgLocalDID;
 
@@ -41,7 +44,7 @@ extends AbstractListRevChildrenHistory<IListRevHistoryListener>
     @Override
     protected PBCore.Builder newRequest_(Path path)
     {
-        Util.l(this).warn(">>>> the path may not be absolute path?");
+        l.warn(">>>> the path may not be absolute path?");
         return CoreUtil.newCore(Type.LIST_REV_HISTORY_REQUEST)
             .setListRevHistoryRequest(PBListRevHistoryRequest.newBuilder()
                 .setSeq(getSeq_(path))

@@ -15,7 +15,7 @@ import com.aerofs.daemon.transport.xmpp.ISignalledPipe;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.ex.ExNoResource;
 import com.google.common.collect.ImmutableSet;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.PrintStream;

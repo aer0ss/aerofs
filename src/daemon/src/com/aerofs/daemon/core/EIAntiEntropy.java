@@ -16,7 +16,7 @@ import com.aerofs.lib.id.SIndex;
 import com.google.inject.Inject;
 import com.yammer.metrics.core.Meter;
 import com.yammer.metrics.core.MetricName;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yammer.metrics.Metrics.newMeter;

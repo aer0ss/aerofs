@@ -10,7 +10,7 @@ import com.aerofs.zephyr.core.ExAlreadyBound;
 import com.aerofs.zephyr.core.FatalIOEventHandlerException;
 import com.aerofs.zephyr.core.IIOEventHandler;
 import com.aerofs.zephyr.server.ServerConstants.EndpointState;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;

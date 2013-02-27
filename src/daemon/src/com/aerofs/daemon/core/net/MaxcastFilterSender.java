@@ -6,7 +6,7 @@ package com.aerofs.daemon.core.net;
 
 import com.aerofs.lib.SecUtil;
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class MaxcastFilterSender {
     private static final Logger l = Util.l(MaxcastFilterSender.class);

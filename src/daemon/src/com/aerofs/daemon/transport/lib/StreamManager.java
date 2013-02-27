@@ -8,7 +8,7 @@ import java.util.TreeSet;
 
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.lib.id.StreamID;
 import com.aerofs.lib.Util;

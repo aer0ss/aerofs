@@ -10,7 +10,7 @@ import com.aerofs.daemon.core.migration.ImmigrantVersionControl;
 import com.aerofs.daemon.lib.db.trans.Trans;
 import com.aerofs.daemon.lib.exception.ExStreamInvalid;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.ds.CA;
 import com.aerofs.daemon.core.ds.DirectoryService;
@@ -132,7 +132,7 @@ public class ImmigrantDetector implements IImmigrantDetector
             Version vFrom = _nvc.getLocalVersion_(kFrom);
             ContentHash hFrom = _ds.getCAHash_(kFrom.sokid());
 
-            Util.l().debug("migrate do " + kFrom);
+            l.debug("migrate do " + kFrom);
 
             SOCKID kTo = new SOCKID(socidTo, kidx);
 

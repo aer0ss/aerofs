@@ -23,7 +23,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.PrintStream;
 import java.net.NetworkInterface;

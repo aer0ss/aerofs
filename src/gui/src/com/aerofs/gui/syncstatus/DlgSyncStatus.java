@@ -19,7 +19,7 @@ import com.aerofs.proto.Ritual.GetSyncStatusReply;
 import com.aerofs.proto.Ritual.PBSyncStatus;
 import com.aerofs.proto.Ritual.PBSyncStatus.Status;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.FocusEvent;
@@ -193,7 +193,7 @@ public class DlgSyncStatus extends AeroFSDialog
         try {
             reply = ritual.getSyncStatus(_path.toPB());
         } catch (Exception e) {
-            l.warn(e);
+            l.warn(Util.e(e));
         } finally {
             ritual.close();
         }

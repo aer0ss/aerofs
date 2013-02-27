@@ -2,7 +2,7 @@ package com.aerofs.fsck;
 
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.InOutArg;
 import com.aerofs.lib.Util;

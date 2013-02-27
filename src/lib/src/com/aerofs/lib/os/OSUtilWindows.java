@@ -11,7 +11,7 @@ import com.aerofs.lib.*;
 import com.aerofs.lib.injectable.InjectableFile;
 import com.aerofs.lib.os.OSUtil.Icon;
 import com.aerofs.swig.driver.Driver;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class OSUtilWindows implements IOSUtil
 {

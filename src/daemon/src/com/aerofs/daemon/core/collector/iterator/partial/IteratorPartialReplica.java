@@ -3,7 +3,7 @@ package com.aerofs.daemon.core.collector.iterator.partial;
 import java.sql.SQLException;
 
 import com.aerofs.daemon.lib.db.trans.Trans;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.NativeVersionControl;
 import com.aerofs.daemon.core.collector.CollectorSeq;

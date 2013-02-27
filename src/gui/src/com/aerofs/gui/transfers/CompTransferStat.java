@@ -17,8 +17,11 @@ import com.aerofs.lib.ritual.RitualBlockingClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Files.PBDumpStat;
 import com.aerofs.proto.Files.PBDumpStat.PBTransport;
+import org.slf4j.Logger;
 
-public class CompTransferStat extends Composite {
+public class CompTransferStat extends Composite
+{
+    private static final Logger l = Util.l(CompTransferStat.class);
 
     private final Label _lblIn;
     private final Label _lblOut;
@@ -110,7 +113,7 @@ public class CompTransferStat extends Composite {
                 strOut = Util.formatBandwidth(deltaOut, deltaT);
 
             } catch (Exception e) {
-                Util.l().warn("can't refresh stat: " + Util.e(e));
+                l.warn("can't refresh stat: " + Util.e(e));
                 strIn = Util.formatBandwidth(0, 0);
                 strOut = Util.formatBandwidth(0, 0);
             } finally {

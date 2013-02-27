@@ -25,7 +25,7 @@ import com.aerofs.proto.Limit;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 
 import java.io.ByteArrayInputStream;

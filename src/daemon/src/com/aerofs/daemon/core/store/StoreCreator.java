@@ -15,12 +15,15 @@ import com.aerofs.base.id.SID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.sql.SQLException;
 
 public class StoreCreator
 {
+    private static final Logger l = Util.l(StoreCreator.class);
+
     private IStores _ss;
     private IPhysicalStorage _ps;
     private NativeVersionControl _nvc;
@@ -80,7 +83,7 @@ public class StoreCreator
 
         SIndex sidx = _sid2sidx.getAbsent_(sid, t);
 
-        Util.l(this).debug("create store " + sidx);
+        l.debug("create store " + sidx);
 
         // create root directory; its parent is itself
         _mdb.insertOA_(sidx, OID.ROOT, OID.ROOT, OA.ROOT_DIR_NAME, OA.Type.DIR, 0, t);

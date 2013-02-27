@@ -2,7 +2,7 @@ package com.aerofs.sp.server.session;
 
 import com.aerofs.base.id.UserID;
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.servlet.http.HttpSession;
 import java.util.Set;

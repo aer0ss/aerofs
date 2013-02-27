@@ -10,7 +10,7 @@ import com.aerofs.daemon.tng.ex.ExTransport;
 import com.aerofs.lib.Util;
 import com.aerofs.base.async.UncancellableFuture;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 final class UnicastConnectionSink implements IPipelineEventSink
 {

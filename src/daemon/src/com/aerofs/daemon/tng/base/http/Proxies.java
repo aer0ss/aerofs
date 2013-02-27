@@ -5,7 +5,7 @@
 package com.aerofs.daemon.tng.base.http;
 
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;

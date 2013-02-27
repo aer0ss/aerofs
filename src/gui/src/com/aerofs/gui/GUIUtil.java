@@ -16,7 +16,7 @@ import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.proto.Objects.PBObjectAttributes;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Drawable;

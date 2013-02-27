@@ -8,7 +8,7 @@ import com.aerofs.lib.sched.Scheduler;
 import com.aerofs.lib.OutArg;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.proto.Limit;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import javax.annotation.Nonnull;
 
 // TODO: Set the current time at the start of the event response interval

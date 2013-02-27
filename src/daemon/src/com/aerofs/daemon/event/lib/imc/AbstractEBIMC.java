@@ -37,7 +37,7 @@ abstract public class AbstractEBIMC implements IEBIMC {
 //    public Exception executeNoThrows(Prio prio)
 //    {
 //        _imce.execute(this, prio);
-//        if (_e != null) Util.l(this).warn("execIE: " + Util.e(_e));
+//        if (_e != null) l.warn("execIE: " + Util.e(_e));
 //        return _e;
 //    }
 

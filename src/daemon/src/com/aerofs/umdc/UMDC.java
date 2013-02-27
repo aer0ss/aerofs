@@ -11,7 +11,7 @@ import com.aerofs.lib.db.DBUtil;
 import com.aerofs.lib.db.dbcw.IDBCW;
 import com.aerofs.sv.client.SVClient;
 import com.google.common.io.Files;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import java.io.File;

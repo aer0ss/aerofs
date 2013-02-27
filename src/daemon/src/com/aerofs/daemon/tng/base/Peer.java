@@ -23,7 +23,7 @@ import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.base.id.SID;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;

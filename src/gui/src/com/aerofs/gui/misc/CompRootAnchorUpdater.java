@@ -16,7 +16,7 @@ import com.aerofs.lib.os.OSUtil;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import com.aerofs.lib.Util;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;

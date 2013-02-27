@@ -14,7 +14,7 @@ import com.aerofs.lib.cfg.CfgAbsAuxRoot;
 import com.aerofs.lib.os.OSUtil;
 import com.aerofs.sv.client.SVClient;
 import com.aerofs.swig.driver.Driver;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,7 +52,7 @@ public class DPUTMigrateAuxRoot implements IDaemonPostUpdateTask
                 FileUtil.moveInSameFileSystem(src, dst);
             }
         } catch (Throwable e) {
-            l.fatal("Could not migrate aux root " + Util.e(e));
+            l.error("Could not migrate aux root " + Util.e(e));
             SVClient.logSendDefectSyncIgnoreErrors(true, "migrating aux root failed", e);
             ExitCode.DPUT_MIGRATE_AUX_ROOT_FAILED.exit();
         }

@@ -17,9 +17,12 @@ import com.aerofs.lib.id.FID;
 import com.aerofs.base.id.OID;
 import com.aerofs.lib.id.SIndex;
 import com.aerofs.lib.id.SOID;
+import org.slf4j.Logger;
 
 public class DBCheckFID
 {
+    private static final Logger l = Util.l(DBCheckFID.class);
+
     private final IDBCW _dbcw;
 
     // TODO close these statements after use
@@ -176,7 +179,7 @@ public class DBCheckFID
 
         } else {
             assert type == OA.Type.ANCHOR;
-            Util.l().warn("anchors are not supported yet");
+            l.warn("anchors are not supported yet");
         }
     }
 }

@@ -19,7 +19,7 @@ import com.aerofs.proto.ControllerProto.GetSetupSettingsReply;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.UI;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import static org.eclipse.jface.dialogs.IDialogConstants.*;
 

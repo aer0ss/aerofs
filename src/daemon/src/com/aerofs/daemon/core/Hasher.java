@@ -16,7 +16,7 @@ import com.aerofs.daemon.lib.db.trans.TransManager;
 import com.aerofs.lib.SecUtil;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.object.BranchDeleter;
 import com.aerofs.daemon.core.phy.IPhysicalFile;

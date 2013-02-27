@@ -6,7 +6,7 @@ package com.aerofs.sp.server.session;
 
 import com.aerofs.lib.Util;
 import com.google.common.collect.Maps;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.servlet.http.HttpSession;

@@ -18,7 +18,7 @@ import com.aerofs.lib.ex.ExAlreadyRunning;
 import com.aerofs.base.id.UserID;
 import com.aerofs.ui.IUI.MessageType;
 import com.aerofs.ui.logs.LogArchiver;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 
 import com.aerofs.gui.shellext.ShellextService;

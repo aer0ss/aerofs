@@ -9,7 +9,7 @@ import com.aerofs.lib.SystemUtil;
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.ex.ExDaemonFailedToStart;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 public class InfoCollector
 {

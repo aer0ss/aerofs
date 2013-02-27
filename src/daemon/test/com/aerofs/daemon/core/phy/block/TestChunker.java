@@ -83,7 +83,7 @@ public class TestChunker extends AbstractBlockTest
         public int read(long offset) throws IOException
         {
             if (offset >= _length) return -1;
-            //if ((offset & 0xffff) == 0) Util.l(this).info("read " + offset);
+            //if ((offset & 0xffff) == 0) l.info("read " + offset);
             return 0;
         }
     }

@@ -26,7 +26,7 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

@@ -5,7 +5,7 @@
 package com.aerofs.servlets.lib.db;
 
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 /**
  * Abstract class for thread local transactions. This class is here to de-dup code that is shared

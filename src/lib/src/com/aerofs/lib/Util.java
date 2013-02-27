@@ -1,5 +1,24 @@
 package com.aerofs.lib;
 
+import com.aerofs.base.C;
+import com.aerofs.base.Loggers;
+import com.aerofs.base.ex.AbstractExWirable;
+import com.aerofs.base.ex.ExBadCredential;
+import com.aerofs.lib.FileUtil.FileName;
+import com.aerofs.lib.cfg.Cfg;
+import com.aerofs.lib.ex.ExAborted;
+import com.aerofs.lib.ex.ExNoAvailDevice;
+import com.aerofs.lib.ex.ExProtocolError;
+import com.aerofs.lib.ex.ExTimeout;
+import com.aerofs.lib.id.KIndex;
+import com.aerofs.lib.os.OSUtil;
+import com.aerofs.swig.driver.Driver;
+import com.aerofs.swig.driver.LogLevel;
+import com.google.protobuf.GeneratedMessageLite;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -13,17 +32,12 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -31,47 +45,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
-import com.aerofs.base.C;
-import com.aerofs.base.ex.ExBadCredential;
-import com.aerofs.labeling.L;
-import com.aerofs.lib.FileUtil.FileName;
-import org.apache.log4j.Appender;
-import org.apache.log4j.Category;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.DailyRollingFileAppender;
-import org.apache.log4j.Layout;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.spi.LoggerRepository;
-import org.apache.log4j.spi.ThrowableRendererSupport;
-import org.apache.log4j.varia.NullAppender;
-
-import com.aerofs.lib.cfg.Cfg;
-import com.aerofs.base.ex.AbstractExWirable;
-import com.aerofs.lib.ex.ExAborted;
-import com.aerofs.lib.ex.ExNoAvailDevice;
-import com.aerofs.lib.ex.ExProtocolError;
-import com.aerofs.lib.ex.ExTimeout;
-import com.aerofs.lib.id.KIndex;
-import com.aerofs.lib.os.OSUtil;
-import com.aerofs.swig.driver.Driver;
-import com.aerofs.swig.driver.LogLevel;
-import com.google.protobuf.GeneratedMessageLite;
-
-import javax.annotation.Nonnull;
-
 import static com.aerofs.lib.FileUtil.deleteOrOnExit;
 import static com.aerofs.lib.cfg.Cfg.absRTRoot;
+import static com.google.common.collect.Sets.newHashSet;
 
 public abstract class Util
 {
-    public static final String REMOTE_STACKTRACE = "Remote stacktrace:";
-    private static final String PROP_RTROOT = "aerofs.rtroot";
-    private static final String PROP_APP = "aerofs.app";
-    private static final String LOG4J_PROPERTIES_FILE = "aerofs-log4j.properties";
-
     private static final Logger l = l(Util.class);
 
     private Util()
@@ -79,103 +58,9 @@ public abstract class Util
         // private to enforce uninstantiability for this class
     }
 
-    //-------------------------------------------------------------------------
-    //
-    // END LOGGING UTILITIES (FIXME AG: MOVE INTO LOGUTIL)
-    //
-    //-------------------------------------------------------------------------
-
-    /**
-     * @param app the log file will be named "<app>.log"
-     */
-    public static void initLog4J(String rtRoot, String app)
-        throws IOException
+    public static Logger l(Class<?> cls)
     {
-        System.setProperty(PROP_RTROOT, rtRoot);
-        System.setProperty(PROP_APP, app);
-
-        if (L.get().isStaging()) {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            URL url = cl.getResource(LOG4J_PROPERTIES_FILE);
-            if (url != null) {
-                PropertyConfigurator.configure(url);
-                return;
-            }
-        }
-
-        if (app.equals(Param.SH_NAME)) {
-            Logger.getRootLogger().addAppender(new NullAppender());
-        } else {
-            setupLog4JLayoutAndAppenders(rtRoot + File.separator + app + Param.LOG_FILE_EXT,
-                    L.get().isStaging(), true);
-        }
-
-        String strDate = new SimpleDateFormat("yyyyMMdd").format(new Date());
-        l.debug(app + " ========================================================\n" +
-            Cfg.ver() + (L.get().isStaging() ? " staging " : " ") +
-            strDate + " " + AppRoot.abs() + " " + new File(rtRoot).getAbsolutePath());
-
-        if (Cfg.useProfiler()) {
-            l.debug("profiler: " + Cfg.profilerStartingThreshold());
-        }
-
-        Logger.getRootLogger().setLevel(Cfg.lotsOfLog(rtRoot) ? Level.DEBUG : Level.INFO);
-
-        // print termination banner
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run()
-            {
-                DateFormat format = new SimpleDateFormat("yyyyMMdd");
-                String strDate = format.format(new Date());
-                l.debug("TERMINATED " + strDate);
-            }
-        }));
-    }
-
-    public static Layout getLogLayout(boolean fullyQualified)
-    {
-        LoggerRepository repo = LogManager.getLoggerRepository();
-        if (repo instanceof ThrowableRendererSupport) {
-            ThrowableRendererSupport trs = ((ThrowableRendererSupport)repo);
-            trs.setThrowableRenderer(LogUtil.newThrowableRenderer());
-        }
-
-        String patternLayoutString = "%d{HHmmss.SSS}%-.1p %t ";
-        patternLayoutString += fullyQualified ? "%c" : "%C{1}";
-        patternLayoutString += ", %m%n";
-        Layout layout = LogUtil.newPatternLayout(patternLayoutString);
-        return layout;
-    }
-
-    public static void setupLog4JLayoutAndAppenders(String logfile, boolean logToConsole,
-            boolean fullyQualified)
-            throws IOException
-    {
-        Layout layout = getLogLayout(fullyQualified);
-
-        List<Appender> appenders = new ArrayList<Appender>(2); // max number of appenders
-        appenders.add(new DailyRollingFileAppender(layout, logfile, "'.'yyyyMMdd"));
-        if (logToConsole) {
-            appenders.add(new ConsoleAppender(layout));
-        }
-
-        for (Appender appender : appenders) {
-            Logger.getRootLogger().addAppender(appender);
-        }
-    }
-
-    // these methods may have high overhead and is only suitable for occasional
-    // uses. cache the objects for frequent logging
-    //
-    public static Logger l(Object o)
-    {
-        return l(o.getClass());
-    }
-
-    public static Logger l(Class<?> c)
-    {
-        return LogUtil.getLogger(c);
+        return Loggers.getLogger(cls);
     }
 
     private static String convertStackTraceToString(StackTraceElement[] stackTrace)
@@ -214,12 +99,10 @@ public abstract class Util
 
     public static void logAllThreadStackTraces()
     {
-        l().warn("==== BEGIN STACKS ====\n" +
-                getAllThreadStackTraces(ThreadUtil.getAllThreads()) +
-                "\n==== END STACKS ====");
+        l.warn("==== BEGIN STACKS ====\n{}\n==== END STACKS ====", getAllThreadStackTraces(ThreadUtil.getAllThreads()));
     }
 
-    private static Set<Class<?>> s_suppressStackTrace = new HashSet<Class<?>>();
+    private static Set<Class<?>> s_suppressStackTrace = newHashSet();
     static {
         s_suppressStackTrace.add(ExTimeout.class);
         s_suppressStackTrace.add(ExAborted.class);
@@ -275,12 +158,6 @@ public abstract class Util
         AbstractExWirable.printStackTrace(e, pw);
         return sw.toString();
     }
-
-    //-------------------------------------------------------------------------
-    //
-    // END LOGGING UTILITIES (FIXME AG: MOVE INTO LOGUTIL)
-    //
-    //-------------------------------------------------------------------------
 
     public static String quote(Object o)
     {
@@ -711,12 +588,6 @@ public abstract class Util
         }
     }
 
-    // all case conversions throughout the system shall use this method
-    public static String toEnglishLowerCase(String src)
-    {
-        return src.toLowerCase(Locale.ENGLISH);
-    }
-
     public static int compare(InetSocketAddress a1, InetSocketAddress a2)
     {
         int comp = a1.getPort() - a2.getPort();
@@ -739,11 +610,11 @@ public abstract class Util
                 }
             });
         if (heapDumps == null) {
-            l().error("rtRoot not found.");
+            l.error("rtRoot not found.");
             return;
         }
         for (File heapDumpFile : heapDumps) {
-            l().debug("Deleting old heap dump: " + heapDumpFile);
+            l.debug("Deleting old heap dump: " + heapDumpFile);
             deleteOrOnExit(heapDumpFile);
             heapDumpFile.delete();
         }
@@ -831,11 +702,6 @@ public abstract class Util
         return os;
     }
 
-    public static Category l()
-    {
-        return l;
-    }
-
     /**
      * TODO consider thread safety. May use thread local.
      */
@@ -901,22 +767,17 @@ public abstract class Util
 
     public static void initDriver(String logFileName)
     {
-        // init driver
         OSUtil.get().loadLibrary("aerofsd");
-        switch (Logger.getRootLogger().getLevel().toInt()) {
-        case Level.ERROR_INT:
-            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LERROR);
-            break;
-        case Level.WARN_INT:
-            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LWARN);
-            break;
-        case Level.DEBUG_INT:
+
+        Logger rootLogger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        if (rootLogger.isTraceEnabled() || rootLogger.isDebugEnabled()) {
             Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LDEBUG);
-            break;
-        case Level.INFO_INT:
-        default:
+        } else if (rootLogger.isInfoEnabled()) {
             Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LINFO);
-            break;
+        } else if (rootLogger.isWarnEnabled()) {
+            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LWARN);
+        } else {
+            Driver.initLogger_(Cfg.absRTRoot(), logFileName, LogLevel.LERROR);
         }
     }
 

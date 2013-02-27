@@ -8,7 +8,7 @@ import java.util.Arrays;
 import com.aerofs.lib.ProgressIndicators;
 import com.aerofs.lib.SystemUtil;
 import com.aerofs.swig.driver.Driver;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.injectable.InjectableFile;

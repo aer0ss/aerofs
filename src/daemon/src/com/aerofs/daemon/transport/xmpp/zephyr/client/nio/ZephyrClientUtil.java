@@ -8,7 +8,7 @@ package com.aerofs.daemon.transport.xmpp.zephyr.client.nio;
 import com.aerofs.daemon.event.lib.imc.IResultWaiter;
 import com.aerofs.base.id.DID;
 import com.aerofs.zephyr.core.BufferPool;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 import java.nio.ByteBuffer;

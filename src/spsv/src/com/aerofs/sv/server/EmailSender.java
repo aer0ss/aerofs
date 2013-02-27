@@ -6,7 +6,7 @@ package com.aerofs.sv.server;
 
 import com.aerofs.labeling.L;
 import com.aerofs.sv.common.EmailCategory;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.mail.Message;

@@ -7,7 +7,7 @@ import com.aerofs.base.id.DID;
 import com.aerofs.daemon.core.store.StoreDeletionOperators;
 import com.aerofs.lib.id.SOID;
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.alias.MapAlias2Target;
 import com.aerofs.daemon.lib.db.ICollectorSequenceDatabase;

@@ -17,7 +17,7 @@ import com.aerofs.lib.cfg.Cfg;
 import com.aerofs.lib.event.Prio;
 import com.google.inject.Inject;
 import net.contentobjects.jnotify.JNotifyException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Set;

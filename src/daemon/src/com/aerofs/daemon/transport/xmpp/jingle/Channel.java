@@ -17,7 +17,7 @@ import com.aerofs.lib.ex.ExJingle;
 import com.aerofs.lib.ex.ExNoResource;
 import com.aerofs.base.id.DID;
 import com.aerofs.proto.Transport.PBTPHeader;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.ByteArrayInputStream;
 

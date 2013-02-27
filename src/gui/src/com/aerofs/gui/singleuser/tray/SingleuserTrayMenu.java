@@ -12,7 +12,7 @@ import com.aerofs.gui.tray.TrayMenuPopulator;
 import com.aerofs.labeling.L;
 import com.aerofs.proto.Ritual.ListSharedFoldersReply;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
@@ -291,7 +291,7 @@ public class SingleuserTrayMenu implements ITrayMenu
                                         try {
                                             lme.run(path);
                                         } catch (Exception e) {
-                                            Util.l(this).warn("menu handler: " + Util.e(e));
+                                            l.warn("menu handler: " + Util.e(e));
                                         }
                                     }
                                 });

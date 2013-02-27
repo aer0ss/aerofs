@@ -18,7 +18,7 @@ import com.aerofs.proto.Common.Void;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.annotation.Nullable;

@@ -26,7 +26,7 @@ import com.aerofs.proto.ControllerNotifications.Type;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Builder;
 import com.aerofs.proto.ControllerNotifications.UpdateNotification.Status;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.gui.GUI;
 import com.aerofs.lib.cfg.Cfg;

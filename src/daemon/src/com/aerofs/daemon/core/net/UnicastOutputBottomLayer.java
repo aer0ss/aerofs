@@ -6,7 +6,7 @@ import com.aerofs.daemon.core.tc.TC;
 import com.aerofs.lib.ex.ExAborted;
 import com.aerofs.proto.Transport.PBStream.InvalidationReason;
 import com.google.inject.Inject;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import com.aerofs.daemon.core.tc.Cat;
 import com.aerofs.daemon.core.tc.CoreIMC;

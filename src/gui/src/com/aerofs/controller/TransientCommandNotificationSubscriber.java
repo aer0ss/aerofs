@@ -23,7 +23,7 @@ import com.aerofs.verkehr.client.lib.subscriber.ClientFactory;
 import com.aerofs.verkehr.client.lib.subscriber.ISubscriptionListener;
 import com.aerofs.verkehr.client.lib.subscriber.VerkehrSubscriber;
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.util.HashedWheelTimer;
 
 import javax.annotation.Nullable;

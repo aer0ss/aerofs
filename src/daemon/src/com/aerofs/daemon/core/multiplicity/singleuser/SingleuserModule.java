@@ -20,13 +20,16 @@ import com.aerofs.daemon.core.multiplicity.singleuser.migration.ImmigrantDetecto
 import com.aerofs.lib.Util;
 import com.google.inject.AbstractModule;
 import com.google.inject.internal.Scoping;
+import org.slf4j.Logger;
 
 public class SingleuserModule extends AbstractModule
 {
+    private static final Logger l = Util.l(SingleuserModule.class);
+
     @Override
     protected void configure()
     {
-        Util.l(this).info("single user mode");
+        l.info("single user mode");
 
         bind(Scoping.class).toInstance(Scoping.SINGLETON_INSTANCE);
 

@@ -29,7 +29,7 @@ import com.aerofs.lib.ritual.RitualClient;
 import com.aerofs.lib.ritual.RitualClientFactory;
 import com.aerofs.swig.driver.DriverConstants;
 import com.google.common.util.concurrent.Uninterruptibles;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import static com.aerofs.lib.SystemUtil.ExitCode.*;
 
 import java.io.IOException;
@@ -247,7 +247,7 @@ class DefaultDaemonMonitor implements IDaemonMonitor
             try {
                 watchDaemonProcess(proc);
             } catch (Exception e) {
-                l.info(e);
+                l.info(Util.e(e));
             }
 
             // Since we returned, the daemon has died. If this was because we stopped the daemon,

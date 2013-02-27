@@ -7,7 +7,7 @@ import com.aerofs.gui.GUIUtil;
 import com.aerofs.lib.acl.Role;
 import com.aerofs.base.id.UserID;
 import com.aerofs.ui.UIUtil;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;

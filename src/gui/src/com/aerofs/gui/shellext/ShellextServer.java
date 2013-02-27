@@ -3,7 +3,7 @@ package com.aerofs.gui.shellext;
 import com.aerofs.base.C;
 import com.aerofs.lib.Param;
 import com.aerofs.lib.Util;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;

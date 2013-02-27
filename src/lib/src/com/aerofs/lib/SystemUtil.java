@@ -5,7 +5,8 @@
 package com.aerofs.lib;
 
 import com.aerofs.sv.client.SVClient;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -13,7 +14,7 @@ import java.io.InputStream;
 
 public abstract class SystemUtil
 {
-    private static final Logger l = Logger.getRootLogger();
+    private static final Logger l = LoggerFactory.getLogger(SystemUtil.class);
 
     /**
      * This class defines custom process exit codes and corresponding user friendly error messages.
@@ -81,7 +82,7 @@ public abstract class SystemUtil
          */
         public void exit()
         {
-            Util.l().warn("EXIT with code " + getClass().getName() + "." + this.name());
+            l.warn("EXIT with code " + getClass().getName() + "." + this.name());
             System.exit(getNumber());
         }
 
@@ -111,7 +112,7 @@ public abstract class SystemUtil
      */
     public static Error fatalWithReturn(final Throwable e)
     {
-        l.fatal("FATAL:" + Util.e(e));
+        l.error("FATAL:" + Util.e(e));
         SVClient.logSendDefectSyncNoLogsIgnoreErrors(true, "FATAL:", e);
         ExitCode.FATAL_ERROR.exit();
         throw new Error(e);

@@ -2,7 +2,7 @@ package com.aerofs.ui;
 
 import com.aerofs.lib.Util;
 import com.aerofs.lib.cfg.Cfg;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 
