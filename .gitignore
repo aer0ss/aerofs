@@ -10,3 +10,5 @@ out.*
 .gradle
 dump.rdb
 env
+*.pyc
+resource/dropwizard
