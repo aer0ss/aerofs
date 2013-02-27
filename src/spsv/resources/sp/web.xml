@@ -32,6 +32,16 @@
     <param-value>cacert.pem</param-value>
   </context-param>
 
+  <!-- Redis -->
+  <context-param>
+    <param-name>redis_host</param-name>
+    <param-value>localhost</param-value>
+  </context-param>
+  <context-param>
+    <param-name>redis_port</param-name>
+    <param-value>6379</param-value>
+  </context-param>
+
   <!-- initialization listener -->
 
   <listener>
