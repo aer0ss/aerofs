@@ -121,6 +121,10 @@ public final class CommandNotificationSubscriber
         {
             l.info("cmd: subscribe topic=" + _topic);
             _subscriber.subscribe_(_topic);
+
+            // Also schedule a sync after we subscribe to the topic to ensure we are up to date
+            // after potential verkehr outages.
+            scheduleSyncWithCommandServer();
         }
 
         @Override
