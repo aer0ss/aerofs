@@ -16,7 +16,6 @@ import com.aerofs.sp.server.lib.cert.Certificate;
 import com.aerofs.sp.server.lib.cert.CertificateDatabase;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator;
 import com.aerofs.sp.server.lib.cert.CertificateGenerator.CertificationResult;
-import com.aerofs.sp.server.lib.device.DeviceDatabase.ExDeviceNameAlreadyExist;
 import com.aerofs.sp.server.lib.user.User;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -119,20 +118,10 @@ public class Device
         return _f._factCert.create(serial);
     }
 
-    /**
-     * Set the device name. Rename using Util.nextName() if a device with the same name exists.
-     */
     public void setName(String name)
             throws SQLException, ExNotFound
     {
-        while (true) {
-            try {
-                _f._db.setName(_id, name);
-                break;
-            } catch (ExDeviceNameAlreadyExist e) {
-                name = Util.nextName(name, "");
-            }
-        }
+        _f._db.setName(_id, name);
     }
 
     public void throwIfNotFound()
@@ -176,14 +165,7 @@ public class Device
     public void save(User owner, String osFamily, String osName, String deviceName)
             throws SQLException, ExDeviceIDAlreadyExists
     {
-        while (true) {
-            try {
-                _f._db.insertDevice(_id, owner.id(), osFamily, osName, deviceName);
-                break;
-            } catch (ExDeviceNameAlreadyExist e) {
-                deviceName = Util.nextName(deviceName, "");
-            }
-        }
+        _f._db.insertDevice(_id, owner.id(), osFamily, osName, deviceName);
     }
 
     public void delete()

@@ -21,7 +21,6 @@ import java.sql.SQLException;
 
 import static com.aerofs.lib.db.DBUtil.selectWhere;
 import static com.aerofs.lib.db.DBUtil.updateWhere;
-import static com.aerofs.sp.server.lib.SPSchema.CONSTRAINT_DEVICE_NAME_OWNER;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_ID;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_NAME;
 import static com.aerofs.sp.server.lib.SPSchema.C_DEVICE_OS_FAMILY;
@@ -34,17 +33,6 @@ import static com.aerofs.sp.server.lib.SPSchema.T_DEVICE;
  */
 public class DeviceDatabase extends AbstractSQLDatabase
 {
-    // Do not inherit from ExAleadyExist to avoid misclassification of this exception by the client
-    public static class ExDeviceNameAlreadyExist extends Exception
-    {
-        private static final long serialVersionUID = 1L;
-
-        private ExDeviceNameAlreadyExist()
-        {
-            super();
-        }
-    }
-
     public DeviceDatabase(IDatabaseConnectionProvider<Connection> provider)
     {
         super(provider);
@@ -52,7 +40,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
 
     public void insertDevice(DID did, UserID ownerID, String osFamily, String osName,
             String deviceName)
-            throws SQLException, ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExists
+            throws SQLException, ExDeviceIDAlreadyExists
     {
         try {
             PreparedStatement ps = prepareStatement(
@@ -66,7 +54,17 @@ public class DeviceDatabase extends AbstractSQLDatabase
             ps.setString(5, osName);
             ps.executeUpdate();
         } catch (SQLException e) {
-            throwOnDeviceIDOrNameConstraintViolation(e);
+            throwOnDeviceIDConstraintViolation(e);
+        }
+    }
+
+    private static void throwOnDeviceIDConstraintViolation(SQLException e)
+            throws ExDeviceIDAlreadyExists, SQLException
+    {
+        if (isConstraintViolation(e) && e.getMessage().contains("for key 'PRIMARY'")) {
+            throw new ExDeviceIDAlreadyExists();
+        } else {
+            throw e;
         }
     }
 
@@ -144,7 +142,7 @@ public class DeviceDatabase extends AbstractSQLDatabase
      * Trim the name before saving it to the db
      */
     public void setName(DID did, String name)
-            throws SQLException, ExDeviceNameAlreadyExist, ExNotFound
+            throws SQLException, ExNotFound
     {
         PreparedStatement ps = prepareStatement(
                 updateWhere(T_DEVICE, C_DEVICE_ID + "=?", C_DEVICE_NAME));
@@ -152,43 +150,9 @@ public class DeviceDatabase extends AbstractSQLDatabase
         ps.setString(1, name.trim());
         ps.setString(2, did.toStringFormal());
 
-        try {
-            int count = ps.executeUpdate();
-            assert count <= 1;
-            if (count == 0) throw new ExNotFound("device " + did.toString());
-        } catch (SQLException e) {
-            throwOnDeviceNameConstraintViolation(e);
-        }
-    }
-
-    private static void throwOnDeviceIDOrNameConstraintViolation(SQLException e)
-            throws ExDeviceNameAlreadyExist, ExDeviceIDAlreadyExists, SQLException
-    {
-        if (isConstraintViolation(e)) {
-            if (e.getMessage().contains(CONSTRAINT_DEVICE_NAME_OWNER)) {
-                throw new ExDeviceNameAlreadyExist();
-            } else if (e.getMessage().contains("for key 'PRIMARY'")) {
-                throw new ExDeviceIDAlreadyExists();
-            } else {
-                assert false;
-            }
-        } else {
-            throw e;
-        }
-    }
-
-    private static void throwOnDeviceNameConstraintViolation(SQLException e)
-            throws ExDeviceNameAlreadyExist, SQLException
-    {
-        if (isConstraintViolation(e)) {
-            if (e.getMessage().contains(CONSTRAINT_DEVICE_NAME_OWNER)) {
-                throw new ExDeviceNameAlreadyExist();
-            } else {
-                assert false;
-            }
-        } else {
-            throw e;
-        }
+        int count = ps.executeUpdate();
+        assert count <= 1;
+        if (count == 0) throw new ExNotFound("device " + did.toString());
     }
 
     public void setOSFamilyAndName(DID deviceId, String osFamily, String osName)
